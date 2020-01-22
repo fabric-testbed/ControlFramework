@@ -1,0 +1,267 @@
+openapi: 3.0.1
+info:
+  title: Base Fabric Actor API
+  description: This is a base fabric API
+  contact:
+    email: kthare10@renci.org
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.0
+servers:
+- url: https://virtserver.swaggerhub.com/fabric/actorbase
+paths:
+  /create:
+    post:
+      summary: creates resource(s)
+      description: |
+        Request to create resource(s)
+      operationId: create_post
+      parameters:
+      - name: resourceID
+        in: query
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        default:
+          description: Unexpected Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+      x-codegen-request-body-name: request
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+  /modify:
+    post:
+      summary: modify resource(s)
+      description: |
+        Request to modify resource(s)
+      operationId: modify_post
+      parameters:
+      - name: resourceID
+        in: query
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        default:
+          description: Unexpected Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+      x-codegen-request-body-name: request
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+  /delete:
+    delete:
+      summary: delete resource(s)
+      description: |
+        Request to delete resource(s)
+      operationId: delete_delete
+      parameters:
+      - name: resourceID
+        in: query
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              type: string
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        default:
+          description: Unexpected Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+      x-codegen-request-body-name: request
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+  /get:
+    get:
+      summary: get manifest for the resource(s)
+      description: |
+        Request to get manifest for resource(s)
+      operationId: get_get
+      parameters:
+      - name: resourceID
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "404":
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+        default:
+          description: Unexpected Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/actorResponse'
+      x-openapi-router-controller: swagger_server.controllers.default_controller
+components:
+  schemas:
+    actorResponse:
+      type: object
+      properties:
+        status:
+          minimum: 0
+          type: integer
+          description: status code
+        message:
+          type: string
+          description: status message
+        value:
+          type: object
+          properties: {}
+          description: JSON object
+          example: {}
+        version:
+          type: string
+          description: Actor version
+      example:
+        message: message
+        value: {}
+        version: version
+        status: 0
+  parameters:
+    resourceID:
+      name: resourceID
+      in: query
+      required: true
+      schema:
+        type: string
+

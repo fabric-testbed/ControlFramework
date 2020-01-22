@@ -1,0 +1,10 @@
+version: '3.6'
+
+services:
+    swagger_server:
+        container_name: actor 
+        hostname: actor 
+        image: swagger_server:latest
+        restart: always
+        ports:
+        - "8080:8080"
