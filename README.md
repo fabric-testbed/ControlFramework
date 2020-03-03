@@ -60,30 +60,49 @@ docker-compose up -d
 ```
 
 ## Generate a new server stub
-In a browser, go to [Swagger definition](https://app.swaggerhub.com/apis/kthare10/actorbase/1.0.0)
+In a browser, go to [Swagger definition](https://app.swaggerhub.com/apis/kthare10/actor/1.0.0)
 
 From the generate code icon (downward facing arrow), select Download API > JSON Resolved
 
 A file named swagger-client-generated.zip should be downloaded. This file will contain swagger.json. Extract the json file from the swagger-client-generated.zip and run the following command to generate the Flask based server.
 
 ```bash
-$ swagger-codegen generate -i swagger.json -l python-flask -o actorbase
+$ swagger-codegen generate -i openapi.json -l python-flask -o actorbase
 ```
 
 ## Example
 The following example invokes a create slice operation and depicts create slice function of the Controller plugin being executed:
 
+- Failure to create a slice due to an expired Identity Token
 ```bash
-$ curl -X POST -i "localhost:8080/fabric/actorbase/create?resourceID=abcd-5678" -H "accept: application/json" -H "Content-Type: text/plain"  -d @test.txt
+curl -X POST -i "localhost:8080/fabric/actor/create?resourceID=abcd-5678" -H "accept: application/json" -H "Content-Type: text/plain"  -d 'abcd' -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJraWQiOiIyNDRCMjM1RjZCMjhFMzQxMDhEMTAxRUFDNzM2MkM0RSIsImFsZyI6IlJTMjU2In0.eyJpc3MiOiJodHRwczovL2NpbG9nb24ub3JnIiwic3ViIjoiaHR0cDovL2NpbG9nb24ub3JnL3NlcnZlckEvdXNlcnMvMTE5MDQxMDEiLCJhdWQiOiJjaWxvZ29uOi9jbGllbnRfaWQvMzgwYzJiZmE1ZDk5YWU3NGEzODcxZDg3NGFlOWU2NjkiLCJhdXRoX3RpbWUiOiIxNTgzMjA3ODM1IiwiZXhwIjoxNTgzMjA4NzM2LCJpYXQiOjE1ODMyMDc4MzYsImVtYWlsIjoia3RoYXJlMTBAZW1haWwudW5jLmVkdSIsImdpdmVuX25hbWUiOiJLb21hbCIsImZhbWlseV9uYW1lIjoiVGhhcmVqYSIsImNlcnRfc3ViamVjdF9kbiI6Ii9EQz1vcmcvREM9Y2lsb2dvbi9DPVVTL089VW5pdmVyc2l0eSBvZiBOb3J0aCBDYXJvbGluYSBhdCBDaGFwZWwgSGlsbC9DTj1Lb21hbCBUaGFyZWphIEExMTkwNDEwNiIsImlkcCI6InVybjptYWNlOmluY29tbW9uOnVuYy5lZHUiLCJpZHBfbmFtZSI6IlVuaXZlcnNpdHkgb2YgTm9ydGggQ2Fyb2xpbmEgYXQgQ2hhcGVsIEhpbGwiLCJlcHBuIjoia3RoYXJlMTBAdW5jLmVkdSIsImFmZmlsaWF0aW9uIjoiZW1wbG95ZWVAdW5jLmVkdTtzdGFmZkB1bmMuZWR1O21lbWJlckB1bmMuZWR1IiwibmFtZSI6IktvbWFsIFRoYXJlamEiLCJhY3IiOiJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6YWM6Y2xhc3NlczpQYXNzd29yZFByb3RlY3RlZFRyYW5zcG9ydCIsImVudGl0bGVtZW50IjoidXJuOm1hY2U6ZGlyOmVudGl0bGVtZW50OmNvbW1vbi1saWItdGVybXMifQ.Y_nlG8dnl60ARUCShb_diuKgjaAEZpKKkT89GjUqR5wLELVWM05vRMiAgoS_ZIKz_cveBhtERzTDnoY1MmM21LoP36BHHykGn7zbbhfhsaVccRnHHJnmVDFvoEqajSQg3G846Z3YCARR8F2p9POgzF2Vhr5NxpFcP62wOQMKiQn-JP9Gbx9qCbKmCDW8mAludujUaM0A8SMDEjKps8cpHc8YHnS430UTy3bETBwuC7NULrYnbiSSmK9xGIUVo7iCmf7vpYa144oZq1Zk-fR1J0f_OPAE3K6cKWtpzWGET9mDDYad4SlIqWvLUBrShSw3Aj6zngxYej-kGBr2OkA5-g"
+HTTP/1.0 401 UNAUTHORIZED
+Content-Type: application/problem+json
+Content-Length: 115
+Server: Werkzeug/0.16.0 Python/3.7.0
+Date: Tue, 03 Mar 2020 15:42:02 GMT
+
+{
+  "detail": "Provided token is not valid",
+  "status": 401,
+  "title": "Unauthorized",
+  "type": "about:blank"
+}
+```
+- Successful slice creation
+```bash
+curl -X POST -i "localhost:8080/fabric/actor/create?resourceID=abcd-5678" -H "accept: application/json" -H "Content-Type: text/plain"  -d 'abcd' -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJraWQiOiIyNDRCMjM1RjZCMjhFMzQxMDhEMTAxRUFDNzM2MkM0RSIsImFsZyI6IlJTMjU2In0.eyJpc3MiOiJodHRwczovL2NpbG9nb24ub3JnIiwic3ViIjoiaHR0cDovL2NpbG9nb24ub3JnL3NlcnZlckEvdXNlcnMvMTE5MDQxMDEiLCJhdWQiOiJjaWxvZ29uOi9jbGllbnRfaWQvMzgwYzJiZmE1ZDk5YWU3NGEzODcxZDg3NGFlOWU2NjkiLCJhdXRoX3RpbWUiOiIxNTgzMjQ3MTUxIiwiZXhwIjoxNTgzMjUxMDg3LCJpYXQiOjE1ODMyNTAxODcsImVtYWlsIjoia3RoYXJlMTBAZW1haWwudW5jLmVkdSIsImdpdmVuX25hbWUiOiJLb21hbCIsImZhbWlseV9uYW1lIjoiVGhhcmVqYSIsImNlcnRfc3ViamVjdF9kbiI6Ii9EQz1vcmcvREM9Y2lsb2dvbi9DPVVTL089VW5pdmVyc2l0eSBvZiBOb3J0aCBDYXJvbGluYSBhdCBDaGFwZWwgSGlsbC9DTj1Lb21hbCBUaGFyZWphIEExMTkwNDEwNiIsImlkcCI6InVybjptYWNlOmluY29tbW9uOnVuYy5lZHUiLCJpZHBfbmFtZSI6IlVuaXZlcnNpdHkgb2YgTm9ydGggQ2Fyb2xpbmEgYXQgQ2hhcGVsIEhpbGwiLCJlcHBuIjoia3RoYXJlMTBAdW5jLmVkdSIsImFmZmlsaWF0aW9uIjoiZW1wbG95ZWVAdW5jLmVkdTtzdGFmZkB1bmMuZWR1O21lbWJlckB1bmMuZWR1IiwibmFtZSI6IktvbWFsIFRoYXJlamEiLCJhY3IiOiJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoyLjA6YWM6Y2xhc3NlczpQYXNzd29yZFByb3RlY3RlZFRyYW5zcG9ydCIsImVudGl0bGVtZW50IjoidXJuOm1hY2U6ZGlyOmVudGl0bGVtZW50OmNvbW1vbi1saWItdGVybXMifQ.dMdm4yUQAbRAz7amQqzIwxOM2qCRiWJYflsanSguR2MNYeP2vycuu12HoD7Irso4ZoHhy9QKGVHzPX-xvGIheoLlgSKOBmVUSJmQbqACMvyMiJ3SPGn-oE41M9k54qiwTFNYxP-jPb-yqzzHtaCCUg4vqNmqzjOCwbK8I3IsWV23o_DeZEAI8ChL2tnWXsEpZuHJUU-YzFY3vfd6NNCQ34XdVVrhU0QzUWRSv4S5tmnMHthh89KnH5ooyjMLQ4VfjcMExBDES9sgLOH0xMIaz9pUJTS9XD2AdJ14WTgTXVxPHJvOgYX80Lk7OAOvo2E4uVlULKAH44OfnX1yd153zw"
 HTTP/1.0 200 OK
 Content-Type: application/json
-Content-Length: 31
-Server: Werkzeug/0.16.0 Python/3.6.10
-Date: Wed, 22 Jan 2020 16:26:02 GMT
+Content-Length: 120
+Server: Werkzeug/0.16.0 Python/3.7.0
+Date: Tue, 03 Mar 2020 15:49:32 GMT
 
-"IActorPlugin: creating slice"
+{
+  "code": 200,
+  "message": "slice created with slice_id=930e98ca-5d66-11ea-9748-8c8590ce7849 slice_name=abcd-5678"
+}
 ```
-
 ## Plugins
 The actor loads all the plugins in "plugins" directory. Each plugin must inherit from IActorPlugin class and have an info file. The following is an example for controller plugin. For implementation details look at controller.py. Small set of Base classes or the interfaces are defined in "plugins/api" directory (more stuff to be added). 
 ```bash

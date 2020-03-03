@@ -1,115 +1,63 @@
-#!/usr/bin/env python
-# #######################################################################
-# Copyright (c) 2020 RENCI. All rights reserved
-# This material is the confidential property of RENCI or its
-# licensors and may be used, reproduced, stored or transmitted only in
-# accordance with a valid RENCI license or sublicense agreement.
-# #######################################################################
+#!/usr/bin/env python3
+# MIT License
+#
+# Copyright (c) 2020 FABRIC Testbed
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+# Author: Komal Thareja (kthare10@renci.org)
 
 
-from security.Credentials import Credentials
+import json
+
+import requests
+import jwt
+from security import CONFIG
+
 
 
 class AuthToken:
     """
     Represents the Authentication Token for a user
     """
-    def __init__(self):
-        self.name = None
-        self.guid = None
-        self.cred = None
-        self.cert = None
-        self.loginToken = None
+    def __init__(self, id_token):
+        self.id_token = id_token
+        self.url = CONFIG.get("oauth", "oauth-user-url")
+        self.jwks_url = CONFIG.get("oauth", "oauth-jwks-url")
 
-    def __init__(self, name: str):
-        self.name = name
-        self.guid = None
-        self.cred = None
-        self.cert = None
-        self.loginToken = None
+    def validate(self):
+        try:
+            response = requests.get(self.jwks_url)
+            if response.status_code !=  200:
+                return
+            jwks = response.json()
+            public_keys = {}
+            for jwk in jwks['keys']:
+                kid = jwk['kid']
+                public_keys[kid] = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(jwk))
 
-    def __init__(self, name: str, guid: str):
-        self.name = name
-        self.guid = guid
-        self.cred = None
-        self.cert = None
-        self.loginToken = None
-
-    def __init__(self, name: str, guid: str, cred: Credentials):
-        self.name = name
-        self.guid = guid
-        self.cred = cred
-        self.cert = None
-        self.loginToken = None
-
-    def get_name(self):
-        """
-        Gets the name of the identity represented by this token.
-
-        Returns:
-            identity name
-        """
-        return self.name
-
-    def get_guid(self):
-        """
-        Gets the guid for the identity represented by this token.
-
-        Returns:
-            guid
-        """
-        return self.guid
-
-    def get_credentials(self):
-        """
-        Gets the identity credentials
-
-        Returns:
-            identity credentials
-        """
-        return self.cred
-
-    def set_credentials(self, cred: Credentials):
-        """
-        Sets the identity credentials
-
-        Args:
-            cred: identity credentials
-        """
-        self.cred = cred
-
-    def get_certificate(self):
-        """
-        Gets the identity certificate
-
-        Returns:
-            identity certificate
-        """
-        return self.cert
-
-    def set_certificate(self, cert: str):
-        """
-        Sets the identity certificate
-
-        Args:
-            cert: identity certificate
-        """
-        self.cert = cert
-
-    def get_login_token(self):
-        """
-        Gets the identity token
-
-        Returns:
-            identity token
-        """
-        return self.loginToken
-
-    def set_login_token(self, token: str):
-        """
-        Sets the identity token
-
-        Args:
-            token: identity token
-        """
-        self.loginToken = token
+            kid = jwt.get_unverified_header(self.id_token)['kid']
+            key = public_keys[kid]
+            options = {'verify_aud': False}
+            payload = jwt.decode(self.id_token, key=key, algorithms=['RS256'], options=options)
+            print(json.dumps(payload))
+            return payload
+        except Exception as e:
+            print(e)
