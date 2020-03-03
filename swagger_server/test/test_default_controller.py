@@ -5,7 +5,8 @@ from __future__ import absolute_import
 from flask import json
 from six import BytesIO
 
-from swagger_server.models.actor_response import ActorResponse  # noqa: E501
+from swagger_server.models.error import Error  # noqa: E501
+from swagger_server.models.success import Success  # noqa: E501
 from swagger_server.test import BaseTestCase
 
 
@@ -20,7 +21,7 @@ class TestDefaultController(BaseTestCase):
         body = 'body_example'
         query_string = [('resource_id', 'resource_id_example')]
         response = self.client.open(
-            '/fabric/actorbase/create',
+            '/actor/create',
             method='POST',
             data=json.dumps(body),
             content_type='text/plain',
@@ -33,13 +34,10 @@ class TestDefaultController(BaseTestCase):
 
         delete resource(s)
         """
-        body = 'body_example'
         query_string = [('resource_id', 'resource_id_example')]
         response = self.client.open(
-            '/fabric/actorbase/delete',
+            '/actor/delete',
             method='DELETE',
-            data=json.dumps(body),
-            content_type='text/plain',
             query_string=query_string)
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -51,7 +49,7 @@ class TestDefaultController(BaseTestCase):
         """
         query_string = [('resource_id', 'resource_id_example')]
         response = self.client.open(
-            '/fabric/actorbase/get',
+            '/actor/get',
             method='GET',
             query_string=query_string)
         self.assert200(response,
@@ -65,7 +63,7 @@ class TestDefaultController(BaseTestCase):
         body = 'body_example'
         query_string = [('resource_id', 'resource_id_example')]
         response = self.client.open(
-            '/fabric/actorbase/modify',
+            '/actor/modify',
             method='POST',
             data=json.dumps(body),
             content_type='text/plain',
