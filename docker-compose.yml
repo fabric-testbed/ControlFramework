@@ -4,7 +4,9 @@ services:
     swagger_server:
         container_name: actor 
         hostname: actor 
-        image: swagger_server:latest
+        image: actor:latest
         restart: always
         ports:
-        - "8080:8080"
+        - "8081:8081"
+        volumes:
+        - ./log:/var/log

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # MIT License
 #
 # Copyright (c) 2020 FABRIC Testbed
@@ -20,34 +21,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# Author Komal Thareja (kthare10@renci.org)
-
-# After making modifications to this file, please restart actor to re-read it.
-
-# This file is a sample; to alter a particular value, uncomment it, and set as desired.
-# actor will use sane defaults, in the absence of this configuration file.
-
-[runtime]
-port = 8081
-plugin_dir = actors/plugins
-
-[logging]
-## The directory in which actor should create log files.
-## This directory will be automatically created if it does not exist.
-log-directory = /var/log/
 #
-## The filename to be used for actor's log file.
-log-file = actor.log
-#
-## The default log level for actor.
-#log-level = DEBUG
-#
-## actor rotates log files. You may specify how many archived log files to keep here.
-log-retain = 5
-#
-## actor rotates log files after they exceed a certain size.
-## You may specify the file size that results in a log file being rotated here.
-log-size = 5000000
+# Author: Komal Thareja (kthare10@renci.org)
+import logging
 
-[oauth]
-oauth-jwks-url = https://cilogon.org/oauth2/certs
+import actor.plugins.apis.IActorPlugin as ActorPluginType
+from actor import LOGGER
+
+
+class ControllerPlugin(ActorPluginType.IActorPlugin):
+    """
+    Plugin One
+
+    This is an example of plugin class to depict plugin functionality. It is derived from IActorPlugin base class.
+    Any actor specific functionality should be implemented here by overriding the base class functions.
+
+    """
+    def __init__(self):
+        # Make sure to call the parent class (`IActorPlugin`) methods when
+        # overriding them.
+        super(ControllerPlugin, self).__init__()
+        self.log = logging.getLogger(LOGGER)
+
+
+    def print_name(self):
+        self.log.debug("This is ControllerPlugin")

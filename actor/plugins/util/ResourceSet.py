@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # MIT License
 #
 # Copyright (c) 2020 FABRIC Testbed
@@ -20,34 +21,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# Author Komal Thareja (kthare10@renci.org)
-
-# After making modifications to this file, please restart actor to re-read it.
-
-# This file is a sample; to alter a particular value, uncomment it, and set as desired.
-# actor will use sane defaults, in the absence of this configuration file.
-
-[runtime]
-port = 8081
-plugin_dir = actors/plugins
-
-[logging]
-## The directory in which actor should create log files.
-## This directory will be automatically created if it does not exist.
-log-directory = /var/log/
 #
-## The filename to be used for actor's log file.
-log-file = actor.log
-#
-## The default log level for actor.
-#log-level = DEBUG
-#
-## actor rotates log files. You may specify how many archived log files to keep here.
-log-retain = 5
-#
-## actor rotates log files after they exceed a certain size.
-## You may specify the file size that results in a log file being rotated here.
-log-size = 5000000
+# Author: Komal Thareja (kthare10@renci.org)
 
-[oauth]
-oauth-jwks-url = https://cilogon.org/oauth2/certs
+class ResourceSet:
+    def __init__(self):
+        self.type = None
+        self.units = 0
