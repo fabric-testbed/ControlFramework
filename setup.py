@@ -1,11 +1,10 @@
 # coding: utf-8
 
-import sys
 from setuptools import setup, find_packages
 
-from security import ConfDir, ConfFile, LogDir
+from actor import ConfDir, ConfFile, LogDir, LogFile
 
-NAME = "swagger_server"
+NAME = "actor"
 VERSION = "1.0.0"
 # To install the library, run the following
 #
@@ -14,7 +13,16 @@ VERSION = "1.0.0"
 # prerequisite: setuptools
 # http://pypi.python.org/pypi/setuptools
 
-REQUIRES = ["connexion"]
+REQUIRES = [
+            'yapsy == 1.12.2',
+            'connexion == 2.6.0',
+            'python_dateutil == 2.6.0',
+            'setuptools >= 21.0.0',
+            'requests',
+            'PyJWT >=1.7.1',
+            'connexion[swagger-ui]',
+            'cryptography'
+            ]
 
 setup(
     name=NAME,
@@ -25,11 +33,11 @@ setup(
     keywords=["Swagger", "Base Fabric Actor API"],
     install_requires=REQUIRES,
     packages=find_packages(),
-    package_data={'': ['swagger/swagger.yaml']},
+    package_data={'': ['actor/swagger_server/swagger/swagger.yaml']},
     include_package_data=True,
-    data_files = [(ConfDir, [ConfFile]), (LogDir, [])],
+    data_files = [(ConfDir, [ConfFile]), (LogDir, [LogFile])],
     entry_points={
-        'console_scripts': ['swagger_server=swagger_server.__main__:main']},
+        'console_scripts': ['actor.swagger_server=actor.swagger_server.__main__:main']},
     long_description="""\
     This is a base fabric API
     """
