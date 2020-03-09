@@ -13,7 +13,7 @@ is an example of building a swagger-enabled Flask server.
 This example uses the [Connexion](https://github.com/zalando/connexion) library on top of Flask.
 
 ## API
-API Documentation can be found [here](https://app.swaggerhub.com/apis-docs/kthare10/actorbase/1.0.0#/)
+API Documentation can be found [here](https://app.swaggerhub.com/apis-docs/kthare10/actor/1.0.0)
 
 ## Requirements
 Python 3.5.2+
