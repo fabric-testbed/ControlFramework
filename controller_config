@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # MIT License
 #
 # Copyright (c) 2020 FABRIC Testbed
@@ -21,42 +20,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
+# Author Komal Thareja (kthare10@renci.org)
+
+# After making modifications to this file, please restart controller to re-read it.
+
+# This file is a sample; to alter a particular value, uncomment it, and set as desired.
+# actor will use sane defaults, in the absence of this configuration file.
+
+[runtime]
+port = 8081
+plugin_dir = controller/plugin
+
+[logging]
+## The directory in which actor should create log files.
+## This directory will be automatically created if it does not exist.
+log-directory = /var/log/
 #
-# Author: Komal Thareja (kthare10@renci.org)
-
-import sys
-import configparser
-
-ConfDir = '/etc/actor'
-ConfFile = 'config'
-
-LogDir = '/var/log'
-LogFile = 'actor.log'
-LogLevel = 'DEBUG'
-LogRetain = '5'
-LogFileSize = '5000000'
-
-OauthJwksUri = 'https://cilogon.org/oauth2/certs'
-
-LOGGER = 'actor_logger'
-
-CONFIG = configparser.ConfigParser()
-CONFIG.add_section('runtime')
-CONFIG.add_section('oauth')
-CONFIG.add_section('logging')
-CONFIG.set('logging', 'log-directory', LogDir)
-CONFIG.set('logging', 'log-file', LogFile)
-CONFIG.set('logging', 'log-level', LogLevel)
-CONFIG.set('logging', 'log-retain', LogRetain)
-CONFIG.set('logging', 'log-file-size', LogFileSize)
-CONFIG.set('oauth', 'oauth-jwks-url', OauthJwksUri)
-
-# Now, attempt to read in the configuration file.
-config_file = ConfDir + '/' + ConfFile
-try:
-    files_read = CONFIG.read(config_file)
-    if len(files_read) == 0:
-        sys.stderr.write('Configuration file could not be read; ' +
-                 'proceeding with default settings.')
-except Exception as e:
-    raise RuntimeError('Unable to parse configuration file')
+## The filename to be used for actor's log file.
+log-file = controller.log
+#
+## The default log level for actor.
+log-level = DEBUG
+#
+## actor rotates log files. You may specify how many archived log files to keep here.
+log-retain = 5
+#
+## actor rotates log files after they exceed a certain size.
+## You may specify the file size that results in a log file being rotated here.
+log-size = 5000000

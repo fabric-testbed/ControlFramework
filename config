@@ -28,8 +28,6 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 [runtime]
-port = 8081
-plugin_dir = actors/plugins
 
 [logging]
 ## The directory in which actor should create log files.

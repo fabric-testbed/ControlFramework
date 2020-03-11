@@ -15,4 +15,4 @@ EXPOSE 8081
 
 ENTRYPOINT ["python3"]
 
-CMD ["-m", "actor.swagger_server"]
+CMD ["-m", "controller.swagger_server"]

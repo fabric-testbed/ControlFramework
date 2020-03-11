@@ -3,7 +3,7 @@ import pprint
 import six
 import typing
 
-from actor.swagger_server import util
+from controller.swagger_server import util
 
 T = typing.TypeVar('T')
 

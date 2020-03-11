@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-
 from typing import List
 
 from yapsy.PluginManager import PluginManagerSingleton
@@ -32,9 +31,10 @@ from yapsy.PluginManager import PluginManagerSingleton
 controller generated to handled auth operation described at:
 https://connexion.readthedocs.io/en/latest/security.html
 """
-
 def check_bearerAuth(token):
     # Invoke Controller Actor Plugin
     manager = PluginManagerSingleton.get()
     controller_plugin = manager.getPluginByName("controller")
     return controller_plugin.plugin_object.authenticate(token)
+
+

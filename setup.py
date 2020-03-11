@@ -1,10 +1,10 @@
 # coding: utf-8
 
 from setuptools import setup, find_packages
+import actor
+import controller
 
-from actor import ConfDir, ConfFile, LogDir, LogFile
-
-NAME = "actor"
+NAME = "controller"
 VERSION = "1.0.0"
 # To install the library, run the following
 #
@@ -27,18 +27,19 @@ REQUIRES = [
 setup(
     name=NAME,
     version=VERSION,
-    description="Base Fabric Actor API",
+    description="Fabric Control Framework",
     author_email="kthare10@renci.org",
     url="",
-    keywords=["Swagger", "Base Fabric Actor API"],
+    keywords=["Swagger", "Fabric Control Framework"],
     install_requires=REQUIRES,
     packages=find_packages(),
-    package_data={'': ['actor/swagger_server/swagger/swagger.yaml']},
+    package_data={'': ['controller/swagger_server/swagger/swagger.yaml']},
     include_package_data=True,
-    data_files = [(ConfDir, [ConfFile]), (LogDir, [LogFile])],
+    data_files = [(actor.ConfDir, [actor.ConfFile]), (actor.LogDir, [actor.LogFile]),
+                  (controller.ConfDir, [controller.ConfFile]), (controller.LogDir, [controller.LogFile])],
     entry_points={
-        'console_scripts': ['actor.swagger_server=actor.swagger_server.__main__:main']},
+        'console_scripts': ['controller.swagger_server=controller.swagger_server.__main__:main']},
     long_description="""\
-    This is a base fabric API
+    Fabric Control Framework
     """
 )

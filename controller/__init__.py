@@ -24,33 +24,41 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
+import sys
+import configparser
 
-import connexion
-from yapsy.PluginManager import PluginManagerSingleton
+ConfDir = '/etc/controller'
+ConfFile = 'controller_config'
 
-from actor import CONFIG
-from actor.plugins.util.utils import setup_logging
-from actor.swagger_server import encoder
+LogDir = '/var/log'
+LogFile = 'controller.log'
+LogLevel = 'DEBUG'
+LogRetain = '5'
+LogFileSize = '5000000'
 
+Port = '8081'
+PluginDir = 'controller/plugin'
 
-def main():
-    # Load the plugins from the plugin directory.
-    setup_logging()
-    plugin_dir = CONFIG.get('runtime', 'plugin-dir')
-    manager = PluginManagerSingleton().get()
-    manager.setPluginPlaces([plugin_dir])
-    manager.collectPlugins()
+LOGGER = 'controller_logger'
 
-    # Loop round the plugins and print their names.
-    for plugin in manager.getAllPlugins():
-        plugin.plugin_object.print_name()
-        plugin.plugin_object.configure(None)
+CONFIG = configparser.ConfigParser()
+CONFIG.add_section('runtime')
+CONFIG.add_section('oauth')
+CONFIG.add_section('logging')
+CONFIG.set('runtime', 'port', Port)
+CONFIG.set('runtime', 'plugin-dir', PluginDir)
+CONFIG.set('logging', 'log-directory', LogDir)
+CONFIG.set('logging', 'log-file', LogFile)
+CONFIG.set('logging', 'log-level', LogLevel)
+CONFIG.set('logging', 'log-retain', LogRetain)
+CONFIG.set('logging', 'log-file-size', LogFileSize)
 
-    app = connexion.App(__name__, specification_dir='swagger/')
-    app.app.json_encoder = encoder.JSONEncoder
-    app.add_api('swagger.yaml', arguments={'title': 'Base Fabric Actor API'}, pythonic_params=True)
-    app.run(port=CONFIG.get('runtime', 'port'))
-
-
-if __name__ == '__main__':
-    main()
+# Now, attempt to read in the configuration file.
+config_file = ConfDir + '/' + ConfFile
+try:
+    files_read = CONFIG.read(config_file)
+    if len(files_read) == 0:
+        sys.stderr.write('Configuration file could not be read; ' +
+                 'proceeding with default settings.')
+except Exception as e:
+    raise RuntimeError('Unable to parse configuration file')
