@@ -5,9 +5,6 @@ echo "Installing fabric-mesage-bus"
 pip3 install git+https://github.com/fabric-testbed/MessageBus.git#egg=fabric-message-bus
 echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
 echo "Installing fabric-actor"
-mkdir -p /etc/fabric/actor/config
-mkdir -p /var/log/actor
-pip3 install .
+pip3 install git+https://github.com/fabric-testbed/ActorBase.git#egg=fabric-actor
 echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-cd /usr/src/app/
-tail -f /dev/null
+python3 -m fabric.authority

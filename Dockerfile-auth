@@ -5,7 +5,7 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 VOLUME ["/usr/src/app"]
 
-COPY . /usr/src/app/
+COPY docker-entrypoint-authority.sh /usr/src/app
 RUN pip3 install --upgrade pip
 
 ENTRYPOINT ["/usr/src/app/docker-entrypoint-authority.sh"]

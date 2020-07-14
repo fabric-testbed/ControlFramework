@@ -37,7 +37,7 @@ runtime:
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: logs/
+  - log-directory: /var/log/actor
 
   ## The filename to be used for actor's log file.
   - log-file: actor.log

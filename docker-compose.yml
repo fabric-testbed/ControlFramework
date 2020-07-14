@@ -57,8 +57,8 @@ services:
         restart: always
         depends_on:
         - database 
-          volumes:
-            - "./config/config.vm-am.yaml:/etc/fabric/actor/config/config.vm-am.yaml"
+        volumes:
+            - "./config/config.vm-am.yaml:/etc/fabric/actor/config/config.yaml"
             - "./logs/vm-am:/var/log/actor"
     fabric-broker:
         image: broker:latest
@@ -68,5 +68,5 @@ services:
             - database
             - fabric-vm-am 
         volumes:
-            - "./config/config.broker.yaml:/etc/fabric/actor/config/config.broker.yaml"
+            - "./config/config.broker.yaml:/etc/fabric/actor/config/config.yaml"
             - "./logs/broker:/var/log/actor"
