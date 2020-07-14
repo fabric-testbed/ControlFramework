@@ -158,7 +158,7 @@ class ManagementObject(IManagementObject):
         return self.id
 
     def get_actor_name(self) -> str:
-        raise None
+        return None
 
     def get_type_id(self) -> ID:
         return self.type_id
