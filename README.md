@@ -16,10 +16,10 @@ AM is a CF agent responsible for managing aggregate resources. Is under the cont
 ## Controller
 Controller is an agent of CF that makes allocation decisions (embedding) of user requests into available resources. Communicates with user to collect slice requests, communicates with broker or aggregate managers to collect resource promises, communicates with aggregate managers to provision promised resources. Creates slices, configures resources, maintains their state, modifies slices and slivers.  
 
-### Requirements
+## Requirements
 Python 3.7+
 
-### Configuration
+## Configuration
 Example configuration files for Network AM, VM AM and Broker can be found under config directory:
 ```
 $ ls -ltr config
@@ -29,19 +29,19 @@ total 40
 -rw-r--r--  1 komalthareja  staff  3746 Jul 14 14:38 config.broker.yaml
 ```
 
-### Build Docker Images
+## Build Docker Images
 
-#### Authority Docker Image
+### Authority Docker Image
 ```
 docker build -f Dockerfile-auth -t authority .
 ```
 
-#### Broker Docker Image
+### Broker Docker Image
 ```
 docker build -f Dockerfile-broker -t broker .
 ```
 
-### Running with Docker
+## Running with Docker
 AM container can be brought up via docker-compose as indicated below:
 ```
     fabric-vm-am:
@@ -69,5 +69,5 @@ Broker container can be brought up via docker-compose as indicated below:
 ```
 Use docker-compose.yml to bring all the containers needed to run VM-AM and Broker. Add any additional AMs as needed by pointing to the correct config files.
 
-### Plugins
+## Plugins
 The actor loads all the plugins in "plugins" directory. Each plugin must inherit from IBasePlugin class and have an info file. 
