@@ -1,0 +1,132 @@
+# MIT License
+#
+# Copyright (c) 2020 FABRIC Testbed
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# Author Komal Thareja (kthare10@renci.org)
+
+# After making modifications to this file, please restart actor to re-read it.
+
+# This file is a sample; to alter a particular value, uncomment it, and set as desired.
+# actor will use sane defaults, in the absence of this configuration file.
+
+runtime:
+  - plugin-dir: ./plugins
+  - kafka-server: broker:9092
+  - kafka-schema-registry-url: http://registry:8081
+  - kafka-key-schema: messages_bus/schema/key.avsc
+  - kafka-value-schema: messages_bus/schema/message.avsc
+
+logging:
+  ## The directory in which actor should create log files.
+  ## This directory will be automatically created if it does not exist.
+  - log-directory: logs/
+
+  ## The filename to be used for actor's log file.
+  - log-file: actor.log
+
+  ## The default log level for actor.
+  - log-level: DEBUG
+
+  ## actor rotates log files. You may specify how many archived log files to keep here.
+  - log-retain: 5
+
+  ## actor rotates log files after they exceed a certain size.
+  ## You may specify the file size that results in a log file being rotated here.
+  - log-size: 5000000
+
+oauth:
+  - oauth-jwks-url: https://cilogon.org/oauth2/certs
+
+database:
+  - db-user: am
+  - db-password: am
+  - db-name: am
+  - db-host: actordb:5432
+
+container:
+  - container.guid: fabric-broker-conainer
+
+time:
+  # This section controls settings, which are generally useful
+  # when running under emulation. These settings allow you to
+  # control notion of time.
+
+  # Beginning of time (in unix time).
+  # The default is -1, which translates into using the current time as
+  # the beginning of time for the container's internal clock.
+  - time.startTime: -1
+
+  # Internal tick length (in milliseconds)
+  - time.cycleMillis: 1000
+
+  # The number of the first tick
+  - time.firstTick: 0
+
+  # This property controls if time advances automatically (false) or
+  # manually (true)
+  - time.manual: false
+
+actor:
+  - type: authority
+  - name: fabric-net-am
+  - guid: fabric-net-am-guid
+  - description: Net-AM
+  - kafka-topic: fabric-net-am-topic
+  - controls:
+      - control:
+        - type: site.vlan
+        - module: actor.core.policy
+        - class: VlanControl
+  - pools:
+      - pool:
+        - factory.module: actor.boot.inventory
+        - factory.class: ResourcePoolFactory
+        - type: site.vlan
+        - label: NET VLAN
+        - description: Net Vlan
+        - units: 25
+        - handler:
+          - module: actor.plugins.vlan
+          - class: Dummy
+          - properties:
+              - quantum.properties: config/quantum.properties
+        - attributes:
+            - attribute:
+                - key: resource.class.invfortype
+                - type: Class
+                - value: actor.core.policy.SimplerUnitsInventory.SimplerUnitsInventory
+        - properties:
+            - substrate.file: config/neo4j/rockySite.xml
+peers:
+  - peer:
+    - name: fabric-controller
+    - guid: fabric-controller-guid
+    - type: controller
+    - kafka-topic: fabric-controller-topic
+  - peer:
+    - name: fabric-broker
+    - guid: fabric-broker-guid
+    - type: broker
+    - kafka-topic: fabric-broker-topic
+    - rsets:
+        - rset:
+            - type: site.vlan
+            - units: 15
