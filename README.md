@@ -1,5 +1,5 @@
-# Actors
-Fabric Control Framework Actors
+# Control Framework
+This repository contains Fabric Control Framework and Actor implementations.
 
 ## Overview
 Fabric Control Framework has 3 actors
