@@ -1,12 +1,72 @@
 version: '3.6'
 
 services:
-    controller:
-        container_name: controller
-        hostname: controller
-        image: controller:latest
-        restart: always
+    zookeeper:
+        image: confluentinc/cp-zookeeper:5.5.0
+        hostname: zookeeper
+        container_name: zookeeper
+        ports:
+        - "2181:2181"
+        environment:
+        - ZOOKEEPER_CLIENT_PORT=2181
+        - ZOOKEEPER_TICK_TIME=2000
+    broker:
+        image: confluentinc/cp-server:5.5.0
+        hostname: broker 
+        container_name: broker 
+        depends_on:
+        - zookeeper
+        ports:
+        - "29092:29092"
+        - "9092:9092"
+        environment:
+        - KAFKA_BROKER_ID=1
+        - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+        - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+        - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://broker:29092,PLAINTEXT_HOST://localhost:9092
+        - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+        - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
+        - KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR=1
+        - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
+        - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+    registry:
+        image: confluentinc/cp-schema-registry:5.5.0
+        hostname: registry
+        container_name: registry
+        depends_on:
+        - zookeeper
+        - broker
         ports:
         - "8081:8081"
+        environment:
+        - SCHEMA_REGISTRY_HOST_NAME=registry
+        - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper:2181
+    database:
+        image: fabrictestbed/postgres:12.3
+        container_name: actordb
+        restart: always
+        environment:
+        - POSTGRES_PASSWORD=fabric
+        - POSTGRES_USER=fabric
+        - POSTGRES_MULTIPLE_DATABASES=am,broker,controller
+        ports:
+        - "8432:5432"
+    fabric-vm-am:
+        image: authority:latest 
+        container_name: fabric-vm-am 
+        restart: always
+        depends_on:
+        - database 
+          volumes:
+            - "./config/config.vm-am.yaml:/etc/fabric/actor/config/config.vm-am.yaml"
+            - "./logs/vm-am:/var/log/actor"
+    fabric-broker:
+        image: broker:latest
+        container_name: fabric-broker
+        restart: always
+        depends_on:
+            - database
+            - fabric-vm-am 
         volumes:
-        - ./log:/var/log
+            - "./config/config.broker.yaml:/etc/fabric/actor/config/config.broker.yaml"
+            - "./logs/broker:/var/log/actor"

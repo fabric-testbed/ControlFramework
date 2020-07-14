@@ -1,0 +1,49 @@
+runtime:
+  - kafka-server: localhost:9092
+  - kafka-schema-registry-url: http://localhost:8081
+  - kafka-key-schema: /Users/komalthareja/renci/code/fabric/ActorBase/message_bus/schema/key.avsc
+  - kafka-value-schema: /Users/komalthareja/renci/code/fabric/ActorBase/message_bus/schema/message.avsc
+  - kafka-topic: manage-cli-topic
+logging:
+  ## The directory in which actor should create log files.
+  ## This directory will be automatically created if it does not exist.
+  - log-directory: ./logs/
+
+  ## The filename to be used for actor's log file.
+  - log-file: manage.log
+
+  ## The default log level for actor.
+  - log-level: DEBUG
+
+  ## actor rotates log files. You may specify how many archived log files to keep here.
+  - log-retain: 5
+
+  ## actor rotates log files after they exceed a certain size.
+  ## You may specify the file size that results in a log file being rotated here.
+  - log-size: 5000000
+
+  - logger: manage-cli
+auth:
+  - name: manage-cli
+  - guid: manage-cli-guid
+peers:
+  - peer:
+    - name: fabric-controller
+    - type: controller
+    - guid: fabric-controller-guid
+    - kafka-topic: fabric-controller-topic
+  - peer:
+    - name: fabric-net-am
+    - guid: fabric-net-am-guid
+    - type: authority
+    - kafka-topic: fabric-net-am-topic
+  - peer:
+    - name: fabric-vm-am
+    - guid: fabric-vm-am-guid
+    - type: authority
+    - kafka-topic: fabric-vm-am-topic
+  - peer:
+      - name: fabric-broker
+      - guid: fabric-broker-guid
+      - type: broker
+      - kafka-topic: fabric-broker-topic

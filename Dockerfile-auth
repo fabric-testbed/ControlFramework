@@ -1,0 +1,11 @@
+FROM python:3.8.0
+MAINTAINER Komal Thareja<komal.thareja@gmail.com>
+
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+VOLUME ["/usr/src/app"]
+
+COPY . /usr/src/app/
+RUN pip3 install --upgrade pip
+
+ENTRYPOINT ["/usr/src/app/docker-entrypoint-authority.sh"]

@@ -1,0 +1,5 @@
+{
+    "namespace": "fabric.cf.serialization.avro",
+    "type": "string",
+    "name": "key"
+}

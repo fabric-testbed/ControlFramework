@@ -41,17 +41,6 @@ def main():
     log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     logging.basicConfig(format=log_format, filename=log_path)
 
-    # Load the plugins from the plugin directory.
-    plugin_dir = CONFIG.get('runtime', 'plugin-dir')
-    manager = PluginManagerSingleton().get()
-    manager.setPluginPlaces([plugin_dir])
-    manager.collectPlugins()
-
-    # Loop round the plugins and print their names.
-    for plugin in manager.getAllPlugins():
-        plugin.plugin_object.print_name()
-        plugin.plugin_object.configure(None)
-
     app = connexion.App(__name__, specification_dir='swagger/')
     app.app.json_encoder = encoder.JSONEncoder
     app.add_api('swagger.yaml', arguments={'title': 'Fabric Controller API'}, pythonic_params=True)

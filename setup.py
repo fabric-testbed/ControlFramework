@@ -1,10 +1,10 @@
 # coding: utf-8
 
 from setuptools import setup, find_packages
-import actor
-import controller
 
-NAME = "controller"
+from fabric import actor
+
+NAME = "fabric-actor"
 VERSION = "1.0.0"
 # To install the library, run the following
 #
@@ -15,31 +15,35 @@ VERSION = "1.0.0"
 
 REQUIRES = [
             'yapsy == 1.12.2',
-            'connexion == 2.6.0',
             'python_dateutil == 2.6.0',
             'setuptools >= 21.0.0',
             'requests',
             'PyJWT >=1.7.1',
-            'connexion[swagger-ui]',
-            'cryptography'
+            'cryptography',
+            'psycopg2-binary',
+            'sqlalchemy',
+            'pyyaml',
+            'fabric-message-bus'
             ]
 
 setup(
     name=NAME,
     version=VERSION,
     description="Fabric Control Framework",
+    author="Komal Thareja",
     author_email="kthare10@renci.org",
-    url="",
+    url="https://github.com/fabric-testbed/ActorBase",
     keywords=["Swagger", "Fabric Control Framework"],
     install_requires=REQUIRES,
     packages=find_packages(),
-    package_data={'': ['controller/swagger_server/swagger/swagger.yaml']},
     include_package_data=True,
-    data_files = [(actor.ConfDir, [actor.ConfFile]), (actor.LogDir, [actor.LogFile]),
-                  (controller.ConfDir, [controller.ConfFile]), (controller.LogDir, [controller.LogFile])],
-    entry_points={
-        'console_scripts': ['controller.swagger_server=controller.swagger_server.__main__:main']},
-    long_description="""\
-    Fabric Control Framework
-    """
+    data_files=[(actor.ConfDir, [actor.ConfFile]), (actor.LogDir, [])],
+    long_description=open('README.md').read(),
+    long_description_content_type="text/markdown",
+    classifiers=[
+                  "Programming Language :: Python :: 3",
+                  "License :: OSI Approved :: MIT License",
+                  "Operating System :: OS Independent",
+              ],
+    python_requires='>=3.6'
 )

@@ -23,26 +23,23 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import logging
 
-import actor.plugins.apis.IActorPlugin as ActorPluginType
-from actor import LOGGER
+import fabric.actor.core.apis.IBasePlugin as ActorPluginType
 
 
-class ControllerPlugin(ActorPluginType.IActorPlugin):
+class ControllerPlugin(ActorPluginType.IBasePlugin):
     """
     Plugin One
 
-    This is an example of plugin class to depict plugin functionality. It is derived from IActorPlugin base class.
+    This is an example of plugin class to depict plugin functionality. It is derived from IBasePlugin base class.
     Any actor specific functionality should be implemented here by overriding the base class functions.
 
     """
     def __init__(self):
-        # Make sure to call the parent class (`IActorPlugin`) methods when
+        # Make sure to call the parent class (`IBasePlugin`) methods when
         # overriding them.
         super(ControllerPlugin, self).__init__()
-        self.log = logging.getLogger(LOGGER)
 
 
     def print_name(self):
-        self.log.debug("This is ControllerPlugin")
+        print("This is ControllerPlugin")
