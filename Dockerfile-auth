@@ -8,4 +8,14 @@ VOLUME ["/usr/src/app"]
 COPY docker-entrypoint-authority.sh /usr/src/app
 RUN pip3 install --upgrade pip
 
+RUN echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+RUN echo "Installing fabric-message-bus"
+RUN pip3 install git+https://github.com/fabric-testbed/MessageBus.git#egg=fabric-message-bus
+RUN mkdir -p "/etc/fabric/message_bus/schema"
+RUN cp /usr/local/lib/python3.8/site-packages/fabric/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
+RUN echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+RUN echo "Installing fabric-actor"
+RUN pip3 install git+https://github.com/fabric-testbed/ActorBase.git#egg=fabric-actor
+RUN echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+
 ENTRYPOINT ["/usr/src/app/docker-entrypoint-authority.sh"]

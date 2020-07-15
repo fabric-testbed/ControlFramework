@@ -31,8 +31,8 @@ runtime:
   - plugin-dir: ./plugins
   - kafka-server: broker:29092
   - kafka-schema-registry-url: http://registry:8081
-  - kafka-key-schema: message_bus/schema/key.avsc
-  - kafka-value-schema: message_bus/schema/message.avsc
+  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
 
 logging:
   ## The directory in which actor should create log files.
@@ -92,7 +92,7 @@ actor:
   - description: Broker
   - kafka-topic: fabric-broker-topic
   - policy:
-      - module: actor.core.policy.BrokerSimplerUnitsPolicy
+      - module: fabric.actor.core.policy.BrokerSimplerUnitsPolicy
       - class: BrokerSimplerUnitsPolicy
       - properties:
         - queue.type: fifo

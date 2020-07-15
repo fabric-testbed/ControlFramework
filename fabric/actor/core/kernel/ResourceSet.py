@@ -26,12 +26,12 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from fabric.actor.core.core.Ticket import Ticket
     from fabric.actor.core.time.Term import Term
     from fabric.actor.core.util.ID import ID
     from fabric.actor.core.util.Notice import Notice
     from fabric.actor.core.apis.IConcreteSet import IConcreteSet
     from fabric.actor.core.util import ResourceType
+    from fabric.actor.core.core.Ticket import Ticket
 
 from datetime import datetime
 from fabric.actor.core.apis.IReservation import IReservation
@@ -185,7 +185,7 @@ class ResourceSet:
         raise Exception("internal error: " + message)
 
     def merge_properties(self, reservation: IReservation, resource_set):
-        if not isinstance(resource_set, ResourceSet):
+        if reservation is None or resource_set is None:
             self.error("Invalid argument")
 
         if self.properties is None:
@@ -197,7 +197,7 @@ class ResourceSet:
             # current assumption is that resource properties are constant
             # over the lifetime of a reservation and are supplied by the
             # broker.
-            from fabric.actor.core.core import Ticket
+            from fabric.actor.core.core.Ticket import Ticket
             if self.resources is None and isinstance(resource_set.get_resources(), Ticket):
                 self.properties.resource_properties = ResourceData.merge_properties(
                     resource_set.get_resource_properties(), self.properties.resource_properties)
@@ -227,7 +227,7 @@ class ResourceSet:
                 resource_set.get_config_properties(), self.properties.configuration_properties)
 
     def delta_update(self, reservation: IReservation, resource_set):
-        if not isinstance(resource_set, ResourceSet):
+        if reservation is None or resource_set is None:
             self.error("Invalid argument")
 
         if self.resources is None:
@@ -280,7 +280,7 @@ class ResourceSet:
             self.units = 0
 
     def full_update(self, reservation:IReservation, resource_set):
-        if not isinstance(resource_set, ResourceSet):
+        if reservation is None or resource_set is None:
             self.error("Invalid argument")
 
         # take the units and the type
@@ -620,7 +620,7 @@ class ResourceSet:
         return result
 
     def update(self, reservation: IReservation, resource_set: ResourceSet):
-        if not isinstance(resource_set, ResourceSet) or reservation is None:
+        if reservation is None or resource_set is None:
             self.error("Invalid argument")
 
         if resource_set.resources is not None:
@@ -629,7 +629,7 @@ class ResourceSet:
             self.delta_update(reservation, resource_set)
 
     def update_properties(self, reservation: IReservation, resource_set):
-        if not isinstance(resource_set, ResourceSet) or reservation is None:
+        if reservation is None or resource_set is None:
             self.error("Invalid argument")
 
         self.merge_properties(reservation, resource_set)

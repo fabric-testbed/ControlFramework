@@ -31,8 +31,8 @@ runtime:
   - plugin-dir: ./plugins
   - kafka-server: broker:9092
   - kafka-schema-registry-url: http://registry:8081
-  - kafka-key-schema: messages_bus/schema/key.avsc
-  - kafka-value-schema: messages_bus/schema/message.avsc
+  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
 
 logging:
   ## The directory in which actor should create log files.
@@ -93,18 +93,18 @@ actor:
   - controls:
       - control:
         - type: site.vlan
-        - module: actor.core.policy
+        - module: fabric.actor.core.policy
         - class: VlanControl
   - pools:
       - pool:
-        - factory.module: actor.boot.inventory
+        - factory.module: fabric.actor.boot.inventory
         - factory.class: ResourcePoolFactory
         - type: site.vlan
         - label: NET VLAN
         - description: Net Vlan
         - units: 25
         - handler:
-          - module: actor.plugins.vlan
+          - module: fabric.actor.plugins.vlan
           - class: Dummy
           - properties:
               - quantum.properties: config/quantum.properties
@@ -112,7 +112,7 @@ actor:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
-                - value: actor.core.policy.SimplerUnitsInventory.SimplerUnitsInventory
+                - value: fabric.actor.core.policy.SimplerUnitsInventory.SimplerUnitsInventory
         - properties:
             - substrate.file: config/neo4j/rockySite.xml
 peers:

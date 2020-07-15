@@ -81,10 +81,14 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         else:
             return super().execute(request)
 
-        if self.producer.produce_sync(self.kafka_topic, avro_message):
+        if self.producer is None:
+            self.producer = self.create_kafka_producer()
+
+        if self.producer is not None and self.producer.produce_sync(self.kafka_topic, avro_message):
             self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
-            self.logger.error("Failed to send message {} to {}".format(avro_message.name, self.kafka_topic))
+            self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
+                                                                                       self.kafka_topic, self.producer))
 
     def prepare_ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()

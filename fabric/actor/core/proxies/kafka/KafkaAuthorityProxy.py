@@ -54,40 +54,44 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
     def execute(self, request: IRPCRequestState):
         avro_message = None
         if request.get_type() == RPCRequestType.Redeem:
-            message = RedeemAvro()
-            message.message_id = str(request.get_message_id())
-            message.callback_topic = request.callback_topic
-            message.reservation = request.reservation
-            message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message = RedeemAvro()
+            avro_message.message_id = str(request.get_message_id())
+            avro_message.callback_topic = request.callback_topic
+            avro_message.reservation = request.reservation
+            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
 
         elif request.get_type() == RPCRequestType.ExtendLease:
-            message = ExtendLeaseAvro()
-            message.message_id = str(request.get_message_id())
-            message.callback_topic = request.callback_topic
-            message.reservation = request.reservation
-            message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message = ExtendLeaseAvro()
+            avro_message.message_id = str(request.get_message_id())
+            avro_message.callback_topic = request.callback_topic
+            avro_message.reservation = request.reservation
+            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
 
         elif request.get_type() == RPCRequestType.ModifyLease:
-            message = ModifyLeaseAvro()
-            message.message_id = str(request.get_message_id())
-            message.callback_topic = request.callback_topic
-            message.reservation = request.reservation
-            message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message = ModifyLeaseAvro()
+            avro_message.message_id = str(request.get_message_id())
+            avro_message.callback_topic = request.callback_topic
+            avro_message.reservation = request.reservation
+            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
 
         elif request.get_type() == RPCRequestType.Close:
-            message = CloseAvro()
-            message.message_id = str(request.get_message_id())
-            message.callback_topic = request.callback_topic
-            message.reservation = request.reservation
-            message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message = CloseAvro()
+            avro_message.message_id = str(request.get_message_id())
+            avro_message.callback_topic = request.callback_topic
+            avro_message.reservation = request.reservation
+            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
 
         else:
             return super().execute(request)
 
-        if self.producer.produce_sync(self.kafka_topic, message):
-            self.logger.debug("Message {} written to {}".format(message.name, self.kafka_topic))
+        if self.producer is None:
+            self.producer = self.create_kafka_producer()
+
+        if self.producer is not None and self.producer.produce_sync(self.kafka_topic, avro_message):
+            self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
-            self.logger.error("Failed to send message {} to {}".format(message.name, self.kafka_topic))
+            self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
+                                                                                       self.kafka_topic, self.producer))
 
     def prepare_redeem(self, reservation: IControllerReservation, callback: IControllerCallbackProxy, caller:
     AuthToken) -> IRPCRequestState:

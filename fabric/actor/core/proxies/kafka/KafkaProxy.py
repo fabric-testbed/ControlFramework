@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+import traceback
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.proxies.kafka.Translate import Translate
@@ -91,24 +93,28 @@ class KafkaProxy(Proxy, ICallbackProxy):
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.logger = None
-        self.producer = self.create_kafka_producer()
+        self.producer = None
 
     def create_kafka_producer(self) -> AvroProducerApi:
-        from confluent_kafka import avro
-        conf = {'bootstrap.servers': self.bootstrap_server,
-                     'schema.registry.url': self.schema_registry}
+        try:
+            from confluent_kafka import avro
+            conf = {'bootstrap.servers': self.bootstrap_server,
+                         'schema.registry.url': self.schema_registry}
 
-        file = open(self.key_schema_file, "r")
-        kbytes = file.read()
-        file.close()
-        key_schema = avro.loads(kbytes)
-        file = open(self.value_schema_file, "r")
-        vbytes = file.read()
-        file.close()
-        val_schema = avro.loads(vbytes)
+            file = open(self.key_schema_file, "r")
+            kbytes = file.read()
+            file.close()
+            key_schema = avro.loads(kbytes)
+            file = open(self.value_schema_file, "r")
+            vbytes = file.read()
+            file.close()
+            val_schema = avro.loads(vbytes)
 
-        # create a producer
-        return AvroProducerApi(conf, key_schema, val_schema, self.logger)
+            # create a producer
+            return AvroProducerApi(conf, key_schema, val_schema, self.logger)
+        except Exception as e:
+            traceback.print_exc()
+            self.logger.error("Failed to create kafka producer {}".format(e))
 
     def execute(self, request: IRPCRequestState):
         avro_message = None
@@ -142,10 +148,14 @@ class KafkaProxy(Proxy, ICallbackProxy):
         else:
             raise Exception("Unsupported RPC: type={}".format(request.get_type()))
 
-        if self.producer.produce_sync(self.kafka_topic, avro_message):
+        if self.producer is None:
+            self.producer = self.create_kafka_producer()
+
+        if self.producer is not None and self.producer.produce_sync(self.kafka_topic, avro_message):
             self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
-            self.logger.error("Failed to send message {} to {}".format(avro_message.name, self.kafka_topic))
+            self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
+                                                                                       self.kafka_topic, self.producer))
 
     def prepare_query(self, callback: ICallbackProxy, query: dict, caller: AuthToken):
         request = KafkaProxyRequestState()

@@ -236,7 +236,7 @@ class RemoteActorCache:
                 self.check_to_remove_entry(from_guid)
                 self.check_to_remove_entry(to_guid)
 
-                self.logger.error("Peer established from {} to {}".format(from_guid, to_guid))
+                self.logger.debug("Peer established from {} to {}".format(from_guid, to_guid))
 
         except Exception as e:
             self.logger.error("Peer could not be established from {} to {} e:={}".format(from_guid, to_guid, e))
