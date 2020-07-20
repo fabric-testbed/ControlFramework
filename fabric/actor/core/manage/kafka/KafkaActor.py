@@ -327,10 +327,10 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         return response
 
     def get_reservations(self) -> GetReservationsResponseAvro:
-        return self.do_get_reservations(None, Constants.AllReservationStates)
+        return self.do_get_reservations(slice_id=None, state=Constants.AllReservationStates, reservation_id=None)
 
     def get_reservations_by_state(self, state: int) -> GetReservationsResponseAvro:
-        return self.do_get_reservations(None, state)
+        return self.do_get_reservations(slice_id=None, state=state, reservation_id=None)
 
     def get_reservations_by_slice_id(self, slice_id: ID) -> GetReservationsResponseAvro:
         self.clear_last()
@@ -338,13 +338,13 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_exception = Exception("Invalid arguments")
             return None
 
-        return self.do_get_reservations(slice_id, Constants.AllReservationStates)
+        return self.do_get_reservations(slice_id=slice_id, state=Constants.AllReservationStates, reservation_id=None)
 
     def get_reservations_by_slice_id_and_state(self, slice_id: ID, state: int) -> GetReservationsResponseAvro:
-        return self.do_get_reservations(slice_id, state)
+        return self.do_get_reservations(slice_id=slice_id, state=state, reservation_id=None)
 
     def get_reservation(self, rid: ID) -> GetReservationsResponseAvro:
-        return self.do_get_reservations(None, None, reservation_id=rid)
+        return self.do_get_reservations(slice_id=None, state=None, reservation_id=rid)
 
     def remove_reservation(self, rid: ID) -> bool:
         response = StatusResponseAvro()

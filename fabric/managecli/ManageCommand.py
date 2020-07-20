@@ -123,7 +123,7 @@ class ManageCommand:
 
     def get_reservation(self, actor_name: str, rid: str, callback_topic: str):
         try:
-            result = self.do_get_reservations(actor_name, rid, callback_topic)
+            result = self.do_get_reservation(actor_name, rid, callback_topic)
             print("Get Reservations Response Status: {}".format(result.status))
             if result.status.get_code() == 0 and result.reservations is not None:
                 for r in result.reservations:

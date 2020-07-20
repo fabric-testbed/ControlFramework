@@ -38,17 +38,17 @@ class ManageCliTest(unittest.TestCase):
 
     def test_get_slices(self):
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'slices', '--actor', 'fabric-broker'])
+        result = runner.invoke(managecli.managecli, ['show', 'slices', '--actor', 'fabric-vm-am'])
         print("Result: {}".format(result.output))
 
     def test_get_slice(self):
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'slice', '--actor', 'fabric-broker', '--sliceid', 'fabric-broker'])
+        result = runner.invoke(managecli.managecli, ['show', 'slice', '--actor', 'fabric-vm-am', '--sliceid', 'fabric-broker-guid'])
         print("Result: {}".format(result.output))
 
     def test_get_reservations(self):
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'reservations', '--actor', 'fabric-broker'])
+        result = runner.invoke(managecli.managecli, ['show', 'reservations', '--actor', 'fabric-vm-am'])
         print("Result: {}".format(result.output))
 
     def test_get_reservation(self):
