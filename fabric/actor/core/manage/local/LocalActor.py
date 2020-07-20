@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from fabric.actor.security.AuthToken import AuthToken
     from fabric.actor.core.util.ID import ID
     from fabric.message_bus.messages.ReservationMng import ReservationMng
-    from fabric.message_bus.messages.ReservationStateAvro import ReservationStateMng
+    from fabric.message_bus.messages.ReservationStateAvro import ReservationStateAvro
     from fabric.message_bus.messages.SliceAvro import SliceAvro
 
 
@@ -259,7 +259,7 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def get_reservation_state(self, rid: ID) -> ReservationStateMng:
+    def get_reservation_state(self, rid: ID) -> ReservationStateAvro:
         self.clear_last()
         try:
             result = self.manager.get_reservation_state(self.auth, rid)

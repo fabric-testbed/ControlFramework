@@ -32,23 +32,23 @@ from fabric.actor.core.common.Constants import Constants
 from fabric.actor.core.apis.IMgmtActor import IMgmtActor
 from fabric.actor.core.manage.kafka.KafkaMgmtMessageProcessor import KafkaMgmtMessageProcessor
 from fabric.actor.core.manage.kafka.KafkaProxy import KafkaProxy
-from fabric.message_bus.messages.CloseReservationsAvro import CloseReservationsRequestAvro
+from fabric.message_bus.messages.CloseReservationsAvro import CloseReservationsAvro
 from fabric.message_bus.messages.GetReservationsResponseAvro import GetReservationsResponseAvro
 from fabric.message_bus.messages.GetReservationsStateRequestAvro import GetReservationsStateRequestAvro
 from fabric.message_bus.messages.GetReservationsStateResponseAvro import GetReservationsStateResponseAvro
 from fabric.message_bus.messages.GetSlicesResponseAvro import GetSlicesResponseAvro
-from fabric.message_bus.messages.AddSliceAvro import AddSliceRequestAvro
+from fabric.message_bus.messages.AddSliceAvro import AddSliceAvro
 from fabric.message_bus.messages.GetReservationsRequestAvro import GetReservationsRequestAvro
 from fabric.message_bus.messages.GetSlicesRequestAvro import GetSlicesRequestAvro
-from fabric.message_bus.messages.RemoveReservationAvro import RemoveReservationRequestAvro
+from fabric.message_bus.messages.RemoveReservationAvro import RemoveReservationAvro
 from fabric.message_bus.messages.RemoveSliceAvro import RemoveSliceAvro
 from fabric.message_bus.messages.ReservationMng import ReservationMng
 from fabric.message_bus.messages.ResultAvro import ResultAvro
 from fabric.message_bus.messages.SliceAvro import SliceAvro
 from fabric.actor.core.util.ID import ID
 from fabric.message_bus.messages.StatusResponseAvro import StatusResponseAvro
-from fabric.message_bus.messages.UpdateReservationAvro import UpdateReservationRequestAvro
-from fabric.message_bus.messages.UpdateSliceAvro import UpdateSliceRequestAvro
+from fabric.message_bus.messages.UpdateReservationAvro import UpdateReservationAvro
+from fabric.message_bus.messages.UpdateSliceAvro import UpdateSliceAvro
 
 if TYPE_CHECKING:
     from fabric.message_bus.messages.AuthAvro import AuthAvro
@@ -199,7 +199,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         response.status = ResultAvro()
 
         try:
-            request = AddSliceRequestAvro()
+            request = AddSliceAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.callback_topic = self.callback_topic
@@ -242,7 +242,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         response = StatusResponseAvro()
         response.status = ResultAvro()
         try:
-            request = UpdateSliceRequestAvro()
+            request = UpdateSliceAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.callback_topic = self.callback_topic
@@ -355,7 +355,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             return False
 
         try:
-            request = RemoveReservationRequestAvro()
+            request = RemoveReservationAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.callback_topic = self.callback_topic
@@ -402,7 +402,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             return False
 
         try:
-            request = CloseReservationsRequestAvro()
+            request = CloseReservationsAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.callback_topic = self.callback_topic
@@ -449,7 +449,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             return False
 
         try:
-            request = CloseReservationsRequestAvro()
+            request = CloseReservationsAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.callback_topic = self.callback_topic
@@ -496,7 +496,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             return False
 
         try:
-            request = UpdateReservationRequestAvro()
+            request = UpdateReservationAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.callback_topic = self.callback_topic

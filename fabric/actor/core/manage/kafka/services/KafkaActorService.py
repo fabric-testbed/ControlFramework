@@ -31,19 +31,19 @@ from fabric.actor.core.common.Constants import Constants
 from fabric.actor.core.manage.ManagementObject import ManagementObject
 from fabric.actor.core.manage.kafka.services.KafkaService import KafkaService
 from fabric.actor.core.proxies.kafka.Translate import Translate
-from fabric.message_bus.messages.AddSliceAvro import AddSliceRequestAvro
-from fabric.message_bus.messages.CloseReservationsAvro import CloseReservationsRequestAvro
+from fabric.message_bus.messages.AddSliceAvro import AddSliceAvro
+from fabric.message_bus.messages.CloseReservationsAvro import CloseReservationsAvro
 from fabric.message_bus.messages.GetReservationsRequestAvro import GetReservationsRequestAvro
 from fabric.message_bus.messages.GetReservationsResponseAvro import GetReservationsResponseAvro
 from fabric.message_bus.messages.GetReservationsStateRequestAvro import GetReservationsStateRequestAvro
 from fabric.message_bus.messages.GetSlicesResponseAvro import GetSlicesResponseAvro
 from fabric.message_bus.messages.GetSlicesRequestAvro import GetSlicesRequestAvro
-from fabric.message_bus.messages.RemoveReservationAvro import RemoveReservationRequestAvro
+from fabric.message_bus.messages.RemoveReservationAvro import RemoveReservationAvro
 from fabric.message_bus.messages.RemoveSliceAvro import RemoveSliceAvro
 from fabric.message_bus.messages.ResultAvro import ResultAvro
 from fabric.actor.core.util.ID import ID
 from fabric.message_bus.messages.StatusResponseAvro import StatusResponseAvro
-from fabric.message_bus.messages.UpdateReservationAvro import UpdateReservationRequestAvro
+from fabric.message_bus.messages.UpdateReservationAvro import UpdateReservationAvro
 from fabric.message_bus.messages.message import IMessageAvro
 
 
@@ -177,7 +177,7 @@ class KafkaActorService(KafkaService):
 
         return result
 
-    def add_slice(self, request:AddSliceRequestAvro) -> StatusResponseAvro:
+    def add_slice(self, request:AddSliceAvro) -> StatusResponseAvro:
         result = StatusResponseAvro()
         result.status = ResultAvro()
 
@@ -201,7 +201,7 @@ class KafkaActorService(KafkaService):
 
         return result
 
-    def update_slice(self, request:AddSliceRequestAvro) -> StatusResponseAvro:
+    def update_slice(self, request:AddSliceAvro) -> StatusResponseAvro:
         result = StatusResponseAvro()
         result.status = ResultAvro()
 
@@ -270,7 +270,7 @@ class KafkaActorService(KafkaService):
 
         return result
 
-    def remove_reservation(self, request: RemoveReservationRequestAvro):
+    def remove_reservation(self, request: RemoveReservationAvro):
         result = StatusResponseAvro()
         result.status = ResultAvro()
         try:
@@ -290,7 +290,7 @@ class KafkaActorService(KafkaService):
 
         return result
 
-    def close_reservations(self, request: CloseReservationsRequestAvro):
+    def close_reservations(self, request: CloseReservationsAvro):
         result = StatusResponseAvro()
         result.status = ResultAvro()
         try:
@@ -315,7 +315,7 @@ class KafkaActorService(KafkaService):
 
         return result
 
-    def update_reservation(self, request:UpdateReservationRequestAvro):
+    def update_reservation(self, request:UpdateReservationAvro):
         result = StatusResponseAvro()
         result.status = ResultAvro()
         try:

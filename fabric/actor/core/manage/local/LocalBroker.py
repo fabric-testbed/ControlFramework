@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from fabric.actor.security.AuthToken import AuthToken
     from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
     from fabric.message_bus.messages.ReservationMng import ReservationMng
-    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationMng
+    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationAvro
     from fabric.actor.core.util.ResourceType import ResourceType
 
 
@@ -126,7 +126,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return None
 
-    def add_reservation(self, reservation: TicketReservationMng) -> ID:
+    def add_reservation(self, reservation: TicketReservationAvro) -> ID:
         self.clear_last()
         try:
             result = self.manager.add_reservation(reservation, self.auth)

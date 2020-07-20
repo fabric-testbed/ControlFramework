@@ -37,7 +37,7 @@ from fabric.actor.core.manage.ManagementUtils import ManagementUtils
 from fabric.actor.core.manage.ProxyProtocolDescriptor import ProxyProtocolDescriptor
 from fabric.actor.core.apis.IActorManagementObject import IActorManagementObject
 from fabric.message_bus.messages.ReservationMng import ReservationMng
-from fabric.message_bus.messages.ReservationStateAvro import ReservationStateMng
+from fabric.message_bus.messages.ReservationStateAvro import ReservationStateAvro
 from fabric.actor.core.manage.messages.ResultEventMng import ResultEventMng
 from fabric.actor.core.manage.messages.ResultReservationMng import ResultReservationMng
 from fabric.actor.core.manage.messages.ResultReservationStateMng import ResultReservationStateMng
@@ -669,7 +669,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                         j += 1
 
                     else:
-                        state = ReservationStateMng()
+                        state = ReservationStateAvro()
                         state.set_state(ReservationStates.Unknown.value)
                         state.set_pending_state(ReservationPendingStates.Unknown.value)
                         result.result.append(state)

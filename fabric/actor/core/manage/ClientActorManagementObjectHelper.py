@@ -38,7 +38,7 @@ from fabric.actor.core.kernel.ResourceSet import ResourceSet
 from fabric.actor.core.manage.Converter import Converter
 from fabric.actor.core.manage.ManagementObject import ManagementObject
 from fabric.actor.core.manage.ManagementUtils import ManagementUtils
-from fabric.message_bus.messages.LeaseReservationAvro import LeaseReservationMng
+from fabric.message_bus.messages.LeaseReservationAvro import LeaseReservationAvro
 from fabric.actor.core.manage.messages.PoolInfoMng import PoolInfoMng
 from fabric.actor.core.manage.messages.ResultPoolInfoMng import ResultPoolInfoMng
 from fabric.actor.core.manage.messages.ResultProxyMng import ResultProxyMng
@@ -58,7 +58,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.IClientActor import IClientActor
     from fabric.actor.security.AuthToken import AuthToken
     from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
-    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationMng
+    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationAvro
     from fabric.actor.core.apis.IActor import IActor
     from fabric.message_bus.messages.ReservationMng import ReservationMng
 
@@ -163,7 +163,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def add_reservation_private(self, reservation: TicketReservationMng):
+    def add_reservation_private(self, reservation: TicketReservationAvro):
         result = ResultAvro()
         slice_id = ID(reservation.get_slice_id())
         rset = Converter.get_resource_set(reservation)
@@ -206,7 +206,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         self.client.register(rc)
         return rc.get_reservation_id(), result
 
-    def add_reservation(self, reservation: TicketReservationMng, caller: AuthToken) -> ResultStringMng:
+    def add_reservation(self, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringMng:
         result = ResultStringMng()
         result.status = ResultAvro()
 
@@ -325,7 +325,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                         return result
 
                     ManagementUtils.update_reservation(r, reservation)
-                    if isinstance(reservation, LeaseReservationMng):
+                    if isinstance(reservation, LeaseReservationAvro):
                         predecessors = reservation.get_redeem_predecessors()
                         for pred in predecessors:
                             if pred.get_reservation_id() is None:
