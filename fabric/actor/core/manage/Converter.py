@@ -37,12 +37,12 @@ from fabric.actor.core.core.Ticket import Ticket
 from fabric.actor.core.core.Unit import Unit
 from fabric.actor.core.kernel.ResourceSet import ResourceSet
 from fabric.actor.core.manage.messages.ActorMng import ActorMng
-from fabric.message_bus.messages.LeaseReservationMng import LeaseReservationMng
-from fabric.actor.core.manage.messages.LeaseReservationStateMng import LeaseReservationStateMng
+from fabric.message_bus.messages.LeaseReservationAvro import LeaseReservationAvro
 from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
+from fabric.message_bus.messages.LeaseReservationStateAvro import LeaseReservationStateAvro
 from fabric.message_bus.messages.ReservationMng import ReservationMng
-from fabric.actor.core.manage.messages.ReservationStateMng import ReservationStateMng
-from fabric.message_bus.messages.TicketReservationMng import TicketReservationMng
+from fabric.message_bus.messages.ReservationStateAvro import ReservationStateAvro
+from fabric.message_bus.messages.TicketReservationAvro import TicketReservationAvro
 from fabric.actor.core.manage.messages.UnitMng import UnitMng
 from fabric.actor.core.proxies.ActorLocation import ActorLocation
 from fabric.actor.core.proxies.kafka.KafkaProxy import KafkaProxy
@@ -93,9 +93,9 @@ class Converter:
         rsv_mng = None
 
         if isinstance(reservation, IControllerReservation):
-            rsv_mng = LeaseReservationMng()
+            rsv_mng = LeaseReservationAvro()
         elif isinstance(reservation, IClientReservation):
-            rsv_mng = TicketReservationMng()
+            rsv_mng = TicketReservationAvro()
         else:
             rsv_mng = ReservationMng()
 
@@ -181,21 +181,21 @@ class Converter:
         mng.set_local_properties(local)
         mng.set_resource_properties(resource)
 
-        if isinstance(mng, TicketReservationMng):
+        if isinstance(mng, TicketReservationAvro):
             mng.set_ticket_properties(ticket)
 
         return mng
 
     @staticmethod
-    def fill_reservation_state(res: dict) -> ReservationStateMng:
+    def fill_reservation_state(res: dict) -> ReservationStateAvro:
         result = None
         if 'rsv_joining' in res:
-            result = LeaseReservationStateMng()
+            result = LeaseReservationStateAvro()
             result.set_joining(res['rsv_joining'])
             result.set_state(res['rsv_state'])
             result.set_pending_state(res['rsv_pending'])
         else:
-            result = ReservationStateMng()
+            result = ReservationStateAvro()
             result.set_state(res['rsv_state'])
             result.set_pending_state(res['rsv_pending'])
 

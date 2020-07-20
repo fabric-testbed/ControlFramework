@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
     from fabric.actor.core.manage.messages.ResultPoolInfoMng import ResultPoolInfoMng
     from fabric.actor.core.manage.messages.ResultStringMng import ResultStringMng
-    from fabric.message_bus.messages.TicketReservationMng import TicketReservationMng
+    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationMng
     from fabric.actor.core.manage.messages.ResultStringsMng import ResultStringsMng
     from fabric.message_bus.messages.ReservationMng import ReservationMng
     from fabric.actor.core.manage.messages.ResultReservationMng import ResultReservationMng

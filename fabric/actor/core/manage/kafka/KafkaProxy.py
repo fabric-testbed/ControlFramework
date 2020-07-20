@@ -41,7 +41,8 @@ if TYPE_CHECKING:
 
 
 class KafkaProxy(IComponent):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, kafka_config:dict, logger, message_processor: KafkaMgmtMessageProcessor):
+    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, kafka_config: dict, logger,
+                 message_processor: KafkaMgmtMessageProcessor):
         self.management_id = guid
         self.auth = auth
         self.logger = logger
@@ -60,7 +61,8 @@ class KafkaProxy(IComponent):
             key_schema_location = kafka_config.get(Constants.PropertyConfKafkaKeySchema, None)
             value_schema_location = kafka_config.get(Constants.PropertyConfKafkaValueSchema, None)
 
-            if boot_strap_server is None or schema_registry is None or key_schema_location is None or value_schema_location is None:
+            if boot_strap_server is None or schema_registry is None or key_schema_location is None or \
+                    value_schema_location is None:
                 raise Exception("Invalid Arguments")
 
             conf = {'bootstrap.servers': boot_strap_server,
@@ -75,7 +77,7 @@ class KafkaProxy(IComponent):
             val_bytes = file.read()
             file.close()
             val_schema = avro.loads(val_bytes)
-            from message_bus.producer import AvroProducerApi
+            from fabric.message_bus.producer import AvroProducerApi
             self.producer = AvroProducerApi(conf, key_schema, val_schema, self.logger)
         except Exception as e:
             traceback.print_exc()

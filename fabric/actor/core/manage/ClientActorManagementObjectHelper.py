@@ -38,7 +38,7 @@ from fabric.actor.core.kernel.ResourceSet import ResourceSet
 from fabric.actor.core.manage.Converter import Converter
 from fabric.actor.core.manage.ManagementObject import ManagementObject
 from fabric.actor.core.manage.ManagementUtils import ManagementUtils
-from fabric.message_bus.messages.LeaseReservationMng import LeaseReservationMng
+from fabric.message_bus.messages.LeaseReservationAvro import LeaseReservationMng
 from fabric.actor.core.manage.messages.PoolInfoMng import PoolInfoMng
 from fabric.actor.core.manage.messages.ResultPoolInfoMng import ResultPoolInfoMng
 from fabric.actor.core.manage.messages.ResultProxyMng import ResultProxyMng
@@ -58,7 +58,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.IClientActor import IClientActor
     from fabric.actor.security.AuthToken import AuthToken
     from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
-    from fabric.message_bus.messages.TicketReservationMng import TicketReservationMng
+    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationMng
     from fabric.actor.core.apis.IActor import IActor
     from fabric.message_bus.messages.ReservationMng import ReservationMng
 

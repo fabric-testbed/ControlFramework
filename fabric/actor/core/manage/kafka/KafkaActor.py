@@ -32,17 +32,23 @@ from fabric.actor.core.common.Constants import Constants
 from fabric.actor.core.apis.IMgmtActor import IMgmtActor
 from fabric.actor.core.manage.kafka.KafkaMgmtMessageProcessor import KafkaMgmtMessageProcessor
 from fabric.actor.core.manage.kafka.KafkaProxy import KafkaProxy
-from fabric.message_bus.messages.GetReservationsResponse import GetReservationsResponseAvro
+from fabric.message_bus.messages.CloseReservationsAvro import CloseReservationsRequestAvro
+from fabric.message_bus.messages.GetReservationsResponseAvro import GetReservationsResponseAvro
+from fabric.message_bus.messages.GetReservationsStateRequestAvro import GetReservationsStateRequestAvro
+from fabric.message_bus.messages.GetReservationsStateResponseAvro import GetReservationsStateResponseAvro
 from fabric.message_bus.messages.GetSlicesResponseAvro import GetSlicesResponseAvro
-from fabric.message_bus.messages.AddSliceRequestAvro import AddSliceRequestAvro
-from fabric.message_bus.messages.GetReservationsRequest import GetReservationsRequestAvro
+from fabric.message_bus.messages.AddSliceAvro import AddSliceRequestAvro
+from fabric.message_bus.messages.GetReservationsRequestAvro import GetReservationsRequestAvro
 from fabric.message_bus.messages.GetSlicesRequestAvro import GetSlicesRequestAvro
+from fabric.message_bus.messages.RemoveReservationAvro import RemoveReservationRequestAvro
 from fabric.message_bus.messages.RemoveSliceAvro import RemoveSliceAvro
+from fabric.message_bus.messages.ReservationMng import ReservationMng
 from fabric.message_bus.messages.ResultAvro import ResultAvro
 from fabric.message_bus.messages.SliceAvro import SliceAvro
 from fabric.actor.core.util.ID import ID
 from fabric.message_bus.messages.StatusResponseAvro import StatusResponseAvro
-from fabric.message_bus.messages.UpdateSliceRequestAvro import UpdateSliceRequestAvro
+from fabric.message_bus.messages.UpdateReservationAvro import UpdateReservationRequestAvro
+from fabric.message_bus.messages.UpdateSliceAvro import UpdateSliceRequestAvro
 
 if TYPE_CHECKING:
     from fabric.message_bus.messages.AuthAvro import AuthAvro
@@ -97,6 +103,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_exception = e
             response.status.code = Constants.ErrorInternalError
             response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
 
         return response
 
@@ -140,6 +147,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_exception = e
             response.status.code = Constants.ErrorInternalError
             response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
 
         return response
 
@@ -181,6 +189,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_exception = e
             response.status.code = Constants.ErrorInternalError
             response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
 
         return response
 
@@ -224,6 +233,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_exception = e
             response.status.code = Constants.ErrorInternalError
             response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
 
         return response
 
@@ -266,6 +276,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_exception = e
             response.status.code = Constants.ErrorInternalError
             response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
 
         return response
 
@@ -280,8 +291,8 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.reservation_state = state
-            request.slice_id = slice_id
-            request.reservation_id = reservation_id
+            request.slice_id = str(slice_id)
+            request.reservation_id = str(reservation_id)
 
             ret_val = self.producer.produce_sync(self.kafka_topic, request)
 
@@ -311,6 +322,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_exception = e
             response.status.code = Constants.ErrorInternalError
             response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
 
         return response
 
@@ -333,3 +345,240 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
     def get_reservation(self, rid: ID) -> GetReservationsResponseAvro:
         return self.do_get_reservations(None, None, reservation_id=rid)
+
+    def remove_reservation(self, rid: ID) -> bool:
+        response = StatusResponseAvro()
+        response.status = ResultAvro()
+        self.clear_last()
+        if rid is None:
+            self.last_exception = Exception("Invalid arguments")
+            return False
+
+        try:
+            request = RemoveReservationRequestAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.callback_topic = self.callback_topic
+            request.message_id = str(ID())
+            request.reservation_id = str(rid)
+
+            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            response.message_id = request.message_id
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(request.get_message_id())
+                    response.status.code = Constants.ErrorInternalError
+                    response.status.message = "Timeout occurred"
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+            else:
+                self.logger.debug("Failed to send the message")
+                response.status.code = Constants.ErrorTransportFailure
+                response.status.message = "Failed to send the message"
+
+        except Exception as e:
+            self.last_exception = e
+            response.status.code = Constants.ErrorInternalError
+            response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
+
+        return response.status.code == 0
+
+    def close_reservation(self, rid: ID) -> bool:
+        response = StatusResponseAvro()
+        response.status = ResultAvro()
+        self.clear_last()
+        if rid is None:
+            self.last_exception = Exception("Invalid arguments")
+            return False
+
+        try:
+            request = CloseReservationsRequestAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.callback_topic = self.callback_topic
+            request.message_id = str(ID())
+            request.reservation_id = str(rid)
+
+            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            response.message_id = request.message_id
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(request.get_message_id())
+                    response.status.code = Constants.ErrorInternalError
+                    response.status.message = "Timeout occurred"
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+            else:
+                self.logger.debug("Failed to send the message")
+                response.status.code = Constants.ErrorTransportFailure
+                response.status.message = "Failed to send the message"
+
+        except Exception as e:
+            self.last_exception = e
+            response.status.code = Constants.ErrorInternalError
+            response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
+
+        return response.status.code == 0
+
+    def close_reservations(self, slice_id: ID) -> bool:
+        response = StatusResponseAvro()
+        response.status = ResultAvro()
+        self.clear_last()
+        if slice_id is None:
+            self.last_exception = Exception("Invalid arguments")
+            return False
+
+        try:
+            request = CloseReservationsRequestAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.callback_topic = self.callback_topic
+            request.message_id = str(ID())
+            request.slice_id = str(slice_id)
+
+            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            response.message_id = request.message_id
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(request.get_message_id())
+                    response.status.code = Constants.ErrorInternalError
+                    response.status.message = "Timeout occurred"
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+            else:
+                self.logger.debug("Failed to send the message")
+                response.status.code = Constants.ErrorTransportFailure
+                response.status.message = "Failed to send the message"
+
+        except Exception as e:
+            self.last_exception = e
+            response.status.code = Constants.ErrorInternalError
+            response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
+
+        return response.status.code == 0
+
+    def update_reservation(self, reservation: ReservationMng) -> bool:
+        response = StatusResponseAvro()
+        response.status = ResultAvro()
+        self.clear_last()
+        if reservation is None:
+            self.last_exception = Exception("Invalid arguments")
+            return False
+
+        try:
+            request = UpdateReservationRequestAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.callback_topic = self.callback_topic
+            request.message_id = str(ID())
+            request.reservation = reservation
+
+            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            response.message_id = request.message_id
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(request.get_message_id())
+                    response.status.code = Constants.ErrorInternalError
+                    response.status.message = "Timeout occurred"
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+            else:
+                self.logger.debug("Failed to send the message")
+                response.status.code = Constants.ErrorTransportFailure
+                response.status.message = "Failed to send the message"
+
+        except Exception as e:
+            self.last_exception = e
+            response.status.code = Constants.ErrorInternalError
+            response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
+
+        return response.status.code == 0
+
+    def get_reservation_state_for_reservations(self, reservation_list: list) -> list:
+        response = GetReservationsStateResponseAvro()
+        response.status = ResultAvro()
+        self.clear_last()
+        if reservation_list is None:
+            self.last_exception = Exception("Invalid arguments")
+            return None
+
+        try:
+            request = GetReservationsStateRequestAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.callback_topic = self.callback_topic
+            request.message_id = str(ID())
+            request.reservation_ids = []
+            for r in reservation_list:
+                request.reservation_ids.append(str(r))
+
+            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            response.message_id = request.message_id
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(request.get_message_id())
+                    response.status.code = Constants.ErrorInternalError
+                    response.status.message = "Timeout occurred"
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+            else:
+                self.logger.debug("Failed to send the message")
+                response.status.code = Constants.ErrorTransportFailure
+                response.status.message = "Failed to send the message"
+
+        except Exception as e:
+            self.last_exception = e
+            response.status.code = Constants.ErrorInternalError
+            response.status.details = traceback.format_exc()
+            response.status.message = "ErrorInternalError"
+
+        return response.reservation_states

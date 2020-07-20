@@ -3,11 +3,11 @@ runtime:
   - kafka-schema-registry-url: http://localhost:8081
   - kafka-key-schema: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/message_bus/schema/message.avsc
-  - kafka-topic: manage-cli-topic
+  - kafka-topic: managecli-topic
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: ./logs/
+  - log-directory: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/managecli/logs/
 
   ## The filename to be used for actor's log file.
   - log-file: manage.log
@@ -22,10 +22,10 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   - log-size: 5000000
 
-  - logger: manage-cli
+  - logger: managecli
 auth:
-  - name: manage-cli
-  - guid: manage-cli-guid
+  - name: managecli
+  - guid: managecli-guid
 peers:
   - peer:
     - name: fabric-controller

@@ -31,15 +31,19 @@ from fabric.actor.core.common.Constants import Constants
 from fabric.actor.core.manage.ManagementObject import ManagementObject
 from fabric.actor.core.manage.kafka.services.KafkaService import KafkaService
 from fabric.actor.core.proxies.kafka.Translate import Translate
-from fabric.message_bus.messages.AddSliceRequestAvro import AddSliceRequestAvro
-from fabric.message_bus.messages.GetReservationsRequest import GetReservationsRequestAvro
-from fabric.message_bus.messages.GetReservationsResponse import GetReservationsResponseAvro
+from fabric.message_bus.messages.AddSliceAvro import AddSliceRequestAvro
+from fabric.message_bus.messages.CloseReservationsAvro import CloseReservationsRequestAvro
+from fabric.message_bus.messages.GetReservationsRequestAvro import GetReservationsRequestAvro
+from fabric.message_bus.messages.GetReservationsResponseAvro import GetReservationsResponseAvro
+from fabric.message_bus.messages.GetReservationsStateRequestAvro import GetReservationsStateRequestAvro
 from fabric.message_bus.messages.GetSlicesResponseAvro import GetSlicesResponseAvro
 from fabric.message_bus.messages.GetSlicesRequestAvro import GetSlicesRequestAvro
+from fabric.message_bus.messages.RemoveReservationAvro import RemoveReservationRequestAvro
 from fabric.message_bus.messages.RemoveSliceAvro import RemoveSliceAvro
 from fabric.message_bus.messages.ResultAvro import ResultAvro
 from fabric.actor.core.util.ID import ID
 from fabric.message_bus.messages.StatusResponseAvro import StatusResponseAvro
+from fabric.message_bus.messages.UpdateReservationAvro import UpdateReservationRequestAvro
 from fabric.message_bus.messages.message import IMessageAvro
 
 
@@ -70,6 +74,17 @@ class KafkaActorService(KafkaService):
 
         elif message.get_message_name() == IMessageAvro.GetReservationsRequest:
             result = self.get_reservations(message)
+
+        elif message.get_message_name() == IMessageAvro.RemoveReservation:
+            result = self.remove_reservation(message)
+
+        elif message.get_message_name() == IMessageAvro.CloseReservations:
+            result = self.close_reservations(message)
+
+        elif message.get_message_name() == IMessageAvro.UpdateReservation:
+            result = self.update_reservation(message)
+        elif message.get_message_name() == IMessageAvro.GetReservationsStateRequest:
+            result = self.get(message)
 
         else:
             self.logger.debug("Unsupported Message, discarding it!")
@@ -255,6 +270,91 @@ class KafkaActorService(KafkaService):
 
         return result
 
+    def remove_reservation(self, request: RemoveReservationRequestAvro):
+        result = StatusResponseAvro()
+        result.status = ResultAvro()
+        try:
+            if request.guid is None or request.get_reservation_id() is None:
+                result.status.set_code(Constants.ErrorInvalidArguments)
+                return result
 
+            auth = Translate.translate_auth_from_avro(request.auth)
+            mo = self.get_actor_mo(ID(request.guid))
+            temp_result = mo.remove_reservation(auth, ID(request.reservation_id))
+            result.status = temp_result
+            result.message_id = request.message_id
 
+        except Exception as e:
+            result.status.set_code(Constants.ErrorInternalError)
+            result.status = ManagementObject.set_exception_details(result.status, e)
 
+        return result
+
+    def close_reservations(self, request: CloseReservationsRequestAvro):
+        result = StatusResponseAvro()
+        result.status = ResultAvro()
+        try:
+            if request.guid is None or (request.get_slice_id() is None and request.get_reservation_id() is None):
+                result.status.set_code(Constants.ErrorInvalidArguments)
+                return result
+
+            auth = Translate.translate_auth_from_avro(request.auth)
+            mo = self.get_actor_mo(ID(request.guid))
+
+            if request.get_slice_id() is not None:
+                temp_result = mo.close_slice_reservations(auth, ID(request.slice_id))
+            else:
+                temp_result = mo.close_reservation(auth, ID(request.reservation_id))
+
+            result.status = temp_result
+            result.message_id = request.message_id
+
+        except Exception as e:
+            result.status.set_code(Constants.ErrorInternalError)
+            result.status = ManagementObject.set_exception_details(result.status, e)
+
+        return result
+
+    def update_reservation(self, request:UpdateReservationRequestAvro):
+        result = StatusResponseAvro()
+        result.status = ResultAvro()
+        try:
+            if request.guid is None or request.get_reservation() is None:
+                result.status.set_code(Constants.ErrorInvalidArguments)
+                return result
+
+            auth = Translate.translate_auth_from_avro(request.auth)
+            mo = self.get_actor_mo(ID(request.guid))
+
+            temp_result = mo.update_reservation(ID(request.reservation), auth)
+
+            result.status = temp_result
+            result.message_id = request.message_id
+
+        except Exception as e:
+            result.status.set_code(Constants.ErrorInternalError)
+            result.status = ManagementObject.set_exception_details(result.status, e)
+
+        return result
+
+    def get_reservation_state(self, request:GetReservationsStateRequestAvro):
+        result = StatusResponseAvro()
+        result.status = ResultAvro()
+        try:
+            if request.guid is None or request.get_reservation_ids() is None:
+                result.status.set_code(Constants.ErrorInvalidArguments)
+                return result
+
+            auth = Translate.translate_auth_from_avro(request.auth)
+            mo = self.get_actor_mo(ID(request.guid))
+
+            temp_result = mo.get_reservation_state_for_reservations(auth, request.get_reservation_ids())
+
+            result.status = temp_result
+            result.message_id = request.message_id
+
+        except Exception as e:
+            result.status.set_code(Constants.ErrorInternalError)
+            result.status = ManagementObject.set_exception_details(result.status, e)
+
+        return result

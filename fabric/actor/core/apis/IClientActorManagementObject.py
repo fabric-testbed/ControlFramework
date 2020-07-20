@@ -32,7 +32,7 @@ from fabric.actor.core.manage.messages.ResultStringsMng import ResultStringsMng
 from fabric.message_bus.messages.ResultAvro import ResultAvro
 
 if TYPE_CHECKING:
-    from fabric.message_bus.messages.TicketReservationMng import TicketReservationMng
+    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationMng
     from fabric.actor.security.AuthToken import AuthToken
     from fabric.actor.core.manage.messages.ResultStringMng import ResultStringMng
     from fabric.actor.core.util.ResourceType import ResourceType

@@ -26,19 +26,19 @@
 import logging
 import threading
 import traceback
+import click
 
-from fabric.actor.core import Constants
-from fabric.actor.core import KafkaActor
-from fabric.actor.core import KafkaBroker
+from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.manage.kafka.KafkaActor import KafkaActor
+from fabric.actor.core.manage.kafka.KafkaBroker import KafkaBroker
 from fabric.actor.core.manage.kafka.KafkaMgmtMessageProcessor import KafkaMgmtMessageProcessor
-from fabric.actor.core.util import ID
-from manage_cli.ConfigProcessor import ConfigProcessor
-from message_bus.messages.GetReservationsResponse import GetReservationsResponseAvro
-from message_bus.messages.GetSlicesResponseAvro import GetSlicesResponseAvro
+from fabric.actor.core.util.ID import ID
+from fabric.managecli.ConfigProcessor import ConfigProcessor
+from fabric.managecli.ManageCommand import ManageCommand
 
 
 class MainShell:
-    PATH = "./config/manage-cli.yaml"
+    PATH = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/managecli/config/manage-cli.yaml"
 
     def __init__(self):
         self.config_processor = ConfigProcessor(self.PATH)
@@ -67,7 +67,8 @@ class MainShell:
             file.close()
             self.val_schema = avro.loads(val_bytes)
         except Exception as e:
-            traceback.print_exc()
+            err_str = traceback.format_exc()
+            self.logger.error(err_str)
             self.logger.error("Exception occurred while loading schemas {}".format(e))
             raise e
 
@@ -96,14 +97,15 @@ class MainShell:
         if peers is not None:
             for p in peers:
                 # TODO Actor Live Check
-                mgmt_actor= None
+                mgmt_actor = None
                 if p.get_type() == Constants.BROKER:
                     mgmt_actor = KafkaBroker(ID(p.get_guid()), p.get_kafka_topic(), self.config_processor.get_auth(),
-                                            self.config_processor.get_kafka_config(), self.logger,
-                                            self.message_processor)
+                                             self.config_processor.get_kafka_config(), self.logger,
+                                             self.message_processor)
                 else:
                     mgmt_actor = KafkaActor(ID(p.get_guid()), p.get_kafka_topic(), self.config_processor.get_auth(),
-                                        self.config_processor.get_kafka_config(), self.logger, self.message_processor)
+                                            self.config_processor.get_kafka_config(), self.logger,
+                                            self.message_processor)
                 try:
                     self.lock.acquire()
                     self.logger.debug("Added actor {} to cache".format(p.get_name()))
@@ -156,57 +158,25 @@ class MainShell:
 
         return log
 
+    def get_callback_topic(self) -> str:
+        return self.config_processor.get_kafka_topic()
+
     def start(self):
-        self.initialize()
-        self.message_processor.start()
+        try:
+            self.initialize()
+            self.message_processor.start()
+        except Exception as e:
+            err_str = traceback.format_exc()
+            self.logger.error(err_str)
+            self.logger.debug("Failed to start Management Shell: {}".format(str(e)))
 
     def stop(self):
-        self.message_processor.stop()
-
-    def get_slices(self, actor_name: str) -> GetSlicesResponseAvro:
-        actor = self.get_mgmt_actor(actor_name)
-
-        if actor is None:
-            raise Exception("Invalid arguments actor {} not found".format(actor_name))
         try:
-            actor.prepare(self.config_processor.get_kafka_topic())
-            return actor.get_slices()
+            self.message_processor.stop()
         except Exception as e:
-            traceback.print_exc()
-
-    def get_slice(self, actor_name: str, slice_id: str) -> GetSlicesResponseAvro:
-        actor = self.get_mgmt_actor(actor_name)
-
-        if actor is None or slice_id is None:
-            raise Exception("Invalid arguments actor {} not found".format(actor_name))
-        try:
-            actor.prepare(self.config_processor.get_kafka_topic())
-            return actor.get_slice(ID(slice_id))
-        except Exception as e:
-            traceback.print_exc()
-            print(e)
-
-    def get_reservations(self, actor_name: str) -> GetReservationsResponseAvro:
-        actor = self.get_mgmt_actor(actor_name)
-
-        if actor is None:
-            raise Exception("Invalid arguments actor {} not found".format(actor_name))
-        try:
-            actor.prepare(self.config_processor.get_kafka_topic())
-            return actor.get_reservations()
-        except Exception as e:
-            traceback.print_exc()
-
-    def claim_resources(self, broker: str, am_guid: str, rid: str):
-        actor = self.get_mgmt_actor(broker)
-
-        if actor is None:
-            raise Exception("Invalid arguments actor {} not found".format(broker))
-        try:
-            actor.prepare(self.config_processor.get_kafka_topic())
-            return actor.claim_resources(ID(am_guid), ID(rid))
-        except Exception as e:
-            traceback.print_exc()
+            err_str = traceback.format_exc()
+            self.logger.error(err_str)
+            self.logger.debug("Failed to stop Management Shell: {}".format(str(e)))
 
 
 class MainShellSingleton:
@@ -227,34 +197,91 @@ class MainShellSingleton:
     get = classmethod(get)
 
 
-if __name__ == '__main__':
+@click.group()
+@click.option('-v', '--verbose', is_flag=True)
+@click.pass_context
+def managecli(ctx, verbose):
+    ctx.ensure_object(dict)
+    ctx.obj['VERBOSE'] = verbose
 
+
+@click.group()
+@click.pass_context
+def manage(ctx):
+    """ issue management commands
+    """
+    return
+
+
+@manage.command()
+@click.option('--broker', default=None, help='Broker Name', required=True)
+@click.option('--am', default=None, help='AM Name', required=True)
+@click.pass_context
+def claim(ctx, broker, am):
+    """ Claim reservations for am to broker
+    """
     MainShellSingleton.get().start()
-
-    broker_slice_id_list = []
-
-    result = MainShellSingleton.get().get_slices("fabric-vm-am")
-    print("Get Slices Response Status: {}".format(result.status))
-    if result.status.get_code() == 0 and result.slices is not None:
-        for s in result.slices:
-            s.print()
-            if s.get_slice_name() == "fabric-broker":
-                broker_slice_id_list.append(s.get_slice_id())
-
-    claim_rid_list = {}
-    result = MainShellSingleton.get().get_reservations("fabric-vm-am")
-    print("Get Reservations Response Status: {}".format(result.status))
-    if result.status.get_code() == 0 and result.reservations is not None:
-        for r in result.reservations:
-            if r.get_slice_id() in broker_slice_id_list:
-                claim_rid_list[r.get_reservation_id()] = r.get_resource_type()
-                r.print()
-
-    print("List of reservations to be claimed: {}".format(claim_rid_list))
-
-    for k,v in claim_rid_list.items():
-        print("Claiming Reservation# {} for resource_type: {}".format(k, v))
-        result = MainShellSingleton.get().claim_resources("fabric-broker", "fabric-vm-am-guid", k)
-        print("Claim Response: {}".format(result))
-
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.claim_resources(broker, am, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
+
+
+@click.group()
+@click.pass_context
+def show(ctx):
+    """ issue management commands
+    """
+    return
+
+
+@show.command()
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.pass_context
+def slices(ctx, actor):
+    """ Get Slices from an actor
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.get_slices(actor, MainShellSingleton.get().get_callback_topic())
+    MainShellSingleton.get().stop()
+
+
+@show.command()
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--sliceid', default=None, help='Slice ID', required=True)
+@click.pass_context
+def slice(ctx, actor, sliceid):
+    """ Get Slices from an actor
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.get_slice(actor, sliceid, MainShellSingleton.get().get_callback_topic())
+    MainShellSingleton.get().stop()
+
+
+@show.command()
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.pass_context
+def reservations(ctx, actor):
+    """ Get Slices from an actor
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.get_reservations(actor, MainShellSingleton.get().get_callback_topic())
+    MainShellSingleton.get().stop()
+
+@show.command()
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--rid', default=None, help='Reservation Id', required=True)
+@click.pass_context
+def reservation(ctx, actor, rid):
+    """ Get Slices from an actor
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.get_reservation(actor, rid, MainShellSingleton.get().get_callback_topic())
+    MainShellSingleton.get().stop()
+
+
+managecli.add_command(manage)
+managecli.add_command(show)

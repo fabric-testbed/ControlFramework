@@ -82,7 +82,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(actor_obj)
 
-            self.logger.debug("Added actor_obj to database!")
+            # self.logger.debug("Added actor_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -94,7 +94,7 @@ class PsqlDatabase:
                 if actor is not None:
                     actor.properties = properties
 
-            self.logger.debug("Updated actor_obj in database!")
+            # self.logger.debug("Updated actor_obj in database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -105,7 +105,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Actors).filter(Actors.act_name == name).delete()
 
-            self.logger.debug("Deleted actor_obj from database!")
+            # self.logger.debug("Deleted actor_obj from database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -173,7 +173,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(msc_obj)
 
-            self.logger.debug("Added msc_obj to database!")
+            # self.logger.debug("Added msc_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -201,7 +201,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(mng_obj)
 
-            self.logger.debug("Added mng_obj to database!")
+            # self.logger.debug("Added mng_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -210,7 +210,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 session.query(ManagerObjects).filter(ManagerObjects.mo_key == manager_key).delete()
-            self.logger.debug("Removed manager_obj from database!")
+            # self.logger.debug("Removed manager_obj from database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -219,7 +219,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 session.query(ManagerObjects).filter(ManagerObjects.mo_act_id == act_id).delete()
-            self.logger.debug("Removed manager_obj from database!")
+            # self.logger.debug("Removed manager_obj from database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -292,7 +292,7 @@ class PsqlDatabase:
                              slc_resource_type=slc_resource_type, properties=properties, slc_act_id=act_id)
             with session_scope(self.db_engine) as session:
                 session.add(slc_obj)
-            self.logger.debug("Added slc_obj to database!")
+            # self.logger.debug("Added slc_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -308,7 +308,7 @@ class PsqlDatabase:
                     slc_obj.slc_name = slc_name
                     slc_obj.slc_type = slc_type
                     slc_obj.slc_resource_type = slc_resource_type
-                    self.logger.debug("Update slc_obj to database!")
+                    # self.logger.debug("Update slc_obj to database!")
                 else:
                     raise Exception("Slice not found")
         except Exception as e:
@@ -320,7 +320,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Slices).filter(Slices.slc_guid == slc_guid and
                                              Slices.slc_act_id == act_id).delete()
-                self.logger.debug("Remove slc_obj from database!")
+                # self.logger.debug("Remove slc_obj from database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -435,7 +435,7 @@ class PsqlDatabase:
                                    properties=properties)
             with session_scope(self.db_engine) as session:
                 session.add(rsv_obj)
-            self.logger.debug("Added rsv_obj to database!")
+            #self.logger.debug("Added rsv_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -453,7 +453,7 @@ class PsqlDatabase:
                     rsv_obj.rsv_pending = rsv_pending
                     rsv_obj.rsv_joining = rsv_joining
                     rsv_obj.properties = properties
-                    self.logger.debug("Updated rsv_obj to database!")
+                    # self.logger.debug("Updated rsv_obj to database!")
                 else:
                     raise Exception("Reservation not found")
         except Exception as e:
@@ -468,7 +468,7 @@ class PsqlDatabase:
                 raise Exception("Slice for {} not found".format(rsv_resid))
             with session_scope(self.db_engine) as session:
                 session.query(Reservations).filter(Reservations.rsv_resid == rsv_resid and Reservations.rsv_slc_id.in_(slc_id_list)).delete()
-            self.logger.debug("Removed rsv_obj from database!")
+            # self.logger.debug("Removed rsv_obj from database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -671,7 +671,7 @@ class PsqlDatabase:
             prx_obj = Proxies(prx_act_id=act_id, prx_name=prx_name, properties=properties)
             with session_scope(self.db_engine) as session:
                 session.add(prx_obj)
-            self.logger.debug("Added prx_obj to database!")
+            #self.logger.debug("Added prx_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -683,7 +683,7 @@ class PsqlDatabase:
                                                         Proxies.prx_name == prx_name).first()
                 if prx_obj is not None:
                     prx_obj.properties = properties
-                    self.logger.debug("Updated prx_obj to database!")
+                    #self.logger.debug("Updated prx_obj to database!")
                 else:
                     raise Exception("Proxy not found")
         except Exception as e:
@@ -695,7 +695,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Proxies).filter(Proxies.prx_act_id == act_id and
                                               Proxies.prx_name == prx_name).delete()
-            self.logger.debug("Removed prx_obj from database!")
+            #self.logger.debug("Removed prx_obj from database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -719,7 +719,7 @@ class PsqlDatabase:
                                      properties=properties)
             with session_scope(self.db_engine) as session:
                 session.add(cfg_obj)
-            self.logger.debug("Added cfg_obj to database!")
+            #self.logger.debug("Added cfg_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -732,7 +732,7 @@ class PsqlDatabase:
                 if cfg_obj is not None:
                     cfg_obj.cfgm_path = cfgm_path
                     cfg_obj.properties = properties
-                    self.logger.debug("Updated cfg_obj to database!")
+                    #self.logger.debug("Updated cfg_obj to database!")
                 else:
                     raise Exception("Reservation not found")
         except Exception as e:
@@ -744,7 +744,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(ConfigMappings).filter(ConfigMappings.cfgm_act_id == act_id and
                                                      ConfigMappings.cfgm_type == cfgm_type).delete()
-            self.logger.debug("Removed cfg_obj from database!")
+            #self.logger.debug("Removed cfg_obj from database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -781,7 +781,7 @@ class PsqlDatabase:
                                      properties=properties)
             with session_scope(self.db_engine) as session:
                 session.add(clt_obj)
-            self.logger.debug("Added clt_obj to database!")
+            #self.logger.debug("Added clt_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -793,7 +793,7 @@ class PsqlDatabase:
                                                         Clients.clt_name == clt_name).first()
                 if clt_obj is not None:
                     clt_obj.properties = properties
-                    self.logger.debug("Updated clt_obj to database!")
+                    #self.logger.debug("Updated clt_obj to database!")
                 else:
                     raise Exception("Client not found")
         except Exception as e:
@@ -805,7 +805,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Clients).filter(Clients.clt_act_id == act_id and
                                               Clients.clt_name == clt_name).delete()
-            self.logger.debug("Removed clt_obj from database!")
+            #self.logger.debug("Removed clt_obj from database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -815,7 +815,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Clients).filter(Clients.clt_act_id == act_id and
                                               Clients.clt_guid == clt_guid).delete()
-            self.logger.debug("Removed clt_obj from database!")
+            #self.logger.debug("Removed clt_obj from database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -881,7 +881,7 @@ class PsqlDatabase:
                 unt_obj.unt_unt_id = unt_unt_id
             with session_scope(self.db_engine) as session:
                 session.add(unt_obj)
-            self.logger.debug("Added unt_obj to database!")
+            #self.logger.debug("Added unt_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -948,7 +948,7 @@ class PsqlDatabase:
                               properties=properties)
             with session_scope(self.db_engine) as session:
                 session.add(plg_obj)
-            self.logger.debug("Added plg_obj to database!")
+            #self.logger.debug("Added plg_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -957,7 +957,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 session.query(Plugins).filter(Plugins.plg_local_id == plugin_id).delete()
-            self.logger.debug("Removed plg_obj to database!")
+            #self.logger.debug("Removed plg_obj to database!")
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e

@@ -460,7 +460,7 @@ class ConfigurationProcessor:
 
         if client_mgmt_actor is None:
             self.logger.info("{} is a remote client. Not performing claim".format(info.client.get_name()))
-            self.trigger_remote_claim(info)
+            #self.trigger_remote_claim(info)
             return
 
         self.logger.info("Claiming resources from {} to {}".format(info.exporter.get_name(), info.client.get_name()))

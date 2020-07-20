@@ -26,8 +26,8 @@
 
 import yaml
 
-from manage_cli.Configuration import Configuration
-from message_bus.messages.AuthAvro import AuthAvro
+from fabric.managecli.Configuration import Configuration
+from fabric.message_bus.messages.AuthAvro import AuthAvro
 
 
 class ConfigProcessor:
@@ -48,7 +48,6 @@ class ConfigProcessor:
     def read_configuration(self) -> Configuration:
         if self.path is None:
             raise Exception("No data source has been specified")
-        print("Reading config file: {}".format(self.path))
         config_dict = None
         with open(self.path) as f:
             config_dict = yaml.safe_load(f)
