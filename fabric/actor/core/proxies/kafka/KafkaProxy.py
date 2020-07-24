@@ -71,17 +71,6 @@ class KafkaProxy(Proxy, ICallbackProxy):
         self.logger = logger
         self.proxy_type = Constants.ProtocolKafka
         self.type = self.TypeDefault
-
-        from fabric.actor.core.container.Globals import GlobalsSingleton
-        config = GlobalsSingleton.get().get_config()
-        self.bootstrap_server = config.get_global_config().get_runtime()[Constants.PropertyConfKafkaServer]
-
-        self.schema_registry = config.get_global_config().get_runtime()[Constants.PropertyConfKafkaSchemaRegistry]
-
-        self.key_schema_file = config.get_global_config().get_runtime()[Constants.PropertyConfKafkaKeySchema]
-
-        self.value_schema_file = config.get_global_config().get_runtime()[Constants.PropertyConfKafkaValueSchema]
-
         self.producer = self.create_kafka_producer()
 
     def __getstate__(self):
@@ -97,21 +86,8 @@ class KafkaProxy(Proxy, ICallbackProxy):
 
     def create_kafka_producer(self) -> AvroProducerApi:
         try:
-            from confluent_kafka import avro
-            conf = {'bootstrap.servers': self.bootstrap_server,
-                         'schema.registry.url': self.schema_registry}
-
-            file = open(self.key_schema_file, "r")
-            kbytes = file.read()
-            file.close()
-            key_schema = avro.loads(kbytes)
-            file = open(self.value_schema_file, "r")
-            vbytes = file.read()
-            file.close()
-            val_schema = avro.loads(vbytes)
-
-            # create a producer
-            return AvroProducerApi(conf, key_schema, val_schema, self.logger)
+            from fabric.actor.core.container.Globals import GlobalsSingleton
+            return GlobalsSingleton.get().get_kafka_producer()
         except Exception as e:
             traceback.print_exc()
             self.logger.error("Failed to create kafka producer {}".format(e))

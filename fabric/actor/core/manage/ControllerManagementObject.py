@@ -104,7 +104,7 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
     def demand_reservation_rid(self, rid: ID, caller: AuthToken) -> ResultAvro:
         return self.client_helper.demand_reservation_rid(rid, caller)
 
-    def demand_reservation(self, reservation: ReservationMng, caller: AuthToken) -> ResultStringMng:
+    def demand_reservation(self, reservation: ReservationMng, caller: AuthToken) -> ResultAvro:
         return self.client_helper.demand_reservation(reservation, caller)
 
     def claim_resources(self, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationMng:
@@ -120,7 +120,7 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
                                                      request_properties, config_properties, caller)
 
     def modify_reservation(self, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
-        self.client_helper.modify_reservation(rid, modify_properties, caller)
+        return self.client_helper.modify_reservation(rid, modify_properties, caller)
 
     def get_reservation_units(self, caller: AuthToken, rid: ID) -> ResultUnitMng:
         result = ResultUnitMng()

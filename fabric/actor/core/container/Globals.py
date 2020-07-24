@@ -142,6 +142,69 @@ class Globals:
             raise Exception("Invalid state")
         return self.config
 
+    def get_kafka_config_producer(self) -> dict:
+        if self.config is None or self.config.get_runtime_config() is None:
+            return None
+        bootstrap_server = self.config.get_runtime_config()[Constants.PropertyConfKafkaServer]
+        schema_registry = self.config.get_runtime_config()[Constants.PropertyConfKafkaSchemaRegistry]
+        security_protocol = self.config.get_runtime_config()[Constants.PropertyConfKafkaSecurityProtocol]
+        group_id = self.config.get_runtime_config()[Constants.PropertyConfKafkaGroupId]
+        ssl_ca_location = self.config.get_runtime_config()[Constants.PropertyConfKafkaSSlCaLocation]
+        ssl_certificate_location = self.config.get_runtime_config()[Constants.PropertyConfKafkaSslCertificateLocation]
+        ssl_key_location = self.config.get_runtime_config()[Constants.PropertyConfKafkaSslKeyLocation]
+        ssl_key_password = self.config.get_runtime_config()[Constants.PropertyConfKafkaSslKeyPassword]
+
+        conf = {'bootstrap.servers': bootstrap_server,
+                'security.protocol': security_protocol,
+                'group.id': group_id,
+                'ssl.ca.location': ssl_ca_location,
+                'ssl.certificate.location': ssl_certificate_location,
+                'ssl.key.location': ssl_key_location,
+                'ssl.key.password': ssl_key_password,
+                'schema.registry.url': schema_registry}
+
+        return conf
+
+    def get_kafka_config_consumer(self) -> dict:
+        if self.config is None or self.config.get_runtime_config() is None:
+            return None
+
+        conf = self.get_kafka_config_producer()
+        conf['auto.offset.reset'] = 'earliest'
+        return conf
+
+    def get_kafka_schemas(self):
+        key_schema_file = self.config.get_runtime_config()[Constants.PropertyConfKafkaKeySchema]
+        value_schema_file = self.config.get_runtime_config()[Constants.PropertyConfKafkaValueSchema]
+
+        from confluent_kafka import avro
+        file = open(key_schema_file, "r")
+        kbytes = file.read()
+        file.close()
+        key_schema = avro.loads(kbytes)
+        file = open(value_schema_file, "r")
+        vbytes = file.read()
+        file.close()
+        val_schema = avro.loads(vbytes)
+
+        return key_schema, val_schema
+
+    def get_kafka_producer(self):
+        conf = self.get_kafka_config_producer()
+        key_schema, val_schema = self.get_kafka_schemas()
+
+        from fabric.message_bus.producer import AvroProducerApi
+        producer = AvroProducerApi(conf, key_schema, val_schema, self.get_logger())
+        return producer
+
+    def get_kafka_consumer(self):
+        conf = self.get_kafka_config_consumer()
+        key_schema, val_schema = self.get_kafka_schemas()
+
+        from fabric.message_bus.consumer import AvroConsumerApi
+        consumer = AvroConsumerApi(conf, key_schema, val_schema, self.get_logger())
+        return consumer
+
     def get_logger(self):
         if not self.initialized:
             raise Exception("Invalid state")

@@ -26,125 +26,10 @@
 import traceback
 
 from fabric.actor.core.util.ID import ID
-from fabric.message_bus.messages.GetReservationsResponseAvro import GetReservationsResponseAvro
-from fabric.message_bus.messages.GetSlicesResponseAvro import GetSlicesResponseAvro
-from fabric.message_bus.messages.ResultAvro import ResultAvro
+from fabric.managecli.ShowCommand import ShowCommand
 
 
-class ManageCommand:
-    def __init__(self, logger):
-        self.logger = logger
-
-    @staticmethod
-    def print_result(status: ResultAvro):
-        print("Code={}".format(status.get_code()))
-        if status.message is not None:
-            print("Message={}".format(status.message))
-        if status.details is not None:
-            print("Details={}".format(status.details))
-
-    @staticmethod
-    def get_actor(actor_name: str):
-        from fabric.managecli.managecli import MainShellSingleton
-        actor = MainShellSingleton.get().get_mgmt_actor(actor_name)
-        return actor
-
-    def get_slices(self, actor_name: str, callback_topic: str):
-        try:
-            result = self.do_get_slices(actor_name, callback_topic)
-            print("Get Slices Response Status: {}".format(result.status))
-            if result.status.get_code() == 0 and result.slices is not None:
-                for s in result.slices:
-                    s.print()
-        except Exception as e:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-            print("Exception occurred while processing get_slices {}".format(e))
-
-    def do_get_slices(self, actor_name: str, callback_topic: str) -> GetSlicesResponseAvro:
-        actor = self.get_actor(actor_name)
-
-        if actor is None:
-            raise Exception("Invalid arguments actor {} not found".format(actor_name))
-        try:
-            actor.prepare(callback_topic)
-            return actor.get_slices()
-        except Exception as e:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-
-    def get_slice(self, actor_name: str, slice_id: str, callback_topic: str):
-        try:
-            result = self.do_get_slice(actor_name, slice_id, callback_topic)
-            print("Get Slice Response Status: {}".format(result.status))
-            if result.status.get_code() == 0 and result.slices is not None:
-                for s in result.slices:
-                    s.print()
-        except Exception as e:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-            print("Exception occurred while processing get_slice {}".format(e))
-
-    def do_get_slice(self, actor_name: str, slice_id: str, callback_topic: str) -> GetSlicesResponseAvro:
-        actor = self.get_actor(actor_name)
-
-        if actor is None or slice_id is None:
-            raise Exception("Invalid arguments actor {} not found".format(actor_name))
-        try:
-            actor.prepare(callback_topic)
-            return actor.get_slice(ID(slice_id))
-        except Exception as e:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-
-    def get_reservations(self, actor_name: str, callback_topic: str):
-        try:
-            result = self.do_get_reservations(actor_name, callback_topic)
-            print("Get Reservations Response Status: {}".format(result.status))
-            if result.status.get_code() == 0 and result.reservations is not None:
-                for r in result.reservations:
-                    r.print()
-        except Exception as e:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-            print("Exception occurred while processing get_reservations {}".format(e))
-
-    def do_get_reservations(self, actor_name: str, callback_topic: str) -> GetReservationsResponseAvro:
-        actor = self.get_actor(actor_name)
-
-        if actor is None:
-            raise Exception("Invalid arguments actor {} not found".format(actor_name))
-        try:
-            actor.prepare(callback_topic)
-            return actor.get_reservations()
-        except Exception as e:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-
-    def get_reservation(self, actor_name: str, rid: str, callback_topic: str):
-        try:
-            result = self.do_get_reservation(actor_name, rid, callback_topic)
-            print("Get Reservations Response Status: {}".format(result.status))
-            if result.status.get_code() == 0 and result.reservations is not None:
-                for r in result.reservations:
-                    r.print()
-        except Exception as e:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-            print("Exception occurred while processing get_reservation {}".format(e))
-
-    def do_get_reservation(self, actor_name: str, rid: str, callback_topic: str) -> GetReservationsResponseAvro:
-        actor = self.get_actor(actor_name)
-
-        if actor is None:
-            raise Exception("Invalid arguments actor {} not found".format(actor_name))
-        try:
-            actor.prepare(callback_topic)
-            return actor.get_reservation(rid)
-        except Exception as e:
-            ex_str = traceback.format_exc()
-            self.logger.error(ex_str)
-
+class ManageCommand(ShowCommand):
     def claim_resources(self, broker: str, am: str, callback_topic: str):
         try:
             am_actor = self.get_actor(am)
@@ -181,10 +66,10 @@ class ManageCommand:
             for k, v in claim_rid_list.items():
                 print("Reservation ID: {} Resource Type: {}".format(k, v))
 
-            #for k, v in claim_rid_list.items():
-            #    print("Claiming Reservation# {} for resource_type: {}".format(k, v))
-            #    result = self.do_claim_resources(broker, am_actor.get_guid(), k, callback_topic)
-            #    print("Claim Response: {}".format(result))
+            for k, v in claim_rid_list.items():
+                print("Claiming Reservation# {} for resource_type: {}".format(k, v))
+                result = self.do_claim_resources(broker, am_actor.get_guid(), k, callback_topic)
+                print("Claim Response: {}".format(result))
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
@@ -198,6 +83,90 @@ class ManageCommand:
         try:
             actor.prepare(callback_topic)
             return actor.claim_resources(ID(am_guid), ID(rid))
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+
+    def do_close_reservation(self, rid: str, actor_name: str, callback_topic: str):
+        actor = self.get_actor(actor_name)
+        if actor is None:
+            raise Exception("Invalid arguments actor_name {} not found".format(actor_name))
+
+        try:
+            actor.prepare(callback_topic)
+            return actor.close_reservation(ID(rid))
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+
+    def close_reservation(self, rid: str, actor_name: str, callback_topic: str):
+        try:
+            result = self.do_close_reservation(rid, actor_name, callback_topic)
+            print(result)
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+            print("Exception occurred while processing close_reservation {}".format(e))
+
+    def close_slice(self, slice_id: str, actor_name: str, callback_topic: str):
+        try:
+            result = self.do_close_slice(slice_id, actor_name, callback_topic)
+            print(result)
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+            print("Exception occurred while processing close_slice {}".format(e))
+
+    def do_close_slice(self, slice_id: str, actor_name: str, callback_topic: str):
+        actor = self.get_actor(actor_name)
+        if actor is None:
+            raise Exception("Invalid arguments actor_name {} not found".format(actor_name))
+
+        try:
+            actor.prepare(callback_topic)
+            return actor.close_reservations(slice_id)
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+
+    def remove_reservation(self, rid: str, actor_name: str, callback_topic: str):
+        try:
+            result = self.do_remove_reservation(rid, actor_name, callback_topic)
+            print(result)
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+            print("Exception occurred while processing remove_reservation {}".format(e))
+
+    def do_remove_reservation(self, rid: str, actor_name: str, callback_topic: str):
+        actor = self.get_actor(actor_name)
+        if actor is None:
+            raise Exception("Invalid arguments actor_name {} not found".format(actor_name))
+
+        try:
+            actor.prepare(callback_topic)
+            return actor.remove_reservation(ID(rid))
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+
+    def remove_slice(self, slice_id: str, actor_name: str, callback_topic: str):
+        try:
+            result = self.do_remove_slice(slice_id, actor_name, callback_topic)
+            print(result)
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+            print("Exception occurred while processing remove_reservation {}".format(e))
+
+    def do_remove_slice(self, slice_id: str, actor_name: str, callback_topic: str):
+        actor = self.get_actor(actor_name)
+        if actor is None:
+            raise Exception("Invalid arguments actor_name {} not found".format(actor_name))
+
+        try:
+            actor.prepare(callback_topic)
+            return actor.remove_slice(ID(slice_id))
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)

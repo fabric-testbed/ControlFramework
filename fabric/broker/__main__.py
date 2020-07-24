@@ -27,11 +27,12 @@ import time
 import traceback
 
 from fabric.actor.core.util.GracefulInterruptHandler import GracefulInterruptHandler
-from fabric.actor.core.container.Globals import GlobalsSingleton
+from fabric.actor.core.container.Globals import Globals, GlobalsSingleton
 
 
 def main():
     try:
+        Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/broker/config.broker.yaml"
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(True)
             while True:

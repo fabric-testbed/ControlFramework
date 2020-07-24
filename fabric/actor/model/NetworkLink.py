@@ -23,15 +23,37 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
+from fabric.actor.model.BaseElement import BaseElement
+from fabric.actor.model.InterfaceInfo import InterfaceInfo
 
-from fabric.actor.core.manage.kafka.services.KafkaServerActorService import KafkaServerActorService
 
-
-class KafkaAuthorityService(KafkaServerActorService):
+class NetworkLink(BaseElement):
     def __init__(self):
-        super().__init__()
+        self.bandwidth = 0
+        self.layer = None
+        self.technology = None
+        self.interface_info = None
 
+    def get_bandwidth(self) -> int:
+        return self.bandwidth
 
+    def set_bandwidth(self, bandwidth: int):
+        self.bandwidth = bandwidth
 
+    def get_layer(self) -> str:
+        return self.layer
 
+    def set_layer(self, layer: str):
+        self.layer = layer
+
+    def get_technology(self) -> str:
+        return self.technology
+
+    def set_technology(self, technology: str):
+        self.technology = technology
+
+    def set_interface_info(self, interface_info: InterfaceInfo):
+        self.interface_info = interface_info
+
+    def get_interface_info(self) -> InterfaceInfo:
+        return self.interface_info

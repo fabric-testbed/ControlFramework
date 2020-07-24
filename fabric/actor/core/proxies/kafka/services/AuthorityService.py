@@ -49,7 +49,7 @@ class AuthorityService(BrokerService):
         super().__init__(actor)
 
     def pass_authority(self, reservation: ReservationAvro) -> IAuthorityReservation:
-        slice_obj = Translate.translate_slice(reservation.slice.guid, reservation.slice.name)
+        slice_obj = Translate.translate_slice(reservation.slice.guid, reservation.slice.slice_name)
         term = Translate.translate_term_from_avro(reservation.term)
 
         resource_set = Translate.translate_resource_set_from_avro(reservation.resource_set)

@@ -39,9 +39,9 @@ from fabric.message_bus.messages.ResultAvro import ResultAvro
 
 
 class KafkaBroker(KafkaServerActor, IMgmtBroker):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, kafka_config: dict, logger,
+    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
                  message_processor: KafkaMgmtMessageProcessor):
-        super().__init__(guid, kafka_topic, auth, kafka_config, logger, message_processor)
+        super().__init__(guid, kafka_topic, auth, logger, message_processor)
 
     def claim_resources_slice(self, broker: ID, slice_id: ID, rid: ID) -> ClaimResourcesResponseAvro:
 

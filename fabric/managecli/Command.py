@@ -23,15 +23,23 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
-
-from fabric.actor.core.manage.kafka.services.KafkaServerActorService import KafkaServerActorService
+from fabric.message_bus.messages.ResultAvro import ResultAvro
 
 
-class KafkaAuthorityService(KafkaServerActorService):
-    def __init__(self):
-        super().__init__()
+class Command:
+    def __init__(self, logger):
+        self.logger = logger
 
+    @staticmethod
+    def print_result(status: ResultAvro):
+        print("Code={}".format(status.get_code()))
+        if status.message is not None:
+            print("Message={}".format(status.message))
+        if status.details is not None:
+            print("Details={}".format(status.details))
 
-
-
+    @staticmethod
+    def get_actor(actor_name: str):
+        from fabric.managecli.managecli import MainShellSingleton
+        actor = MainShellSingleton.get().get_mgmt_actor(actor_name)
+        return actor

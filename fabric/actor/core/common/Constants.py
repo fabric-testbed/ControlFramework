@@ -57,6 +57,13 @@ class Constants:
     PropertyConfKafkaSchemaRegistry = "kafka-schema-registry-url"
     PropertyConfKafkaKeySchema = "kafka-key-schema"
     PropertyConfKafkaValueSchema = "kafka-value-schema"
+    PropertyConfKafkaSSlCaLocation = "kafka-ssl-ca-location"
+    PropertyConfKafkaSslCertificateLocation = "kafka-ssl-certificate-location"
+    PropertyConfKafkaSslKeyLocation = "kafka-ssl-key-location"
+    PropertyConfKafkaSslKeyPassword = "kafka-ssl-key-password"
+    PropertyConfKafkaSecurityProtocol = "kafka-security-protocol"
+    PropertyConfKafkaGroupId = "kafka-group-id"
+
     PropertyConfPluginDir = "plugin-dir"
 
     ConfigLoggingSection = 'logging'
@@ -91,8 +98,8 @@ class Constants:
     ProtocolKafka = "kafka"
 
     # TODO change after testing
-    HomeDirectory = '/usr/src/app/'
-    #HomeDirectory = '/Users/komalthareja/renci/code/fabric/ActorBase/actor/test/'
+    #HomeDirectory = '/usr/src/app/'
+    HomeDirectory = '/Users/komalthareja/renci/code/fabric/ActorBase/'
     SuperblockLocation = HomeDirectory + "state_recovery.lock"
     ControllerLockLocation = HomeDirectory + "controller_recovery.lock"
     ConfigurationFile = "/etc/fabric/actor/config/config.yaml"
@@ -100,7 +107,7 @@ class Constants:
 
     TestBrokerConfigurationFile = HomeDirectory + "config/config.broker.yaml"
     TestNetAmConfigurationFile = HomeDirectory + "config/config.net-am.yaml"
-    TestVmAmConfigurationFile = HomeDirectory + "config/config.vm-am.yaml"
+    TestVmAmConfigurationFile = HomeDirectory + "config/config.site.am.yaml"
 
     ElasticTime = "request.elasticTime"
     ElasticSize = "request.elasticSize"

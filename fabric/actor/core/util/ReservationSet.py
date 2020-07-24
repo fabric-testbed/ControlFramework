@@ -60,7 +60,7 @@ class ReservationSet:
         """
         self.reservations.clear()
 
-    def contains(self, reservation: IReservation = None, rid: str = None):
+    def contains(self, reservation: IReservation = None, rid: ID = None):
         """
         Checks if the reservation is part of the set
 

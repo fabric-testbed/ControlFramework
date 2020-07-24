@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.IActorRunnable import IActorRunnable
 from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Exceptions import ReservationNotFoundException
 from fabric.actor.core.kernel.ReservationFactory import ReservationFactory
 from fabric.actor.core.kernel.ReservationStates import ReservationStates, ReservationPendingStates
 from fabric.actor.core.kernel.SliceFactory import SliceFactory
@@ -120,6 +121,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     result.status = ManagementObject.set_exception_details(result.status, e)
                 if slice_list is not None:
                     result.result = Translate.fill_slices(slice_list, True)
+                else:
+                    result.status = Constants.ErrorNoSuchSlice
+                    result.message = 'ErrorNoSlices'
             except Exception as e:
                 self.logger.error("getSlices {}".format(e))
                 result.status.set_code(Constants.ErrorInternalError)
@@ -145,6 +149,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 if slice_obj is not None:
                     slice_list = [slice_obj]
                     result.result = Translate.fill_slices(slice_list, True)
+                else:
+                    result.status = Constants.ErrorNoSuchSlice
+                    result.message = 'ErrorNoSuchSlice'
             except Exception as e:
                 self.logger.error("getSlice {}".format(e))
                 result.status.set_code(Constants.ErrorInternalError)
@@ -202,12 +209,12 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     self.actor = actor
 
                 def run(self):
-                    self.actor.remove_slice(slice_id)
+                    self.actor.remove_slice_by_slice_id(slice_id)
                     return None
 
             self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
         except Exception as e:
-            self.logger.error("remove: {}".format(e))
+            self.logger.error("remove_slice: {}".format(e))
             result.set_code(Constants.ErrorInternalError)
             result = ManagementObject.set_exception_details(result, e)
         return result
@@ -244,7 +251,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
             result = self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
         except Exception as e:
-            self.logger.error("update Slice: {}".format(e))
+            self.logger.error("update_slice: {}".format(e))
             result.set_code(Constants.ErrorInternalError)
             result = ManagementObject.set_exception_details(result, e)
 
@@ -291,6 +298,10 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("getReservations: {}".format(e))
+            result.status.set_code(Constants.ErrorNoSuchReservation)
+            result.status.set_message(e.text)
         except Exception as e:
             self.logger.error("getReservations: {}".format(e))
             result.status.set_code(Constants.ErrorInternalError)
@@ -311,7 +322,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             try:
                 res_list = self.db.get_reservations_by_state(state)
             except Exception as e:
-                self.logger.error("getReservations:db access {}".format(e))
+                self.logger.error("get_reservations_by_state:db access {}".format(e))
                 result.status.set_code(Constants.ErrorDatabaseError)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
@@ -329,8 +340,12 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservations_by_state: {}".format(e))
+            result.status.set_code(Constants.ErrorNoSuchReservation)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservations: {}".format(e))
+            self.logger.error("get_reservations_by_state: {}".format(e))
             result.status.set_code(Constants.ErrorInternalError)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
@@ -349,7 +364,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             try:
                 res_list = self.db.get_reservations_by_slice_id(slice_id)
             except Exception as e:
-                self.logger.error("getReservations:db access {}".format(e))
+                self.logger.error("get_reservations_by_slice_id:db access {}".format(e))
                 result.status.set_code(Constants.ErrorDatabaseError)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
@@ -367,8 +382,12 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservations_by_slice_id: {}".format(e))
+            result.status.set_code(Constants.ErrorNoSuchReservation)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservations: {}".format(e))
+            self.logger.error("get_reservations_by_slice_id: {}".format(e))
             result.status.set_code(Constants.ErrorInternalError)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
@@ -387,7 +406,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             try:
                 res_list = self.db.get_reservations_by_slice_id_state(slice_id, state)
             except Exception as e:
-                self.logger.error("getReservations:db access {}".format(e))
+                self.logger.error("get_reservations_by_slice_id_state:db access {}".format(e))
                 result.status.set_code(Constants.ErrorDatabaseError)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
@@ -405,8 +424,12 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservations_by_slice_id_state: {}".format(e))
+            result.status.set_code(Constants.ErrorNoSuchReservation)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservations: {}".format(e))
+            self.logger.error("get_reservations_by_slice_id_state: {}".format(e))
             result.status.set_code(Constants.ErrorInternalError)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
@@ -424,9 +447,13 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             res_list = None
             try:
                 res = self.db.get_reservation(rid)
-                res_list = [res]
+                if res is not None:
+                    res_list = [res]
+                else:
+                    result.status.set_code(Constants.ErrorNoSuchReservation)
+                    result.status.set_message('ErrorNoSuchReservation')
             except Exception as e:
-                self.logger.error("getReservations:db access {}".format(e))
+                self.logger.error("get_reservation:db access {}".format(e))
                 result.status.set_code(Constants.ErrorDatabaseError)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
@@ -444,8 +471,12 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservation: {}".format(e))
+            result.status.set_code(Constants.ErrorNoSuchReservation)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservations: {}".format(e))
+            self.logger.error("get_reservation: {}".format(e))
             result.status.set_code(Constants.ErrorInternalError)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
@@ -468,8 +499,12 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     return None
 
             self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("remove_reservation: {}".format(e))
+            result.set_code(Constants.ErrorNoSuchReservation)
+            result.set_message(e.text)
         except Exception as e:
-            self.logger.error("remove reservation {}".format(e))
+            self.logger.error("remove_reservation: {}".format(e))
             result.set_code(Constants.ErrorInternalError)
             result = ManagementObject.set_exception_details(result, e)
 
@@ -489,13 +524,19 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                 def run(self):
                     self.actor.close_by_rid(rid)
-                    return None
+                    return True
 
             self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("close_reservation: {}".format(e))
+            result.set_code(Constants.ErrorNoSuchReservation)
+            result.set_message(e.text)
         except Exception as e:
-            self.logger.error("close reservation {}".format(e))
+            self.logger.error("close_reservation: {}".format(e))
             result.set_code(Constants.ErrorInternalError)
             result = ManagementObject.set_exception_details(result, e)
+
+        print("KOMAL {}".format(result))
         return result
 
     def close_slice_reservations(self, caller: AuthToken, slice_id: ID) -> ResultAvro:
@@ -516,7 +557,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
             self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
         except Exception as e:
-            self.logger.error("close reservation {}".format(e))
+            self.logger.error("close_slice_reservations: {}".format(e))
             result.set_code(Constants.ErrorInternalError)
             result = ManagementObject.set_exception_details(result, e)
         return result
@@ -599,8 +640,12 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     return result
 
             result = self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("update_reservation: {}".format(e))
+            result.set_code(Constants.ErrorNoSuchReservation)
+            result.set_message(e.text)
         except Exception as e:
-            self.logger.error("update Slice: {}".format(e))
+            self.logger.error("update_reservation: {}".format(e))
             result.set_code(Constants.ErrorInternalError)
             result = ManagementObject.set_exception_details(result, e)
 
@@ -615,19 +660,22 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
-            res_list = None
+            res_dict = None
             try:
-                res = self.db.get_reservation(rid)
-                res_list = [res]
+                res_dict = self.db.get_reservation(rid)
             except Exception as e:
-                self.logger.error("getReservationState:db access {}".format(e))
+                self.logger.error("get_reservation_state:db access {}".format(e))
                 result.status.set_code(Constants.ErrorDatabaseError)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
-            result.result = Converter.fill_reservation_state(res_list)
+            result.result = Converter.fill_reservation_state(res_dict)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservation_state: {}".format(e))
+            result.status.set_code(Constants.ErrorNoSuchReservation)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservationState {}".format(e))
+            self.logger.error("get_reservation_state {}".format(e))
             result.status.set_code(Constants.ErrorInternalError)
             result.status = ManagementObject.set_exception_details(result.status, e)
         return result
@@ -674,7 +722,10 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                         state.set_pending_state(ReservationPendingStates.Unknown.value)
                         result.result.append(state)
                     i += 1
-
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservation_state_for_reservations: {}".format(e))
+            result.status.set_code(Constants.ErrorNoSuchReservation)
+            result.status.set_message(e.text)
         except Exception as e:
             self.logger.error("get_reservation_state_for_reservations {}".format(e))
             result.status.set_code(Constants.ErrorInternalError)

@@ -31,6 +31,6 @@ from fabric.message_bus.messages.AuthAvro import AuthAvro
 
 
 class KafkaServerActor(KafkaActor, IMgmtServerActor):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, kafka_config: dict, logger,
+    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
                  message_processor: KafkaMgmtMessageProcessor):
-        super().__init__(guid, kafka_topic, auth, kafka_config, logger, message_processor)
+        super().__init__(guid, kafka_topic, auth, logger, message_processor)

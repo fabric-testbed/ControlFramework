@@ -23,15 +23,29 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
-
-from fabric.actor.core.manage.kafka.services.KafkaServerActorService import KafkaServerActorService
 
 
-class KafkaAuthorityService(KafkaServerActorService):
-    def __init__(self):
-        super().__init__()
+class ReservationNotFoundException(Exception):
+    def __init__(self, text: str = None, rid=None):
+        super(ReservationNotFoundException, self).__init__()
+        if text is not None:
+            self.text = str(text)
+        else:
+            self.text = "Reservation# {} not found".format(rid)
+        self.rid = rid
+
+    def __str__(self):
+        return self.text
 
 
+class SliceNotFoundException(Exception):
+    def __init__(self, text: str = None, slice_id=None):
+        super(SliceNotFoundException, self).__init__()
+        if text is not None:
+            self.text = str(text)
+        else:
+            self.text = "Slice# {} not found".format(slice_id)
+        self.slice_id = slice_id
 
-
+    def __str__(self):
+        return self.text

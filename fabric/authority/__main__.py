@@ -26,12 +26,13 @@
 import time
 import traceback
 
+from fabric.actor.core.container.Globals import Globals, GlobalsSingleton
 from fabric.actor.core.util.GracefulInterruptHandler import GracefulInterruptHandler
-from fabric.actor.core.container.Globals import GlobalsSingleton
 
 
 def main():
     try:
+        Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/authority/config.site.am.yaml"
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(True)
             while True:

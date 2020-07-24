@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.IAuthority import IAuthority
 from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Exceptions import ReservationNotFoundException
 from fabric.actor.core.kernel.ReservationFactory import ReservationFactory
 from fabric.actor.core.manage.Converter import Converter
 from fabric.actor.core.manage.ManagementObject import ManagementObject
@@ -92,6 +93,10 @@ class AuthorityManagementObject(ServerActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("getReservations: {}".format(e))
+            result.status.set_code(Constants.ErrorNoSuchReservation)
+            result.status.set_message(e.text)
         except Exception as e:
             self.logger.error("get_authority_reservations: {}".format(e))
             result.status.set_code(Constants.ErrorInternalError)

@@ -55,9 +55,12 @@ if TYPE_CHECKING:
 
 
 class KafkaActor(KafkaProxy, IMgmtActor):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, kafka_config:dict, logger,
+    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
                  message_processor: KafkaMgmtMessageProcessor):
-        super().__init__(guid, kafka_topic, auth, kafka_config, logger, message_processor)
+        super().__init__(guid, kafka_topic, auth, logger, message_processor)
+
+    def get_guid(self) -> ID:
+        return self.management_id
 
     def prepare(self, callback_topic:str):
         self.callback_topic = callback_topic
@@ -280,7 +283,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         return response
 
-    def do_get_reservations(self, slice_id: ID, state: int, reservation_id: ID = None) -> GetReservationsResponseAvro:
+    def do_get_reservations(self, slice_id: ID = None, state: int = None, reservation_id: ID = None) -> GetReservationsResponseAvro:
         self.clear_last()
         response = GetReservationsResponseAvro()
         response.status = ResultAvro()
@@ -291,8 +294,10 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.reservation_state = state
-            request.slice_id = str(slice_id)
-            request.reservation_id = str(reservation_id)
+            if slice_id is not None:
+                request.slice_id = str(slice_id)
+            if reservation_id is not None:
+                request.reservation_id = str(reservation_id)
 
             ret_val = self.producer.produce_sync(self.kafka_topic, request)
 

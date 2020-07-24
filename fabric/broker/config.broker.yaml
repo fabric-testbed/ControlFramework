@@ -29,10 +29,10 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: broker:29092
-  - kafka-schema-registry-url: http://registry:8081
-  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
+  - kafka-server: 127.0.0.1:9092
+  - kafka-schema-registry-url: http://127.0.0.1:8081
+  - kafka-key-schema: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/message_bus/schema/key.avsc
+  - kafka-value-schema: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/message_bus/schema/message.avsc
   - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
   - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
   - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
@@ -43,7 +43,7 @@ runtime:
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: /var/log/actor
+  - log-directory: /Users/komalthareja/renci/code/fabric/ActorBase/logs/broker
 
   ## The filename to be used for actor's log file.
   - log-file: actor.log
@@ -66,7 +66,7 @@ database:
   - db-user: fabric
   - db-password: fabric
   - db-name: broker
-  - db-host: actordb:5432
+  - db-host: 127.0.0.1:8432
 
 container:
   - container.guid: fabric-broker-conainer

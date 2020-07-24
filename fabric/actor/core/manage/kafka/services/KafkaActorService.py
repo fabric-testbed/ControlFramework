@@ -48,8 +48,8 @@ from fabric.message_bus.messages.message import IMessageAvro
 
 
 class KafkaActorService(KafkaService):
-    def __init__(self, producer_conf, key_schema, val_schema):
-        super().__init__(producer_conf, key_schema, val_schema)
+    def __init__(self):
+        super().__init__()
 
     def process(self, message: IMessageAvro):
         callback_topic = message.get_callback_topic()
@@ -168,7 +168,7 @@ class KafkaActorService(KafkaService):
             mo = self.get_actor_mo(ID(request.guid))
 
             temp_result = mo.remove_slice(ID(request.slice_id), auth)
-            result.status = temp_result.status
+            result.status = temp_result
             result.message_id = request.message_id
 
         except Exception as e:
@@ -214,7 +214,7 @@ class KafkaActorService(KafkaService):
             mo = self.get_actor_mo(ID(request.guid))
 
             temp_result = mo.update_slice(request.slice_obj, auth)
-            result.status = temp_result.status
+            result.status = temp_result
             result.message_id = request.message_id
 
         except Exception as e:
@@ -313,6 +313,7 @@ class KafkaActorService(KafkaService):
             result.status.set_code(Constants.ErrorInternalError)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
+        print("KOMAL {}".format(result))
         return result
 
     def update_reservation(self, request:UpdateReservationAvro):

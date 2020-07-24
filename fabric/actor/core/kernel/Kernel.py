@@ -30,6 +30,7 @@ from fabric.actor.core.apis.IBasePlugin import IBasePlugin
 from fabric.actor.core.apis.IPolicy import IPolicy
 from fabric.actor.core.apis.ISlice import ISlice
 from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Exceptions import ReservationNotFoundException
 from fabric.actor.core.container.Globals import GlobalsSingleton
 from fabric.actor.core.kernel.AuthorityReservation import AuthorityReservation
 from fabric.actor.core.kernel.FailedRPC import FailedRPC
@@ -819,13 +820,13 @@ class Kernel:
         if reservation is not None:
             local = self.soft_validate(reservation=reservation)
             if local is None:
-                self.error("reservation not found", None)
+                self.error("reservation not found", ReservationNotFoundException(rid=rid))
             return local
 
         if rid is not None:
             local = self.soft_validate(rid=rid)
             if local is None:
-                self.error("reservation not found", None)
+                self.error("reservation not found", ReservationNotFoundException(rid=rid))
             return local
 
     def handle_failed_rpc(self, reservation: IKernelReservation, rpc: FailedRPC):

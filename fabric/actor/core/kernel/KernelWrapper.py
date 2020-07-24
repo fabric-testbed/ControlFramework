@@ -37,6 +37,7 @@ from fabric.actor.core.apis.IControllerReservation import IControllerReservation
 from fabric.actor.core.apis.IPolicy import IPolicy
 from fabric.actor.core.apis.IReservation import IReservation
 from fabric.actor.core.apis.ISlice import ISlice
+from fabric.actor.core.common.Exceptions import SliceNotFoundException
 from fabric.actor.core.kernel.FailedRPC import FailedRPC
 from fabric.actor.core.apis.IKernelClientReservation import IKernelClientReservation
 from fabric.actor.core.apis.IKernelReservation import IKernelReservation
@@ -127,7 +128,7 @@ class KernelWrapper:
             raise Exception("Invalid argument")
 
         if self.kernel.is_known_slice(slice_id):
-            raise Exception("Unknown Slice {}".format(slice_id))
+            raise SliceNotFoundException(slice_id)
 
         reservations = self.get_reservations(slice_id)
         for r in reservations:
@@ -403,7 +404,6 @@ class KernelWrapper:
             self.logger.info("Relinquish for non-existent reservation. Reservation has already been closed. Nothing to relinquish")
             return
 
-        auth_properties = reservation.get_resources().get_request_properties()
         # TODO
         requester = self.monitor.check_proxy(caller, None)
 

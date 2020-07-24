@@ -91,7 +91,9 @@ class Slice(IKernelSlice):
         return result
 
     def get_config_properties(self):
-        return self.rsrcdata.get_configuration_properties()
+        if self.rsrcdata is not None:
+            return self.rsrcdata.get_configuration_properties()
+        return None
 
     def get_description(self):
         return self.description
@@ -100,7 +102,9 @@ class Slice(IKernelSlice):
         return self.guard
 
     def get_local_properties(self):
-        return self.rsrcdata.get_local_properties()
+        if self.rsrcdata is not None:
+            return self.rsrcdata.get_local_properties()
+        return None
 
     def get_name(self):
         return self.name
@@ -112,7 +116,9 @@ class Slice(IKernelSlice):
         return self.rsrcdata
 
     def get_request_properties(self):
-        return self.rsrcdata.get_request_properties()
+        if self.rsrcdata is not None:
+            return self.rsrcdata.get_request_properties()
+        return None
 
     def get_reservations(self) ->ReservationSet:
         return self.reservations
@@ -121,7 +127,9 @@ class Slice(IKernelSlice):
         return self.reservations.values()
 
     def get_resource_properties(self):
-        return self.rsrcdata.get_resource_properties()
+        if self.rsrcdata is not None:
+            return self.rsrcdata.get_resource_properties()
+        return None
 
     def get_resource_type(self):
         return self.resource_type

@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
+import threading
 
 from fabric.actor.core.plugins.db.ActorDatabase import ActorDatabase
 from fabric.actor.core.plugins.db.ClientDatabase import ClientDatabase
@@ -43,6 +44,7 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
         del state['initialized']
         del state['logger']
         del state['reset_state']
+        del state['lock']
         return state
 
     def __setstate__(self, state):
@@ -54,30 +56,49 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
         self.initialized = False
         self.logger = None
         self.reset_state = False
+        self.lock = threading.Lock()
 
     def add_client(self, client: Client):
-        properties = pickle.dumps(client)
-        return self.db.add_client(self.actor_id, client.get_name(), str(client.get_guid()), properties)
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(client)
+            self.db.add_client(self.actor_id, client.get_name(), str(client.get_guid()), properties)
+        finally:
+            self.lock.release()
 
     def update_client(self, client: Client):
-        properties = pickle.dumps(client)
-        return self.db.update_client(self.actor_id, client.get_name(), properties)
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(client)
+            self.db.update_client(self.actor_id, client.get_name(), properties)
+        finally:
+            self.lock.release()
 
     def remove_client(self, guid: ID):
-        return self.db.remove_client_by_guid(self.actor_id, str(guid))
+        try:
+            self.lock.acquire()
+            self.db.remove_client_by_guid(self.actor_id, str(guid))
+        finally:
+            self.lock.release()
 
     def get_client(self, guid: ID) -> dict:
         result = None
         try:
+            self.lock.acquire()
             result = self.db.get_client_by_guid(self.actor_id, str(guid))
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return result
 
     def get_clients(self) -> list:
         result = None
         try:
+            self.lock.acquire()
             result = self.db.get_clients(self.actor_id)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return result

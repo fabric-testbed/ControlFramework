@@ -23,15 +23,21 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
-
-from fabric.actor.core.manage.kafka.services.KafkaServerActorService import KafkaServerActorService
 
 
-class KafkaAuthorityService(KafkaServerActorService):
+class BaseElement:
     def __init__(self):
-        super().__init__()
+        self.resource_type = None
+        self.graph_node_id = None
 
+    def set_resource_type(self, resource_type: str):
+        self.resource_type = resource_type
 
+    def get_resource_type(self) -> str:
+        return self.resource_type
 
+    def set_graph_node_id(self, graph_node_id: str):
+        self.graph_node_id = graph_node_id
 
+    def get_graph_node_id(self) -> str:
+        return self.graph_node_id

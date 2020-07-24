@@ -37,8 +37,8 @@ from fabric.message_bus.messages.ResultAvro import ResultAvro
 
 
 class KafkaClientActorService(KafkaActorService):
-    def __init__(self, producer_conf, key_schema, val_schema):
-        super().__init__(producer_conf, key_schema, val_schema)
+    def __init__(self):
+        super().__init__()
 
     def claim_resources(self, request: ClaimResourcesAvro) -> ClaimResourcesResponseAvro:
         result = ClaimResourcesResponseAvro()

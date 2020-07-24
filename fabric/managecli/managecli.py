@@ -35,6 +35,7 @@ from fabric.actor.core.manage.kafka.KafkaMgmtMessageProcessor import KafkaMgmtMe
 from fabric.actor.core.util.ID import ID
 from fabric.managecli.ConfigProcessor import ConfigProcessor
 from fabric.managecli.ManageCommand import ManageCommand
+from fabric.managecli.ShowCommand import ShowCommand
 
 
 class MainShell:
@@ -225,6 +226,53 @@ def claim(ctx, broker, am):
     mgmt_command.claim_resources(broker, am, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
+@manage.command()
+@click.option('--rid', default=None, help='Reservation Id', required=True)
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.pass_context
+def closereservation(ctx, rid, actor):
+    """ Closes reservation for an actor
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.close_reservation(rid, actor, MainShellSingleton.get().get_callback_topic())
+    MainShellSingleton.get().stop()
+
+@manage.command()
+@click.option('--sliceid', default=None, help='Slice Id', required=True)
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.pass_context
+def closeslice(ctx, sliceid, actor):
+    """ Closes Slice for an actor
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.close_slice(sliceid, actor, MainShellSingleton.get().get_callback_topic())
+    MainShellSingleton.get().stop()
+
+@manage.command()
+@click.option('--rid', default=None, help='Reservation Id', required=True)
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.pass_context
+def removereservation(ctx, rid, actor):
+    """ Removes reservation for an actor
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.remove_reservation(rid, actor, MainShellSingleton.get().get_callback_topic())
+    MainShellSingleton.get().stop()
+
+@manage.command()
+@click.option('--sliceid', default=None, help='Slice Id', required=True)
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.pass_context
+def removeslice(ctx, sliceid, actor):
+    """ Removes slice for an actor
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.remove_slice(sliceid, actor, MainShellSingleton.get().get_callback_topic())
+    MainShellSingleton.get().stop()
 
 @click.group()
 @click.pass_context
@@ -241,7 +289,7 @@ def slices(ctx, actor):
     """ Get Slices from an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command = ShowCommand(MainShellSingleton.get().logger)
     mgmt_command.get_slices(actor, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
@@ -254,7 +302,7 @@ def slice(ctx, actor, sliceid):
     """ Get Slices from an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command = ShowCommand(MainShellSingleton.get().logger)
     mgmt_command.get_slice(actor, sliceid, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
@@ -266,7 +314,7 @@ def reservations(ctx, actor):
     """ Get Slices from an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command = ShowCommand(MainShellSingleton.get().logger)
     mgmt_command.get_reservations(actor, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
@@ -278,7 +326,7 @@ def reservation(ctx, actor, rid):
     """ Get Slices from an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command = ShowCommand(MainShellSingleton.get().logger)
     mgmt_command.get_reservation(actor, rid, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 

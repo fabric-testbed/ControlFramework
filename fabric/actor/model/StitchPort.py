@@ -23,15 +23,17 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
+from fabric.actor.model.BaseElement import BaseElement
+from fabric.actor.model.InterfaceInfo import InterfaceInfo
 
-from fabric.actor.core.manage.kafka.services.KafkaServerActorService import KafkaServerActorService
 
-
-class KafkaAuthorityService(KafkaServerActorService):
+class StitchPort(BaseElement):
     def __init__(self):
         super().__init__()
+        self.interface_info = None
 
+    def set_interface_info(self, interface_info: InterfaceInfo):
+        self.interface_info = interface_info
 
-
-
+    def get_interface_info(self) -> InterfaceInfo:
+        return self.interface_info
