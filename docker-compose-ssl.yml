@@ -13,10 +13,10 @@ services:
         - ZOOKEEPER_SYNC_LIMIT=2
         - ZOOKEEPER_CLIENT_PORT=2181
         - ZOOKEEPER_TICK_TIME=2000
-    broker:
+    broker1:
         image: confluentinc/cp-server:latest
-        hostname: broker 
-        container_name: broker 
+        hostname: broker1
+        container_name: broker1
         depends_on:
         - zookeeper
         volumes:

@@ -32,7 +32,7 @@ from fabric.actor.core.util.GracefulInterruptHandler import GracefulInterruptHan
 
 def main():
     try:
-        Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/authority/config.site.am.yaml"
+        #Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/authority/config.site.am.yaml"
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(True)
             while True:
