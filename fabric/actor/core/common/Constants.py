@@ -98,8 +98,8 @@ class Constants:
     ProtocolKafka = "kafka"
 
     # TODO change after testing
-    #HomeDirectory = '/usr/src/app/'
-    HomeDirectory = '/Users/komalthareja/renci/code/fabric/ActorBase/'
+    HomeDirectory = '/usr/src/app/'
+    #HomeDirectory = '/Users/komalthareja/renci/code/fabric/ActorBase/'
     SuperblockLocation = HomeDirectory + "state_recovery.lock"
     ControllerLockLocation = HomeDirectory + "controller_recovery.lock"
     ConfigurationFile = "/etc/fabric/actor/config/config.yaml"
