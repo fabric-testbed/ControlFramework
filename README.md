@@ -42,32 +42,34 @@ docker build -f Dockerfile-broker -t broker .
 ```
 
 ## Running with Docker
-AM container can be brought up via docker-compose as indicated below:
+### Generate Credentials
+You must generate CA certificates (or use yours if you already have one) and then generate a keystore and truststore for brokers and clients.
 ```
-    fabric-vm-am:
-        image: authority:latest 
-        container_name: fabric-vm-am 
-        restart: always
-        depends_on:
-        - database 
-        volumes:
-            - "./config/config.vm-am.yaml:/etc/fabric/actor/config/config.yaml"
-            - "./logs/vm-am:/var/log/actor"
+cd $(pwd)/secrets
+./create-certs.sh
+(Type yes for all "Trust this certificate? [no]:" prompts.)
+cd -
 ```
-Broker container can be brought up via docker-compose as indicated below:
+Set the environment variable for the secrets directory. This is used in later commands. Make sure that you are in the MessageBus directory.
 ```
-    fabric-broker:
-        image: broker:latest
-        container_name: fabric-broker
-        restart: always
-        depends_on:
-            - database
-            - fabric-vm-am 
-        volumes:
-            - "./config/config.broker.yaml:/etc/fabric/actor/config/config.yaml"
-            - "./logs/broker:/var/log/actor"
+export KAFKA_SSL_SECRETS_DIR=$(pwd)/secrets
 ```
-Use docker-compose.yml to bring all the containers needed to run VM-AM and Broker. Add any additional AMs as needed by pointing to the correct config files.
+### Bring up the containers
+You can use the docker-compose.yaml file to bring up a simple Kafka cluster containing
+- broker
+- zookeeper 
+- schema registry
+
+Use the below command to bring up the cluster
+```
+docker-compose up -d
+```
+
+This should bring up following containers:
+```
+
+```
+Use docker-compose.yml to bring all the containers needed to run Site-AM and Broker. Add any additional AMs as needed by pointing to the correct config files.
 
 ## Plugins
 The actor loads all the plugins in "plugins" directory. Each plugin must inherit from IBasePlugin class and have an info file. 
