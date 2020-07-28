@@ -10,7 +10,7 @@ RUN pip3 install --upgrade pip
 RUN pip3 install git+https://github.com/fabric-testbed/MessageBus.git@master
 RUN mkdir -p "/etc/fabric/message_bus/schema"
 RUN cp /usr/local/lib/python3.8/site-packages/fabric/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
-RUN pip3 install git+https://github.com/fabric-testbed/ActorBase.git@mgmt_cli
+RUN pip3 install git+https://github.com/fabric-testbed/ActorBase.git@master
 
 ENTRYPOINT ["python3"]
 
