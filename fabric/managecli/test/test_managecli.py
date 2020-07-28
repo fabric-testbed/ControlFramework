@@ -39,14 +39,14 @@ class ManageCliTest(unittest.TestCase):
         print("=======Begin test1")
         runner = CliRunner()
         result = runner.invoke(managecli.managecli, ['manage', 'claim', '--broker', 'fabric-broker', '--am',
-                                                     'fabric-vm-am'])
+                                                     'fabric-site-am'])
         print("Result: {}".format(result.output))
         print("=======End test1")
 
     def test_b_get_slices_am(self):
         print("=======Begin test2")
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'slices', '--actor', 'fabric-vm-am'])
+        result = runner.invoke(managecli.managecli, ['show', 'slices', '--actor', 'fabric-site-am'])
         print("Result: {}".format(result.output))
         output_str = result.output.split('\n')
         for s in output_str:
@@ -71,7 +71,7 @@ class ManageCliTest(unittest.TestCase):
         print("=======Begin test4")
         print("Using slice_id:{}".format(self.am_slice_id))
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'slice', '--actor', 'fabric-vm-am', '--sliceid', ManageCliTest.am_slice_id])
+        result = runner.invoke(managecli.managecli, ['show', 'slice', '--actor', 'fabric-site-am', '--sliceid', ManageCliTest.am_slice_id])
         print("Result: {}".format(result.output))
         print("=======End test4")
 
@@ -98,7 +98,7 @@ class ManageCliTest(unittest.TestCase):
     def test_g_get_reservations_am(self):
         print("=======Begin test7")
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'reservations', '--actor', 'fabric-vm-am'])
+        result = runner.invoke(managecli.managecli, ['show', 'reservations', '--actor', 'fabric-site-am'])
         print("Result: {}".format(result.output))
         output_str = result.output.split('\n')
         for r in output_str:
@@ -117,7 +117,7 @@ class ManageCliTest(unittest.TestCase):
     def test_i_get_reservation(self):
         print("=======Begin test9")
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'reservation', '--actor', 'fabric-vm-am', '--rid', ManageCliTest.am_res_id])
+        result = runner.invoke(managecli.managecli, ['show', 'reservation', '--actor', 'fabric-site-am', '--rid', ManageCliTest.am_res_id])
         print("Result: {}".format(result.output))
         print("=======End test9")
 

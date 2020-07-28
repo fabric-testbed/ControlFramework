@@ -14,5 +14,5 @@ RUN pip3 install git+https://github.com/fabric-testbed/ActorBase.git@mgmt_cli#eg
 
 ENTRYPOINT ["python3"]
 
-CMD ["-m", "fabric.broker"]
-#ENTRYPOINT ["tail","-f","/dev/null"]
+#CMD ["-m", "fabric.broker"]
+ENTRYPOINT ["tail","-f","/dev/null"]

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
 
 import traceback
 
@@ -37,11 +39,14 @@ from fabric.message_bus.messages.ClaimResourcesAvro import ClaimResourcesAvro
 from fabric.message_bus.messages.ClaimResourcesResponseAvro import ClaimResourcesResponseAvro
 from fabric.message_bus.messages.ResultAvro import ResultAvro
 
+if TYPE_CHECKING:
+    from fabric.message_bus.producer import AvroProducerApi
+
 
 class KafkaBroker(KafkaServerActor, IMgmtBroker):
     def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
-                 message_processor: KafkaMgmtMessageProcessor):
-        super().__init__(guid, kafka_topic, auth, logger, message_processor)
+                 message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
+        super().__init__(guid, kafka_topic, auth, logger, message_processor, producer)
 
     def claim_resources_slice(self, broker: ID, slice_id: ID, rid: ID) -> ClaimResourcesResponseAvro:
 

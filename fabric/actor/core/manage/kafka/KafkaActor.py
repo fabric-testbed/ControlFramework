@@ -52,12 +52,13 @@ from fabric.message_bus.messages.UpdateSliceAvro import UpdateSliceAvro
 
 if TYPE_CHECKING:
     from fabric.message_bus.messages.AuthAvro import AuthAvro
+    from fabric.message_bus.producer import AvroProducerApi
 
 
 class KafkaActor(KafkaProxy, IMgmtActor):
     def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
-                 message_processor: KafkaMgmtMessageProcessor):
-        super().__init__(guid, kafka_topic, auth, logger, message_processor)
+                 message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
+        super().__init__(guid, kafka_topic, auth, logger, message_processor, producer)
 
     def get_guid(self) -> ID:
         return self.management_id

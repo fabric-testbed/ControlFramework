@@ -1,116 +1,122 @@
-version: '3.6'
-
+---
+version: "2.3"
 services:
-    zookeeper:
-        image: confluentinc/cp-zookeeper:latest
-        hostname: zookeeper
-        container_name: zookeeper
-        ports:
-        - "2181:2181"
-        environment:
-        - ZOOKEEPER_SERVER_ID=1
-        - ZOOKEEPER_INIT_LIMIT=5
-        - ZOOKEEPER_SYNC_LIMIT=2
-        - ZOOKEEPER_CLIENT_PORT=2181
-        - ZOOKEEPER_TICK_TIME=2000
-    broker1:
-        image: confluentinc/cp-server:latest
-        hostname: broker1
-        container_name: broker1
-        depends_on:
-        - zookeeper
-        volumes:
-        - ${KAFKA_SSL_SECRETS_DIR}:/etc/kafka/secrets
-        ports:
-        - "29092:29092"
-        - "9092:9092"
-        environment:
-        - KAFKA_BROKER_ID=1
-        - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-        - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=SSL:SSL,SSL_HOST:SSL
-        - KAFKA_ADVERTISED_LISTENERS=SSL://broker1:9092,SSL_HOST://localhost:19092
-        - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
-        - KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS=0
-        - KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR=1
-        - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
-        - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
-        - KAFKA_SSL_KEYSTORE_FILENAME=kafka.broker1.keystore.jks
-        - KAFKA_SSL_KEYSTORE_CREDENTIALS=broker1_keystore_creds
-        - KAFKA_SSL_KEY_CREDENTIALS=broker1_sslkey_creds
-        - KAFKA_SSL_TRUSTSTORE_FILENAME=kafka.broker1.truststore.jks
-        - KAFKA_SSL_TRUSTSTORE_CREDENTIALS=broker1_truststore_creds
-        - KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=" "
-        - KAFKA_SSL_CLIENT_AUTH=requested
-        - KAFKA_SECURITY_INTER_BROKER_PROTOCOL=SSL
-    schemaregistry:
-        image: confluentinc/cp-schema-registry:latest
-        container_name: schemaregistry
-        restart: always
-        depends_on:
-            - zookeeper
-            - broker1
-        volumes:
-            - ${KAFKA_SSL_SECRETS_DIR}:/etc/kafka/secrets
-        ports:
-            - 8081:8081
-        environment:
-            - SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS=broker1:9092
-            - SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL=zookeeper:2181
-            - SCHEMA_REGISTRY_HOST_NAME=schemaregistry
-            - SCHEMA_REGISTRY_LISTENERS=http://0.0.0.0:8081
-            - SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL=SSL
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    restart: always
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      ç: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
 
-            - SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_LOCATION=/etc/kafka/secrets/kafka.schemaregistry.truststore.jks
-            - SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_PASSWORD=confluent
-            - SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_LOCATION=/etc/kafka/secrets/kafka.schemaregistry.keystore.jks
-            - SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_PASSWORD=confluent
-            - SCHEMA_REGISTRY_KAFKASTORE_SSL_KEY_PASSWORD=confluent
-            - SCHEMA_REGISTRY_KAFKASTORE_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM=" "
+  broker1:
+    image: confluentinc/cp-kafka:latest
+    hostname: broker1
+    container_name: broker1
+    depends_on:
+      - zookeeper
+    volumes:
+      - ${KAFKA_SSL_SECRETS_DIR}:/etc/kafka/secrets
+    ports:
+      - 9092:9092
+      - 19092:19092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SSL:SSL,SSL_HOST:SSL
+      KAFKA_ADVERTISED_LISTENERS: SSL://broker1:9092,SSL_HOST://localhost:19092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
 
-            - SCHEMA_REGISTRY_SSL_KEYSTORE_LOCATION=/etc/kafka/secrets/kafka.schemaregistry.keystore.jks
-            - SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD=confluent
-            - SCHEMA_REGISTRY_SSL_KEY_PASSWORD=confluent
-            - SCHEMA_REGISTRY_DEBUG='true'
-    database:
-        image: fabrictestbed/postgres:12.3
-        container_name: actordb
-        restart: always
-        environment:
-        - POSTGRES_PASSWORD=fabric
-        - POSTGRES_USER=fabric
-        - POSTGRES_MULTIPLE_DATABASES=am,broker,controller
-        ports:
-        - "8432:5432"
-    start-fabric-actors:
-        image: dadarek/wait-for-dependencies
-        depends_on:
+
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.broker1.keystore.jks
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: broker1_keystore_creds
+      KAFKA_SSL_KEY_CREDENTIALS: broker1_sslkey_creds
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.broker1.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: broker1_truststore_creds
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+      KAFKA_SSL_CLIENT_AUTH: requested
+      KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SSL
+
+  schemaregistry:
+    image: confluentinc/cp-schema-registry:latest
+    container_name: schemaregistry
+    restart: always
+    depends_on:
+      - zookeeper
+      - broker1
+    volumes:
+      - ${KAFKA_SSL_SECRETS_DIR}:/etc/kafka/secrets
+    ports:
+      - 8081:8081
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker1:9092
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SSL
+
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.schemaregistry.truststore.jks
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_PASSWORD: fabric 
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.schemaregistry.keystore.jks
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_PASSWORD: fabric 
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEY_PASSWORD: fabric 
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+
+      SCHEMA_REGISTRY_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.schemaregistry.keystore.jks
+      SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD: fabric 
+      SCHEMA_REGISTRY_SSL_KEY_PASSWORD: fabric 
+
+      SCHEMA_REGISTRY_DEBUG: 'true'
+  database:
+    image: fabrictestbed/postgres:12.3
+    container_name: actordb
+    restart: always
+    environment:
+        POSTGRES_PASSWORD: fabric
+        POSTGRES_USER: fabric
+        POSTGRES_MULTIPLE_DATABASES: am,broker,controller
+    ports:
+        - 8432:5432
+  start-fabric-actors:
+    image: dadarek/wait-for-dependencies
+    depends_on:
         - zookeeper 
-        - broker1
+        - broker1 
         - schemaregistry
         - database
-        command: zookeeper:2181 broker:29092 registry:8081 database:5432
-    fabric-vm-am:
-        image: authority:latest 
-        container_name: fabric-vm-am 
-        restart: always
-        depends_on:
+    command: zookeeper:2181 broker1:19092 broker:9092 registry:8081 database:5432
+  fabric-site-am:
+    image: authority:latest 
+    container_name: fabric-site-am 
+    restart: always
+    depends_on:
         - start-fabric-actors 
-        volumes:
+    volumes:
         - "./config/config.site.am.yaml:/etc/fabric/actor/config/config.yaml"
-        - "./secrets/:/etc/fabric/message_bus/ssl/cacert.pem"
-        - "./secrets/:/etc/fabric/message_bus/ssl/client.pem"
-        - "./secrets/:/etc/fabric/message_bus/ssl/client.key"
-        - "./logs/vm-am:/var/log/actor"
-    fabric-broker:
-        image: broker:latest
-        container_name: fabric-broker
-        restart: always
-        depends_on:
+        - "./logs/site-am:/var/log/actor"
+        - "./secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem"
+        - "./secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key"
+        - "./secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem"
+  fabric-broker:
+    image: broker:latest
+    container_name: fabric-broker
+    restart: always
+    depends_on:
         - start-fabric-actors 
-        - fabric-vm-am 
-        volumes:
+        - fabric-site-am 
+    volumes:
         - "./config/config.broker.yaml:/etc/fabric/actor/config/config.yaml"
-        - "./secrets/:/etc/fabric/message_bus/ssl/cacert.pem"
-        - "./secrets/:/etc/fabric/message_bus/ssl/client.pem"
-        - "./secrets/:/etc/fabric/message_bus/ssl/client.key"
         - "./logs/broker:/var/log/actor"
+        - "./secrets/snakeoil-ca-1-copy.crt:/etc/fabric/message_bus/ssl/cacert.pem"
+        - "./secrets/kafkacat2.client.key:/etc/fabric/message_bus/ssl/client.key"
+        - "./secrets/kafkacat2-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem"

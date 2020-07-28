@@ -38,10 +38,12 @@ from fabric.message_bus.messages.ResultAvro import ResultAvro
 if TYPE_CHECKING:
     from fabric.actor.core.util.ID import ID
     from fabric.message_bus.messages.AuthAvro import AuthAvro
+    from fabric.message_bus.producer import AvroProducerApi
 
 
 class KafkaProxy(IComponent):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger, message_processor: KafkaMgmtMessageProcessor):
+    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger, message_processor: KafkaMgmtMessageProcessor,
+                 producer: AvroProducerApi = None):
         self.management_id = guid
         self.auth = auth
         self.logger = logger
@@ -50,7 +52,10 @@ class KafkaProxy(IComponent):
         self.last_status = None
         self.last_exception = None
         self.callback_topic = None
-        self.setup_kafka_producer()
+        if producer is None:
+            self.setup_kafka_producer()
+        else:
+            self.producer = producer
         self.message_processor = message_processor
 
     def setup_kafka_producer(self):

@@ -53,6 +53,24 @@ class RuntimeConfig:
     def get_kafka_topic(self) -> str:
         return self.kafka_config.get(Constants.KafkaTopic, None)
 
+    def get_security_protocol(self) -> str:
+        return self.kafka_config.get(Constants.PropertyConfKafkaSecurityProtocol, None)
+
+    def get_group_id(self) -> str:
+        return self.kafka_config.get(Constants.PropertyConfKafkaGroupId, None)
+
+    def get_ca_location(self) -> str:
+        return self.kafka_config.get(Constants.PropertyConfKafkaSSlCaLocation, None)
+
+    def get_cert_location(self) -> str:
+        return self.kafka_config.get(Constants.PropertyConfKafkaSslCertificateLocation, None)
+
+    def get_key_location(self) -> str:
+        return self.kafka_config.get(Constants.PropertyConfKafkaSslKeyLocation, None)
+
+    def get_key_password(self) -> str:
+        return self.kafka_config.get(Constants.PropertyConfKafkaSslKeyPassword, None)
+
 
 class LogConfig:
     def __init__(self, config: list):

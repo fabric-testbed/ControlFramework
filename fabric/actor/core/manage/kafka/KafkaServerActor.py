@@ -23,14 +23,21 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from fabric.actor.core.apis.IMgmtServerActor import IMgmtServerActor
 from fabric.actor.core.manage.kafka.KafkaActor import KafkaActor
-from fabric.actor.core.manage.kafka.KafkaMgmtMessageProcessor import KafkaMgmtMessageProcessor
-from fabric.actor.core.util.ID import ID
-from fabric.message_bus.messages.AuthAvro import AuthAvro
+
+if TYPE_CHECKING:
+    from fabric.actor.core.manage.kafka.KafkaMgmtMessageProcessor import KafkaMgmtMessageProcessor
+    from fabric.actor.core.util.ID import ID
+    from fabric.message_bus.messages.AuthAvro import AuthAvro
+    from fabric.message_bus.producer import AvroProducerApi
 
 
 class KafkaServerActor(KafkaActor, IMgmtServerActor):
     def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
-                 message_processor: KafkaMgmtMessageProcessor):
-        super().__init__(guid, kafka_topic, auth, logger, message_processor)
+                 message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
+        super().__init__(guid, kafka_topic, auth, logger, message_processor, producer)

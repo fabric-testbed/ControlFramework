@@ -48,50 +48,33 @@ class MainShell:
         self.lock = threading.Lock()
         self.auth = None
         self.logger = None
-        self.conf = None
         self.key_schema = None
         self.val_schema = None
+        self.producer = None
 
-    def set_up_kafka_conf_and_schema(self):
-        try:
-            self.conf = {'bootstrap.servers': self.config_processor.get_kafka_server(),
-                         'schema.registry.url': self.config_processor.get_kafka_schema_registry()}
+    def setup_kafka(self):
+        conf = self.config_processor.get_kafka_config_producer()
+        key_schema, val_schema = self.config_processor.get_kafka_schemas()
+        self.key_schema = key_schema
+        self.val_schema = val_schema
 
-            from confluent_kafka import avro
+        from fabric.message_bus.producer import AvroProducerApi
+        self.producer = AvroProducerApi(conf, key_schema, val_schema, self.logger)
 
-            file = open(self.config_processor.get_kafka_key_schema(), "r")
-            key_bytes = file.read()
-            file.close()
-            self.key_schema = avro.loads(key_bytes)
-            file = open(self.config_processor.get_kafka_value_schema(), "r")
-            val_bytes = file.read()
-            file.close()
-            self.val_schema = avro.loads(val_bytes)
-        except Exception as e:
-            err_str = traceback.format_exc()
-            self.logger.error(err_str)
-            self.logger.error("Exception occurred while loading schemas {}".format(e))
-            raise e
+        consumer_conf = self.config_processor.get_kafka_config_consumer()
+        topics = [self.config_processor.get_kafka_topic()]
+
+        self.message_processor = KafkaMgmtMessageProcessor(consumer_conf, self.key_schema, self.val_schema, topics,
+                                                           logger=self.logger)
 
     def initialize(self):
         self.config_processor.process()
 
         self.logger = self.make_logger()
 
-        self.set_up_kafka_conf_and_schema()
-
-        self.setup_kafka_processor()
+        self.setup_kafka()
 
         self.load_actor_cache()
-
-    def setup_kafka_processor(self):
-        consumer_conf = self.conf
-        consumer_conf['group.id'] = "fabric_cf"
-        consumer_conf['auto.offset.reset'] = "earliest"
-        topics = [self.config_processor.get_kafka_topic()]
-
-        self.message_processor = KafkaMgmtMessageProcessor(consumer_conf, self.key_schema, self.val_schema, topics,
-                                                           logger=self.logger)
 
     def load_actor_cache(self):
         peers = self.config_processor.get_peers()
@@ -101,12 +84,10 @@ class MainShell:
                 mgmt_actor = None
                 if p.get_type() == Constants.BROKER:
                     mgmt_actor = KafkaBroker(ID(p.get_guid()), p.get_kafka_topic(), self.config_processor.get_auth(),
-                                             self.config_processor.get_kafka_config(), self.logger,
-                                             self.message_processor)
+                                             self.logger, self.message_processor, producer=self.producer)
                 else:
                     mgmt_actor = KafkaActor(ID(p.get_guid()), p.get_kafka_topic(), self.config_processor.get_auth(),
-                                            self.config_processor.get_kafka_config(), self.logger,
-                                            self.message_processor)
+                                            self.logger, self.message_processor, producer=self.producer)
                 try:
                     self.lock.acquire()
                     self.logger.debug("Added actor {} to cache".format(p.get_name()))

@@ -6,14 +6,18 @@ set -o nounset \
     -o xtrace
 
 # Generate CA key
-openssl req -new -x509 -keyout cacert.key -out cacert.pem -days 365 -subj '/CN=ca1.test.confluent.io/OU=TEST/O=CONFLUENT/L=PaloAlto/S=Ca/C=US' -passin pass:confluent -passout pass:confluent
-# openssl req -new -x509 -keyout snakeoil-ca-2.key -out snakeoil-ca-2.crt -days 365 -subj '/CN=ca2.test.confluent.io/OU=TEST/O=CONFLUENT/L=PaloAlto/S=Ca/C=US' -passin pass:confluent -passout pass:confluent
+openssl req -new -x509 -keyout snakeoil-ca-1.key -out snakeoil-ca-1.crt -days 365 -subj '/CN=ca1.test.fabric.io/OU=TEST/O=FABRIC/L=ChapelHill/S=NC/C=US' -passin pass:fabric -passout pass:fabric
+cp snakeoil-ca-1.crt snakeoil-ca-1-copy.crt
+# openssl req -new -x509 -keyout snakeoil-ca-2.key -out snakeoil-ca-2.crt -days 365 -subj '/CN=ca2.test.fabric.io/OU=TEST/O=FABRIC/L=ChapelHill/S=NC/C=US' -passin pass:fabric -passout pass:fabric
 
-# Kafkacat
-openssl genrsa -des3 -passout "pass:confluent" -out client.key 1024
-openssl req -passin "pass:confluent" -passout "pass:confluent" -key client.key -new -out client.req -subj '/CN=kafkacat.test.confluent.io/OU=TEST/O=CONFLUENT/L=PaloAlto/S=Ca/C=US'
-openssl x509 -req -CA cacert.pem -CAkey cacert.key -in client.req -out client.pem -days 9999 -CAcreateserial -passin "pass:confluent"
+# kafkacat1
+openssl genrsa -des3 -passout "pass:fabric" -out kafkacat1.client.key 1024
+openssl req -passin "pass:fabric" -passout "pass:fabric" -key kafkacat1.client.key -new -out kafkacat1.client.req -subj '/CN=kafkacat1.test.fabric.io/OU=TEST/O=FABRIC/L=ChapelHill/S=NC/C=US'
+openssl x509 -req -CA snakeoil-ca-1.crt -CAkey snakeoil-ca-1.key -in kafkacat1.client.req -out kafkacat1-ca1-signed.pem -days 9999 -CAcreateserial -passin "pass:fabric"
 
+openssl genrsa -des3 -passout "pass:fabric" -out kafkacat2.client.key 1024
+openssl req -passin "pass:fabric" -passout "pass:fabric" -key kafkacat2.client.key -new -out kafkacat2.client.req -subj '/CN=kafkacat2.test.fabric.io/OU=TEST/O=FABRIC/L=ChapelHill/S=NC/C=US'
+openssl x509 -req -CA snakeoil-ca-1.crt -CAkey snakeoil-ca-1.key -in kafkacat2.client.req -out kafkacat2-ca1-signed.pem -days 9999 -CAcreateserial -passin "pass:fabric"
 
 
 for i in broker1 schemaregistry producer consumer
@@ -22,25 +26,25 @@ do
 	# Create keystores
 	keytool -genkey -noprompt \
 				 -alias $i \
-				 -dname "CN=$i.test.confluent.io, OU=TEST, O=CONFLUENT, L=PaloAlto, S=Ca, C=US" \
+				 -dname "CN=$i.test.fabric.io, OU=TEST, O=FABRIC, L=ChapelHill, S=NC, C=US" \
 				 -keystore kafka.$i.keystore.jks \
 				 -keyalg RSA \
-				 -storepass confluent \
-				 -keypass confluent
+				 -storepass fabric \
+				 -keypass fabric
 
 	# Create CSR, sign the key and import back into keystore
-	keytool -keystore kafka.$i.keystore.jks -alias $i -certreq -file $i.csr -storepass confluent -keypass confluent
+	keytool -keystore kafka.$i.keystore.jks -alias $i -certreq -file $i.csr -storepass fabric -keypass fabric
 
-	openssl x509 -req -CA cacert.pem -CAkey cacert.key -in $i.csr -out $i-ca1-signed.crt -days 9999 -CAcreateserial -passin pass:confluent
+	openssl x509 -req -CA snakeoil-ca-1.crt -CAkey snakeoil-ca-1.key -in $i.csr -out $i-ca1-signed.crt -days 9999 -CAcreateserial -passin pass:fabric
 
-	keytool -keystore kafka.$i.keystore.jks -alias CARoot -import -file cacert.pem -storepass confluent -keypass confluent
+	keytool -keystore kafka.$i.keystore.jks -alias CARoot -import -file snakeoil-ca-1.crt -storepass fabric -keypass fabric
 
-	keytool -keystore kafka.$i.keystore.jks -alias $i -import -file $i-ca1-signed.crt -storepass confluent -keypass confluent
+	keytool -keystore kafka.$i.keystore.jks -alias $i -import -file $i-ca1-signed.crt -storepass fabric -keypass fabric
 
 	# Create truststore and import the CA cert.
-	keytool -keystore kafka.$i.truststore.jks -alias CARoot -import -file cacert.pem -storepass confluent -keypass confluent
+	keytool -keystore kafka.$i.truststore.jks -alias CARoot -import -file snakeoil-ca-1.crt -storepass fabric -keypass fabric
 
-  echo "confluent" > ${i}_sslkey_creds
-  echo "confluent" > ${i}_keystore_creds
-  echo "confluent" > ${i}_truststore_creds
+  echo "fabric" > ${i}_sslkey_creds
+  echo "fabric" > ${i}_keystore_creds
+  echo "fabric" > ${i}_truststore_creds
 done
