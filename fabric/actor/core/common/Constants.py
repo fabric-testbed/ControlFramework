@@ -27,17 +27,19 @@ from enum import Enum
 
 
 class ErrorCodes(Enum):
-    ErrorInvalidArguments = -7000
-    ErrorInvalidActor = -8000
-    ErrorInvalidReservation = -9000
-    ErrorDatabaseError = -10000
-    ErrorInternalError = -11000
-    ErrorNoSuchSlice = -15000
-    ErrorNoSuchResourcePool = -15010
-    ErrorNoSuchReservation = -17200
-    ErrorNoSuchBroker = -19000
-    ErrorInvalidSlice = -16000
-    ErrorNoSuchActor = -12000
+    ErrorInvalidArguments = 1
+    ErrorInvalidActor = 2
+    ErrorInvalidReservation = 3
+    ErrorDatabaseError = 4
+    ErrorInternalError = 5
+    ErrorNoSuchSlice = 6
+    ErrorNoSuchResourcePool = 7
+    ErrorNoSuchReservation = 8
+    ErrorNoSuchBroker = 9
+    ErrorInvalidSlice = 10
+    ErrorNoSuchActor = 11
+    ErrorTransportFailure = 12
+    ErrorTransportTimeout = 13
 
 
 class Constants:
@@ -195,20 +197,6 @@ class Constants:
     PropertyProxiesModule = ".module"
 
     ExtendSameUnits = -1
-
-    ErrorInvalidArguments = -7000
-    ErrorInvalidActor = -8000
-    ErrorInvalidReservation = -9000
-    ErrorDatabaseError = -10000
-    ErrorInternalError = -11000
-    ErrorNoSuchActor = -12000
-    ErrorNoSuchSlice = -15000
-    ErrorNoSuchResourcePool = -15010
-    ErrorInvalidSlice = -16000
-    ErrorNoSuchReservation = -17200
-    ErrorNoSuchBroker = -19000
-    ErrorTransportFailure = -20000
-
     AllReservationStates = -1
 
     ManagementApiTimeoutInSeconds = 120.0

@@ -28,7 +28,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.IAuthority import IAuthority
-from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Constants import Constants, ErrorCodes
 from fabric.actor.core.common.Exceptions import ReservationNotFoundException
 from fabric.actor.core.kernel.ReservationFactory import ReservationFactory
 from fabric.actor.core.manage.Converter import Converter
@@ -72,7 +72,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
         try:
             res_list = None
@@ -80,7 +81,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
                 res_list = self.db.get_authority_reservations()
             except Exception as e:
                 self.logger.error("get_authority_reservations:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
@@ -95,11 +97,12 @@ class AuthorityManagementObject(ServerActorManagementObject):
                         result.result.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("getReservations: {}".format(e))
-            result.status.set_code(Constants.ErrorNoSuchReservation)
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
             result.status.set_message(e.text)
         except Exception as e:
             self.logger.error("get_authority_reservations: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -112,7 +115,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
         try:
             units_list = None
@@ -120,7 +124,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
                 units_list = self.db.get_units(rid)
             except Exception as e:
                 self.logger.error("get_reservation_units:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
@@ -128,7 +133,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
                 result.result = Converter.fill_units(units_list)
         except Exception as e:
             self.logger.error("get_reservation_units: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -138,7 +144,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
         try:
             units_list = None
@@ -147,7 +154,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
                 units_list = [unit]
             except Exception as e:
                 self.logger.error("get_reservation_units:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
@@ -155,7 +163,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
                 result.result = Converter.fill_units(units_list)
         except Exception as e:
             self.logger.error("get_authority_reservations: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result

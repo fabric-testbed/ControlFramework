@@ -9,6 +9,7 @@ runtime:
   - kafka-ssl-key-location:  /Users/komalthareja/renci/code/fabric/ActorBase//secrets/kafkacat1.client.key
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
+  - kafka-group-id: fabric-cf
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.

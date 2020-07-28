@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING
 
 import traceback
 
-from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Constants import Constants, ErrorCodes
 from fabric.actor.core.apis.IMgmtBroker import IMgmtBroker
 from fabric.actor.core.manage.kafka.KafkaMgmtMessageProcessor import KafkaMgmtMessageProcessor
 from fabric.actor.core.manage.kafka.KafkaServerActor import KafkaServerActor
@@ -78,19 +78,20 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
                     self.message_processor.remove_message(request.get_message_id())
-                    response.status.code = Constants.ErrorInternalError
-                    response.status.message = "Timeout occurred"
+                    response.status.code = ErrorCodes.ErrorTransportTimeout.value
+                    response.status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
                     self.logger.debug("Received response {}".format(message_wrapper.response))
                     return message_wrapper.response
             else:
                 self.logger.debug("Failed to send the message")
-                response.status.code = Constants.ErrorTransportFailure
-                response.status.message = "Failed to send the message"
+                response.status.code = ErrorCodes.ErrorTransportFailure.value
+                response.status.message = ErrorCodes.ErrorTransportFailure.name
 
         except Exception as e:
             self.last_exception = e
-            response.status.code = Constants.ErrorInternalError
+            response.status.code = ErrorCodes.ErrorInternalError.value
+            response.status.message = ErrorCodes.ErrorInternalError.name
             response.status.details = traceback.format_exc()
 
         return response
@@ -123,19 +124,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
                     self.message_processor.remove_message(request.get_message_id())
-                    response.status.code = Constants.ErrorInternalError
-                    response.status.message = "Timeout occurred"
+                    response.status.code = ErrorCodes.ErrorTransportTimeout.value
+                    response.status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
                     self.logger.debug("Received response {}".format(message_wrapper.response))
                     return message_wrapper.response
             else:
                 self.logger.debug("Failed to send the message")
-                response.status.code = Constants.ErrorTransportFailure
-                response.status.message = "Failed to send the message"
-
+                response.status.code = ErrorCodes.ErrorTransportFailure.value
+                response.status.message = ErrorCodes.ErrorTransportFailure.name
         except Exception as e:
             self.last_exception = e
-            response.status.code = Constants.ErrorInternalError
+            response.status.code = ErrorCodes.ErrorInternalError.value
+            response.status.message = ErrorCodes.ErrorInternalError.name
             response.status.details = traceback.format_exc()
 
         return response

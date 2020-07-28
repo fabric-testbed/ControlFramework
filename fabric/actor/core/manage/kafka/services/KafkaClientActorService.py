@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import traceback
 
-from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Constants import Constants, ErrorCodes
 from fabric.actor.core.manage.kafka.services.KafkaActorService import KafkaActorService
 from fabric.actor.core.proxies.kafka.Translate import Translate
 from fabric.message_bus.messages.ClaimResourcesAvro import ClaimResourcesAvro
@@ -45,7 +45,8 @@ class KafkaClientActorService(KafkaActorService):
         result.status = ResultAvro()
         try:
             if request.guid is None or request.broker_id is None or request.reservation_id is None:
-                result.status.set_code(Constants.ErrorInvalidArguments)
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
                 return result
 
             auth = Translate.translate_auth_from_avro(request.auth)
@@ -53,7 +54,8 @@ class KafkaClientActorService(KafkaActorService):
 
             if mo is None:
                 print("Management object could not be found: guid: {} auth: {}".format(request.guid, auth))
-                result.status.set_code(Constants.ErrorNoSuchBroker)
+                result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
+                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
                 return result
 
             if request.slice_id is not None:
@@ -68,7 +70,8 @@ class KafkaClientActorService(KafkaActorService):
 
             result.status = temp_result.status
         except Exception as e:
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             result.status.set_message(str(e))
             result.status.set_details(traceback.format_exc())
 

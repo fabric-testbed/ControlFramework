@@ -28,7 +28,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Constants import Constants, ErrorCodes
 from fabric.actor.core.manage.ActorManagementObject import ActorManagementObject
 from fabric.actor.core.manage.ClientActorManagementObjectHelper import ClientActorManagementObjectHelper
 from fabric.actor.core.manage.Converter import Converter
@@ -127,7 +127,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
         try:
             units_list = None
@@ -135,7 +136,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
                 units_list = self.db.get_units(rid)
             except Exception as e:
                 self.logger.error("get_reservation_units:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
@@ -143,7 +145,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
                 result.result = Converter.fill_units(units_list)
         except Exception as e:
             self.logger.error("get_reservation_units: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result

@@ -115,7 +115,7 @@ peers:
     - type: authority
     - kafka-topic: fabric-net-am-topic
   - peer:
-    - name: fabric-vm-am
-    - guid: fabric-vm-am-guid
+    - name: fabric-site-am
+    - guid: fabric-site-am-guid
     - type: authority
-    - kafka-topic: fabric-vm-am-topic
+    - kafka-topic: fabric-site-am-topic

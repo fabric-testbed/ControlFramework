@@ -168,6 +168,6 @@ class ManagementObject(IManagementObject):
 
     @staticmethod
     def set_exception_details(result: ResultAvro, e: Exception):
-        result.set_message(str(e))
+        result.message += str(e)
         result.set_details(traceback.format_exc())
         return result
