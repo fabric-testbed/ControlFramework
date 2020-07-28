@@ -67,7 +67,13 @@ docker-compose up -d
 
 This should bring up following containers:
 ```
-
+     NAMES
+01d8824bc88a        broker:latest                            "python3 -m fabric.b…"   7 minutes ago       Up 7 minutes                                                           fabric-broker
+9790175929e7        authority:latest                         "python3 -m fabric.a…"   7 minutes ago       Up 7 minutes                                                           fabric-site-am
+df0e3be0b641        confluentinc/cp-schema-registry:latest   "/etc/confluent/dock…"   7 minutes ago       Up 7 minutes        0.0.0.0:8081->8081/tcp                             schemaregistry
+82a0a59c117b        confluentinc/cp-kafka:latest             "/etc/confluent/dock…"   7 minutes ago       Up 7 minutes        0.0.0.0:9092->9092/tcp, 0.0.0.0:19092->19092/tcp   broker1
+1fea39fedf6a        fabrictestbed/postgres:12.3              "docker-entrypoint.s…"   7 minutes ago       Up 7 minutes        0.0.0.0:8432->5432/tcp                             actordb
+c6b824b7d3c6        confluentinc/cp-zookeeper:latest         "/etc/confluent/dock…"   7 minutes ago       Up 7 minutes        2888/tcp, 0.0.0.0:2181->2181/tcp, 3888/tcp         zookeeper
 ```
 Use docker-compose.yml to bring all the containers needed to run Site-AM and Broker. Add any additional AMs as needed by pointing to the correct config files.
 
