@@ -7,3 +7,5 @@ sqlalchemy
 psycopg2-binary
 pyyaml
 fabric-message-bus
+click
+pytest

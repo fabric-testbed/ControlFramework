@@ -393,6 +393,11 @@ class Configuration:
     def get_global_config(self) -> GlobalConfig:
         return self.global_config
 
+    def get_runtime_config(self) -> dict:
+        if self.global_config is not None:
+            return self.global_config.get_runtime()
+        return None
+
     def get_actor(self) -> ActorConfig:
         return self.actor
 

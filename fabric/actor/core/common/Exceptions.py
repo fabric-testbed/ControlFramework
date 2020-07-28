@@ -23,16 +23,29 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.manage.messages.ReservationStateMng import ReservationStateMng
 
 
-class LeaseReservationStateMng(ReservationStateMng):
-    def __init__(self):
-        super().__init__()
-        self.joining = None
+class ReservationNotFoundException(Exception):
+    def __init__(self, text: str = None, rid=None):
+        super(ReservationNotFoundException, self).__init__()
+        if text is not None:
+            self.text = str(text)
+        else:
+            self.text = "Reservation# {} not found".format(rid)
+        self.rid = rid
 
-    def get_joining(self) -> int:
-        return self.joining
+    def __str__(self):
+        return self.text
 
-    def set_joining(self, value: int):
-        self.joining = value
+
+class SliceNotFoundException(Exception):
+    def __init__(self, text: str = None, slice_id=None):
+        super(SliceNotFoundException, self).__init__()
+        if text is not None:
+            self.text = str(text)
+        else:
+            self.text = "Slice# {} not found".format(slice_id)
+        self.slice_id = slice_id
+
+    def __str__(self):
+        return self.text

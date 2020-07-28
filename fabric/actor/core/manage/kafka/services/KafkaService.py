@@ -31,9 +31,9 @@ if TYPE_CHECKING:
 
 
 class KafkaService:
-    def __init__(self, producer_conf, key_schema, val_schema):
-        from fabric.message_bus.producer import AvroProducerApi
-        self.producer = AvroProducerApi(producer_conf, key_schema, val_schema)
+    def __init__(self):
+        from fabric.actor.core.container.Globals import GlobalsSingleton
+        self.producer = GlobalsSingleton.get().get_kafka_producer()
         self.logger = None
 
     def set_logger(self, logger):

@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
+import threading
 
 from fabric.actor.core.apis.IActor import IActor
 from fabric.actor.core.apis.IBrokerProxy import IBrokerProxy
@@ -48,6 +49,7 @@ class ActorDatabase(IDatabase):
         self.initialized = False
         self.logger = None
         self.reset_state = False
+        self.lock = threading.Lock()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -57,6 +59,7 @@ class ActorDatabase(IDatabase):
         del state['initialized']
         del state['logger']
         del state['reset_state']
+        del state['lock']
         return state
 
     def __setstate__(self, state):
@@ -68,6 +71,7 @@ class ActorDatabase(IDatabase):
         self.initialized = False
         self.logger = None
         self.reset_state = False
+        self.lock = threading.Lock()
 
     def set_logger(self, logger):
         self.logger = logger
@@ -91,41 +95,62 @@ class ActorDatabase(IDatabase):
 
     def get_actor_id_from_name(self, actor_name: str) -> int:
         try:
+            self.lock.acquire()
             actor = self.db.get_actor(actor_name)
             self.actor_id = actor['act_id']
             return self.actor_id
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_slice_id_from_guid(self, slice_id: ID) -> int:
         try:
+            self.lock.acquire()
             slice_obj = self.db.get_slice(self.actor_id, str(slice_id))
             return slice_obj['slc_id']
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_slice_by_id(self, id: int) -> dict:
         try:
+            self.lock.acquire()
             slice_obj = self.db.get_slice_by_id(self.actor_id, id)
             return slice_obj
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def add_slice(self, slice_object: ISlice):
-        properties = pickle.dumps(slice_object)
-        self.db.add_slice(self.actor_id, str(slice_object.get_slice_id()), slice_object.get_name(),
-                          slice_object.get_slice_type().value, str(slice_object.get_resource_type()), properties)
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(slice_object)
+            self.db.add_slice(self.actor_id, str(slice_object.get_slice_id()), slice_object.get_name(),
+                              slice_object.get_slice_type().value, str(slice_object.get_resource_type()), properties)
+        finally:
+            self.lock.release()
 
     def update_slice(self, slice_object: ISlice):
-        properties = pickle.dumps(slice_object)
-        self.db.update_slice(self.actor_id, str(slice_object.get_slice_id()), slice_object.get_name(),
-                             slice_object.get_slice_type().value, str(slice_object.get_resource_type()), properties)
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(slice_object)
+            self.db.update_slice(self.actor_id, str(slice_object.get_slice_id()), slice_object.get_name(),
+                                 slice_object.get_slice_type().value, str(slice_object.get_resource_type()), properties)
+        finally:
+            self.lock.release()
 
     def remove_slice(self, slice_id: ID):
-        self.db.remove_slice(self.actor_id, str(slice_id))
+        try:
+            self.lock.acquire()
+            self.db.remove_slice(self.actor_id, str(slice_id))
+        finally:
+            self.lock.release()
 
     def get_slice(self, slice_id: ID) -> dict:
         try:
@@ -136,60 +161,90 @@ class ActorDatabase(IDatabase):
 
     def get_slices(self) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_slices(self.actor_id)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_inventory_slices(self) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_slices_by_type(self.actor_id, SliceTypes.InventorySlice.value)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_client_slices(self) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_slices_by_types(self.actor_id, SliceTypes.ClientSlice.value, SliceTypes.BrokerClientSlice.value)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_slice_by_resource_type(self, rtype: ResourceType) -> dict:
         try:
+            self.lock.acquire()
             return self.db.get_slices_by_resource_type(self.actor_id, str(rtype))
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def add_reservation(self, reservation: IReservation):
-        self.logger.debug("Adding reservation {} to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
-        properties = pickle.dumps(reservation)
-        self.db.add_reservation(self.actor_id, str(reservation.get_slice_id()), str(reservation.get_reservation_id()),
-                                reservation.get_category(), reservation.get_state().value, reservation.get_pending_state().value,
-                                reservation.get_join_state().value, properties)
+        try:
+            self.lock.acquire()
+            self.logger.debug("Adding reservation {} to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
+            properties = pickle.dumps(reservation)
+            self.db.add_reservation(self.actor_id, str(reservation.get_slice_id()), str(reservation.get_reservation_id()),
+                                    reservation.get_category(), reservation.get_state().value, reservation.get_pending_state().value,
+                                    reservation.get_join_state().value, properties)
+        finally:
+            self.lock.release()
 
     def update_reservation(self, reservation: IReservation):
-        properties = pickle.dumps(reservation)
-        self.db.update_reservation(self.actor_id, str(reservation.get_slice_id()), str(reservation.get_reservation_id()),
-                                   reservation.get_category(), reservation.get_state().value, reservation.get_pending_state().value,
-                                   reservation.get_join_state().value, properties)
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(reservation)
+            self.db.update_reservation(self.actor_id, str(reservation.get_slice_id()), str(reservation.get_reservation_id()),
+                                       reservation.get_category(), reservation.get_state().value, reservation.get_pending_state().value,
+                                       reservation.get_join_state().value, properties)
+        finally:
+            self.lock.release()
 
     def remove_reservation(self, rid: ID):
-        self.db.remove_reservation(self.actor_id, str(rid))
+        try:
+            self.lock.acquire()
+            self.db.remove_reservation(self.actor_id, str(rid))
+        finally:
+            self.lock.release()
 
     def get_reservation(self, rid: ID) -> dict:
         try:
+            self.lock.acquire()
             return self.db.get_reservation(self.actor_id, str(rid))
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_reservations_by_slice_id(self, slice_id: ID) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_reservations_by_slice_id(self.actor_id, str(slice_id))
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_reservations_by_slice_id_state(self, slice_id: ID, state: int) -> list:
@@ -201,90 +256,132 @@ class ActorDatabase(IDatabase):
 
     def get_client_reservations(self) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_reservations_by_2_category(self.actor_id, IReservation.CategoryBroker,
                                                       IReservation.CategoryAuthority)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_client_reservations_by_slice_id(self, slice_id: ID) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_reservations_by_slice_id_by_2_category(self.actor_id, str(slice_id),
-                                                                  IReservation.CategoryBroker,
-                                                                  IReservation.CategoryAuthority)
+                                                                      IReservation.CategoryBroker,
+                                                                      IReservation.CategoryAuthority)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_holdings(self) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_reservations_by_category(self.actor_id, IReservation.CategoryClient)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_holdings_by_slice_id(self, slice_id: ID) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_reservations_by_slice_id_by_category(self.actor_id, str(slice_id), IReservation.CategoryClient)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_broker_reservations(self) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_reservations_by_category(self.actor_id, IReservation.CategoryBroker)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_authority_reservations(self) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_reservations_by_category(self.actor_id, IReservation.CategoryAuthority)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_reservations(self) -> list:
         try:
+            self.lock.acquire()
             self.logger.debug("Actor ID: {}".format(self.actor_id))
             return self.db.get_reservations(self.actor_id)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_reservations_by_state(self, state: int) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_reservations_by_state(self.actor_id, state)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_reservations_by_rids(self, rid: list):
         try:
+            self.lock.acquire()
             return self.db.get_reservations_by_rids(self.actor_id, rid)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def add_broker(self, broker: IBrokerProxy):
-        properties = pickle.dumps(broker)
-        self.db.add_proxy(self.actor_id, broker.get_name(), properties)
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(broker)
+            self.db.add_proxy(self.actor_id, broker.get_name(), properties)
+        finally:
+            self.lock.release()
 
     def update_broker(self, broker: IBrokerProxy):
-        properties = pickle.dumps(broker)
-        self.db.update_proxy(self.actor_id, broker.get_name(), properties)
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(broker)
+            self.db.update_proxy(self.actor_id, broker.get_name(), properties)
+        finally:
+            self.lock.release()
 
     def remove_broker(self, broker: IBrokerProxy):
-        self.db.remove_proxy(self.actor_id, broker.get_name())
+        try:
+            self.lock.acquire()
+            self.db.remove_proxy(self.actor_id, broker.get_name())
+        finally:
+            self.lock.release()
 
     def set_actor_name(self, name: str):
         self.actor_name = name
 
     def get_brokers(self) -> list:
         try:
+            self.lock.acquire()
             return self.db.get_proxies(self.actor_id)
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
 

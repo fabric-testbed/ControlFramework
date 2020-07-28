@@ -32,7 +32,7 @@ from fabric.actor.core.common.Constants import Constants
 from fabric.actor.core.manage.ControllerManagementObject import ControllerManagementObject
 from fabric.actor.core.apis.IMgmtController import IMgmtController
 from fabric.actor.core.manage.local.LocalActor import LocalActor
-from fabric.message_bus.messages.TicketReservationMng import TicketReservationMng
+from fabric.message_bus.messages.TicketReservationAvro import TicketReservationAvro
 from fabric.actor.core.util.ID import ID
 
 if TYPE_CHECKING:
@@ -138,7 +138,7 @@ class LocalController(LocalActor, IMgmtController):
 
         return None
 
-    def add_reservation(self, reservation: TicketReservationMng) -> ID:
+    def add_reservation(self, reservation: TicketReservationAvro) -> ID:
         self.clear_last()
         try:
             result = self.manager.add_reservation(reservation, self.auth)

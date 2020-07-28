@@ -37,13 +37,13 @@ from fabric.actor.core.util.ReservationSet import ReservationSet
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.IBroker import IBroker
-    from fabric.actor.core.apis.IClientReservation import IClientReservation
     from fabric.actor.core.policy.InventoryForType import InventoryForType
     from fabric.actor.core.util.ResourceType import ResourceType
     from fabric.actor.core.kernel.ResourceSet import ResourceSet
 
 from fabric.actor.core.policy.BrokerPriorityPolicy import BrokerPriorityPolicy
 from fabric.actor.core.policy.Inventory import Inventory
+from fabric.actor.core.apis.IClientReservation import IClientReservation
 
 
 class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):

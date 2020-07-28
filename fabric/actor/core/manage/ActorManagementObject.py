@@ -27,7 +27,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.IActorRunnable import IActorRunnable
-from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Constants import Constants, ErrorCodes
+from fabric.actor.core.common.Exceptions import ReservationNotFoundException
 from fabric.actor.core.kernel.ReservationFactory import ReservationFactory
 from fabric.actor.core.kernel.ReservationStates import ReservationStates, ReservationPendingStates
 from fabric.actor.core.kernel.SliceFactory import SliceFactory
@@ -37,7 +38,7 @@ from fabric.actor.core.manage.ManagementUtils import ManagementUtils
 from fabric.actor.core.manage.ProxyProtocolDescriptor import ProxyProtocolDescriptor
 from fabric.actor.core.apis.IActorManagementObject import IActorManagementObject
 from fabric.message_bus.messages.ReservationMng import ReservationMng
-from fabric.actor.core.manage.messages.ReservationStateMng import ReservationStateMng
+from fabric.message_bus.messages.ReservationStateAvro import ReservationStateAvro
 from fabric.actor.core.manage.messages.ResultEventMng import ResultEventMng
 from fabric.actor.core.manage.messages.ResultReservationMng import ResultReservationMng
 from fabric.actor.core.manage.messages.ResultReservationStateMng import ResultReservationStateMng
@@ -108,7 +109,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.set_status(ResultAvro())
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
         else:
             slice_list = None
             try:
@@ -116,13 +118,18 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     slice_list = self.db.get_slices()
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
-                    result.status.set_code(Constants.ErrorDatabaseError)
+                    result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                    result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                     result.status = ManagementObject.set_exception_details(result.status, e)
                 if slice_list is not None:
                     result.result = Translate.fill_slices(slice_list, True)
+                else:
+                    result.status.set_code(ErrorCodes.ErrorNoSuchSlice.value)
+                    result.status.set_message(ErrorCodes.ErrorNoSuchSlice.name)
             except Exception as e:
                 self.logger.error("getSlices {}".format(e))
-                result.status.set_code(Constants.ErrorInternalError)
+                result.status.set_code(ErrorCodes.ErrorInternalError.value)
+                result.status.set_message(ErrorCodes.ErrorInternalError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
         return result
 
@@ -131,7 +138,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.set_status(ResultAvro())
 
         if slice_id is None or caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
         else:
             slice_obj = None
             try:
@@ -139,15 +147,20 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     slice_obj = self.db.get_slice(slice_id)
                 except Exception as e:
                     self.logger.error("getSlice:db access {}".format(e))
-                    result.status.set_code(Constants.ErrorDatabaseError)
+                    result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                    result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                     result.status = ManagementObject.set_exception_details(result.status, e)
 
                 if slice_obj is not None:
                     slice_list = [slice_obj]
                     result.result = Translate.fill_slices(slice_list, True)
+                else:
+                    result.status.set_code(ErrorCodes.ErrorNoSuchSlice.value)
+                    result.status.set_message(ErrorCodes.ErrorNoSuchSlice.name)
             except Exception as e:
                 self.logger.error("getSlice {}".format(e))
-                result.status.set_code(Constants.ErrorInternalError)
+                result.status.set_code(ErrorCodes.ErrorInternalError.value)
+                result.status.set_message(ErrorCodes.ErrorInternalError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
         return result
 
@@ -156,7 +169,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.set_status(ResultAvro())
 
         if slice_mng is None or caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
 
         else:
             try:
@@ -185,7 +199,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 result.set_result(str(slice_obj.get_slice_id()))
             except Exception as e:
                 self.logger.error("addslice: {}".format(e))
-                result.status.set_code(Constants.ErrorInternalError)
+                result.status.set_code(ErrorCodes.ErrorInternalError.value)
+                result.status.set_message(ErrorCodes.ErrorInternalError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -193,7 +208,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
     def remove_slice(self, slice_id: ID, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
         if slice_id is None or caller is None:
-            result.set_code(Constants.ErrorInvalidArguments)
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -202,20 +218,22 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     self.actor = actor
 
                 def run(self):
-                    self.actor.remove_slice(slice_id)
+                    self.actor.remove_slice_by_slice_id(slice_id)
                     return None
 
             self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
         except Exception as e:
-            self.logger.error("remove: {}".format(e))
-            result.set_code(Constants.ErrorInternalError)
+            self.logger.error("remove_slice: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.name)
             result = ManagementObject.set_exception_details(result, e)
         return result
 
     def update_slice(self, slice_mng: SliceAvro, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
         if slice_mng is None or slice_mng.get_slice_id() is None or caller is None:
-            result.set_code(Constants.ErrorInvalidArguments)
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -229,7 +247,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     result = ResultAvro()
                     slice_obj = self.actor.get_slice(slice_id=slice_id)
                     if slice_obj is None:
-                        result.set_code(Constants.ErrorNoSuchSlice)
+                        result.set_code(ErrorCodes.ErrorNoSuchSlice.value)
+                        result.set_message(ErrorCodes.ErrorNoSuchSlice.name)
                         return result
                     slice_obj = ManagementUtils.update_slice(slice_obj, slice_mng)
 
@@ -237,15 +256,17 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                         self.actor.get_plugin().get_database().update_slice(slice_obj)
                     except Exception as e:
                         print("Could not commit slice update {}".format(e))
-                        result.set_code(Constants.ErrorDatabaseError)
+                        result.set_code(ErrorCodes.ErrorDatabaseError.value)
+                        result.set_message(ErrorCodes.ErrorDatabaseError.name)
                         result = ManagementObject.set_exception_details(result, e)
 
                     return result
 
             result = self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
         except Exception as e:
-            self.logger.error("update Slice: {}".format(e))
-            result.set_code(Constants.ErrorInternalError)
+            self.logger.error("update_slice: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.name)
             result = ManagementObject.set_exception_details(result, e)
 
         return result
@@ -265,7 +286,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.set_status(ResultAvro())
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -274,7 +296,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 res_list = self.db.get_reservations()
             except Exception as e:
                 self.logger.error("getReservations:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
             if res_list is not None:
@@ -291,9 +314,14 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("getReservations: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
         except Exception as e:
             self.logger.error("getReservations: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -303,7 +331,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.set_status(ResultAvro())
 
         if caller is None or state is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -311,8 +340,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             try:
                 res_list = self.db.get_reservations_by_state(state)
             except Exception as e:
-                self.logger.error("getReservations:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                self.logger.error("get_reservations_by_state:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
             if res_list is not None:
@@ -329,9 +359,14 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservations_by_state: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservations: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            self.logger.error("get_reservations_by_state: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -341,7 +376,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.set_status(ResultAvro())
 
         if caller is None or slice_id is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -349,8 +385,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             try:
                 res_list = self.db.get_reservations_by_slice_id(slice_id)
             except Exception as e:
-                self.logger.error("getReservations:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                self.logger.error("get_reservations_by_slice_id:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
             if res_list is not None:
@@ -367,9 +404,14 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservations_by_slice_id: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservations: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            self.logger.error("get_reservations_by_slice_id: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -379,7 +421,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.set_status(ResultAvro())
 
         if caller is None or slice_id is None or state is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -387,8 +430,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             try:
                 res_list = self.db.get_reservations_by_slice_id_state(slice_id, state)
             except Exception as e:
-                self.logger.error("getReservations:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                self.logger.error("get_reservations_by_slice_id_state:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
             if res_list is not None:
@@ -405,9 +449,14 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservations_by_slice_id_state: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservations: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            self.logger.error("get_reservations_by_slice_id_state: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -417,17 +466,23 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.set_status(ResultAvro())
 
         if caller is None or rid is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
             res_list = None
             try:
                 res = self.db.get_reservation(rid)
-                res_list = [res]
+                if res is not None:
+                    res_list = [res]
+                else:
+                    result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+                    result.status.set_message(ErrorCodes.ErrorNoSuchReservation.name)
             except Exception as e:
-                self.logger.error("getReservations:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                self.logger.error("get_reservation:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
 
             if res_list is not None:
@@ -444,9 +499,14 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservation: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservations: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            self.logger.error("get_reservation: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -455,7 +515,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result = ResultAvro()
 
         if rid is None or caller is None:
-            result.set_code(Constants.ErrorInvalidArguments)
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -468,9 +529,14 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     return None
 
             self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("remove_reservation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.set_message(e.text)
         except Exception as e:
-            self.logger.error("remove reservation {}".format(e))
-            result.set_code(Constants.ErrorInternalError)
+            self.logger.error("remove_reservation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.name)
             result = ManagementObject.set_exception_details(result, e)
 
         return result
@@ -479,7 +545,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result = ResultAvro()
 
         if rid is None or caller is None:
-            result.set_code(Constants.ErrorInvalidArguments)
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -489,20 +556,27 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                 def run(self):
                     self.actor.close_by_rid(rid)
-                    return None
+                    return True
 
             self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("close_reservation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.set_message(e.text)
         except Exception as e:
-            self.logger.error("close reservation {}".format(e))
-            result.set_code(Constants.ErrorInternalError)
+            self.logger.error("close_reservation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.name)
             result = ManagementObject.set_exception_details(result, e)
+
         return result
 
     def close_slice_reservations(self, caller: AuthToken, slice_id: ID) -> ResultAvro:
         result = ResultAvro()
 
         if slice_id is None or caller is None:
-            result.set_code(Constants.ErrorInvalidArguments)
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -516,8 +590,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
             self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
         except Exception as e:
-            self.logger.error("close reservation {}".format(e))
-            result.set_code(Constants.ErrorInternalError)
+            self.logger.error("close_slice_reservations: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.name)
             result = ManagementObject.set_exception_details(result, e)
         return result
 
@@ -535,7 +610,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -544,7 +620,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             result.set_result(str(id))
         except Exception as e:
             self.logger.error("createEventSubscription {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
         return result
 
@@ -552,7 +629,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result = ResultAvro()
 
         if caller is None:
-            result.set_code(Constants.ErrorInvalidArguments)
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -560,7 +638,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             GlobalsSingleton.get().event_manager.delete_subscription(id, caller)
         except Exception as e:
             self.logger.error("createEventSubscription {}".format(e))
-            result.set_code(Constants.ErrorInternalError)
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.name)
             result = ManagementObject.set_exception_details(result, e)
         return result
 
@@ -570,7 +649,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
     def update_reservation(self, reservation: ReservationMng, caller: AuthToken):
         result = ResultAvro()
         if reservation is None or caller is None:
-            result.set_code(Constants.ErrorInvalidArguments)
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -584,7 +664,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     result = ResultAvro()
                     r = self.actor.get_reservation(rid)
                     if r is None:
-                        result.set_code(Constants.ErrorNoSuchReservation)
+                        result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+                        result.set_message(ErrorCodes.ErrorNoSuchReservation.name)
                         return result
                     r = ManagementUtils.update_reservation(r, reservation)
                     r.set_dirty()
@@ -593,15 +674,21 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                         self.actor.get_plugin().get_database().update_reservation(r)
                     except Exception as e:
                         print("Could not commit slice update {}".format(e))
-                        result.set_code(Constants.ErrorDatabaseError)
+                        result.set_code(ErrorCodes.ErrorDatabaseError.value)
+                        result.set_message(ErrorCodes.ErrorDatabaseError.name)
                         result = ManagementObject.set_exception_details(result, e)
 
                     return result
 
             result = self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("update_reservation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.set_message(e.text)
         except Exception as e:
-            self.logger.error("update Slice: {}".format(e))
-            result.set_code(Constants.ErrorInternalError)
+            self.logger.error("update_reservation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.name)
             result = ManagementObject.set_exception_details(result, e)
 
         return result
@@ -611,24 +698,30 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.status = ResultAvro()
 
         if rid is None or caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
-            res_list = None
+            res_dict = None
             try:
-                res = self.db.get_reservation(rid)
-                res_list = [res]
+                res_dict = self.db.get_reservation(rid)
             except Exception as e:
-                self.logger.error("getReservationState:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                self.logger.error("get_reservation_state:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
-            result.result = Converter.fill_reservation_state(res_list)
+            result.result = Converter.fill_reservation_state(res_dict)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservation_state: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
         except Exception as e:
-            self.logger.error("getReservationState {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            self.logger.error("get_reservation_state {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
         return result
 
@@ -637,12 +730,14 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result.status = ResultAvro()
 
         if rids is None or len(rids) == 0 or caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         for rid in rids:
             if rid is None:
-                result.status.set_code(Constants.ErrorInvalidArguments)
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
                 return result
 
         try:
@@ -651,7 +746,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 res_list = self.db.get_reservations_by_rids(rids)
             except Exception as e:
                 self.logger.error("get_reservation_state_for_reservations:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
@@ -669,15 +765,19 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                         j += 1
 
                     else:
-                        state = ReservationStateMng()
+                        state = ReservationStateAvro()
                         state.set_state(ReservationStates.Unknown.value)
                         state.set_pending_state(ReservationPendingStates.Unknown.value)
                         result.result.append(state)
                     i += 1
-
+        except ReservationNotFoundException as e:
+            self.logger.error("get_reservation_state_for_reservations: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
         except Exception as e:
             self.logger.error("get_reservation_state_for_reservations {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result

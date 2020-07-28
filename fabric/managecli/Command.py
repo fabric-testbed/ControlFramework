@@ -23,20 +23,23 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric.message_bus.messages.ResultAvro import ResultAvro
 
-class ReservationStateMng:
-    def __init__(self):
-        self.state = None
-        self.pending_state = None
 
-    def get_state(self) -> int:
-        return self.state
+class Command:
+    def __init__(self, logger):
+        self.logger = logger
 
-    def set_state(self, value: int):
-        self.state = value
+    @staticmethod
+    def print_result(status: ResultAvro):
+        print("Code={}".format(status.get_code()))
+        if status.message is not None:
+            print("Message={}".format(status.message))
+        if status.details is not None:
+            print("Details={}".format(status.details))
 
-    def get_pending_state(self) -> int:
-        return self.pending_state
-
-    def set_pending_state(self, value: int):
-        self.pending_state = value
+    @staticmethod
+    def get_actor(actor_name: str):
+        from fabric.managecli.managecli import MainShellSingleton
+        actor = MainShellSingleton.get().get_mgmt_actor(actor_name)
+        return actor

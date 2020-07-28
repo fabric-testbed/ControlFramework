@@ -26,7 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from fabric.message_bus.messages.AuthTokenAvro import AuthTokenAvro
+    from fabric.message_bus.messages.AuthAvro import AuthAvro
 
 
 class ActorMng:
@@ -59,10 +59,10 @@ class ActorMng:
     def get_type(self) -> int:
         return self.type
 
-    def set_owner(self, value: AuthTokenAvro):
+    def set_owner(self, value: AuthAvro):
         self.owner = value
 
-    def get_owner(self) -> AuthTokenAvro:
+    def get_owner(self) -> AuthAvro:
         return self.owner
 
     def set_description(self, value: str):

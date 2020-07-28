@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.IComponent import IComponent
 
 if TYPE_CHECKING:
-    from fabric.message_bus.messages.TicketReservationMng import TicketReservationMng
+    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationMng
     from fabric.actor.core.util.ID import ID
     from fabric.message_bus.messages.ReservationMng import ReservationMng
     from fabric.actor.core.manage.messages.ProxyMng import ProxyMng

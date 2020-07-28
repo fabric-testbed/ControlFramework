@@ -31,7 +31,7 @@ from fabric.actor.core.apis.IComponent import IComponent
 if TYPE_CHECKING:
     from fabric.actor.core.util.ID import ID
     from fabric.message_bus.messages.ReservationMng import ReservationMng
-    from fabric.actor.core.manage.messages.ReservationStateMng import ReservationStateMng
+    from fabric.message_bus.messages.ReservationStateAvro import ReservationStateMng
     from fabric.message_bus.messages.SliceAvro import SliceAvro
 
 

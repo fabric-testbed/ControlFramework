@@ -36,9 +36,9 @@ from fabric.actor.core.util.ReservationSet import ReservationSet
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.IBroker import IBroker
-    from fabric.actor.core.apis.IBrokerReservation import IBrokerReservation
     from fabric.actor.core.apis.IReservation import IReservation
 
+from fabric.actor.core.apis.IBrokerReservation import IBrokerReservation
 from fabric.actor.core.core.BrokerPolicy import BrokerPolicy
 from fabric.actor.core.apis.IClientReservation import IClientReservation
 

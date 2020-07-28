@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
+import threading
 
 from fabric.actor.core.core.Unit import Unit
 from fabric.actor.core.plugins.db.ServerActorDatabase import ServerActorDatabase
@@ -43,6 +44,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
         del state['initialized']
         del state['logger']
         del state['reset_state']
+        del state['lock']
         return state
 
     def __setstate__(self, state):
@@ -54,13 +56,17 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
         self.initialized = False
         self.logger = None
         self.reset_state = False
+        self.lock = threading.Lock()
 
     def get_unit(self, unit_id: ID):
         result = None
         try:
+            self.lock.acquire()
             result = self.db.get_unit(self.actor_id, str(unit_id))
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return result
 
     def add_unit(self, u: Unit):
@@ -68,31 +74,46 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
             self.logger.info("unit {} is already present in database".format(u.get_id()))
             return
 
-        slice_id = str(u.get_slice_id())
-        parent = self.get_unit(u.get_parent_id())
-        parent_id = None
-        if parent is not None:
-            parent_id = parent['unt_id']
-        res_id = str(u.get_reservation_id())
+        try:
+            self.lock.acquire()
+            slice_id = str(u.get_slice_id())
+            parent = self.get_unit(u.get_parent_id())
+            parent_id = None
+            if parent is not None:
+                parent_id = parent['unt_id']
+            res_id = str(u.get_reservation_id())
 
-        properties = pickle.dumps(u)
-        self.db.add_unit(self.actor_id, slice_id, res_id, str(u.get_id()), parent_id,
-                         int(str(u.get_resource_type())), u.get_state().value, properties)
+            properties = pickle.dumps(u)
+            self.db.add_unit(self.actor_id, slice_id, res_id, str(u.get_id()), parent_id,
+                             int(str(u.get_resource_type())), u.get_state().value, properties)
+        finally:
+            self.lock.release()
 
     def get_units(self, rid: ID):
         result = None
         try:
+            self.lock.acquire()
             result = self.db.get_units(self.actor_id, str(rid))
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return result
 
     def remove_unit(self, uid: ID):
-        return self.db.remove_unit(self.actor_id, str(uid))
+        try:
+            self.lock.acquire()
+            self.db.remove_unit(self.actor_id, str(uid))
+        finally:
+            self.lock.release()
 
     def update_unit(self, u: Unit):
-        properties = pickle.dumps(u)
-        return self.db.update_unit(self.actor_id, str(u.get_id()),properties)
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(u)
+            self.db.update_unit(self.actor_id, str(u.get_id()),properties)
+        finally:
+            self.lock.release()
 
 
 

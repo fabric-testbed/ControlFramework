@@ -27,17 +27,19 @@ from enum import Enum
 
 
 class ErrorCodes(Enum):
-    ErrorInvalidArguments = -7000
-    ErrorInvalidActor = -8000
-    ErrorInvalidReservation = -9000
-    ErrorDatabaseError = -10000
-    ErrorInternalError = -11000
-    ErrorNoSuchSlice = -15000
-    ErrorNoSuchResourcePool = -15010
-    ErrorNoSuchReservation = -17200
-    ErrorNoSuchBroker = -19000
-    ErrorInvalidSlice = -16000
-    ErrorNoSuchActor = -12000
+    ErrorInvalidArguments = 1
+    ErrorInvalidActor = 2
+    ErrorInvalidReservation = 3
+    ErrorDatabaseError = 4
+    ErrorInternalError = 5
+    ErrorNoSuchSlice = 6
+    ErrorNoSuchResourcePool = 7
+    ErrorNoSuchReservation = 8
+    ErrorNoSuchBroker = 9
+    ErrorInvalidSlice = 10
+    ErrorNoSuchActor = 11
+    ErrorTransportFailure = 12
+    ErrorTransportTimeout = 13
 
 
 class Constants:
@@ -57,6 +59,13 @@ class Constants:
     PropertyConfKafkaSchemaRegistry = "kafka-schema-registry-url"
     PropertyConfKafkaKeySchema = "kafka-key-schema"
     PropertyConfKafkaValueSchema = "kafka-value-schema"
+    PropertyConfKafkaSSlCaLocation = "kafka-ssl-ca-location"
+    PropertyConfKafkaSslCertificateLocation = "kafka-ssl-certificate-location"
+    PropertyConfKafkaSslKeyLocation = "kafka-ssl-key-location"
+    PropertyConfKafkaSslKeyPassword = "kafka-ssl-key-password"
+    PropertyConfKafkaSecurityProtocol = "kafka-security-protocol"
+    PropertyConfKafkaGroupId = "kafka-group-id"
+
     PropertyConfPluginDir = "plugin-dir"
 
     ConfigLoggingSection = 'logging'
@@ -92,7 +101,7 @@ class Constants:
 
     # TODO change after testing
     HomeDirectory = '/usr/src/app/'
-    #HomeDirectory = '/Users/komalthareja/renci/code/fabric/ActorBase/actor/test/'
+    #HomeDirectory = '/Users/komalthareja/renci/code/fabric/ActorBase/'
     SuperblockLocation = HomeDirectory + "state_recovery.lock"
     ControllerLockLocation = HomeDirectory + "controller_recovery.lock"
     ConfigurationFile = "/etc/fabric/actor/config/config.yaml"
@@ -100,7 +109,7 @@ class Constants:
 
     TestBrokerConfigurationFile = HomeDirectory + "config/config.broker.yaml"
     TestNetAmConfigurationFile = HomeDirectory + "config/config.net-am.yaml"
-    TestVmAmConfigurationFile = HomeDirectory + "config/config.vm-am.yaml"
+    TestVmAmConfigurationFile = HomeDirectory + "config/config.site.am.yaml"
 
     ElasticTime = "request.elasticTime"
     ElasticSize = "request.elasticSize"
@@ -188,20 +197,6 @@ class Constants:
     PropertyProxiesModule = ".module"
 
     ExtendSameUnits = -1
-
-    ErrorInvalidArguments = -7000
-    ErrorInvalidActor = -8000
-    ErrorInvalidReservation = -9000
-    ErrorDatabaseError = -10000
-    ErrorInternalError = -11000
-    ErrorNoSuchActor = -12000
-    ErrorNoSuchSlice = -15000
-    ErrorNoSuchResourcePool = -15010
-    ErrorInvalidSlice = -16000
-    ErrorNoSuchReservation = -17200
-    ErrorNoSuchBroker = -19000
-    ErrorTransportFailure = -20000
-
     AllReservationStates = -1
 
     ManagementApiTimeoutInSeconds = 120.0

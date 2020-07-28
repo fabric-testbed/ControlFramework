@@ -86,7 +86,11 @@ class MessageService(AvroConsumerApi):
                     message.get_message_name() == IMessageAvro.GetReservationsRequest or \
                     message.get_message_name() == IMessageAvro.AddSlice or \
                     message.get_message_name() == IMessageAvro.UpdateSlice or \
-                    message.get_message_name() == IMessageAvro.RemoveSlice:
+                    message.get_message_name() == IMessageAvro.RemoveSlice or \
+                    message.get_message_name() == IMessageAvro.CloseReservations or \
+                    message.get_message_name() == IMessageAvro.UpdateReservation or \
+                    message.get_message_name() == IMessageAvro.RemoveReservation or \
+                    message.get_message_name() == IMessageAvro.GetReservationsStateRequest:
                 self.kafka_mgmt_service.process(message)
             else:
                 self.kafka_service.process(message)

@@ -23,7 +23,8 @@ REQUIRES = [
             'psycopg2-binary',
             'sqlalchemy',
             'pyyaml',
-            'fabric-message-bus'
+            'fabric-message-bus',
+            'click'
             ]
 
 setup(

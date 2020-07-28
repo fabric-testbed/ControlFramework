@@ -44,7 +44,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
     from fabric.actor.core.manage.messages.ResultPoolInfoMng import ResultPoolInfoMng
     from fabric.actor.core.manage.messages.ResultStringMng import ResultStringMng
-    from fabric.message_bus.messages.TicketReservationMng import TicketReservationMng
+    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationAvro
     from fabric.actor.core.manage.messages.ResultStringsMng import ResultStringsMng
     from fabric.message_bus.messages.ReservationMng import ReservationMng
     from fabric.actor.core.manage.messages.ResultReservationMng import ResultReservationMng
@@ -91,7 +91,7 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
     def get_pool_info(self, broker: ID, caller: AuthToken) -> ResultPoolInfoMng:
         return self.client_helper.get_pool_info(broker, caller)
 
-    def add_reservation(self, reservation: TicketReservationMng, caller: AuthToken) -> ResultStringMng:
+    def add_reservation(self, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringMng:
         return self.client_helper.add_reservation(reservation, caller)
 
     def add_reservations(self, reservations: list, caller: AuthToken) -> ResultStringsMng:

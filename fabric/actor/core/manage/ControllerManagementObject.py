@@ -28,7 +28,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Constants import Constants, ErrorCodes
 from fabric.actor.core.manage.ActorManagementObject import ActorManagementObject
 from fabric.actor.core.manage.ClientActorManagementObjectHelper import ClientActorManagementObjectHelper
 from fabric.actor.core.manage.Converter import Converter
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
     from fabric.actor.core.manage.messages.ResultPoolInfoMng import ResultPoolInfoMng
     from fabric.actor.core.manage.messages.ResultStringMng import ResultStringMng
-    from fabric.message_bus.messages.TicketReservationMng import TicketReservationMng
+    from fabric.message_bus.messages.TicketReservationAvro import TicketReservationMng
     from fabric.actor.core.manage.messages.ResultStringsMng import ResultStringsMng
     from fabric.message_bus.messages.ReservationMng import ReservationMng
     from fabric.actor.core.manage.messages.ResultReservationMng import ResultReservationMng
@@ -104,7 +104,7 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
     def demand_reservation_rid(self, rid: ID, caller: AuthToken) -> ResultAvro:
         return self.client_helper.demand_reservation_rid(rid, caller)
 
-    def demand_reservation(self, reservation: ReservationMng, caller: AuthToken) -> ResultStringMng:
+    def demand_reservation(self, reservation: ReservationMng, caller: AuthToken) -> ResultAvro:
         return self.client_helper.demand_reservation(reservation, caller)
 
     def claim_resources(self, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationMng:
@@ -120,14 +120,15 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
                                                      request_properties, config_properties, caller)
 
     def modify_reservation(self, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
-        self.client_helper.modify_reservation(rid, modify_properties, caller)
+        return self.client_helper.modify_reservation(rid, modify_properties, caller)
 
     def get_reservation_units(self, caller: AuthToken, rid: ID) -> ResultUnitMng:
         result = ResultUnitMng()
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
         try:
             units_list = None
@@ -135,7 +136,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
                 units_list = self.db.get_units(rid)
             except Exception as e:
                 self.logger.error("get_reservation_units:db access {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
@@ -143,7 +145,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
                 result.result = Converter.fill_units(units_list)
         except Exception as e:
             self.logger.error("get_reservation_units: {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result

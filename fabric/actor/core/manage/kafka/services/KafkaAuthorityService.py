@@ -29,8 +29,8 @@ from fabric.actor.core.manage.kafka.services.KafkaServerActorService import Kafk
 
 
 class KafkaAuthorityService(KafkaServerActorService):
-    def __init__(self, producer_conf, key_schema, val_schema):
-        super().__init__(producer_conf, key_schema, val_schema)
+    def __init__(self):
+        super().__init__()
 
 
 

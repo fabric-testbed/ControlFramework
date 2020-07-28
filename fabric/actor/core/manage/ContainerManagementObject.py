@@ -26,7 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.Constants import Constants, ErrorCodes
 from fabric.actor.core.manage.Converter import Converter
 from fabric.actor.core.manage.ManagementObject import ManagementObject
 from fabric.actor.core.manage.ProxyProtocolDescriptor import ProxyProtocolDescriptor
@@ -83,7 +83,8 @@ class ContainerManagementObject(ManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -91,7 +92,8 @@ class ContainerManagementObject(ManagementObject):
             result.result = Converter.fill_actors(act_list)
         except Exception as e:
             self.logger.error("get_actors {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -101,7 +103,8 @@ class ContainerManagementObject(ManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -110,7 +113,8 @@ class ContainerManagementObject(ManagementObject):
                 act_list = self.get_container_management_database().get_actors()
             except Exception as e:
                 self.logger.error("get_actors_from_database {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
@@ -119,7 +123,8 @@ class ContainerManagementObject(ManagementObject):
 
         except Exception as e:
             self.logger.error("get_actors_from_database {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -129,7 +134,8 @@ class ContainerManagementObject(ManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -138,7 +144,8 @@ class ContainerManagementObject(ManagementObject):
                 act_list = self.get_container_management_database().get_actors(name=name, actor_type=actor_type)
             except Exception as e:
                 self.logger.error("get_actors_from_database {}".format(e))
-                result.status.set_code(Constants.ErrorDatabaseError)
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
                 return result
 
@@ -147,7 +154,8 @@ class ContainerManagementObject(ManagementObject):
 
         except Exception as e:
             self.logger.error("get_actors_from_database {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
@@ -157,7 +165,8 @@ class ContainerManagementObject(ManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -165,7 +174,8 @@ class ContainerManagementObject(ManagementObject):
             result.result = Converter.fill_actors(act_list)
         except Exception as e:
             self.logger.error("get_controllers {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
     def get_brokers(self, caller: AuthToken) -> ResultActorMng:
@@ -173,7 +183,8 @@ class ContainerManagementObject(ManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -181,7 +192,8 @@ class ContainerManagementObject(ManagementObject):
             result.result = Converter.fill_actors(act_list)
         except Exception as e:
             self.logger.error("get_brokers {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
     def get_authorities(self, caller: AuthToken) -> ResultActorMng:
@@ -189,7 +201,8 @@ class ContainerManagementObject(ManagementObject):
         result.status = ResultAvro()
 
         if caller is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -197,7 +210,8 @@ class ContainerManagementObject(ManagementObject):
             result.result = Converter.fill_actors(act_list)
         except Exception as e:
             self.logger.error("get_authorities {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
     def get_management_object(self, guid: ID) -> IManagementObject:
@@ -209,7 +223,8 @@ class ContainerManagementObject(ManagementObject):
         result.status = ResultAvro()
 
         if caller is None or protocol is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -217,7 +232,8 @@ class ContainerManagementObject(ManagementObject):
             result.result = Converter.fill_proxies(proxies)
         except Exception as e:
             self.logger.error("get_broker_proxies {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
     def get_site_proxies(self, protocol: str, caller: AuthToken) -> ResultProxyMng:
@@ -225,7 +241,8 @@ class ContainerManagementObject(ManagementObject):
         result.status = ResultAvro()
 
         if caller is None or protocol is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -233,7 +250,8 @@ class ContainerManagementObject(ManagementObject):
             result.result = Converter.fill_proxies(proxies)
         except Exception as e:
             self.logger.error("get_site_proxies {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)
 
     def get_proxies_by_protocol(self, protocol: str, caller: AuthToken) -> ResultProxyMng:
@@ -241,7 +259,8 @@ class ContainerManagementObject(ManagementObject):
         result.status = ResultAvro()
 
         if caller is None or protocol is None:
-            result.status.set_code(Constants.ErrorInvalidArguments)
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
@@ -249,5 +268,6 @@ class ContainerManagementObject(ManagementObject):
             result.result = Converter.fill_proxies(proxies)
         except Exception as e:
             self.logger.error("get_proxies {}".format(e))
-            result.status.set_code(Constants.ErrorInternalError)
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)

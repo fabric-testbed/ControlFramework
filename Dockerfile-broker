@@ -5,14 +5,14 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 VOLUME ["/usr/src/app"]
 
-COPY docker-entrypoint-broker.sh /usr/src/app
 RUN pip3 install --upgrade pip
 
-RUN pip3 install git+https://github.com/fabric-testbed/MessageBus.git#egg=fabric-message-bus
+RUN pip3 install git+https://github.com/fabric-testbed/MessageBus.git
 RUN mkdir -p "/etc/fabric/message_bus/schema"
 RUN cp /usr/local/lib/python3.8/site-packages/fabric/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
-RUN pip3 install git+https://github.com/fabric-testbed/ActorBase.git#egg=fabric-actor
+RUN pip3 install git+https://github.com/fabric-testbed/ActorBase.git@mgmt_cli
 
 ENTRYPOINT ["python3"]
 
 CMD ["-m", "fabric.broker"]
+#ENTRYPOINT ["tail","-f","/dev/null"]

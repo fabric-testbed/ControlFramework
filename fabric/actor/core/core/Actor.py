@@ -80,6 +80,7 @@ class ActorEvent(IActorEvent):
         try:
             self.status.result = self.runnable.run()
         except Exception as e:
+            traceback.print_exc()
             self.status.exception = e
         finally:
             with self.status.lock:
@@ -518,6 +519,7 @@ class Actor(IActor):
 
             self.logger.info("Recovered reservation #{}".format(r.get_reservation_id()))
         except Exception as e:
+            traceback.print_exc()
             self.logger.error("Exception occurred in recovering reservation e={}".format(e))
             raise Exception("Could not recover Reservation #{}".format(properties))
 
@@ -740,44 +742,25 @@ class Actor(IActor):
 
     def setup_message_service(self):
         try:
+            # Kafka Proxy Service object
             module_name = self.get_kafka_service_module()
             class_name = self.get_kafka_service_class()
             kafka_service = ReflectionUtils.create_instance_with_params(module_name, class_name)(self)
 
-            from fabric.actor.core.container.Globals import GlobalsSingleton
-            config = GlobalsSingleton.get().get_config()
-
-            bootstrap_server = config.get_global_config().get_runtime()[Constants.PropertyConfKafkaServer]
-            schema_registry = config.get_global_config().get_runtime()[Constants.PropertyConfKafkaSchemaRegistry]
-            key_schema_file = config.get_global_config().get_runtime()[Constants.PropertyConfKafkaKeySchema]
-            value_schema_file = config.get_global_config().get_runtime()[Constants.PropertyConfKafkaValueSchema]
-
-            conf = {'bootstrap.servers': bootstrap_server,
-                    'schema.registry.url': schema_registry,
-                    'group.id': "fabric_cf",
-                    'auto.offset.reset': "earliest"}
-
-            topic = config.get_actor().get_kafka_topic()
-            topics = [topic]
-
-            from confluent_kafka import avro
-
-            file = open(key_schema_file, "r")
-            key_bytes = file.read()
-            file.close()
-            key_schema = avro.loads(key_bytes)
-            file = open(value_schema_file, "r")
-            val_bytes = file.read()
-            file.close()
-            val_schema = avro.loads(val_bytes)
-
+            # Kafka Management Service object
             module_name = self.get_mgmt_kafka_service_module()
             class_name = self.get_mgmt_kafka_service_class()
-            producer_conf = {'bootstrap.servers': bootstrap_server, 'schema.registry.url': schema_registry}
-            kafka_mgmt_service = ReflectionUtils.create_instance_with_params(module_name, class_name)(producer_conf, key_schema, val_schema)
+            kafka_mgmt_service = ReflectionUtils.create_instance_with_params(module_name, class_name)()
             kafka_mgmt_service.set_logger(self.logger)
 
-            self.message_service = MessageService(kafka_service, kafka_mgmt_service, conf, key_schema, val_schema, topics, logger=self.logger)
+            # Incoming Message Service
+            from fabric.actor.core.container.Globals import GlobalsSingleton
+            config = GlobalsSingleton.get().get_config()
+            topic = config.get_actor().get_kafka_topic()
+            topics = [topic]
+            consumer_conf = GlobalsSingleton.get().get_kafka_config_consumer()
+            key_schema, val_schema = GlobalsSingleton.get().get_kafka_schemas()
+            self.message_service = MessageService(kafka_service, kafka_mgmt_service, consumer_conf, key_schema, val_schema, topics, logger=self.logger)
         except Exception as e:
             traceback.print_exc()
             self.logger.error("Failed to setup message service e={}".format(e))

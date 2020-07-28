@@ -460,7 +460,7 @@ class ConfigurationProcessor:
 
         if client_mgmt_actor is None:
             self.logger.info("{} is a remote client. Not performing claim".format(info.client.get_name()))
-            self.trigger_remote_claim(info)
+            #self.trigger_remote_claim(info)
             return
 
         self.logger.info("Claiming resources from {} to {}".format(info.exporter.get_name(), info.client.get_name()))
@@ -485,26 +485,9 @@ class ConfigurationProcessor:
             claim_req.callback_topic = self.config.actor.get_kafka_topic()
             claim_req.slice_id = "null"
 
-            bootstrap_server = self.config.get_global_config().get_runtime()[Constants.PropertyConfKafkaServer]
-            schema_registry = self.config.get_global_config().get_runtime()[Constants.PropertyConfKafkaSchemaRegistry]
-            key_schema_file = self.config.get_global_config().get_runtime()[Constants.PropertyConfKafkaKeySchema]
-            value_schema_file = self.config.get_global_config().get_runtime()[Constants.PropertyConfKafkaValueSchema]
-
-            from confluent_kafka import avro
-            conf = {'bootstrap.servers': bootstrap_server,
-                    'schema.registry.url': schema_registry}
-
-            file = open(key_schema_file, "r")
-            kbytes = file.read()
-            file.close()
-            key_schema = avro.loads(kbytes)
-            file = open(value_schema_file, "r")
-            vbytes = file.read()
-            file.close()
-            val_schema = avro.loads(vbytes)
-
             # create a producer
-            producer = AvroProducerApi(conf, key_schema, val_schema, self.logger)
+            from fabric.actor.core.container.Globals import GlobalsSingleton
+            producer = GlobalsSingleton.get().get_kafka_producer()
             if producer.produce_sync(info.client_topic, claim_req):
                 self.logger.debug("Message {} written to {}".format(claim_req.name, info.client_topic))
             else:

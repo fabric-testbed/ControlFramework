@@ -1,13 +1,19 @@
 runtime:
-  - kafka-server: localhost:9092
+  - kafka-server: localhost:19092
   - kafka-schema-registry-url: http://localhost:8081
   - kafka-key-schema: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/message_bus/schema/message.avsc
-  - kafka-topic: manage-cli-topic
+  - kafka-topic: managecli-topic
+  - kafka-ssl-ca-location:  /Users/komalthareja/renci/code/fabric/ActorBase//secrets/snakeoil-ca-1.crt
+  - kafka-ssl-certificate-location:  /Users/komalthareja/renci/code/fabric/ActorBase/secrets/kafkacat1-ca1-signed.pem
+  - kafka-ssl-key-location:  /Users/komalthareja/renci/code/fabric/ActorBase//secrets/kafkacat1.client.key
+  - kafka-ssl-key-password:  fabric
+  - kafka-security-protocol: SSL
+  - kafka-group-id: fabric-cf
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: ./logs/
+  - log-directory: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/managecli/logs/
 
   ## The filename to be used for actor's log file.
   - log-file: manage.log
@@ -22,10 +28,10 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   - log-size: 5000000
 
-  - logger: manage-cli
+  - logger: managecli
 auth:
-  - name: manage-cli
-  - guid: manage-cli-guid
+  - name: managecli
+  - guid: managecli-guid
 peers:
   - peer:
     - name: fabric-controller
@@ -38,10 +44,10 @@ peers:
     - type: authority
     - kafka-topic: fabric-net-am-topic
   - peer:
-    - name: fabric-vm-am
-    - guid: fabric-vm-am-guid
+    - name: fabric-site-am
+    - guid: fabric-site-am-guid
     - type: authority
-    - kafka-topic: fabric-vm-am-topic
+    - kafka-topic: fabric-site-am-topic
   - peer:
       - name: fabric-broker
       - guid: fabric-broker-guid

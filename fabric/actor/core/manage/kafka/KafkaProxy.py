@@ -38,10 +38,12 @@ from fabric.message_bus.messages.ResultAvro import ResultAvro
 if TYPE_CHECKING:
     from fabric.actor.core.util.ID import ID
     from fabric.message_bus.messages.AuthAvro import AuthAvro
+    from fabric.message_bus.producer import AvroProducerApi
 
 
 class KafkaProxy(IComponent):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, kafka_config:dict, logger, message_processor: KafkaMgmtMessageProcessor):
+    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger, message_processor: KafkaMgmtMessageProcessor,
+                 producer: AvroProducerApi = None):
         self.management_id = guid
         self.auth = auth
         self.logger = logger
@@ -50,33 +52,16 @@ class KafkaProxy(IComponent):
         self.last_status = None
         self.last_exception = None
         self.callback_topic = None
-        self.setup_kafka_producer(kafka_config)
+        if producer is None:
+            self.setup_kafka_producer()
+        else:
+            self.producer = producer
         self.message_processor = message_processor
 
-    def setup_kafka_producer(self, kafka_config: dict):
+    def setup_kafka_producer(self):
         try:
-            boot_strap_server = kafka_config.get(Constants.PropertyConfKafkaServer, None)
-            schema_registry = kafka_config.get(Constants.PropertyConfKafkaSchemaRegistry, None)
-            key_schema_location = kafka_config.get(Constants.PropertyConfKafkaKeySchema, None)
-            value_schema_location = kafka_config.get(Constants.PropertyConfKafkaValueSchema, None)
-
-            if boot_strap_server is None or schema_registry is None or key_schema_location is None or value_schema_location is None:
-                raise Exception("Invalid Arguments")
-
-            conf = {'bootstrap.servers': boot_strap_server,
-                    'schema.registry.url': schema_registry}
-
-            from confluent_kafka import avro
-            file = open(key_schema_location, "r")
-            key_bytes = file.read()
-            file.close()
-            key_schema = avro.loads(key_bytes)
-            file = open(value_schema_location, "r")
-            val_bytes = file.read()
-            file.close()
-            val_schema = avro.loads(val_bytes)
-            from message_bus.producer import AvroProducerApi
-            self.producer = AvroProducerApi(conf, key_schema, val_schema, self.logger)
+            from fabric.actor.core.container.Globals import GlobalsSingleton
+            self.producer = GlobalsSingleton.get().get_kafka_producer()
         except Exception as e:
             traceback.print_exc()
             self.logger.eror("Exception occurred while loading schemas {}".format(e))

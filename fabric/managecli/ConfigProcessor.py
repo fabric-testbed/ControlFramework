@@ -26,8 +26,8 @@
 
 import yaml
 
-from manage_cli.Configuration import Configuration
-from message_bus.messages.AuthAvro import AuthAvro
+from fabric.managecli.Configuration import Configuration
+from fabric.message_bus.messages.AuthAvro import AuthAvro
 
 
 class ConfigProcessor:
@@ -48,7 +48,6 @@ class ConfigProcessor:
     def read_configuration(self) -> Configuration:
         if self.path is None:
             raise Exception("No data source has been specified")
-        print("Reading config file: {}".format(self.path))
         config_dict = None
         with open(self.path) as f:
             config_dict = yaml.safe_load(f)
@@ -88,6 +87,36 @@ class ConfigProcessor:
         else:
             return None
 
+    def get_security_protocol(self) -> str:
+        if self.config is not None and self.config.get_runtime_config() is not None:
+            return self.config.get_runtime_config().get_security_protocol()
+        return None
+
+    def get_group_id(self) -> str:
+        if self.config is not None and self.config.get_runtime_config() is not None:
+            return self.config.get_runtime_config().get_group_id()
+        return None
+
+    def get_ca_location(self) -> str:
+        if self.config is not None and self.config.get_runtime_config() is not None:
+            return self.config.get_runtime_config().get_ca_location()
+        return None
+
+    def get_cert_location(self) -> str:
+        if self.config is not None and self.config.get_runtime_config() is not None:
+            return self.config.get_runtime_config().get_cert_location()
+        return None
+
+    def get_key_location(self) -> str:
+        if self.config is not None and self.config.get_runtime_config() is not None:
+            return self.config.get_runtime_config().get_key_location()
+        return None
+
+    def get_key_password(self) -> str:
+        if self.config is not None and self.config.get_runtime_config() is not None:
+            return self.config.get_runtime_config().get_key_password()
+        return None
+
     def get_peers(self) -> list:
         return self.config.get_peers()
 
@@ -125,3 +154,51 @@ class ConfigProcessor:
         if self.config is not None and self.config.get_runtime_config() is not None:
             return self.config.get_runtime_config().get_kafka_config()
         return None
+
+    def get_kafka_config_producer(self) -> dict:
+        if self.config is None or self.config.get_runtime_config() is None:
+            return None
+
+        bootstrap_server = self.get_kafka_server()
+        schema_registry = self.get_kafka_schema_registry()
+        security_protocol = self.get_security_protocol()
+        group_id = self.get_group_id()
+        ssl_ca_location = self.get_ca_location()
+        ssl_certificate_location = self.get_cert_location()
+        ssl_key_location = self.get_key_location()
+        ssl_key_password = self.get_key_password()
+
+        conf = {'bootstrap.servers': bootstrap_server,
+                'security.protocol': security_protocol,
+                'group.id': group_id,
+                'ssl.ca.location': ssl_ca_location,
+                'ssl.certificate.location': ssl_certificate_location,
+                'ssl.key.location': ssl_key_location,
+                'ssl.key.password': ssl_key_password,
+                'schema.registry.url': schema_registry}
+
+        return conf
+
+    def get_kafka_config_consumer(self) -> dict:
+        if self.config is None or self.config.get_runtime_config() is None:
+            return None
+
+        conf = self.get_kafka_config_producer()
+        conf['auto.offset.reset'] = 'earliest'
+        return conf
+
+    def get_kafka_schemas(self):
+        key_schema_file = self.get_kafka_key_schema()
+        value_schema_file = self.get_kafka_value_schema()
+
+        from confluent_kafka import avro
+        file = open(key_schema_file, "r")
+        kbytes = file.read()
+        file.close()
+        key_schema = avro.loads(kbytes)
+        file = open(value_schema_file, "r")
+        vbytes = file.read()
+        file.close()
+        val_schema = avro.loads(vbytes)
+
+        return key_schema, val_schema

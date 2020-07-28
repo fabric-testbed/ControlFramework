@@ -51,22 +51,30 @@ services:
         - POSTGRES_MULTIPLE_DATABASES=am,broker,controller
         ports:
         - "8432:5432"
+    start-fabric-actors:
+        image: dadarek/wait-for-dependencies
+        depends_on:
+        - zookeeper 
+        - broker 
+        - registry
+        - database
+        command: zookeeper:2181 broker:29092 registry:8081 database:5432
     fabric-vm-am:
         image: authority:latest 
         container_name: fabric-vm-am 
         restart: always
         depends_on:
-        - database 
+        - start-fabric-actors 
         volumes:
-            - "./config/config.vm-am.yaml:/etc/fabric/actor/config/config.yaml"
-            - "./logs/vm-am:/var/log/actor"
+        - "./config/config.site.am.yaml:/etc/fabric/actor/config/config.yaml"
+        - "./logs/vm-am:/var/log/actor"
     fabric-broker:
         image: broker:latest
         container_name: fabric-broker
         restart: always
         depends_on:
-            - database
-            - fabric-vm-am 
+        - start-fabric-actors 
+        - fabric-vm-am 
         volumes:
-            - "./config/config.broker.yaml:/etc/fabric/actor/config/config.yaml"
-            - "./logs/broker:/var/log/actor"
+        - "./config/config.broker.yaml:/etc/fabric/actor/config/config.yaml"
+        - "./logs/broker:/var/log/actor"
