@@ -38,8 +38,9 @@ class ManageCliTest(unittest.TestCase):
     def test_a_claim_resources(self):
         runner = CliRunner()
         result = runner.invoke(managecli.managecli, ['manage', 'claim', '--broker', 'fabric-broker', '--am',
-                                                     'fabric-site-am'])
+                                                 'fabric-site-am'])
         print("Result: {}".format(result.output))
+        self.assertTrue(result.output.find("Code") == -1)
 
     def test_b_get_slices_am(self):
         runner = CliRunner()

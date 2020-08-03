@@ -283,7 +283,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def get_reservations(self, caller: AuthToken) -> ResultReservationAvro:
         result = ResultReservationAvro()
-        result.set_status(ResultAvro())
+        result.status = ResultAvro()
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
