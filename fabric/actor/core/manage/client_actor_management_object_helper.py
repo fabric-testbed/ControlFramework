@@ -437,6 +437,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             rc = self.client.execute_on_actor_thread_and_wait(Runner(self.client))
 
             if rc is not None:
+                result.reservations = []
                 reservation = Converter.fill_reservation(rc, True)
                 result.reservations.append(reservation)
             else:
@@ -480,6 +481,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             rc = self.client.execute_on_actor_thread_and_wait(Runner(self.client))
 
             if rc is not None:
+                result.reservations = []
                 reservation = Converter.fill_reservation(rc, True)
                 result.reservations.append(reservation)
             else:
