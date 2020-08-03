@@ -38,7 +38,7 @@ from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.actor import Actor
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.sesource_set import ResourceSet
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.authority_management_object import AuthorityManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_authority_service import KafkaAuthorityService
 from fabric.actor.core.proxies.kafka.services.authority_service import AuthorityService

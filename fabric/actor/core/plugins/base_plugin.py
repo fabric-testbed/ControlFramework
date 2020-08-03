@@ -41,7 +41,7 @@ from fabric.actor.core.apis.i_actor_event import IActorEvent
 from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.delegation.simple_resource_ticket_factory import SimpleResourceTicketFactory
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.plugins.config.config import Config
 
 

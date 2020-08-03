@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.actor.core.util.id import ID
     from fabric.message_bus.messages.reservation_mng import ReservationMng
-    from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
+    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
     from fabric.actor.core.util.resource_type import ResourceType
 
 

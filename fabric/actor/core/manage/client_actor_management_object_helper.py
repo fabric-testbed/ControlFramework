@@ -39,9 +39,9 @@ from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.management_utils import ManagementUtils
 from fabric.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
-from fabric.actor.core.manage.messages.PoolInfoMng import PoolInfoMng
-from fabric.actor.core.manage.messages.ResultPoolInfoMng import ResultPoolInfoMng
-from fabric.actor.core.manage.messages.ResultProxyMng import ResultProxyMng
+from fabric.actor.core.manage.messages.pool_info_mng import PoolInfoMng
+from fabric.actor.core.manage.messages.result_pool_info_mng import ResultPoolInfoMng
+from fabric.actor.core.manage.messages.result_proxy_mng import ResultProxyMng
 from fabric.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.result_string_avro import ResultStringAvro
@@ -57,7 +57,7 @@ from fabric.actor.core.core.broker_policy import BrokerPolicy
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_actor import IClientActor
     from fabric.actor.security.auth_token import AuthToken
-    from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
+    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.actor.core.apis.i_actor import IActor
     from fabric.message_bus.messages.reservation_mng import ReservationMng

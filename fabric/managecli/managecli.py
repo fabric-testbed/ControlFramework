@@ -33,9 +33,9 @@ from fabric.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric.actor.core.manage.kafka.kafka_broker import KafkaBroker
 from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric.actor.core.util.id import ID
-from fabric.managecli.ConfigProcessor import ConfigProcessor
-from fabric.managecli.ManageCommand import ManageCommand
-from fabric.managecli.ShowCommand import ShowCommand
+from fabric.managecli.config_processor import ConfigProcessor
+from fabric.managecli.manage_command import ManageCommand
+from fabric.managecli.show_command import ShowCommand
 
 
 class MainShell:

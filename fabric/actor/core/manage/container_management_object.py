@@ -31,10 +31,10 @@ from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric.actor.core.apis.i_management_object import IManagementObject
-from fabric.actor.core.manage.messages.ResultProxyMng import ResultProxyMng
+from fabric.actor.core.manage.messages.result_proxy_mng import ResultProxyMng
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.util.id import ID
-from fabric.actor.core.manage.messages.ResultActorMng import ResultActorMng
+from fabric.actor.core.manage.messages.result_actor_mng import ResultActorMng
 from fabric.message_bus.messages.result_avro import ResultAvro
 
 if TYPE_CHECKING:

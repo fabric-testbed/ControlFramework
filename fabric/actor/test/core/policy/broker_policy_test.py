@@ -34,7 +34,7 @@ from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.proxies.kafka.kafka_authority_proxy import KafkaAuthorityProxy
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.time.term import Term

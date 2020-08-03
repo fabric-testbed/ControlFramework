@@ -34,7 +34,7 @@ from fabric.message_bus.messages.slice_avro import SliceAvro
 
 if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
-    from fabric.actor.core.manage.messages.ClientMng import ClientMng
+    from fabric.actor.core.manage.messages.client_mng import ClientMng
     from fabric.actor.security.auth_token import AuthToken
 
 

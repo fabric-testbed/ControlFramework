@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import unittest
 
-from fabric.managecli.ManageCommand import ManageCommand
+from fabric.managecli.manage_command import ManageCommand
 from fabric.managecli.managecli import MainShellSingleton
 
 

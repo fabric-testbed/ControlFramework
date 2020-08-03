@@ -38,11 +38,11 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
     from fabric.actor.core.apis.i_actor import IActor
     from fabric.message_bus.messages.result_avro import ResultAvro
-    from fabric.actor.core.manage.messages.ResultProxyMng import ResultProxyMng
+    from fabric.actor.core.manage.messages.result_proxy_mng import ResultProxyMng
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.util.id import ID
-    from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
-    from fabric.actor.core.manage.messages.ResultPoolInfoMng import ResultPoolInfoMng
+    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
+    from fabric.actor.core.manage.messages.result_pool_info_mng import ResultPoolInfoMng
     from fabric.message_bus.messages.result_string_avro import ResultStringAvro
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.message_bus.messages.result_strings_avro import ResultStringsAvro

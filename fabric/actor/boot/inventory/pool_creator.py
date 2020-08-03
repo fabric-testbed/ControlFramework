@@ -35,7 +35,7 @@ from fabric.actor.core.util.resource_data import ResourceData
 if TYPE_CHECKING:
     from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
     from fabric.actor.boot.inventory.i_resource_pool_factory import IResourcePoolFactory
-    from fabric.actor.core.plugins.substrate.AuthoritySubstrate import AuthoritySubstrate
+    from fabric.actor.core.plugins.substrate.authority_substrate import AuthoritySubstrate
 
 
 class PoolCreator:

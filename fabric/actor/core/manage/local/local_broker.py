@@ -37,7 +37,7 @@ from fabric.actor.core.util.id import ID
 if TYPE_CHECKING:
     from fabric.actor.core.manage.management_object import ManagementObject
     from fabric.actor.security.auth_token import AuthToken
-    from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
+    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
     from fabric.message_bus.messages.reservation_mng import ReservationMng
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.actor.core.util.resource_type import ResourceType

@@ -36,7 +36,7 @@ from fabric.actor.core.util.id import ID
 if TYPE_CHECKING:
     from fabric.actor.core.manage.management_object import ManagementObject
     from fabric.actor.security.auth_token import AuthToken
-    from fabric.actor.core.manage.messages.ClientMng import ClientMng
+    from fabric.actor.core.manage.messages.client_mng import ClientMng
     from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
     from fabric.message_bus.messages.slice_avro import SliceAvro

@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
 
 if TYPE_CHECKING:
-    from fabric.actor.core.manage.messages.UnitMng import UnitMng
+    from fabric.actor.core.manage.messages.unit_mng import UnitMng
     from fabric.actor.core.util.id import ID
 
 

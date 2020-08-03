@@ -39,10 +39,10 @@ from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.kernel.sesource_set import ResourceSet
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.plugins.config.config import Config
-from fabric.actor.core.plugins.substrate.Substrate import Substrate
-from fabric.actor.core.plugins.substrate.db.SubstrateActorDatabase import SubstrateActorDatabase
+from fabric.actor.core.plugins.substrate.substrate import Substrate
+from fabric.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID

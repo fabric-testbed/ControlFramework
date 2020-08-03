@@ -37,7 +37,7 @@ from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric.actor.core.kernel.sesource_set import ResourceSet
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.policy.broker_simpler_units_policy import BrokerSimplerUnitsPolicy
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID

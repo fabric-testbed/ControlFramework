@@ -26,7 +26,7 @@
 import traceback
 
 from fabric.actor.core.util.id import ID
-from fabric.managecli.ShowCommand import ShowCommand
+from fabric.managecli.show_command import ShowCommand
 
 
 class ManageCommand(ShowCommand):

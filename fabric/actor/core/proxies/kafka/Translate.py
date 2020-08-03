@@ -30,7 +30,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.kernel.sesource_set import ResourceSet
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID

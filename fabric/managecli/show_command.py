@@ -26,7 +26,7 @@
 import traceback
 
 from fabric.actor.core.util.id import ID
-from fabric.managecli.Command import Command
+from fabric.managecli.command import Command
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.result_slice_avro import ResultSliceAvro
 

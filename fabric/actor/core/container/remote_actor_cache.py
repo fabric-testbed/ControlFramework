@@ -31,8 +31,8 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.actor_identity import ActorIdentity
-from fabric.actor.core.manage.messages.ClientMng import ClientMng
-from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
+from fabric.actor.core.manage.messages.client_mng import ClientMng
+from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
 from fabric.actor.core.util.id import ID
 from fabric.message_bus.admin import AdminApi
 

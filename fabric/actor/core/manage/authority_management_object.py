@@ -36,7 +36,7 @@ from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric.actor.core.manage.server_actor_management_object import ServerActorManagementObject
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
-from fabric.actor.core.manage.messages.ResultUnitMng import ResultUnitMng
+from fabric.actor.core.manage.messages.result_unit_mng import ResultUnitMng
 from fabric.message_bus.messages.result_avro import ResultAvro
 
 if TYPE_CHECKING:

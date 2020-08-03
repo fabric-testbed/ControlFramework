@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.common.resource_pool_attribute_descriptor import ResourcePoolAttributeDescriptor, ResourcePoolAttributeType
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
-from fabric.actor.core.policy.SimplerUnitsInventory import SimplerUnitsInventory
+from fabric.actor.core.policy.simpler_units_inventory import SimplerUnitsInventory
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.reflection_utils import ReflectionUtils
 from fabric.actor.core.util import resource_type

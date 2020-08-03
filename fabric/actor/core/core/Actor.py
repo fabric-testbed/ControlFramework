@@ -46,7 +46,7 @@ from fabric.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric.actor.core.kernel.sesource_set import ResourceSet
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.proxies.proxy import Proxy
 from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.time.term import Term

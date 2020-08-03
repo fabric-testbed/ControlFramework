@@ -26,7 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor_identity import IActorIdentity

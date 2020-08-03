@@ -32,7 +32,7 @@ from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.manage.error import Error
 from fabric.actor.core.apis.i_component import IComponent
 from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
-from fabric.actor.core.manage.messages.ProtocolProxyMng import ProtocolProxyMng
+from fabric.actor.core.manage.messages.protocol_proxy_mng import ProtocolProxyMng
 from fabric.message_bus.messages.result_avro import ResultAvro
 
 if TYPE_CHECKING:

@@ -39,9 +39,9 @@ if TYPE_CHECKING:
     from fabric.message_bus.messages.reservation_mng import ReservationMng
     from fabric.actor.core.util.id import ID
     from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
-    from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
-    from fabric.actor.core.manage.messages.ResultProxyMng import ResultProxyMng
-    from fabric.actor.core.manage.messages.ResultPoolInfoMng import ResultPoolInfoMng
+    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
+    from fabric.actor.core.manage.messages.result_proxy_mng import ResultProxyMng
+    from fabric.actor.core.manage.messages.result_pool_info_mng import ResultPoolInfoMng
 
 
 class IClientActorManagementObject:

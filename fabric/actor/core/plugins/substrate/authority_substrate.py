@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.core.apis.i_slice import ISlice
 
-from fabric.actor.core.plugins.substrate.Substrate import Substrate
+from fabric.actor.core.plugins.substrate.substrate import Substrate
 
 
 class AuthoritySubstrate(Substrate):

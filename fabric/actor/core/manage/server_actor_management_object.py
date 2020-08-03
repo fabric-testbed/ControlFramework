@@ -34,11 +34,11 @@ from fabric.actor.core.core.authority_policy import AuthorityPolicy
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric.actor.core.kernel.sesource_set import ResourceSet
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.manage.management_object import ManagementObject
-from fabric.actor.core.manage.messages.ResultClientMng import ResultClientMng
+from fabric.actor.core.manage.messages.result_client_mng import ResultClientMng
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric.actor.core.proxies.kafka.translate import Translate
@@ -52,7 +52,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_server_actor import IServerActor
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.util.id import ID
-    from fabric.actor.core.manage.messages.ClientMng import ClientMng
+    from fabric.actor.core.manage.messages.client_mng import ClientMng
     from fabric.message_bus.messages.slice_avro import SliceAvro
     from fabric.actor.core.util.resource_type import ResourceType
 

@@ -32,7 +32,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.broker_management_object import BrokerManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_broker_service import KafkaBrokerService
 from fabric.actor.core.proxies.kafka.services.broker_service import BrokerService

@@ -31,7 +31,7 @@ from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.common.exceptions import ReservationNotFoundException
 from fabric.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
-from fabric.actor.core.kernel.SliceFactory import SliceFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.management_utils import ManagementUtils
@@ -39,7 +39,7 @@ from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDesc
 from fabric.actor.core.apis.i_actor_management_object import IActorManagementObject
 from fabric.message_bus.messages.reservation_mng import ReservationMng
 from fabric.message_bus.messages.reservation_state_avro import ReservationStateAvro
-from fabric.actor.core.manage.messages.ResultEventMng import ResultEventMng
+from fabric.actor.core.manage.messages.result_event_mng import ResultEventMng
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
 from fabric.message_bus.messages.result_string_avro import ResultStringAvro

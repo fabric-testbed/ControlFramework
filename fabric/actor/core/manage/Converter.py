@@ -36,14 +36,14 @@ from fabric.actor.core.core.actor_identity import ActorIdentity
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.core.unit import Unit
 from fabric.actor.core.kernel.sesource_set import ResourceSet
-from fabric.actor.core.manage.messages.ActorMng import ActorMng
+from fabric.actor.core.manage.messages.actor_mng import ActorMng
 from fabric.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
-from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
+from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
 from fabric.message_bus.messages.lease_reservation_state_avro import LeaseReservationStateAvro
 from fabric.message_bus.messages.reservation_mng import ReservationMng
 from fabric.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
-from fabric.actor.core.manage.messages.UnitMng import UnitMng
+from fabric.actor.core.manage.messages.unit_mng import UnitMng
 from fabric.actor.core.proxies.actor_location import ActorLocation
 from fabric.actor.core.proxies.kafka.kafka_proxy import KafkaProxy
 from fabric.actor.core.proxies.local.local_proxy import LocalProxy
@@ -52,7 +52,7 @@ from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.resource_type import ResourceType
-from fabric.actor.core.manage.messages.ClientMng import ClientMng
+from fabric.actor.core.manage.messages.client_mng import ClientMng
 from fabric.message_bus.messages.slice_avro import SliceAvro
 
 if TYPE_CHECKING:
