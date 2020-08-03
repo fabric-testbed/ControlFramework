@@ -106,7 +106,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def get_slices(self, caller: AuthToken) -> ResultSliceAvro:
         result = ResultSliceAvro()
-        result.set_status(ResultAvro())
+        result.status = ResultAvro()
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
@@ -135,7 +135,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def get_slice(self, slice_id: ID, caller: AuthToken) -> ResultSliceAvro:
         result = ResultSliceAvro()
-        result.set_status(ResultAvro())
+        result.status = ResultAvro()
 
         if slice_id is None or caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
@@ -166,7 +166,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def add_slice(self, slice_mng: SliceAvro, caller: AuthToken) -> ResultStringAvro:
         result = ResultStringAvro()
-        result.set_status(ResultAvro())
+        result.status = ResultAvro()
 
         if slice_mng is None or caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
@@ -328,7 +328,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def get_reservations_by_state(self, caller: AuthToken, state: int) -> ResultReservationAvro:
         result = ResultReservationAvro()
-        result.set_status(ResultAvro())
+        result.status = ResultAvro()
 
         if caller is None or state is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
@@ -373,7 +373,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def get_reservations_by_slice_id(self, caller: AuthToken, slice_id: ID) -> ResultReservationAvro:
         result = ResultReservationAvro()
-        result.set_status(ResultAvro())
+        result.status = ResultAvro()
 
         if caller is None or slice_id is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
@@ -418,7 +418,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def get_reservations_by_slice_id_state(self, caller: AuthToken, slice_id: ID, state: int) -> ResultReservationAvro:
         result = ResultReservationAvro()
-        result.set_status(ResultAvro())
+        result.status = ResultAvro()
 
         if caller is None or slice_id is None or state is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
@@ -463,7 +463,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def get_reservation(self, caller: AuthToken, rid: ID) -> ResultReservationAvro:
         result = ResultReservationAvro()
-        result.set_status(ResultAvro())
+        result.status = ResultAvro()
 
         if caller is None or rid is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
