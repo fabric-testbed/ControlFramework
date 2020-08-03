@@ -87,14 +87,14 @@ class AuthorityManagementObject(ServerActorManagementObject):
                 return result
 
             if res_list is not None:
-                result.result = []
+                result.reservations = []
                 for r in res_list:
                     slice_obj = self.get_slice_by_id(r['slc_id'])
                     rsv_obj = ReservationFactory.create_instance(r, self.actor, slice_obj,
                                                                  self.actor.get_logger())
                     if rsv_obj is not None:
                         rr = Converter.fill_reservation(rsv_obj, False)
-                        result.result.append(rr)
+                        result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("getReservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)

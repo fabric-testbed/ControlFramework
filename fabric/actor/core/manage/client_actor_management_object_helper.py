@@ -239,7 +239,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             rid, result.status = self.client.execute_on_actor_thread_and_wait(Runner(self))
 
             if rid is not None:
-                result.result = str(rid)
+                result.result_str = str(rid)
         except Exception as e:
             self.logger.error("add_reservation {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -438,7 +438,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
             if rc is not None:
                 reservation = Converter.fill_reservation(rc, True)
-                result.result.append(reservation)
+                result.reservations.append(reservation)
             else:
                 raise Exception("Internal Error")
         except Exception as e:
@@ -481,7 +481,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
             if rc is not None:
                 reservation = Converter.fill_reservation(rc, True)
-                result.result.append(reservation)
+                result.reservations.append(reservation)
             else:
                 raise Exception("Internal Error")
         except Exception as e:
