@@ -67,7 +67,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         self.clear_last()
 
         status = ResultAvro()
-        ret_val = None
+        rret_val = None
 
         try:
             request = GetSlicesRequestAvro()
@@ -95,7 +95,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     self.logger.debug("Received response {}".format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
-                        ret_val = message_wrapper.response.slices
+                        rret_val = message_wrapper.response.slices
 
             else:
                 self.logger.debug("Failed to send the message")
@@ -110,12 +110,12 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         self.last_status = status
 
-        return ret_val
+        return rret_val
 
     def get_slice(self, slice_id: ID) -> SliceAvro:
         self.clear_last()
         status = ResultAvro()
-        ret_val = None
+        rret_val = None
 
         try:
             request = GetSlicesRequestAvro()
@@ -143,7 +143,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     self.logger.debug("Received response {}".format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0 and message_wrapper.response.slices is not None and len(message_wrapper.response.slices) > 0:
-                        ret_val = message_wrapper.response.slices.__iter__().__next__()
+                        rret_val = message_wrapper.response.slices.__iter__().__next__()
             else:
                 self.logger.debug("Failed to send the message")
                 status.code = ErrorCodes.ErrorTransportFailure.value
@@ -157,7 +157,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         self.last_status = status
 
-        return ret_val
+        return rret_val
 
     def remove_slice(self, slice_id: ID) -> bool:
         self.clear_last()
@@ -203,7 +203,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         return status.code == 0
 
     def add_slice(self, slice_obj: SliceAvro) -> ID:
-        ret_val = None
+        rret_val = None
         self.clear_last()
         status = ResultAvro()
 
@@ -233,7 +233,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     self.logger.debug("Received response {}".format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
-                        ret_val = ID(message_wrapper.response.get_result())
+                        rret_val = ID(message_wrapper.response.get_result())
             else:
                 self.logger.debug("Failed to send the message")
                 status.code = ErrorCodes.ErrorTransportFailure.value
@@ -247,7 +247,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         self.last_status = status
 
-        return ret_val
+        return rret_val
 
     def update_slice(self, slice_obj: SliceAvro) -> bool:
         self.clear_last()

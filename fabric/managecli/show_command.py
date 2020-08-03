@@ -59,8 +59,10 @@ class ShowCommand(Command):
     def get_slice(self, actor_name: str, slice_id: str, callback_topic: str):
         try:
             slice_obj, error = self.do_get_slice(actor_name, slice_id, callback_topic)
+            print(type(slice_obj))
+            print(type(error))
             if slice_obj is not None:
-                slice.print()
+                slice_obj.print()
             else:
                 print("Status: {}".format(error.get_status()))
         except Exception as e:

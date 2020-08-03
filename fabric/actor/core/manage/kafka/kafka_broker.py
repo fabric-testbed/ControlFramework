@@ -52,7 +52,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         self.clear_last()
         status = ResultAvro()
-        ret_val = None
+        rret_val = None
 
         try:
             request = ClaimResourcesAvro()
@@ -84,7 +84,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     status = message_wrapper.response.status
                     if status.code == 0 and message_wrapper.response.reservations is not None and len(
                             message_wrapper.response.reservations) > 0:
-                        ret_val = message_wrapper.response.reservations.__iter__().__next__()
+                        rret_val = message_wrapper.response.reservations.__iter__().__next__()
             else:
                 self.logger.debug("Failed to send the message")
                 status.code = ErrorCodes.ErrorTransportFailure.value
@@ -98,11 +98,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         self.last_status = status
 
-        return ret_val
+        return rret_val
 
     def claim_resources(self, broker: ID, rid: ID) -> ReservationMng:
         self.clear_last()
         status = ResultAvro()
+        rret_val = None
 
         try:
             request = ClaimResourcesAvro()
@@ -133,7 +134,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     status = message_wrapper.response.status
                     if status.code == 0 and message_wrapper.response.reservations is not None and len(
                             message_wrapper.response.reservations) > 0:
-                        ret_val = message_wrapper.response.reservations.__iter__().__next__()
+                        rret_val = message_wrapper.response.reservations.__iter__().__next__()
             else:
                 self.logger.debug("Failed to send the message")
                 status.code = ErrorCodes.ErrorTransportFailure.value
@@ -146,4 +147,4 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         self.last_status = status
 
-        return ret_val
+        return rret_val
