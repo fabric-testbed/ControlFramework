@@ -30,33 +30,33 @@ import threading
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.kernel.BrokerReservationFactory import BrokerReservationFactory
-from fabric.actor.core.kernel.ClientReservationFactory import ClientReservationFactory
+from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
+from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric.actor.core.kernel.SliceFactory import SliceFactory
-from fabric.actor.core.manage.BrokerManagementObject import BrokerManagementObject
-from fabric.actor.core.manage.kafka.services.KafkaBrokerService import KafkaBrokerService
-from fabric.actor.core.proxies.kafka.services.BrokerService import BrokerService
-from fabric.actor.core.time.Term import Term
-from fabric.actor.core.util.ResourceData import ResourceData
+from fabric.actor.core.manage.broker_management_object import BrokerManagementObject
+from fabric.actor.core.manage.kafka.services.kafka_broker_service import KafkaBrokerService
+from fabric.actor.core.proxies.kafka.services.broker_service import BrokerService
+from fabric.actor.core.time.term import Term
+from fabric.actor.core.util.resource_data import ResourceData
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.IBrokerProxy import IBrokerProxy
-    from fabric.actor.core.apis.ISlice import ISlice
-    from fabric.actor.core.apis.IClientReservation import IClientReservation
-    from fabric.actor.core.kernel.ResourceSet import ResourceSet
-    from fabric.actor.core.util.ID import ID
-    from fabric.actor.core.apis.IClientCallbackProxy import IClientCallbackProxy
-    from fabric.actor.core.apis.IReservation import IReservation
-    from fabric.actor.core.apis.IBrokerReservation import IBrokerReservation
-    from fabric.actor.core.util.Client import Client
+    from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
+    from fabric.actor.core.apis.i_slice import ISlice
+    from fabric.actor.core.apis.i_client_reservation import IClientReservation
+    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.util.id import ID
+    from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
+    from fabric.actor.core.apis.i_reservation import IReservation
+    from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
+    from fabric.actor.core.util.client import Client
 
-from fabric.actor.core.apis.IBroker import IBroker
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.core.Actor import Actor
-from fabric.actor.core.registry.PeerRegistry import PeerRegistry
-from fabric.actor.core.time.ActorClock import ActorClock
-from fabric.actor.core.util.ReservationSet import ReservationSet
-from fabric.actor.security.AuthToken import AuthToken
+from fabric.actor.core.apis.i_broker import IBroker
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.core.actor import Actor
+from fabric.actor.core.registry.peer_registry import PeerRegistry
+from fabric.actor.core.time.actor_clock import ActorClock
+from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.security.auth_token import AuthToken
 
 
 class Broker(Actor, IBroker):

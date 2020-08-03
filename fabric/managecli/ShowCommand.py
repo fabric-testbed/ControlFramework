@@ -25,10 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 
-from fabric.actor.core.util.ID import ID
+from fabric.actor.core.util.id import ID
 from fabric.managecli.Command import Command
-from fabric.message_bus.messages.GetReservationsResponseAvro import GetReservationsResponseAvro
-from fabric.message_bus.messages.GetSlicesResponseAvro import GetSlicesResponseAvro
+from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
+from fabric.message_bus.messages.result_slice_avro import ResultSliceAvro
 
 
 class ShowCommand(Command):
@@ -45,7 +45,7 @@ class ShowCommand(Command):
             self.logger.error(ex_str)
             print("Exception occurred while processing get_slices {}".format(e))
 
-    def do_get_slices(self, actor_name: str, callback_topic: str) -> GetSlicesResponseAvro:
+    def do_get_slices(self, actor_name: str, callback_topic: str) -> ResultSliceAvro:
         actor = self.get_actor(actor_name)
 
         if actor is None:
@@ -70,7 +70,7 @@ class ShowCommand(Command):
             self.logger.error(ex_str)
             print("Exception occurred while processing get_slice {}".format(e))
 
-    def do_get_slice(self, actor_name: str, slice_id: str, callback_topic: str) -> GetSlicesResponseAvro:
+    def do_get_slice(self, actor_name: str, slice_id: str, callback_topic: str) -> ResultSliceAvro:
         actor = self.get_actor(actor_name)
 
         if actor is None or slice_id is None:
@@ -95,7 +95,7 @@ class ShowCommand(Command):
             self.logger.error(ex_str)
             print("Exception occurred while processing get_reservations {}".format(e))
 
-    def do_get_reservations(self, actor_name: str, callback_topic: str) -> GetReservationsResponseAvro:
+    def do_get_reservations(self, actor_name: str, callback_topic: str) -> ResultReservationAvro:
         actor = self.get_actor(actor_name)
 
         if actor is None:
@@ -120,7 +120,7 @@ class ShowCommand(Command):
             self.logger.error(ex_str)
             print("Exception occurred while processing get_reservation {}".format(e))
 
-    def do_get_reservation(self, actor_name: str, rid: str, callback_topic: str) -> GetReservationsResponseAvro:
+    def do_get_reservation(self, actor_name: str, rid: str, callback_topic: str) -> ResultReservationAvro:
         actor = self.get_actor(actor_name)
 
         if actor is None:

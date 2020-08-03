@@ -28,15 +28,15 @@ from __future__ import annotations
 import pickle
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.constants import Constants
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.ISlice import ISlice
-    from fabric.actor.core.util.ResourceData import ResourceData
+    from fabric.actor.core.apis.i_slice import ISlice
+    from fabric.actor.core.util.resource_data import ResourceData
 
-from fabric.actor.core.apis.ISliceFactory import ISliceFactory
-from fabric.actor.core.kernel.Slice import Slice
-from fabric.actor.core.util.ID import ID
+from fabric.actor.core.apis.i_slice_factory import ISliceFactory
+from fabric.actor.core.kernel.slice import Slice
+from fabric.actor.core.util.id import ID
 
 
 class SliceFactory(ISliceFactory):

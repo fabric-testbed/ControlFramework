@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.message_bus.messages.ResultAvro import ResultAvro
+from fabric.message_bus.messages.result_avro import ResultAvro
 
 
 class ResultEventMng:

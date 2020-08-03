@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.common.Constants import Constants
+from fabric.actor.core.common.constants import Constants
 
 
 class RuntimeConfig:

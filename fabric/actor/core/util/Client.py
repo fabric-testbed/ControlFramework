@@ -23,8 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.util.ID import ID
-from fabric.actor.security.AuthToken import AuthToken
+from fabric.actor.core.util.id import ID
+from fabric.actor.security.auth_token import AuthToken
 
 
 class Client:

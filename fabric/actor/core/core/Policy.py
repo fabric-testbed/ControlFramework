@@ -23,14 +23,14 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.apis.IActor import IActor
-from fabric.actor.core.apis.IPolicy import IPolicy
-from fabric.actor.core.apis.IReservation import IReservation
-from fabric.actor.core.plugins.config.ConfigToken import ConfigToken
-from fabric.actor.core.time.Term import Term
-from fabric.actor.core.util.ID import ID
-from fabric.actor.core.util.ReservationSet import ReservationSet
-from fabric.actor.core.kernel.ResourceSet import ResourceSet
+from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.apis.i_policy import IPolicy
+from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.plugins.config.config_token import ConfigToken
+from fabric.actor.core.time.term import Term
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.core.kernel.sesource_set import ResourceSet
 
 
 class Policy(IPolicy):

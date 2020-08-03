@@ -29,27 +29,27 @@ import queue
 import threading
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.apis.IReservation import IReservation
-from fabric.actor.core.manage.ControllerManagementObject import ControllerManagementObject
-from fabric.actor.core.manage.kafka.services.KafkaControllerService import KafkaControllerService
-from fabric.actor.core.proxies.kafka.services.ControllerService import ControllerService
-from fabric.actor.core.util.PropList import PropList
+from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.manage.controller_management_object import ControllerManagementObject
+from fabric.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
+from fabric.actor.core.proxies.kafka.services.controller_service import ControllerService
+from fabric.actor.core.util.prop_list import PropList
 
 if TYPE_CHECKING:
-    from fabric.actor.core.time.ActorClock import ActorClock
-    from fabric.actor.security.AuthToken import AuthToken
-    from fabric.actor.core.apis.IBrokerProxy import IBrokerProxy
-    from fabric.actor.core.apis.IClientReservation import IClientReservation
-    from fabric.actor.core.apis.ISlice import ISlice
-    from fabric.actor.core.kernel.ResourceSet import ResourceSet
-    from fabric.actor.core.util.ID import ID
-    from fabric.actor.core.apis.IControllerReservation import IControllerReservation
+    from fabric.actor.core.time.actor_clock import ActorClock
+    from fabric.actor.security.auth_token import AuthToken
+    from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
+    from fabric.actor.core.apis.i_client_reservation import IClientReservation
+    from fabric.actor.core.apis.i_slice import ISlice
+    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.util.id import ID
+    from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 
-from fabric.actor.core.apis.IController import IController
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.core.Actor import Actor
-from fabric.actor.core.registry.PeerRegistry import PeerRegistry
-from fabric.actor.core.util.ReservationSet import ReservationSet
+from fabric.actor.core.apis.i_controller import IController
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.core.actor import Actor
+from fabric.actor.core.registry.peer_registry import PeerRegistry
+from fabric.actor.core.util.reservation_set import ReservationSet
 
 
 class Controller(Actor, IController):

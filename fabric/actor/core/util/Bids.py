@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.util.ReservationSet import ReservationSet
+from fabric.actor.core.util.reservation_set import ReservationSet
 
 
 class Bids:

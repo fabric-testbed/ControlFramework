@@ -28,17 +28,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fabric.actor.core.core.Actor import Actor
-    from fabric.actor.core.apis.IDatabase import IDatabase
-    from fabric.actor.core.apis.IReservation import IReservation
-    from fabric.actor.core.core.Unit import Unit
-    from fabric.actor.core.plugins.config.ConfigToken import ConfigToken
+    from fabric.actor.core.core.actor import Actor
+    from fabric.actor.core.apis.i_database import IDatabase
+    from fabric.actor.core.apis.i_reservation import IReservation
+    from fabric.actor.core.core.unit import Unit
+    from fabric.actor.core.plugins.config.config_token import ConfigToken
 
-from fabric.actor.core.plugins.config.Config import Config
-from fabric.actor.core.apis.ISubstrateDatabase import ISubstrateDatabase
-from fabric.actor.core.plugins.BasePlugin import BasePlugin
-from fabric.actor.core.apis.ISubstrate import ISubstrate
-from fabric.actor.core.util.PropList import PropList
+from fabric.actor.core.plugins.config.config import Config
+from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
+from fabric.actor.core.plugins.base_plugin import BasePlugin
+from fabric.actor.core.apis.i_substrate import ISubstrate
+from fabric.actor.core.util.prop_list import PropList
 
 
 class Substrate(BasePlugin, ISubstrate):

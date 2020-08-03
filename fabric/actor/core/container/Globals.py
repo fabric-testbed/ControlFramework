@@ -28,16 +28,16 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.container.Container import Container
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.container.container import Container
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.IActorContainer import IActorContainer
-    from fabric.actor.boot.Configuration import Configuration
+    from fabric.actor.core.apis.i_actor_container import IActorContainer
+    from fabric.actor.boot.configuration import Configuration
 
 import logging
 import os
-from fabric.actor.core.container.EventManager import EventManager
+from fabric.actor.core.container.event_manager import EventManager
 
 
 class Globals:
@@ -126,7 +126,7 @@ class Globals:
 
     def load_config(self):
         try:
-            from fabric.actor.boot.ConfigurationLoader import ConfigurationLoader
+            from fabric.actor.boot.configuration_loader import ConfigurationLoader
             loader = ConfigurationLoader(self.ConfigFile)
             self.config = loader.read_configuration()
         except Exception as e:

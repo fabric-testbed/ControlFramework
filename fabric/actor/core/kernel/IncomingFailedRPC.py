@@ -26,12 +26,12 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.kernel.IncomingRPC import IncomingRPC
+from fabric.actor.core.kernel.incoming_rpc import IncomingRPC
 
 if TYPE_CHECKING:
-    from fabric.actor.core.kernel.RPCRequestType import RPCRequestType
-    from fabric.actor.core.util.ID import ID
-    from fabric.actor.security.AuthToken import AuthToken
+    from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
+    from fabric.actor.core.util.id import ID
+    from fabric.actor.security.auth_token import AuthToken
 
 
 class IncomingFailedRPC(IncomingRPC):

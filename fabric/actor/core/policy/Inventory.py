@@ -26,24 +26,24 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.common.ResourcePoolAttributeDescriptor import ResourcePoolAttributeDescriptor, ResourcePoolAttributeType
-from fabric.actor.core.common.ResourcePoolDescriptor import ResourcePoolDescriptor
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.resource_pool_attribute_descriptor import ResourcePoolAttributeDescriptor, ResourcePoolAttributeType
+from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric.actor.core.policy.SimplerUnitsInventory import SimplerUnitsInventory
-from fabric.actor.core.util.PropList import PropList
-from fabric.actor.core.util.ReflectionUtils import ReflectionUtils
-from fabric.actor.core.util import ResourceType
+from fabric.actor.core.util.prop_list import PropList
+from fabric.actor.core.util.reflection_utils import ReflectionUtils
+from fabric.actor.core.util import resource_type
 
 if TYPE_CHECKING:
-    from fabric.actor.core.policy.InventoryForType import InventoryForType
-    from fabric.actor.core.apis.IClientReservation import IClientReservation
+    from fabric.actor.core.policy.inventory_for_type import InventoryForType
+    from fabric.actor.core.apis.i_client_reservation import IClientReservation
 
 
 class Inventory:
     def __init__(self):
         self.map = {}
 
-    def contains_type(self, resource_type: ResourceType):
+    def contains_type(self, resource_type: resource_type):
         if resource_type is None:
             raise Exception("Invalid argument")
 
@@ -52,7 +52,7 @@ class Inventory:
 
         return False
 
-    def get(self, resource_type: ResourceType) -> InventoryForType:
+    def get(self, resource_type: resource_type) -> InventoryForType:
         if resource_type is None:
             raise Exception("Invalid argument")
 

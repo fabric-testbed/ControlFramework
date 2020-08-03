@@ -36,27 +36,27 @@ from enum import Enum
 
 from yapsy.PluginManager import PluginManagerSingleton
 
-from fabric.actor.core.container.RemoteActorCache import RemoteActorCacheSingleton
-from fabric.actor.core.container.db.ContainerDatabase import ContainerDatabase
-from fabric.actor.core.proxies.ActorLocation import ActorLocation
-from fabric.actor.core.proxies.ProxyFactory import ProxyFactorySingleton
-from fabric.actor.core.registry.ActorRegistry import ActorRegistrySingleton
-from fabric.actor.core.time.ActorClock import ActorClock
-from fabric.actor.core.util.ReflectionUtils import ReflectionUtils
-from fabric.actor.core.apis.IActorContainer import IActorContainer
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.container.ProtocolDescriptor import ProtocolDescriptor
-from fabric.actor.core.extensions.PluginManager import PluginManager
-from fabric.actor.core.kernel.KernelTick import KernelTick
-from fabric.actor.core.manage.ManagementObjectManager import ManagementObjectManager
+from fabric.actor.core.container.remote_actor_cache import RemoteActorCacheSingleton
+from fabric.actor.core.container.db.container_database import ContainerDatabase
+from fabric.actor.core.proxies.actor_location import ActorLocation
+from fabric.actor.core.proxies.proxy_factory import ProxyFactorySingleton
+from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
+from fabric.actor.core.time.actor_clock import ActorClock
+from fabric.actor.core.util.reflection_utils import ReflectionUtils
+from fabric.actor.core.apis.i_actor_container import IActorContainer
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.container.protocol_descriptor import ProtocolDescriptor
+from fabric.actor.core.extensions.plugin_manager import PluginManager
+from fabric.actor.core.kernel.kernel_tick import KernelTick
+from fabric.actor.core.manage.management_object_manager import ManagementObjectManager
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.IActor import IActor
-    from fabric.actor.core.apis.ITick import ITick
-    from fabric.actor.core.util.ID import ID
-    from fabric.actor.core.apis.IActorIdentity import IActorIdentity
-    from fabric.actor.core.apis.IContainerDatabase import IContainerDatabase
-    from fabric.actor.boot.Configuration import Configuration
+    from fabric.actor.core.apis.i_actor import IActor
+    from fabric.actor.core.apis.i_tick import ITick
+    from fabric.actor.core.util.id import ID
+    from fabric.actor.core.apis.i_actor_identity import IActorIdentity
+    from fabric.actor.core.apis.i_container_database import IContainerDatabase
+    from fabric.actor.boot.configuration import Configuration
 
 
 class ContainerState(Enum):
@@ -91,7 +91,7 @@ class Container(IActorContainer):
         self.recovered = False
         self.plugin_manager = PluginManager()
         self.management_object_manager = ManagementObjectManager()
-        from fabric.actor.core.container.Globals import GlobalsSingleton
+        from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
         self.db = None
         self.container_lock = threading.Lock()
@@ -161,7 +161,7 @@ class Container(IActorContainer):
 
             if self.is_fresh():
                 try:
-                    from fabric.actor.boot.ConfigurationLoader import ConfigurationLoader
+                    from fabric.actor.boot.configuration_loader import ConfigurationLoader
                     loader = ConfigurationLoader()
                     loader.process(self.config)
                 except Exception as e:
@@ -189,7 +189,7 @@ class Container(IActorContainer):
         self.define_protocols()
         self.plugin_manager.initialize(self.db)
         self.management_object_manager.initialize(self.db)
-        from fabric.actor.core.kernel.RPCManagerSingleton import RPCManagerSingleton
+        from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
         RPCManagerSingleton.get().start()
 
     def define_protocols(self):
@@ -263,7 +263,7 @@ class Container(IActorContainer):
 
     def create_container_manager_object(self):
         self.logger.info("Creating container manager object")
-        from fabric.actor.core.manage.ContainerManagementObject import ContainerManagementObject
+        from fabric.actor.core.manage.container_management_object import ContainerManagementObject
         management_object = ContainerManagementObject()
         self.management_object_manager.register_manager_object(management_object)
 
@@ -410,7 +410,7 @@ class Container(IActorContainer):
             self.remove_state_file()
             self.stop()
             self.logger.info("Stopping RPC Manager")
-            from fabric.actor.core.kernel.RPCManagerSingleton import RPCManagerSingleton
+            from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
             RPCManagerSingleton.get().stop()
             self.logger.info("Stopping actors")
             actors = ActorRegistrySingleton.get().get_actors()

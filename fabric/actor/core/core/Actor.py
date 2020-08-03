@@ -28,36 +28,36 @@ import queue
 import threading
 import traceback
 
-from fabric.actor.core.apis.IPolicy import IPolicy
-from fabric.actor.core.apis.ITimerTask import ITimerTask
-from fabric.actor.core.apis.IActor import IActor
-from fabric.actor.core.apis.IActorEvent import IActorEvent
-from fabric.actor.core.apis.IActorProxy import IActorProxy
-from fabric.actor.core.apis.IActorRunnable import IActorRunnable
-from fabric.actor.core.apis.IQueryResponseHandler import IQueryResponseHandler
-from fabric.actor.core.apis.IReservation import IReservation
-from fabric.actor.core.apis.IReservationTracker import IReservationTracker
-from fabric.actor.core.apis.ISlice import ISlice
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.container.MessageService import MessageService
-from fabric.actor.core.core.ReservationTracker import ReservationTracker
-from fabric.actor.core.kernel.FailedRPC import FailedRPC
-from fabric.actor.core.kernel.KernelWrapper import KernelWrapper
-from fabric.actor.core.kernel.RPCManagerSingleton import RPCManagerSingleton
-from fabric.actor.core.kernel.ReservationFactory import ReservationFactory
-from fabric.actor.core.kernel.ResourceSet import ResourceSet
+from fabric.actor.core.apis.i_policy import IPolicy
+from fabric.actor.core.apis.i_timer_task import ITimerTask
+from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.apis.i_actor_event import IActorEvent
+from fabric.actor.core.apis.i_actor_proxy import IActorProxy
+from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
+from fabric.actor.core.apis.i_query_response_handler import IQueryResponseHandler
+from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.apis.i_reservation_tracker import IReservationTracker
+from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.container.message_service import MessageService
+from fabric.actor.core.core.reservation_tracker import ReservationTracker
+from fabric.actor.core.kernel.failed_rpc import FailedRPC
+from fabric.actor.core.kernel.kernel_wrapper import KernelWrapper
+from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
+from fabric.actor.core.kernel.reservation_factory import ReservationFactory
+from fabric.actor.core.kernel.sesource_set import ResourceSet
 from fabric.actor.core.kernel.SliceFactory import SliceFactory
-from fabric.actor.core.proxies.Proxy import Proxy
-from fabric.actor.core.time.ActorClock import ActorClock
-from fabric.actor.core.time.Term import Term
-from fabric.actor.core.util.AllActorEventsFilter import AllActorEventsFilter
-from fabric.actor.core.util.ID import ID
-from fabric.actor.core.util.IterableQueue import IterableQueue
-from fabric.actor.core.util.ReflectionUtils import ReflectionUtils
-from fabric.actor.core.util.ReservationSet import ReservationSet
-from fabric.actor.security.AccessMonitor import AccessMonitor
-from fabric.actor.security.AuthToken import AuthToken
-from fabric.actor.security.Guard import Guard
+from fabric.actor.core.proxies.proxy import Proxy
+from fabric.actor.core.time.actor_clock import ActorClock
+from fabric.actor.core.time.term import Term
+from fabric.actor.core.util.all_actor_events_filter import AllActorEventsFilter
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.util.iterable_queue import IterableQueue
+from fabric.actor.core.util.reflection_utils import ReflectionUtils
+from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.security.access_monitor import AccessMonitor
+from fabric.actor.security.auth_token import AuthToken
+from fabric.actor.security.guard import Guard
 
 
 class ExecutionStatus:
@@ -198,7 +198,7 @@ class Actor(IActor):
         self.plugin.actor_added()
         self.reservation_tracker = ReservationTracker()
         filters = [AllActorEventsFilter(self.get_guid())]
-        from fabric.actor.core.container.Globals import GlobalsSingleton
+        from fabric.actor.core.container.globals import GlobalsSingleton
         self.subscription_id = GlobalsSingleton.get().event_manager.create_subscription(self.identity,
                                                                                         filters,
                                                                                         self.reservation_tracker)
@@ -206,7 +206,7 @@ class Actor(IActor):
     def actor_removed(self):
         if self.subscription_id is not None:
             try:
-                from fabric.actor.core.container.Globals import GlobalsSingleton
+                from fabric.actor.core.container.globals import GlobalsSingleton
                 GlobalsSingleton.get().event_manager.delete_subscription(self.subscription_id, self.identity)
             except Exception as e:
                 self.logger.error(e)
@@ -344,7 +344,7 @@ class Actor(IActor):
         return self.type
 
     def initialize(self):
-        from fabric.actor.core.container.Globals import GlobalsSingleton
+        from fabric.actor.core.container.globals import GlobalsSingleton
 
         if not self.initialized:
             if self.identity is None:
@@ -754,7 +754,7 @@ class Actor(IActor):
             kafka_mgmt_service.set_logger(self.logger)
 
             # Incoming Message Service
-            from fabric.actor.core.container.Globals import GlobalsSingleton
+            from fabric.actor.core.container.globals import GlobalsSingleton
             config = GlobalsSingleton.get().get_config()
             topic = config.get_actor().get_kafka_topic()
             topics = [topic]

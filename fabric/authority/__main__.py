@@ -26,8 +26,8 @@
 import time
 import traceback
 
-from fabric.actor.core.container.Globals import Globals, GlobalsSingleton
-from fabric.actor.core.util.GracefulInterruptHandler import GracefulInterruptHandler
+from fabric.actor.core.container.globals import Globals, GlobalsSingleton
+from fabric.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
 
 
 def main():
