@@ -29,9 +29,9 @@ import threading
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fabric.actor.core.plugins.BasePlugin import BasePlugin
-    from fabric.actor.core.plugins.config.ConfigToken import ConfigToken
-    from fabric.actor.core.plugins.config.ConfigurationMapping import ConfigurationMapping
+    from fabric.actor.core.plugins.base_plugin import BasePlugin
+    from fabric.actor.core.plugins.config.config_token import ConfigToken
+    from fabric.actor.core.plugins.config.configuration_mapping import ConfigurationMapping
 
 
 class Config:

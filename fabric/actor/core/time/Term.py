@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime
 
-from fabric.actor.core.time.ActorClock import ActorClock
+from fabric.actor.core.time.actor_clock import ActorClock
 
 
 class Term:
@@ -88,7 +88,7 @@ class Term:
         @returns clock factory
         """
         if Term.clock is None:
-            from fabric.actor.core.container.Globals import GlobalsSingleton
+            from fabric.actor.core.container.globals import GlobalsSingleton
             actor_container = GlobalsSingleton.get().get_container()
             if actor_container is not None:
                 Term.clock = actor_container.get_actor_clock()

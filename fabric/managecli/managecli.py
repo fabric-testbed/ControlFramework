@@ -28,11 +28,11 @@ import threading
 import traceback
 import click
 
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.manage.kafka.KafkaActor import KafkaActor
-from fabric.actor.core.manage.kafka.KafkaBroker import KafkaBroker
-from fabric.actor.core.manage.kafka.KafkaMgmtMessageProcessor import KafkaMgmtMessageProcessor
-from fabric.actor.core.util.ID import ID
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.manage.kafka.kafka_actor import KafkaActor
+from fabric.actor.core.manage.kafka.kafka_broker import KafkaBroker
+from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
+from fabric.actor.core.util.id import ID
 from fabric.managecli.ConfigProcessor import ConfigProcessor
 from fabric.managecli.ManageCommand import ManageCommand
 from fabric.managecli.ShowCommand import ShowCommand

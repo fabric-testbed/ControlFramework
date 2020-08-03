@@ -27,10 +27,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.IClientReservation import IClientReservation
+    from fabric.actor.core.apis.i_client_reservation import IClientReservation
 
-from fabric.actor.core.policy.FreeAllocatedSet import FreeAllocatedSet
-from fabric.actor.core.policy.InventoryForType import InventoryForType
+from fabric.actor.core.policy.free_allocated_set import FreeAllocatedSet
+from fabric.actor.core.policy.inventory_for_type import InventoryForType
 
 
 class SimplerUnitsInventory(InventoryForType):

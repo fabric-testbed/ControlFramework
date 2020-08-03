@@ -27,7 +27,7 @@
 import yaml
 
 from fabric.managecli.Configuration import Configuration
-from fabric.message_bus.messages.AuthAvro import AuthAvro
+from fabric.message_bus.messages.auth_avro import AuthAvro
 
 
 class ConfigProcessor:

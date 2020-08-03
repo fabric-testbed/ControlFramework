@@ -28,37 +28,37 @@ from __future__ import annotations
 import traceback
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.apis.IClientReservation import IClientReservation
-from fabric.actor.core.apis.IControllerReservation import IControllerReservation
+from fabric.actor.core.apis.i_client_reservation import IClientReservation
+from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.core.ActorIdentity import ActorIdentity
-from fabric.actor.core.core.Ticket import Ticket
-from fabric.actor.core.core.Unit import Unit
-from fabric.actor.core.kernel.ResourceSet import ResourceSet
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.core.actor_identity import ActorIdentity
+from fabric.actor.core.core.ticket import Ticket
+from fabric.actor.core.core.unit import Unit
+from fabric.actor.core.kernel.sesource_set import ResourceSet
 from fabric.actor.core.manage.messages.ActorMng import ActorMng
-from fabric.message_bus.messages.LeaseReservationAvro import LeaseReservationAvro
+from fabric.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric.actor.core.manage.messages.ProxyMng import ProxyMng
-from fabric.message_bus.messages.LeaseReservationStateAvro import LeaseReservationStateAvro
-from fabric.message_bus.messages.ReservationMng import ReservationMng
-from fabric.message_bus.messages.ReservationStateAvro import ReservationStateAvro
-from fabric.message_bus.messages.TicketReservationAvro import TicketReservationAvro
+from fabric.message_bus.messages.lease_reservation_state_avro import LeaseReservationStateAvro
+from fabric.message_bus.messages.reservation_mng import ReservationMng
+from fabric.message_bus.messages.reservation_state_avro import ReservationStateAvro
+from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric.actor.core.manage.messages.UnitMng import UnitMng
-from fabric.actor.core.proxies.ActorLocation import ActorLocation
-from fabric.actor.core.proxies.kafka.KafkaProxy import KafkaProxy
-from fabric.actor.core.proxies.local.LocalProxy import LocalProxy
-from fabric.actor.core.util.Client import Client
-from fabric.actor.core.util.ID import ID
-from fabric.actor.core.util.PropList import PropList
-from fabric.actor.core.util.ResourceData import ResourceData
-from fabric.actor.core.util.ResourceType import ResourceType
+from fabric.actor.core.proxies.actor_location import ActorLocation
+from fabric.actor.core.proxies.kafka.kafka_proxy import KafkaProxy
+from fabric.actor.core.proxies.local.local_proxy import LocalProxy
+from fabric.actor.core.util.client import Client
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.util.prop_list import PropList
+from fabric.actor.core.util.resource_data import ResourceData
+from fabric.actor.core.util.resource_type import ResourceType
 from fabric.actor.core.manage.messages.ClientMng import ClientMng
-from fabric.message_bus.messages.SliceAvro import SliceAvro
+from fabric.message_bus.messages.slice_avro import SliceAvro
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.IReservation import IReservation
-    from fabric.actor.core.apis.IProxy import IProxy
-    from fabric.actor.core.apis.IActor import IActor
+    from fabric.actor.core.apis.i_reservation import IReservation
+    from fabric.actor.core.apis.i_proxy import IProxy
+    from fabric.actor.core.apis.i_actor import IActor
 
 
 class Converter:
@@ -277,7 +277,7 @@ class Converter:
         try:
             location = ActorLocation(mng.get_kafka_topic())
             identity = ActorIdentity(mng.get_name(), ID(mng.get_guid()))
-            from fabric.actor.core.container.Container import Container
+            from fabric.actor.core.container.container import Container
             return Container.get_proxy(mng.get_protocol(), identity, location, mng.get_type())
         except Exception as e:
             traceback.print_exc()
@@ -321,14 +321,14 @@ class Converter:
 
     @staticmethod
     def fill_actor_from_db(properties: dict) -> ActorMng:
-        from fabric.actor.core.core.Actor import Actor
+        from fabric.actor.core.core.actor import Actor
         actor = Actor.create_instance(properties)
         result = ActorMng()
         result.set_description(actor.get_description())
         result.set_name(actor.get_name())
         result.set_type(actor.get_type())
 
-        from fabric.actor.core.registry.ActorRegistry import ActorRegistrySingleton
+        from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
         aa = ActorRegistrySingleton.get().get_actor(actor.get_name())
         result.set_online(aa is not None)
 

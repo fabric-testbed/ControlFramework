@@ -31,22 +31,22 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.IActor import IActor
-    from fabric.actor.core.apis.IPolicy import IPolicy
-    from fabric.actor.core.apis.ISlice import ISlice
-    from fabric.actor.core.apis.IKernelSlice import IKernelSlice
-    from fabric.actor.core.kernel.RequestTypes import RequestTypes
-    from fabric.actor.core.kernel.ResourceSet import ResourceSet
-    from fabric.actor.core.time.Term import Term
-    from fabric.actor.core.util.ID import ID
-    from fabric.actor.core.util.ResourceType import ResourceType
+    from fabric.actor.core.apis.i_actor import IActor
+    from fabric.actor.core.apis.i_policy import IPolicy
+    from fabric.actor.core.apis.i_slice import ISlice
+    from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
+    from fabric.actor.core.kernel.request_types import RequestTypes
+    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.time.term import Term
+    from fabric.actor.core.util.id import ID
+    from fabric.actor.core.util.resource_type import ResourceType
 
-from fabric.actor.core.apis.IReservation import IReservation
-from fabric.actor.core.apis.IKernelReservation import IKernelReservation
-from fabric.actor.core.kernel.ReservationStateTransitionEvent import ReservationStateTransitionEvent
-from fabric.actor.core.kernel.ReservationStates import ReservationStates, ReservationPendingStates, JoinState
-from fabric.actor.core.util.ReservationState import ReservationState
-from fabric.actor.security.Guard import Guard
+from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
+from fabric.actor.core.kernel.reservation_state_transition_event import ReservationStateTransitionEvent
+from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
+from fabric.actor.core.util.reservation_state import ReservationState
+from fabric.actor.security.guard import Guard
 
 
 class Reservation(IKernelReservation):
@@ -598,7 +598,7 @@ class Reservation(IKernelReservation):
         self.pending_state = pending
 
         if self.actor is not None:
-            from fabric.actor.core.container.Globals import GlobalsSingleton
+            from fabric.actor.core.container.globals import GlobalsSingleton
             GlobalsSingleton.get().event_manager.dispatch_event(
                 ReservationStateTransitionEvent(self, self.get_reservation_state()))
 

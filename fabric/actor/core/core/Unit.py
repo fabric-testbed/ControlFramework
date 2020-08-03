@@ -27,12 +27,12 @@ import pickle
 from enum import Enum
 
 
-from fabric.actor.core.apis.IReservation import IReservation
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.plugins.config.ConfigToken import ConfigToken
-from fabric.actor.core.util.ID import ID
-from fabric.actor.core.util.Notice import Notice
-from fabric.actor.core.util.ResourceType import ResourceType
+from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.plugins.config.config_token import ConfigToken
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.util.notice import Notice
+from fabric.actor.core.util.resource_type import ResourceType
 
 
 class UnitState(Enum):

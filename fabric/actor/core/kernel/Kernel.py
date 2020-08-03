@@ -26,32 +26,32 @@
 import threading
 import traceback
 
-from fabric.actor.core.apis.IBasePlugin import IBasePlugin
-from fabric.actor.core.apis.IPolicy import IPolicy
-from fabric.actor.core.apis.ISlice import ISlice
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.common.Exceptions import ReservationNotFoundException
-from fabric.actor.core.container.Globals import GlobalsSingleton
-from fabric.actor.core.kernel.AuthorityReservation import AuthorityReservation
-from fabric.actor.core.kernel.FailedRPC import FailedRPC
-from fabric.actor.core.apis.IKernelBrokerReservation import IKernelBrokerReservation
-from fabric.actor.core.apis.IKernelControllerReservation import IKernelControllerReservation
-from fabric.actor.core.apis.IKernelReservation import IKernelReservation
-from fabric.actor.core.apis.IKernelServerReservation import IKernelServerReservation
-from fabric.actor.core.apis.IKernelSlice import IKernelSlice
-from fabric.actor.core.kernel.RequestTypes import RequestTypes
-from fabric.actor.core.kernel.Reservation import Reservation
-from fabric.actor.core.kernel.ReservationPurgedEvent import ReservationPurgedEvent
-from fabric.actor.core.kernel.ReservationStates import ReservationPendingStates, ReservationStates
-from fabric.actor.core.kernel.ResourceSet import ResourceSet
-from fabric.actor.core.kernel.SequenceComparisonCodes import SequenceComparisonCodes
-from fabric.actor.core.kernel.SliceTable2 import SliceTable2
-from fabric.actor.core.time.Term import Term
-from fabric.actor.core.util.ID import ID
-from fabric.actor.core.util.ReservationSet import ReservationSet
-from fabric.actor.core.util.ResourceData import ResourceData
-from fabric.actor.core.util.UpdateData import UpdateData
-from fabric.actor.security.AuthToken import AuthToken
+from fabric.actor.core.apis.i_base_plugin import IBasePlugin
+from fabric.actor.core.apis.i_policy import IPolicy
+from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ReservationNotFoundException
+from fabric.actor.core.container.globals import GlobalsSingleton
+from fabric.actor.core.kernel.authority_reservation import AuthorityReservation
+from fabric.actor.core.kernel.failed_rpc import FailedRPC
+from fabric.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
+from fabric.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
+from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
+from fabric.actor.core.apis.i_kernel_server_reservation import IKernelServerReservation
+from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
+from fabric.actor.core.kernel.request_types import RequestTypes
+from fabric.actor.core.kernel.reservation import Reservation
+from fabric.actor.core.kernel.reservation_purged_event import ReservationPurgedEvent
+from fabric.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
+from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
+from fabric.actor.core.kernel.slice_table2 import SliceTable2
+from fabric.actor.core.time.term import Term
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.core.util.resource_data import ResourceData
+from fabric.actor.core.util.update_data import UpdateData
+from fabric.actor.security.auth_token import AuthToken
 
 
 class Kernel:

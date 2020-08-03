@@ -26,14 +26,14 @@
 import pickle
 from datetime import datetime
 
-from fabric.actor.core.apis.IBasePlugin import IBasePlugin
-from fabric.actor.core.apis.IAuthorityProxy import IAuthorityProxy
-from fabric.actor.core.apis.IConcreteSet import IConcreteSet
-from fabric.actor.core.apis.IReservation import IReservation
-from fabric.actor.core.delegation.ResourceTicket import ResourceTicket
-from fabric.actor.core.time.Term import Term
-from fabric.actor.core.util.Notice import Notice
-from fabric.actor.core.util.ResourceType import ResourceType
+from fabric.actor.core.apis.i_base_plugin import IBasePlugin
+from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
+from fabric.actor.core.apis.i_concrete_set import IConcreteSet
+from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.delegation.resource_ticket import ResourceTicket
+from fabric.actor.core.time.term import Term
+from fabric.actor.core.util.notice import Notice
+from fabric.actor.core.util.resource_type import ResourceType
 
 
 class Ticket(IConcreteSet):

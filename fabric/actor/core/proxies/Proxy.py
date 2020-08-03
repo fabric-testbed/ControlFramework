@@ -25,16 +25,16 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
 
-from fabric.actor.core.apis.IActor import IActor
-from fabric.actor.core.apis.IBasePlugin import IBasePlugin
-from fabric.actor.core.apis.ICallbackProxy import ICallbackProxy
-from fabric.actor.core.apis.IConcreteSet import IConcreteSet
-from fabric.actor.core.apis.IProxy import IProxy
-from fabric.actor.core.kernel.ResourceSet import ResourceSet
-from fabric.actor.core.registry.ActorRegistry import ActorRegistrySingleton
-from fabric.actor.core.util.ID import ID
-from fabric.actor.core.util.ResourceData import ResourceData
-from fabric.actor.security.AuthToken import AuthToken
+from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.apis.i_base_plugin import IBasePlugin
+from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
+from fabric.actor.core.apis.i_concrete_set import IConcreteSet
+from fabric.actor.core.apis.i_proxy import IProxy
+from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.util.resource_data import ResourceData
+from fabric.actor.security.auth_token import AuthToken
 
 
 class Proxy(IProxy):
@@ -111,7 +111,7 @@ class Proxy(IProxy):
         if Proxy.PropertyProxyActorName in properties:
             name = properties[Proxy.PropertyProxyActorName]
 
-        from fabric.actor.core.container.Globals import GlobalsSingleton
+        from fabric.actor.core.container.globals import GlobalsSingleton
         proxy.set_logger(GlobalsSingleton.get().get_logger())
 
         if register:

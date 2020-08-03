@@ -26,29 +26,29 @@
 import queue
 import threading
 
-from fabric.actor.core.apis.IAuthority import IAuthority
-from fabric.actor.core.apis.IAuthorityReservation import IAuthorityReservation
-from fabric.actor.core.apis.IBrokerReservation import IBrokerReservation
-from fabric.actor.core.apis.IClientCallbackProxy import IClientCallbackProxy
-from fabric.actor.core.apis.IClientReservation import IClientReservation
-from fabric.actor.core.apis.IControllerCallbackProxy import IControllerCallbackProxy
-from fabric.actor.core.apis.IReservation import IReservation
-from fabric.actor.core.apis.ISlice import ISlice
-from fabric.actor.core.common.Constants import Constants
-from fabric.actor.core.core.Actor import Actor
-from fabric.actor.core.kernel.BrokerReservationFactory import BrokerReservationFactory
-from fabric.actor.core.kernel.ResourceSet import ResourceSet
+from fabric.actor.core.apis.i_authority import IAuthority
+from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
+from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
+from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
+from fabric.actor.core.apis.i_client_reservation import IClientReservation
+from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
+from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.core.actor import Actor
+from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
+from fabric.actor.core.kernel.sesource_set import ResourceSet
 from fabric.actor.core.kernel.SliceFactory import SliceFactory
-from fabric.actor.core.manage.AuthorityManagementObject import AuthorityManagementObject
-from fabric.actor.core.manage.kafka.services.KafkaAuthorityService import KafkaAuthorityService
-from fabric.actor.core.proxies.kafka.services.AuthorityService import AuthorityService
-from fabric.actor.core.time.ActorClock import ActorClock
-from fabric.actor.core.time.Term import Term
-from fabric.actor.core.util.Client import Client
-from fabric.actor.core.util.ID import ID
-from fabric.actor.core.util.ReservationSet import ReservationSet
-from fabric.actor.core.util.ResourceData import ResourceData
-from fabric.actor.security.AuthToken import AuthToken
+from fabric.actor.core.manage.authority_management_object import AuthorityManagementObject
+from fabric.actor.core.manage.kafka.services.kafka_authority_service import KafkaAuthorityService
+from fabric.actor.core.proxies.kafka.services.authority_service import AuthorityService
+from fabric.actor.core.time.actor_clock import ActorClock
+from fabric.actor.core.time.term import Term
+from fabric.actor.core.util.client import Client
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.core.util.resource_data import ResourceData
+from fabric.actor.security.auth_token import AuthToken
 
 
 class Authority(Actor, IAuthority):

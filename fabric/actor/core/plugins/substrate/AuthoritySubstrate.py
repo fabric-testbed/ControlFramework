@@ -26,17 +26,17 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.core.UnitSet import UnitSet
-from fabric.actor.core.core.PoolManager import PoolManager
-from fabric.actor.core.kernel.ResourceSet import ResourceSet
-from fabric.actor.core.util.ResourceData import ResourceData
+from fabric.actor.core.core.unit_set import UnitSet
+from fabric.actor.core.core.pool_manager import PoolManager
+from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.util.resource_data import ResourceData
 
 if TYPE_CHECKING:
-    from fabric.actor.core.core.Actor import Actor
-    from fabric.actor.core.plugins.config.Config import Config
-    from fabric.actor.core.apis.ISubstrateDatabase import ISubstrateDatabase
-    from fabric.actor.core.apis.IReservation import IReservation
-    from fabric.actor.core.apis.ISlice import ISlice
+    from fabric.actor.core.core.actor import Actor
+    from fabric.actor.core.plugins.config.config import Config
+    from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
+    from fabric.actor.core.apis.i_reservation import IReservation
+    from fabric.actor.core.apis.i_slice import ISlice
 
 from fabric.actor.core.plugins.substrate.Substrate import Substrate
 

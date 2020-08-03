@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-import fabric.actor.core.apis.IBasePlugin as ActorPluginType
+import fabric.actor.core.apis.i_base_plugin as ActorPluginType
 
 
 class ControllerPlugin(ActorPluginType.IBasePlugin):

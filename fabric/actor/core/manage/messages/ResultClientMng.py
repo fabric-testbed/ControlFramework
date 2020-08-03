@@ -26,7 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from fabric.message_bus.messages.ResultAvro import ResultAvro
+    from fabric.message_bus.messages.result_avro import ResultAvro
 
 
 class ResultClientMng:

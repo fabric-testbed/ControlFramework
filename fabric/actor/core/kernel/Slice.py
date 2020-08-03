@@ -25,15 +25,15 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from enum import Enum
 
-from fabric.actor.core.apis.ISlice import ISlice
-from fabric.actor.core.apis.IKernelReservation import IKernelReservation
-from fabric.actor.core.apis.IKernelSlice import IKernelSlice
-from fabric.actor.core.util.ID import ID
-from fabric.actor.core.util.ReservationSet import ReservationSet
-from fabric.actor.core.util.ResourceData import ResourceData
-from fabric.actor.core.util.ResourceType import ResourceType
-from fabric.actor.security.AuthToken import AuthToken
-from fabric.actor.security.Guard import Guard
+from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
+from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.core.util.resource_data import ResourceData
+from fabric.actor.core.util.resource_type import ResourceType
+from fabric.actor.security.auth_token import AuthToken
+from fabric.actor.security.guard import Guard
 
 
 class SliceTypes(Enum):

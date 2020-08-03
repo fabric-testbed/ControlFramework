@@ -29,27 +29,27 @@ import pickle
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.kernel.ResourceSet import ResourceSet
+from fabric.actor.core.kernel.sesource_set import ResourceSet
 from fabric.actor.core.kernel.SliceFactory import SliceFactory
 
-from fabric.actor.core.time.Term import Term
-from fabric.actor.core.util.ID import ID
-from fabric.actor.core.util.PropList import PropList
-from fabric.actor.core.util.ResourceData import ResourceData
-from fabric.actor.core.util.ResourceType import ResourceType
-from fabric.actor.core.util.UpdateData import UpdateData
-from fabric.actor.security.AuthToken import AuthToken
-from fabric.message_bus.messages.AuthAvro import AuthAvro
-from fabric.message_bus.messages.ResourceDataAvro import ResourceDataAvro
-from fabric.message_bus.messages.ResourceSetAvro import ResourceSetAvro
-from fabric.message_bus.messages.SliceAvro import SliceAvro
-from fabric.message_bus.messages.TermAvro import TermAvro
-from fabric.message_bus.messages.UpdateDataAvro import UpdateDataAvro
+from fabric.actor.core.time.term import Term
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.util.prop_list import PropList
+from fabric.actor.core.util.resource_data import ResourceData
+from fabric.actor.core.util.resource_type import ResourceType
+from fabric.actor.core.util.update_data import UpdateData
+from fabric.actor.security.auth_token import AuthToken
+from fabric.message_bus.messages.auth_avro import AuthAvro
+from fabric.message_bus.messages.resource_data_avro import ResourceDataAvro
+from fabric.message_bus.messages.resource_set_avro import ResourceSetAvro
+from fabric.message_bus.messages.slice_avro import SliceAvro
+from fabric.message_bus.messages.term_avro import TermAvro
+from fabric.message_bus.messages.update_data_avro import UpdateDataAvro
 
-from fabric.actor.core.apis.IReservation import IReservation
+from fabric.actor.core.apis.i_reservation import IReservation
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.ISlice import ISlice
+    from fabric.actor.core.apis.i_slice import ISlice
 
 
 class Translate:

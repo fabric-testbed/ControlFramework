@@ -26,8 +26,8 @@
 import threading
 from datetime import datetime
 
-from fabric.actor.core.apis.ITicker import ITicker
-from fabric.actor.core.time.ActorClock import ActorClock
+from fabric.actor.core.apis.i_ticker import ITicker
+from fabric.actor.core.time.actor_clock import ActorClock
 
 
 class Tick(ITicker):
@@ -35,7 +35,7 @@ class Tick(ITicker):
     Abstract class for all container clock implementation
     """
     def __init__(self):
-        from fabric.actor.core.container.Globals import GlobalsSingleton
+        from fabric.actor.core.container.globals import GlobalsSingleton
         # The current cycle.
         self.current_cycle = -1
         # The logger.

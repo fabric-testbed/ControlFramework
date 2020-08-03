@@ -26,10 +26,10 @@
 import pickle
 import threading
 
-from fabric.actor.core.core.Unit import Unit
-from fabric.actor.core.plugins.db.ServerActorDatabase import ServerActorDatabase
-from fabric.actor.core.apis.ISubstrateDatabase import ISubstrateDatabase
-from fabric.actor.core.util.ID import ID
+from fabric.actor.core.core.unit import Unit
+from fabric.actor.core.plugins.db.server_actor_database import ServerActorDatabase
+from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
+from fabric.actor.core.util.id import ID
 
 
 class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
@@ -49,7 +49,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        from fabric.actor.db.PsqlDatabase import PsqlDatabase
+        from fabric.actor.db.psql_database import PsqlDatabase
         self.db = PsqlDatabase(self.user, self.password, self.database, self.db_host, None)
         self.actor_id = None
         self.actor_name = None
