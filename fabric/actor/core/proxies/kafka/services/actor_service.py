@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_concrete_set import IConcreteSet
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
-from fabric.actor.core.kernel.IncomingFailedRPC import IncomingFailedRPC
+from fabric.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
 from fabric.actor.core.kernel.incoming_query_rpc import IncomingQueryRPC
 from fabric.actor.core.kernel.incoming_rpc import IncomingRPC
 from fabric.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC

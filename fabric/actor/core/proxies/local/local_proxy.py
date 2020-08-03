@@ -28,7 +28,7 @@ from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.rpc_request_state import RPCRequestState
-from fabric.actor.core.kernel.IncomingFailedRPC import IncomingFailedRPC
+from fabric.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
 from fabric.actor.core.kernel.incoming_query_rpc import IncomingQueryRPC
 from fabric.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton

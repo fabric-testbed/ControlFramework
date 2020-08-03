@@ -42,7 +42,7 @@ from fabric.actor.core.kernel.claim_timeout import ClaimTimeout
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.kernel.failed_rpc_event import FailedRPCEvent
 from fabric.actor.core.kernel.inbound_rpc_event import InboundRPCEvent
-from fabric.actor.core.kernel.IncomingFailedRPC import IncomingFailedRPC
+from fabric.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
 from fabric.actor.core.kernel.incoming_rpc import IncomingRPC
 from fabric.actor.core.kernel.incoming_rpc_event import IncomingRPCEvent
 from fabric.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
