@@ -101,23 +101,23 @@ actor:
   - controls:
       - control:
         - type: site.vm
-        - module: fabric.actor.core.policy.SimpleVMControl
+        - module: fabric.actor.core.policy.simple_vm_control
         - class: SimpleVMControl
       - control:
         - type: site.baremetalce
-        - module: fabric.actor.core.policy.SimpleVMControl
+        - module: fabric.actor.core.policy.simple_vm_control
         - class: SimpleVMControl
       - control:
         - type: site.vlan
-        - module: fabric.actor.core.policy.VlanControl
+        - module: fabric.actor.core.policy.vlan_control
         - class: VlanControl
       - control:
         - type: site.lun
-        - module: fabric.actor.core.policy.LUNControl
+        - module: fabric.actor.core.policy.lun_control
         - class: LUNControl
   - pools:
       - pool:
-        - factory.module: fabric.actor.boot.inventory.ResourcePoolFactory
+        - factory.module: fabric.actor.boot.inventory.resource_pool_factory
         - factory.class: ResourcePoolFactory
         - type: site.vm
         - label: VM AM
@@ -133,13 +133,13 @@ actor:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
-                - value: fabric.actor.core.policy.SimplerUnitsInventory.SimplerUnitsInventory
+                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
         - properties:
             - substrate.file: config/neo4j/rockyvmsite.xml
             - ip.subnet: 255.255.255.0
             - ip.list: 192.168.1.2/24
       - pool:
-        - factory.module: fabric.actor.boot.inventory.ResourcePoolFactory
+        - factory.module: fabric.actor.boot.inventory.resource_pool_factory
         - factory.class: ResourcePoolFactory
         - type: site.baremetalce
         - label: xCAT node
@@ -177,7 +177,7 @@ actor:
             - vlan.tag.start0: 1
             - vlan.tag.end0: 100
       - pool:
-        - factory.module: fabric.actor.boot.inventory.ResourcePoolFactory
+        - factory.module: fabric.actor.boot.inventory.resource_pool_factory
         - factory.class: ResourcePoolFactory
         - type: site.lun
         - label: OS internal lun

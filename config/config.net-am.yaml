@@ -99,11 +99,11 @@ actor:
   - controls:
       - control:
         - type: site.vlan
-        - module: fabric.actor.core.policy
+        - module: fabric.actor.core.policy.vlan_control
         - class: VlanControl
   - pools:
       - pool:
-        - factory.module: fabric.actor.boot.inventory
+        - factory.module: fabric.actor.boot.inventory.resource_pool_factory
         - factory.class: ResourcePoolFactory
         - type: site.vlan
         - label: NET VLAN
@@ -118,7 +118,7 @@ actor:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
-                - value: fabric.actor.core.policy.SimplerUnitsInventory.SimplerUnitsInventory
+                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
         - properties:
             - substrate.file: config/neo4j/rockySite.xml
 peers:

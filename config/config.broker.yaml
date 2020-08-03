@@ -98,7 +98,7 @@ actor:
   - description: Broker
   - kafka-topic: fabric-broker-topic
   - policy:
-      - module: fabric.actor.core.policy.BrokerSimplerUnitsPolicy
+      - module: fabric.actor.core.policy.broker_simpler_units_policy
       - class: BrokerSimplerUnitsPolicy
       - properties:
         - queue.type: fifo
