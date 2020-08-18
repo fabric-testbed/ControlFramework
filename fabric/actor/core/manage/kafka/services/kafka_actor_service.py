@@ -353,3 +353,4 @@ class KafkaActorService(KafkaService):
             result.status = ManagementObject.set_exception_details(result.status, e)
 
         return result
+

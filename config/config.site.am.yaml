@@ -170,7 +170,7 @@ actor:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
-                - value: fabric.actor.core.policy.SimplerUnitsInventory.SimplerUnitsInventory
+                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
         - properties:
             - substrate.file: config/neo4j/rockyvmsite.xml
             - vlan.range.num: 100
@@ -192,7 +192,7 @@ actor:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
-                - value: fabric.actor.core.policy.SimplerUnitsInventory.SimplerUnitsInventory
+                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
         - properties:
             - substrate.file: config/neo4j/rockyvmsite.xml
             - lun.range.num: 100

@@ -108,6 +108,8 @@ class Translate:
         avro_slice = SliceAvro()
         avro_slice.slice_name = slice_obj.get_name()
         avro_slice.guid = str(slice_obj.get_slice_id())
+        avro_slice.description = slice_obj.get_description()
+        avro_slice.owner = Translate.translate_auth_to_avro(slice_obj.get_owner())
         return avro_slice
 
     @staticmethod
