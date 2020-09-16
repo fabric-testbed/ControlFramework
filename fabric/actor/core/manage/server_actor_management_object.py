@@ -33,7 +33,7 @@ from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.core.authority_policy import AuthorityPolicy
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.reservation_factory import ReservationFactory
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric.actor.core.manage.converter import Converter
@@ -116,7 +116,7 @@ class ServerActorManagementObject(ActorManagementObject):
             try:
                 res_list = self.db.get_holdings()
             except Exception as e:
-                self.logger.error("get_holdings:db access {}".format(e))
+                self.logger.error("get_inventory_reservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
                 result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result.status, e)
@@ -132,7 +132,7 @@ class ServerActorManagementObject(ActorManagementObject):
                         rr = Converter.fill_reservation(rsv_obj, False)
                         result.result.append(rr)
         except Exception as e:
-            self.logger.error("get_holdings: {}".format(e))
+            self.logger.error("get_inventory_reservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result.status, e)

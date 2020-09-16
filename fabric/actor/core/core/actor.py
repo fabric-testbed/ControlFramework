@@ -30,7 +30,7 @@ import traceback
 
 from fabric.actor.core.apis.i_policy import IPolicy
 from fabric.actor.core.apis.i_timer_task import ITimerTask
-from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.apis.i_actor import IActor, ActorType
 from fabric.actor.core.apis.i_actor_event import IActorEvent
 from fabric.actor.core.apis.i_actor_proxy import IActorProxy
 from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
@@ -45,7 +45,7 @@ from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric.actor.core.kernel.reservation_factory import ReservationFactory
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.proxies.proxy import Proxy
 from fabric.actor.core.time.actor_clock import ActorClock
@@ -108,7 +108,7 @@ class Actor(IActor):
         # Actor name.
         self.name = None
         # Actor type code.
-        self.type = None
+        self.type = ActorType.All
         # Actor description.
         self.description = self.DefaultDescription
         # Identity object representing this actor.
@@ -220,8 +220,10 @@ class Actor(IActor):
     def close(self, reservation: IReservation):
         if reservation is not None:
             if not self.recovered:
+                self.logger.debug("Adding reservation: {} to closing list".format(reservation.get_reservation_id()))
                 self.closing.add(reservation)
             else:
+                self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
                 self.wrapper.close(reservation.get_reservation_id())
 
     def close_slice_reservations(self, slice_id: ID):
@@ -230,6 +232,7 @@ class Actor(IActor):
     def close_reservations(self, reservations: ReservationSet):
         for reservation in reservations.values():
             try:
+                self.logger.debug("Closing reservation: {}".format(reservation.get_reservation_id()))
                 self.close(reservation=reservation)
             except Exception as e:
                 self.logger.error("Could not close for #{} {}".format(reservation.get_reservation_id(), e))
@@ -267,31 +270,35 @@ class Actor(IActor):
         self.logger.debug("External Tick end cycle: {}".format(cycle))
 
     def actor_tick(self, cycle: int):
-        if not self.recovered:
-            self.logger.warning("Tick for an actor that has not completed recovery")
-            return
-        current_cycle = 0
-        if self.first_tick:
-            current_cycle = cycle
-        else:
-            current_cycle = self.current_cycle + 1
-
-        while current_cycle <= cycle:
-            self.logger.debug("actor_tick: {} start".format(current_cycle))
-            self.current_cycle = current_cycle
-            self.policy.prepare(self.current_cycle)
-
+        try:
+            if not self.recovered:
+                self.logger.warning("Tick for an actor that has not completed recovery")
+                return
+            current_cycle = 0
             if self.first_tick:
-                self.reset()
+                current_cycle = cycle
+            else:
+                current_cycle = self.current_cycle + 1
 
-            self.tick_handler()
-            self.policy.finish(self.current_cycle)
+            while current_cycle <= cycle:
+                self.logger.debug("actor_tick: {} start".format(current_cycle))
+                self.current_cycle = current_cycle
+                self.policy.prepare(self.current_cycle)
 
-            self.wrapper.tick()
+                if self.first_tick:
+                    self.reset()
 
-            self.first_tick = False
-            self.logger.debug("actor_tick: {} end".format(current_cycle))
-            current_cycle += 1
+                self.tick_handler()
+                self.policy.finish(self.current_cycle)
+
+                self.wrapper.tick()
+
+                self.first_tick = False
+                self.logger.debug("actor_tick: {} end".format(current_cycle))
+                current_cycle += 1
+        except Exception as e:
+            self.logger.debug(traceback.format_exc())
+            raise e
 
     def get_actor_clock(self) -> ActorClock:
         return self.clock
@@ -340,7 +347,7 @@ class Actor(IActor):
     def get_slices(self):
         return self.wrapper.get_slices()
 
-    def get_type(self):
+    def get_type(self) -> ActorType:
         return self.type
 
     def initialize(self):
@@ -720,13 +727,15 @@ class Actor(IActor):
 
                 if not self.timer_queue.empty():
                     for timer in IterableQueue(self.timer_queue):
-                        timers.append(timers)
+                        timers.append(timer)
 
                 self.actor_main_lock.notify_all()
 
             if len(events) > 0:
                 self.logger.debug("Processing {} events".format(len(events)))
                 for e in events:
+                    self.logger.debug("Processing event of type {}".format(type(e)))
+                    self.logger.debug("Processing event {}".format(e))
                     try:
                         e.process()
                     except Exception as e:
@@ -777,18 +786,3 @@ class Actor(IActor):
         except Exception as e:
             raise e
         return deserialized_actor
-
-    @staticmethod
-    def get_actor_type_from_string(type_str: str) -> int:
-        if type_str.lower() == Constants.AUTHORITY or type_str.lower() == Constants.SITE:
-            return Constants.ActorTypeSiteAuthority
-
-        elif type_str.lower() == Constants.CONTROLLER:
-            return Constants.ActorTypeController
-
-        elif type_str.lower() == Constants.BROKER:
-            return Constants.ActorTypeBroker
-
-        return Constants.ActorTypeAll
-
-

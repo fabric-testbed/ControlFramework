@@ -32,37 +32,39 @@ class ReservationStates(Enum):
     """
     Nascent = 1
     Ticketed = 2
-    Active = 3
-    ActiveTicketed = 4
-    Closed = 5
-    CloseWait = 6
-    Failed = 7
-    Unknown = 8
+    Reclaimed = 3
+    Active = 4
+    ActiveTicketed = 5
+    Closed = 6
+    CloseWait = 7
+    Failed = 8
+    Unknown = 9
 
 
 class ReservationPendingStates(Enum):
     """
     Pending operation states (enum ReservationPending) Should be protected: public just for logging
     """
-    None_ = 1
-    Ticketing = 2
-    Redeeming = 3
-    ExtendingTicket = 4
-    ExtendingLease = 5
-    Priming = 6
-    Blocked = 7
-    Closing = 8
-    Probing = 9
-    ClosingJoining = 10
-    ModifyingLease = 11
-    AbsorbUpdate = 11
-    SendUpdate = 12
-    Unknown = 13
+    None_ = 11
+    Ticketing = 12
+    Reclaiming = 13
+    Redeeming = 14
+    ExtendingTicket = 15
+    ExtendingLease = 16
+    Priming = 17
+    Blocked = 18
+    Closing = 19
+    Probing = 20
+    ClosingJoining = 21
+    ModifyingLease = 22
+    AbsorbUpdate = 23
+    SendUpdate = 24
+    Unknown = 25
 
 
 class JoinState(Enum):
-    None_ = 1
-    NoJoin = 2
-    BlockedJoin = 3
-    BlockedRedeem = 4
-    Joining = 5
+    None_ = 31
+    NoJoin = 32
+    BlockedJoin = 33
+    BlockedRedeem = 34
+    Joining = 35

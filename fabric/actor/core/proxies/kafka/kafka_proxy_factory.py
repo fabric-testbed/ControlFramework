@@ -26,6 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.apis.i_broker import IBroker
 from fabric.actor.core.common.constants import Constants
@@ -60,10 +61,10 @@ class KafkaProxyFactory(IProxyFactory):
 
             if actor_type is not None:
                 from fabric.actor.core.container.globals import GlobalsSingleton
-                if actor_type.lower() == Constants.AUTHORITY or actor_type.lower() == Constants.SITE:
+                if actor_type.lower() == ActorType.Authority.name.lower():
                     result = KafkaAuthorityProxy(kafka_topic, identity.get_identity(), GlobalsSingleton.get().get_logger())
 
-                elif actor_type.lower() == Constants.BROKER:
+                elif actor_type.lower() == ActorType.Broker.name.lower():
                     result = KafkaBrokerProxy(kafka_topic, identity.get_identity(), GlobalsSingleton.get().get_logger())
                 else:
                     raise Exception("Unsupported proxy type: {}".format(actor_type))

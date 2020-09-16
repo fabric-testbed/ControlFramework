@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.kernel.slice_factory import SliceFactory
@@ -37,7 +39,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_slice import ISlice
 
 
-class PoolManager:
+class PoolManagerError(Enum):
     ErrorNone = 0
     ErrorPoolExists = -10
     ErrorTypeExists = -20
@@ -45,9 +47,12 @@ class PoolManager:
     ErrorDatabaseError = -40
     ErrorInternalError = -50
 
+
+class PoolManager:
+
     class CreatePoolResult:
         def __init__(self):
-            self.code = PoolManager.ErrorNone
+            self.code = PoolManagerError.ErrorNone
             self.slice = None
 
     def __init__(self, db: IDatabase, identity: IActorIdentity, logger):
@@ -60,13 +65,13 @@ class PoolManager:
     def create_pool(self, slice_id: ID, name: str, rtype: ResourceType, resource_data: ResourceData) -> CreatePoolResult:
         result = self.CreatePoolResult()
         if slice_id is None or name is None or rtype is None:
-            result.code = self.ErrorInvalidArguments
+            result.code = PoolManagerError.ErrorInvalidArguments
             return result
         try:
             temp = self.db.get_slice(slice_id)
 
             if temp is not None and len(temp) > 0:
-                result.code = self.ErrorPoolExists
+                result.code = PoolManagerError.ErrorPoolExists
                 return result
 
             temp = self.db.get_inventory_slices()
@@ -76,7 +81,7 @@ class PoolManager:
                     rt = slice_obj.get_resource_type()
                     if rt == rtype:
                         result.slice = slice_obj
-                        result.code = self.ErrorTypeExists
+                        result.code = PoolManagerError.ErrorTypeExists
                         return result
 
             slice_obj = SliceFactory.create(slice_id, name, resource_data.clone())
@@ -88,9 +93,9 @@ class PoolManager:
                 self.db.add_slice(slice_obj)
                 result.slice = slice_obj
             except Exception as e:
-                result.code = self.ErrorDatabaseError
+                result.code = PoolManagerError.ErrorDatabaseError
         except Exception as e:
-            result.code = self.ErrorInternalError
+            result.code = PoolManagerError.ErrorInternalError
         return result
 
     def update_pool(self, slice_obj: ISlice):

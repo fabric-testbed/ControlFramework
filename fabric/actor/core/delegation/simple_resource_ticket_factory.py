@@ -31,6 +31,7 @@ from fabric.actor.core.apis.i_resource_ticket_factory import IResourceTicketFact
 from fabric.actor.core.delegation.resource_bin import ResourceBin
 from fabric.actor.core.delegation.resource_delegation import ResourceDelegation
 from fabric.actor.core.delegation.resource_ticket import ResourceTicket
+from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_type import ResourceType
@@ -88,9 +89,9 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
         delegation_list = []
         for delegation in ticket.delegations:
             d = {'guid': delegation.get_guid()}
-            t = {'start_time': delegation.get_term().get_start_time().timestamp(),
-                 'end_time': delegation.get_term().get_end_time().timestamp(),
-                 'new_start_time': delegation.get_term().get_new_start_time().timestamp()}
+            t = {'start_time': ActorClock.to_milliseconds(delegation.get_term().get_start_time()),
+                 'end_time': ActorClock.to_milliseconds(delegation.get_term().get_end_time()),
+                 'new_start_time': ActorClock.to_milliseconds(delegation.get_term().get_new_start_time())}
             d['term'] = t
             d['units'] = delegation.get_units()
             d['type'] = delegation.get_resource_type()
@@ -111,9 +112,9 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                     if b.get_parent_guid() is not None:
                         b['parent_guid'] = b.get_parent_guid()
 
-                    term = {'start_time': b.get_term().get_start_time().timsetamp(),
-                            'end_time': b.get_term().get_end_time().timsetamp(),
-                            'new_start_time': b.get_term().get_new_start_time().timsetamp()}
+                    term = {'start_time': ActorClock.to_milliseconds(b.get_term().get_start_time()),
+                            'end_time': ActorClock.to_milliseconds(b.get_term().get_end_time()),
+                            'new_start_time': ActorClock.to_milliseconds(b.get_term().get_new_start_time())}
 
                     bin['term'] = term
                     bin_list.append(bin)
@@ -138,8 +139,8 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                         start_time = term_dict.get('start_time', None)
                         end_time = term_dict.get('end_time', None)
                         new_start_time = term_dict.get('new_start_time', None)
-                        term = Term(start=datetime.fromtimestamp(start_time), end=datetime.fromtimestamp(end_time),
-                                    new_start=datetime.fromtimestamp(new_start_time))
+                        term = Term(start=ActorClock.from_milliseconds(start_time), end=ActorClock.from_milliseconds(end_time),
+                                    new_start=ActorClock.from_milliseconds(new_start_time))
                         dd.term = term
                     dd.units = d.get('units', 0)
                     dd.type = d.get('type', None)
@@ -164,9 +165,9 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                                 start_time = term_dict.get('start_time', None)
                                 end_time = term_dict.get('end_time', None)
                                 new_start_time = term_dict.get('new_start_time', None)
-                                term = Term(start=datetime.fromtimestamp(start_time),
-                                            end=datetime.fromtimestamp(end_time),
-                                            new_start=datetime.fromtimestamp(new_start_time))
+                                term = Term(start=ActorClock.from_milliseconds(start_time),
+                                            end=ActorClock.from_milliseconds(end_time),
+                                            new_start=ActorClock.from_milliseconds(new_start_time))
                             bb.term = term
                             dd.bins.append(bb)
                     if ticket is None:

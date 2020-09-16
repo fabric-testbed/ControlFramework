@@ -84,7 +84,7 @@ services:
     environment:
         POSTGRES_PASSWORD: fabric
         POSTGRES_USER: fabric
-        POSTGRES_MULTIPLE_DATABASES: am,broker,controller
+        POSTGRES_MULTIPLE_DATABASES: am,broker,orchestrator, test
     ports:
         - 8432:5432
   start-fabric-actors:

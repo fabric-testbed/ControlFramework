@@ -33,14 +33,14 @@ from fabric.actor.core.apis.i_policy import IPolicy
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
     from fabric.actor.core.util.bids import Bids
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
 
 
 class IClientPolicy(IPolicy):
     """
     IClientPolicy defines the policy interface for an actor acting
-    as a client of another actor (broker or a controller).
+    as a client of another actor (broker or a orchestrator).
     """
     def demand(self, reservation: IClientReservation):
         """

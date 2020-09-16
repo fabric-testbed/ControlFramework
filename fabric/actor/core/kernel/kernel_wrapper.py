@@ -45,7 +45,7 @@ from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
 from fabric.actor.core.kernel.kernel import Kernel
 from fabric.actor.core.kernel.request_types import RequestTypes
 from fabric.actor.core.kernel.reservation_states import ReservationStates
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.time.term import Term
@@ -93,6 +93,18 @@ class KernelWrapper:
         exported.prepare(callback, self.logger)
         self.kernel.claim(exported)
 
+    def reclaim_request(self, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy):
+        if reservation is None or caller is None or callback is None:
+            raise Exception("Invalid argument")
+
+        # Note: for claim we do not need the slice object, so we use
+        # validate(ReservationID) instead of validate(Reservation).
+        exported = self.kernel.validate(rid=reservation.get_reservation_id())
+        # check access
+        self.monitor.check_reserve(exported.get_slice().get_guard(), caller)
+        exported.prepare(callback, self.logger)
+        self.kernel.reclaim(exported)
+
     def fail(self, rid: ID, message: str):
         """
         Fails the specified reservation.
@@ -127,8 +139,8 @@ class KernelWrapper:
         if slice_id is None:
             raise Exception("Invalid argument")
 
-        if self.kernel.is_known_slice(slice_id):
-            raise SliceNotFoundException(slice_id)
+        if not self.kernel.is_known_slice(slice_id):
+            raise SliceNotFoundException(str(slice_id))
 
         reservations = self.get_reservations(slice_id)
         for r in reservations:
@@ -338,11 +350,12 @@ class KernelWrapper:
                    requests, if false, no comparison will be performed.
         @throws Exception in case of error
         """
+        self.logger.debug("extend_ticket_request")
         if reservation is None or caller is None:
             raise Exception("Invalid argument")
         if compare_sequence_numbers:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
-            auth_properties = reservation.get_resources().get_request_properties()
+            auth_properties = reservation.get_requested_resources().get_request_properties()
             # TODO
             requester = self.monitor.check_proxy(caller, None)
             self.monitor.check_reserve(target.get_slice().get_guard(), requester)
@@ -350,6 +363,7 @@ class KernelWrapper:
             sequence_compare = self.kernel.compare_and_update(reservation, target)
 
             if sequence_compare == SequenceComparisonCodes.SequenceGreater:
+                self.logger.debug("extend_ticket SequenceGreater")
                 self.kernel.extend_ticket(target)
 
             elif sequence_compare == SequenceComparisonCodes.SequenceInProgress:
@@ -367,6 +381,7 @@ class KernelWrapper:
             # TODO
             requester = self.monitor.check_proxy(caller, None)
             self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+            self.logger.debug("extend_ticket No sequence number comparison")
             self.extend_ticket(target)
 
     def modify_lease(self, reservation: IControllerReservation):
@@ -454,7 +469,7 @@ class KernelWrapper:
         if slice_id is None:
             raise Exception("Invalid argument")
 
-        return self.get_reservations(slice_id)
+        return self.kernel.get_reservations(slice_id)
 
     def get_slice(self, slice_id: ID) -> ISlice:
         """

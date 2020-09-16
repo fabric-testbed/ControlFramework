@@ -36,14 +36,14 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_slice import ISlice
     from fabric.actor.core.kernel.failed_rpc import FailedRPC
     from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.id import ID
 
 from datetime import datetime
 from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
-from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
@@ -95,7 +95,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         self.notified_failed = False
         # True if the reservation was closed in the priming state.
         self.closed_in_priming = False
-        self.category = IReservation.CategoryBroker
+        self.category = ReservationCategory.Broker
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -214,7 +214,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
 
         super().handle_failed_rpc(failed)
 
-    def prepare(self, callback: ICallbackProxy, logger):
+    def prepare(self, callback: ICallbackProxy, logger, reclaim: bool=False):
         self.set_logger(logger)
         self.callback = callback
 
@@ -262,8 +262,22 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             # to a client. Set mustSendUpdate so that the update will be sent
             # on the next probe.
             self.must_send_update = True
+        elif self.state == ReservationStates.Reclaimed:
+            self.transition("claim", ReservationStates.Ticketed, ReservationPendingStates.None_)
+            self.must_send_update = True
         else:
             self.error("Wrong reservation state for ticket claim")
+
+    def reclaim(self):
+        self.approved = False
+        if self.state == ReservationStates.Ticketed:
+            # We are an agent asked to return a pre-reserved "will call" ticket
+            # to a client. Set mustSendUpdate so that the update will be sent
+            # on the next probe.
+            self.transition("reclaimed", ReservationStates.Reclaimed, ReservationPendingStates.None_)
+            self.must_send_update = True
+        else:
+            self.error("Wrong reservation state for ticket reclaim")
 
     def extend_ticket(self, actor: IActor):
         self.incoming_request()
@@ -462,7 +476,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.fail_notify("reservation is already ticketed")
             else:
                 try:
-                    self.transition("ticket request", ReservationStates.Ticketed, ReservationPendingStates.Priming)
+                    self.transition("extending ticket", ReservationStates.Ticketed,
+                                    ReservationPendingStates.ExtendingTicket)
 
                     # If the policy has processed this reservation, set granted to
                     # true so that we can send the ticket back to the client. If

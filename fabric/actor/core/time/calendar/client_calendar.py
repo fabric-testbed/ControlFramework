@@ -82,14 +82,10 @@ class ClientCalendar(BaseCalendar):
         Removes the specified reservation from all internal calendar data structures
         @params reservation: reservation to remove
         """
-        try:
-            self.lock.acquire()
-            self.remove_demand(reservation)
-            self.remove_pending(reservation)
-            self.remove_renewing(reservation)
-            self.remove_holdings(reservation)
-        finally:
-            self.lock.release()
+        self.remove_demand(reservation)
+        self.remove_pending(reservation)
+        self.remove_renewing(reservation)
+        self.remove_holdings(reservation)
 
     def remove_scheduled_or_in_progress(self, reservation: IReservation):
         """
@@ -99,13 +95,9 @@ class ClientCalendar(BaseCalendar):
         reservation from the holdings list.
         @params reservation : reservation to remove
         """
-        try:
-            self.lock.acquire()
-            self.remove_demand(reservation)
-            self.remove_pending(reservation)
-            self.remove_renewing(reservation)
-        finally:
-            self.lock.release()
+        self.remove_demand(reservation)
+        self.remove_pending(reservation)
+        self.remove_renewing(reservation)
 
     def get_demand(self) -> ReservationSet:
         """
@@ -114,7 +106,7 @@ class ClientCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            return self.demand
+            return self.demand.clone()
         finally:
             self.lock.release()
 
@@ -147,7 +139,7 @@ class ClientCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            return self.pending
+            return self.pending.clone()
         finally:
             self.lock.release()
 
@@ -217,9 +209,10 @@ class ClientCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            if d is None and type is None:
-                return self.holdings.get_reservations()
-            return self.holdings.get_reservations(int(d.timestamp() * 1000), type)
+            when = None
+            if d is not None:
+                when = ActorClock.to_milliseconds(d)
+            return self.holdings.get_reservations(when, type)
         finally:
             self.lock.release()
 
@@ -232,7 +225,8 @@ class ClientCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            self.holdings.add_reservation(reservation, int(start.timestamp() * 1000), int(end.timestamp() * 1000))
+            self.holdings.add_reservation(reservation, ActorClock.to_milliseconds(start),
+                                          ActorClock.to_milliseconds(end))
         finally:
             self.lock.release()
 

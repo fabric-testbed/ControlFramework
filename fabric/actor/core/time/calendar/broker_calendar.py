@@ -59,33 +59,25 @@ class BrokerCalendar(ClientCalendar):
 
     def remove(self, reservation: IReservation):
         super().remove(reservation)
-        try:
-            self.lock.acquire()
-            self.remove_closing(reservation)
-            if isinstance(reservation, IBrokerReservation):
-                self.remove_request(reservation)
+        self.remove_closing(reservation)
+        if isinstance(reservation, IBrokerReservation):
+            self.remove_request(reservation)
 
-                source = reservation.get_source()
-                if source is not None:
-                    self.remove_request(reservation, source)
-                    self.remove_outlay(source, reservation)
-        finally:
-            self.lock.release()
+            source = reservation.get_source()
+            if source is not None:
+                self.remove_request(reservation, source)
+                self.remove_outlay(source, reservation)
 
     def remove_scheduled_or_in_progress(self, reservation: IReservation):
         super().remove_scheduled_or_in_progress(reservation)
-        try:
-            self.lock.acquire()
-            self.remove_closing(reservation)
+        self.remove_closing(reservation)
 
-            if isinstance(reservation, IBrokerReservation) :
-                self.remove_request(reservation)
+        if isinstance(reservation, IBrokerReservation) :
+            self.remove_request(reservation)
 
-                source = reservation.get_source()
-                if source is not None:
-                    self.remove_request(reservation, source)
-        finally:
-            self.lock.release()
+            source = reservation.get_source()
+            if source is not None:
+                self.remove_request(reservation, source)
 
     def get_requests(self, cycle: int) -> ReservationSet:
         """
@@ -174,7 +166,8 @@ class BrokerCalendar(ClientCalendar):
         try:
             self.lock.acquire()
             calendar = self.get_source_calendar(source)
-            calendar.outlays.add_reservation(client, int(start.timestamp() * 1000), int(end.timestamp() * 1000))
+            calendar.outlays.add_reservation(client, ActorClock.to_milliseconds(start),
+                                             ActorClock.to_milliseconds(end))
         finally:
             self.lock.release()
 
@@ -252,7 +245,7 @@ class BrokerCalendar(ClientCalendar):
             if time is None:
                 return calendar.outlays.get_reservations()
             else:
-                return calendar.outlays.get_reservations(time.timestamp() * 1000)
+                return calendar.outlays.get_reservations(ActorClock.to_milliseconds(time))
         finally:
             self.lock.release()
 

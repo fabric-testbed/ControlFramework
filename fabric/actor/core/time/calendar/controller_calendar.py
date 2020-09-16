@@ -52,12 +52,8 @@ class ControllerCalendar(ClientCalendar):
         @params reservation: reservation to remove
         """
         super().remove(reservation)
-        try:
-            self.lock.acquire()
-            self.remove_closing(reservation)
-            self.remove_redeeming(reservation)
-        finally:
-            self.lock.release()
+        self.remove_closing(reservation)
+        self.remove_redeeming(reservation)
 
     def get_closing(self, cycle: int) -> ReservationSet:
         """

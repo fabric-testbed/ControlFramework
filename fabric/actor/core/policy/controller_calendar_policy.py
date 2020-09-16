@@ -29,7 +29,7 @@ from fabric.actor.core.apis.i_controller_reservation import IControllerReservati
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.core.policy import Policy
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.time.calendar.controller_calendar import ControllerCalendar
 from fabric.actor.core.util.reservation_set import ReservationSet
@@ -49,7 +49,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
         self.pending_notify = ReservationSet()
         # If the actor is initialized
         self.initialized = False
-        # If true, the controller will close reservations lazily: it will not
+        # If true, the orchestrator will close reservations lazily: it will not
         # issue a close and will wait until the site terminates the lease. The
         # major drawback is that leave actions will not be able to connect to the
         # resources, since the resources will not exist at this time.
@@ -57,7 +57,6 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        state['actor_id'] = self.actor.get_reference()
         del state['logger']
         del state['actor']
         del state['clock']
@@ -68,10 +67,14 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
         return state
 
     def __setstate__(self, state):
-        actor_id = state['actor_id']
-        # TODO recover actor
-        del state['actor_id']
         self.__dict__.update(state)
+
+        self.logger = None
+        self.actor = None
+        self.clock = None
+        self.initialized = False
+        self.pending_notify = ReservationSet()
+        self.lazy_close = False
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
 

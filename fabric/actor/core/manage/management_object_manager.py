@@ -126,7 +126,7 @@ class ManagementObjectManager:
         Loads all manager objects not associated with specific actors
         @throws Exception in case of error
         """
-        self.logger.get_logger().info("Loading container-level management objects")
+        self.logger.info("Loading container-level management objects")
         manager_objects = self.db.get_manager_containers()
         self.load_objects(manager_objects)
         self.logger.info("Finished loading container-level management objects")

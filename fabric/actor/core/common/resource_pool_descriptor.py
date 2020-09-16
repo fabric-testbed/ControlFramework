@@ -200,3 +200,13 @@ class ResourcePoolDescriptor:
             attribute.reset(properties, temp)
             attribute.set_key(key_value)
             self.add_attribute(attribute)
+
+    def clone(self):
+        properties = {}
+        self.save(properties, None)
+        copy = ResourcePoolDescriptor()
+        try:
+            copy.reset(properties, None)
+        except Exception as e:
+            raise Exception("Unexpected error during deserialization={}".format(e))
+        return copy

@@ -23,3 +23,28 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric.actor.core.time.actor_clock import ActorClock
+from fabric.actor.core.time.calendar.controller_calendar import ControllerCalendar
+from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.test.core.time.calendar.client_calendar_test import ClientCalendarTest
+
+
+class ControllerCalendarTest(ClientCalendarTest):
+    def _get_calendar(self):
+        clock = ActorClock(self.Offset, self.Length)
+        return ControllerCalendar(clock)
+
+    def test_create2(self):
+        cal = self._get_calendar()
+        self.assertIsNotNone(cal.closing)
+        self.assertIsNotNone(cal.redeeming)
+
+        self.assertIsNotNone(cal.get_closing(1000))
+        self.assertIsNotNone(cal.get_redeeming(1000))
+
+    def check_set(self, rset: ReservationSet, check: ReservationSet):
+        self.assertIsNotNone(check)
+        self.assertEqual(rset.size(), check.size())
+
+        for res in rset.values():
+            self.assertTrue(check.contains(reservation=res))

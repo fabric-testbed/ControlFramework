@@ -38,7 +38,7 @@ from fabric.actor.core.util.id import ID
 if TYPE_CHECKING:
     from fabric.actor.core.manage.management_object import ManagementObject
     from fabric.actor.security.auth_token import AuthToken
-    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
+    from fabric.message_bus.messages.proxy_avro import ProxyAvro
     from fabric.message_bus.messages.reservation_mng import ReservationMng
     from fabric.actor.core.util.resource_type import ResourceType
 
@@ -50,7 +50,7 @@ class LocalController(LocalActor, IMgmtController):
         if not isinstance(manager, ControllerManagementObject):
             raise Exception("Invalid manager object. Required: {}".format(type(ControllerManagementObject)))
 
-    def add_broker(self, broker: ProxyMng) -> bool:
+    def add_broker(self, broker: ProxyAvro) -> bool:
         self.clear_last()
         try:
             result = self.manager.add_broker(broker, self.auth)
@@ -74,7 +74,7 @@ class LocalController(LocalActor, IMgmtController):
 
         return None
 
-    def get_broker(self, broker: ID) -> ProxyMng:
+    def get_broker(self, broker: ID) -> ProxyAvro:
         self.clear_last()
         try:
             result = self.manager.get_broker(broker, self.auth)

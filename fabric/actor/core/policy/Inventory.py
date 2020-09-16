@@ -32,7 +32,7 @@ from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescri
 from fabric.actor.core.policy.simpler_units_inventory import SimplerUnitsInventory
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.reflection_utils import ReflectionUtils
-from fabric.actor.core.util import resource_type
+from fabric.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
     from fabric.actor.core.policy.inventory_for_type import InventoryForType
@@ -43,7 +43,7 @@ class Inventory:
     def __init__(self):
         self.map = {}
 
-    def contains_type(self, resource_type: resource_type):
+    def contains_type(self, resource_type: ResourceType):
         if resource_type is None:
             raise Exception("Invalid argument")
 
@@ -52,11 +52,11 @@ class Inventory:
 
         return False
 
-    def get(self, resource_type: resource_type) -> InventoryForType:
+    def get(self, resource_type: ResourceType) -> InventoryForType:
         if resource_type is None:
             raise Exception("Invalid argument")
 
-        return self.map[resource_type]
+        return self.map.get(resource_type, None)
 
     def remove(self, source: IClientReservation):
         """

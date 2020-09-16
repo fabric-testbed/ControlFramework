@@ -25,7 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import unittest
 from datetime import datetime
-
+import time
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.delegation.resource_bin import ResourceBin
 from fabric.actor.core.delegation.simple_resource_ticket_factory import SimpleResourceTicketFactory
 from fabric.actor.core.time.term import Term
@@ -35,12 +36,19 @@ from fabric.actor.test.base_test_case import BaseTestCase
 
 
 class SimpleTicketTest(BaseTestCase, unittest.TestCase):
+    from fabric.actor.core.container.globals import Globals
+    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+
+    from fabric.actor.core.container.globals import GlobalsSingleton
+    GlobalsSingleton.get().start(True)
+    while not GlobalsSingleton.get().start_completed:
+        time.sleep(0.0001)
 
     def setUp(self) -> None:
         self.factory = self.make_ticket_factory()
         self.now = datetime.utcnow()
-        self.end = (self.now.timestamp() * 1000) + (1000 * 60 * 60 *24)
-        self.term = Term(start=self.now, end=datetime.fromtimestamp(self.end))
+        self.end = self.now.replace(day=1)
+        self.term = Term(start=self.now, end=self.end)
         self.type = ResourceType(str(ID()))
         self.units = 100
         self.create_factories()

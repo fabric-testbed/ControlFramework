@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 class IControllerPublic:
     """
-    IControllerPublic represents the public cross-actor interface for actors acting in the controller role.
+    IControllerPublic represents the public cross-actor interface for actors acting in the orchestrator role.
     """
     def update_lease(self, reservation: IReservation, update_data, caller: AuthToken):
         """

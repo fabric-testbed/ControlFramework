@@ -25,13 +25,99 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from fabric.actor.core.apis.i_reservation import ReservationCategory
+from fabric.actor.core.common.constants import ErrorCodes
 from fabric.actor.core.manage.kafka.services.kafka_server_actor_service import KafkaServerActorService
+from fabric.actor.core.manage.management_object import ManagementObject
+from fabric.actor.core.proxies.kafka.translate import Translate
+from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
+from fabric.message_bus.messages.get_reservation_units_avro import GetReservationUnitsAvro
+from fabric.message_bus.messages.get_unit_avro import GetUnitAvro
+from fabric.message_bus.messages.message import IMessageAvro
+from fabric.message_bus.messages.result_avro import ResultAvro
+from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
+from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
 
 
 class KafkaAuthorityService(KafkaServerActorService):
     def __init__(self):
         super().__init__()
 
+    def process(self, message: IMessageAvro):
+        if message.get_message_name() == IMessageAvro.GetReservationsRequest and \
+                message.get_reservation_type() is not None and \
+                message.get_reservation_type() == ReservationCategory.Authority.name:
+            self.get_authority_reservations(message)
+        elif message.get_message_name() == IMessageAvro.GetReservationUnitsRequest:
+            self.get_reservation_units(message)
+        elif message.get_message_name() == IMessageAvro.GetUnitRequest:
+            self.get_unit(message)
+        else:
+            super().process(message)
 
+    def get_authority_reservations(self, request: GetReservationsRequestAvro) -> ResultReservationAvro:
+        result = ResultReservationAvro()
+        result.status = ResultAvro()
+        try:
+            if request.guid is None:
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                return result
 
+            auth = Translate.translate_auth_from_avro(request.auth)
+            mo = self.get_actor_mo(ID(request.guid))
 
+            result = mo.get_authority_reservations(auth)
+            result.message_id = request.message_id
+
+        except Exception as e:
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result.status, e)
+
+        return result
+
+    def get_reservation_units(self, request:GetReservationUnitsAvro) -> ResultUnitAvro:
+        result = ResultUnitAvro()
+        result.status = ResultAvro()
+        try:
+            if request.guid is None or request.reservation_id is None:
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                return result
+
+            auth = Translate.translate_auth_from_avro(request.auth)
+            mo = self.get_actor_mo(ID(request.guid))
+
+            result = mo.get_reservation_units(auth, ID(request.reservation_id))
+            result.message_id = request.message_id
+
+        except Exception as e:
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result.status, e)
+
+        return result
+
+    def get_unit(self, request:GetUnitAvro) -> ResultUnitAvro:
+        result = ResultUnitAvro()
+        result.status = ResultAvro()
+        try:
+            if request.guid is None or request.unit_id is None:
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                return result
+
+            auth = Translate.translate_auth_from_avro(request.auth)
+            mo = self.get_actor_mo(ID(request.guid))
+
+            result = mo.get_reservation_unit(auth, ID(request.unit_id))
+            result.message_id = request.message_id
+
+        except Exception as e:
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result.status, e)
+
+        return result

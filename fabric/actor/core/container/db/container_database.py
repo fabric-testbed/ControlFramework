@@ -30,9 +30,9 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.extensions.plugin import Plugin
+from fabric.actor.core.apis.i_actor import IActor, ActorType
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.i_actor import IActor
     from fabric.actor.core.apis.i_management_object import IManagementObject
     from fabric.actor.core.util.id import ID
 
@@ -81,7 +81,7 @@ class ContainerDatabase(IContainerDatabase):
 
     def add_actor(self, actor: IActor):
         properties = pickle.dumps(actor)
-        self.db.add_actor(actor.get_name(), str(actor.get_guid()), actor.get_type(), properties)
+        self.db.add_actor(actor.get_name(), str(actor.get_guid()), actor.get_type().value, properties)
 
     def remove_actor(self, actor_name: str):
         self.db.remove_actor(actor_name)
@@ -96,7 +96,7 @@ class ContainerDatabase(IContainerDatabase):
                 result = self.db.get_actors()
             elif name is not None and actor_type is not None:
                 name = "%{}%".format(name)
-                if actor_type != Constants.ActorTypeAll:
+                if actor_type != ActorType.All.value:
                     result = self.db.get_actors_by_name_and_type(name, actor_type)
                 else:
                     result = self.db.get_actors_by_name(name)

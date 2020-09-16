@@ -214,7 +214,7 @@ class Ticket(IConcreteSet):
         """
         Indicates that we're committing resources to a client (on an an agent).
         May need to touch TicketSet database since we're committing it. On a
-        client (controller) this indicates that we have successfully scored
+        client (orchestrator) this indicates that we have successfully scored
         a ticket. The ticket has already been validated with validate().
         @params reservation the slice for the reservation
         """

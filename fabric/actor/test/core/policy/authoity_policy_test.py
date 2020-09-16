@@ -33,12 +33,13 @@ from fabric.actor.core.apis.i_actor_identity import IActorIdentity
 from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
+from fabric.actor.core.apis.i_database import IDatabase
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.plugins.config.config import Config
 from fabric.actor.core.plugins.substrate.substrate import Substrate
@@ -54,7 +55,7 @@ from fabric.actor.test.base_test_case import BaseTestCase
 from fabric.actor.test.controller_callback_helper import ControllerCallbackHelper
 
 
-class AuthorityPolicyTest(BaseTestCase, unittest.TestCase):
+class AuthorityPolicyTest(BaseTestCase):
     DonateStartCycle = 10
     DonateEndCycle = 100
     DonateUnits = 123
@@ -71,13 +72,11 @@ class AuthorityPolicyTest(BaseTestCase, unittest.TestCase):
     logging.basicConfig(format=log_format, filename="actor.log")
     Logger.setLevel(logging.INFO)
 
-    def setUp(self):
-        #PsqlDatabase(BaseTestCase.DbUser, BaseTestCase.DbPwd, BaseTestCase.DbUser, BaseTestCase.DbHost, self.Logger).reset_db()
-        #time.sleep(1)
-        return
+    authority = None
 
-    def make_actor_database(self):
-        return SubstrateActorDatabase(BaseTestCase.DbUser, BaseTestCase.DbPwd, BaseTestCase.DbUser, BaseTestCase.DbHost, self.Logger)
+    def make_actor_database(self) -> IDatabase:
+        db = SubstrateActorDatabase(self.DbUser, self.DbPwd, self.DbName, self.DbHost, self.Logger)
+        return db
 
     def make_plugin(self):
         plugin = Substrate(None, None, None)
@@ -85,7 +84,9 @@ class AuthorityPolicyTest(BaseTestCase, unittest.TestCase):
         plugin.set_config(config)
         return plugin
 
-    def get_authority(self):
+    def get_authority(self, name: str = BaseTestCase.AuthorityName, guid: ID = BaseTestCase.AuthorityGuid):
+        db = self.get_container_database()
+        db.reset_db()
         authority = super().get_authority()
         authority.set_recovered(True)
         Term.set_clock(authority.get_actor_clock())
@@ -197,10 +198,11 @@ class AuthorityPolicyTest(BaseTestCase, unittest.TestCase):
         self.assertEqual(request.get_requested_units(), rset.get_units())
         self.assertEqual(incoming.get_term(), request.get_requested_term())
 
-    def test_create(self):
+    def test_a_create(self):
         authority = self.get_authority()
+        self.assertIsNotNone(authority)
 
-    def __test_donate(self):
+    def test_b_donate(self):
         site = self.get_authority()
         policy = site.get_policy()
         self.check_before_donate(site)
@@ -208,7 +210,7 @@ class AuthorityPolicyTest(BaseTestCase, unittest.TestCase):
         policy.donate_reservation(source)
         self.check_after_donate(site, source)
 
-    def __test_donate_set(self):
+    def test_c_donate_set(self):
         site = self.get_authority()
         policy = site.get_policy()
         self.check_before_donate_set(site)
@@ -216,7 +218,7 @@ class AuthorityPolicyTest(BaseTestCase, unittest.TestCase):
         policy.donate(rset)
         self.check_after_donate_set(site, rset)
 
-    def __test_redeem(self):
+    def test_d_redeem(self):
         site = self.get_authority()
         policy = site.get_policy()
         controller = self.get_controller()
@@ -268,7 +270,7 @@ class AuthorityPolicyTest(BaseTestCase, unittest.TestCase):
 
         handler.check_termination()
 
-    def __test_extend_lease(self):
+    def test_e_extend_lease(self):
         site = self.get_authority()
         policy = site.get_policy()
         controller = self.get_controller()
@@ -320,7 +322,7 @@ class AuthorityPolicyTest(BaseTestCase, unittest.TestCase):
             self.external_tick(site, cycle)
         handler.check_termination()
 
-    def __test_close(self):
+    def test_f_close(self):
         site = self.get_authority()
         policy = site.get_policy()
         controller = self.get_controller()

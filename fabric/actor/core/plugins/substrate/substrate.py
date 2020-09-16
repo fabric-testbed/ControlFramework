@@ -330,7 +330,7 @@ class Substrate(BasePlugin, ISubstrate):
         return self.db
 
     def set_database(self, db: IDatabase):
-        if not isinstance(db, ISubstrateDatabase):
+        if db is not None and not isinstance(db, ISubstrateDatabase):
             raise Exception("db must implement ISubstrateDatabase")
 
         super().set_database(db)

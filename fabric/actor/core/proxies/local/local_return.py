@@ -35,7 +35,7 @@ from fabric.actor.core.apis.i_server_reservation import IServerReservation
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.proxies.proxy import Proxy
 from fabric.actor.core.proxies.local.local_proxy import LocalProxy
 from fabric.actor.core.util.resource_data import ResourceData

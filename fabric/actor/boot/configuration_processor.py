@@ -58,7 +58,7 @@ from fabric.actor.core.util.resource_type import ResourceType
 from fabric.actor.core.core.actor import Actor
 from fabric.actor.security.auth_token import AuthToken
 from fabric.message_bus.messages.claim_resources_avro import ClaimResourcesAvro
-from fabric.message_bus.producer import AvroProducerApi
+from fabric.actor.core.apis.i_actor import ActorType
 
 if TYPE_CHECKING:
     from fabric.actor.boot.configuration import Configuration, ActorConfig, PolicyConfig, Peer
@@ -125,13 +125,13 @@ class ConfigurationProcessor:
         return actor
 
     def make_actor_instance(self, actor_config: ActorConfig) -> IActor:
-        actor_type = actor_config.get_type()
+        actor_type = ActorType.get_actor_type_from_string(actor_config.get_type())
         actor = None
-        if actor_type == Constants.CONTROLLER:
+        if actor_type == ActorType.Controller:
             actor = Controller()
-        elif actor_type == Constants.BROKER:
+        elif actor_type == ActorType.Broker:
             actor = Broker()
-        elif actor_type == Constants.AUTHORITY:
+        elif actor_type == ActorType.Authority:
             actor = Authority()
         else:
             raise Exception("Unsupported actor type: {}".format(actor_type))
@@ -153,15 +153,15 @@ class ConfigurationProcessor:
     def make_plugin_instance(self, actor: IActor, actor_config: ActorConfig):
         plugin = None
         if actor.get_plugin() is None:
-            if actor.get_type() == Constants.ActorTypeSiteAuthority:
+            if actor.get_type() == ActorType.Authority:
                 # TODO replacement of ANT CONFIG
                 plugin = AuthoritySubstrate(actor, None, Config())
 
-            elif actor.get_type() == Constants.ActorTypeController:
+            elif actor.get_type() == ActorType.Controller:
                 # TODO replacement of ANT CONFIG
                 plugin = Substrate(actor, None, Config())
 
-            elif actor.get_type() == Constants.ActorTypeBroker:
+            elif actor.get_type() == ActorType.Broker:
                 plugin = BasePlugin(actor, None, Config())
 
         if plugin is None:
@@ -188,11 +188,11 @@ class ConfigurationProcessor:
     def make_actor_policy(self, actor: IActor, config: ActorConfig):
         policy = None
         if config.get_policy() is None:
-            if actor.get_type() == Constants.ActorTypeSiteAuthority:
+            if actor.get_type() == ActorType.Authority:
                 policy = self.make_site_policy(config)
-            elif actor.get_type() == Constants.ActorTypeBroker:
+            elif actor.get_type() == ActorType.Broker:
                 policy = BrokerSimplerUnitsPolicy()
-            elif actor.get_type() == Constants.ActorTypeController:
+            elif actor.get_type() == ActorType.Controller:
                 policy = ControllerSimplePolicy()
         else:
             policy = self.make_policy(config.get_policy())
@@ -290,7 +290,7 @@ class ConfigurationProcessor:
             raise Exception("Could not register actor: {} {}".format(self.actor.get_name(), e))
 
     def create_default_slice(self):
-        if self.actor.get_type() != Constants.ActorTypeSiteAuthority:
+        if self.actor.get_type() != ActorType.Authority:
             slice_obj = SliceFactory.create(slice_id=ID(), name=self.actor.get_name())
             slice_obj.set_inventory(True)
             try:
@@ -364,14 +364,14 @@ class ConfigurationProcessor:
 
     def process_peer(self, peer: Peer):
         from_guid = ID(peer.get_guid())
-        from_type = Actor.get_actor_type_from_string(peer.get_type())
+        from_type = ActorType.get_actor_type_from_string(peer.get_type())
         to_guid = self.actor.get_guid()
         to_type = self.actor.get_type()
 
         # We only like peers broker->site and service->broker
         # Reverse the peer if it connects site->broker or broker->service
 
-        if from_type == Constants.ActorTypeSiteAuthority and to_type == Constants.ActorTypeBroker:
+        if from_type == ActorType.Authority and to_type == ActorType.Broker:
             temp = from_guid
             from_guid = to_guid
             to_guid = temp
@@ -379,28 +379,17 @@ class ConfigurationProcessor:
             from_type = to_type
             to_type = temp
 
-        if from_type == Constants.BROKER and to_type == Constants.ActorTypeController:
+        if from_type == ActorType.Broker and to_type == ActorType.Controller:
             temp = from_guid
             from_guid = to_guid
             to_guid = temp
             temp = from_type
             from_type = to_type
             to_type = temp
-
-        # Check if this is a valid peer (error if authority -> * or controller -> authority).
-        if from_type == Constants.ActorTypeSiteAuthority:
-            raise Exception("Invalid peer type: controller can only talk to broker or site authority")
 
         # peers between actors of same type aren't allowed unless the actors are both brokers
-        if from_type == to_type and from_type != Constants.ActorTypeBroker:
-            raise Exception("Invalid peer type: broker can only talk to broker, controller or site authority")
-
-        # peers controller->site or vice versa are not allowed
-        #if from_type == Constants.ActorTypeController and to_type == Constants.ActorTypeSiteAuthority:
-        #    raise Exception("Invalid peer type: Peers between Controller and sites are not allowed")
-
-        if to_type == Constants.ActorTypeController and from_type == Constants.ActorTypeSiteAuthority:
-            raise Exception("Invalid peer type: Peers between Controller and sites are not allowed")
+        if from_type == to_type and from_type != ActorType.Broker:
+            raise Exception("Invalid peer type: broker can only talk to broker, orchestrator or site authority")
 
         container = ManagementUtils.connect(self.actor.get_identity())
         to_mgmt_actor = container.get_actor(to_guid)

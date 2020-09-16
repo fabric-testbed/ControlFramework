@@ -31,7 +31,7 @@ from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.kernel.reservation_client import ReservationClient
 from fabric.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 

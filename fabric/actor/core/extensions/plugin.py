@@ -43,7 +43,7 @@ class Plugin:
     TypeManagerObject = 3
     # Specifies a plugin that provides a new portal plugin implementation.
     TypePortalPlugin = 4
-    # Specifies a plugin that provides a new actor controller implementation.
+    # Specifies a plugin that provides a new actor orchestrator implementation.
     TypeActorController = 5
     # Specified a new plugin that provides an new application implementation.
     TypeApplicationController = 6

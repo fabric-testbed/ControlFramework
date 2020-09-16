@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.resource_data import ResourceData
     from fabric.actor.security.auth_token import AuthToken
 
+from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_actor_event import IActorEvent
 from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.common.constants import Constants
@@ -212,5 +213,5 @@ class BasePlugin(IBasePlugin):
         return self.config_properties
 
     def is_site_authority(self):
-        return self.actor.get_type() == Constants.ActorTypeSiteAuthority
+        return self.actor.get_type() == ActorType.Authority
 

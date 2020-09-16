@@ -26,6 +26,7 @@
 import queue
 import threading
 
+from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
@@ -37,7 +38,7 @@ from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.actor import Actor
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.authority_management_object import AuthorityManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_authority_service import KafkaAuthorityService
@@ -57,7 +58,7 @@ class Authority(Actor, IAuthority):
     """
     def __init__(self, identity: AuthToken = None, clock: ActorClock = None):
         super().__init__(identity, clock)
-        self.type = Constants.ActorTypeSiteAuthority
+        self.type = ActorType.Authority
         # Initialization status.
         self.initialized = False
         # Reservations to redeem once the actor recovers.
@@ -132,6 +133,13 @@ class Authority(Actor, IAuthority):
 
         self.wrapper.claim_request(reservation, caller, callback)
 
+    def reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+        slice_obj = reservation.get_slice()
+        if slice_obj is not None:
+            slice_obj.set_broker_client()
+
+        self.wrapper.reclaim_request(reservation, caller, callback)
+
     def close_by_caller(self, reservation:IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
@@ -147,7 +155,7 @@ class Authority(Actor, IAuthority):
         """
         expired = self.policy.get_closing(cycle)
         if expired is not None:
-            self.logger.info("Authority expiring for cycle {} = {}".format(cycle, expired))
+            # self.logger.info("Authority expiring for cycle {} = {}".format(cycle, expired))
             self.close_reservations(expired)
 
     def donate(self, resources: ResourceSet):

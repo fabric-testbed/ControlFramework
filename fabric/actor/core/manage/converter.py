@@ -35,7 +35,8 @@ from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.actor_identity import ActorIdentity
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.core.unit import Unit
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
+from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.message_bus.messages.actor_avro import ActorAvro
 from fabric.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric.message_bus.messages.proxy_avro import ProxyAvro
@@ -125,15 +126,15 @@ class Converter:
             rsv_mng.set_renew_time(reservation.get_renew_time())
 
         if reservation.get_term() is not None:
-            rsv_mng.set_start(int(reservation.get_term().get_start_time().timestamp() * 1000))
-            rsv_mng.set_end(int(reservation.get_term().get_end_time().timestamp() * 1000))
+            rsv_mng.set_start(ActorClock.to_milliseconds(reservation.get_term().get_start_time()))
+            rsv_mng.set_end(ActorClock.to_milliseconds(reservation.get_term().get_end_time()))
         else:
             if reservation.get_requested_term() is not None:
-                rsv_mng.set_start(int(reservation.get_requested_term().get_start_time().timestamp() * 1000))
-                rsv_mng.set_end(int(reservation.get_requested_term().get_end_time().timestamp() * 1000))
+                rsv_mng.set_start(ActorClock.to_milliseconds(reservation.get_requested_term().get_start_time()))
+                rsv_mng.set_end(ActorClock.to_milliseconds(reservation.get_requested_term().get_end_time()))
 
         if reservation.get_requested_term() is not None:
-            rsv_mng.set_requested_end(int(reservation.get_requested_term().get_end_time().timestamp() * 1000))
+            rsv_mng.set_requested_end(ActorClock.to_milliseconds(reservation.get_requested_term().get_end_time()))
 
         rsv_mng.set_notices(reservation.get_notices())
 

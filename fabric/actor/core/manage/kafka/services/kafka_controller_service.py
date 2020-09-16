@@ -25,8 +25,16 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from fabric.actor.core.apis.i_reservation import ReservationCategory
+from fabric.actor.core.common.constants import ErrorCodes
 from fabric.actor.core.manage.kafka.services.kafka_client_actor_service import KafkaClientActorService
+from fabric.actor.core.manage.management_object import ManagementObject
+from fabric.actor.core.proxies.kafka.translate import Translate
+from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.get_reservation_units_avro import GetReservationUnitsAvro
 from fabric.message_bus.messages.message import IMessageAvro
+from fabric.message_bus.messages.result_avro import ResultAvro
+from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
 
 
 class KafkaControllerService(KafkaClientActorService):
@@ -34,7 +42,29 @@ class KafkaControllerService(KafkaClientActorService):
         super().__init__()
 
     def process(self, message: IMessageAvro):
-        if message.get_message_name() == IMessageAvro.ClaimResources:
-            self.claim_resources(message)
+        if message.get_message_name() == IMessageAvro.GetReservationUnitsRequest:
+            self.get_reservation_units(message)
         else:
             super().process(message)
+
+    def get_reservation_units(self, request:GetReservationUnitsAvro) -> ResultUnitAvro:
+        result = ResultUnitAvro()
+        result.status = ResultAvro()
+        try:
+            if request.guid is None or request.reservation_id is None:
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                return result
+
+            auth = Translate.translate_auth_from_avro(request.auth)
+            mo = self.get_actor_mo(ID(request.guid))
+
+            result = mo.get_reservation_units(auth, ID(request.reservation_id))
+            result.message_id = request.message_id
+
+        except Exception as e:
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result.status, e)
+
+        return result

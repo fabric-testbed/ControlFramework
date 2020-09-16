@@ -1,0 +1,120 @@
+# MIT License
+#
+# Copyright (c) 2020 FABRIC Testbed
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+# Author Komal Thareja (kthare10@renci.org)
+
+# After making modifications to this file, please restart actor to re-read it.
+
+# This file is a sample; to alter a particular value, uncomment it, and set as desired.
+# actor will use sane defaults, in the absence of this configuration file.
+
+runtime:
+  - plugin-dir: ./plugins
+  - kafka-server: broker1:9092
+  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
+  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
+  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
+  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  - kafka-ssl-key-password:  fabric
+  - kafka-security-protocol: SSL
+  - kafka-group-id: fabric-cf
+  - controller.rest.port: 8700
+
+logging:
+  ## The directory in which actor should create log files.
+  ## This directory will be automatically created if it does not exist.
+  - log-directory: /var/log/actor
+
+  ## The filename to be used for actor's log file.
+  - log-file: actor.log
+
+  ## The default log level for actor.
+  - log-level: DEBUG
+
+  ## actor rotates log files. You may specify how many archived log files to keep here.
+  - log-retain: 5
+
+  ## actor rotates log files after they exceed a certain size.
+  ## You may specify the file size that results in a log file being rotated here.
+  - log-size: 5000000
+
+  - logger: fabric-orchestrator
+oauth:
+  - token-public-key: /etc/fabric/ssl/token_public.pem
+
+database:
+  - db-user: fabric
+  - db-password: fabric
+  - db-name: test
+  - db-host: localhost:8432
+
+container:
+  - container.guid: fabric-orchestrator-conainer
+
+time:
+  # This section controls settings, which are generally useful
+  # when running under emulation. These settings allow you to
+  # control notion of time.
+
+  # Beginning of time (in unix time).
+  # The default is -1, which translates into using the current time as
+  # the beginning of time for the container's internal clock.
+  - time.startTime: -1
+
+  # Internal tick length (in milliseconds)
+  - time.cycleMillis: 1000
+
+  # The number of the first tick
+  - time.firstTick: 0
+
+  # This property controls if time advances automatically (false) or
+  # manually (true)
+  - time.manual: false
+
+actor:
+  - type: orchestrator
+  - name: fabric-orchestrator
+  - guid: fabric-orchestrator-guid
+  - description: orchestrator
+  - kafka-topic: fabric-orchestrator-topic
+  - policy:
+      - module: fabric.actor.core.policy.controller_ticket_review_policy
+      - class: ControllerTicketReviewPolicy
+
+peers:
+  - peer:
+    - name: fabric-broker
+    - type: broker
+    - guid: fabric-broker-guid
+    - kafka-topic: fabric-broker-topic
+  - peer:
+    - name: fabric-net-am
+    - guid: fabric-net-am-guid
+    - type: authority
+    - kafka-topic: fabric-net-am-topic
+  - peer:
+    - name: fabric-site-am
+    - guid: fabric-site-am-guid
+    - type: authority
+    - kafka-topic: fabric-site-am-topic

@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_server_reservation import IServerReservation
 if TYPE_CHECKING:
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
 
 
 class IAuthorityReservation(IServerReservation):

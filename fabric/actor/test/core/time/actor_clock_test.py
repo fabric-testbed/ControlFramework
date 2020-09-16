@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import unittest
-from datetime import datetime
 
 from fabric.actor.core.time.actor_clock import ActorClock
 
@@ -54,16 +53,14 @@ class ActorClockTest(unittest.TestCase):
         ms = offset
         for i in range(100):
             exp = i
-            self.assertEqual(exp, clock.cycle(millis=ms))
-            self.assertEqual(exp, clock.cycle(when=datetime.fromtimestamp(ms*1000)))
+            self.assertEqual(exp, clock.cycle(when=ActorClock.from_milliseconds(ms)))
             ms += length
 
         ms = offset
         for i in range(100):
             exp = i
             for j in range(length):
-                self.assertEqual(exp, clock.cycle(millis=ms))
-                self.assertEqual(exp, clock.cycle(when=datetime.fromtimestamp(ms*1000)))
+                self.assertEqual(exp, clock.cycle(when=ActorClock.from_milliseconds(ms)))
                 ms += 1
 
     def test_date(self):
@@ -73,7 +70,7 @@ class ActorClockTest(unittest.TestCase):
 
         ms = offset
         for i in range(100):
-            self.assertEqual(datetime.fromtimestamp(ms * 1000), clock.date(i))
+            self.assertEqual(ActorClock.from_milliseconds(ms), clock.date(i))
             ms += length
 
     def test_cycle_start_end_date(self):
@@ -85,8 +82,8 @@ class ActorClockTest(unittest.TestCase):
         end = offset + length - 1
 
         for i in range(100):
-            self.assertEqual(datetime.fromtimestamp(start * 1000), clock.cycle_start_date(i))
-            self.assertEqual(datetime.fromtimestamp(end * 1000), clock.cycle_end_date(i))
+            self.assertEqual(ActorClock.from_milliseconds(start), clock.cycle_start_date(i))
+            self.assertEqual(ActorClock.from_milliseconds(end), clock.cycle_end_date(i))
             self.assertEqual(start, clock.cycle_start_in_millis(i))
             self.assertEqual(end, clock.cycle_end_in_millis(i))
             start += length

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.actor.core.util.id import ID
     from fabric.message_bus.messages.reservation_mng import ReservationMng
-    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
+    from fabric.message_bus.messages.proxy_avro import ProxyAvro
     from fabric.actor.core.util.resource_type import ResourceType
 
 
@@ -87,7 +87,7 @@ class IMgmtClientActor(IComponent):
         """
         raise NotImplementedError
 
-    def get_broker(self, broker: ID) -> ProxyMng:
+    def get_broker(self, broker: ID) -> ProxyAvro:
         """
         Returns the broker with the specified ID.
         @param broker broker id
@@ -95,7 +95,7 @@ class IMgmtClientActor(IComponent):
         """
         raise NotImplementedError
 
-    def add_broker(self, broker: ProxyMng) -> bool:
+    def add_broker(self, broker: ProxyAvro) -> bool:
         """
         Adds a new broker.
         @param broker broker
@@ -130,17 +130,17 @@ class IMgmtClientActor(IComponent):
         """
         raise NotImplementedError
 
-    def extend_reservation(self, reservation: id, new_end_time: datetime, new_units: int,
+    def extend_reservation(self, reservation: ID, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType, request_properties: dict,
                            config_properties: dict) -> bool:
         raise NotImplementedError
 
-    def extend_reservation_end_time(self, reservation: id, new_end_time: datetime) -> bool:
+    def extend_reservation_end_time(self, reservation: ID, new_end_time: datetime) -> bool:
         raise NotImplementedError
 
-    def extend_reservation_end_time_request(self, reservation: id, new_end_time: datetime, request_properties: dict) -> bool:
+    def extend_reservation_end_time_request(self, reservation: ID, new_end_time: datetime, request_properties: dict) -> bool:
         raise NotImplementedError
 
-    def extend_reservation_end_time_request_config(self, reservation: id, new_end_time: datetime,
+    def extend_reservation_end_time_request_config(self, reservation: ID, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
         raise NotImplementedError

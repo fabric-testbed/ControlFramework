@@ -28,14 +28,14 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_client_policy import IClientPolicy
 
 if TYPE_CHECKING:
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.reservation_set import ReservationSet
 
 
 class IControllerPolicy(IClientPolicy):
     """
-    IControllerPolicy defines the policy interface for an actor acting in the controller role.
+    IControllerPolicy defines the policy interface for an actor acting in the orchestrator role.
     """
     def get_redeeming(self, cycle: int) -> ReservationSet:
         """

@@ -120,10 +120,10 @@ class Slice(IKernelSlice):
             return self.rsrcdata.get_request_properties()
         return None
 
-    def get_reservations(self) ->ReservationSet:
+    def get_reservations(self) -> ReservationSet:
         return self.reservations
 
-    def get_reservations_list(self) ->list:
+    def get_reservations_list(self) -> list:
         return self.reservations.values()
 
     def get_resource_properties(self):

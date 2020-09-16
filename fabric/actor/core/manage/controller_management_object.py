@@ -35,17 +35,17 @@ from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
-from fabric.actor.core.manage.messages.result_unit_mng import ResultUnitMng
+from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_controller import IController
     from fabric.actor.core.apis.i_actor import IActor
-    from fabric.actor.core.manage.messages.result_proxy_mng import ResultProxyMng
+    from fabric.message_bus.messages.result_proxy_avro import ResultProxyAvro
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.util.id import ID
-    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
-    from fabric.actor.core.manage.messages.result_pool_info_mng import ResultPoolInfoMng
+    from fabric.message_bus.messages.proxy_avro import ProxyMng
+    from fabric.message_bus.messages.result_pool_info_avro import ResultPoolInfoMng
     from fabric.message_bus.messages.result_string_avro import ResultStringAvro
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.message_bus.messages.result_strings_avro import ResultStringsAvro
@@ -83,10 +83,10 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
             super().set_actor(actor)
             self.client_helper = ClientActorManagementObjectHelper(actor)
 
-    def get_brokers(self, caller: AuthToken) -> ResultProxyMng:
+    def get_brokers(self, caller: AuthToken) -> ResultProxyAvro:
         return self.client_helper.get_brokers(caller)
 
-    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyMng:
+    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
         return self.client_helper.get_broker(broker_id, caller)
 
     def add_broker(self, broker_proxy: ProxyMng, caller: AuthToken) -> ResultAvro:
@@ -122,8 +122,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
     def modify_reservation(self, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
         return self.client_helper.modify_reservation(rid, modify_properties, caller)
 
-    def get_reservation_units(self, caller: AuthToken, rid: ID) -> ResultUnitMng:
-        result = ResultUnitMng()
+    def get_reservation_units(self, caller: AuthToken, rid: ID) -> ResultUnitAvro:
+        result = ResultUnitAvro()
         result.status = ResultAvro()
 
         if caller is None:

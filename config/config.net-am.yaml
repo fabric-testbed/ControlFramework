@@ -59,7 +59,7 @@ logging:
   - log-size: 5000000
 
 oauth:
-  - oauth-jwks-url: https://cilogon.org/oauth2/certs
+  - token-public-key: /etc/fabric/ssl/token_public.pem
 
 database:
   - db-user: am
@@ -123,10 +123,10 @@ actor:
             - substrate.file: config/neo4j/rockySite.xml
 peers:
   - peer:
-    - name: fabric-controller
-    - guid: fabric-controller-guid
-    - type: controller
-    - kafka-topic: fabric-controller-topic
+    - name: fabric-orchestrator
+    - guid: fabric-orchestrator-guid
+    - type: orchestrator
+    - kafka-topic: fabric-orchestrator-topic
   - peer:
     - name: fabric-broker
     - guid: fabric-broker-guid

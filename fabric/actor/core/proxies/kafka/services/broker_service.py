@@ -32,6 +32,7 @@ from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.actor.core.proxies.kafka.services.actor_service import ActorService
 from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.reclaim_avro import ReclaimAvro
 from fabric.message_bus.messages.reservation_avro import ReservationAvro
 from fabric.message_bus.messages.message import IMessageAvro
 
@@ -84,6 +85,18 @@ class BrokerService(ActorService):
             raise e
         self.do_dispatch(rpc)
 
+    def reclaim(self, request: ReclaimAvro):
+        rpc = None
+        authToken = Translate.translate_auth_from_avro(request.auth)
+        try:
+            rsvn = self.pass_agent(request.reservation)
+            callback = self.get_callback(request.callback_topic, authToken)
+            rpc = IncomingReservationRPC(request.message_id, RPCRequestType.Reclaim, rsvn, callback, None, authToken)
+        except Exception as e:
+            self.logger.error("Invalid reclaim request: {}".format(e))
+            raise e
+        self.do_dispatch(rpc)
+
     def extend_ticket(self, request: ExtendTicketAvro):
         rpc = None
         authToken = Translate.translate_auth_from_avro(request.auth)
@@ -113,6 +126,8 @@ class BrokerService(ActorService):
             self.ticket(message)
         elif message.get_message_name() == IMessageAvro.Claim:
             self.claim(message)
+        elif message.get_message_name() == IMessageAvro.Reclaim:
+            self.reclaim(message)
         elif message.get_message_name() == IMessageAvro.ExtendTicket:
             self.extend_ticket(message)
         elif message.get_message_name() == IMessageAvro.Relinquish:

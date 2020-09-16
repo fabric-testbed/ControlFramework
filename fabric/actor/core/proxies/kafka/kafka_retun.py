@@ -114,7 +114,7 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
 
         rset = None
         if reservation.get_resources() is None:
-            from fabric.actor.core.kernel.sesource_set import ResourceSet
+            from fabric.actor.core.kernel.resource_set import ResourceSet
             from fabric.actor.core.util.resource_data import ResourceData
             rset = Translate.translate_resource_set(ResourceSet(units=0, rtype=reservation.get_requested_type(),
                                                     rdata=ResourceData()), Translate.DirectionReturn)

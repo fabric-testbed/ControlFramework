@@ -28,6 +28,8 @@ from datetime import datetime
 
 from fabric.actor.core.apis.i_tick import ITick
 from fabric.actor.core.kernel.tick import Tick
+from fabric.actor.core.time.actor_clock import ActorClock
+from fabric.actor.core.time.term import Term
 
 
 class KernelTick(Tick):
@@ -58,8 +60,8 @@ class KernelTick(Tick):
 
     def next_tick(self):
         with self.lock:
-            now = int(datetime.utcnow().timestamp() * 1000)
-            self.current_cycle = self.clock.cycle(millis=now)
+            now = datetime.utcnow()
+            self.current_cycle = self.clock.cycle(when=now)
             self.logger.info("Clock interrupt: now= {} cycle={}".format(now, self.current_cycle))
             if not self.manual and self.timer is None:
                 return

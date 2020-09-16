@@ -36,12 +36,12 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_slice import ISlice
     from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
     from fabric.actor.core.kernel.request_types import RequestTypes
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.util.resource_type import ResourceType
 
-from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
 from fabric.actor.core.kernel.reservation_state_transition_event import ReservationStateTransitionEvent
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
@@ -53,14 +53,14 @@ class Reservation(IKernelReservation):
     """
     These are the only methods synchronized on the Reservation object itself. The
     purpose is to allow an external thread to await a state transition in a
-    Reservation without holding the controller lock. State changes are made only
-    while holding the controller lock, so a controller may examine the state without
+    Reservation without holding the orchestrator lock. State changes are made only
+    while holding the orchestrator lock, so a orchestrator may examine the state without
     acquiring the reservation lock.
 
     Reservation objects passed into a slices actor to initiate or request new
     reservations are taken over by the kernel. Validate the passed-in state, mark
     some context specific to the operation, and clean out the rest of it in
-    preparation to link it into controller structures. No locks are held, and these
+    preparation to link it into orchestrator structures. No locks are held, and these
     routines have no side effects other than to the (new) reservation.
 
     Reservation is the base for all reservation objects. It
@@ -85,7 +85,7 @@ class Reservation(IKernelReservation):
         # The unique reservation identifier.
         self.rid = rid
         # Reservation category. Subclasses should supply the correct value.
-        self.category = IReservation.CategoryAll
+        self.category = ReservationCategory.All
         # Reservation state.
         self.state = ReservationStates.Nascent
         # Reservation pending state.
@@ -235,6 +235,9 @@ class Reservation(IKernelReservation):
     def claim(self):
         self.internal_error("abstract claim trap")
 
+    def reclaim(self):
+        self.internal_error("abstract reclaim trap")
+
     def clear_dirty(self):
         self.dirty = False
         self.state_transition = False
@@ -288,7 +291,7 @@ class Reservation(IKernelReservation):
             return self.approved_resources.get_units()
         return 0
 
-    def get_category(self):
+    def get_category(self) -> ReservationCategory:
         return self.category
 
     def get_guard(self) -> Guard:
@@ -416,8 +419,11 @@ class Reservation(IKernelReservation):
     def is_closing(self) -> bool:
         return self.state == ReservationStates.CloseWait or self.pending_state == ReservationPendingStates.Closing
 
-    def is_dirty(self):
+    def is_dirty(self) -> bool:
         return self.dirty
+
+    def is_reclaimed(self) -> bool:
+        return self.state == ReservationStates.Reclaimed
 
     def is_expired(self, t: datetime = None) -> bool:
         if t is None:
@@ -503,6 +509,9 @@ class Reservation(IKernelReservation):
             self.requested_resources.setup(self)
 
     def service_claim(self):
+        return
+
+    def service_reclaim(self):
         return
 
     def service_close(self):

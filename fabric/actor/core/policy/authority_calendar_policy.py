@@ -31,7 +31,7 @@ from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.core.authority_policy import AuthorityPolicy
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.plugins.config.config_token import ConfigToken
 from fabric.actor.core.policy.i_resource_control import IResourceControl
 from fabric.actor.core.time.term import Term
@@ -260,7 +260,9 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             self.calendar.remove_outlay(reservation)
 
     def remove(self, reservation: IReservation):
-        raise Exception("Not implemented")
+        # TODO KOMAL
+        #raise Exception("Not implemented")
+        self.calendar.remove(reservation)
 
     def finish(self, cycle: int):
         super().finish(cycle)
@@ -282,10 +284,10 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         @raises Exception in case of error
         """
         if requests is None or cycle == 0:
-            self.logger.debug("Authority requests for cycle {} = [none]".format(cycle))
+            # self.logger.debug("Authority requests for cycle {} = [none]".format(cycle))
             return
 
-        self.logger.debug("Authority requests for cycle {} = {}".format(cycle, requests))
+        # self.logger.debug("Authority requests for cycle {} = {}".format(cycle, requests))
 
         self.map_shrinking(requests)
         self.map_growing(requests)
@@ -298,7 +300,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         @param bids set of deferred operations for this cycle (non-null)
         @raises Exception in case of error
         """
-        self.logger.debug("Processing shrinking requests")
+        # self.logger.debug("Processing shrinking requests")
         rids_to_remove = []
         for reservation in bids.values():
             adjust = reservation.get_deficit()
@@ -323,7 +325,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         @param bids set of deferred operations for this cycle (non-null)
         @throws Exception in case of error
         """
-        self.logger.debug("Processing growing requests")
+        # self.logger.debug("Processing growing requests")
         rids_to_remove = []
         for reservation in bids.values():
             if reservation.is_terminal():

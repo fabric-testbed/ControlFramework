@@ -96,7 +96,7 @@ class ReservationSet:
         Returns:
             Reservation identified by rid
         """
-        return self.reservations.get(rid)
+        return self.reservations.get(rid, None)
 
     def get_exception(self, rid: ID) -> IReservation:
         """
@@ -132,7 +132,8 @@ class ReservationSet:
         Args:
             reservation: reservation to remove
         """
-        self.reservations.pop(reservation.get_reservation_id())
+        if reservation.get_reservation_id() in self.reservations:
+            self.reservations.pop(reservation.get_reservation_id())
 
     def remove_by_rid(self, rid: ID):
         """
@@ -141,7 +142,8 @@ class ReservationSet:
         Args:
             rid: reservation id of reservation to remove
         """
-        self.reservations.pop(rid)
+        if rid in self.reservations:
+            self.reservations.pop(rid)
 
     def size(self) -> int:
         """
@@ -166,7 +168,6 @@ class ReservationSet:
         return result
 
     def clone(self):
-        reservations = self.reservations.copy()
         result = ReservationSet()
-        result.reservations = reservations
+        result.reservations = self.reservations.copy()
         return result

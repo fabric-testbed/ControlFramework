@@ -31,7 +31,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
     from fabric.actor.core.apis.i_client_policy import IClientPolicy
     from fabric.actor.core.time.term import Term
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.resource_type import ResourceType
 
 from fabric.actor.core.apis.i_reservation import IReservation

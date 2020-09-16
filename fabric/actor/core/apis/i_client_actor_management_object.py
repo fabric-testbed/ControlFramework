@@ -39,9 +39,9 @@ if TYPE_CHECKING:
     from fabric.message_bus.messages.reservation_mng import ReservationMng
     from fabric.actor.core.util.id import ID
     from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
-    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
-    from fabric.actor.core.manage.messages.result_proxy_mng import ResultProxyMng
-    from fabric.actor.core.manage.messages.result_pool_info_mng import ResultPoolInfoMng
+    from fabric.message_bus.messages.proxy_avro import ProxyAvro
+    from fabric.message_bus.messages.result_proxy_avro import ResultProxyAvro
+    from fabric.message_bus.messages.result_pool_info_avro import ResultPoolInfoMng
 
 
 class IClientActorManagementObject:
@@ -62,13 +62,13 @@ class IClientActorManagementObject:
     def demand_reservation_rid(self, rid: ID, caller: AuthToken) -> ResultAvro:
         raise NotImplementedError
 
-    def get_brokers(self, caller: AuthToken) -> ResultProxyMng:
+    def get_brokers(self, caller: AuthToken) -> ResultProxyAvro:
         raise NotImplementedError
 
-    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyMng:
+    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
         raise NotImplementedError
 
-    def add_broker(self, broker_proxy: ProxyMng, caller: AuthToken) -> ResultAvro:
+    def add_broker(self, broker_proxy: ProxyAvro, caller: AuthToken) -> ResultAvro:
         raise NotImplementedError
 
     def claim_resources_slice(self, broker: ID, slice_id: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:

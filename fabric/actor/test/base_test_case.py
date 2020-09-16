@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
 
-from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.apis.i_actor import IActor, ActorType
 from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.apis.i_broker import IBroker
@@ -53,18 +53,18 @@ class BaseTestCase:
     ActorName = "testActor"
     ActorGuid = ID()
 
-    AuthorityName = "Authority"
-    BrokerName = "broker"
-    ControllerName = "controller"
+    AuthorityName = "Test-Authority"
+    BrokerName = "Test-Broker"
+    ControllerName = "Test-Controller"
 
-    ControllerGuid = "test-controller-guid"
+    ControllerGuid = "test-orchestrator-guid"
     AuthorityGuid = "test-authority-guid"
     BrokerGuid = "test-broker-guid"
 
-    DbUser = 'test'
-    DbPwd = 'test'
+    DbUser = 'fabric'
+    DbPwd = 'fabric'
     DbName = 'test'
-    DbHost = '127.0.0.1:9432'
+    DbHost = '127.0.0.1:8432'
 
     Logger = logging.getLogger('BaseTestCase')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
@@ -162,7 +162,7 @@ class BaseTestCase:
     def get_actor_instance(self) -> IActor:
         from fabric.actor.test.test_actor import TestActor
         actor = TestActor()
-        actor.type = Constants.ActorTypeAll
+        actor.type = ActorType.All
         return actor
 
     def get_authority_instance(self) -> IActor:

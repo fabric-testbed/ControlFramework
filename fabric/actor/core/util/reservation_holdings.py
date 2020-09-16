@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import  bisect
+from functools import total_ordering
+
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.util.reservation_set import ReservationSet
 from fabric.actor.core.util.resource_type import ResourceType
@@ -53,14 +55,16 @@ class ReservationWrapper:
             # don't attempt to compare against unrelated types
             return NotImplemented
 
-        return self.end < other.end and self.reservation.get_reservation_id() < self.reservation.get_reservation_id()
+        result = 0
+        if self.end == other.end:
+            if self.reservation is not None and other.reservation is not None:
+                result = self.reservation.get_reservation_id() < other.reservation.get_reservation_id()
 
-    def __gt__(self, other):
-        if not isinstance(other, ReservationWrapper):
-            # don't attempt to compare against unrelated types
-            return NotImplemented
+            return result
+        return self.end < other.end
 
-        return self.end > other.end and self.reservation.get_reservation_id() > self.reservation.get_reservation_id()
+    def __str__(self):
+        return "{}:{}:{}:{}".format(self.end, self.start, self.end, self.reservation.get_reservation_id())
 
 
 class ReservationHoldings:
@@ -99,8 +103,7 @@ class ReservationHoldings:
         if reservation.get_reservation_id() in self.map :
             entry = self.map[reservation.get_reservation_id()]
             if entry is not None:
-                if start - entry.end <= 1:
-                    raise Exception("Invalid")
+                assert ((start - entry.end) <= 1)
                 my_start = entry.start
                 self.remove_reservation(reservation)
 
@@ -115,7 +118,7 @@ class ReservationHoldings:
         Cost: O(log(n)).
         @params entry : entry to add
         """
-        bisect.insort(self.list, entry)
+        bisect.insort_left(self.list, entry)
 
     def clear(self):
         """

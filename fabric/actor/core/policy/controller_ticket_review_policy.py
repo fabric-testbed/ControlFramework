@@ -52,7 +52,6 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        state['actor_id'] = self.actor.get_reference()
         del state['logger']
         del state['actor']
         del state['clock']
@@ -64,10 +63,15 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
         return state
 
     def __setstate__(self, state):
-        actor_id = state['actor_id']
-        # TODO recover actor
-        del state['actor_id']
         self.__dict__.update(state)
+
+        self.logger = None
+        self.actor = None
+        self.clock = None
+        self.initialized = False
+        self.pending_notify = ReservationSet()
+        self.lazy_close = False
+        self.pending_redeem = ReservationSet()
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
 
@@ -98,7 +102,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
             slice_id = slice_obj.get_slice_id()
 
             # only want to do this for 'new' tickets
-            if reservation.is_failed() or reservation.is_ticketing():
+            if reservation.is_failed() or reservation.is_ticketed():
                 # check if we've examined this slice already
                 if slice_id not in slice_status_map:
                     # set the default status
@@ -106,14 +110,16 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                     # examine every reservation contained within the slice,
                     # looking for either a Failed or Nascent reservation
                     # we have to look at everything in a slice once, to determine all/any Sites with failures
-                    for slice_reservation in slice_obj.get_reservations().value():
+                    for slice_reservation in slice_obj.get_reservations().values():
 
-                        # If any Reservations that are being redeemed, that means the slice has already cleared TicketReview.
+                        # If any Reservations that are being redeemed, that means the
+                        # slice has already cleared TicketReview.
                         if slice_reservation.is_redeeming():
                             # There shouldn't be any Nascent reservations, if a reservation is being Redeemed.
                             if slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
-                                self.logger.error("Nascent reservation found while Reservation {} in slice {} is redeeming"
-                                                  .format(slice_reservation.get_reservation_id(), slice_obj.get_name()))
+                                self.logger.error(
+                                    "Nascent reservation found while Reservation {} in slice {} is redeeming"
+                                    .format(slice_reservation.get_reservation_id(), slice_obj.get_name()))
 
                                 # We may have previously found a Failed Reservation,
                                 # but if a ticketed reservation is being redeemed,
@@ -154,9 +160,11 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                         self.actor.close(reservation)
                         self.calendar.remove_pending(reservation)
                         self.pending_notify.remove(reservation)
+
                 elif slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
-                    self.logger.info("Mobing reservation {} to pending redeem list due to nascent reservation in slice {}"
-                                     .format(reservation.get_reservation_id(), slice_obj.get_name()))
+                    self.logger.info(
+                        "Moving reservation {} to pending redeem list due to nascent reservation in slice {}"
+                        .format(reservation.get_reservation_id(), slice_obj.get_name()))
                     self.pending_redeem.add(reservation)
                     self.calendar.remove_pending(reservation)
 

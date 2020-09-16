@@ -61,21 +61,21 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
     def get_unit(self, unit_id: ID):
         result = None
         try:
-            self.lock.acquire()
             result = self.db.get_unit(self.actor_id, str(unit_id))
         except Exception as e:
             self.logger.error(e)
-        finally:
-            self.lock.release()
+
         return result
 
     def add_unit(self, u: Unit):
-        if self.get_unit(u.get_id()) is not None:
-            self.logger.info("unit {} is already present in database".format(u.get_id()))
-            return
-
         try:
+            if u.get_resource_type() is None:
+                raise Exception("Invalid argument: resource_type")
             self.lock.acquire()
+            if self.get_unit(u.get_id()) is not None:
+                self.logger.info("unit {} is already present in database".format(u.get_id()))
+                return
+
             slice_id = str(u.get_slice_id())
             parent = self.get_unit(u.get_parent_id())
             parent_id = None

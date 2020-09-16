@@ -28,6 +28,7 @@ import threading
 import traceback
 import click
 
+from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric.actor.core.manage.kafka.kafka_broker import KafkaBroker
@@ -82,7 +83,7 @@ class MainShell:
             for p in peers:
                 # TODO Actor Live Check
                 mgmt_actor = None
-                if p.get_type() == Constants.BROKER:
+                if p.get_type().lower() == ActorType.Broker.name.lower():
                     mgmt_actor = KafkaBroker(ID(p.get_guid()), p.get_kafka_topic(), self.config_processor.get_auth(),
                                              self.logger, self.message_processor, producer=self.producer)
                 else:
@@ -199,14 +200,30 @@ def manage(ctx):
 @manage.command()
 @click.option('--broker', default=None, help='Broker Name', required=True)
 @click.option('--am', default=None, help='AM Name', required=True)
+@click.option('--rid', default=None, help='Reservation Id', required=False)
 @click.pass_context
-def claim(ctx, broker, am):
+def claim(ctx, broker: str, am: str, rid: str):
     """ Claim reservations for am to broker
     """
     MainShellSingleton.get().start()
     mgmt_command = ManageCommand(MainShellSingleton.get().logger)
-    mgmt_command.claim_resources(broker, am, MainShellSingleton.get().get_callback_topic())
+    mgmt_command.claim_resources(broker, am, MainShellSingleton.get().get_callback_topic(), rid)
     MainShellSingleton.get().stop()
+
+
+@manage.command()
+@click.option('--broker', default=None, help='Broker Name', required=True)
+@click.option('--am', default=None, help='AM Name', required=True)
+@click.option('--rid', default=None, help='Reservation Id', required=False)
+@click.pass_context
+def reclaim(ctx, broker: str, am: str, rid: str):
+    """ Claim reservations for am to broker
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
+    mgmt_command.reclaim_resources(broker, am, MainShellSingleton.get().get_callback_topic(), rid)
+    MainShellSingleton.get().stop()
+
 
 @manage.command()
 @click.option('--rid', default=None, help='Reservation Id', required=True)
@@ -220,6 +237,7 @@ def closereservation(ctx, rid, actor):
     mgmt_command.close_reservation(rid, actor, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
+
 @manage.command()
 @click.option('--sliceid', default=None, help='Slice Id', required=True)
 @click.option('--actor', default=None, help='Actor Name', required=True)
@@ -231,6 +249,7 @@ def closeslice(ctx, sliceid, actor):
     mgmt_command = ManageCommand(MainShellSingleton.get().logger)
     mgmt_command.close_slice(sliceid, actor, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
+
 
 @manage.command()
 @click.option('--rid', default=None, help='Reservation Id', required=True)
@@ -244,6 +263,7 @@ def removereservation(ctx, rid, actor):
     mgmt_command.remove_reservation(rid, actor, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
+
 @manage.command()
 @click.option('--sliceid', default=None, help='Slice Id', required=True)
 @click.option('--actor', default=None, help='Actor Name', required=True)
@@ -256,6 +276,7 @@ def removeslice(ctx, sliceid, actor):
     mgmt_command.remove_slice(sliceid, actor, MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
+
 @click.group()
 @click.pass_context
 def show(ctx):
@@ -266,50 +287,27 @@ def show(ctx):
 
 @show.command()
 @click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--sliceid', default=None, help='Slice ID', required=False)
 @click.pass_context
-def slices(ctx, actor):
+def slices(ctx, actor, sliceid):
     """ Get Slices from an actor
     """
     MainShellSingleton.get().start()
     mgmt_command = ShowCommand(MainShellSingleton.get().logger)
-    mgmt_command.get_slices(actor, MainShellSingleton.get().get_callback_topic())
+    mgmt_command.get_slices(actor, MainShellSingleton.get().get_callback_topic(), sliceid)
     MainShellSingleton.get().stop()
 
 
 @show.command()
 @click.option('--actor', default=None, help='Actor Name', required=True)
-@click.option('--sliceid', default=None, help='Slice ID', required=True)
+@click.option('--rid', default=None, help='Reservation Id', required=False)
 @click.pass_context
-def slice(ctx, actor, sliceid):
+def reservations(ctx, actor, rid):
     """ Get Slices from an actor
     """
     MainShellSingleton.get().start()
     mgmt_command = ShowCommand(MainShellSingleton.get().logger)
-    mgmt_command.get_slice(actor, sliceid, MainShellSingleton.get().get_callback_topic())
-    MainShellSingleton.get().stop()
-
-
-@show.command()
-@click.option('--actor', default=None, help='Actor Name', required=True)
-@click.pass_context
-def reservations(ctx, actor):
-    """ Get Slices from an actor
-    """
-    MainShellSingleton.get().start()
-    mgmt_command = ShowCommand(MainShellSingleton.get().logger)
-    mgmt_command.get_reservations(actor, MainShellSingleton.get().get_callback_topic())
-    MainShellSingleton.get().stop()
-
-@show.command()
-@click.option('--actor', default=None, help='Actor Name', required=True)
-@click.option('--rid', default=None, help='Reservation Id', required=True)
-@click.pass_context
-def reservation(ctx, actor, rid):
-    """ Get Slices from an actor
-    """
-    MainShellSingleton.get().start()
-    mgmt_command = ShowCommand(MainShellSingleton.get().logger)
-    mgmt_command.get_reservation(actor, rid, MainShellSingleton.get().get_callback_topic())
+    mgmt_command.get_reservations(actor, MainShellSingleton.get().get_callback_topic(), rid)
     MainShellSingleton.get().stop()
 
 

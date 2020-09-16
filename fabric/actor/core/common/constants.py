@@ -44,11 +44,9 @@ class ErrorCodes(Enum):
 
 class Constants:
     ReservationHasPendingOperation = -200001
-
-    ActorTypeSiteAuthority = 3
-    ActorTypeBroker = 2
-    ActorTypeController = 1
-    ActorTypeAll = 0
+    ExtendSameUnits = -1
+    AllReservationStates = -1
+    ManagementApiTimeoutInSeconds = 120.0
 
     ContainerManagmentObjectID = "manager"
 
@@ -87,6 +85,7 @@ class Constants:
 
     ConfigSectionOAuth = "oauth"
     PropertyConfOAuthJwksUrl = "oauth-jwks-url"
+    PropertyConfOAuthTokenPublicKey = "token-public-key"
 
     ConfigSectionDatabase = "database"
     PropertyConfDbUser = "db-user"
@@ -107,21 +106,18 @@ class Constants:
     ConfigurationFile = "/etc/fabric/actor/config/config.yaml"
     StateFileLocation = '/tmp/fabric_actor.tmp'
 
-    TestBrokerConfigurationFile = HomeDirectory + "config/config.broker.yaml"
-    TestNetAmConfigurationFile = HomeDirectory + "config/config.net-am.yaml"
-    TestVmAmConfigurationFile = HomeDirectory + "config/config.site.am.yaml"
+    TestDirectory = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/actor/test/"
+    TestBrokerConfigurationFile = TestDirectory + "config/config.broker.yaml"
+    TestNetAmConfigurationFile = TestDirectory + "config/config.net-am.yaml"
+    TestVmAmConfigurationFile = TestDirectory + "config/config.site.am.yaml"
+    TestControllerConfigurationFile = TestDirectory + "config/config.orchestrator.yaml"
 
     ElasticTime = "request.elasticTime"
     ElasticSize = "request.elasticSize"
 
-    SITE = "site"
-    BROKER = "broker"
-    AUTHORITY = "authority"
-    CONTROLLER = "controller"
-
     PoolPrefix = "pool."
     PoolsCount = "pools.count"
-    QueryActionDisctoverPools = "discover.pools"
+    QueryActionDiscoverPools = "discover.pools"
     QueryAction = "query.action"
     QueryResponse = "query.response"
 
@@ -167,6 +163,13 @@ class Constants:
     UnitVlanQoSRate = "unit.vlan.qos.rate"
     UnitVlanQoSBurstSize = "unit.vlan.qos.burst.size"
 
+    UnitEthPrefix = "unit.eth"
+    UnitNumberInterface = "unit.number.interface"
+
+    UnitModifyPropMessageSuffix = ".message"
+    UnitModifyPropCodeSuffix = ".code"
+    UnitModifyPropPrefix = "unit.modify."
+
     ConfigUnitTag = "config.unit.tag"
 
     PropertyStartVlan = "vlan.tag.start"
@@ -196,7 +199,6 @@ class Constants:
     PropertyProxiesClass = ".class"
     PropertyProxiesModule = ".module"
 
-    ExtendSameUnits = -1
-    AllReservationStates = -1
-
-    ManagementApiTimeoutInSeconds = 120.0
+    PropertyConfControllerRestPort = "orchestrator.rest.port"
+    PropertyConfControllerCreateWaitTimeMs = "orchestrator.create.wait.time.ms"
+    PropertyConfControllerDelayResourceTypes = "orchestrator.delay.resource.types"

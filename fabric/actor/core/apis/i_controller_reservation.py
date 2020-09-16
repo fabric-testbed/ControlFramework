@@ -30,7 +30,7 @@ from fabric.actor.core.kernel.reservation_states import JoinState
 
 if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
 
 
 class IControllerReservation(IClientReservation):

@@ -23,14 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
 from fabric.actor.test.core.policy.authoity_policy_test import AuthorityPolicyTest
-
-if TYPE_CHECKING:
-    from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
-
+from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric.actor.core.policy.authority_calendar_policy import AuthorityCalendarPolicy
 
 

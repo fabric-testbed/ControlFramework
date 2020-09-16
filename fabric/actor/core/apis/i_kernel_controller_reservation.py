@@ -29,7 +29,7 @@ from fabric.actor.core.apis.i_kernel_client_reservation import IKernelClientRese
 
 class IKernelControllerReservation(IKernelClientReservation, IControllerReservation):
     """
-    Kernel-level interface for controller reservations.
+    Kernel-level interface for orchestrator reservations.
     """
     def prepare_join(self):
         """

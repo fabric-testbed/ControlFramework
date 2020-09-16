@@ -30,7 +30,7 @@ from fabric.actor.boot.inventory.i_resource_pool_factory import IResourcePoolFac
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.util.id import ID
 

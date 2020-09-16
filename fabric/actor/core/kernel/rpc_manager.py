@@ -38,7 +38,7 @@ from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallba
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric.actor.core.apis.i_query_response_handler import IQueryResponseHandler
 from fabric.actor.core.apis.i_reservation import IReservation
-from fabric.actor.core.kernel.claim_timeout import ClaimTimeout
+from fabric.actor.core.kernel.claim_timeout import ClaimTimeout, ReclaimTimeout
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.kernel.failed_rpc_event import FailedRPCEvent
 from fabric.actor.core.kernel.inbound_rpc_event import InboundRPCEvent
@@ -128,6 +128,12 @@ class RPCManager:
     def claim(self, reservation: IClientReservation):
         self.validate(reservation)
         self.do_claim(reservation.get_actor(), reservation.get_broker(),
+                      reservation, reservation.get_client_callback_proxy(),
+                      reservation.get_slice().get_owner())
+
+    def reclaim(self, reservation: IClientReservation):
+        self.validate(reservation)
+        self.do_reclaim(reservation.get_actor(), reservation.get_broker(),
                       reservation, reservation.get_client_callback_proxy(),
                       reservation.get_slice().get_owner())
 
@@ -286,6 +292,19 @@ class RPCManager:
         rpc.timer = KernelTimer.schedule(actor, ClaimTimeout(rpc), self.CLAIM_TIMEOUT_MS)
         self.enqueue(rpc)
 
+    def do_reclaim(self, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
+                 callback: IClientCallbackProxy, caller: AuthToken):
+        proxy.get_logger().info("Outbound reclaim request from <{}>: {}".format(caller.get_name(), reservation))
+
+        state = proxy.prepare_reclaim(reservation, callback, caller)
+        state.set_caller(caller)
+        state.set_type(RPCRequestType.Reclaim)
+
+        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_ticket_sequence_out(), None)
+        # Schedule a timeout
+        rpc.timer = KernelTimer.schedule(actor, ReclaimTimeout(rpc), self.CLAIM_TIMEOUT_MS)
+        self.enqueue(rpc)
+
     def do_ticket(self, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
                  callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound ticket request from <{}>: {}".format(caller.get_name(), reservation))
@@ -420,6 +439,10 @@ class RPCManager:
 
         elif rpc.get_request_type() == RPCRequestType.Claim:
             actor.get_logger().info("Inbound claim request from <{}>:{}".format(rpc.get_caller().get_name(),
+                                                                                rpc.get_reservation()))
+
+        elif rpc.get_request_type() == RPCRequestType.Reclaim:
+            actor.get_logger().info("Inbound reclaim request from <{}>:{}".format(rpc.get_caller().get_name(),
                                                                                 rpc.get_reservation()))
 
         elif rpc.get_request_type() == RPCRequestType.Ticket:

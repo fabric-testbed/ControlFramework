@@ -29,6 +29,7 @@ import queue
 import threading
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
@@ -41,7 +42,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
     from fabric.actor.core.apis.i_slice import ISlice
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 
@@ -71,7 +72,7 @@ class Controller(Actor, IController):
         self.registry = PeerRegistry()
         # initialization status
         self.initialized = False
-        self.type = Constants.ActorTypeController
+        self.type = ActorType.Controller
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -194,11 +195,30 @@ class Controller(Actor, IController):
         self.policy.demand(reservation)
         reservation.set_policy(self.policy)
 
-    def extend_lease(self, reservation: IControllerReservation, rset: ReservationSet):
+    def extend_lease_reservation(self, reservation: IControllerReservation):
         if not self.recovered:
             self.extending_lease.add(reservation)
         else:
             self.wrapper.extend_lease(reservation)
+
+    def extend_lease(self, reservation: IControllerReservation = None, rset: ReservationSet = None):
+        if reservation is not None and rset is not None:
+            raise Exception("Invalid Arguments: reservation and rset can not be both not None")
+        if reservation is None and rset is None:
+            raise Exception("Invalid Arguments: reservation and rset can not be both None")
+
+        if reservation is not None:
+            self.extend_lease_reservation(reservation)
+
+        if rset is not None:
+            for reservation in rset.values():
+                try:
+                    if isinstance(reservation, IControllerReservation):
+                        self.extend_lease_reservation(reservation)
+                    else:
+                        self.logger.warning("Reservation #{} cannot extendLease".format(reservation.get_reservation_id()))
+                except Exception as e:
+                    self.logger.error("Could not extend_lease for #{} e=".format(reservation.get_reservation_id(), e))
 
     def extend_ticket_client(self, reservation: IClientReservation):
         if not self.recovered:
@@ -223,7 +243,7 @@ class Controller(Actor, IController):
         return self.get_brokers()
 
     def get_default_broker(self) -> IBrokerProxy:
-        return self.get_default_broker()
+        return self.registry.get_default_broker()
 
     def initialize(self):
         if not self.initialized:
@@ -364,7 +384,7 @@ class Controller(Actor, IController):
         self.redeem_reservations(self.redeeming)
         self.redeeming.clear()
 
-        self.extend_lease(None, self.extending_lease)
+        self.extend_lease(rset=self.extending_lease)
         self.extending_lease.clear()
 
     @staticmethod

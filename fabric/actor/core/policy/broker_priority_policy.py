@@ -31,7 +31,9 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.policy.broker_simple_policy import BrokerSimplePolicy
 from fabric.actor.core.policy.fifo_queue import FIFOQueue
+from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
@@ -129,7 +131,7 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
         """
         cycle = self.clock.cycle(when=when)
         time = self.clock.cycle_end_in_millis(cycle)
-        return datetime.fromtimestamp(time / 1000)
+        return ActorClock.from_milliseconds(time)
 
     def align_start(self, when: datetime) -> datetime:
         """
@@ -141,10 +143,10 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
         """
         cycle = self.clock.cycle(when=when)
         time = self.clock.cycle_start_in_millis(cycle)
-        return datetime.fromtimestamp(time / 1000)
+        return ActorClock.from_milliseconds(time)
 
-    def get_current_pool_id(self, reservation: IBrokerReservation) -> str:
-        return str(reservation.get_source().get_type())
+    def get_current_pool_id(self, reservation: IBrokerReservation) -> ResourceType:
+        return reservation.get_source().get_type()
 
     def get_requested_pool_id(self, reservation: IBrokerReservation):
         if reservation.get_requested_resources() is not None:

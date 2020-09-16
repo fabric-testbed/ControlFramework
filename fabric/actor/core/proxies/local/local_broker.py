@@ -57,6 +57,13 @@ class LocalBroker(LocalProxy, IBrokerProxy):
         state.callback = callback
         return state
 
+    def prepare_reclaim(self, reservation: IReservation, callback: IClientCallbackProxy,
+                      caller: AuthToken) -> IRPCRequestState:
+        state = LocalProxy.LocalProxyRequestState()
+        state.reservation = self.pass_reservation(reservation, caller)
+        state.callback = callback
+        return state
+
     def prepare_extend_ticket(self, reservation: IReservation, callback: IClientCallbackProxy,
                               caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()

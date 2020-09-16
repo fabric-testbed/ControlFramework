@@ -93,7 +93,7 @@ class ManagementUtils:
         return handler.result
 
     @staticmethod
-    def get_local_container(caller: AuthToken = None):
+    def get_local_container(caller: AuthToken):
         from fabric.actor.core.container.globals import GlobalsSingleton
         manager = GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(
             ID(Constants.ContainerManagmentObjectID))
@@ -101,6 +101,6 @@ class ManagementUtils:
         return proxy
 
     @staticmethod
-    def connect(caller: AuthToken = None) -> IMgmtContainer():
+    def connect(caller: AuthToken) -> IMgmtContainer():
         return ManagementUtils.get_local_container(caller)
 

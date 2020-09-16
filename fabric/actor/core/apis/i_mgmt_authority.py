@@ -30,7 +30,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
 
 if TYPE_CHECKING:
-    from fabric.actor.core.manage.messages.unit_mng import UnitMng
+    from fabric.message_bus.messages.unit_avro import UnitAvro
     from fabric.actor.core.util.id import ID
 
 
@@ -50,7 +50,7 @@ class IMgmtAuthority(IMgmtServerActor):
         """
         raise NotImplementedError
 
-    def get_reservation_unit(self, uid: ID) -> UnitMng:
+    def get_reservation_unit(self, uid: ID) -> UnitAvro:
         """
         Returns the specified inventory item
         @param unit unit id
