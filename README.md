@@ -13,8 +13,8 @@ Broker is an agent of CF that collects resource availability information from mu
 ## Aggregate Manager
 AM is a CF agent responsible for managing aggregate resources. Is under the control of the owner of the aggregate. Provides promises of resources to brokers and controllers/ orchestrators.
 
-## Controller
-Controller is an agent of CF that makes allocation decisions (embedding) of user requests into available resources. Communicates with user to collect slice requests, communicates with broker or aggregate managers to collect resource promises, communicates with aggregate managers to provision promised resources. Creates slices, configures resources, maintains their state, modifies slices and slivers.  
+## Orchestrator
+Orchestrator is an agent of CF that makes allocation decisions (embedding) of user requests into available resources. Communicates with user to collect slice requests, communicates with broker or aggregate managers to collect resource promises, communicates with aggregate managers to provision promised resources. Creates slices, configures resources, maintains their state, modifies slices and slivers.  
 
 ## Requirements
 Python 3.7+
@@ -27,6 +27,7 @@ total 40
 -rw-r--r--  1 komalthareja  staff  4312 Jul 14 14:38 config.net-am.yaml
 -rw-r--r--  1 komalthareja  staff  7277 Jul 14 14:38 config.vm-am.yaml
 -rw-r--r--  1 komalthareja  staff  3746 Jul 14 14:38 config.broker.yaml
+-rw-r--r--  1 komalthareja  staff  3746 Jul 14 14:38 config.orchestrator.yaml
 ```
 
 ## Build Docker Images
@@ -39,6 +40,11 @@ docker build -f Dockerfile-auth -t authority .
 ### Broker Docker Image
 ```
 docker build -f Dockerfile-broker -t broker .
+```
+
+### Orchestrator Docker Image
+```
+docker build -f Dockerfile-orchestrator -t orchestrator .
 ```
 
 ## Running with Docker
@@ -75,7 +81,4 @@ df0e3be0b641        confluentinc/cp-schema-registry:latest   "/etc/confluent/doc
 1fea39fedf6a        fabrictestbed/postgres:12.3              "docker-entrypoint.s…"   7 minutes ago       Up 7 minutes        0.0.0.0:8432->5432/tcp                             actordb
 c6b824b7d3c6        confluentinc/cp-zookeeper:latest         "/etc/confluent/dock…"   7 minutes ago       Up 7 minutes        2888/tcp, 0.0.0.0:2181->2181/tcp, 3888/tcp         zookeeper
 ```
-Use docker-compose.yml to bring all the containers needed to run Site-AM and Broker. Add any additional AMs as needed by pointing to the correct config files.
-
-## Plugins
-The actor loads all the plugins in "plugins" directory. Each plugin must inherit from IBasePlugin class and have an info file. 
+Use docker-compose.yml to bring all the containers needed to run Site-AM, Broker and Orchestrator. Add any additional AMs as needed by pointing to the correct config files.
