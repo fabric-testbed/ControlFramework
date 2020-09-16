@@ -9,3 +9,4 @@ pyyaml
 fabric-message-bus
 click
 pytest
+confluent-kafka[avro]

@@ -137,6 +137,7 @@ class MainShell:
         log.setLevel(log_level)
         log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
 
+
         logging.basicConfig(format=log_format, filename=log_path)
 
         return log
