@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import uuid
+from functools import total_ordering
 
 
 class ID:
@@ -48,6 +49,20 @@ class ID:
 
     def __hash__(self):
         return hash(self.id)
+
+    def __lt__(self, other):
+        if not isinstance(other, ID):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+
+        return self.id < other.id
+
+    def __eq__(self, other):
+        if not isinstance(other, ID):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+
+        return self.id == other.id
 
 
 def main():

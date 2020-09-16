@@ -117,7 +117,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
             self.calendar.add_closing(reservation, self.clock.cycle(when=reservation.get_approved_term().get_end_time()))
 
-            self.logger.debug("AentAllocated: units= {} res= {} term= {} "
+            self.logger.debug("AgentAllocated: units= {} res= {} term= {} "
                               .format(reservation.get_approved_resources().get_units(),
                                       reservation, reservation.get_approved_term()))
         else:
@@ -162,8 +162,10 @@ class BrokerCalendarPolicy(BrokerPolicy):
     def close(self, reservation:IReservation):
         if isinstance(reservation, IClientReservation):
             rset = self.calendar.get_outlays(reservation)
+            self.logger.debug("Client reservation; get outlays: {}".format(rset))
             self.actor.close_reservations(rset)
         else:
+            self.logger.debug("Removing reservation from scheduled or in progress list")
             self.calendar.remove_scheduled_or_in_progress(reservation)
 
     def closed(self, reservation: IReservation):
@@ -230,10 +232,13 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
     def release(self, reservation):
         if isinstance(reservation, IBrokerReservation):
+            self.logger.debug("Broker reservation")
             source = reservation.get_source()
             if source is not None:
+                self.logger.debug("Broker reservation; removing outlay")
                 self.calendar.remove_outlay(source, reservation)
         elif isinstance(reservation, IClientReservation):
+            self.logger.debug("Client reservation; removing source calendar")
             self.calendar.remove_source_calendar(reservation)
 
     def release_not_approved(self, reservation: IBrokerReservation):

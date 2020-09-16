@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.plugins.config.config_token import ConfigToken
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.reservation_set import ReservationSet
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
 
 
 class IPolicy:

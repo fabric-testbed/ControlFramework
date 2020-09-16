@@ -30,7 +30,7 @@ from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.apis.i_concrete_set import IConcreteSet
 from fabric.actor.core.apis.i_proxy import IProxy
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_data import ResourceData

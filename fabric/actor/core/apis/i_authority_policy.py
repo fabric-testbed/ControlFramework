@@ -30,7 +30,7 @@ from fabric.actor.core.apis.i_server_policy import IServerPolicy
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
 
 
 class IAuthorityPolicy(IServerPolicy):

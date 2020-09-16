@@ -65,12 +65,15 @@ class Term:
     @staticmethod
     def delta(d1: datetime, d2: datetime) -> int:
         """
-        Computes the difference in milliseconds between two dates.
+        Computes the difference in microseconds between two dates.
         @params d1 : date 1
         @params d2: date 2
-        @returns the difference in milliseconds between two dates.
+        @returns the difference in microseconds between two dates.
         """
-        return int((d2.timestamp() - d1.timestamp()) * 1000)
+        d2_ms = ActorClock.to_milliseconds(d2)
+        d1_ms = ActorClock.to_milliseconds(d1)
+
+        return d2_ms - d1_ms
 
     @staticmethod
     def get_readable_date(date: datetime) -> str:
@@ -104,6 +107,7 @@ class Term:
         @params start: start time
         @params end: end time
         @params new_start: new start time
+        @params length: length in ms
         """
         # Start time: first valid millisecond.
         if start is not None:
@@ -115,7 +119,8 @@ class Term:
             self.end_time = end
         else:
             if start is not None and length is not None and length > 1:
-                self.end_time = datetime.fromtimestamp(int(int(start.timestamp() * 1000) + length - 1)/1000)
+                start_ms = ActorClock.to_milliseconds(start) + length - 1
+                self.end_time = ActorClock.from_milliseconds(start_ms)
             else:
                 raise Exception("Invalid arguments, length and end both not specified")
 
@@ -226,6 +231,9 @@ class Term:
         @params old_term : old term
         @raises Exception if this term does not extend the old term
         """
+        if not isinstance(old_term, Term):
+            raise Exception("Invalid type: {}".format(type(old_term)))
+
         flag = self.extends_term(old_term)
         if flag is False:
             raise Exception("New term does not extend previous term")
@@ -270,7 +278,7 @@ class Term:
         """
         Creates a new term as an extension of the specified term. The term is
         extended with the current term length.
-        @params length new term length
+        @params length new term length in milliseconds
         @returns term extended with the current term length
         """
         if self.start_time is None or self.end_time is None:
@@ -279,9 +287,10 @@ class Term:
         if length != 0:
             length_to_use = length
 
-        new_start = datetime.fromtimestamp(int((self.end_time.timestamp() * 1000 + 1) / 1000))
+        new_start_ms = ActorClock.to_milliseconds(self.end_time) + 1
+        new_start = ActorClock.from_milliseconds(new_start_ms)
+        end = ActorClock.from_milliseconds(new_start_ms + length_to_use - 1)
 
-        end = datetime.fromtimestamp(int((new_start.timestamp() * 1000 + length_to_use - 1) / 1000))
         return Term(start=self.start_time, end=end, new_start=new_start)
 
     def extends_term(self, old_term) -> bool:
@@ -314,7 +323,10 @@ class Term:
         if self.start_time is None or self.end_time is None:
             raise Exception("Invalid state")
 
-        return int(((self.end_time.timestamp() - self.start_time.timestamp()) * 1000) + 1)
+        start_ms = ActorClock.to_milliseconds(self.start_time)
+        end_ms = ActorClock.to_milliseconds(self.end_time)
+
+        return end_ms - start_ms + 1
 
     def get_length(self) -> int:
         """
@@ -325,7 +337,10 @@ class Term:
         if self.new_start_time is None or self.end_time is None:
             raise Exception("Invalid state")
 
-        return int(((self.end_time.timestamp() - self.new_start_time.timestamp()) * 1000) + 1)
+        new_start_ms = ActorClock.to_milliseconds(self.new_start_time)
+        end_ms = ActorClock.to_milliseconds(self.end_time)
+
+        return end_ms - new_start_ms + 1
 
     def get_new_start_time(self) -> datetime:
         """
@@ -372,7 +387,7 @@ class Term:
         if date is None:
             raise Exception("Invalid argument")
 
-        return Term(start = date, length=self.get_length())
+        return Term(start=date, length=self.get_length())
 
     def __str__(self):
         if Term.set_cycles :

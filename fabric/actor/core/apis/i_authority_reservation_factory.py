@@ -30,7 +30,7 @@ from fabric.actor.core.util import id
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_slice import ISlice
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
 
 

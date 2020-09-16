@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
     from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
     from fabric.actor.core.apis.i_reservation import IReservation
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.security.auth_token import AuthToken
 
 

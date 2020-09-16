@@ -36,9 +36,9 @@ if TYPE_CHECKING:
 
 class IController(IClientActor, IControllerPublic):
     """
-    IController defines the interface for a actor acting in the controller role.
+    IController defines the interface for a actor acting in the orchestrator role.
     """
-    def extend_lease(self, reservation: IControllerReservation, rset: ReservationSet):
+    def extend_lease(self, reservation: IControllerReservation = None, rset: ReservationSet = None):
         """
         Issues an extend lease request for the given reservation. Note:
         the reservation must have already been registered with the actor.

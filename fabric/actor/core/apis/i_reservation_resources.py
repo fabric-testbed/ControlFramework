@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.resource_type import ResourceType
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.resource_count import ResourceCount
 
 import datetime

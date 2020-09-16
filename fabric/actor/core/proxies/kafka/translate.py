@@ -29,8 +29,9 @@ import pickle
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
+from fabric.actor.core.time.actor_clock import ActorClock
 
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
@@ -108,6 +109,8 @@ class Translate:
         avro_slice = SliceAvro()
         avro_slice.slice_name = slice_obj.get_name()
         avro_slice.guid = str(slice_obj.get_slice_id())
+        avro_slice.description = slice_obj.get_description()
+        avro_slice.owner = Translate.translate_auth_to_avro(slice_obj.get_owner())
         return avro_slice
 
     @staticmethod
@@ -132,15 +135,15 @@ class Translate:
     def translate_term(term: Term) -> TermAvro:
         avro_term = TermAvro()
         if term.get_start_time() is not None:
-            avro_term.start_time = int(term.get_start_time().timestamp() * 1000)
+            avro_term.start_time = ActorClock.to_milliseconds(term.get_start_time())
         else:
             term.start_time = 0
         if term.get_end_time() is not None:
-            avro_term.end_time = int(term.get_end_time().timestamp() * 1000)
+            avro_term.end_time = ActorClock.to_milliseconds(term.get_end_time())
         else:
             term.end_time = 0
         if term.get_new_start_time() is not None:
-            avro_term.new_start_time = int(term.get_new_start_time().timestamp() * 1000)
+            avro_term.new_start_time = ActorClock.to_milliseconds(term.get_new_start_time())
         else:
             avro_term.new_start_time = 0
         return avro_term
@@ -199,13 +202,13 @@ class Translate:
         end_time = None
         new_start_time = None
         if term.start_time > 0:
-            start_time = datetime.fromtimestamp(term.start_time / 1000)
+            start_time = ActorClock.from_milliseconds(term.start_time)
 
         if term.end_time > 0:
-            end_time = datetime.fromtimestamp(term.end_time / 1000)
+            end_time = ActorClock.from_milliseconds(term.end_time)
 
         if term.new_start_time > 0:
-            new_start_time = datetime.fromtimestamp(term.new_start_time / 1000)
+            new_start_time = ActorClock.from_milliseconds(term.new_start_time)
 
         return Term(start=start_time, end=end_time, new_start=new_start_time)
 

@@ -33,7 +33,7 @@ from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.policy.resource_control import ResourceControl
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.ipv4_set import IPv4Set
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.core.unit import Unit, UnitState
 
 if TYPE_CHECKING:

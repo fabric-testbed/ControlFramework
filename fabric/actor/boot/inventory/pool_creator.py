@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.boot.inventory.resource_pool_factory import ResourcePoolFactory
+from fabric.actor.core.core.pool_manager import PoolManagerError
 from fabric.actor.core.plugins.config.configuration_mapping import ConfigurationMapping
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.reflection_utils import ReflectionUtils
@@ -78,7 +79,7 @@ class PoolCreator:
             create_pool_result = self.substrate.get_pool_manager().create_pool(ID(), pool.get_resource_type_label(),
                                                                                pool.get_resource_type(), rd)
 
-            if create_pool_result.code != 0:
+            if create_pool_result.code != PoolManagerError.ErrorNone:
                 raise Exception("Could not create resource pool: {}. error={}".format(pool.get_resource_type_label(),
                                                                                       create_pool_result.code))
 

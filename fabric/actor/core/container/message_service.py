@@ -82,15 +82,20 @@ class MessageService(AvroConsumerApi):
     def handle_message(self, message: IMessageAvro):
         try:
             if message.get_message_name() == IMessageAvro.ClaimResources or \
+                    message.get_message_name() == IMessageAvro.ReclaimResources or \
                     message.get_message_name() == IMessageAvro.GetSlicesRequest or \
                     message.get_message_name() == IMessageAvro.GetReservationsRequest or \
+                    message.get_message_name() == IMessageAvro.GetReservationsStateRequest or \
+                    message.get_message_name() == IMessageAvro.GetReservationUnitsRequest or \
+                    message.get_message_name() == IMessageAvro.GetUnitRequest or \
+                    message.get_message_name() == IMessageAvro.GetPoolInfoRequest or \
                     message.get_message_name() == IMessageAvro.AddSlice or \
                     message.get_message_name() == IMessageAvro.UpdateSlice or \
                     message.get_message_name() == IMessageAvro.RemoveSlice or \
                     message.get_message_name() == IMessageAvro.CloseReservations or \
                     message.get_message_name() == IMessageAvro.UpdateReservation or \
                     message.get_message_name() == IMessageAvro.RemoveReservation or \
-                    message.get_message_name() == IMessageAvro.GetReservationsStateRequest:
+                    message.get_message_name() == IMessageAvro.ExtendReservation:
                 self.kafka_mgmt_service.process(message)
             else:
                 self.kafka_service.process(message)

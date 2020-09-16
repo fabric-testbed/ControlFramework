@@ -30,6 +30,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
+from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.util.bids import Bids
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.reservation_set import ReservationSet
@@ -381,7 +382,7 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         if renewing is None:
             return None
 
-        self.logger.debug("Expiring = {}".format(renewing.size()))
+        #self.logger.debug("Expiring = {}".format(renewing.size()))
 
         for reservation in renewing.values():
             self.logger.debug("Expiring res: {}".format(reservation))
@@ -405,7 +406,7 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
     def query(self, p: dict) -> dict:
         """
         Returns the ADVANCE_TIME of an agent's allocation
-        in the properties. This is used so that controller and downstream
+        in the properties. This is used so that orchestrator and downstream
         brokers know how early to bid. If the requested properties is null, the
         agent returns all of the properties that it has defined.
         """
@@ -456,7 +457,7 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         end_millis = self.clock.cycle_end_in_millis(cycle)
 
         # get the date that represents the end of the cycle
-        aligned_end = datetime.fromtimestamp(end_millis / 1000)
+        aligned_end = ActorClock.from_milliseconds(end_millis)
         # update the term end
         approved.set_end_time(aligned_end)
 

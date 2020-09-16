@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric.actor.core.common.constants import Constants, ErrorCodes
-from fabric.actor.core.common.exceptions import ReservationNotFoundException
+from fabric.actor.core.common.exceptions import ReservationNotFoundException, SliceNotFoundException
 from fabric.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.kernel.slice_factory import SliceFactory
@@ -589,6 +589,11 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     return None
 
             self.actor.execute_on_actor_thread_and_wait(Runner(self.actor))
+        except SliceNotFoundException as e:
+            self.logger.error("close_slice_reservations: {}".format(e))
+            result.set_code(ErrorCodes.ErrorNoSuchSlice.value)
+            result.set_message(e.text)
+            result = ManagementObject.set_exception_details(result, e)
         except Exception as e:
             self.logger.error("close_slice_reservations: {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)

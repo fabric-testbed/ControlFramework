@@ -43,3 +43,17 @@ class ClaimTimeout(ITimerTask):
                                 "Timeout during claim. Please remove the reservation and retry later")
         else:
             self.req.actor.get_logger().debug("Claim has already completed")
+
+class ReclaimTimeout(ITimerTask):
+    def __init__(self, req: RPCRequest):
+        self.req = req
+
+    def execute(self):
+        self.req.actor.get_logger().debug("Reclaim timeout. Reservation= {}".format(self.req.reservation))
+        # TODO
+        if self.req.reservation.is_ticketed():
+            self.req.actor.get_logger().error("Failing reservation {} due to expired reclaim timeout".format(self.req.reservation))
+            self.req.actor.fail(self.req.get_reservation().get_reservation_id(),
+                                "Timeout during claim. Please remove the reservation and retry later")
+        else:
+            self.req.actor.get_logger().debug("Reclaim has already completed")

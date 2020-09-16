@@ -32,7 +32,7 @@ from fabric.actor.core.apis.i_kernel_server_reservation import IKernelServerRese
 from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
 from fabric.actor.core.kernel.reservation import Reservation
 from fabric.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.rpc_exception import RPCError

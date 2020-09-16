@@ -34,12 +34,11 @@ from fabric.actor.core.policy.resource_control import ResourceControl
 from fabric.actor.core.policy.vm_control import VMControl
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.ipv4_set import IPv4Set
-
+from fabric.actor.core.kernel.resource_set import ResourceSet
 if TYPE_CHECKING:
     from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
     from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
     from fabric.actor.core.apis.i_reservation import IReservation
 
 
@@ -222,7 +221,7 @@ class SimpleVMControl(ResourceControl):
                 for att in pool.get_descriptor().get_attributes():
                     if att.get_value() is not None:
                         key = att.get_key()
-                        key = key.replace("^resource\\.", "unit.")
+                        key = key.replace("resource.", "unit.")
                         vm.set_property(key, att.get_value())
 
                 uset.add_unit(vm)

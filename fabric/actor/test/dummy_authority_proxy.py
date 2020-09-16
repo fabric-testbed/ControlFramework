@@ -60,6 +60,9 @@ class DummyAuthorityProxy(DummyProxy, IAuthorityProxy):
     def prepare_claim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
         return None
 
+    def prepare_reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+        return None
+
     def prepare_extend_ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
         return None
 

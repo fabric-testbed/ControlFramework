@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.core.pool_manager import PoolManager
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.util.resource_data import ResourceData
 
 if TYPE_CHECKING:

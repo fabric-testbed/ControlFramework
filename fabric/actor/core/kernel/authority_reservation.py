@@ -33,11 +33,11 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_slice import ISlice
     from fabric.actor.core.kernel.failed_rpc import FailedRPC
     from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.id import ID
 
-from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric.actor.core.apis.i_kernel_authority_reservation import IKernelAuthorityReservation
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.kernel.request_types import RequestTypes
@@ -60,7 +60,7 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
         # True if we notified the client about the fact that the reservation had failed
         self.notified_about_failure = False
         # Creates a new "blank" reservation instance. Used during recovery.
-        self.category = IReservation.CategoryAuthority
+        self.category = ReservationCategory.Authority
 
     def __getstate__(self):
         state = self.__dict__.copy()

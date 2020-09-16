@@ -61,7 +61,7 @@ logging:
   - logger: fabric-site-am
 
 oauth:
-  - oauth-jwks-url: https://cilogon.org/oauth2/certs
+  - token-public-key: /etc/fabric/ssl/token_public.pem
 
 database:
   - db-user: fabric
@@ -170,7 +170,7 @@ actor:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
-                - value: fabric.actor.core.policy.SimplerUnitsInventory.SimplerUnitsInventory
+                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
         - properties:
             - substrate.file: config/neo4j/rockyvmsite.xml
             - vlan.range.num: 100
@@ -192,7 +192,7 @@ actor:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
-                - value: fabric.actor.core.policy.SimplerUnitsInventory.SimplerUnitsInventory
+                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
         - properties:
             - substrate.file: config/neo4j/rockyvmsite.xml
             - lun.range.num: 100
@@ -200,10 +200,10 @@ actor:
             - lun.tag.end0: 100
 peers:
   - peer:
-    - name: fabric-controller
-    - type: controller
-    - guid: fabric-controller-guid
-    - kafka-topic: fabric-controller-topic
+    - name: fabric-orchestrator
+    - type: orchestrator
+    - guid: fabric-orchestrator-guid
+    - kafka-topic: fabric-orchestrator-topic
   - peer:
     - name: fabric-broker
     - type: broker

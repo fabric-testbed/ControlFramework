@@ -43,12 +43,12 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_policy import IClientPolicy
     from fabric.actor.core.apis.i_policy import IPolicy
     from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.resource_count import ResourceCount
     from fabric.actor.core.util.resource_type import ResourceType
 
-from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric.actor.core.apis.i_kernel_client_reservation import IKernelClientReservation
 from fabric.actor.core.kernel.predecessor_state import PredecessorState
@@ -63,10 +63,10 @@ from fabric.actor.security.guard import Guard
 
 class ReservationClient(Reservation, IKernelClientReservation, IControllerReservation):
     """
-    Reservation state machine for a client-side reservation. Role: controller,
+    Reservation state machine for a client-side reservation. Role: orchestrator,
     or an agent requesting tickets from an upstream agent. This class
     includes support for client-side handling of leases as well as tickets; lease
-    handling is relevant only to the controller.
+    handling is relevant only to the orchestrator.
 
     Implementation note on terms. One complication in ReservationClient is that
     acquiring or renewing a lease is a two-step process (first the ticket, then
@@ -150,12 +150,12 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         # policy will be in approvedTerm.
         self.suggested_term = term
         # The most recently recommended resources for new requests/extensions for
-        # this reservation. This field will be set by the programmer/controller to
+        # this reservation. This field will be set by the programmer/orchestrator to
         # pass information to the resource policy. The policy must examine this
         # field and decide what to do. Once a decision is made, the resources
         # chosen by the policy will be in approvedResources.
         self.suggested_resources = resources
-        # On the controller, ReservationClient has an additional joinstate
+        # On the orchestrator, ReservationClient has an additional joinstate
         # variable to track and sequence join/redeem operations. Reservations may
         # be "blocked" from redeeming or joining the guest (i.e.,
         # configuration/post-install) until their "predecessor" reservations have
@@ -163,9 +163,9 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         # redeeming: these may be the same, or either may be specified without the
         # other.
         self.joinstate = JoinState.NoJoin
-        # Join predecessors for this reservation (controller only).
+        # Join predecessors for this reservation (orchestrator only).
         self.joinPredecessors = {}
-        # Redeem predecessors for this reservation (controller only).
+        # Redeem predecessors for this reservation (orchestrator only).
         self.redeemPredecessors = {}
         # The status of the last ticket update.
         self.last_ticket_update = UpdateData()
@@ -194,7 +194,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         self.approved_resources = resources
         self.approved_term = term
         self.approved = True
-        self.category = IReservation.CategoryClient
+        self.category = ReservationCategory.Client
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -239,7 +239,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     def absorb_lease_update(self, incoming: IReservation, update_date: UpdateData):
         """
         Absorbs and incoming lease update.
-        
+
         @param incoming
                    incoming update
         @param update_date
@@ -269,7 +269,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     def absorb_ticket_update(self, incoming: IReservation, update_data: UpdateData):
         """
         Absorbs an incoming ticket update.
-        
+
         @param incoming
                    incoming ticket update
         @param update_data
@@ -297,7 +297,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         """
         Determines whether the incoming lease update is acceptable and if so
         accepts it.
-        
+
         @param incoming
                    incoming lease update
         @param update_data
@@ -306,7 +306,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         """
         # should we absorb this. What if decide not to accept the update?
         self.last_lease_update.absorb(update_data)
-        
+
         # Policy: if this lease update fails, then transition to Failed.
         # Alternative: could transition to (state, None) to allow retry of the
         # redeem/extend by a higher level.
@@ -326,7 +326,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         """
         Determines whether the incoming ticket update is acceptable and if so
         accepts it.
-        
+
         @param incoming
                    incoming ticket update
         @param update_data
@@ -393,7 +393,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         facilitate configuration. Note that approveRedeem may be polled multiple
         times, and should be idempotent.
 
-        
+
         @return true if approved; false otherwise
         """
         approved = True
@@ -474,12 +474,16 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
     def close(self):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Failed:
+            self.logger.debug("Reservation in Nascent or failed state, transition to close")
             self.transition("close", ReservationStates.Closed, self.pending_state)
             if self.broker is not None:
+                self.logger.debug("Triggering relinquish")
                 self.do_relinquish()
         elif self.state == ReservationStates.Ticketed:
             if self.pending_state != ReservationPendingStates.Redeeming:
+                self.logger.debug("Reservation in ticketed")
                 self.transition("close", ReservationStates.Closed, self.pending_state)
+                self.logger.debug("Triggering relinquish")
                 self.do_relinquish()
             else:
                 self.logger.info("Received close for a redeeming reservation. Deferring close until redeem completes.")
@@ -698,7 +702,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             self.policy.lease_satisfies(self.resources, incoming.get_resources(), self.term, incoming.get_term())
 
             if self.is_active_ticketed():
-                assert incoming.get_term().get_new_start_time().timestamp() == self.term.get_new_start_time().timestamp()
+                assert incoming.get_term().get_new_start_time() == self.term.get_new_start_time()
         except Exception as e:
             self.logger.warning("lease update does not satisfy ticket term (ignored)")
             update_data.post("lease update does not satisfy ticket term (ignored)")
@@ -827,7 +831,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         self.policy = policy
 
         if self.state == ReservationStates.Nascent:
-            # We are a broker or controller initiating a new ticket
+            # We are a broker or orchestrator initiating a new ticket
             # request to an upstream agent.
             assert self.broker is not None
 
@@ -878,6 +882,11 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 self.state == ReservationStates.Failed:
             self.error("initiating reserve on defunct reservation")
 
+        elif self.state == ReservationStates.Reclaimed:
+            self.transition("claiming ticket post reclaim", ReservationStates.Reclaimed, ReservationPendingStates.Ticketing)
+            self.sequence_ticket_out += 1
+            RPCManagerSingleton.get().claim(self)
+
     def setup(self):
         super().setup()
         if self.leased_resources is not None:
@@ -888,6 +897,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
     def service_close(self):
         if self.leased_resources is not None:
+            self.logger.debug("Closing leased resources: {}".format(type(self.leased_resources)))
             self.leased_resources.close()
 
     def service_probe(self):
@@ -1070,12 +1080,20 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     def update_ticket(self, incoming: IReservation, update_data):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Ticketed:
             if self.pending_state != ReservationPendingStates.Ticketing and \
-                    self.pending_state != ReservationPendingStates.ExtendingTicket:
+                    self.pending_state != ReservationPendingStates.ExtendingTicket and \
+                    self.pending_state != ReservationPendingStates.Reclaiming:
                 self.logger.warning("unsolicited ticket update. Ignoring it. Details: {}".format(incoming))
                 return
 
+            if self.pending_state == ReservationPendingStates.Reclaiming:
+                self.transition("ticket update", ReservationStates.Reclaimed, ReservationPendingStates.None_)
+                self.suggested = False
+                self.approved = False
+                self.pending_recover = False
+                return
+
             if self.accept_ticket_update(incoming, update_data):
-                self.transition("tickt update", ReservationStates.Ticketed, ReservationPendingStates.None_)
+                self.transition("ticket update", ReservationStates.Ticketed, ReservationPendingStates.None_)
                 self.suggested = False
                 self.approved = False
                 self.pending_recover = False
@@ -1097,6 +1115,18 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
         elif self.state == ReservationStates.Failed:
             self.log_error("Ticket update on failed reservation", None)
+
+        elif self.state == ReservationStates.Reclaimed:
+            if self.pending_state != ReservationPendingStates.Ticketing :
+                self.logger.warning("unsolicited ticket update. Ignoring it. Details: {}".format(incoming))
+                return
+
+            # TODO KOMAL
+            #if self.accept_ticket_update(incoming, update_data):
+            self.transition("ticket update", ReservationStates.Ticketed, ReservationPendingStates.None_)
+            self.suggested = False
+            self.approved = False
+            self.pending_recover = False
 
     def validate_incoming(self):
         if self.slice is None:
@@ -1182,7 +1212,9 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
     def handle_failed_rpc(self, failed: FailedRPC):
         remote_auth = failed.get_remote_auth()
-        if failed.get_request_type() == RPCRequestType.Claim or failed.get_request_type() == RPCRequestType.Ticket or \
+        if failed.get_request_type() == RPCRequestType.Claim or \
+                failed.get_request_type() == RPCRequestType.Reclaim or \
+                failed.get_request_type() == RPCRequestType.Ticket or \
                 failed.get_request_type() == RPCRequestType.ExtendTicket or \
                 failed.get_request_type() == RPCRequestType.Relinquish:
 
@@ -1335,7 +1367,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         self.set_pending_recover(True)
         self.transition("[recovery]", self.state, ReservationPendingStates.None_)
         self.set_lease_sequence_out(self.get_lease_sequence_out() - 1)
-        self.actor.extend_lease(self)
+        self.actor.extend_lease(reservation=self)
         self.logger.debug(
             "Issued extend lease request for reservation #{} State={}".format(self.get_reservation_id(),
                                                                               self.print_state()))
@@ -1400,3 +1432,32 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 self.logger.warning("Reservation #{} has failed".format(self.get_reservation_id()))
         except Exception as e:
             raise e
+
+    def reclaim(self):
+        self.approved = False
+        if self.state == ReservationStates.Ticketed:
+            # We are an agent asked to return a pre-reserved "will call" ticket
+            # to a client. Set mustSendUpdate so that the update will be sent
+            # on the next probe.
+            self.transition("reclaimed", ReservationStates.Ticketed, ReservationPendingStates.Reclaiming)
+            if self.state != ReservationStates.Failed:
+                self.service_reclaim()
+        else:
+            self.error("Wrong reservation state for ticket reclaim")
+
+    def service_reclaim(self):
+        self.log_debug("Generating reclaim")
+        if self.callback is None:
+            self.logger.warning("Cannot generate reclaim: no callback.")
+            return
+
+        self.logger.debug("Generating reclaim")
+        try:
+            if self.exported:
+                self.sequence_ticket_out += 1
+                RPCManagerSingleton.get().reclaim(self)
+        except Exception as e:
+            # Note that this may result in a "stuck" reservation... not much we
+            # can do if the receiver has failed or rejects our update. We will
+            # regenerate on any user-initiated probe.
+            self.log_remote_error("callback failed", e)

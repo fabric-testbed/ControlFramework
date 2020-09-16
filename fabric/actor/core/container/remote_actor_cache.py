@@ -32,13 +32,13 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.actor_identity import ActorIdentity
 from fabric.actor.core.manage.messages.client_mng import ClientMng
-from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
+from fabric.message_bus.messages.proxy_avro import ProxyAvro
 from fabric.actor.core.util.id import ID
 from fabric.message_bus.admin import AdminApi
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
-    from fabric.actor.core.apis.i_actor import IActor
+    from fabric.actor.core.apis.i_actor import IActor, ActorType
 
 
 class RemoteActorCache:
@@ -169,7 +169,7 @@ class RemoteActorCache:
 
             if kafka_topic is not None:
                 self.logger.debug("Kafka Topic is available, registering broker proxy")
-                proxy = ProxyMng()
+                proxy = ProxyAvro()
                 proxy.set_protocol(protocol)
                 proxy.set_guid(str(identity.get_guid()))
                 proxy.set_name(identity.get_name())
@@ -256,20 +256,13 @@ class RemoteActorCache:
             act_name = actor.get_name()
             act_type = actor.get_type()
             act_guid = actor.get_guid()
-            act_type_str = None
-            if act_type == Constants.ActorTypeController:
-                act_type_str = Constants.CONTROLLER
-            elif act_type == Constants.ActorTypeBroker:
-                act_type_str = Constants.BROKER
-            elif act_type == Constants.ActorTypeSiteAuthority:
-                act_type_str = Constants.AUTHORITY
 
             from fabric.actor.core.container.globals import GlobalsSingleton
             kafka_topic = GlobalsSingleton.get().get_config().get_actor().get_kafka_topic()
 
             entry = {self.ActorName: act_name,
                      self.ActorGuid: act_guid,
-                     self.ActorType: act_type_str,
+                     self.ActorType: act_type.name,
                      self.ActorProtocol: Constants.ProtocolKafka,
                      self.ActorLocation: kafka_topic}
 

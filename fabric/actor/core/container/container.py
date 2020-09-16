@@ -31,11 +31,11 @@ import traceback
 from typing import TYPE_CHECKING
 
 import os
-from datetime import datetime
 from enum import Enum
 
 from yapsy.PluginManager import PluginManagerSingleton
 
+from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric.actor.core.container.remote_actor_cache import RemoteActorCacheSingleton
 from fabric.actor.core.container.db.container_database import ContainerDatabase
 from fabric.actor.core.proxies.actor_location import ActorLocation
@@ -95,6 +95,10 @@ class Container(IActorContainer):
         self.logger = GlobalsSingleton.get().get_logger()
         self.db = None
         self.container_lock = threading.Lock()
+        self.actor = None
+
+    def get_actor(self) -> IActor:
+        return self.actor
 
     def determine_boot_mode(self):
         filename = Constants.SuperblockLocation
@@ -230,7 +234,7 @@ class Container(IActorContainer):
     def set_time(self):
         start_time = int(self.config.get_global_config().get_time()[Constants.PropertyConfTimeStartTime])
         if start_time == -1:
-            start_time = int(datetime.utcnow().timestamp() * 1000)
+            start_time = ActorClock.get_current_milliseconds()
 
         cycle_millis = int(self.config.get_global_config().get_time()[Constants.PropertyConfTimeCycleMillis])
 
@@ -325,6 +329,7 @@ class Container(IActorContainer):
         actor.actor_added()
         self.register_management_object(actor)
         self.register_common(actor)
+        self.actor = actor
         actor.start()
 
     def unregister_actor(self, actor: IActor):
@@ -491,3 +496,6 @@ class Container(IActorContainer):
             return proxy
         except Exception as e:
             raise e
+
+    def get_management_actor(self) -> IMgmtActor:
+        return self.get_management_object(self.actor.get_guid())

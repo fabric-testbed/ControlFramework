@@ -30,12 +30,14 @@ import threading
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.broker_management_object import BrokerManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_broker_service import KafkaBrokerService
 from fabric.actor.core.proxies.kafka.services.broker_service import BrokerService
+from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.resource_data import ResourceData
 
@@ -43,7 +45,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
     from fabric.actor.core.apis.i_slice import ISlice
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
     from fabric.actor.core.apis.i_reservation import IReservation
@@ -73,7 +75,7 @@ class Broker(Actor, IBroker):
         self.registry = PeerRegistry()
         # Initialization status.
         self.initialized = False
-        self.type = Constants.ActorTypeBroker
+        self.type = ActorType.Broker
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -160,7 +162,8 @@ class Broker(Actor, IBroker):
                 except Exception as e:
                     self.logger.error("unexpected extend failure for #{}".format(reservation.get_reservation_id()))
 
-    def claim_client(self, reservation_id: ID = None, resources: ResourceSet = None, slice_object: ISlice = None, broker: IBrokerProxy = None) -> IClientReservation:
+    def claim_client(self, reservation_id: ID = None, resources: ResourceSet = None,
+                     slice_object: ISlice = None, broker: IBrokerProxy = None) -> IClientReservation:
         if reservation_id is None:
             raise Exception("Invalid arguments")
 
@@ -175,16 +178,53 @@ class Broker(Actor, IBroker):
         end.replace(year=end.year + 30)
         term = Term(start=self.clock.cycle_start_date(0), end=end)
 
-        reservation = ClientReservationFactory.create(rid=reservation_id, resources=resources, term=term, slice_object=slice_object, broker=broker, actor=self)
+        reservation = ClientReservationFactory.create(rid=reservation_id, resources=resources, term=term,
+                                                      slice_object=slice_object, broker=broker, actor=self)
+        reservation.set_exported(True)
+        self.wrapper.ticket(reservation, self)
+        return reservation
+
+    def reclaim_client(self, reservation_id: ID = None, resources: ResourceSet = None,
+                       slice_object: ISlice = None, broker: IBrokerProxy = None,
+                       caller: AuthToken=None) -> IClientReservation:
+        if reservation_id is None:
+            raise Exception("Invalid arguments")
+
+        if slice_object is None:
+            slice_object = self.get_default_slice()
+            if slice_object is None:
+                slice_object = SliceFactory.create(slice_id=ID(), name=self.identity.get_name())
+                slice_object.set_owner(self.identity)
+                slice_object.set_inventory(True)
+
+        end = datetime.utcnow()
+        end.replace(year=end.year + 30)
+        term = Term(start=self.clock.cycle_start_date(0), end=end)
+
+        reservation = ClientReservationFactory.create(rid=reservation_id, resources=resources, term=term,
+                                                      slice_object=slice_object, broker=broker, actor=self)
         reservation.set_exported(True)
 
-        self.wrapper.ticket(reservation, self)
+        protocol = reservation.get_broker().get_type()
+        callback = ActorRegistrySingleton.get().get_callback(protocol, self.get_name())
+        if callback is None:
+            raise Exception("Unsupported")
+
+        reservation.prepare(callback, self.logger)
+        reservation.validate_outgoing()
+        self.wrapper.reclaim_request(reservation, caller, callback)
+
         return reservation
 
     def claim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
         self.wrapper.claim_request(reservation, caller, callback)
+
+    def reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+        if not self.is_recovered() or self.is_stopped():
+            raise Exception("This actor cannot receive calls")
+        self.wrapper.reclaim_request(reservation, caller, callback)
 
     def close_expiring(self, cycle: int):
         """

@@ -43,7 +43,7 @@ from fabric.actor.core.kernel.request_types import RequestTypes
 from fabric.actor.core.kernel.reservation import Reservation
 from fabric.actor.core.kernel.reservation_purged_event import ReservationPurgedEvent
 from fabric.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
 from fabric.actor.core.kernel.slice_table2 import SliceTable2
 from fabric.actor.core.time.term import Term
@@ -93,6 +93,19 @@ class Kernel:
         """
         try:
             reservation.claim()
+            self.plugin.get_database().update_reservation(reservation)
+        except Exception as e:
+            self.error("An error occurred during claim for reservation #{}".format(reservation.get_reservation_id()), e)
+
+    def reclaim(self, reservation: IKernelBrokerReservation):
+        """
+        Processes a requests to claim new ticket for previously exported
+        resources (broker role). On the client side this request is issued by
+        @param reservation the reservation being claimed
+        @throws Exception
+        """
+        try:
+            reservation.reclaim()
             self.plugin.get_database().update_reservation(reservation)
         except Exception as e:
             self.error("An error occurred during claim for reservation #{}".format(reservation.get_reservation_id()), e)
@@ -176,7 +189,7 @@ class Kernel:
         @param e exception
         """
         self.logger.error("Error: {} Exception: {}".format(err, e))
-        raise Exception(e)
+        raise e
 
     def extend_lease(self, reservation: IKernelReservation):
         """
@@ -264,6 +277,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            self.logger.debug("Processing extend ticket for reservation={}".format(type(reservation)))
             if reservation.can_renew():
                 reservation.extend_ticket(self.plugin.get_actor())
             else:
@@ -341,7 +355,7 @@ class Kernel:
         @return reservation
         """
         if rid is not None:
-            self.reservations.get(rid)
+            return self.reservations.get(rid)
         return None
 
     def get_reservations(self, slice_id: ID) -> list:
@@ -538,8 +552,11 @@ class Kernel:
                 self.unregister_reservation(rid)
             else:
                 raise Exception("Only reservations in failed, closed, or closewait state can be removed.")
+        else:
+            self.logger.debug("Reservation # {} not found".format(rid))
 
         self.plugin.get_database().remove_reservation(rid)
+        self.logger.debug("Reservation # {} removed from DB".format(rid))
 
     def remove_slice(self, slice_id: ID):
         """
@@ -554,6 +571,7 @@ class Kernel:
         slice_object = self.get_slice(slice_id)
 
         if slice_object is None:
+            self.logger.debug("Slice object not found in local data structure, removing from database")
             self.plugin.get_database().remove_slice(slice_id)
         else:
             possible = (slice_object.get_reservations().size() == 0)
@@ -608,7 +626,7 @@ class Kernel:
 
         try:
             temp = self.plugin.get_database().get_slice(slice_object.get_slice_id())
-            if temp is not None and len(temp) == 0:
+            if temp is None:
                 raise Exception("The slice does not have a database record")
         except Exception as e:
             try:

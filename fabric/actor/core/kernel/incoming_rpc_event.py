@@ -83,6 +83,11 @@ class IncomingRPCEvent(IActorEvent):
             server.claim(self.rpc.get_reservation(), self.rpc.get_callback(), self.rpc.get_caller())
             server.get_logger().info("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
+        elif self.rpc.get_request_type() == RPCRequestType.Reclaim:
+            server.get_logger().info("processing reclaim from <{}>".format(self.rpc.get_caller().get_name()))
+            server.reclaim(self.rpc.get_reservation(), self.rpc.get_callback(), self.rpc.get_caller())
+            server.get_logger().info("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
+
         elif self.rpc.get_request_type() == RPCRequestType.Ticket:
             server.get_logger().info("processing ticket from <{}>".format(self.rpc.get_caller().get_name()))
             server.ticket(self.rpc.get_reservation(), self.rpc.get_callback(), self.rpc.get_caller())

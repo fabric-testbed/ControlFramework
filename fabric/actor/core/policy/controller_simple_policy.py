@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import traceback
+
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.core.properties_manager import PropertiesManager
 from fabric.actor.core.policy.broker_simple_policy import BrokerSimplePolicy
@@ -56,7 +58,6 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        state['actor_id'] = self.actor.get_reference()
         del state['logger']
         del state['actor']
         del state['clock']
@@ -67,10 +68,14 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         return state
 
     def __setstate__(self, state):
-        actor_id = state['actor_id']
-        # TODO recover actor
-        del state['actor_id']
         self.__dict__.update(state)
+
+        self.logger = None
+        self.actor = None
+        self.clock = None
+        self.initialized = False
+        self.pending_notify = ReservationSet()
+        self.lazy_close = False
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
 
@@ -97,6 +102,7 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
             self.logger.debug("bidForSources: cycle {} bids {}".format(cycle, bidding.size()))
         except Exception as e:
             self.logger.error("an error in formulateBids:{}".format(e))
+            self.logger.error(traceback.format_exc())
 
         return Bids(bidding, extending)
 
@@ -166,7 +172,7 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         for reservation in demand.values():
             kernel_slice = reservation.get_slice()
             for slice_reservation in kernel_slice.get_reservations().values():
-                self.logger.trace("Reservation {} is in state: {}".format(slice_reservation.get_reservation_id(),
+                self.logger.debug("Reservation {} is in state: {}".format(slice_reservation.get_reservation_id(),
                                                                           slice_reservation.get_state().name))
 
         broker = self.actor.get_default_broker()
@@ -192,10 +198,10 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         """
         result = ReservationSet()
         renewing = self.calendar.get_renewing(cycle)
-        if renewing is None or len(renewing) == 0:
+        if renewing is None or renewing.size() == 0:
             return result
 
-        self.logger.debug("Renewing = {}".format(len(renewing)))
+        self.logger.debug("Renewing = {}".format(renewing.size()))
         for reservation in renewing.values():
             self.logger.debug("Renewing res: {}".format(reservation))
 

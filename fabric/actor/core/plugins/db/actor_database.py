@@ -29,7 +29,7 @@ import threading
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
 from fabric.actor.core.apis.i_database import IDatabase
-from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.kernel.slice import SliceTypes
 from fabric.actor.core.util.id import ID
@@ -129,6 +129,8 @@ class ActorDatabase(IDatabase):
 
     def add_slice(self, slice_object: ISlice):
         try:
+            if self.get_slice(slice_object.get_slice_id()) is not None:
+                raise Exception("Slice # {} already exists".format(slice_object.get_slice_id()))
             self.lock.acquire()
             properties = pickle.dumps(slice_object)
             self.db.add_slice(self.actor_id, str(slice_object.get_slice_id()), slice_object.get_name(),
@@ -202,20 +204,28 @@ class ActorDatabase(IDatabase):
     def add_reservation(self, reservation: IReservation):
         try:
             self.lock.acquire()
-            self.logger.debug("Adding reservation {} to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
+            self.logger.debug("Adding reservation {} to slice {}".format(reservation.get_reservation_id(),
+                                                                         reservation.get_slice()))
             properties = pickle.dumps(reservation)
             self.db.add_reservation(self.actor_id, str(reservation.get_slice_id()), str(reservation.get_reservation_id()),
-                                    reservation.get_category(), reservation.get_state().value, reservation.get_pending_state().value,
+                                    reservation.get_category().value, reservation.get_state().value,
+                                    reservation.get_pending_state().value,
                                     reservation.get_join_state().value, properties)
+            self.logger.debug(
+                "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
             self.lock.release()
 
     def update_reservation(self, reservation: IReservation):
         try:
             self.lock.acquire()
+            self.logger.debug("Updating reservation {} in slice {}".format(reservation.get_reservation_id(),
+                                                                           reservation.get_slice()))
             properties = pickle.dumps(reservation)
-            self.db.update_reservation(self.actor_id, str(reservation.get_slice_id()), str(reservation.get_reservation_id()),
-                                       reservation.get_category(), reservation.get_state().value, reservation.get_pending_state().value,
+            self.db.update_reservation(self.actor_id, str(reservation.get_slice_id()),
+                                       str(reservation.get_reservation_id()),
+                                       reservation.get_category().value, reservation.get_state().value,
+                                       reservation.get_pending_state().value,
                                        reservation.get_join_state().value, properties)
         finally:
             self.lock.release()
@@ -223,6 +233,7 @@ class ActorDatabase(IDatabase):
     def remove_reservation(self, rid: ID):
         try:
             self.lock.acquire()
+            self.logger.debug("Removing reservation {}".format(rid))
             self.db.remove_reservation(self.actor_id, str(rid))
         finally:
             self.lock.release()
@@ -257,8 +268,8 @@ class ActorDatabase(IDatabase):
     def get_client_reservations(self) -> list:
         try:
             self.lock.acquire()
-            return self.db.get_reservations_by_2_category(self.actor_id, IReservation.CategoryBroker,
-                                                      IReservation.CategoryAuthority)
+            return self.db.get_reservations_by_2_category(self.actor_id, ReservationCategory.Broker.value,
+                                                      ReservationCategory.Authority.value)
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -269,8 +280,8 @@ class ActorDatabase(IDatabase):
         try:
             self.lock.acquire()
             return self.db.get_reservations_by_slice_id_by_2_category(self.actor_id, str(slice_id),
-                                                                      IReservation.CategoryBroker,
-                                                                      IReservation.CategoryAuthority)
+                                                                      ReservationCategory.Broker.value,
+                                                                      ReservationCategory.Authority.value)
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -280,7 +291,7 @@ class ActorDatabase(IDatabase):
     def get_holdings(self) -> list:
         try:
             self.lock.acquire()
-            return self.db.get_reservations_by_category(self.actor_id, IReservation.CategoryClient)
+            return self.db.get_reservations_by_category(self.actor_id, ReservationCategory.Client.value)
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -290,7 +301,7 @@ class ActorDatabase(IDatabase):
     def get_holdings_by_slice_id(self, slice_id: ID) -> list:
         try:
             self.lock.acquire()
-            return self.db.get_reservations_by_slice_id_by_category(self.actor_id, str(slice_id), IReservation.CategoryClient)
+            return self.db.get_reservations_by_slice_id_by_category(self.actor_id, str(slice_id), ReservationCategory.Client.value)
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -300,7 +311,7 @@ class ActorDatabase(IDatabase):
     def get_broker_reservations(self) -> list:
         try:
             self.lock.acquire()
-            return self.db.get_reservations_by_category(self.actor_id, IReservation.CategoryBroker)
+            return self.db.get_reservations_by_category(self.actor_id, ReservationCategory.Broker.value)
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -310,7 +321,7 @@ class ActorDatabase(IDatabase):
     def get_authority_reservations(self) -> list:
         try:
             self.lock.acquire()
-            return self.db.get_reservations_by_category(self.actor_id, IReservation.CategoryAuthority)
+            return self.db.get_reservations_by_category(self.actor_id, ReservationCategory.Authority.value)
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -351,6 +362,7 @@ class ActorDatabase(IDatabase):
     def add_broker(self, broker: IBrokerProxy):
         try:
             self.lock.acquire()
+            self.logger.debug("Adding broker {}({})".format(broker.get_name(), broker.get_guid()))
             properties = pickle.dumps(broker)
             self.db.add_proxy(self.actor_id, broker.get_name(), properties)
         finally:
@@ -359,6 +371,7 @@ class ActorDatabase(IDatabase):
     def update_broker(self, broker: IBrokerProxy):
         try:
             self.lock.acquire()
+            self.logger.debug("Updating broker {}({})".format(broker.get_name(), broker.get_guid()))
             properties = pickle.dumps(broker)
             self.db.update_proxy(self.actor_id, broker.get_name(), properties)
         finally:
@@ -367,6 +380,7 @@ class ActorDatabase(IDatabase):
     def remove_broker(self, broker: IBrokerProxy):
         try:
             self.lock.acquire()
+            self.logger.debug("Removing broker {}({})".format(broker.get_name(), broker.get_guid()))
             self.db.remove_proxy(self.actor_id, broker.get_name())
         finally:
             self.lock.release()
@@ -383,7 +397,3 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
         return None
-
-
-
-

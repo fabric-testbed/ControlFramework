@@ -34,14 +34,15 @@ from fabric.actor.core.apis.i_controller_reservation import IControllerReservati
 from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.management_utils import ManagementUtils
+from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
-from fabric.actor.core.manage.messages.pool_info_mng import PoolInfoMng
-from fabric.actor.core.manage.messages.result_pool_info_mng import ResultPoolInfoMng
-from fabric.actor.core.manage.messages.result_proxy_mng import ResultProxyMng
+from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
+from fabric.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
+from fabric.message_bus.messages.result_proxy_avro import ResultProxyAvro
 from fabric.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.result_string_avro import ResultStringAvro
@@ -57,7 +58,7 @@ from fabric.actor.core.core.broker_policy import BrokerPolicy
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_actor import IClientActor
     from fabric.actor.security.auth_token import AuthToken
-    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
+    from fabric.message_bus.messages.proxy_avro import ProxyMng
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.actor.core.apis.i_actor import IActor
     from fabric.message_bus.messages.reservation_mng import ReservationMng
@@ -69,8 +70,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def get_brokers(self, caller: AuthToken) -> ResultProxyMng:
-        result = ResultProxyMng()
+    def get_brokers(self, caller: AuthToken) -> ResultProxyAvro:
+        result = ResultProxyAvro()
         result.status = ResultAvro()
 
         if caller is None:
@@ -89,8 +90,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyMng:
-        result = ResultProxyMng()
+    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
+        result = ResultProxyAvro()
         result.status = ResultAvro()
 
         if broker_id is None or caller is None:
@@ -138,8 +139,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def get_pool_info(self, broker: ID, caller: AuthToken) -> ResultPoolInfoMng:
-        result = ResultPoolInfoMng()
+    def get_pool_info(self, broker: ID, caller: AuthToken) -> ResultPoolInfoAvro:
+        result = ResultPoolInfoAvro()
         result.status = ResultAvro()
 
         if broker is None or caller is None:
@@ -157,7 +158,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 for rd in pools:
                     temp = {}
                     temp = rd.save(temp, None)
-                    pi = PoolInfoMng()
+                    pi = PoolInfoAvro()
                     pi.set_type(str(rd.get_resource_type()))
                     pi.set_name(rd.get_resource_type_label())
                     pi.set_properties(temp)
@@ -178,8 +179,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         result = ResultAvro()
         slice_id = ID(reservation.get_slice_id())
         rset = Converter.get_resource_set(reservation)
-        term = Term(start=datetime.fromtimestamp(reservation.get_start() * 1000),
-                    end=datetime.fromtimestamp(reservation.get_end() * 1000))
+        term = Term(start=ActorClock.from_milliseconds(reservation.get_start()),
+                    end=ActorClock.from_milliseconds(reservation.get_end()))
 
         broker = None
 
@@ -477,6 +478,51 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
                 def run(self):
                     return self.actor.claim_client(reservation_id=rid, resources=rset, broker=my_broker)
+
+            rc = self.client.execute_on_actor_thread_and_wait(Runner(self.client))
+
+            if rc is not None:
+                result.reservations = []
+                reservation = Converter.fill_reservation(rc, True)
+                result.reservations.append(reservation)
+            else:
+                raise Exception("Internal Error")
+        except Exception as e:
+            traceback.print_exc()
+            self.logger.error("claim_resources {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result.status, e)
+
+        return result
+
+    def reclaim_resources(self, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
+        result = ResultReservationAvro()
+        result.status = ResultAvro()
+
+        if caller is None or rid is None or broker is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+
+        try:
+            rtype = ResourceType(str(ID()))
+            rdata = ResourceData()
+            rset = ResourceSet(units=0, rtype=rtype, rdata=rdata)
+
+            my_broker = self.client.get_broker(broker)
+
+            if my_broker is None:
+                result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
+                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
+                return result
+
+            class Runner(IActorRunnable):
+                def __init__(self, actor: IActor):
+                    self.actor = actor
+
+                def run(self):
+                    return self.actor.reclaim_client(reservation_id=rid, resources=rset, broker=my_broker, caller=caller)
 
             rc = self.client.execute_on_actor_thread_and_wait(Runner(self.client))
 

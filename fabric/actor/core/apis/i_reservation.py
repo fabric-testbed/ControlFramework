@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from enum import Enum
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
@@ -39,22 +41,22 @@ from fabric.actor.core.apis.i_reservation_resources import IReservationResources
 from fabric.actor.core.apis.i_reservation_status import IReservationStatus
 
 
+class ReservationCategory(Enum):
+    # Unspecified reservation category.
+    All = 0
+    # Client-side reservations.
+    Client = 1
+    # Broker-side reservations.
+    Broker = 2
+    # Site authority-side reservations.
+    Authority = 3
+
 class IReservation(IReservationResources, IReservationStatus):
     """
     IReservation defines the the core API for a reservation. Most of the methods described in the interface allow the
     programmer to inspect the state of the reservation, access some of its core objects,
     and wait for the occurrence of a particular event.
     """
-
-    # Unspecified reservation category.
-    CategoryAll = 0
-    # Client-side reservations.
-    CategoryClient = 1
-    # Broker-side reservations.
-    CategoryBroker = 2
-    # Site authority-side reservations.
-    CategoryAuthority = 3
-
     # Serialization property name: reservation identifier.
     PropertyID = "rsv_resid"
 
@@ -87,7 +89,7 @@ class IReservation(IReservationResources, IReservationStatus):
         """
         raise NotImplementedError( "Should have implemented this" )
 
-    def get_category(self) -> int:
+    def get_category(self) -> ReservationCategory:
         """
         Returns the reservation category.
 

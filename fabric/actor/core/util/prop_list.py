@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.common.constants import Constants
 
 if TYPE_CHECKING:
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
 
 
 class PropList:

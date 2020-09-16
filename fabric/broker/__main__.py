@@ -32,7 +32,7 @@ from fabric.actor.core.container.globals import Globals, GlobalsSingleton
 
 def main():
     try:
-        #Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/broker/config.broker.yaml"
+        Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/broker/config.broker.yaml"
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(True)
             while True:

@@ -34,7 +34,7 @@ from fabric.actor.core.policy.free_allocated_set import FreeAllocatedSet
 from fabric.actor.core.policy.resource_control import ResourceControl
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_data import ResourceData
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_reservation import IClientReservation

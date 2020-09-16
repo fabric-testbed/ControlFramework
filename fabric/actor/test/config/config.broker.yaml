@@ -29,10 +29,16 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: localhost:9092
+  - kafka-server: localhost:19092
   - kafka-schema-registry-url: http://localhost:8081
-  - kafka-key-schema: ../../schema/key.avsc
-  - kafka-value-schema: ../../schema/key.avsc
+  - kafka-key-schema: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/message_bus/schema/key.avsc
+  - kafka-value-schema: /Users/komalthareja/renci/code/fabric/ActorBase/fabric/message_bus/schema/message.avsc
+  - kafka-ssl-ca-location:  /Users/komalthareja/renci/code/fabric/ActorBase/secrets/snakeoil-ca-1.crt
+  - kafka-ssl-certificate-location:  /Users/komalthareja/renci/code/fabric/ActorBase/secrets/kafkacat1-ca1-signed.pem
+  - kafka-ssl-key-location:  /Users/komalthareja/renci/code/fabric/ActorBase/secrets/kafkacat1.client.key
+  - kafka-ssl-key-password:  fabric
+  - kafka-security-protocol: SSL
+  - kafka-group-id: fabric-cf
 
 logging:
   ## The directory in which actor should create log files.
@@ -57,10 +63,10 @@ oauth:
   - oauth-jwks-url: https://cilogon.org/oauth2/certs
 
 database:
-  - db-user: test
-  - db-password: test
+  - db-user: fabric
+  - db-password: fabric
   - db-name: test
-  - db-host: 127.0.0.1:9432
+  - db-host: localhost:8432
 
 container:
   - container.guid: fabric-broker-conainer
@@ -92,24 +98,24 @@ actor:
   - description: Broker
   - kafka-topic: fabric-broker-topic
   - policy:
-      - module: actor.core.policy.BrokerSimplerUnitsPolicy
+      - module: fabric.actor.core.policy.broker_simpler_units_policy
       - class: BrokerSimplerUnitsPolicy
       - properties:
         - queue.type: fifo
 
 peers:
   - peer:
-    - name: fabric-controller
-    - guid: fabric-controller-guid
-    - type: controller
-    - kafka-topic: fabric-controller-topic
+    - name: fabric-orchestrator
+    - type: orchestrator
+    - guid: fabric-orchestrator-guid
+    - kafka-topic: fabric-orchestrator-topic
   - peer:
     - name: fabric-net-am
     - guid: fabric-net-am-guid
     - type: authority
     - kafka-topic: fabric-net-am-topic
   - peer:
-    - name: fabric-vm-am
-    - guid: fabric-vm-am-guid
+    - name: fabric-site-am
+    - guid: fabric-site-am-guid
     - type: authority
-    - kafka-topic: fabric-vm-am-topic
+    - kafka-topic: fabric-site-am-topic

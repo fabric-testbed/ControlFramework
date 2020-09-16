@@ -30,7 +30,7 @@ from fabric.actor.core.apis.i_server_reservation import IServerReservation
 from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
 
 if TYPE_CHECKING:
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
 
 

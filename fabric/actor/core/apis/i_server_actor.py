@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.core.apis.i_slice import ISlice
     from fabric.actor.core.time.term import Term
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.client import Client
     from fabric.actor.core.util.id import ID
     from fabric.actor.security.auth_token import AuthToken
@@ -108,6 +108,16 @@ class IServerActor(IActor, IServerPublic):
         raise NotImplementedError("Should have implemented this")
 
     def claim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+        """
+        Processes an incoming claim request.
+        @params reservation: reservation
+        @params callback : callback
+        @params caller: caller
+        @raises Exception in case of error
+        """
+        raise NotImplementedError("Should have implemented this")
+
+    def reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         """
         Processes an incoming claim request.
         @params reservation: reservation

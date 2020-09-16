@@ -61,24 +61,16 @@ class ActorClock:
 
         return int(millis / self.cycle_millis)
 
-    def cycle(self, when: datetime = None, millis: int = None) -> int:
+    def cycle(self, when: datetime) -> int:
         """
         Converts date/milliseconds to cycles.
         @params date : date
-        @params millis : milliseconds
         @return cycles
         """
-        if when is None and millis is None:
+        if when is None:
             raise Exception("Invalid arguments")
 
-        if millis is not None and millis == 0:
-            raise Exception("Invalid arguments")
-
-        if when is not None and millis is not None:
-            raise Exception("Invalid arguments")
-
-        if when is not None:
-            millis = int(when.timestamp() * 1000)
+        millis = self.to_milliseconds(when)
 
         if millis < self.beginning_of_time:
             return 0
@@ -95,7 +87,9 @@ class ActorClock:
         if cycle < 0:
             raise Exception("Invalid arguments")
 
-        return datetime.fromtimestamp(((self.beginning_of_time + ((cycle + 1) * self.cycle_millis)) - 1) / 1000)
+        millis = (self.beginning_of_time + ((cycle + 1) * self.cycle_millis)) - 1
+
+        return self.from_milliseconds(millis)
 
     def cycle_end_in_millis(self, cycle:int) -> int:
         """
@@ -105,7 +99,7 @@ class ActorClock:
         """
         return int((self.cycle_start_in_millis(cycle) + self.cycle_millis) - 1)
 
-    def cycle_start_date(self, cycle:int) -> datetime:
+    def cycle_start_date(self, cycle: int) -> datetime:
         """
         Calculates the first millisecond of the given cycle.
         @params cycle : cycle
@@ -134,7 +128,8 @@ class ActorClock:
         if cycle < 0:
             raise Exception("Invalid arguments")
 
-        return datetime.fromtimestamp((self.beginning_of_time + (cycle * self.cycle_millis)) / 1000)
+        millis = self.beginning_of_time + (cycle * self.cycle_millis)
+        return self.from_milliseconds(millis)
 
     def get_beginning_of_time(self) -> int:
         """
@@ -162,3 +157,30 @@ class ActorClock:
         if cycle < 0:
             raise Exception("Invalid arguments")
         return cycle * self.cycle_millis
+
+    @staticmethod
+    def get_current_milliseconds() -> int:
+        """
+        Returns the current time in milliseconds.  Note that
+        while the unit of time of the return value is a millisecond,
+        the granularity of the value depends on the underlying
+        operating system and may be larger.  For example, many
+        operating systems measure time in units of tens of
+        milliseconds.
+
+        @return  the difference, measured in milliseconds, between
+                  the current time and midnight, January 1, 1970 UTC.
+        """
+        when = datetime.utcnow()
+        epoch = datetime.utcfromtimestamp(0)
+        return int((when - epoch).total_seconds() * 1000)
+
+    @staticmethod
+    def from_milliseconds(milli_seconds) -> datetime:
+        result = datetime.utcfromtimestamp(milli_seconds//1000).replace(microsecond=milli_seconds%1000*1000)
+        return result
+
+    @staticmethod
+    def to_milliseconds(when: datetime) -> int:
+        epoch = datetime.utcfromtimestamp(0)
+        return int((when - epoch).total_seconds() * 1000)

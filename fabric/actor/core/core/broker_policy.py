@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 
 from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
 from fabric.actor.core.core.policy import Policy
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 
 
 class BrokerPolicy(Policy, IBrokerPolicy):

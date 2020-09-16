@@ -64,4 +64,4 @@ class SimplerUnitsInventory(InventoryForType):
         return self.set.get_free()
 
     def get_allocated(self) -> int:
-        return self.get_allocated()
+        return self.set.get_allocated()

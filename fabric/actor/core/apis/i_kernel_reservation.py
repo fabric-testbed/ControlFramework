@@ -73,6 +73,14 @@ class IKernelReservation(IReservation):
         """
         raise NotImplementedError("Should have implemented this")
 
+    def reclaim(self):
+        """
+        Reclaims an exported "will call" reservation.
+
+        @throws Exception in case of error
+        """
+        raise NotImplementedError("Should have implemented this")
+
     def close(self):
         """
         Closes the reservation. Locked with the kernel lock.
@@ -164,6 +172,13 @@ class IKernelReservation(IReservation):
     def service_claim(self):
         """
         Finishes processing claim.
+        @throws Exception in case of error
+        """
+        raise NotImplementedError("Should have implemented this")
+
+    def service_reclaim(self):
+        """
+        Finishes processing reclaim.
         @throws Exception in case of error
         """
         raise NotImplementedError("Should have implemented this")

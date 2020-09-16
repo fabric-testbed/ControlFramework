@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import time
+import unittest
 from datetime import datetime
 
 from fabric.actor.core.apis.i_broker import IBroker
@@ -33,28 +35,42 @@ from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.common.resource_pool_attribute_descriptor import ResourcePoolAttributeDescriptor, \
     ResourcePoolAttributeType
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
+from fabric.actor.core.core.broker_policy import BrokerPolicy
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.policy.broker_simpler_units_policy import BrokerSimplerUnitsPolicy
+from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.resource_type import ResourceType
+from fabric.actor.test.client_callback_helper import ClientCallbackHelper
 from fabric.actor.test.core.policy.broker_policy_test import BrokerPolicyTest
 
 
-class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest):
+class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
+    from fabric.actor.core.container.globals import Globals
+    Globals.ConfigFile = Constants.TestBrokerConfigurationFile
+
+    from fabric.actor.core.container.globals import GlobalsSingleton
+    GlobalsSingleton.get().start(True)
+    while not GlobalsSingleton.get().start_completed:
+        time.sleep(0.0001)
+
     def get_broker_policy(self) -> IBrokerPolicy:
         policy = BrokerSimplerUnitsPolicy()
         return policy
 
     def get_request_from_request(self, request: IBrokerReservation, units: int, rtype: ResourceType, start: datetime, end: datetime):
         rset = ResourceSet(units=units, rtype=rtype, rdata=ResourceData())
+
         term = Term(start=request.get_term().get_start_time(), end=end, new_start=start)
+
         result = BrokerReservationFactory.create(request.get_reservation_id(), rset, term, request.get_slice())
+
         result.set_sequence_in(request.get_sequence_in() + 1)
         return result
 
@@ -80,7 +96,7 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest):
 
     def get_source(self, units: int, rtype: ResourceType, broker: IBroker, slice_obj: ISlice):
         start = broker.get_actor_clock().cycle_start_date(self.DonateStartCycle)
-        end = broker.get_actor_clock().cycle_start_date(self.DonateEndCycle)
+        end = broker.get_actor_clock().cycle_end_date(self.DonateEndCycle)
         term = Term(start=start, end=end)
 
         resources = ResourceSet(units=units, rtype=rtype, rdata=ResourceData())
@@ -97,4 +113,109 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest):
         source = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
 
         return source
+
+    def check_query_response(self, response: dict, count: int):
+        temp = response.get(Constants.QueryResponse, None)
+        self.assertIsNotNone(temp)
+        self.assertEqual(temp, Constants.QueryActionDiscoverPools)
+        temp = response.get(Constants.PoolsCount, None)
+        self.assertIsNotNone(temp)
+        self.assertEqual(count, int(temp), count)
+        result = BrokerPolicy.get_resource_pools(response)
+        self.assertEqual(count, len(result))
+        return result
+
+    def test_e_donate(self):
+        broker = self.get_broker()
+        policy = broker.get_policy()
+
+        slice_obj = SliceFactory.create(ID(), name="inventory_slice")
+        slice_obj.set_inventory(True)
+
+        for i in range(1, 10):
+            rtype = ResourceType(str(i))
+            source = self.get_source(i, rtype, broker, slice_obj)
+            broker.donate_reservation(source)
+
+            self.assertEqual(i, len(policy.inventory.get_inventory()))
+            pool = policy.inventory.get(rtype)
+            self.assertIsNotNone(pool)
+            self.assertEqual(i, pool.get_free())
+            self.assertEqual(0, pool.get_allocated())
+
+    def test_f_query(self):
+        broker = self.get_broker()
+        policy = broker.get_policy()
+
+        request = {Constants.QueryAction:Constants.QueryActionDiscoverPools}
+        response = policy.query(request)
+
+        print(response)
+
+        rd = self.check_query_response(response, 0)
+
+        slice_obj = SliceFactory.create(ID(), name="inventory_slice")
+        slice_obj.set_inventory(True)
+
+        for i in range(1, 10):
+            rtype = ResourceType(str(i))
+            source = self.get_source(i, rtype, broker, slice_obj)
+            broker.donate_reservation(source)
+
+            response = policy.query(request)
+            print(response)
+            rd = self.check_query_response(response, i)
+
+    def test_g_advanced_request(self):
+        broker = self.get_broker()
+        controller = self.get_controller()
+        policy = broker.get_policy()
+        policy.allocation_horizon = 10
+
+        clock = broker.get_actor_clock()
+
+        rtype = ResourceType("1")
+        proxy = ClientCallbackHelper(controller.get_name(), controller.get_guid())
+        broker_callback = ClientCallbackHelper(broker.get_name(), broker.get_guid())
+        ActorRegistrySingleton.get().register_callback(proxy)
+        ActorRegistrySingleton.get().register_callback(broker_callback)
+
+        slice_obj = SliceFactory.create(ID(), name="inventory_slice")
+        slice_obj.set_inventory(True)
+
+        source = self.get_source(1, rtype, broker, slice_obj)
+        broker.donate_reservation(source)
+
+        cycle = 1
+        broker.external_tick(cycle)
+        cycle += 1
+
+        units = 1
+        start = clock.cycle_start_date(self.DonateStartCycle)
+        end = clock.cycle_end_date(self.DonateEndCycle - 1)
+
+        request = self.get_request(units, rtype, start, end)
+        broker.ticket(request, proxy, proxy.get_identity())
+
+        self.assertEqual(proxy.prepared, 0)
+        self.assertEqual(proxy.called, 0)
+
+        for c in range(cycle, self.DonateEndCycle):
+            broker.external_tick(c)
+            while broker.get_current_cycle() != c:
+                time.sleep(0.001)
+
+            while proxy.prepared != 1:
+                time.sleep(0.001)
+
+            self.assert_ticketed(request, units, rtype, start, end)
+            self.assertEqual(1, proxy.prepared)
+
+            if proxy.called > 0:
+                self.assert_ticketed(proxy.get_reservation(), units, rtype, start, end)
+
+        broker.await_no_pending_reservations()
+
+        self.assertEqual(1, proxy.get_called())
+        self.assertTrue(request.is_closed())
 

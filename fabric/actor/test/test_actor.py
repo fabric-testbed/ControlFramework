@@ -24,7 +24,23 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from fabric.actor.core.core.actor import Actor
+from fabric.actor.core.manage.kafka.services.kafka_authority_service import KafkaAuthorityService
+from fabric.actor.core.proxies.kafka.services.authority_service import AuthorityService
 
 
 class TestActor(Actor):
-    pass
+    @staticmethod
+    def get_kafka_service_class() -> str:
+        return AuthorityService.__name__
+
+    @staticmethod
+    def get_kafka_service_module() -> str:
+        return AuthorityService.__module__
+
+    @staticmethod
+    def get_mgmt_kafka_service_class() -> str:
+        return KafkaAuthorityService.__name__
+
+    @staticmethod
+    def get_mgmt_kafka_service_module() -> str:
+        return KafkaAuthorityService.__module__

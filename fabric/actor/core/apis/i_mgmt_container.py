@@ -44,9 +44,9 @@ class IMgmtContainer(IComponent):
 
     def get_controller(self, guid: ID):
         """
-        Obtains the specified controller.
+        Obtains the specified orchestrator.
         @param guid guid
-        @return specified controller
+        @return specified orchestrator
         """
         raise NotImplementedError
 

@@ -28,7 +28,7 @@ from fabric.actor.core.apis.i_controller_reservation import IControllerReservati
 from fabric.actor.core.apis.i_controller_reservation_factory import IControllerReservationFactory
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.kernel.reservation_client import ReservationClient
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 

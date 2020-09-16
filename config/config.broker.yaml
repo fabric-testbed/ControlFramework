@@ -60,7 +60,7 @@ logging:
 
   - logger: fabric-broker
 oauth:
-  - oauth-jwks-url: https://cilogon.org/oauth2/certs
+  - token-public-key: /etc/fabric/ssl/token_public.pem
 
 database:
   - db-user: fabric
@@ -105,10 +105,10 @@ actor:
 
 peers:
   - peer:
-    - name: fabric-controller
-    - type: controller
-    - guid: fabric-controller-guid
-    - kafka-topic: fabric-controller-topic
+    - name: fabric-orchestrator
+    - type: orchestrator
+    - guid: fabric-orchestrator-guid
+    - kafka-topic: fabric-orchestrator-topic
   - peer:
     - name: fabric-net-am
     - guid: fabric-net-am-guid

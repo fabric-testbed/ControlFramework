@@ -41,8 +41,7 @@ class ClientCalendarTest(unittest.TestCase):
         return ClientCalendar(clock)
 
     def _make_reservation(self, id: str):
-        resrvation = ClientReservationFactory.create(ID(id))
-        return resrvation
+        return ClientReservationFactory.create(ID(id))
 
     def test_create(self):
         cal = self._get_calendar()
@@ -68,22 +67,27 @@ class ClientCalendarTest(unittest.TestCase):
 
         for i in range(5):
             r = self._make_reservation(str(i))
+            # add to the list
             rset.add(r)
             cal.add_demand(r)
+            # get the list and check it
             temp = cal.get_demand()
             self.check_set(rset, temp)
+            # remove from the returned set
             temp.remove(r)
+            # make sure this did not affect the parent data structure
             temp = cal.get_demand()
             self.check_set(rset, temp)
 
         for i in range(5):
             r = self._make_reservation(str(i))
+            # add to the list
             rset.remove(r)
             cal.remove_demand(r)
+
+            # get the list and check it
             temp = cal.get_demand()
-            self.check_set(rset, temp)
-            temp.remove(r)
-            temp = cal.get_demand()
+
             self.check_set(rset, temp)
 
     def test_pending(self):
@@ -104,8 +108,5 @@ class ClientCalendarTest(unittest.TestCase):
             r = self._make_reservation(str(i))
             rset.remove(r)
             cal.remove_pending(r)
-            temp = cal.get_pending()
-            self.check_set(rset, temp)
-            temp.remove(r)
             temp = cal.get_pending()
             self.check_set(rset, temp)

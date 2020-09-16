@@ -194,10 +194,10 @@ actor:
             - lun.tag.end0: 100
 peers:
   - peer:
-    - name: fabric-controller
-    - type: controller
-    - guid: fabric-controller-guid
-    - kafka-topic: fabric-controller-topic
+    - name: fabric-orchestrator
+    - type: orchestrator
+    - guid: fabric-orchestrator-guid
+    - kafka-topic: fabric-orchestrator-topic
   - peer:
     - name: fabric-broker
     - type: broker

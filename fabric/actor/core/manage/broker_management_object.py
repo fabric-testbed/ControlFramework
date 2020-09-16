@@ -38,11 +38,11 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
     from fabric.actor.core.apis.i_actor import IActor
     from fabric.message_bus.messages.result_avro import ResultAvro
-    from fabric.actor.core.manage.messages.result_proxy_mng import ResultProxyMng
+    from fabric.message_bus.messages.result_proxy_avro import ResultProxyAvro
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.util.id import ID
-    from fabric.actor.core.manage.messages.proxy_mng import ProxyMng
-    from fabric.actor.core.manage.messages.result_pool_info_mng import ResultPoolInfoMng
+    from fabric.message_bus.messages.proxy_avro import ProxyMng
+    from fabric.message_bus.messages.result_pool_info_avro import ResultPoolInfoMng
     from fabric.message_bus.messages.result_string_avro import ResultStringAvro
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.message_bus.messages.result_strings_avro import ResultStringsAvro
@@ -79,10 +79,10 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
             super().set_actor(actor)
             self.client_helper = ClientActorManagementObjectHelper(actor)
 
-    def get_brokers(self, caller: AuthToken) -> ResultProxyMng:
+    def get_brokers(self, caller: AuthToken) -> ResultProxyAvro:
         return self.client_helper.get_brokers(caller)
 
-    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyMng:
+    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
         return self.client_helper.get_broker(broker_id, caller)
 
     def add_broker(self, broker_proxy: ProxyMng, caller: AuthToken) -> ResultAvro:
@@ -105,6 +105,9 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
 
     def claim_resources(self, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
         return self.client_helper.claim_resources(broker, rid, caller)
+
+    def reclaim_resources(self, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
+        return self.client_helper.reclaim_resources(broker, rid, caller)
 
     def claim_resources_slice(self, broker: ID, slice_id: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
         return self.client_helper.claim_resources_slice(broker, slice_id, rid, caller)

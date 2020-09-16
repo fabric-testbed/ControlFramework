@@ -60,8 +60,7 @@ class Tick(ITicker):
         """
         Calculates the cycle before the first cycle. The cycle is derived from current time.
         """
-        current_millis = int(datetime.utcnow().timestamp() * 1000)
-        self.current_cycle = self.clock.cycle(millis=current_millis)
+        self.current_cycle = self.clock.cycle(when=datetime.utcnow())
 
     def check_initialized(self):
         """

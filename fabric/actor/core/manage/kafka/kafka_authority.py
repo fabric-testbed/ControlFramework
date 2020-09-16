@@ -24,6 +24,173 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+import traceback
 from typing import TYPE_CHECKING
-class KafkaAuthority:
-    pass
+
+from fabric.actor.core.apis.i_mgmt_authority import IMgmtAuthority
+from fabric.actor.core.apis.i_reservation import ReservationCategory
+from fabric.actor.core.common.constants import Constants, ErrorCodes
+from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
+from fabric.actor.core.manage.kafka.kafka_server_actor import KafkaServerActor
+from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.auth_avro import AuthAvro
+from fabric.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
+from fabric.message_bus.messages.get_reservation_units_avro import GetReservationUnitsAvro
+from fabric.message_bus.messages.get_unit_avro import GetUnitAvro
+from fabric.message_bus.messages.result_avro import ResultAvro
+from fabric.message_bus.messages.unit_avro import UnitAvro
+from fabric.message_bus.producer import AvroProducerApi
+
+
+class KafkaAuthority (KafkaServerActor, IMgmtAuthority):
+    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
+                 message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
+        super().__init__(guid, kafka_topic, auth, logger, message_processor, producer)
+
+    def get_authority_reservations(self) -> list:
+        self.clear_last()
+        status = ResultAvro()
+        rret_val = None
+
+        try:
+            request = GetReservationsRequestAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.message_id = str(ID())
+            request.callback_topic = self.callback_topic
+            request.reservation_type = ReservationCategory.Authority.name
+
+            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(request.get_message_id())
+                    status.code = ErrorCodes.ErrorTransportTimeout.value
+                    status.message = ErrorCodes.ErrorTransportTimeout.name
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    status = message_wrapper.response.status
+                    if status.code == 0:
+                        rret_val = message_wrapper.response.reservations
+            else:
+                self.logger.debug("Failed to send the message")
+                status.code = ErrorCodes.ErrorTransportFailure.value
+                status.message = ErrorCodes.ErrorTransportFailure.name
+
+        except Exception as e:
+            self.last_exception = e
+            status.code = ErrorCodes.ErrorInternalError.value
+            status.message = ErrorCodes.ErrorInternalError.name
+            status.details = traceback.format_exc()
+
+        self.last_status = status
+
+        return rret_val
+
+    def get_reservation_units(self, rid: ID) -> list:
+        self.clear_last()
+        status = ResultAvro()
+        rret_val = None
+
+        try:
+            request = GetReservationUnitsAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.message_id = str(ID())
+            request.callback_topic = self.callback_topic
+            request.reservation_id = str(rid)
+
+            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(request.get_message_id())
+                    status.code = ErrorCodes.ErrorTransportTimeout.value
+                    status.message = ErrorCodes.ErrorTransportTimeout.name
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    status = message_wrapper.response.status
+                    if status.code == 0:
+                        rret_val = message_wrapper.response.units
+            else:
+                self.logger.debug("Failed to send the message")
+                status.code = ErrorCodes.ErrorTransportFailure.value
+                status.message = ErrorCodes.ErrorTransportFailure.name
+
+        except Exception as e:
+            self.last_exception = e
+            status.code = ErrorCodes.ErrorInternalError.value
+            status.message = ErrorCodes.ErrorInternalError.name
+            status.details = traceback.format_exc()
+
+        self.last_status = status
+
+        return rret_val
+
+    def get_reservation_unit(self, uid: ID) -> UnitAvro:
+        self.clear_last()
+        status = ResultAvro()
+        rret_val = None
+
+        try:
+            request = GetUnitAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.message_id = str(ID())
+            request.callback_topic = self.callback_topic
+            request.reservation_id = str(uid)
+
+            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(request.get_message_id())
+                    status.code = ErrorCodes.ErrorTransportTimeout.value
+                    status.message = ErrorCodes.ErrorTransportTimeout.name
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    status = message_wrapper.response.status
+                    if status.code == 0:
+                        rret_val = message_wrapper.response.units
+            else:
+                self.logger.debug("Failed to send the message")
+                status.code = ErrorCodes.ErrorTransportFailure.value
+                status.message = ErrorCodes.ErrorTransportFailure.name
+
+        except Exception as e:
+            self.last_exception = e
+            status.code = ErrorCodes.ErrorInternalError.value
+            status.message = ErrorCodes.ErrorInternalError.name
+            status.details = traceback.format_exc()
+
+        self.last_status = status
+
+        if rret_val is not None:
+            return rret_val.__iter__().__next__()
+
+        return rret_val

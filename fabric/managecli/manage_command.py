@@ -30,7 +30,7 @@ from fabric.managecli.show_command import ShowCommand
 
 
 class ManageCommand(ShowCommand):
-    def claim_resources(self, broker: str, am: str, callback_topic: str):
+    def claim_resources(self, broker: str, am: str, callback_topic: str, rid: str):
         try:
             am_actor = self.get_actor(am)
             broker_actor = self.get_actor(broker)
@@ -38,19 +38,20 @@ class ManageCommand(ShowCommand):
             if am_actor is None or broker_actor is None:
                 raise Exception("Invalid arguments am_actor {} or broker_actor {} not found".format(am_actor, broker_actor))
 
-            slices, error = self.do_get_slices(am, callback_topic)
-            if slices is None:
-                print("Error occurred while getting slices for actor: {}".format(am))
-                self.print_result(error.get_status())
-                return
-
-            broker_slice_id_list = []
-            for s in slices:
-                if s.get_slice_name() == broker:
-                    broker_slice_id_list.append(s.get_slice_id())
-
             claim_rid_list = {}
-            reservations, error = self.do_get_reservations(am, callback_topic)
+            broker_slice_id_list = []
+            if rid is None:
+                slices, error = self.do_get_slices(am, callback_topic, None)
+                if slices is None:
+                    print("Error occurred while getting slices for actor: {}".format(am))
+                    self.print_result(error.get_status())
+                    return
+
+                for s in slices:
+                    if s.get_slice_name() == broker:
+                        broker_slice_id_list.append(s.get_slice_id())
+
+            reservations, error = self.do_get_reservations(am, callback_topic, rid)
             if reservations is None:
                 print("Error occurred while getting reservations for actor: {}".format(am))
                 self.print_result(error.get_status())
@@ -58,18 +59,64 @@ class ManageCommand(ShowCommand):
 
             if reservations is not None:
                 for r in reservations:
-                    if r.get_slice_id() in broker_slice_id_list:
+                    if rid is not None or r.get_slice_id() in broker_slice_id_list:
                         claim_rid_list[r.get_reservation_id()] = r.get_resource_type()
 
-            print("List of reservations to be claimed from {} by {}:".format(am, broker))
-            for k, v in claim_rid_list.items():
-                print("Reservation ID: {} Resource Type: {}".format(k, v))
+            if len(claim_rid_list) == 0:
+                print("No reservations to be claimed from {} by {}:".format(am, broker))
 
-            for k, v in claim_rid_list.items():
-                print("Claiming Reservation# {} for resource_type: {}".format(k, v))
-                reservation, error = self.do_claim_resources(broker, am_actor.get_guid(), k, callback_topic)
+            for reservation_id, resource_type in claim_rid_list.items():
+                print("Claiming Reservation# {} for resource_type: {}".format(reservation_id, resource_type))
+                reservation, error = self.do_claim_resources(broker, am_actor.get_guid(), reservation_id, callback_topic)
                 if reservation is not None:
-                    print("Claim Response: {}".format(reservation))
+                    print("Reservation claimed: {} ".format(reservation.get_reservation_id()))
+                else:
+                    self.print_result(error.get_status())
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+            print("Exception occurred while processing claim {}".format(e))
+
+    def reclaim_resources(self, broker: str, am: str, callback_topic: str, rid: str):
+        try:
+            am_actor = self.get_actor(am)
+            broker_actor = self.get_actor(broker)
+
+            if am_actor is None or broker_actor is None:
+                raise Exception("Invalid arguments am_actor {} or broker_actor {} not found".format(am_actor, broker_actor))
+
+            reclaim_rid_list = {}
+            broker_slice_id_list = []
+            if rid is None:
+                slices, error = self.do_get_slices(am, callback_topic, None)
+                if slices is None:
+                    print("Error occurred while getting slices for actor: {}".format(am))
+                    self.print_result(error.get_status())
+                    return
+
+                for s in slices:
+                    if s.get_slice_name() == broker:
+                        broker_slice_id_list.append(s.get_slice_id())
+
+            reservations, error = self.do_get_reservations(am, callback_topic, rid)
+            if reservations is None:
+                print("Error occurred while getting reservations for actor: {}".format(am))
+                self.print_result(error.get_status())
+                return
+
+            if reservations is not None:
+                for r in reservations:
+                    if rid is not None or r.get_slice_id() in broker_slice_id_list:
+                        reclaim_rid_list[r.get_reservation_id()] = r.get_resource_type()
+
+            if len(reclaim_rid_list) == 0:
+                print("No reservations to be claimed from {} by {}:".format(am, broker))
+
+            for reservation_id, resource_type in reclaim_rid_list.items():
+                print("Reclaiming Reservation# {} for resource_type: {}".format(reservation_id, resource_type))
+                reservation, error = self.do_reclaim_resources(broker, am_actor.get_guid(), reservation_id, callback_topic)
+                if reservation is not None:
+                    print("Reservation reclaimed: {} ".format(reservation.get_reservation_id()))
                 else:
                     self.print_result(error.get_status())
         except Exception as e:
@@ -85,6 +132,18 @@ class ManageCommand(ShowCommand):
         try:
             actor.prepare(callback_topic)
             return actor.claim_resources(ID(am_guid), ID(rid)), actor.get_last_error()
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+
+    def do_reclaim_resources(self, broker: str, am_guid: str, rid: str, callback_topic: str):
+        actor = self.get_actor(broker)
+
+        if actor is None:
+            raise Exception("Invalid arguments actor {} not found".format(broker))
+        try:
+            actor.prepare(callback_topic)
+            return actor.reclaim_resources(ID(am_guid), ID(rid)), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)

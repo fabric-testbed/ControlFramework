@@ -72,6 +72,10 @@ class LocalProxy(Proxy, ICallbackProxy):
                 incoming = IncomingReservationRPC(request.get_message_id(), request.get_type(), request.reservation,
                                                   request.callback, None, request.get_caller())
 
+            elif request.get_type() == RPCRequestType.Reclaim:
+                incoming = IncomingReservationRPC(request.get_message_id(), request.get_type(), request.reservation,
+                                                  request.callback, None, request.get_caller())
+
             elif request.get_type() == RPCRequestType.Ticket:
                 incoming = IncomingReservationRPC(request.get_message_id(), request.get_type(), request.reservation,
                                                   request.callback, None, request.get_caller())

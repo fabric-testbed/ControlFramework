@@ -24,6 +24,9 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+import time
+import unittest
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
@@ -34,7 +37,7 @@ from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.core.unit import Unit
 from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.policy.resource_control import ResourceControl
 from fabric.actor.core.policy.vm_control import VMControl
 from fabric.actor.core.util.id import ID
@@ -53,14 +56,17 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_reservation import IReservation
 
 
-class VMControlTest(AuthorityCalendarPolicyTest):
+class VMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
     VMMemory = 300
     VmmCapacity = 3
 
-    from fabric.actor.core.container import globals
-    globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    from fabric.actor.core.container.globals import Globals
+    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(True)
+    while not GlobalsSingleton.get().start_completed:
+        time.sleep(0.0001)
 
     def get_control(self, policy: AuthorityCalendarPolicy = None):
         if policy:
@@ -80,7 +86,7 @@ class VMControlTest(AuthorityCalendarPolicyTest):
         ad.set_label("Memory")
         ad.set_unit("MB")
         ad.set_type(ResourcePoolAttributeType.INTEGER)
-        ad.set_value(int(self.VMMemory))
+        ad.set_value(str(self.VMMemory))
         rd.add_attribute(ad)
         return rd
 

@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 
 class IControllerCallbackProxy(IClientCallbackProxy):
     """
-    IControllerCallbackProxy represents the proxy callback interface to an actor acting in the controller role.
+    IControllerCallbackProxy represents the proxy callback interface to an actor acting in the orchestrator role.
     """
     def prepare_update_lease(self, reservation: IAuthorityReservation,  update_data,
                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from enum import Enum
 from typing import TYPE_CHECKING
 
 
@@ -42,6 +44,23 @@ from fabric.actor.core.apis.i_actor_identity import IActorIdentity
 from fabric.actor.core.apis.i_slice_operations import ISliceOperations
 from fabric.actor.core.apis.i_reservation_operations import IReservationOperations
 from fabric.actor.core.apis.i_tick import ITick
+
+
+class ActorType(Enum):
+    All = 0
+    Controller = 1
+    Broker = 2
+    Authority = 3
+
+    @staticmethod
+    def get_actor_type_from_string(actor_type: str) -> ActorType:
+        if actor_type.lower() == ActorType.Controller.name.lower():
+            return ActorType.Controller
+        if actor_type.lower() == ActorType.Broker.name.lower():
+            return ActorType.Broker
+        if actor_type.lower() == ActorType.Authority.name.lower():
+            return ActorType.Authority
+        return ActorType.All
 
 
 class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, ITimerQueue):
@@ -135,7 +154,7 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         """
         raise NotImplementedError("Should have implemented this")
 
-    def get_type(self):
+    def get_type(self) -> ActorType:
         """
         Returns the type of the actor.
 

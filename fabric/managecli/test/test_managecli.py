@@ -42,6 +42,20 @@ class ManageCliTest(unittest.TestCase):
         print("Result: {}".format(result.output))
         self.assertTrue(result.output.find("Code") == -1)
 
+    def test_a_claim_resources_by_rid(self):
+        runner = CliRunner()
+        result = runner.invoke(managecli.managecli, ['manage', 'claim', '--broker', 'fabric-broker', '--am',
+                                                 'fabric-site-am', '--rid', '63deb5b6-e291-4ed5-9d9f-fc58a70605f4'])
+        print("Result: {}".format(result.output))
+        self.assertTrue(result.output.find("Code") == -1)
+
+    def test_a_reclaim_resources_by_rid(self):
+        runner = CliRunner()
+        result = runner.invoke(managecli.managecli, ['manage', 'reclaim', '--broker', 'fabric-broker', '--am',
+                                                 'fabric-site-am', '--rid', '63deb5b6-e291-4ed5-9d9f-fc58a70605f4'])
+        print("Result: {}".format(result.output))
+        self.assertTrue(result.output.find("Code") == -1)
+
     def test_b_get_slices_am(self):
         runner = CliRunner()
         result = runner.invoke(managecli.managecli, ['show', 'slices', '--actor', 'fabric-site-am'])
@@ -57,14 +71,14 @@ class ManageCliTest(unittest.TestCase):
     def test_d_get_slice_am(self):
         print("Using slice_id:{}".format(self.am_slice_id))
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'slice', '--actor', 'fabric-site-am', '--sliceid', ManageCliTest.am_slice_id])
+        result = runner.invoke(managecli.managecli, ['show', 'slices', '--actor', 'fabric-site-am', '--sliceid', ManageCliTest.am_slice_id])
         print("Result: {}".format(result.output))
         self.assertTrue(result.output.find("ErrorNoSuchSlice") != -1)
 
     def test_e_get_slice_broker(self):
         print("Using slice_id:{}".format(self.broker_slice_id))
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'slice', '--actor', 'fabric-broker', '--sliceid', ManageCliTest.broker_slice_id])
+        result = runner.invoke(managecli.managecli, ['show', 'slices', '--actor', 'fabric-broker', '--sliceid', ManageCliTest.broker_slice_id])
         print("Result: {}".format(result.output))
         self.assertTrue(result.output.find("ErrorNoSuchSlice") != -1)
 
@@ -82,29 +96,31 @@ class ManageCliTest(unittest.TestCase):
 
     def test_h_get_reservation(self):
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'reservation', '--actor', 'fabric-broker', '--rid', ManageCliTest.broker_res_id])
+        result = runner.invoke(managecli.managecli, ['show', 'reservations', '--actor', 'fabric-broker', '--rid', ManageCliTest.broker_res_id])
         print("Result: {}".format(result.output))
         self.assertTrue(result.output.find("ErrorNoSuchReservation") != -1)
 
     def test_i_get_reservation(self):
         runner = CliRunner()
-        result = runner.invoke(managecli.managecli, ['show', 'reservation', '--actor', 'fabric-site-am', '--rid', ManageCliTest.am_res_id])
+        result = runner.invoke(managecli.managecli, ['show', 'reservations', '--actor', 'fabric-site-am', '--rid', ManageCliTest.am_res_id])
         print("Result: {}".format(result.output))
         self.assertTrue(result.output.find("ErrorNoSuchReservation") != -1)
 
     def test_j_close_reservation(self):
         runner = CliRunner()
+        #result = runner.invoke(managecli.managecli, ['manage', 'closereservation', '--actor', 'fabric-broker', '--rid',
+        #                                             ManageCliTest.am_res_id])
         result = runner.invoke(managecli.managecli, ['manage', 'closereservation', '--actor', 'fabric-broker', '--rid',
-                                                     ManageCliTest.am_res_id])
+                                                     '1e5c5119-3532-49e8-ab65-05296fd00602'])
         print("Result: {}".format(result.output))
-        self.assertTrue(result.output.find('True') != -1)
+        self.assertTrue(result.output.find('False') != -1)
 
     def test_k_close_slice(self):
         runner = CliRunner()
         result = runner.invoke(managecli.managecli, ['manage', 'closeslice', '--actor', 'fabric-broker', '--sliceid',
                                                      ManageCliTest.broker_slice_id])
         print("Result: {}".format(result.output))
-        self.assertTrue(result.output.find('True') != -1)
+        self.assertTrue(result.output.find('False') != -1)
 
     def test_l_remove_reservation(self):
         runner = CliRunner()

@@ -32,7 +32,7 @@ from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.core.policy import Policy
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.delegation.resource_delegation import ResourceDelegation
-from fabric.actor.core.kernel.sesource_set import ResourceSet
+from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_data import ResourceData

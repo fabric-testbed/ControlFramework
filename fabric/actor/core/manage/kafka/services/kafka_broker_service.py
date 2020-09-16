@@ -25,6 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from fabric.actor.core.apis.i_reservation import ReservationCategory
+from fabric.actor.core.kernel.slice import SliceTypes
 from fabric.actor.core.manage.kafka.services.kafka_client_actor_service import KafkaClientActorService
 from fabric.actor.core.manage.kafka.services.kafka_server_actor_service import KafkaServerActorService
 from fabric.message_bus.messages.message import IMessageAvro
@@ -42,6 +44,39 @@ class KafkaBrokerService(KafkaClientActorService, KafkaServerActorService):
 
         if message.get_message_name() == IMessageAvro.ClaimResources:
             result = self.claim_resources(message)
+        elif message.get_message_name() == IMessageAvro.ReclaimResources:
+            result = self.reclaim_resources(message)
+        elif message.get_message_name() == IMessageAvro.AddReservation:
+            result = self.add_reservation(message)
+        elif message.get_message_name() == IMessageAvro.AddReservations:
+            result = self.add_reservations(message)
+        elif message.get_message_name() == IMessageAvro.DemandReservation:
+            result = self.demand_reservation(message)
+        elif message.get_message_name() == IMessageAvro.GetActorsRequest:
+            result = self.get_brokers(message)
+        elif message.get_message_name() == IMessageAvro.GetPoolInfoRequest:
+            result = self.get_pool_info(message)
+        elif message.get_message_name() == IMessageAvro.ExtendReservation:
+            result = self.extend_reservation(message)
+        elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
+                message.get_reservation_type() is not None and \
+                message.get_reservation_type() == ReservationCategory.Broker.name:
+            self.get_broker_reservations(message)
+        elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
+                message.get_slice_type() is not None and \
+                message.get_slice_type() == SliceTypes.InventorySlice.name:
+            self.get_inventory_slices(message)
+        elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
+                message.get_reservation_type() is not None and \
+                message.get_reservation_type() == ReservationCategory.Client.name:
+            self.get_inventory_reservations(message)
+        elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
+                message.get_slice_type() is not None and \
+                message.get_slice_type() == SliceTypes.ClientSlice.name:
+            self.get_client_slices(message)
+        elif message.get_message_name() == IMessageAvro.AddSlice and message.slice_obj is not None and \
+                (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
+            self.add_client_slice(message)
         else:
             super().process(message)
             return

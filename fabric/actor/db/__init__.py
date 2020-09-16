@@ -135,7 +135,7 @@ class Units(Base):
     __tablename__ = 'Units'
     unt_id = Column(Integer, Sequence('unt_id', start=1, increment=1), autoincrement=True, primary_key=True)
     unt_uid = Column(String)
-    unt_unt_id = Column(Integer)
+    unt_unt_id = Column(Integer, nullable=True)
     unt_act_id = Column(Integer, ForeignKey('Actors.act_id'))
     unt_slc_id = Column(Integer, ForeignKey('Slices.slc_id'))
     unt_rsv_id = Column(Integer, ForeignKey('Reservations.rsv_id'))

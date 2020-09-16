@@ -34,10 +34,10 @@ from fabric.actor.core.policy.free_allocated_set import FreeAllocatedSet
 from fabric.actor.core.policy.resource_control import ResourceControl
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_data import ResourceData
+from fabric.actor.core.kernel.resource_set import ResourceSet
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
     from fabric.actor.core.apis.i_reservation import IReservation
 
 
@@ -95,7 +95,7 @@ class VlanControl(ResourceControl):
                     if start == 0 and end == 0:
                         break
 
-                    for j in range(start, end):
+                    for j in range(start, end + 1):
                         self.tags.add_inventory(j)
 
                     size = size + (end - start + 1)
@@ -126,7 +126,7 @@ class VlanControl(ResourceControl):
             if needed > 1:
                 reservation.fail("Cannot assign more than 1 VLAN per reservation", None)
 
-            config_tag = config_properties[Constants.ConfigUnitTag]
+            config_tag = config_properties.get(Constants.ConfigUnitTag, None)
             static_tag = None
             if config_tag is not None:
                 static_tag = int(config_tag)

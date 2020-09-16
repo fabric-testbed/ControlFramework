@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.reservation_states import ReservationStates
+from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.reservation_set import ReservationSet
@@ -39,7 +40,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
     from fabric.actor.core.policy.inventory_for_type import InventoryForType
     from fabric.actor.core.util.resource_type import ResourceType
-    from fabric.actor.core.kernel.sesource_set import ResourceSet
+    from fabric.actor.core.kernel.resource_set import ResourceSet
 
 from fabric.actor.core.policy.broker_priority_policy import BrokerPriorityPolicy
 from fabric.actor.core.policy.Inventory import Inventory
@@ -120,11 +121,11 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
 
     def query(self, p: dict) -> dict:
         action = self.get_query_action(p)
-        if action.lower() != Constants.QueryActionDisctoverPools:
+        if action.lower() != Constants.QueryActionDiscoverPools:
             return super().query(p)
 
         response = self.inventory.get_resource_pools()
-        response[Constants.QueryResponse] = Constants.QueryActionDisctoverPools
+        response[Constants.QueryResponse] = Constants.QueryActionDiscoverPools
         return response
 
     def get_default_pool_id(self) -> str:
@@ -147,7 +148,7 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
                     inv = self.inventory.get(pool_id)
 
                     if inv is not None:
-                        ext_term = Term(start=reservation.get_term().get_start_term(), end=end, new_start=start)
+                        ext_term = Term(start=reservation.get_term().get_start_time(), end=end, new_start=start)
                         self.extend(reservation, inv, ext_term)
                     else:
                         reservation.fail("there is no pool to satisfy this request")
@@ -199,12 +200,10 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
 
         term = None
         if start < start_time and PropList.is_elastic_time(reservation.get_requested_resources()):
-            length = end.timestamp() - start.timestamp()
-            length *= 1000
-            length = int(length)
+            length = ActorClock.to_milliseconds(end) - ActorClock.to_milliseconds(start)
 
             start = self.clock.cycle_start_in_millis(start_cycle)
-            term = Term(start=start, length=int(length))
+            term = Term(start=start, length=length)
 
         pool_id = str(reservation.get_requested_resources().get_type())
         if pool_id is None or not self.inventory.contains_type(pool_id):
@@ -314,14 +313,19 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
 
     def release(self, reservation):
         if isinstance(reservation, IBrokerReservation):
+            self.logger.debug("Broker reservation")
             super().release(reservation)
             if reservation.is_closed_in_priming():
+                self.logger.debug("Releasing resources (closed in priming)")
                 self.release_resources(reservation.get_approved_resources(), reservation.get_approved_term())
             else:
+                self.logger.debug("Releasing resources")
                 self.release_resources(reservation.get_resources(), reservation.get_term())
         elif isinstance(reservation, IClientReservation):
+            self.logger.debug("Client reservation")
             super().release(reservation)
-            self.inventory.remove(reservation)
+            status = self.inventory.remove(reservation)
+            self.logger.debug("Removing reservation: {} from inventory status: {}".format(reservation.get_reservation_id(), status))
 
     def release_not_approved(self, reservation: IBrokerReservation):
         super().release_not_approved(reservation)

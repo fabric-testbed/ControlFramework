@@ -36,6 +36,8 @@ class UpdateData:
         self.message = message
         self.events = None
         self.failed = False
+        if self.message is None:
+            self.message = ""
 
     def absorb(self, other):
         """
