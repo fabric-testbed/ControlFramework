@@ -27,11 +27,11 @@ from fabric.message_bus.messages.result_avro import ResultAvro
 
 
 class Command:
-    def __init__(self, logger):
+    def __init__(self, *, logger):
         self.logger = logger
 
     @staticmethod
-    def print_result(status: ResultAvro):
+    def print_result(*, status: ResultAvro):
         print("Code={}".format(status.get_code()))
         if status.message is not None:
             print("Message={}".format(status.message))
@@ -39,7 +39,7 @@ class Command:
             print("Details={}".format(status.details))
 
     @staticmethod
-    def get_actor(actor_name: str):
+    def get_actor(*, actor_name: str):
         from fabric.managecli.managecli import MainShellSingleton
-        actor = MainShellSingleton.get().get_mgmt_actor(actor_name)
+        actor = MainShellSingleton.get().get_mgmt_actor(name=actor_name)
         return actor

@@ -35,13 +35,13 @@ from fabric.actor.core.util.rpc_exception import RPCException, RPCError
 
 
 class QueryTimeout(ITimerTask):
-    def __init__(self, req: RPCRequest):
+    def __init__(self, *, req: RPCRequest):
         self.req = req
 
     def execute(self):
         from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
         pending = RPCManagerSingleton.get().remove_pending_request(self.req.request.get_message_id())
         if pending is not None:
-            failed = FailedRPC(e=RPCException("Timeout while waiting for query response", RPCError.Timeout),
-                               request=self.req)
-            self.req.actor.queue_event(FailedRPCEvent(self.req.actor, failed))
+            failed = FailedRPC(e=RPCException(message="Timeout while waiting for query response",
+                                              error=RPCError.Timeout), request=self.req)
+            self.req.actor.queue_event(FailedRPCEvent(actor=self.req.actor, failed=failed))

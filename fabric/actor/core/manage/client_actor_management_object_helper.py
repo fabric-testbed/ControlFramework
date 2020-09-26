@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import traceback
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
@@ -58,19 +58,19 @@ from fabric.actor.core.core.broker_policy import BrokerPolicy
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_actor import IClientActor
     from fabric.actor.security.auth_token import AuthToken
-    from fabric.message_bus.messages.proxy_avro import ProxyMng
+    from fabric.message_bus.messages.proxy_avro import ProxyAvro
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.actor.core.apis.i_actor import IActor
     from fabric.message_bus.messages.reservation_mng import ReservationMng
 
 
 class ClientActorManagementObjectHelper(IClientActorManagementObject):
-    def __init__(self, client: IClientActor):
+    def __init__(self, *, client: IClientActor):
         self.client = client
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def get_brokers(self, caller: AuthToken) -> ResultProxyAvro:
+    def get_brokers(self, *, caller: AuthToken) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -81,16 +81,16 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         try:
             brokers = self.client.get_brokers()
-            result.result = Converter.fill_proxies(brokers)
+            result.proxies = Converter.fill_proxies(proxies=brokers)
         except Exception as e:
             self.logger.error("get_brokers {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
+    def get_broker(self, *, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -100,10 +100,10 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            broker = self.client.get_broker(broker_id)
+            broker = self.client.get_broker(guid=broker_id)
             if broker is not None:
                 brokers = [broker]
-                result.result = Converter.fill_proxies(brokers)
+                result.proxies = Converter.fill_proxies(proxies=brokers)
             else:
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
@@ -112,34 +112,34 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             self.logger.error("get_broker {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def add_broker(self, broker_proxy: ProxyMng, caller: AuthToken) -> ResultAvro:
+    def add_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
 
-        if broker_proxy is None or caller is None:
+        if broker is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
             result.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
 
         try:
-            proxy = Converter.get_agent_proxy(broker_proxy)
+            proxy = Converter.get_agent_proxy(mng=broker)
             if proxy is None:
                 result.set_code(ErrorCodes.ErrorInvalidArguments.value)
                 result.set_message(ErrorCodes.ErrorInvalidArguments.name)
             else:
-                self.client.add_broker(proxy)
+                self.client.add_broker(broker=proxy)
         except Exception as e:
             self.logger.error("add_broker {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
             result.set_message(ErrorCodes.ErrorInternalError.name)
-            result = ManagementObject.set_exception_details(result, e)
+            result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
 
-    def get_pool_info(self, broker: ID, caller: AuthToken) -> ResultPoolInfoAvro:
+    def get_pool_info(self, *, broker: ID, caller: AuthToken) -> ResultPoolInfoAvro:
         result = ResultPoolInfoAvro()
         result.status = ResultAvro()
 
@@ -149,21 +149,23 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            b = self.client.get_broker(broker)
+            b = self.client.get_broker(guid=broker)
             if b is not None:
                 request = BrokerPolicy.get_resource_pools_query()
-                response = ManagementUtils.query(self.client, b, request)
+                response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request)
                 pools = BrokerPolicy.get_resource_pools(response)
 
-                for rd in pools:
+                for resource_type, rpd in pools.items():
                     temp = {}
-                    temp = rd.save(temp, None)
+                    temp = rpd.save(properties=temp, prefix=None)
                     pi = PoolInfoAvro()
-                    pi.set_type(str(rd.get_resource_type()))
-                    pi.set_name(rd.get_resource_type_label())
+                    pi.set_type(str(resource_type))
+                    pi.set_name(rpd.get_resource_type_label())
                     pi.set_properties(temp)
 
-                    result.result.append(pi)
+                    if result.pools is None:
+                        result.pools = []
+                    result.pools.append(pi)
             else:
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
@@ -171,56 +173,56 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             self.logger.error("get_pool_info {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def add_reservation_private(self, reservation: TicketReservationAvro):
+    def add_reservation_private(self, *, reservation: TicketReservationAvro):
         result = ResultAvro()
-        slice_id = ID(reservation.get_slice_id())
-        rset = Converter.get_resource_set(reservation)
-        term = Term(start=ActorClock.from_milliseconds(reservation.get_start()),
-                    end=ActorClock.from_milliseconds(reservation.get_end()))
+        slice_id = ID(id=reservation.get_slice_id())
+        rset = Converter.get_resource_set(res_mng=reservation)
+        term = Term(start=ActorClock.from_milliseconds(milli_seconds=reservation.get_start()),
+                    end=ActorClock.from_milliseconds(milli_seconds=reservation.get_end()))
 
         broker = None
 
         if reservation.get_broker() is not None:
-            broker = ID(reservation.get_broker())
+            broker = ID(id=reservation.get_broker())
 
         rc = ControllerReservationFactory.create(rid=ID(), resources=rset, term=term)
-        rc.set_renewable(reservation.is_renewable())
+        rc.set_renewable(renewable=reservation.is_renewable())
 
         if rc.get_state() != ReservationStates.Nascent or rc.get_pending_state() != ReservationPendingStates.None_:
             result.set_code(ErrorCodes.ErrorInvalidReservation.value)
             result.set_message("Only reservations in Nascent.None can be added")
             return None, result
 
-        slice_obj = self.client.get_slice(slice_id)
+        slice_obj = self.client.get_slice(slice_id=slice_id)
 
         if slice_obj is None:
             result.set_code(ErrorCodes.ErrorNoSuchSlice.value)
             result.set_message(ErrorCodes.ErrorNoSuchSlice.name)
             return None, result
 
-        rc.set_slice(slice_obj)
+        rc.set_slice(slice_object=slice_obj)
 
         proxy = None
 
         if broker is None:
             proxy = self.client.get_default_broker()
         else:
-            proxy = self.client.get_broker(broker)
+            proxy = self.client.get_broker(guid=broker)
 
         if proxy is None:
             result.set_code(ErrorCodes.ErrorNoSuchBroker.value)
             result.set_message(ErrorCodes.ErrorNoSuchBroker.name)
             return None, result
 
-        rc.set_broker(proxy)
-        self.client.register(rc)
+        rc.set_broker(broker=proxy)
+        self.client.register(reservation=rc)
         return rc.get_reservation_id(), result
 
-    def add_reservation(self, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
+    def add_reservation(self, *, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
 
@@ -231,13 +233,13 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         try:
             class Runner(IActorRunnable):
-                def __init__(self, parent):
+                def __init__(self, *, parent):
                     self.parent = parent
 
                 def run(self):
-                    return self.parent.add_reservation_private(reservation)
+                    return self.parent.add_reservation_private(reservation=reservation)
 
-            rid, result.status = self.client.execute_on_actor_thread_and_wait(Runner(self))
+            rid, result.status = self.client.execute_on_actor_thread_and_wait(runnable=Runner(parent=self))
 
             if rid is not None:
                 result.result_str = str(rid)
@@ -245,11 +247,11 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             self.logger.error("add_reservation {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def add_reservations(self, reservations: list, caller: AuthToken) -> ResultStringsAvro:
+    def add_reservations(self, *, reservations: List[TicketReservationAvro], caller: AuthToken) -> ResultStringsAvro:
         result = ResultStringsAvro()
         result.status = ResultAvro()
 
@@ -266,26 +268,26 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         try:
             class Runner(IActorRunnable):
-                def __init__(self, parent):
+                def __init__(self, *, parent):
                     self.parent = parent
 
                 def run(self):
                     result = []
                     try:
                         for r in reservations:
-                            rr, status = self.parent.add_reservation_private(r)
+                            rr, status = self.parent.add_reservation_private(reservation=r)
                             if rr is not None:
                                 result.append(str(rr))
                             else:
                                 raise Exception("Could not add reservation")
                     except Exception as e:
                         for r in reservations:
-                            self.parent.client.unregister(r)
+                            self.parent.client.unregister(reservation=r)
                         result.clear()
 
                     return result
 
-            rids, result.status = self.client.execute_on_actor_thread_and_wait(Runner(self))
+            rids, result.status = self.client.execute_on_actor_thread_and_wait(runnable=Runner(parent=self))
 
             if result.status.get_code() == 0:
                 for r in rids:
@@ -294,11 +296,11 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             self.logger.error("add_reservations {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def demand_reservation_rid(self, rid: ID, caller: AuthToken) -> ResultAvro:
+    def demand_reservation_rid(self, *, rid: ID, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
 
         if rid is None or caller is None:
@@ -308,23 +310,23 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         try:
             class Runner(IActorRunnable):
-                def __init__(self, actor: IActor):
+                def __init__(self, *, actor: IActor):
                     self.actor = actor
 
                 def run(self):
-                    self.actor.demand(rid)
+                    self.actor.demand(rid=rid)
                     return None
 
-            self.client.execute_on_actor_thread_and_wait(Runner(self.client))
+            self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
         except Exception as e:
             self.logger.error("demand_reservation_rid {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
             result.set_message(ErrorCodes.ErrorInternalError.name)
-            result = ManagementObject.set_exception_details(result, e)
+            result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
 
-    def demand_reservation(self, reservation: ReservationMng, caller: AuthToken) -> ResultAvro:
+    def demand_reservation(self, *, reservation: ReservationMng, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
 
         if reservation is None or caller is None:
@@ -334,69 +336,74 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         try:
             class Runner(IActorRunnable):
-                def __init__(self, actor: IActor, logger):
+                def __init__(self, *, actor: IActor, logger):
                     self.actor = actor
                     self.logger = logger
 
                 def run(self):
                     result = ResultAvro()
-                    rid = ID(reservation.get_reservation_id())
-                    r = self.actor.get_reservation(rid)
+                    rid = ID(id=reservation.get_reservation_id())
+                    r = self.actor.get_reservation(rid=rid)
                     if r is None:
                         result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.name)
                         return result
 
-                    ManagementUtils.update_reservation(r, reservation)
+                    ManagementUtils.update_reservation(res_obj=r, rsv_mng=reservation)
                     if isinstance(reservation, LeaseReservationAvro):
                         predecessors = reservation.get_redeem_predecessors()
                         for pred in predecessors:
                             if pred.get_reservation_id() is None:
-                                self.logger.warning("Redeem predecessor specified for rid={} but missing reservation id of predecessor".format(rid))
+                                self.logger.warning("Redeem predecessor specified for rid={} "
+                                                    "but missing reservation id of predecessor".format(rid))
                                 continue
 
-                            predid = ID(pred.get_reservation_id())
-                            pr = self.actor.get_reservation(predid)
+                            predid = ID(id=pred.get_reservation_id())
+                            pr = self.actor.get_reservation(rid=predid)
 
                             if pr is None:
-                                self.logger.warning("Redeem predecessor for rid={} with rid={} does not exist. Ignoring it!".format(rid, predid))
+                                self.logger.warning("Redeem predecessor for rid={} with rid={} does not exist. "
+                                                    "Ignoring it!".format(rid, predid))
                                 continue
 
                             if not isinstance(pr, IControllerReservation):
-                                self.logger.warning("Redeem predecessor for rid={} is not an IControllerReservation: class={}".format(rid, type(pr)))
+                                self.logger.warning("Redeem predecessor for rid={} is not an IControllerReservation: "
+                                                    "class={}".format(rid, type(pr)))
                                 continue
 
                             ff = pred.get_filter()
                             if ff is not None:
-                                self.logger.debug("Setting redeem predecessor on reservation # {} pred={} filter={}".format(r.get_reservation_id(), pr.get_reservation_id(), ff))
-                                r.add_redeem_predecessor(pr, ff)
+                                self.logger.debug("Setting redeem predecessor on reservation # {} pred={} filter={}".
+                                                  format(r.get_reservation_id(), pr.get_reservation_id(), ff))
+                                r.add_redeem_predecessor(reservation=pr, filter=ff)
                             else:
                                 self.logger.debug(
-                                    "Setting redeem predecessor on reservation # {} pred={} filter=none".format(r.get_reservation_id(),
-                                                                                                              pr.get_reservation_id()))
-                                r.add_redeem_predecessor(pr)
+                                    "Setting redeem predecessor on reservation # {} pred={} filter=none".
+                                        format(r.get_reservation_id(), pr.get_reservation_id()))
+                                r.add_redeem_predecessor(reservation=pr)
 
                     try:
-                        self.actor.get_plugin().get_database().update_reservation(r)
+                        self.actor.get_plugin().get_database().update_reservation(reservation=r)
                     except Exception as e:
                         self.logger.error("Could not commit slice update {}".format(e))
                         result.set_code(ErrorCodes.ErrorDatabaseError.value)
                         result.set_message(ErrorCodes.ErrorDatabaseError.name)
 
-                    self.actor.demand(rid)
+                    self.actor.demand(rid=rid)
 
                     return result
 
-            result = self.client.execute_on_actor_thread_and_wait(Runner(self.client, self.logger))
+            result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client,
+                                                                                  logger=self.logger))
         except Exception as e:
             self.logger.error("demand_reservation {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
             result.set_message(ErrorCodes.ErrorInternalError.name)
-            result = ManagementObject.set_exception_details(result, e)
+            result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
 
-    def claim_resources_slice(self, broker: ID, slice_id: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
+    def claim_resources_slice(self, *, broker: ID, slice_id: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -406,18 +413,18 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            rtype = ResourceType(str(ID()))
+            rtype = ResourceType(resource_type=str(ID()))
             rdata = ResourceData()
             rset = ResourceSet(units=0, rtype=rtype, rdata=rdata)
 
-            my_broker = self.client.get_broker(broker)
+            my_broker = self.client.get_broker(guid=broker)
 
             if my_broker is None:
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
                 return result
 
-            slice_obj = self.client.get_slice(slice_id)
+            slice_obj = self.client.get_slice(slice_id=slice_id)
             if slice_obj is None:
                 result.status.set_code(ErrorCodes.ErrorNoSuchSlice.value)
                 result.status.set_message(ErrorCodes.ErrorNoSuchSlice.name)
@@ -429,17 +436,18 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 return result
 
             class Runner(IActorRunnable):
-                def __init__(self, actor: IActor):
+                def __init__(self, *, actor: IActor):
                     self.actor = actor
 
                 def run(self):
-                    return self.actor.claim_client(reservation_id=rid, resources=rset, slice_obj=slice_obj, broker=my_broker)
+                    return self.actor.claim_client(reservation_id=rid, resources=rset, slice_obj=slice_obj,
+                                                   broker=my_broker)
 
-            rc = self.client.execute_on_actor_thread_and_wait(Runner(self.client))
+            rc = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
 
             if rc is not None:
                 result.reservations = []
-                reservation = Converter.fill_reservation(rc, True)
+                reservation = Converter.fill_reservation(reservation=rc, full=True)
                 result.reservations.append(reservation)
             else:
                 raise Exception("Internal Error")
@@ -447,11 +455,11 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             self.logger.error("claim_resources_slice {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def claim_resources(self, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
+    def claim_resources(self, *, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -461,11 +469,11 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            rtype = ResourceType(str(ID()))
+            rtype = ResourceType(resource_type=str(ID()))
             rdata = ResourceData()
             rset = ResourceSet(units=0, rtype=rtype, rdata=rdata)
 
-            my_broker = self.client.get_broker(broker)
+            my_broker = self.client.get_broker(guid=broker)
 
             if my_broker is None:
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
@@ -473,17 +481,17 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 return result
 
             class Runner(IActorRunnable):
-                def __init__(self, actor: IActor):
+                def __init__(self, *, actor: IActor):
                     self.actor = actor
 
                 def run(self):
                     return self.actor.claim_client(reservation_id=rid, resources=rset, broker=my_broker)
 
-            rc = self.client.execute_on_actor_thread_and_wait(Runner(self.client))
+            rc = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
 
             if rc is not None:
                 result.reservations = []
-                reservation = Converter.fill_reservation(rc, True)
+                reservation = Converter.fill_reservation(reservation=rc, full=True)
                 result.reservations.append(reservation)
             else:
                 raise Exception("Internal Error")
@@ -492,11 +500,11 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             self.logger.error("claim_resources {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def reclaim_resources(self, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
+    def reclaim_resources(self, *, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -506,11 +514,11 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            rtype = ResourceType(str(ID()))
+            rtype = ResourceType(resource_type=str(ID()))
             rdata = ResourceData()
             rset = ResourceSet(units=0, rtype=rtype, rdata=rdata)
 
-            my_broker = self.client.get_broker(broker)
+            my_broker = self.client.get_broker(guid=broker)
 
             if my_broker is None:
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
@@ -518,17 +526,18 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 return result
 
             class Runner(IActorRunnable):
-                def __init__(self, actor: IActor):
+                def __init__(self, *, actor: IActor):
                     self.actor = actor
 
                 def run(self):
-                    return self.actor.reclaim_client(reservation_id=rid, resources=rset, broker=my_broker, caller=caller)
+                    return self.actor.reclaim_client(reservation_id=rid, resources=rset, broker=my_broker,
+                                                     caller=caller)
 
-            rc = self.client.execute_on_actor_thread_and_wait(Runner(self.client))
+            rc = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
 
             if rc is not None:
                 result.reservations = []
-                reservation = Converter.fill_reservation(rc, True)
+                reservation = Converter.fill_reservation(reservation=rc, full=True)
                 result.reservations.append(reservation)
             else:
                 raise Exception("Internal Error")
@@ -537,11 +546,11 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             self.logger.error("claim_resources {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def extend_reservation(self, reservation: id, new_end_time: datetime, new_units: int,
+    def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType, request_properties: dict,
                            config_properties: dict, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
@@ -553,34 +562,36 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         try:
             class Runner(IActorRunnable):
-                def __init__(self, actor: IActor):
+                def __init__(self, *, actor: IActor):
                     self.actor = actor
 
                 def run(self):
                     result = ResultAvro()
-                    r = self.actor.get_reservation(ID(reservation.get_reservation_id()))
+                    r = self.actor.get_reservation(rid=ID(id=reservation.get_reservation_id()))
                     if r is None:
                         result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.name)
                         return result
 
-                    temp = PropList.merge_properties(r.get_resources().get_config_properties(), config_properties)
-                    r.get_resources().set_config_properties(temp)
+                    temp = PropList.merge_properties(incoming=r.get_resources().get_config_properties(),
+                                                     outgoing=config_properties)
+                    r.get_resources().set_config_properties(p=temp)
 
-                    temp = PropList.merge_properties(r.get_resources().get_request_properties(), request_properties)
-                    r.get_resources().set_request_properties(temp)
+                    temp = PropList.merge_properties(incoming=r.get_resources().get_request_properties(),
+                                                     outgoing=request_properties)
+                    r.get_resources().set_request_properties(p=temp)
 
                     rset = ResourceSet()
                     if new_units == Constants.ExtendSameUnits:
-                        rset.set_units(r.get_resources().get_units())
+                        rset.set_units(units=r.get_resources().get_units())
                     else:
-                        rset.set_units(new_units)
+                        rset.set_units(units=new_units)
 
                     if new_resource_type is None:
-                        rset.set_type(r.get_resources().get_type())
+                        rset.set_type(rtype=r.get_resources().get_type())
 
-                    rset.set_config_properties(config_properties)
-                    rset.set_request_properties(request_properties)
+                    rset.set_config_properties(p=config_properties)
+                    rset.set_request_properties(p=request_properties)
 
                     tmp_start_time = r.get_term().get_start_time()
                     new_term = r.get_term().extend()
@@ -589,21 +600,21 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                     new_term.set_new_start_time(tmp_start_time)
                     new_term.set_start_time(tmp_start_time)
 
-                    self.actor.extend(r.get_reservation_id(), rset, new_term)
+                    self.actor.extend(rid=r.get_reservation_id(), resources=rset, term=new_term)
 
                     return result
 
-            result = self.client.execute_on_actor_thread_and_wait(Runner(self.client))
+            result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
 
         except Exception as e:
             self.logger.error("extend_reservation {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
             result.set_message(ErrorCodes.ErrorInternalError.name)
-            result = ManagementObject.set_exception_details(result, e)
+            result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
 
-    def modify_reservation(self, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
+    def modify_reservation(self, *, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
 
         if rid is None or modify_properties is None:
@@ -615,25 +626,25 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         try:
 
             class Runner(IActorRunnable):
-                def __init__(self, actor: IActor):
+                def __init__(self, *, actor: IActor):
                     self.actor = actor
 
                 def run(self):
                     result = ResultAvro()
-                    r = self.actor.get_reservation(rid)
+                    r = self.actor.get_reservation(rid=rid)
                     if r is None:
                         result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.name)
                         return result
 
-                    self.actor.modify(rid, modify_properties)
+                    self.actor.modify(reservation_id=rid, modify_properties=modify_properties)
 
                     return result
-            result = self.client.execute_on_actor_thread_and_wait(Runner(self.client))
+            result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
         except Exception as e:
             self.logger.error("modify_reservation {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
             result.set_message(ErrorCodes.ErrorInternalError.name)
-            result = ManagementObject.set_exception_details(result, e)
+            result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result

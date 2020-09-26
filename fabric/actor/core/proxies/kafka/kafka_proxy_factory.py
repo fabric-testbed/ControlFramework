@@ -29,12 +29,11 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.apis.i_broker import IBroker
-from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.proxies.kafka.kafka_authority_proxy import KafkaAuthorityProxy
 from fabric.actor.core.proxies.kafka.kafka_broker_proxy import KafkaBrokerProxy
 from fabric.actor.core.proxies.kafka.kafka_retun import KafkaReturn
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
-from fabric.actor.core.proxies.i_proxy_factory import IProxyFactory
+from fabric.actor.core.apis.i_proxy_factory import IProxyFactory
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor_identity import IActorIdentity
@@ -44,40 +43,45 @@ if TYPE_CHECKING:
 
 
 class KafkaProxyFactory(IProxyFactory):
-    def new_proxy(self, identity: IActorIdentity, location: ActorLocation, actor_type: str = None) -> IProxy:
+    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, type: str = None) -> IProxy:
         result = None
-        actor = ActorRegistrySingleton.get().get_actor(identity.get_name())
+        actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
 
         if actor is not None:
             descriptor = location.get_descriptor()
             if descriptor is not None and descriptor.get_location() is not None:
                 if isinstance(actor, IAuthority):
-                    result = KafkaAuthorityProxy(descriptor.get_location(), actor.get_identity(), actor.get_logger())
+                    result = KafkaAuthorityProxy(kafka_topic=descriptor.get_location(), identity=actor.get_identity(),
+                                                 logger=actor.get_logger())
 
                 elif isinstance(actor, IBroker):
-                    result = KafkaBrokerProxy(descriptor.get_location(), actor.get_identity(), actor.get_logger())
+                    result = KafkaBrokerProxy(kafka_topic=descriptor.get_location(), identity=actor.get_identity(),
+                                              logger=actor.get_logger())
         else:
             kafka_topic = location.get_location()
 
-            if actor_type is not None:
+            if type is not None:
                 from fabric.actor.core.container.globals import GlobalsSingleton
-                if actor_type.lower() == ActorType.Authority.name.lower():
-                    result = KafkaAuthorityProxy(kafka_topic, identity.get_identity(), GlobalsSingleton.get().get_logger())
+                if type.lower() == ActorType.Authority.name.lower():
+                    result = KafkaAuthorityProxy(kafka_topic=kafka_topic, identity=identity.get_identity(),
+                                                 logger=GlobalsSingleton.get().get_logger())
 
-                elif actor_type.lower() == ActorType.Broker.name.lower():
-                    result = KafkaBrokerProxy(kafka_topic, identity.get_identity(), GlobalsSingleton.get().get_logger())
+                elif type.lower() == ActorType.Broker.name.lower():
+                    result = KafkaBrokerProxy(kafka_topic=kafka_topic, identity=identity.get_identity(),
+                                              logger=GlobalsSingleton.get().get_logger())
                 else:
-                    raise Exception("Unsupported proxy type: {}".format(actor_type))
+                    raise Exception("Unsupported proxy type: {}".format(type))
             else:
                 raise Exception("Missing proxy type")
         return result
 
-    def new_callback(self, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:
+    def new_callback(self, *, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:
         result = None
-        actor = ActorRegistrySingleton.get().get_actor(identity.get_name())
+        actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
         if actor is not None:
             descriptor = location.get_descriptor()
             if descriptor is not None and descriptor.get_location() is not None:
                 kafka_topic = descriptor.get_location()
-                result = KafkaReturn(kafka_topic, actor.get_identity(), actor.get_logger())
+                result = KafkaReturn(kafka_topic=kafka_topic, identity=actor.get_identity(),
+                                     logger=actor.get_logger())
         return result

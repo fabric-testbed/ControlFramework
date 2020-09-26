@@ -46,14 +46,18 @@ if TYPE_CHECKING:
 class ContainerManagementObject(ManagementObject):
     def __init__(self):
         super().__init__()
-        self.id = ID(Constants.ContainerManagmentObjectID)
+        self.id = ID(id=Constants.ContainerManagmentObjectID)
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_container import LocalContainer
-        local = ProxyProtocolDescriptor(Constants.ProtocolLocal, LocalContainer.__name__, LocalContainer.__module__)
+        local = ProxyProtocolDescriptor(protocol=Constants.ProtocolLocal,
+                                        proxy_class=LocalContainer.__name__,
+                                        proxy_module=LocalContainer.__module__)
 
         from fabric.actor.core.manage.kafka.kafka_container import KafkaContainer
-        kakfa = ProxyProtocolDescriptor(Constants.ProtocolKafka, KafkaContainer.__name__, KafkaContainer.__module__)
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.ProtocolKafka,
+                                        proxy_class=KafkaContainer.__name__,
+                                        proxy_module=KafkaContainer.__module__)
 
         self.proxies = []
         self.proxies.append(local)
@@ -61,8 +65,8 @@ class ContainerManagementObject(ManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = ContainerManagementObject.__name__,
-        properties[Constants.PropertyModuleName] = ContainerManagementObject.__name__
+        properties[Constants.PropertyClassName] = ContainerManagementObject.__name__
+        properties[Constants.PropertyModuleName] = ContainerManagementObject.__module__
 
         return properties
 
@@ -70,7 +74,7 @@ class ContainerManagementObject(ManagementObject):
         from fabric.actor.core.container.globals import GlobalsSingleton
         return GlobalsSingleton.get().get_container().get_database()
 
-    def get_actors_from_registry(self, atype: int, user: AuthToken):
+    def get_actors_from_registry(self, *, atype: int, user: AuthToken):
         result = []
         actors = ActorRegistrySingleton.get().get_actors()
         if actors is not None:
@@ -79,7 +83,7 @@ class ContainerManagementObject(ManagementObject):
                     result.append(a)
         return result
 
-    def get_actors(self, caller: AuthToken) -> ResultActorAvro:
+    def get_actors(self, *, caller: AuthToken) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -89,17 +93,17 @@ class ContainerManagementObject(ManagementObject):
             return result
 
         try:
-            act_list = self.get_actors_from_registry(ActorType.All.value, caller)
-            result.result = Converter.fill_actors(act_list)
+            act_list = self.get_actors_from_registry(atype=ActorType.All.value, user=caller)
+            result.result = Converter.fill_actors(act_list=act_list)
         except Exception as e:
             self.logger.error("get_actors {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def get_actors_from_database(self, caller: AuthToken) -> ResultActorAvro:
+    def get_actors_from_database(self, *, caller: AuthToken) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -116,21 +120,22 @@ class ContainerManagementObject(ManagementObject):
                 self.logger.error("get_actors_from_database {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
                 result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result.status, e)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if act_list is not None:
-                result.result = Converter.fill_actors_from_db(act_list)
+                result.result = Converter.fill_actors_from_db(act_list=act_list)
 
         except Exception as e:
             self.logger.error("get_actors_from_database {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def get_actors_from_database_name_type_status(self, name: str, actor_type: int, status: int, caller: AuthToken) -> ResultActorAvro:
+    def get_actors_from_database_name_type_status(self, *, name: str, actor_type: int, status: int,
+                                                  caller: AuthToken) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -147,21 +152,21 @@ class ContainerManagementObject(ManagementObject):
                 self.logger.error("get_actors_from_database {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
                 result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result.status, e)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if act_list is not None:
-                result.result = Converter.fill_actors_from_db_status(act_list, status)
+                result.result = Converter.fill_actors_from_db_status(act_list=act_list, status=status)
 
         except Exception as e:
             self.logger.error("get_actors_from_database {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def get_controllers(self, caller: AuthToken) -> ResultActorAvro:
+    def get_controllers(self, *, caller: AuthToken) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -171,15 +176,15 @@ class ContainerManagementObject(ManagementObject):
             return result
 
         try:
-            act_list = self.get_actors_from_registry(ActorType.Controller.value, caller)
-            result.result = Converter.fill_actors(act_list)
+            act_list = self.get_actors_from_registry(atype=ActorType.Orchestrator.value, user=caller)
+            result.result = Converter.fill_actors(act_list=act_list)
         except Exception as e:
             self.logger.error("get_controllers {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_brokers(self, caller: AuthToken) -> ResultActorAvro:
+    def get_brokers(self, *, caller: AuthToken) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -189,15 +194,15 @@ class ContainerManagementObject(ManagementObject):
             return result
 
         try:
-            act_list = self.get_actors_from_registry(ActorType.Broker.value, caller)
-            result.result = Converter.fill_actors(act_list)
+            act_list = self.get_actors_from_registry(atype=ActorType.Broker.value, user=caller)
+            result.result = Converter.fill_actors(act_list=act_list)
         except Exception as e:
             self.logger.error("get_brokers {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_authorities(self, caller: AuthToken) -> ResultActorAvro:
+    def get_authorities(self, *, caller: AuthToken) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -207,19 +212,19 @@ class ContainerManagementObject(ManagementObject):
             return result
 
         try:
-            act_list = self.get_actors_from_registry(ActorType.Authority.value, caller)
-            result.result = Converter.fill_actors(act_list)
+            act_list = self.get_actors_from_registry(atype=ActorType.Authority.value, user=caller)
+            result.result = Converter.fill_actors(act_list=act_list)
         except Exception as e:
             self.logger.error("get_authorities {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_management_object(self, guid: ID) -> IManagementObject:
+    def get_management_object(self, *, key: ID) -> IManagementObject:
         from fabric.actor.core.container.globals import GlobalsSingleton
-        return GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(guid)
+        return GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(key=key)
 
-    def get_broker_proxies(self, protocol: str, caller: AuthToken) -> ResultProxyAvro:
+    def get_broker_proxies(self, *, protocol: str, caller: AuthToken) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -229,15 +234,15 @@ class ContainerManagementObject(ManagementObject):
             return result
 
         try:
-            proxies = ActorRegistrySingleton.get().get_broker_proxies(protocol)
-            result.result = Converter.fill_proxies(proxies)
+            proxies = ActorRegistrySingleton.get().get_broker_proxies(protocol=protocol)
+            result.result = Converter.fill_proxies(proxies=proxies)
         except Exception as e:
             self.logger.error("get_broker_proxies {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_site_proxies(self, protocol: str, caller: AuthToken) -> ResultProxyAvro:
+    def get_site_proxies(self, *, protocol: str, caller: AuthToken) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -247,15 +252,15 @@ class ContainerManagementObject(ManagementObject):
             return result
 
         try:
-            proxies = ActorRegistrySingleton.get().get_site_proxies(protocol)
-            result.result = Converter.fill_proxies(proxies)
+            proxies = ActorRegistrySingleton.get().get_site_proxies(protocol=protocol)
+            result.result = Converter.fill_proxies(proxies=proxies)
         except Exception as e:
             self.logger.error("get_site_proxies {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_proxies_by_protocol(self, protocol: str, caller: AuthToken) -> ResultProxyAvro:
+    def get_proxies_by_protocol(self, *, protocol: str, caller: AuthToken) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -265,10 +270,10 @@ class ContainerManagementObject(ManagementObject):
             return result
 
         try:
-            proxies = ActorRegistrySingleton.get().get_proxies(protocol)
-            result.result = Converter.fill_proxies(proxies)
+            proxies = ActorRegistrySingleton.get().get_proxies(protocol=protocol)
+            result.result = Converter.fill_proxies(proxies=proxies)
         except Exception as e:
             self.logger.error("get_proxies {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)

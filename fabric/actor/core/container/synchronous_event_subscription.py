@@ -35,15 +35,15 @@ if TYPE_CHECKING:
 
 
 class SynchronousEventSubscription(AEventSubscription):
-    def __init__(self, handler: IEventHandler, token: AuthToken, filters: list):
-        super().__init__(token, filters)
+    def __init__(self, *, handler: IEventHandler, token: AuthToken, filters: list):
+        super().__init__(token=token, filters=filters)
         self.handler = handler
 
-    def deliver_event(self, event: IEvent):
-        if self.matches(event):
-            self.handler.handle(event)
+    def deliver_event(self, *, event: IEvent):
+        if self.matches(event=event):
+            self.handler.handle(event=event)
 
-    def drain_events(self, timeout: int) -> list:
+    def drain_events(self, *, timeout: int) -> list:
         raise Exception("drainEvents is not supported on synchronous subscriptions")
 
     def is_abandoned(self) -> bool:

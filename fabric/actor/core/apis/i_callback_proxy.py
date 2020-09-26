@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
@@ -38,7 +40,9 @@ class ICallbackProxy(IProxy):
     """
     ICallbackProxy represents the proxy callback interface to an actor.
     """
-    def prepare_query_result(self, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
+
+    @abstractmethod
+    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
         """
         Prepare the query result
 
@@ -46,9 +50,9 @@ class ICallbackProxy(IProxy):
             request_id: request id
             caller: caller
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def prepare_failed_request(self, request_id: str, failed_request_type,
+    @abstractmethod
+    def prepare_failed_request(self, *, request_id: str, failed_request_type,
                                failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
         """
         Prepare the failed response
@@ -60,4 +64,4 @@ class ICallbackProxy(IProxy):
             error: error string
             caller: caller
         """
-        raise NotImplementedError( "Should have implemented this" )
+

@@ -31,16 +31,16 @@ from fabric.actor.test.core.time.calendar.client_calendar_test import ClientCale
 
 class ControllerCalendarTest(ClientCalendarTest):
     def _get_calendar(self):
-        clock = ActorClock(self.Offset, self.Length)
-        return ControllerCalendar(clock)
+        clock = ActorClock(beginning_of_time=self.Offset, cycle_millis=self.Length)
+        return ControllerCalendar(clock=clock)
 
     def test_create2(self):
         cal = self._get_calendar()
         self.assertIsNotNone(cal.closing)
         self.assertIsNotNone(cal.redeeming)
 
-        self.assertIsNotNone(cal.get_closing(1000))
-        self.assertIsNotNone(cal.get_redeeming(1000))
+        self.assertIsNotNone(cal.get_closing(cycle=1000))
+        self.assertIsNotNone(cal.get_redeeming(cycle=1000))
 
     def check_set(self, rset: ReservationSet, check: ReservationSet):
         self.assertIsNotNone(check)

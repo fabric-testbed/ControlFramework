@@ -38,13 +38,14 @@ from fabric.actor.core.util.id import ID
 
 class ClientReservationFactory(ReservationFactory, IClientReservationFactory):
     @staticmethod
-    def create(rid: ID, resources: ResourceSet = None, term: Term = None, slice_object: ISlice = None,
+    def create(*, rid: ID, resources: ResourceSet = None, term: Term = None, slice_object: ISlice = None,
                broker: IBrokerProxy = None, actor: IActor = None):
         result = ReservationClient(rid=rid, resources=resources, term=term, slice_object=slice_object, broker=broker)
         if actor is not None:
-            result.restore(actor, slice_object, actor.get_logger())
+            result.restore(actor=actor, slice_obj=slice_object, logger=actor.get_logger())
         return result
 
     @staticmethod
-    def set_as_source(reservation: IClientReservation):
-        reservation.transition("[source]", ReservationStates.Ticketed, ReservationPendingStates.None_)
+    def set_as_source(*, reservation: IClientReservation):
+        reservation.transition(prefix="[source]", state=ReservationStates.Ticketed,
+                               pending=ReservationPendingStates.None_)

@@ -26,12 +26,13 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.manage.server_actor_management_object import ServerActorManagementObject
 from fabric.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
 from fabric.actor.core.manage.local.local_actor import LocalActor
 from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.reservation_mng import ReservationMng
 
 if TYPE_CHECKING:
     from fabric.actor.core.manage.management_object import ManagementObject
@@ -43,16 +44,16 @@ if TYPE_CHECKING:
 
 
 class LocalServerActor(LocalActor, IMgmtServerActor):
-    def __init__(self, manager: ManagementObject = None, auth: AuthToken = None):
-        super().__init__(manager, auth)
+    def __init__(self, *, manager: ManagementObject, auth: AuthToken):
+        super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, ServerActorManagementObject):
             raise Exception("Invalid manager object. Required: {}".format(type(ServerActorManagementObject)))
 
-    def get_client_slices(self) -> list:
+    def get_client_slices(self) -> List[SliceAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_client_slices(self.auth)
+            result = self.manager.get_client_slices(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -61,10 +62,10 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_clients(self) -> list:
+    def get_clients(self) -> List[SliceAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_clients(self.auth)
+            result = self.manager.get_clients(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -73,27 +74,27 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_client(self, guid: ID) -> ClientMng:
+    def get_client(self, *, guid: ID) -> ClientMng:
         self.clear_last()
         try:
-            result = self.manager.get_client(self.auth, guid)
+            result = self.manager.get_client(caller=self.auth, guid=guid)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return self.get_first(result.result)
+                return self.get_first(result_list=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def register_client(self, client: ClientMng, kafka_topic: str) -> bool:
+    def register_client(self, *, client: ClientMng, kafka_topic: str) -> bool:
         self.clear_last()
         if client is None or kafka_topic is None:
             self.last_exception = Exception("Invalid arguments")
             return False
 
         try:
-            result = self.manager.register_client(client, kafka_topic, self.auth)
+            result = self.manager.register_client(client=client, kafka_topic=kafka_topic, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0
@@ -102,14 +103,14 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return False
 
-    def unregister_client(self, guid: ID) -> bool:
+    def unregister_client(self, *, guid: ID) -> bool:
         self.clear_last()
         if guid is None:
             self.last_exception = Exception("Invalid arguments")
             return False
 
         try:
-            result = self.manager.unregister_client(guid, self.auth)
+            result = self.manager.unregister_client(guid=guid, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0
@@ -118,10 +119,10 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return False
 
-    def get_client_reservations(self) -> list:
+    def get_client_reservations(self) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_client_reservations(self.auth)
+            result = self.manager.get_client_reservations(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -130,10 +131,10 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_broker_reservations(self) -> list:
+    def get_broker_reservations(self) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_broker_reservations(self.auth)
+            result = self.manager.get_broker_reservations(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -142,10 +143,10 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_inventory_slices(self) -> list:
+    def get_inventory_slices(self) -> List[SliceAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_inventory_slices(self.auth)
+            result = self.manager.get_inventory_slices(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -154,10 +155,10 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_inventory_reservations(self) -> list:
+    def get_inventory_reservations(self) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_inventory_reservations(self.auth)
+            result = self.manager.get_inventory_reservations(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -166,10 +167,10 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_inventory_reservations_by_slice_id(self, slice_id: ID) -> list:
+    def get_inventory_reservations_by_slice_id(self, *, slice_id: ID) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_inventory_reservations_by_slice_id(self.auth, slice_id)
+            result = self.manager.get_inventory_reservations_by_slice_id(caller=self.auth, slice_id=slice_id)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -178,10 +179,10 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def add_client_slice(self, slice_mng: SliceAvro) -> ID:
+    def add_client_slice(self, *, slice_mng: SliceAvro) -> ID:
         self.clear_last()
         try:
-            result = self.manager.add_client_slice(self.auth, slice_mng)
+            result = self.manager.add_client_slice(caller=self.auth, slice_mng=slice_mng)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -190,10 +191,10 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_client_reservations_by_slice_id(self, slice_id: ID) -> list:
+    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_client_reservations_by_slice_id(self.auth, slice_id)
+            result = self.manager.get_client_reservations_by_slice_id(caller=self.auth, slice_id=slice_id)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -202,65 +203,75 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def export_resources_pool_client_slice(self, client_slice_id: ID, pool_id: ID, start: datetime, end: datetime,
+    def export_resources_pool_client_slice(self, *, client_slice_id: ID, pool_id: ID, start: datetime, end: datetime,
                                            units: int, ticket_properties: dict, resource_properties: dict,
                                            source_ticket_id: ID) -> ID:
         try:
-            result = self.manager.export_resources_pool_client_slice(client_slice_id, pool_id, start, end, units,
-                                                                     ticket_properties, resource_properties,
-                                                                     source_ticket_id, self.auth)
+            result = self.manager.export_resources_pool_client_slice(client_slice_id=client_slice_id,
+                                                                     pool_id=pool_id, start=start, end=end, units=units,
+                                                                     ticket_properties=ticket_properties,
+                                                                     resource_properties=resource_properties,
+                                                                     source_ticket_id=source_ticket_id,
+                                                                     caller=self.auth)
             self.last_status = result.status
             if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(result.result)
+                return ID(id=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def export_resources_pool(self, pool_id: ID, start: datetime, end: datetime, units: int,
+    def export_resources_pool(self, *, pool_id: ID, start: datetime, end: datetime, units: int,
                               ticket_properties: dict, resource_properties: dict, source_ticket_id: ID,
                               client: AuthToken) -> ID:
         try:
-            result = self.manager.export_resources_pool(pool_id, start, end, units,
-                                                        ticket_properties, resource_properties,
-                                                        source_ticket_id, client, self.auth)
+            result = self.manager.export_resources_pool(pool_id=pool_id, start=start, end=end, units=units,
+                                                        ticket_properties=ticket_properties,
+                                                        resource_properties=resource_properties,
+                                                        source_ticket_id=source_ticket_id, client=client,
+                                                        caller=self.auth)
+
             self.last_status = result.status
             if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(result.result)
+                return ID(id=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def export_resources_client_slice(self, client_slice_id: ID, rtype: ResourceType, start: datetime, end: datetime,
+    def export_resources_client_slice(self, *, client_slice_id: ID, rtype: ResourceType, start: datetime, end: datetime,
                                       units: int, ticket_properties: dict, resource_properties: dict,
                                       source_ticket_id: ID) -> ID:
         try:
-            result = self.manager.export_resources_client_slice(client_slice_id, rtype, start, end, units,
-                                                                ticket_properties, resource_properties,
-                                                                source_ticket_id, self.auth)
+            result = self.manager.export_resources_client_slice(client_slice_id=client_slice_id,
+                                                                rtype=rtype, start=start, end=end, units=units,
+                                                                ticket_properties=ticket_properties,
+                                                                resource_properties=resource_properties,
+                                                                source_ticket_id=source_ticket_id, caller=self.auth)
+
             self.last_status = result.status
             if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(result.result)
+                return ID(id=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def export_resources(self, rtype: ResourceType, start: datetime, end: datetime, units: int,
+    def export_resources(self, *, rtype: ResourceType, start: datetime, end: datetime, units: int,
                          ticket_properties: dict, resource_properties: dict, source_ticket_id: ID,
                          client: AuthToken) -> ID:
         try:
-            result = self.manager.export_resources(rtype, start, end, units,
-                                                   ticket_properties, resource_properties,
-                                                   source_ticket_id, client, self.auth)
+            result = self.manager.export_resources(rtype=rtype, start=start, end=end, units=units,
+                                                   ticket_properties=ticket_properties,
+                                                   resource_properties=resource_properties,
+                                                   source_ticket_id=source_ticket_id, client=client, caller=self.auth)
             self.last_status = result.status
             if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(result.result)
+                return ID(id=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
     def clone(self) -> IMgmtActor:
-        return LocalServerActor(self.manager, self.auth)
+        return LocalServerActor(manager=self.manager, auth=self.auth)

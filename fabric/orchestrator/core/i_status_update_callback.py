@@ -23,11 +23,16 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import List
+
+from fabric.actor.core.util.id import ID
+
+
 class IStatusUpdateCallback:
     """
     Callbacks on reservation status updates must comply with this interface
     """
-    def success(self, ok: list, act_on: list):
+    def success(self, *, ok: List[ID], act_on: List[ID]):
         """
         All reservations in indicated group have gone to Active or have OK modify status
         @param ok - reservations that transitioned to Active or OK modify status
@@ -36,7 +41,7 @@ class IStatusUpdateCallback:
         """
         raise NotImplementedError
 
-    def failure(self, failed: list, ok: list, act_on: list):
+    def failure(self, *, failed: List[ID], ok: List[ID], act_on: List[ID]):
         """
         Some reservations may have gone into Failed or not OK modify status, so provide an action for those
         @param failed - those reservations that failed or went to not OK

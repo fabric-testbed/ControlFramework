@@ -25,8 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from abc import abstractmethod
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
@@ -41,41 +42,112 @@ if TYPE_CHECKING:
     from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
     from fabric.message_bus.messages.proxy_avro import ProxyAvro
     from fabric.message_bus.messages.result_proxy_avro import ResultProxyAvro
-    from fabric.message_bus.messages.result_pool_info_avro import ResultPoolInfoMng
+    from fabric.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
 
 
 class IClientActorManagementObject:
-    def add_reservation(self, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def add_reservation(self, *, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
+        """
+        Add a reservation
+        @params reservation : reservation to be added
+        @params caller: caller
+        @returns reservation id on success and error code on failure (ResultStringAvro)
+        """
 
-    def add_reservations(self, reservations: list, caller: AuthToken) -> ResultStringsAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def add_reservations(self, *, reservations: List[TicketReservationAvro], caller: AuthToken) -> ResultStringsAvro:
+        """
+        Add reservations
+        @params reservations : reservations to be added
+        @params caller: caller
+        @returns reservation ids on success and error code on failure (ResultStringsAvro)
+        """
 
-    def extend_reservation(self, reservation: id, new_end_time: datetime, new_units: int,
-                            new_resource_type: ResourceType, request_properties: dict,
-                            config_properties: dict, caller: AuthToken) -> ResultAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
+                           new_resource_type: ResourceType, request_properties: dict,
+                           config_properties: dict, caller: AuthToken) -> ResultAvro:
+        """
+        Extend a reservation
+        @params reservation : reservation to be extended
+        @params new_end_time: new end time
+        @params new_resource_type: new resource type
+        @params config_properties: config_properties
+        @params caller: caller
+        @returns success or failure status
+        """
 
-    def demand_reservation(self, reservation: ReservationMng, caller: AuthToken) -> ResultStringAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def demand_reservation(self, *, reservation: ReservationMng, caller: AuthToken) -> ResultStringAvro:
+        """
+        Demand a reservation
+        @params reservation : reservation to be demanded
+        @params caller: caller
+        @returns reservation id on success and error code on failure (ResultStringAvro)
+        """
 
-    def demand_reservation_rid(self, rid: ID, caller: AuthToken) -> ResultAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def demand_reservation_rid(self, *, rid: ID, caller: AuthToken) -> ResultAvro:
+        """
+        Demand a reservation by reservation id
+        @params rid : reservation id of reservation to be demanded
+        @params caller: caller
+        @returns success or failure status
+        """
 
-    def get_brokers(self, caller: AuthToken) -> ResultProxyAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def get_brokers(self, *, caller: AuthToken) -> ResultProxyAvro:
+        """
+        Get all brokers
+        @params caller: caller
+        @returns list of all the brokers
+        """
 
-    def get_broker(self, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def get_broker(self, *, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
+        """
+        Get a broker
+        @params broker_id : broker_id
+        @params caller: caller
+        @returns broker information
+        """
 
-    def add_broker(self, broker_proxy: ProxyAvro, caller: AuthToken) -> ResultAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def add_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
+        """
+        Add a broker
+        @params broker: broker_proxy to be added
+        @params caller: caller
+        @returns success or failure status
+        """
 
-    def claim_resources_slice(self, broker: ID, slice_id: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def claim_resources_slice(self, *, broker: ID, slice_id: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
+        """
+        Claim resources for a slice
+        @params broker : broker ID
+        @params slice_id : slice ID
+        @params rid : reservation ID
+        @params caller: caller
+        @returns ResultReservationAvro
+        """
 
-    def claim_resources(self, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
-        raise NotImplementedError
+    @abstractmethod
+    def claim_resources(self, *, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
+        """
+        Claim resources
+        @params broker : broker ID
+        @params rid : reservation ID
+        @params caller: caller
+        @returns ResultReservationAvro
+        """
 
-    def get_pool_info(self, broker: ID, caller: AuthToken) -> ResultPoolInfoMng:
-        raise NotImplementedError
+    @abstractmethod
+    def get_pool_info(self, *, broker: ID, caller: AuthToken) -> ResultPoolInfoAvro:
+        """
+        Get Pool Info
+        @params broker : broker ID
+        @params caller: caller
+        @returns pool information
+        """

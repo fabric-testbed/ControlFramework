@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 
 class LocalProxy(IComponent):
-    def __init__(self, manager: ManagementObject = None, auth: AuthToken = None):
+    def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         self.manager = manager
         self.auth = auth
         self.last_status = None
@@ -47,7 +47,7 @@ class LocalProxy(IComponent):
         self.last_status = ResultAvro()
 
     def get_last_error(self) -> Error:
-        return Error(self.last_status, self.last_exception)
+        return Error(status=self.last_status, e=self.last_exception)
 
     def get_manager_object(self) -> ManagementObject:
         return self.manager
@@ -58,7 +58,7 @@ class LocalProxy(IComponent):
     def get_type_id(self) -> str:
         return str(self.manager.get_type_id())
 
-    def get_first(self, result_list: list):
+    def get_first(self, *, result_list: list):
         if result_list is not None and len(result_list) > 0:
             return result_list.__iter__().__next__()
         return None

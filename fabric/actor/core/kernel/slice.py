@@ -52,7 +52,7 @@ class Slice(IKernelSlice):
     reservations at many sites; and on the site Authority, where each slice may
     hold multiple reservations for resources at that site.
     """
-    def __init__(self, id: ID = None, name: str = "unspecified", data: ResourceData = None):
+    def __init__(self, *, id: ID = None, name: str = "unspecified", data: ResourceData = None):
         # Globally unique identifier.
         self.guid = id
         # Slice name. Not required to be globally or locally unique.
@@ -152,11 +152,11 @@ class Slice(IKernelSlice):
     def prepare(self):
         self.reservations.clear()
 
-    def register(self, reservation: IKernelReservation):
+    def register(self, *, reservation: IKernelReservation):
         if self.reservations.contains(rid=reservation.get_reservation_id()):
             raise Exception("Reservation #{} already exists in slice".format(reservation.get_reservation_id()))
 
-        self.reservations.add(reservation)
+        self.reservations.add(reservation=reservation)
 
     def set_broker_client(self):
         self.type = SliceTypes.BrokerClientSlice
@@ -164,13 +164,13 @@ class Slice(IKernelSlice):
     def set_client(self):
         self.type = SliceTypes.ClientSlice
 
-    def set_description(self, description: str):
+    def set_description(self, *, description: str):
         self.description = description
 
-    def set_guard(self, g: Guard):
+    def set_guard(self, *, g: Guard):
         self.guard = g
 
-    def set_inventory(self, value: bool):
+    def set_inventory(self, *, value: bool):
         if value:
             self.type = SliceTypes.InventorySlice
         else:
@@ -179,41 +179,41 @@ class Slice(IKernelSlice):
     def get_slice_type(self) -> SliceTypes:
         return self.type
 
-    def set_name(self, name: str):
+    def set_name(self, *, name: str):
         self.name = name
 
-    def set_owner(self, auth: AuthToken):
-        self.owner = auth
-        self.guard.set_owner(auth)
-        self.guard.set_object_id(self.guid)
+    def set_owner(self, *, owner: AuthToken):
+        self.owner = owner
+        self.guard.set_owner(owner=owner)
+        self.guard.set_object_id(object_id=self.guid)
 
-    def set_properties(self, rsrcdata: ResourceData):
+    def set_properties(self, *, rsrcdata: ResourceData):
         self.rsrcdata = rsrcdata
 
-    def set_resource_type(self, resource_type: ResourceType):
+    def set_resource_type(self, *, resource_type: ResourceType):
         self.resource_type = resource_type
 
-    def soft_lookup(self, rid: ID):
-        return self.reservations.get(rid)
+    def soft_lookup(self, *, rid: ID):
+        return self.reservations.get(rid=rid)
 
     def __str__(self):
         return "{}({})".format(self.name, str(self.guid))
 
-    def unregister(self, reservation: IKernelReservation):
-        self.reservations.remove(reservation)
+    def unregister(self, *, reservation: IKernelReservation):
+        self.reservations.remove(reservation=reservation)
 
-    def set_local_properties(self, value: dict):
+    def set_local_properties(self, *, value: dict):
         if self.rsrcdata is not None:
             self.rsrcdata.local_properties = value
 
-    def set_config_properties(self, value: dict):
+    def set_config_properties(self, *, value: dict):
         if self.rsrcdata is not None:
             self.rsrcdata.configuration_properties = value
 
-    def set_request_properties(self, value: dict):
+    def set_request_properties(self, *, value: dict):
         if self.rsrcdata is not None:
             self.rsrcdata.request_properties = value
 
-    def set_resource_properties(self, value: dict):
+    def set_resource_properties(self, *, value: dict):
         if self.rsrcdata is not None:
             self.rsrcdata.resource_properties = value

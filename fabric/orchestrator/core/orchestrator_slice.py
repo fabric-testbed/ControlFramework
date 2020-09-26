@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 from datetime import datetime
+from typing import List
 
 from fabric.orchestrator.core.slice_state_machine import SliceStateMachine, SliceState
 from fabric.message_bus.messages.reservation_mng import ReservationMng
@@ -38,9 +39,10 @@ from fabric.message_bus.messages.slice_avro import SliceAvro
 
 
 class OrchestratorSlice:
-    def __init__(self, controller: IMgmtController, slice_obj: SliceAvro, name: str, user_dn: str, ssh_credentials: list, recover: bool):
+    def __init__(self, *, controller: IMgmtController, slice_obj: SliceAvro, name: str, user_dn: str,
+                 ssh_credentials: list, recover: bool):
         self.slice_lock = threading.Lock()
-        self.state_machine = SliceStateMachine(ID(slice_obj.get_slice_id()), recover)
+        self.state_machine = SliceStateMachine(slice_id=ID(id=slice_obj.get_slice_id()), recover=recover)
         self.slice_urn = name
         self.user_dn = user_dn
         self.ssh_credentials = ssh_credentials
@@ -56,8 +58,9 @@ class OrchestratorSlice:
             cloud_handler = None
             # TODO
             # initialize the cloud handler
-            self.workflow = RequestWorkflow(cloud_handler)
-            self.reservation_converter = ReservationConverter(self.ssh_credentials, controller, self)
+            self.workflow = RequestWorkflow(cloud_handler=cloud_handler)
+            self.reservation_converter = ReservationConverter(ssh_credentials=self.ssh_credentials,
+                                                              controller=controller, controller_slice=self)
         except Exception as e:
             raise e
 
@@ -67,7 +70,7 @@ class OrchestratorSlice:
     def unlock(self):
         self.slice_lock.release()
 
-    def remove_computed_reservations(self, rid: str):
+    def remove_computed_reservations(self, *, rid: str):
         if self.computed_reservations is not None:
             reservation_to_remove = None
             for reservation in self.computed_reservations:
@@ -77,34 +80,34 @@ class OrchestratorSlice:
             if reservation_to_remove is not None:
                 self.computed_reservations.remove(reservation_to_remove)
 
-    def add_computed_reservations(self, reservation: TicketReservationAvro):
+    def add_computed_reservations(self, *, reservation: TicketReservationAvro):
         if self.computed_reservations is None:
             self.computed_reservations = []
         self.computed_reservations.append(reservation)
 
-    def set_computed_reservations(self, reservations: list):
+    def set_computed_reservations(self, *, reservations: List[TicketReservationAvro]):
         self.computed_reservations = reservations
 
-    def get_computed_reservations(self) -> list:
+    def get_computed_reservations(self) -> List[TicketReservationAvro]:
         return self.computed_reservations
 
-    def get_all_reservations(self, controller: IMgmtController) -> list:
+    def get_all_reservations(self, *, controller: IMgmtController) -> List[ReservationMng]:
         if controller is None:
             return None
 
         return controller.get_reservations()
 
-    def get_units(self, controller: IMgmtController, rid: ID):
+    def get_units(self, *, controller: IMgmtController, rid: ID):
         try:
-            controller.get_reservation_units(rid)
+            controller.get_reservation_units(rid=rid)
         except Exception as e:
             raise e
 
-    def get_reservation_states(self, controller: IMgmtController, rids: list):
+    def get_reservation_states(self, *, controller: IMgmtController, rids: List[ID]):
         try:
             if rids is None:
                 return None
-            return controller.get_reservation_state_for_reservations(rids)
+            return controller.get_reservation_state_for_reservations(reservation_list=rids)
         except Exception as e:
             raise e
 
@@ -114,7 +117,7 @@ class OrchestratorSlice:
     def get_user_dn(self) -> str:
         return self.user_dn
 
-    def match_user_dn(self, dn: str):
+    def match_user_dn(self, *, dn: str):
         if dn is None:
             return False
         return self.user_dn == dn
@@ -123,14 +126,15 @@ class OrchestratorSlice:
         return self.slice_urn
 
     def get_slice_id(self) -> ID:
-        return ID(self.slice_obj.get_slice_id())
+        return ID(id=self.slice_obj.get_slice_id())
 
     def get_reservation_converter(self) -> ReservationConverter:
         return self.reservation_converter
 
     def close(self):
         if not self.global_assignment_cleared and \
-                (self.state_machine.get_state() == SliceState.Dead or self.state_machine.get_state() == SliceState.Closing):
+                (self.state_machine.get_state() == SliceState.Dead or
+                 self.state_machine.get_state() == SliceState.Closing):
             self.workflow.close()
 
         if self.computed_reservations is not None:
@@ -191,13 +195,13 @@ class OrchestratorSlice:
         return self.first_delete_attempt
 
     def reevaluate(self) -> SliceState:
-        return self.state_machine.transition_slice(SliceStateMachine.REEVALUATE)
+        return self.state_machine.transition_slice(operation=SliceStateMachine.REEVALUATE)
 
     def recover(self):
         # TODO
         return
 
-    def add_recover_reservation(self, r: ReservationMng):
+    def add_recover_reservation(self, *, r: ReservationMng):
         # TODO
         return
 
@@ -215,7 +219,7 @@ class OrchestratorSlice:
         if self.get_computed_reservations() is not None:
             for reservation in self.get_computed_reservations():
                 result += "[ Slice UID: {} | Reservation UID: {} | Resource Type: {} | Resource Units: {} ]\n".format(
-                    reservation.get_slice_id(), reservation.get_reservation_id(), reservation.get_type(),
+                    reservation.get_slice_id(), reservation.get_reservation_id(), reservation.get_resource_type(),
                     reservation.get_units())
         else:
             result += "No new reservations were computed\n"

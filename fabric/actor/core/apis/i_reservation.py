@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from abc import abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -50,6 +51,7 @@ class ReservationCategory(Enum):
     Broker = 2
     # Site authority-side reservations.
     Authority = 3
+    
 
 class IReservation(IReservationResources, IReservationStatus):
     """
@@ -74,12 +76,13 @@ class IReservation(IReservationResources, IReservationStatus):
 
     PropertyStateJoined = "rsv_joining"
 
+    @abstractmethod
     def clear_dirty(self):
         """
         Marks that the reservation has no uncommitted updates or state transitions.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_actor(self) -> IActor:
         """
         Returns the actor in control of the reservation.
@@ -87,8 +90,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             the actor in control of the reservation.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_category(self) -> ReservationCategory:
         """
         Returns the reservation category.
@@ -96,8 +99,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             the reservation category.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_pending_state(self) -> ReservationPendingStates:
         """
         Returns the current pending reservation state.
@@ -105,8 +108,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             current pending reservation state.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_pending_state_name(self) -> str:
         """
         Returns the current pending reservation state name
@@ -114,8 +117,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             current pending reservation state name
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_reservation_id(self) -> ID:
         """
         Returns the reservation id.
@@ -123,8 +126,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             the reservation id.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_reservation_state(self) -> ReservationState:
         """
         Returns the current composite reservation state.
@@ -132,8 +135,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             current composite reservation state.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_slice(self) -> ISlice:
         """
         Returns the slice the reservation belongs to.
@@ -141,8 +144,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             slice the reservation belongs to.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_slice_id(self) -> ID:
         """
         Returns the slice GUID.
@@ -150,8 +153,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             slice guid
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_slice_name(self) -> str:
         """
         Returns the slice name.
@@ -159,8 +162,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             slice name
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_state(self) -> ReservationStates:
         """
         Returns the current reservation state.
@@ -168,8 +171,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             current reservation state.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_state_name(self) -> str:
         """
         Returns the current reservation state name.
@@ -177,8 +180,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             current reservation state name.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_type(self) -> ResourceType:
         """
         Returns the resource type allocated to the reservation. If no resources have yet been allocated to the
@@ -187,8 +190,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             resource type allocated to the reservation. None if no resources have been allocated to the reservation.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def has_uncommitted_transition(self) -> bool:
         """
         Checks if the reservation has uncommitted state transitions.
@@ -196,8 +199,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             true if the reservation has an uncommitted transition
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_dirty(self) -> bool:
         """
         Checks if the reservation has uncommitted updates.
@@ -205,8 +208,8 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             true if the reservation has an uncommitted updates
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_pending_recover(self) -> bool:
         """
         Checks if a recovery operation is in progress for the reservation
@@ -214,33 +217,33 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns:
             true if a recovery operation for the reservation is in progress
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def set_dirty(self):
         """
         Marks the reservation as containing uncommitted updates.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_pending_recover(self, pending_recover:bool):
+    @abstractmethod
+    def set_pending_recover(self, *, pending_recover:bool):
         """
         Indicates if a recovery operation for the reservation is going to be in progress.
 
         Args:
             pending_recover: true, a recovery operation is in progress, false - no recovery operation is in progress.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_slice(self, slice_object):
+    @abstractmethod
+    def set_slice(self, *, slice_object):
         """
         Sets the slice the reservation belongs to.
 
         Args:
             slice_object: slice the reservation belongs to
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def transition(self, prefix: str, state: ReservationStates, pending: ReservationPendingStates):
+    @abstractmethod
+    def transition(self, *, prefix: str, state: ReservationStates, pending: ReservationPendingStates):
         """
         Transitions this reservation into a new state.
 
@@ -251,5 +254,9 @@ class IReservation(IReservationResources, IReservationStatus):
         """
         raise NotImplementedError("Should have implemented this" )
 
+    @abstractmethod
     def get_notices(self) -> str:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Returns the error message associated with this reservation.
+        @return error message associated with this reservation
+        """

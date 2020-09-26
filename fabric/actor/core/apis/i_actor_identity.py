@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
@@ -37,7 +39,7 @@ class IActorIdentity:
     IActorIdentity defines the interface required to represent the identity of an actor.
     Each actor is represented by a globally unique identifier and an AuthToken
     """
-
+    @abstractmethod
     def get_guid(self) -> ID:
         """
         Returns the globally unique identifier for this actor
@@ -45,8 +47,8 @@ class IActorIdentity:
         Returns:
             actor guid
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_identity(self) -> AuthToken:
         """
         Returns the identity of the actor
@@ -54,8 +56,8 @@ class IActorIdentity:
         Returns:
             actor's identity
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_name(self) -> str:
         """
         Returns the actor name
@@ -63,4 +65,3 @@ class IActorIdentity:
         Returns:
             actor name. Note actor names are expected to be unique.
         """
-        raise NotImplementedError( "Should have implemented this" )

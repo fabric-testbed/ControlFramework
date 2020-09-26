@@ -23,19 +23,27 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
-    from fabric.actor.core.apis.i_proxy import IProxy
-    from fabric.actor.core.apis.i_actor_identity import IActorIdentity
-    from fabric.actor.core.proxies.actor_location import ActorLocation
+from fabric.actor.core.util.resource_type import ResourceType
 
 
-class IProxyFactory:
-    def new_callback(self, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:
-        raise NotImplementedError("Should have implemented this")
+class SiteResourceTypes:
+    def __init__(self, *, domain: str):
+        self.domain = domain
+        self.map = {}
 
-    def new_proxy(self, identity: IActorIdentity, location: ActorLocation, type: str = None) -> IProxy:
-        raise NotImplementedError("Should have implemented this")
+    def get_domain(self) -> str:
+        return self.domain
+
+    def get_resources(self):
+        return self.map.values()
+
+    def get_resource(self, *, rtype: ResourceType):
+        return self.map.get(rtype, None)
+
+    def get_default_resource(self):
+        next(iter(self.map.values()))
+
+    def add_resource(self, *, resource):
+        if resource.get_resource_type() in self.map:
+            raise Exception("Resource type {} already exists".format(resource.get_resource_type()))
+        self.map[resource.get_resource_type()] = resource

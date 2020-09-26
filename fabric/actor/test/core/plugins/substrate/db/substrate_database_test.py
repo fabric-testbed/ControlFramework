@@ -48,23 +48,24 @@ class SubstrateDatabaseTest(ActorDatabaseTest):
     Logger.setLevel(logging.INFO)
 
     def make_actor_database(self) -> IDatabase:
-        db = SubstrateActorDatabase(self.DbUser, self.DbPwd, self.DbName, self.DbHost, self.Logger)
+        db = SubstrateActorDatabase(user=self.DbUser, password=self.DbPwd, database=self.DbName, db_host=self.DbHost,
+                                    logger=self.Logger)
         return db
 
     def test_d_add_update_get_unit(self):
         actor = self.prepare_actor_database()
         db = actor.get_plugin().get_database()
-        slice_obj = SliceFactory.create(ID(), "slice-1")
-        db.add_slice(slice_obj)
+        slice_obj = SliceFactory.create(slice_id=ID(), name="slice-1")
+        db.add_slice(slice_object=slice_obj)
 
         rset = ResourceSet()
         term = Term(start=datetime.now(), end=datetime.now().replace(minute=20))
-        res = AuthorityReservationFactory.create(rset, term, slice_obj, ID())
-        db.add_reservation(res)
+        res = AuthorityReservationFactory.create(resources=rset, term=term, slice_obj=slice_obj, rid=ID())
+        db.add_reservation(reservation=res)
 
-        rtype = ResourceType("12")
-        u = Unit(ID(), rid=res.get_reservation_id(), slice_id=slice_obj.get_slice_id(), actor_id=actor.get_guid())
-        u.set_resource_type(rtype)
-        db.add_unit(u)
+        rtype = ResourceType(resource_type="12")
+        u = Unit(id=ID(), rid=res.get_reservation_id(), slice_id=slice_obj.get_slice_id(), actor_id=actor.get_guid())
+        u.set_resource_type(rtype=rtype)
+        db.add_unit(u=u)
 
-        self.assertIsNotNone(db.get_unit(u.get_id()))
+        self.assertIsNotNone(db.get_unit(unit_id=u.get_id()))

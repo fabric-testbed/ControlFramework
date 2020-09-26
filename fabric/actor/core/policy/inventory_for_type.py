@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
@@ -43,10 +45,10 @@ class InventoryForType:
     def get_type(self) -> ResourceType:
         return self.resource_type
 
-    def set_type(self, rtype: ResourceType):
+    def set_type(self, *, rtype: ResourceType):
         self.resource_type = rtype
 
-    def donate(self, source: IClientReservation):
+    def donate(self, *, source: IClientReservation):
         if self.source is not None:
             raise Exception("This inventory pool already has a source.")
         self.source = source
@@ -54,7 +56,7 @@ class InventoryForType:
     def get_source(self) -> IClientReservation:
         return self.source
 
-    def set_descriptor(self, rpd: ResourcePoolDescriptor):
+    def set_descriptor(self, *, rpd: ResourcePoolDescriptor):
         self.resource_pool_descriptor = rpd
 
     def get_descriptor(self) -> ResourcePoolDescriptor:
@@ -63,7 +65,8 @@ class InventoryForType:
     def get_properties(self) -> dict:
         return self.properties
 
-    def allocate(self, count:int, request: dict, resource: dict = None) -> dict:
+    @abstractmethod
+    def allocate(self, *, count:int, request: dict, resource: dict = None) -> dict:
         """
         Allocates the specified number of units given the client request
         properties. This method is called for new ticketing/extending reservations.
@@ -72,18 +75,18 @@ class InventoryForType:
         @param resource what is currently allocated
         @return the resource properties to be passed back to the client
         """
-        raise Exception("Not implemented")
 
-    def allocate_revisit(self, count: int, resource: dict):
+    @abstractmethod
+    def allocate_revisit(self, *, count: int, resource: dict):
         """
         Called during revisit to indicate that a ticketed reservation is being
         recovered.
         @param count number of units
         @param resource resource properties
         """
-        raise Exception("Not implemented")
 
-    def free(self, count: int, request: dict = None, resource: dict = None) -> dict:
+    @abstractmethod
+    def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
         """
         Frees the specified number of resource units.
         @param count number of units
@@ -91,18 +94,17 @@ class InventoryForType:
         @param resource resource properties
         @return new resource properties
         """
-        raise Exception("Not implemented")
 
+    @abstractmethod
     def get_free(self) -> int:
         """
         Returns the number of free units in the inventory pool.
         @return number of free units
         """
-        raise Exception("Not implemented")
 
+    @abstractmethod
     def get_allocated(self) -> int:
         """
         Returns the number of allocated units from this invento
         @return number of allocated units
         """
-        raise Exception("Not implemented")

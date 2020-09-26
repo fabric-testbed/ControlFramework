@@ -81,7 +81,8 @@ class Reservation(IKernelReservation):
     PropertyProperties = "ReservationProperties"
     PropertyError = "ReservationError"
 
-    def __init__(self, rid: ID = None, resources: ResourceSet = None, term: Term = None, slice_object: IKernelSlice = None):
+    def __init__(self, *, rid: ID = None, resources: ResourceSet = None, term: Term = None,
+                 slice_object: IKernelSlice = None):
         # The unique reservation identifier.
         self.rid = rid
         # Reservation category. Subclasses should supply the correct value.
@@ -181,7 +182,7 @@ class Reservation(IKernelReservation):
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
 
-    def restore(self, actor: IActor, slice_obj: ISlice, logger):
+    def restore(self, *, actor: IActor, slice_obj: ISlice, logger):
         """
         Must be invoked after creating reservation from unpickling
         """
@@ -205,38 +206,38 @@ class Reservation(IKernelReservation):
     def can_renew(self) -> bool:
         return True
 
-    def internal_error(self, err: str):
+    def internal_error(self, *, err: str):
         self.logger.error("internal error for reservation: {} : {}".format(self, err))
         raise Exception("internal error: {}".format(err))
 
-    def error(self, err: str):
+    def error(self, *, err: str):
         if self.logger is not None:
             self.logger.error("error for reservation: {} : {}".format(self, err))
         else:
             print("error for reservation: {} : {}".format(self, err))
         raise Exception("error: {}".format(err))
 
-    def log_warning(self, message: str):
+    def log_warning(self, *, message: str):
         self.logger.warning("reservation #{} : {}".format(self.rid, message))
 
-    def log_debug(self, message: str):
+    def log_debug(self, *, message: str):
         self.logger.debug("reservation #{} : {}".format(self.rid, message))
 
-    def log_info(self, message: str):
+    def log_info(self, *, message: str):
         self.logger.info("reservation #{} : {}".format(self.rid, message))
 
-    def log_error(self, message: str, exception: Exception):
+    def log_error(self, *, message: str, exception: Exception):
         traceback.print_exc()
         self.logger.warning("reservation #{} : {} : {}".format(self.rid, message, exception))
 
-    def log_remote_error(self, message: str, exception: Exception):
-        self.log_error("remote error: {}".format(message), exception)
+    def log_remote_error(self, *, message: str, exception: Exception):
+        self.log_error(message="remote error: {}".format(message), exception=exception)
 
     def claim(self):
-        self.internal_error("abstract claim trap")
+        self.internal_error(err="abstract claim trap")
 
     def reclaim(self):
-        self.internal_error("abstract reclaim trap")
+        self.internal_error(err="abstract reclaim trap")
 
     def clear_dirty(self):
         self.dirty = False
@@ -257,20 +258,20 @@ class Reservation(IKernelReservation):
     def modify_lease(self):
         return
 
-    def extend_ticket(self, actor: IActor):
-        self.internal_error("abstract extend_ticket trap")
+    def extend_ticket(self, *, actor: IActor):
+        self.internal_error(err="abstract extend_ticket trap")
 
-    def fail(self, message: str, exception: Exception = None):
+    def fail(self, *, message: str, exception: Exception = None):
         self.error_message = message
         self.bid_pending = False
-        self.transition(message, ReservationStates.Failed, ReservationPendingStates.None_)
-        self.log_error(message, exception)
+        self.transition(prefix=message, state=ReservationStates.Failed, pending=ReservationPendingStates.None_)
+        self.log_error(message=message, exception=exception)
 
-    def fail_warn(self, message: str):
+    def fail_warn(self, *, message: str):
         self.error_message = message
-        self.transition(message, ReservationStates.Failed, ReservationPendingStates.None_)
+        self.transition(prefix=message, state=ReservationStates.Failed, pending=ReservationPendingStates.None_)
         message = "reservation has failed: {} : [{}]".format(message, self)
-        self.log_warning(message)
+        self.log_warning(message=message)
 
     def get_actor(self):
         return self.actor
@@ -354,7 +355,7 @@ class Reservation(IKernelReservation):
         return self.rid
 
     def get_reservation_state(self) -> ReservationState:
-        return ReservationState(self.state, self.pending_state)
+        return ReservationState(state=self.state, pending=self.pending_state)
 
     def get_resources(self) -> ResourceSet:
         return self.resources
@@ -386,16 +387,16 @@ class Reservation(IKernelReservation):
             return None
         return self.resources.get_type()
 
-    def get_units(self, when: datetime = None) -> int:
+    def get_units(self, *, when: datetime = None) -> int:
         if when is None:
             if self.resources is None:
                 return 0
             return self.resources.get_units()
         if not self.is_terminal() and self.term is not None and self.term.contains(date=when):
-            return self.resources.get_concrete_units(when)
+            return self.resources.get_concrete_units(when=when)
         return 0
 
-    def handle_duplicate_request(self, operation: RequestTypes):
+    def handle_duplicate_request(self, *, operation: RequestTypes):
         return
 
     def has_uncommitted_transition(self) -> bool:
@@ -425,7 +426,7 @@ class Reservation(IKernelReservation):
     def is_reclaimed(self) -> bool:
         return self.state == ReservationStates.Reclaimed
 
-    def is_expired(self, t: datetime = None) -> bool:
+    def is_expired(self, *, t: datetime = None) -> bool:
         if t is None:
             return self.expired
         return self.term.expired(date=t)
@@ -472,11 +473,11 @@ class Reservation(IKernelReservation):
     def nothing_pending(self):
         """
         Ensures the reservation does not have a pending operation.
-        
+
         @throws Exception if the reservation has a pending operation.
         """
         if self.pending_state != ReservationPendingStates.None_:
-            self.error("reservation has a pending operation")
+            self.error(err="reservation has a pending operation")
 
     def prepare_probe(self):
         return
@@ -489,24 +490,24 @@ class Reservation(IKernelReservation):
         An incoming client request named this validated Reservation object for an
         existing reservation. Check to be sure that it has not been destroyed in
         a race since the validate.
-        
+
         @throws Exception thrown if the state is closed or failed
         """
         if self.state == ReservationStates.Closed or self.state == ReservationStates.Failed:
-            self.error("invalid Reservation")
+            self.error(err="invalid Reservation")
 
-    def reserve(self, policy: IPolicy):
+    def reserve(self, *, policy: IPolicy):
         return
 
     def setup(self):
         if self.resources is not None:
-            self.resources.setup(self)
+            self.resources.setup(reservation=self)
 
         if self.approved_resources is not None:
-            self.approved_resources.setup(self)
+            self.approved_resources.setup(reservation=self)
 
         if self.requested_resources is not None:
-            self.requested_resources.setup(self)
+            self.requested_resources.setup(reservation=self)
 
     def service_claim(self):
         return
@@ -538,39 +539,39 @@ class Reservation(IKernelReservation):
     def service_update_ticket(self):
         return
 
-    def set_actor(self, actor: IActor):
+    def set_actor(self, *, actor: IActor):
         self.actor = actor
 
-    def set_approved(self, term: Term = None, approved_resources: ResourceSet = None):
+    def set_approved(self, *, term: Term = None, approved_resources: ResourceSet = None):
         self.approved_term = term
         self.approved_resources = approved_resources
         self.approved = True
 
-    def set_approved_resources(self, approved_resources: ResourceSet):
+    def set_approved_resources(self, *, approved_resources: ResourceSet):
         self.approved_resources = approved_resources
 
-    def set_approved_term(self, term: Term):
+    def set_approved_term(self, *, term: Term):
         self.approved_term = term
 
-    def set_bid_pending(self, inbid: bool):
-        self.bid_pending = inbid
+    def set_bid_pending(self, *, value: bool):
+        self.bid_pending = value
 
     def set_dirty(self):
         self.dirty = True
 
-    def set_expired(self, value: bool):
+    def set_expired(self, *, value: bool):
         self.expired = value
 
-    def set_logger(self, logger):
+    def set_logger(self, *, logger):
         self.logger = logger
 
-    def set_pending_recover(self, pending_recover:bool):
+    def set_pending_recover(self, *, pending_recover:bool):
         self.pending_recover = pending_recover
 
-    def set_service_pending(self, code: int):
+    def set_service_pending(self, *, code: ReservationPendingStates):
         self.service_pending = code
 
-    def set_slice(self, slice_object: ISlice):
+    def set_slice(self, *, slice_object: ISlice):
         self.slice = slice_object
 
     def __str__(self):
@@ -591,7 +592,7 @@ class Reservation(IKernelReservation):
 
         return msg
 
-    def transition(self, prefix: str, state: ReservationStates, pending: ReservationPendingStates):
+    def transition(self, *, prefix: str, state: ReservationStates, pending: ReservationPendingStates):
         if self.state == ReservationStates.Failed:
             if self.logger is not None:
                 self.logger.debug("failed")
@@ -608,17 +609,17 @@ class Reservation(IKernelReservation):
 
         if self.actor is not None:
             from fabric.actor.core.container.globals import GlobalsSingleton
-            GlobalsSingleton.get().event_manager.dispatch_event(
-                ReservationStateTransitionEvent(self, self.get_reservation_state()))
+            GlobalsSingleton.get().event_manager.dispatch_event(event=ReservationStateTransitionEvent(
+                reservation=self, state=self.get_reservation_state()))
 
         self.dirty = True
         self.state_transition = True
 
-    def update_lease(self, incoming: IReservation, update_data):
-        self.internal_error("abstract update_lease trap")
+    def update_lease(self, *, incoming: IReservation, update_data):
+        self.internal_error(err="abstract update_lease trap")
 
-    def update_ticket(self, incoming: IReservation, update_data):
-        self.internal_error("abstract update_ticket trap")
+    def update_ticket(self, *, incoming: IReservation, update_data):
+        self.internal_error(err="abstract update_ticket trap")
 
     def validate_outgoing(self):
         return
@@ -630,27 +631,27 @@ class Reservation(IKernelReservation):
         """
         Validates the reservation. For use by prepare() methods defined by
         subclasses.
-        
+
         @throws Exception
         """
         assert self.state == ReservationStates.Nascent
         self.nothing_pending()
 
         if self.slice is None:
-            self.error("no slice specified")
+            self.error(err="no slice specified")
 
         if self.resources is None:
-            self.error("no resource set specified")
+            self.error(err="no resource set specified")
 
         if self.term is None:
-            self.error("no term specified")
+            self.error(err="no term specified")
 
         self.term.validate()
 
-    def set_local_property(self, key: str, value: str):
+    def set_local_property(self, *, key: str, value: str):
         self.resources.get_local_properties()[key] = value
 
-    def get_local_property(self, key: str) -> str:
+    def get_local_property(self, *, key: str) -> str:
         return self.resources.get_local_properties()[key]
 
     def get_join_state(self) -> JoinState:

@@ -42,125 +42,133 @@ from fabric.actor.core.apis.i_controller import IController
 
 
 class IncomingRPCEvent(IActorEvent):
-    def __init__(self, actor: IActor, rpc: IncomingRPC):
+    def __init__(self, *, actor: IActor, rpc: IncomingRPC):
         self.actor = actor
         self.rpc = rpc
 
-    def do_process_actor(self, actor: IActor):
+    def do_process_actor(self, *, actor: IActor):
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.Query:
-            actor.get_logger().info("processing query from <{}>".format(self.rpc.get_calller().get_name()))
-            result = actor.query(self.rpc.get(), self.rpc.get_caller())
+            actor.get_logger().info("processing query from <{}>".format(self.rpc.get_caller().get_name()))
+            result = actor.query(query=self.rpc.get(), caller=self.rpc.get_caller())
             from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-            RPCManagerSingleton.get().query_result(actor, self.rpc.get_callback(), self.rpc.get_message_id(),
-                                                   result, actor.get_identity())
+            RPCManagerSingleton.get().query_result(actor=actor, remote_actor=self.rpc.get_callback(),
+                                                   request_id=self.rpc.get_message_id(),
+                                                   response=result, caller=actor.get_identity())
         elif self.rpc.get_request_type() == RPCRequestType.QueryResult:
-            actor.get_logger().info("processing query response from <{}>".format(self.rpc.get_calller().get_name()))
+            actor.get_logger().info("processing query response from <{}>".format(self.rpc.get_caller().get_name()))
             result = self.rpc.get()
             if self.rpc.get_response_handler() is not None:
                 handler = self.rpc.get_response_handler()
-                handler.handle(self.rpc.get_error(), result)
+                handler.handle(status=self.rpc.get_error(), result=result)
             else:
-                actor.get_logger().warning("No response handler is associated with the queryResponse. Ignoring queryResponse")
+                actor.get_logger().warning("No response handler is associated with the queryResponse. "
+                                           "Ignoring queryResponse")
         else:
             processed = False
         return processed
 
-    def do_process_client(self, client: IClientActor):
+    def do_process_client(self, *, client: IClientActor):
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.UpdateTicket:
             client.get_logger().info("processing update ticket from <{}>".format(self.rpc.get_caller().get_name()))
-            client.update_ticket(self.rpc.get_reservation(), self.rpc.get_update_data(), self.rpc.get_caller())
+            client.update_ticket(reservation=self.rpc.get_reservation(), update_data=self.rpc.get_update_data(),
+                                 caller=self.rpc.get_caller())
             client.get_logger().info("update ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
         else:
-            processed = self.do_process_actor(client)
+            processed = self.do_process_actor(actor=client)
         return processed
 
-    def do_process_server(self, server: IServerActor):
+    def do_process_server(self, *, server: IServerActor):
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.Claim:
             server.get_logger().info("processing claim from <{}>".format(self.rpc.get_caller().get_name()))
-            server.claim(self.rpc.get_reservation(), self.rpc.get_callback(), self.rpc.get_caller())
+            server.claim(reservation=self.rpc.get_reservation(), callback=self.rpc.get_callback(),
+                         caller=self.rpc.get_caller())
             server.get_logger().info("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.Reclaim:
             server.get_logger().info("processing reclaim from <{}>".format(self.rpc.get_caller().get_name()))
-            server.reclaim(self.rpc.get_reservation(), self.rpc.get_callback(), self.rpc.get_caller())
+            server.reclaim(reservation=self.rpc.get_reservation(), callback=self.rpc.get_callback(),
+                           caller=self.rpc.get_caller())
             server.get_logger().info("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.Ticket:
             server.get_logger().info("processing ticket from <{}>".format(self.rpc.get_caller().get_name()))
-            server.ticket(self.rpc.get_reservation(), self.rpc.get_callback(), self.rpc.get_caller())
+            server.ticket(reservation=self.rpc.get_reservation(), callback=self.rpc.get_callback(),
+                          caller=self.rpc.get_caller())
             server.get_logger().info("ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.ExtendTicket:
             server.get_logger().info("processing extend ticket from <{}>".format(self.rpc.get_caller().get_name()))
-            server.extend_ticket(self.rpc.get_reservation(), self.rpc.get_caller())
+            server.extend_ticket(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
             server.get_logger().info("extend processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.Relinquish:
             server.get_logger().info("processing relinquish from <{}>".format(self.rpc.get_caller().get_name()))
-            server.relinquish(self.rpc.get_reservation(), self.rpc.get_caller())
+            server.relinquish(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
             server.get_logger().info("relinquish processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         else:
-            processed = self.do_process_actor(server)
+            processed = self.do_process_actor(actor=server)
         return processed
 
-    def do_process_broker(self, broker: IBroker):
-        processed = self.do_process_server(broker)
+    def do_process_broker(self, *, broker: IBroker):
+        processed = self.do_process_server(server=broker)
         if not processed:
-            processed = self.do_process_client(broker)
+            processed = self.do_process_client(client=broker)
         return processed
 
-    def do_process_authority(self, authority: IAuthority):
+    def do_process_authority(self, *, authority: IAuthority):
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.Redeem:
             authority.get_logger().info("processing redeem from <{}>".format(self.rpc.get_caller().get_name()))
-            authority.redeem(self.rpc.get_reservation(), self.rpc.get_callback(), self.rpc.get_caller())
+            authority.redeem(reservation=self.rpc.get_reservation(), callback=self.rpc.get_callback(),
+                             caller=self.rpc.get_caller())
 
         elif self.rpc.get_request_type() == RPCRequestType.ExtendLease:
             authority.get_logger().info("processing extend lease from <{}>".format(self.rpc.get_caller().get_name()))
-            authority.extend_lease(self.rpc.get_reservation(), self.rpc.get_caller())
+            authority.extend_lease(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
 
         elif self.rpc.get_request_type() == RPCRequestType.ModifyLease:
             authority.get_logger().info("processing modify lease from <{}>".format(self.rpc.get_caller().get_name()))
-            authority.modify_lease(self.rpc.get_reservation(), self.rpc.get_caller())
+            authority.modify_lease(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
 
         elif self.rpc.get_request_type() == RPCRequestType.Close:
             authority.get_logger().info("processing close from <{}>".format(self.rpc.get_caller().get_name()))
-            authority.relinquish(self.rpc.get_reservation(), self.rpc.get_caller())
+            authority.relinquish(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
 
         else:
-            processed = self.do_process_server(authority)
+            processed = self.do_process_server(server=authority)
         return processed
 
-    def do_process_controller(self, controller: IController):
+    def do_process_controller(self, *, controller: IController):
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.UpdateLease:
             controller.get_logger().info("processing redeem from <{}>".format(self.rpc.get_caller().get_name()))
             if self.rpc.get_reservation().get_resources().get_resources() is not None:
                 controller.get_logger().info("inbound lease is {}".format(self.rpc.get_reservation().get_resources().get_resources()))
 
-            controller.update_lease(self.rpc.get_reservation(), self.rpc.get_update_data(), self.rpc.get_caller())
+            controller.update_lease(reservation=self.rpc.get_reservation(), update_data=self.rpc.get_update_data(),
+                                    caller=self.rpc.get_caller())
         else:
-            processed = self.do_process_client(controller)
+            processed = self.do_process_client(client=controller)
         return processed
 
     def process(self):
         done = False
         if isinstance(self.actor, IAuthority):
-            done = self.do_process_authority(self.actor)
+            done = self.do_process_authority(authority=self.actor)
             if done:
                 return
 
         if isinstance(self.actor, IBroker):
-            done = self.do_process_broker(self.actor)
+            done = self.do_process_broker(broker=self.actor)
             if done:
                 return
 
         if isinstance(self.actor, IController):
-            done = self.do_process_controller(self.actor)
+            done = self.do_process_controller(controller=self.actor)
             if done:
                 return
 

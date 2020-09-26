@@ -39,21 +39,21 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
     from fabric.actor.core.apis.i_proxy import IProxy
 
-from fabric.actor.core.proxies.i_proxy_factory import IProxyFactory
+from fabric.actor.core.apis.i_proxy_factory import IProxyFactory
 
 
 class LocalProxyFactory(IProxyFactory):
-    def new_callback(self, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:
-        actor = ActorRegistrySingleton.get().get_actor(identity.get_name())
+    def new_callback(self, *, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:
+        actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
         if actor is not None:
-            return LocalReturn(actor)
+            return LocalReturn(actor=actor)
         return None
 
-    def new_proxy(self, identity: IActorIdentity, location: ActorLocation, type: str = None) -> IProxy:
-        actor = ActorRegistrySingleton.get().get_actor(identity.get_name())
+    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, type: str = None) -> IProxy:
+        actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
         if actor is not None:
             if isinstance(actor, IAuthority):
-                return LocalAuthority(actor)
+                return LocalAuthority(actor=actor)
             elif isinstance(actor, IBroker):
-                return LocalBroker(actor)
+                return LocalBroker(actor=actor)
         return None

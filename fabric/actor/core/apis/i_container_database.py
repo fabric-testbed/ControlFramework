@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -35,76 +37,85 @@ class IContainerDatabase:
     Interface for container-level databases. Defines the functions necessary for
     bootstrapping and recovering a container.
     """
-    def add_container_properties(self, properties: dict):
+
+    @abstractmethod
+    def add_container_properties(self, *, properties: dict):
         """
-        Adds the container properties list to the database.
+        Adds the container properties  to the database.
        
-        @param p container properties list.
+        @param properties container properties dict.
        
         @throws Exception if an error occurs while accessing the database
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_container_properties(self) -> dict:
         """
-        Retrieves the container properties list.
-        @return container properties list
+        Retrieves the container properties.
+        @return container properties
         @throws Exception if an error occurs while accessing the database
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_reset_state(self, value: bool):
+    @abstractmethod
+    def set_reset_state(self, *, value: bool):
         """
         Controls whether the database should reset its state.
        
         @param value TRUE if reset is required, FALSE otherwise
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_actors(self, name: str = None, actor_type: int = None) -> list:
+    @abstractmethod
+    def get_actors(self, *, name: str = None, actor_type: int = None) -> list:
         """
         Retrieves the actors defined in this container
         @return vector of properties
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_actor(self, actor_name: str) -> dict:
+    @abstractmethod
+    def get_actor(self, *, actor_name: str) -> dict:
         """
         Retrieves the actors defined in this container
         @param actor_name actor name
         @return vector of properties
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def add_actor(self, actor: IActor):
+    @abstractmethod
+    def add_actor(self, *, actor: IActor):
         """
         Adds a new actor record to the database
         @param actor actor to be added
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def remove_actor(self, actor_name: str):
+    @abstractmethod
+    def remove_actor(self, *, actor_name: str):
         """
         Removes the specified actor record
         @param actor_name actor name
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def remove_actor_database(self, actor_name: str):
+    @abstractmethod
+    def remove_actor_database(self, *, actor_name: str):
         """
         Destroy the database for this actor. Applies to actors storing their
         database on the same database server as the container database.
         @param actor_name actor name
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def add_time(self, properties: dict):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def add_time(self, *, properties: dict):
+        """
+        Adds the time record to the database
+        @params properties: properties
+        """
 
+    @abstractmethod
     def get_time(self) -> dict:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Retrieves the time record from the database
+        @return map of props
+        """

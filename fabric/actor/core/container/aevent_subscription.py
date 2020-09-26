@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
 
 class AEventSubscription:
-    def __init__(self, token: AuthToken, filters: list):
+    def __init__(self, *, token: AuthToken, filters: list):
         self.subscription_id = ID()
         self.token = token
         self.filters = {}
@@ -45,7 +45,7 @@ class AEventSubscription:
     def get_subscription_id(self):
         return self.subscription_id
 
-    def has_access(self, token: AuthToken) -> bool:
+    def has_access(self, *, token: AuthToken) -> bool:
         if token is None:
             return False
         if token.get_name() is None:
@@ -54,25 +54,26 @@ class AEventSubscription:
             return False
         return self.token.get_name() == token.get_name()
 
-    def add_event_filter(self, f: IEventFilter):
+    def add_event_filter(self, *, f: IEventFilter):
         fid = ID()
         self.filters[fid] = f
 
-    def delete_filter(self, fid: ID):
-        self.filters.pop(fid)
+    def delete_filter(self, *, fid: ID):
+        if fid in self.filters:
+            self.filters.pop(fid)
 
-    def matches(self, event: IEvent):
+    def matches(self, *, event: IEvent):
         if len(self.filters) == 0:
             return True
         for f in self.filters.values():
-            if not f.matches(event):
+            if not f.matches(event=event):
                 return False
         return True
 
-    def deliver_event(self, event: IEvent):
+    def deliver_event(self, *, event: IEvent):
         raise NotImplementedError("Should have implemented this")
 
-    def drain_events(self, timeout: int) -> list:
+    def drain_events(self, *, timeout: int) -> list:
         raise NotImplementedError("Should have implemented this")
 
     def is_abandoned(self) -> bool:

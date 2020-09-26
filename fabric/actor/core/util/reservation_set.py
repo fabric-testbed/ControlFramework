@@ -34,7 +34,7 @@ class ReservationSet:
     """
     ReservationSet is a collection of reservations indexed by ReservationID
     """
-    def __init__(self, reservations: dict = None):
+    def __init__(self, *, reservations: dict = None):
         self.reservations = {}
         if reservations is not None:
             self.reservations = reservations
@@ -45,7 +45,7 @@ class ReservationSet:
             result += "rid={} r={}".format(r.get_reservation_id(), r)
         return result
 
-    def add(self, reservation: IReservation):
+    def add(self, *, reservation: IReservation):
         """
         Adds the reservation to the set
 
@@ -60,7 +60,7 @@ class ReservationSet:
         """
         self.reservations.clear()
 
-    def contains(self, reservation: IReservation = None, rid: ID = None):
+    def contains(self, *, reservation: IReservation = None, rid: ID = None):
         """
         Checks if the reservation is part of the set
 
@@ -76,7 +76,7 @@ class ReservationSet:
             return True
         return False
 
-    def count(self, rc: ResourceCount, when: datetime):
+    def count(self, *, rc: ResourceCount, when: datetime):
         """
         Tallies up resources in the ReservationSet. Note: "just a hint" unless kernel lock is held.
 
@@ -87,7 +87,7 @@ class ReservationSet:
         for reservation in self.reservations.values():
             reservation.count(rc, when)
 
-    def get(self, rid: ID) -> IReservation:
+    def get(self, *, rid: ID) -> IReservation:
         """
         Retrieves a reservation from the set.
 
@@ -98,7 +98,7 @@ class ReservationSet:
         """
         return self.reservations.get(rid, None)
 
-    def get_exception(self, rid: ID) -> IReservation:
+    def get_exception(self, *, rid: ID) -> IReservation:
         """
         Returns the specified reservation. If the reservation is not
         present in the set, throws an exception.
@@ -125,7 +125,7 @@ class ReservationSet:
             return True
         return False
 
-    def remove(self, reservation: IReservation):
+    def remove(self, *, reservation: IReservation):
         """
         Removes the specified reservation.
 
@@ -135,7 +135,7 @@ class ReservationSet:
         if reservation.get_reservation_id() in self.reservations:
             self.reservations.pop(reservation.get_reservation_id())
 
-    def remove_by_rid(self, rid: ID):
+    def remove_by_rid(self, *, rid: ID):
         """
         Removes the specified reservation.
 
@@ -161,13 +161,13 @@ class ReservationSet:
 
         return self.reservations == other.reservations
 
+    def clone(self):
+        result = ReservationSet()
+        result.reservations = self.reservations.copy()
+        return result
+
     def values(self) -> list:
         result = []
         for r in self.reservations.values():
             result.append(r)
-        return result
-
-    def clone(self):
-        result = ReservationSet()
-        result.reservations = self.reservations.copy()
         return result

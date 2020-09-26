@@ -24,8 +24,11 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
+import os
 import threading
 import traceback
+from logging.handlers import RotatingFileHandler
+
 import click
 
 from fabric.actor.core.apis.i_actor import ActorType
@@ -43,7 +46,7 @@ class MainShell:
     PATH = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/managecli/config/manage-cli.yaml"
 
     def __init__(self):
-        self.config_processor = ConfigProcessor(self.PATH)
+        self.config_processor = ConfigProcessor(path=self.PATH)
         self.message_processor = None
         self.actor_cache = {}
         self.lock = threading.Lock()
@@ -60,12 +63,13 @@ class MainShell:
         self.val_schema = val_schema
 
         from fabric.message_bus.producer import AvroProducerApi
-        self.producer = AvroProducerApi(conf, key_schema, val_schema, self.logger)
+        self.producer = AvroProducerApi(conf=conf, key_schema=key_schema, record_schema=val_schema, logger=self.logger)
 
         consumer_conf = self.config_processor.get_kafka_config_consumer()
         topics = [self.config_processor.get_kafka_topic()]
 
-        self.message_processor = KafkaMgmtMessageProcessor(consumer_conf, self.key_schema, self.val_schema, topics,
+        self.message_processor = KafkaMgmtMessageProcessor(conf=consumer_conf, key_schema=self.key_schema,
+                                                           record_schema=self.val_schema, topics=topics,
                                                            logger=self.logger)
 
     def initialize(self):
@@ -84,11 +88,15 @@ class MainShell:
                 # TODO Actor Live Check
                 mgmt_actor = None
                 if p.get_type().lower() == ActorType.Broker.name.lower():
-                    mgmt_actor = KafkaBroker(ID(p.get_guid()), p.get_kafka_topic(), self.config_processor.get_auth(),
-                                             self.logger, self.message_processor, producer=self.producer)
+                    mgmt_actor = KafkaBroker(guid=ID(id=p.get_guid()), kafka_topic=p.get_kafka_topic(),
+                                             auth=self.config_processor.get_auth(),
+                                             logger=self.logger, message_processor=self.message_processor,
+                                             producer=self.producer)
                 else:
-                    mgmt_actor = KafkaActor(ID(p.get_guid()), p.get_kafka_topic(), self.config_processor.get_auth(),
-                                            self.logger, self.message_processor, producer=self.producer)
+                    mgmt_actor = KafkaActor(guid=ID(id=p.get_guid()), kafka_topic=p.get_kafka_topic(),
+                                            auth=self.config_processor.get_auth(),
+                                            logger=self.logger, message_processor=self.message_processor,
+                                            producer=self.producer)
                 try:
                     self.lock.acquire()
                     self.logger.debug("Added actor {} to cache".format(p.get_name()))
@@ -98,7 +106,7 @@ class MainShell:
         else:
             self.logger.debug("No peers available")
 
-    def get_mgmt_actor(self, name: str) -> KafkaActor:
+    def get_mgmt_actor(self, *, name: str) -> KafkaActor:
 
         try:
             self.lock.acquire()
@@ -137,8 +145,14 @@ class MainShell:
         log.setLevel(log_level)
         log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
 
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-        logging.basicConfig(format=log_format, filename=log_path)
+        backup_count = self.config_processor.get_log_retain()
+        max_log_size = self.config_processor.get_log_size()
+
+        file_handler = RotatingFileHandler(log_path, backupCount=int(backup_count), maxBytes=int(max_log_size))
+
+        logging.basicConfig(handlers=[file_handler], format=log_format)
 
         return log
 
@@ -206,8 +220,9 @@ def claim(ctx, broker: str, am: str, rid: str):
     """ Claim reservations for am to broker
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
-    mgmt_command.claim_resources(broker, am, MainShellSingleton.get().get_callback_topic(), rid)
+    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.claim_resources(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                 rid=rid)
     MainShellSingleton.get().stop()
 
 
@@ -220,8 +235,9 @@ def reclaim(ctx, broker: str, am: str, rid: str):
     """ Claim reservations for am to broker
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
-    mgmt_command.reclaim_resources(broker, am, MainShellSingleton.get().get_callback_topic(), rid)
+    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.reclaim_resources(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                   rid=rid)
     MainShellSingleton.get().stop()
 
 
@@ -233,8 +249,9 @@ def closereservation(ctx, rid, actor):
     """ Closes reservation for an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
-    mgmt_command.close_reservation(rid, actor, MainShellSingleton.get().get_callback_topic())
+    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.close_reservation(rid=rid, actor_name=actor,
+                                   callback_topic=MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
 
@@ -246,8 +263,9 @@ def closeslice(ctx, sliceid, actor):
     """ Closes Slice for an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
-    mgmt_command.close_slice(sliceid, actor, MainShellSingleton.get().get_callback_topic())
+    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.close_slice(slice_id=sliceid, actor_name=actor,
+                             callback_topic=MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
 
@@ -259,8 +277,9 @@ def removereservation(ctx, rid, actor):
     """ Removes reservation for an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
-    mgmt_command.remove_reservation(rid, actor, MainShellSingleton.get().get_callback_topic())
+    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.remove_reservation(rid=rid, actor_name=actor,
+                                    callback_topic=MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
 
@@ -272,8 +291,9 @@ def removeslice(ctx, sliceid, actor):
     """ Removes slice for an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ManageCommand(MainShellSingleton.get().logger)
-    mgmt_command.remove_slice(sliceid, actor, MainShellSingleton.get().get_callback_topic())
+    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.remove_slice(slice_id=sliceid, actor_name=actor,
+                              callback_topic=MainShellSingleton.get().get_callback_topic())
     MainShellSingleton.get().stop()
 
 
@@ -293,8 +313,9 @@ def slices(ctx, actor, sliceid):
     """ Get Slices from an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ShowCommand(MainShellSingleton.get().logger)
-    mgmt_command.get_slices(actor, MainShellSingleton.get().get_callback_topic(), sliceid)
+    mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.get_slices(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                            slice_id=sliceid)
     MainShellSingleton.get().stop()
 
 
@@ -306,8 +327,9 @@ def reservations(ctx, actor, rid):
     """ Get Slices from an actor
     """
     MainShellSingleton.get().start()
-    mgmt_command = ShowCommand(MainShellSingleton.get().logger)
-    mgmt_command.get_reservations(actor, MainShellSingleton.get().get_callback_topic(), rid)
+    mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.get_reservations(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                  rid=rid)
     MainShellSingleton.get().stop()
 
 

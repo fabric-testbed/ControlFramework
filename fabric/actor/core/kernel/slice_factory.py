@@ -41,11 +41,11 @@ from fabric.actor.core.util.id import ID
 
 class SliceFactory(ISliceFactory):
     @staticmethod
-    def create(slice_id: ID, name: str = None, data: ResourceData = None) -> ISlice:
+    def create(*, slice_id: ID, name: str = None, data: ResourceData = None) -> ISlice:
         return Slice(id=slice_id, name=name, data=data)
 
     @staticmethod
-    def create_instance(properties: dict) -> ISlice:
+    def create_instance(*, properties: dict) -> ISlice:
         if Constants.PropertyPickleProperties not in properties:
             raise Exception("Invalid arguments")
         deserialized_slice = None

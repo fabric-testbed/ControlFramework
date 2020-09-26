@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_server_reservation import IServerReservation
@@ -37,14 +39,15 @@ class IBrokerReservation(IServerReservation):
     """
     IBrokerReservation defines the reservation interface for brokers processing requests for resources.
     """
+    @abstractmethod
     def get_authority(self) -> IAuthorityProxy:
         """
         Returns a proxy to the authority in control of the resources represented by the reservation.
 
         @returns authority proxy
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_source(self) -> IClientReservation:
         """
         Returns source for this reservation. For optional use by policy
@@ -53,8 +56,8 @@ class IBrokerReservation(IServerReservation):
 
         @returns the source reservation
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def is_closed_in_priming(self) -> bool:
         """
         Checks if the reservation was closed while it was in the Priming
@@ -69,9 +72,9 @@ class IBrokerReservation(IServerReservation):
         get_previous_resources(), and the current update that was
         applied to the reservation will be in get_approved_resources()
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_source(self, source: IClientReservation):
+    @abstractmethod
+    def set_source(self, *, source: IClientReservation):
         """
         Sets the source for this reservation. For optional use by policy
         to track where it filled this reservation from, e.g., for use on
@@ -79,4 +82,3 @@ class IBrokerReservation(IServerReservation):
 
         @params source : the source reservation.
         """
-        raise NotImplementedError("Should have implemented this")

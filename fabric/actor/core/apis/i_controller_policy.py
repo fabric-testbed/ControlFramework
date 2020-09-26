@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_client_policy import IClientPolicy
 
@@ -37,15 +39,18 @@ class IControllerPolicy(IClientPolicy):
     """
     IControllerPolicy defines the policy interface for an actor acting in the orchestrator role.
     """
-    def get_redeeming(self, cycle: int) -> ReservationSet:
+
+    @abstractmethod
+    def get_redeeming(self, *, cycle: int) -> ReservationSet:
         """
         Returns a set of reservations that must be redeemed.
         @params cycle the current cycle
         @returns reservations to redeem
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def lease_satisfies(self, request_resources: ResourceSet, actual_resources: ResourceSet, requested_term: Term, actual_term: Term):
+    @abstractmethod
+    def lease_satisfies(self, *, request_resources: ResourceSet, actual_resources: ResourceSet, requested_term: Term,
+                        actual_term: Term):
         """
         Checks if the resources and term received in a lease are in compliance
         with what was initially requested. The policy can prevent the application
@@ -61,4 +66,3 @@ class IControllerPolicy(IClientPolicy):
                    term received from site authority
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

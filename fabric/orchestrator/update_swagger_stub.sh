@@ -11,6 +11,7 @@ STUB_DIR=my_server
 
 FILES_TO_COPY=(
   swagger_server/__init__.py
+  swagger_server/__main__.py
 )
 
 

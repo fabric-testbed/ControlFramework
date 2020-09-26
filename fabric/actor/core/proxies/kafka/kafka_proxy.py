@@ -65,8 +65,8 @@ class KafkaProxy(Proxy, ICallbackProxy):
     TypeBroker = 2
     TypeSite = 3
 
-    def __init__(self, kafka_topic: str, identity: AuthToken, logger):
-        super().__init__(identity)
+    def __init__(self, *, kafka_topic: str, identity: AuthToken, logger):
+        super().__init__(auth=identity)
         self.kafka_topic = kafka_topic
         self.logger = logger
         self.proxy_type = Constants.ProtocolKafka
@@ -92,28 +92,28 @@ class KafkaProxy(Proxy, ICallbackProxy):
             traceback.print_exc()
             self.logger.error("Failed to create kafka producer {}".format(e))
 
-    def execute(self, request: IRPCRequestState):
+    def execute(self, *, request: IRPCRequestState):
         avro_message = None
         if request.get_type() == RPCRequestType.Query:
             avro_message = QueryAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.properties = request.query
             avro_message.callback_topic = request.callback_topic
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.QueryResult:
             avro_message = QueryResultAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.request_id = str(request.request_id)
             avro_message.properties = request.query
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.FailedRPC:
             avro_message = FailedRPCAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.request_id = str(request.request_id)
             avro_message.request_type = request.failed_request_type.value
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
             if request.failed_reservation_id is not None:
                 avro_message.reservation_id = request.failed_reservation_id
@@ -127,27 +127,27 @@ class KafkaProxy(Proxy, ICallbackProxy):
         if self.producer is None:
             self.producer = self.create_kafka_producer()
 
-        if self.producer is not None and self.producer.produce_sync(self.kafka_topic, avro_message):
+        if self.producer is not None and self.producer.produce_sync(topic=self.kafka_topic, record=avro_message):
             self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def prepare_query(self, callback: ICallbackProxy, query: dict, caller: AuthToken):
+    def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken):
         request = KafkaProxyRequestState()
         request.query = query
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request
 
-    def prepare_query_result(self, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
+    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.query = response
         request.request_id = request_id
         request.caller = caller
         return request
 
-    def prepare_failed_request(self, request_id: str, failed_request_type,
+    def prepare_failed_request(self, *, request_id: str, failed_request_type,
                                failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.failed_request_type = failed_request_type

@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.kernel.incoming_rpc import IncomingRPC
 
 if TYPE_CHECKING:
+    from fabric.actor.core.util.id import ID
     from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
@@ -37,9 +38,9 @@ if TYPE_CHECKING:
 
 
 class IncomingReservationRPC(IncomingRPC):
-    def __init__(self, message_id: str, request_type: RPCRequestType, reservation: IReservation,
-                 callback: ICallbackProxy, update_data: UpdateData, caller: AuthToken):
-        super().__init__(message_id, request_type, callback, caller)
+    def __init__(self, *, message_id: ID, request_type: RPCRequestType, reservation: IReservation,
+                 callback: ICallbackProxy = None, update_data: UpdateData = None, caller: AuthToken = None):
+        super().__init__(message_id=message_id, request_type=request_type, callback=callback, caller=caller)
         self.reservation = reservation
         self.update_data = update_data
 

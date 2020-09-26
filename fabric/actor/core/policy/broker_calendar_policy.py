@@ -54,8 +54,8 @@ class BrokerCalendarPolicy(BrokerPolicy):
     PropertyTypeCount = "type.count"
     PropertyDiscoverTypes = "query.discovertypes"
 
-    def __init__(self, actor: IBroker):
-        super().__init__(actor)
+    def __init__(self, *, actor: IBroker):
+        super().__init__(actor=actor)
         # The broker calendar: list of client requests, source reservations, and allocated reservations.
         self.calendar = None
         # Indicates if this actor is initialized
@@ -90,7 +90,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
 
-    def add_for_approval_calendar(self, reservation: IBrokerReservation):
+    def add_for_approval_calendar(self, *, reservation: IBrokerReservation):
         """
         Adds the reservation to the approval list and removes the
         reservation from the closing calendar (if it belongs to it).
@@ -99,40 +99,42 @@ class BrokerCalendarPolicy(BrokerPolicy):
         @throws Exception in case of error
         """
         if reservation.get_term() is not None:
-            self.add_for_approval(reservation)
+            self.add_for_approval(reservation=reservation)
 
-    def add_to_calendar(self, reservation: IBrokerReservation):
+    def add_to_calendar(self, *, reservation: IBrokerReservation):
         """
         Records the reservation in the calendar.
        
         @param reservation reservation
         """
         if reservation.get_approved_resources() is not None and not reservation.is_failed():
-            self.calendar.add_outlay(reservation.get_source(), reservation,
-                                     reservation.get_approved_term().get_new_start_time(),
-                                     reservation.get_approved_term().get_end_time())
+            self.calendar.add_outlay(source=reservation.get_source(), client=reservation,
+                                     start=reservation.get_approved_term().get_new_start_time(),
+                                     end=reservation.get_approved_term().get_end_time())
 
             if reservation.get_term() is not None:
-                self.calendar.remove_closing(reservation)
+                self.calendar.remove_closing(reservation=reservation)
 
-            self.calendar.add_closing(reservation, self.clock.cycle(when=reservation.get_approved_term().get_end_time()))
+            self.calendar.add_closing(reservation=reservation,
+                                      cycle=self.clock.cycle(when=reservation.get_approved_term().get_end_time()))
 
             self.logger.debug("AgentAllocated: units= {} res= {} term= {} "
                               .format(reservation.get_approved_resources().get_units(),
                                       reservation, reservation.get_approved_term()))
         else:
-            reservation.fail("Either there are no resources on the source or the reservation failed", None)
+            reservation.fail(message="Either there are no resources on the source or the reservation failed",
+                             exception=None)
 
-    def approve(self, reservation: IBrokerReservation):
+    def approve(self, *, reservation: IBrokerReservation):
         # Our current policy is to allow the allocation code to issue a ticket
         # but to prevent the ticket from being sent to the client until the
         # administrator approves the allocation.
 
-        self.remove_for_approval(reservation)
+        self.remove_for_approval(reservation=reservation)
 
-        self.add_to_calendar(reservation)
+        self.add_to_calendar(reservation=reservation)
 
-        reservation.set_bid_pending(False)
+        reservation.set_bid_pending(value=False)
 
     def check_pending(self):
         """
@@ -153,25 +155,25 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
             if not reservation.is_terminal():
                 if reservation.is_renewable():
-                    cycle = self.get_renew(reservation)
-                    reservation.set_renew_time(cycle)
+                    cycle = self.get_renew(reservation=reservation)
+                    reservation.set_renew_time(time=cycle)
                     reservation.set_dirty()
 
             self.calendar.remove_pending(reservation)
 
-    def close(self, reservation:IReservation):
+    def close(self, *, reservation:IReservation):
         if isinstance(reservation, IClientReservation):
-            rset = self.calendar.get_outlays(reservation)
+            rset = self.calendar.get_outlays(source=reservation)
             self.logger.debug("Client reservation; get outlays: {}".format(rset))
-            self.actor.close_reservations(rset)
+            self.actor.close_reservations(reservations=rset)
         else:
             self.logger.debug("Removing reservation from scheduled or in progress list")
-            self.calendar.remove_scheduled_or_in_progress(reservation)
+            self.calendar.remove_scheduled_or_in_progress(reservation=reservation)
 
-    def closed(self, reservation: IReservation):
-        self.release(reservation)
+    def closed(self, *, reservation: IReservation):
+        self.release(reservation=reservation)
 
-    def count(self, rvset: ReservationSet, when: datetime):
+    def count(self, *, rvset: ReservationSet, when: datetime):
         """
         Returns a counter for the passed set and the specified data.
        
@@ -181,10 +183,10 @@ class BrokerCalendarPolicy(BrokerPolicy):
         @return counter
         """
         rc = ResourceCount()
-        rvset.count(rc, when)
+        rvset.count(rc=rc, when=when)
         return rc
 
-    def donate_reservation(self, reservation: IClientReservation):
+    def donate_reservation(self, *, reservation: IClientReservation):
         term = reservation.get_term()
         term.validate()
 
@@ -193,22 +195,23 @@ class BrokerCalendarPolicy(BrokerPolicy):
         term = reservation.get_previous_term()
 
         if term is not None:
-            self.calendar.remove_closing(reservation)
+            self.calendar.remove_closing(reservation=reservation)
 
-        self.calendar.add_source(reservation)
+        self.calendar.add_source(source=reservation)
         term = reservation.get_term()
-        self.calendar.add_closing(reservation, self.clock.cycle(when=term.get_end_time()))
+        self.calendar.add_closing(reservation=reservation,
+                                  cycle=self.clock.cycle(when=term.get_end_time()))
 
         if reservation.is_renewable():
-            self.calendar.add_renewing(reservation, reservation.get_renew_time())
+            self.calendar.add_renewing(reservation=reservation, cycle=reservation.get_renew_time())
 
-    def finish(self, cycle: int):
-        self.calendar.tick(cycle)
+    def finish(self, *, cycle: int):
+        self.calendar.tick(cycle=cycle)
 
-    def get_closing(self, cycle: int) -> ReservationSet:
-        return self.calendar.get_closing(cycle)
+    def get_closing(self, *, cycle: int) -> ReservationSet:
+        return self.calendar.get_closing(cycle=cycle)
 
-    def get_renew(self, reservation: IClientReservation) -> int:
+    def get_renew(self, *, reservation: IClientReservation) -> int:
         """
         Returns the cycle when the reservation must be renewed.
        
@@ -223,39 +226,40 @@ class BrokerCalendarPolicy(BrokerPolicy):
     def initialize(self):
         if not self.initialized:
             super().initialize()
-            self.calendar = BrokerCalendar(self.clock)
+            self.calendar = BrokerCalendar(clock=self.clock)
 
             if self.required_approval:
                 self.for_approval = ReservationSet()
 
             self.initialized = True
 
-    def release(self, reservation):
+    def release(self, *, reservation):
         if isinstance(reservation, IBrokerReservation):
             self.logger.debug("Broker reservation")
             source = reservation.get_source()
             if source is not None:
                 self.logger.debug("Broker reservation; removing outlay")
-                self.calendar.remove_outlay(source, reservation)
+                self.calendar.remove_outlay(source=source, client=reservation)
+
         elif isinstance(reservation, IClientReservation):
             self.logger.debug("Client reservation; removing source calendar")
-            self.calendar.remove_source_calendar(reservation)
+            self.calendar.remove_source_calendar(source=reservation)
 
-    def release_not_approved(self, reservation: IBrokerReservation):
-        self.release(reservation)
+    def release_not_approved(self, *, reservation: IBrokerReservation):
+        self.release(reservation=reservation)
 
-    def remove(self, reservation: IReservation):
-        self.calendar.remove(reservation)
+    def remove(self, *, reservation: IReservation):
+        self.calendar.remove(reservation=reservation)
 
-    def revisit(self, reservation: IReservation):
-        super().revisit(reservation)
+    def revisit(self, *, reservation: IReservation):
+        super().revisit(reservation=reservation)
 
         if isinstance(reservation, IClientReservation):
-            self.revisit_client(reservation)
+            self.revisit_client(reservation=reservation)
         elif isinstance(reservation, IBrokerReservation):
-            self.revisit_server(reservation)
+            self.revisit_server(reservation=reservation)
 
-    def revisit_client(self, reservation: IClientReservation):
+    def revisit_client(self, *, reservation: IClientReservation):
         """
         Recovers a source reservation.
        
@@ -265,15 +269,13 @@ class BrokerCalendarPolicy(BrokerPolicy):
         """
         if reservation.get_state() == ReservationStates.Nascent:
             if reservation.get_pending_state() == ReservationPendingStates.None_:
-                self.calendar.add_pending(reservation)
+                self.calendar.add_pending(reservation=reservation)
 
         elif reservation.get_state() == ReservationStates.Ticketed:
-            if reservation.get_pending_state() == ReservationPendingStates.None_:
-                reservation
-            elif reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket:
-                self.calendar.add_pending(reservation)
+            if reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket:
+                self.calendar.add_pending(reservation=reservation)
 
-    def revisit_server(self, reservation: IBrokerReservation):
+    def revisit_server(self, *, reservation: IBrokerReservation):
         """
         Recovers a client reservation.
        
@@ -288,14 +290,15 @@ class BrokerCalendarPolicy(BrokerPolicy):
                 if source is None:
                     raise Exception("Missing source reservation")
 
-                self.calendar.add_outlay(source,
-                                         reservation,
-                                         reservation.get_term().get_new_start_time(),
-                                         reservation.get_term().get_end_time())
+                self.calendar.add_outlay(source=source,
+                                         client=reservation,
+                                         start=reservation.get_term().get_new_start_time(),
+                                         end=reservation.get_term().get_end_time())
 
-                self.calendar.add_closing(reservation, self.clock.cycle(when=reservation.get_term().get_end_time()))
+                self.calendar.add_closing(reservation=reservation,
+                                          cycle=self.clock.cycle(when=reservation.get_term().get_end_time()))
 
-    def query(self, p):
+    def query(self, *, p):
         result = {}
         if p is not None and self.PropertyDiscoverTypes in p:
             holdings = self.calendar.get_holdings()
@@ -308,8 +311,8 @@ class BrokerCalendarPolicy(BrokerPolicy):
                         if rdata is not None:
                             resource_properties = rdata.get_resource_properties()
                             if resource_properties is not None:
-                                result[self.PropertyTypeNamePrefix + count] = ticket.get_type().get_type()
-                                result[self.PropertyTypeDescriptionPrefix + count] = p
+                                result[self.PropertyTypeNamePrefix + str(count)] = ticket.get_type().get_type()
+                                result[self.PropertyTypeDescriptionPrefix + str(count)] = p
                                 count += 1
                 except Exception as e:
                     self.logger.error("query", e)

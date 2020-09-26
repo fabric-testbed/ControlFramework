@@ -36,55 +36,55 @@ class KafkaBrokerService(KafkaClientActorService, KafkaServerActorService):
     def __init__(self):
         super().__init__()
 
-    def process(self, message: IMessageAvro):
+    def process(self, *, message: IMessageAvro):
         callback_topic = message.get_callback_topic()
         result = None
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
         if message.get_message_name() == IMessageAvro.ClaimResources:
-            result = self.claim_resources(message)
+            result = self.claim_resources(request=message)
         elif message.get_message_name() == IMessageAvro.ReclaimResources:
-            result = self.reclaim_resources(message)
+            result = self.reclaim_resources(request=message)
         elif message.get_message_name() == IMessageAvro.AddReservation:
-            result = self.add_reservation(message)
+            result = self.add_reservation(request=message)
         elif message.get_message_name() == IMessageAvro.AddReservations:
-            result = self.add_reservations(message)
+            result = self.add_reservations(request=message)
         elif message.get_message_name() == IMessageAvro.DemandReservation:
-            result = self.demand_reservation(message)
+            result = self.demand_reservation(request=message)
         elif message.get_message_name() == IMessageAvro.GetActorsRequest:
-            result = self.get_brokers(message)
+            result = self.get_brokers(request=message)
         elif message.get_message_name() == IMessageAvro.GetPoolInfoRequest:
-            result = self.get_pool_info(message)
+            result = self.get_pool_info(request=message)
         elif message.get_message_name() == IMessageAvro.ExtendReservation:
-            result = self.extend_reservation(message)
+            result = self.extend_reservation(request=message)
         elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Broker.name:
-            self.get_broker_reservations(message)
+            self.get_broker_reservations(request=message)
         elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.InventorySlice.name:
-            self.get_inventory_slices(message)
+            self.get_inventory_slices(request=message)
         elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Client.name:
-            self.get_inventory_reservations(message)
+            self.get_inventory_reservations(request=message)
         elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.ClientSlice.name:
-            self.get_client_slices(message)
+            self.get_client_slices(request=message)
         elif message.get_message_name() == IMessageAvro.AddSlice and message.slice_obj is not None and \
                 (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
-            self.add_client_slice(message)
+            self.add_client_slice(request=message)
         else:
-            super().process(message)
+            super().process(message=message)
             return
 
         if callback_topic is None:
             self.logger.debug("No callback specified, ignoring the message")
 
-        if self.producer.produce_sync(callback_topic, result):
+        if self.producer.produce_sync(topic=callback_topic, record=result):
             self.logger.debug("Successfully send back response: {}".format(result.to_dict()))
         else:
             self.logger.debug("Failed to send back response: {}".format(result.to_dict()))

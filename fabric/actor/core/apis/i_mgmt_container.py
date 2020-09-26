@@ -24,113 +24,121 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
+from abc import abstractmethod
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_component import IComponent
 
+
 if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
+    from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
+    from fabric.actor.core.apis.i_mgmt_controller import IMgmtController
+    from fabric.actor.core.apis.i_mgmt_broker import IMgmtBroker
+    from fabric.actor.core.apis.i_mgmt_authority import IMgmtAuthority
+    from fabric.message_bus.messages.actor_avro import ActorAvro
+    from fabric.message_bus.messages.proxy_avro import ProxyAvro
 
 
 class IMgmtContainer(IComponent):
-    def get_actor(self, guid: ID):
+    @abstractmethod
+    def get_actor(self, *, guid: ID) -> IMgmtActor:
         """
         Obtains the specified actor.
         @param guid
                    actor guid
         @return proxy to the actor on success, null otherwise. The returned proxy
         """
-        raise NotImplementedError
 
-    def get_controller(self, guid: ID):
+    @abstractmethod
+    def get_controller(self, *, guid: ID) -> IMgmtController:
         """
         Obtains the specified orchestrator.
         @param guid guid
         @return specified orchestrator
         """
-        raise NotImplementedError
 
-    def get_broker(self, guid: ID):
+    @abstractmethod
+    def get_broker(self, *, guid: ID) -> IMgmtBroker:
         """
         Obtains the specified broker
         @param guid guid
         @return specified broker
         """
-        raise NotImplementedError
 
-    def get_authority(self, guid: ID):
+    @abstractmethod
+    def get_authority(self, *, guid: ID) -> IMgmtAuthority:
         """
         Obtains the specified authority
         @param guid guid
         @return specified authority
         """
-        raise NotImplementedError
 
-    def get_actors(self) -> list:
+    @abstractmethod
+    def get_actors(self) -> List[ActorAvro]:
         """
         Obtains a list of all active actors in the container.
         @return list of actors. Always non-null.
         """
-        raise NotImplementedError
 
-    def get_actors_from_database(self) -> list:
+    @abstractmethod
+    def get_actors_from_database(self) -> List[ActorAvro]:
         """
         Obtains a list of all active and suspended actors in the container.
         @return list of actors. Always non-null.
         """
-        raise NotImplementedError
 
-    def get_authorities(self) -> list:
+    @abstractmethod
+    def get_authorities(self) -> List[ActorAvro]:
         """
         Obtains a list of all active site authorities.
         @return list of actors. Always non-null.
         """
-        raise NotImplementedError
 
-    def get_brokers(self) -> list:
+    @abstractmethod
+    def get_brokers(self) -> List[ActorAvro]:
         """
         Obtains a list of all active brokers.
         @return list of actors. Always non-null.
         """
-        raise NotImplementedError
 
-    def get_controllers(self) -> list:
+    @abstractmethod
+    def get_controllers(self) -> List[ActorAvro]:
         """
         Obtains a list of all active controllers.
         @return list of actors. Always non-null.
         """
-        raise NotImplementedError
 
-    def get_proxies(self, protocol: str) -> list:
+    @abstractmethod
+    def get_proxies(self, *, protocol: str) -> List[ProxyAvro]:
         """
         Obtains a list of all proxies to actors using the specified protocol
         @param protocol protocol
         @return list of proxies. Always non-null.
         """
-        raise NotImplementedError
 
-    def get_broker_proxies(self, protocol: str) -> list:
+    @abstractmethod
+    def get_broker_proxies(self, *, protocol: str) -> List[ProxyAvro]:
         """
         Obtains a list of all proxies to brokers using the specified protocol
         @param protocol protocol
         @return list of proxies. Always non-null.
         """
-        raise NotImplementedError
 
-    def get_authority_proxies(self, protocol: str) -> list:
+    @abstractmethod
+    def get_authority_proxies(self, *, protocol: str) -> List[ProxyAvro]:
         """
         Obtains a list of all proxies to brokers using the specified protocol
         @param protocol protocol
         @return list of proxies. Always non-null.
         """
-        raise NotImplementedError
 
-    def get_management_object(self, key: ID):
+    @abstractmethod
+    def get_management_object(self, *, key: ID) -> IComponent:
         """
         Obtains the specified management object
         @param key management object id
         @return management object proxy on success, null otherwise. The returned
                 proxy will share the same credentials.
         """
-        raise NotImplementedError
-

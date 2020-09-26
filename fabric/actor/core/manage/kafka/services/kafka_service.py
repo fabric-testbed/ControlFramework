@@ -36,18 +36,18 @@ class KafkaService:
         self.producer = GlobalsSingleton.get().get_kafka_producer()
         self.logger = None
 
-    def set_logger(self, logger):
+    def set_logger(self, *, logger):
         self.logger = logger
         if self.producer is not None:
-            self.producer.set_logger(logger)
+            self.producer.set_logger(logger=logger)
 
-    def update_status(self, incoming: ResultAvro, outgoing: ResultAvro):
+    def update_status(self, *, incoming: ResultAvro, outgoing: ResultAvro):
         outgoing.set_code(incoming.get_code())
         outgoing.set_details(incoming.get_details())
         outgoing.set_message(incoming.get_message())
         return outgoing
 
-    def get_first(self, result_list: list):
+    def get_first(self, *, result_list: list):
         if result_list is not None and len(result_list) > 0:
             return result_list.__iter__().__next__()
         return None

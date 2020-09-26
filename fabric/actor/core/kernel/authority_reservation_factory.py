@@ -37,7 +37,7 @@ if TYPE_CHECKING:
 
 class AuthorityReservationFactory(IAuthorityReservationFactory):
     @staticmethod
-    def create(resources: ResourceSet, term: Term, slice_obj: ISlice, rid: ID):
+    def create(*, resources: ResourceSet, term: Term, slice_obj: ISlice, rid: ID):
         from fabric.actor.core.kernel.authority_reservation import AuthorityReservation
-        res = AuthorityReservation(rid, resources, term, slice_obj)
+        res = AuthorityReservation(rid=rid, resources=resources, term=term, slice_object=slice_obj)
         return res

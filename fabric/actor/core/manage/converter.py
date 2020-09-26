@@ -26,12 +26,13 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric.actor.core.core.actor_identity import ActorIdentity
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.core.unit import Unit
@@ -39,6 +40,7 @@ from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.message_bus.messages.actor_avro import ActorAvro
 from fabric.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
 from fabric.message_bus.messages.proxy_avro import ProxyAvro
 from fabric.message_bus.messages.lease_reservation_state_avro import LeaseReservationStateAvro
 from fabric.message_bus.messages.reservation_mng import ReservationMng
@@ -64,7 +66,7 @@ if TYPE_CHECKING:
 
 class Converter:
     @staticmethod
-    def get_resource_data(slice_mng: SliceAvro) -> ResourceData:
+    def get_resource_data(*, slice_mng: SliceAvro) -> ResourceData:
         rd = ResourceData()
 
         rd.request_properties = slice_mng.get_request_properties()
@@ -74,23 +76,27 @@ class Converter:
         return rd
 
     @staticmethod
-    def absorb_res_properties(rsv_mng: ReservationMng, res_obj: IReservation):
-        res_obj.get_resources().set_local_properties(
-            PropList.merge_properties(rsv_mng.get_local_properties(), res_obj.get_resources().get_local_properties()))
+    def absorb_res_properties(*, rsv_mng: ReservationMng, res_obj: IReservation):
+        res_obj.get_resources().set_local_properties(p=
+            PropList.merge_properties(incoming=rsv_mng.get_local_properties(),
+                                      outgoing=res_obj.get_resources().get_local_properties()))
 
-        res_obj.get_resources().set_config_properties(
-            PropList.merge_properties(rsv_mng.get_config_properties(), res_obj.get_resources().get_config_properties()))
+        res_obj.get_resources().set_config_properties(p=
+            PropList.merge_properties(incoming=rsv_mng.get_config_properties(),
+                                      outgoing=res_obj.get_resources().get_config_properties()))
 
-        res_obj.get_resources().set_request_properties(
-            PropList.merge_properties(rsv_mng.get_request_properties(), res_obj.get_resources().get_request_properties()))
+        res_obj.get_resources().set_request_properties(p=
+            PropList.merge_properties(incoming=rsv_mng.get_request_properties(),
+                                      outgoing=res_obj.get_resources().get_request_properties()))
 
-        res_obj.get_resources().set_resource_properties(
-            PropList.merge_properties(rsv_mng.get_resource_properties(), res_obj.get_resources().get_resource_properties()))
+        res_obj.get_resources().set_resource_properties(p=
+            PropList.merge_properties(incoming=rsv_mng.get_resource_properties(),
+                                      outgoing=res_obj.get_resources().get_resource_properties()))
 
         return res_obj
 
     @staticmethod
-    def fill_reservation(reservation: IReservation, full: bool) -> ReservationMng:
+    def fill_reservation(*, reservation: IReservation, full: bool) -> ReservationMng:
         rsv_mng = None
 
         if isinstance(reservation, IControllerReservation):
@@ -126,25 +132,25 @@ class Converter:
             rsv_mng.set_renew_time(reservation.get_renew_time())
 
         if reservation.get_term() is not None:
-            rsv_mng.set_start(ActorClock.to_milliseconds(reservation.get_term().get_start_time()))
-            rsv_mng.set_end(ActorClock.to_milliseconds(reservation.get_term().get_end_time()))
+            rsv_mng.set_start(ActorClock.to_milliseconds(when=reservation.get_term().get_start_time()))
+            rsv_mng.set_end(ActorClock.to_milliseconds(when=reservation.get_term().get_end_time()))
         else:
             if reservation.get_requested_term() is not None:
-                rsv_mng.set_start(ActorClock.to_milliseconds(reservation.get_requested_term().get_start_time()))
-                rsv_mng.set_end(ActorClock.to_milliseconds(reservation.get_requested_term().get_end_time()))
+                rsv_mng.set_start(ActorClock.to_milliseconds(when=reservation.get_requested_term().get_start_time()))
+                rsv_mng.set_end(ActorClock.to_milliseconds(when=reservation.get_requested_term().get_end_time()))
 
         if reservation.get_requested_term() is not None:
-            rsv_mng.set_requested_end(ActorClock.to_milliseconds(reservation.get_requested_term().get_end_time()))
+            rsv_mng.set_requested_end(ActorClock.to_milliseconds(when=reservation.get_requested_term().get_end_time()))
 
         rsv_mng.set_notices(reservation.get_notices())
 
         if full:
-            rsv_mng = Converter.attach_res_properties(rsv_mng, reservation)
+            rsv_mng = Converter.attach_res_properties(mng=rsv_mng, reservation=reservation)
 
         return rsv_mng
 
     @staticmethod
-    def attach_res_properties(mng: ReservationMng, reservation: IReservation):
+    def attach_res_properties(*, mng: ReservationMng, reservation: IReservation):
         resource = None
         config = None
         local = None
@@ -188,7 +194,7 @@ class Converter:
         return mng
 
     @staticmethod
-    def fill_reservation_state(res: dict) -> ReservationStateAvro:
+    def fill_reservation_state(*, res: dict) -> ReservationStateAvro:
         result = None
         if 'rsv_joining' in res:
             result = LeaseReservationStateAvro()
@@ -203,55 +209,55 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_reservation_states(res_list: list) -> list:
+    def fill_reservation_states(*, res_list: list) -> List[ReservationStateAvro]:
         result = []
         for r in res_list:
-            rstate = Converter.fill_reservation_state(r)
+            rstate = Converter.fill_reservation_state(res=r)
             result.append(rstate)
 
         return result
 
     @staticmethod
-    def fill_client(client_mng: ClientMng) -> Client:
+    def fill_client(*, client_mng: ClientMng) -> Client:
         result = Client()
-        result.set_name(client_mng.get_name())
-        result.set_guid(ID(client_mng.get_guid()))
+        result.set_name(name=client_mng.get_name())
+        result.set_guid(guid=ID(id=client_mng.get_guid()))
         return result
 
     @staticmethod
-    def fill_client_mng(client: dict) -> ClientMng:
+    def fill_client_mng(*, client: dict) -> ClientMng:
         result = ClientMng()
-        result.set_name(client['clt_name'])
-        result.set_guid(client['clt_guid'])
+        result.set_name(name=client['clt_name'])
+        result.set_guid(guid=client['clt_guid'])
         return result
 
     @staticmethod
-    def fill_clients(client_list: list) -> list:
+    def fill_clients(*, client_list: list) -> List[ClientMng]:
         result = []
         for c in client_list:
-            mng = Converter.fill_client_mng(c)
+            mng = Converter.fill_client_mng(client=c)
             result.append(mng)
 
         return result
 
     @staticmethod
-    def fill_unit_mng(properties: dict) -> UnitAvro:
+    def fill_unit_mng(*, properties: dict) -> UnitAvro:
         result = UnitAvro()
         unit = Unit.create_instance(properties)
         result.properties = unit.properties
         return result
 
     @staticmethod
-    def fill_units(unit_list: list) -> list:
+    def fill_units(*, unit_list: list) -> List[UnitAvro]:
         result = []
         for u in unit_list:
-            mng = Converter.fill_unit_mng(u)
+            mng = Converter.fill_unit_mng(properties=u)
             result.append(mng)
 
         return result
 
     @staticmethod
-    def fill_proxy(proxy: IProxy) -> ProxyAvro:
+    def fill_proxy(*, proxy: IProxy) -> ProxyAvro:
         result = ProxyAvro()
         result.set_name(proxy.get_name())
         result.set_guid(str(proxy.get_guid()))
@@ -265,27 +271,28 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_proxies(proxies: list) -> list:
+    def fill_proxies(*, proxies: list) -> List[ProxyAvro]:
         result = []
         for p in proxies:
-            proxy = Converter.fill_proxy(p)
+            proxy = Converter.fill_proxy(proxy=p)
             result.append(proxy)
 
         return result
 
     @staticmethod
-    def get_agent_proxy(mng: ProxyAvro):
+    def get_agent_proxy(*, mng: ProxyAvro):
         try:
-            location = ActorLocation(mng.get_kafka_topic())
-            identity = ActorIdentity(mng.get_name(), ID(mng.get_guid()))
+            location = ActorLocation(location=mng.get_kafka_topic())
+            identity = ActorIdentity(name=mng.get_name(), guid=ID(id=mng.get_guid()))
             from fabric.actor.core.container.container import Container
-            return Container.get_proxy(mng.get_protocol(), identity, location, mng.get_type())
+            return Container.get_proxy(protocol=mng.get_protocol(), identity=identity, location=location,
+                                       type=mng.get_type())
         except Exception as e:
             traceback.print_exc()
             return None
 
     @staticmethod
-    def get_resource_data_from_res(res_mng: ReservationMng) -> ResourceData:
+    def get_resource_data_from_res(*, res_mng: ReservationMng) -> ResourceData:
         rd = ResourceData()
         rd.request_properties = res_mng.get_request_properties()
         rd.resource_properties = res_mng.get_resource_properties()
@@ -295,13 +302,13 @@ class Converter:
         return rd
 
     @staticmethod
-    def get_resource_set(res_mng: ReservationMng) -> ResourceSet:
-        rd = Converter.get_resource_data_from_res(res_mng)
+    def get_resource_set(*, res_mng: ReservationMng) -> ResourceSet:
+        rd = Converter.get_resource_data_from_res(res_mng=res_mng)
 
-        return ResourceSet(units=res_mng.get_units(), rtype=ResourceType(res_mng.get_resource_type()), rdata=rd)
+        return ResourceSet(units=res_mng.get_units(), rtype=ResourceType(resource_type=res_mng.get_resource_type()), rdata=rd)
 
     @staticmethod
-    def fill_actor(actor: IActor) -> ActorAvro:
+    def fill_actor(*, actor: IActor) -> ActorAvro:
         result = ActorAvro()
         result.set_name(actor.get_name())
         result.set_description(actor.get_description())
@@ -312,43 +319,43 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_actors(act_list: list) -> list:
+    def fill_actors(*, act_list: list) -> List[ActorAvro]:
         result = []
         for a in act_list:
-            act_mng = Converter.fill_actor(a)
+            act_mng = Converter.fill_actor(actor=a)
             result.append(act_mng)
 
         return result
 
     @staticmethod
-    def fill_actor_from_db(properties: dict) -> ActorAvro:
+    def fill_actor_from_db(*, properties: dict) -> ActorAvro:
         from fabric.actor.core.core.actor import Actor
-        actor = Actor.create_instance(properties)
+        actor = Actor.create_instance(properties=properties)
         result = ActorAvro()
         result.set_description(actor.get_description())
         result.set_name(actor.get_name())
         result.set_type(actor.get_type().value)
 
         from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
-        aa = ActorRegistrySingleton.get().get_actor(actor.get_name())
+        aa = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=actor.get_name())
         result.set_online(aa is not None)
 
         return result
 
     @staticmethod
-    def fill_actors_from_db(act_list: list) -> list:
+    def fill_actors_from_db(*, act_list: list) -> List[ActorAvro]:
         result = []
         for a in act_list:
-            act_mng = Converter.fill_actor_from_db(a)
+            act_mng = Converter.fill_actor_from_db(properties=a)
             result.append(act_mng)
 
         return result
 
     @staticmethod
-    def fill_actors_from_db_status(act_list: list, status: int) -> list:
+    def fill_actors_from_db_status(*, act_list: list, status: int) -> List[ActorAvro]:
         result = []
         for a in act_list:
-            act_mng = Converter.fill_actor_from_db(a)
+            act_mng = Converter.fill_actor_from_db(properties=a)
 
             if status == 0:
                 result.append(act_mng)
@@ -360,3 +367,10 @@ class Converter:
                 result.append(act_mng)
 
         return result
+
+    @staticmethod
+    def fill_resource_pool_descriptor(*, pool: PoolInfoAvro) -> ResourcePoolDescriptor:
+        rpd = ResourcePoolDescriptor()
+        properties = pool.get_properties()
+        rpd.reset(properties=properties, prefix=None)
+        return rpd

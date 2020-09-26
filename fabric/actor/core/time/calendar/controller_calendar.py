@@ -36,26 +36,26 @@ class ControllerCalendar(ClientCalendar):
      - closing: a list of reservations organized by the cycle they must be closed
      - redeeming: a list of reservations organized by the cycle they must be redeemed
     """
-    def __init__(self, clock: ActorClock):
+    def __init__(self, *, clock: ActorClock):
         """
         Constructor
         @params clock: clock
         """
-        super().__init__(clock)
+        super().__init__(clock=clock)
         self.closing = ReservationList()
         self.redeeming = ReservationList()
 
-    def remove(self, reservation: IReservation):
+    def remove(self, *, reservation: IReservation):
         """
         Removes the reservation from the calendar.
 
         @params reservation: reservation to remove
         """
-        super().remove(reservation)
-        self.remove_closing(reservation)
-        self.remove_redeeming(reservation)
+        super().remove(reservation=reservation)
+        self.remove_closing(reservation=reservation)
+        self.remove_redeeming(reservation=reservation)
 
-    def get_closing(self, cycle: int) -> ReservationSet:
+    def get_closing(self, *, cycle: int) -> ReservationSet:
         """
         Returns all reservations that need to be closed up to and including the specified cycle.
 
@@ -65,11 +65,11 @@ class ControllerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            return self.closing.get_all_reservations(cycle)
+            return self.closing.get_all_reservations(cycle=cycle)
         finally:
             self.lock.release()
 
-    def add_closing(self, reservation: IReservation, cycle: int):
+    def add_closing(self, *, reservation: IReservation, cycle: int):
         """
         Adds a reservation to be closed on the specified cycle.
 
@@ -78,11 +78,11 @@ class ControllerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            self.closing.add_reservation(reservation, cycle)
+            self.closing.add_reservation(reservation=reservation, cycle=cycle)
         finally:
             self.lock.release()
 
-    def remove_closing(self, reservation: IReservation):
+    def remove_closing(self, *, reservation: IReservation):
         """
          Removes the given reservation from the closing list.
 
@@ -90,11 +90,11 @@ class ControllerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            self.closing.remove_reservation(reservation)
+            self.closing.remove_reservation(reservation=reservation)
         finally:
             self.lock.release()
 
-    def get_redeeming(self, cycle: int) -> ReservationSet:
+    def get_redeeming(self, *, cycle: int) -> ReservationSet:
         """
         Returns all reservations that need to be redeemed up to and including the specified cycle.
 
@@ -104,11 +104,11 @@ class ControllerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            return self.redeeming.get_all_reservations(cycle)
+            return self.redeeming.get_all_reservations(cycle=cycle)
         finally:
             self.lock.release()
 
-    def add_redeeming(self, reservation: IReservation, cycle: int):
+    def add_redeeming(self, *, reservation: IReservation, cycle: int):
         """
         Adds a reservation to be redeeming on the specified cycle.
 
@@ -117,11 +117,11 @@ class ControllerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            self.redeeming.add_reservation(reservation, cycle)
+            self.redeeming.add_reservation(reservation=reservation, cycle=cycle)
         finally:
             self.lock.release()
 
-    def remove_redeeming(self, reservation: IReservation):
+    def remove_redeeming(self, *, reservation: IReservation):
         """
          Removes the given reservation from the redeeming list.
 
@@ -129,15 +129,15 @@ class ControllerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            self.redeeming.remove_reservation(reservation)
+            self.redeeming.remove_reservation(reservation=reservation)
         finally:
             self.lock.release()
 
-    def tick(self, cycle: int):
-        super().tick(cycle)
+    def tick(self, *, cycle: int):
+        super().tick(cycle=cycle)
         try:
             self.lock.acquire()
-            self.closing.tick(cycle)
-            self.redeeming.tick(cycle)
+            self.closing.tick(cycle=cycle)
+            self.redeeming.tick(cycle=cycle)
         finally:
             self.lock.release()

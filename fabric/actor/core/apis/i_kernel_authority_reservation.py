@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
+
 from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric.actor.core.apis.i_kernel_server_reservation import IKernelServerReservation
 
@@ -31,7 +33,8 @@ class IKernelAuthorityReservation(IKernelServerReservation, IAuthorityReservatio
     """
     Kernel-level interface for authority reservations.
     """
-    
+
+    @abstractmethod
     def prepare_extend_lease(self):
         """
         Prepare for an incoming extend request on this existing
@@ -39,8 +42,8 @@ class IKernelAuthorityReservation(IKernelServerReservation, IAuthorityReservatio
        
         @throws Exception thrown if request is rejected (e.g., ticket not valid)
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def prepare_modify_lease(self):
         """
         Prepare for an incoming modify request on this existing
@@ -48,4 +51,3 @@ class IKernelAuthorityReservation(IKernelServerReservation, IAuthorityReservatio
 
         @throws Exception thrown if request is rejected (e.g., ticket not valid)
         """
-        raise NotImplementedError( "Should have implemented this" )

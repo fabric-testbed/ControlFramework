@@ -23,23 +23,26 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-
-import fabric.actor.core.apis.i_base_plugin as ActorPluginType
-
-
-class ControllerPlugin(ActorPluginType.IBasePlugin):
-    """
-    Plugin One
-
-    This is an example of plugin class to depict plugin functionality. It is derived from IBasePlugin base class.
-    Any actor specific functionality should be implemented here by overriding the base class functions.
-
-    """
-    def __init__(self):
-        # Make sure to call the parent class (`IBasePlugin`) methods when
-        # overriding them.
-        super(ControllerPlugin, self).__init__()
+from fabric.actor.boot.inventory.resource_pool_factory import ResourcePoolFactory
+from fim.graph.neo4j_property_graph import Neo4jGraphImporter
 
 
-    def print_name(self):
-        print("This is ControllerPlugin")
+class Neo4jResourcePoolFactory(ResourcePoolFactory):
+    def load_file_direct(self, *, filename, neo4j_config):
+        """
+        Load specified file directly with no manipulations or validation
+        :param filename:
+        :param neo4j_config:
+        :return:
+        """
+        neo4j_graph_importer = Neo4jGraphImporter(url=neo4j_config["url"], user=neo4j_config["user"],
+                                                  pswd=neo4j_config["pass"],
+                                                  import_host_dir=neo4j_config["import_host_dir"],
+                                                  import_dir=neo4j_config["import_dir"])
+        neo4_graph = neo4j_graph_importer.import_graph_from_file_direct(graph_file=filename)
+        neo4_graph.validate_graph()
+
+        return neo4_graph
+
+    def update_descriptor(self):
+        super().update_descriptor()

@@ -45,7 +45,7 @@ class ClientCallbackHelper(IClientCallbackProxy):
             self.reservation = None
             self.update_data = None
 
-    def __init__(self, name: str, guid: ID):
+    def __init__(self, *, name: str, guid: ID):
         self.token = AuthToken(name=name, guid=guid)
         self.called = 0
         self.prepared = 0
@@ -69,17 +69,17 @@ class ClientCallbackHelper(IClientCallbackProxy):
     def get_type(self):
         return Constants.ProtocolLocal
 
-    def prepare_update_ticket(self, reservation: IBrokerReservation, update_data: UpdateData,
+    def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
                               callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
         state = self.MyRequestState()
-        state.reservation = LocalReturn.pass_reservation(reservation,
-                                                         ActorRegistrySingleton.get().get_actor(
-                                                             self.token.get_name()).get_plugin())
+        state.reservation = LocalReturn.pass_reservation(reservation=reservation,
+                                                         plugin=ActorRegistrySingleton.get().get_actor(
+                                                             actor_name_or_guid=self.token.get_name()).get_plugin())
 
         self.prepared += 1
         return state
 
-    def execute(self, request: IRPCRequestState):
+    def execute(self, *, request: IRPCRequestState):
         if request.get_type() == RPCRequestType.UpdateTicket:
             self.called += 1
             self.reservation = request.reservation
@@ -88,9 +88,9 @@ class ClientCallbackHelper(IClientCallbackProxy):
         from fabric.actor.core.container.globals import GlobalsSingleton
         return GlobalsSingleton.get().get_logger()
 
-    def prepare_query_result(self, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
+    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
         raise NotImplementedError
 
-    def prepare_failed_request(self, request_id: str, failed_request_type,
+    def prepare_failed_request(self, *, request_id: str, failed_request_type,
                                failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
         raise NotImplementedError

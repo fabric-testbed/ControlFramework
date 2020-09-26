@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_management_object import IManagementObject
@@ -33,8 +35,17 @@ if TYPE_CHECKING:
 
 
 class IActorManagementObject(IManagementObject):
-    def set_actor(self, actor: IActor):
-        raise NotImplementedError
+    @abstractmethod
+    def set_actor(self, *, actor: IActor):
+        """
+        Set an actor
+        @params actor: actor
+        """
 
-    def update_reservation(self, reservation, caller: AuthToken):
-        raise NotImplementedError
+    @abstractmethod
+    def update_reservation(self, *, reservation, caller: AuthToken):
+        """
+        Update Reservation
+        @params reservation: reservation
+        @params caller: caller
+        """

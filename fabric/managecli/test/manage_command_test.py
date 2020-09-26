@@ -34,6 +34,7 @@ class ManageCommandTest(unittest.TestCase):
     am = "fabric-site-am"
     def test_claim(self):
         MainShellSingleton.get().start()
-        mgmt_command = ManageCommand(MainShellSingleton.get().logger)
-        mgmt_command.claim_resources(self.broker, self.am, MainShellSingleton.get().get_callback_topic())
+        mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+        mgmt_command.claim_resources(broker=self.broker, am=self.am,
+                                     callback_topic=MainShellSingleton.get().get_callback_topic())
         MainShellSingleton.get().stop()

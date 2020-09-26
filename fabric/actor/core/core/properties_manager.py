@@ -31,21 +31,21 @@ class PropertiesManager:
     ElasticTime = "request.elasticTime"
 
     @staticmethod
-    def get_request_properties(rset: ResourceSet, create: bool) -> dict:
+    def get_request_properties(*, rset: ResourceSet, create: bool) -> dict:
         properties = rset.get_request_properties()
         if properties is None and create:
             properties = {}
-            rset.set_request_properties(properties)
+            rset.set_request_properties(p=properties)
         return properties
 
     @staticmethod
-    def set_elastic_size(rset: ResourceSet, value: bool):
-        properties = PropertiesManager.get_request_properties(rset, True)
+    def set_elastic_size(*, rset: ResourceSet, value: bool):
+        properties = PropertiesManager.get_request_properties(rset=rset, create=True)
         properties[PropertiesManager.ElasticSize] = value
         return properties
 
     @staticmethod
-    def is_elastic_size(rset: ResourceSet):
+    def is_elastic_size(*, rset: ResourceSet):
         result = False
         properties = rset.get_request_properties()
         if properties is not None and PropertiesManager.ElasticSize in properties:
@@ -53,14 +53,14 @@ class PropertiesManager:
         return result
 
     @staticmethod
-    def set_elastic_time(rset: ResourceSet, value: bool):
-        properties = PropertiesManager.get_request_properties(rset, True)
+    def set_elastic_time(*, rset: ResourceSet, value: bool):
+        properties = PropertiesManager.get_request_properties(rset=rset, create=True)
         properties[PropertiesManager.ElasticTime] = value
-        rset.set_request_properties(properties)
+        rset.set_request_properties(p=properties)
         return rset
 
     @staticmethod
-    def is_elastic_time(rset: ResourceSet):
+    def is_elastic_time(*, rset: ResourceSet):
         result = False
         properties = rset.get_request_properties()
         if properties is not None and PropertiesManager.ElasticTime in properties:

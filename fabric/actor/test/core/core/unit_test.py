@@ -41,7 +41,7 @@ class UnitTest(BaseTestCase, unittest.TestCase):
     Globals.ConfigFile = Constants.TestVmAmConfigurationFile
 
     from fabric.actor.core.container.globals import GlobalsSingleton
-    GlobalsSingleton.get().start(True)
+    GlobalsSingleton.get().start(force_fresh=True)
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
@@ -51,10 +51,10 @@ class UnitTest(BaseTestCase, unittest.TestCase):
 
     def test_unit(self):
         uid = ID()
-        u1 = Unit(uid)
+        u1 = Unit(id=uid)
         self.assertIsNotNone(u1.get_id())
         self.assertEqual(UnitState.DEFAULT, u1.get_state())
-        self.assertIsNone(u1.get_property("foo"))
+        self.assertIsNone(u1.get_property(name="foo"))
         self.assertIsNone(u1.get_parent_id())
         self.assertIsNone(u1.get_reservation_id())
         self.assertIsNone(u1.get_slice_id())
@@ -74,24 +74,24 @@ class UnitTest(BaseTestCase, unittest.TestCase):
         actor_id = GlobalsSingleton.get().get_container().get_actor().get_guid()
 
         slice_obj = SliceFactory.create(slice_id=slice_id, name="test_slice")
-        db.add_slice(slice_obj)
+        db.add_slice(slice_object=slice_obj)
 
         reservation = ClientReservationFactory.create(rid=rid, slice_object=slice_obj)
-        u1.set_actor_id(actor_id)
-        u1.set_reservation(reservation)
-        u1.set_slice_id(slice_id)
+        u1.set_actor_id(actor_id=actor_id)
+        u1.set_reservation(reservation=reservation)
+        u1.set_slice_id(slice_id=slice_id)
 
-        db.add_reservation(reservation)
+        db.add_reservation(reservation=reservation)
 
         u1.start_prime()
         self.assertEqual(UnitState.PRIMING, u1.get_state())
-        u1.set_property("foo", "bar")
+        u1.set_property(name="foo", value="bar")
         u1.increment_sequence()
         u1.increment_sequence()
-        resource_type = ResourceType("1")
-        u1.set_resource_type(resource_type)
+        resource_type = ResourceType(resource_type="1")
+        u1.set_resource_type(rtype=resource_type)
         self.assertEqual(2, u1.get_sequence())
 
-        db.add_unit(u1)
+        db.add_unit(u=u1)
 
-        self.assertIsNotNone(db.get_unit(uid))
+        self.assertIsNotNone(db.get_unit(unit_id=uid))

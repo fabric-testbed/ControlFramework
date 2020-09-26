@@ -45,16 +45,16 @@ class ProxyFactory:
         self.factories[Constants.ProtocolLocal] = LocalProxyFactory()
         self.factories[Constants.ProtocolKafka] = KafkaProxyFactory()
 
-    def new_callback(self, protocol: str, identity: IActorIdentity, location: ActorLocation):
+    def new_callback(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation):
         if protocol in self.factories:
             factory = self.factories[protocol]
-            return factory.new_callback(identity, location)
+            return factory.new_callback(identity=identity, location=location)
         return None
 
-    def new_proxy(self, protocol: str, identity: IActorIdentity, location: ActorLocation, type: str = None):
+    def new_proxy(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation, type: str = None):
         if protocol in self.factories:
             factory = self.factories[protocol]
-            return factory.new_proxy(identity, location, type)
+            return factory.new_proxy(identity=identity, location=location, type=type)
         return None
 
 

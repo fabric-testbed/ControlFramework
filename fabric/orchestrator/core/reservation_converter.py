@@ -28,13 +28,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from fabric.orchestrator.core.orchestrator_slice import ControllerSlice
+    from fabric.orchestrator.core.orchestrator_slice import OrchestratorSlice
     from fabric.actor.core.apis.i_mgmt_controller import IMgmtController
 
 
 class ReservationConverter:
-    def __init__(self, ssh_credentials: list = None, controller: IMgmtController = None,
-                 controller_slice: ControllerSlice = None):
+    def __init__(self, *, ssh_credentials: list = None, controller: IMgmtController = None,
+                 controller_slice: OrchestratorSlice = None):
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
         self.ssh_credentials = ssh_credentials

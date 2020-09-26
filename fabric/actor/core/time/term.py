@@ -51,8 +51,8 @@ class Term:
     '''
     Flag that controls, whether cycle numbers should be calculated.
     '''
-    set_cycles:bool = True
-    clock:ActorClock = None
+    set_cycles: bool = True
+    clock: ActorClock = None
 
     @staticmethod
     def set_clock(clock: ActorClock):
@@ -70,8 +70,8 @@ class Term:
         @params d2: date 2
         @returns the difference in microseconds between two dates.
         """
-        d2_ms = ActorClock.to_milliseconds(d2)
-        d1_ms = ActorClock.to_milliseconds(d1)
+        d2_ms = ActorClock.to_milliseconds(when=d2)
+        d1_ms = ActorClock.to_milliseconds(when=d1)
 
         return d2_ms - d1_ms
 
@@ -101,7 +101,7 @@ class Term:
 
         return Term.clock
 
-    def __init__(self, start: datetime = None, end: datetime = None, new_start: datetime = None, length: int = None):
+    def __init__(self, *, start: datetime = None, end: datetime = None, new_start: datetime = None, length: int = None):
         """
         Creates a new term.
         @params start: start time
@@ -119,8 +119,8 @@ class Term:
             self.end_time = end
         else:
             if start is not None and length is not None and length > 1:
-                start_ms = ActorClock.to_milliseconds(start) + length - 1
-                self.end_time = ActorClock.from_milliseconds(start_ms)
+                start_ms = ActorClock.to_milliseconds(when=start) + length - 1
+                self.end_time = ActorClock.from_milliseconds(milli_seconds=start_ms)
             else:
                 raise Exception("Invalid arguments, length and end both not specified")
 
@@ -166,7 +166,7 @@ class Term:
             if self.new_start_time is not None:
                 self.cycle_new_start = clock.cycle(when=self.new_start_time)
 
-    def change_length(self, length: int):
+    def change_length(self, *, length: int):
         """
         Creates a new term from the term. The new term has the same start time
         but different length.
@@ -175,7 +175,7 @@ class Term:
         """
         return Term(start=self.start_time, length=length)
 
-    def contains(self, date: datetime = None, term=None) -> bool:
+    def contains(self, *, date: datetime = None, term=None) -> bool:
         """
         Checks if the term contains the given date or term.
         @params date: the date to check
@@ -196,7 +196,7 @@ class Term:
                 raise Exception("Invalid arguments")
             return (not self.start_time > term.start_time) and (not self.end_time < term.end_time)
 
-    def ends_after(self, date: datetime) -> bool:
+    def ends_after(self, *, date: datetime) -> bool:
         """
         Checks if the term ends after the given date.
         @params date : date to check against
@@ -210,7 +210,7 @@ class Term:
 
         return date < self.end_time
 
-    def ends_before(self, date: datetime) -> bool:
+    def ends_before(self, *, date: datetime) -> bool:
         """
         Checks if the term ends after the given date.
         @params date : date to check against
@@ -224,7 +224,7 @@ class Term:
 
         return date > self.end_time
 
-    def enforce_extends_term(self, old_term):
+    def enforce_extends_term(self, *, old_term):
         """
         Checks if this term extends the old one. In case this term does not
         extend old term, logs the error and throws an exception.
@@ -234,7 +234,7 @@ class Term:
         if not isinstance(old_term, Term):
             raise Exception("Invalid type: {}".format(type(old_term)))
 
-        flag = self.extends_term(old_term)
+        flag = self.extends_term(old_term=old_term)
         if flag is False:
             raise Exception("New term does not extend previous term")
 
@@ -260,7 +260,7 @@ class Term:
 
         return True
 
-    def expired(self, date: datetime) -> bool:
+    def expired(self, *, date: datetime) -> bool:
         """
         Checks if the term's expiration date is before the specified time.
         @params time : the time to check against
@@ -274,7 +274,7 @@ class Term:
 
         return date > self.end_time
 
-    def extend(self, length: int = 0):
+    def extend(self, *, length: int = 0):
         """
         Creates a new term as an extension of the specified term. The term is
         extended with the current term length.
@@ -287,13 +287,13 @@ class Term:
         if length != 0:
             length_to_use = length
 
-        new_start_ms = ActorClock.to_milliseconds(self.end_time) + 1
-        new_start = ActorClock.from_milliseconds(new_start_ms)
-        end = ActorClock.from_milliseconds(new_start_ms + length_to_use - 1)
+        new_start_ms = ActorClock.to_milliseconds(when=self.end_time) + 1
+        new_start = ActorClock.from_milliseconds(milli_seconds=new_start_ms)
+        end = ActorClock.from_milliseconds(milli_seconds=new_start_ms + length_to_use - 1)
 
         return Term(start=self.start_time, end=end, new_start=new_start)
 
-    def extends_term(self, old_term) -> bool:
+    def extends_term(self, *, old_term) -> bool:
         """
         Checks if this term extends the old term.
         @params old_term: old term to check against
@@ -323,8 +323,8 @@ class Term:
         if self.start_time is None or self.end_time is None:
             raise Exception("Invalid state")
 
-        start_ms = ActorClock.to_milliseconds(self.start_time)
-        end_ms = ActorClock.to_milliseconds(self.end_time)
+        start_ms = ActorClock.to_milliseconds(when=self.start_time)
+        end_ms = ActorClock.to_milliseconds(when=self.end_time)
 
         return end_ms - start_ms + 1
 
@@ -337,8 +337,8 @@ class Term:
         if self.new_start_time is None or self.end_time is None:
             raise Exception("Invalid state")
 
-        new_start_ms = ActorClock.to_milliseconds(self.new_start_time)
-        end_ms = ActorClock.to_milliseconds(self.end_time)
+        new_start_ms = ActorClock.to_milliseconds(when=self.new_start_time)
+        end_ms = ActorClock.to_milliseconds(when=self.end_time)
 
         return end_ms - new_start_ms + 1
 
@@ -356,28 +356,28 @@ class Term:
         """
         return self.start_time
 
-    def set_end_time(self, date: datetime):
+    def set_end_time(self, *, date: datetime):
         """
         Set end time
         """
         self.end_time = date
         self._set_cycles()
 
-    def set_new_start_time(self, date: datetime):
+    def set_new_start_time(self, *, date: datetime):
         """
         Set new_start time
         """
         self.new_start_time = date
         self._set_cycles()
 
-    def set_start_time(self, date: datetime):
+    def set_start_time(self, *, date: datetime):
         """
         Set start time
         """
         self.start_time = date
         self._set_cycles()
 
-    def shift(self, date: datetime):
+    def shift(self, *, date: datetime):
         """
         Creates a new term from the term. The new term is shifted in time to
         start at the specified start time.

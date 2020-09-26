@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_server_reservation import IServerReservation
@@ -38,18 +40,19 @@ class IKernelServerReservation(IKernelReservation, IServerReservation):
     """
     Kernel-level interface for server reservations.
     """
-    def set_requested_resources(self, resources: ResourceSet):
+
+    @abstractmethod
+    def set_requested_resources(self, *, resources: ResourceSet):
         """
         Sets the requested resources.
        
         @param resources requested resources
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_requested_term(self, term: Term):
+    @abstractmethod
+    def set_requested_term(self, *, term: Term):
         """
         Sets the requested term.
        
         @param term requested term
         """
-        raise NotImplementedError("Should have implemented this")

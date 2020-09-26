@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
@@ -34,12 +36,22 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
     from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
     from fabric.actor.security.auth_token import AuthToken
+    from fabric.actor.core.util.update_data import UpdateData
 
 
 class IControllerCallbackProxy(IClientCallbackProxy):
     """
     IControllerCallbackProxy represents the proxy callback interface to an actor acting in the orchestrator role.
     """
-    def prepare_update_lease(self, reservation: IAuthorityReservation,  update_data,
+
+    @abstractmethod
+    def prepare_update_lease(self, *, reservation: IAuthorityReservation,  update_data: UpdateData,
                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Prepare Update Lease
+        @params reservation: reservation
+        @params update_data: Update Data
+        @params callback: callback
+        @params caller: caller
+        @returns returns IRPCRequestState
+        """

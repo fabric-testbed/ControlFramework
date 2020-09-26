@@ -40,26 +40,27 @@ if TYPE_CHECKING:
 
 
 class PoolCreator:
-    def __init__(self, substrate: AuthoritySubstrate = None, pools: dict = None):
+    def __init__(self, *, substrate: AuthoritySubstrate = None, pools: dict = None):
         self.substrate = substrate
         self.pools = pools
         self.container = None
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def get_factory(self, rd: ResourcePoolDescriptor) -> IResourcePoolFactory:
+    def get_factory(self, *, rd: ResourcePoolDescriptor) -> IResourcePoolFactory:
         factory = None
         if rd.get_pool_factory_module() is None or rd.get_pool_factory_class() is None:
             factory = ResourcePoolFactory()
         else:
             try:
-                factory = ReflectionUtils.create_instance(rd.get_pool_factory_module(), rd.get_pool_factory_class())
+                factory = ReflectionUtils.create_instance(module_name=rd.get_pool_factory_module(),
+                                                          class_name=rd.get_pool_factory_class())
             except Exception as e:
                 raise Exception("Could not instantiate class= {}.{} {}".format(rd.get_pool_factory_module(),
                                                                                rd.get_pool_factory_class(), e))
 
-        factory.set_substrate(self.substrate)
-        factory.set_descriptor(rd)
+        factory.set_substrate(substrate=self.substrate)
+        factory.set_descriptor(descriptor=rd)
         return factory
 
     def process(self):
@@ -69,22 +70,25 @@ class PoolCreator:
             self.logger.debug("Creating resource pool {} of Actor {}".format(
                 pool.get_resource_type_label(), self.substrate.get_actor().get_name()))
 
-            factory = self.get_factory(pool)
+            factory = self.get_factory(rd=pool)
             pool = factory.get_descriptor()
             rd = ResourceData()
-            rd.resource_properties = pool.save(rd.resource_properties, None)
+            rd.resource_properties = pool.save(properties=rd.resource_properties, prefix=None)
 
-            rd.local_properties = ResourceData.merge_properties(pool.pool_properties, rd.local_properties)
+            rd.local_properties = ResourceData.merge_properties(from_props=pool.pool_properties,
+                                                                to_props=rd.local_properties)
 
-            create_pool_result = self.substrate.get_pool_manager().create_pool(ID(), pool.get_resource_type_label(),
-                                                                               pool.get_resource_type(), rd)
+            create_pool_result = self.substrate.get_pool_manager().create_pool(slice_id=ID(),
+                                                                               name=pool.get_resource_type_label(),
+                                                                               rtype=pool.get_resource_type(),
+                                                                               resource_data=rd)
 
             if create_pool_result.code != PoolManagerError.ErrorNone:
                 raise Exception("Could not create resource pool: {}. error={}".format(pool.get_resource_type_label(),
                                                                                       create_pool_result.code))
 
-            self.register_handler(pool)
-            source = factory.create_source_reservation(create_pool_result.slice)
+            self.register_handler(pool=pool)
+            source = factory.create_source_reservation(slice_obj=create_pool_result.slice)
 
             try:
                 self.logger.debug("Adding source reservation to database {}".format(source))
@@ -93,11 +97,11 @@ class PoolCreator:
                 self.logger.debug("Source reservation has delegation of type {}"
                                   .format(source.get_resources().get_resources().get_ticket().get_delegation().__class__.__name__))
 
-                self.substrate.get_database().add_reservation(source)
+                self.substrate.get_database().add_reservation(reservation=source)
             except Exception as e:
                 raise Exception("Could not add source reservation to database {}".format(e))
 
-    def register_handler(self, pool: ResourcePoolDescriptor):
+    def register_handler(self, *, pool: ResourcePoolDescriptor):
         handler_module = pool.get_handler_module()
         handler_class = pool.get_handler_class()
 
@@ -106,9 +110,9 @@ class PoolCreator:
 
         config = self.substrate.get_config()
         config_map = ConfigurationMapping()
-        config_map.set_key(str(pool.get_resource_type()))
-        config_map.set_class_name(handler_class)
-        config_map.set_module_name(handler_module)
-        config_map.set_properties(pool.get_handler_properties())
+        config_map.set_key(key=str(pool.get_resource_type()))
+        config_map.set_class_name(class_name=handler_class)
+        config_map.set_module_name(module_name=handler_module)
+        config_map.set_properties(properties=pool.get_handler_properties())
 
-        config.add_config_mapping(config_map)
+        config.add_config_mapping(mapping=config_map)

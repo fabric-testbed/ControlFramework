@@ -34,7 +34,7 @@ class Bids:
     - ticketing: set of new reservations to obtain tickets for
     - extending: set of existing reservations that need to be extended
     """
-    def __init__(self, ticketing: ReservationSet, extending: ReservationSet):
+    def __init__(self, *, ticketing: ReservationSet, extending: ReservationSet):
         self.ticketing = ticketing
         self.extending = extending
 

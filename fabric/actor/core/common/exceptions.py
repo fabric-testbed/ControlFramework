@@ -26,7 +26,7 @@
 
 
 class ReservationNotFoundException(Exception):
-    def __init__(self, text: str = None, rid=None):
+    def __init__(self, *, text: str = None, rid=None):
         super(ReservationNotFoundException, self).__init__()
         if text is not None:
             self.text = str(text)
@@ -39,7 +39,7 @@ class ReservationNotFoundException(Exception):
 
 
 class SliceNotFoundException(Exception):
-    def __init__(self, text: str = None, slice_id=None):
+    def __init__(self, *, text: str = None, slice_id=None):
         super(SliceNotFoundException, self).__init__()
         if text is not None:
             self.text = str(text)

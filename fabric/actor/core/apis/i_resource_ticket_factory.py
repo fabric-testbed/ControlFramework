@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -36,28 +38,29 @@ if TYPE_CHECKING:
 
 
 class IResourceTicketFactory:
-    def set_actor(self, actor: IActor):
+    @abstractmethod
+    def set_actor(self, *, actor: IActor):
         """
         Sets the actor this factory belongs to.
         @param actor actor
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_actor(self) -> IActor:
         """
         Returns the actor represented by this factory.
         @return actor
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def initialize(self):
         """
         Initializes the factory.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def make_delegation(self, units: int, vector: ResourceVector, term: Term, rtype: ResourceType, sources: list = None,
+    @abstractmethod
+    def make_delegation(self, *, units: int, vector: ResourceVector, term: Term, rtype: ResourceType, sources: list = None,
                         bins: list = None, properties: dict = None, holder: ID = None) -> ResourceDelegation:
         """
         Creates a new ResourceDelegation
@@ -72,9 +75,9 @@ class IResourceTicketFactory:
         @return ResourceDelegation
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def make_ticket(self, source: ResourceTicket, delegation: ResourceDelegation) -> ResourceTicket:
+    @abstractmethod
+    def make_ticket(self, *, source: ResourceTicket, delegation: ResourceDelegation) -> ResourceTicket:
         """
         Creates a new ticket from the specified source tickets.
         Note: all sources must share the same root delegation.
@@ -83,28 +86,27 @@ class IResourceTicketFactory:
         @return ResourceTicket
         @throws TicketException in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def clone(self, original: ResourceTicket) -> ResourceTicket:
+    @abstractmethod
+    def clone(self, *, original: ResourceTicket) -> ResourceTicket:
         """
         Makes a deep clone of the specified resource ticket.
         @param original original
         @return ResourceTicket
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def toJson(self, ticket: ResourceTicket) -> str:
+    @abstractmethod
+    def toJson(self, *, ticket: ResourceTicket) -> str:
         """
         Converts the resource ticket to JSON.
         @param ticket ticket to convert
         @return JSON string representation
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def fromJson(self, json_string: str) -> ResourceTicket:
+    @abstractmethod
+    def fromJson(self, *, json_string: str) -> ResourceTicket:
         """
         Obtains a resource ticket from JSON.
         @param json_string JSON string representation
         @return resource ticket
         """
-        raise NotImplementedError("Should have implemented this")

@@ -42,8 +42,8 @@ from fabric.actor.core.util.prop_list import PropList
 
 
 class Substrate(BasePlugin, ISubstrate):
-    def __init__(self, actor: Actor, db: ISubstrateDatabase, config: Config):
-        super().__init__(actor, db, config)
+    def __init__(self, *, actor: Actor, db: ISubstrateDatabase, config: Config):
+        super().__init__(actor=actor, db=db, config=config)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -66,43 +66,43 @@ class Substrate(BasePlugin, ISubstrate):
         if not isinstance(self.db, ISubstrateDatabase):
             raise Exception("Substrate database class must implement ISubstrateDatabase")
 
-    def transfer_in(self, reservation: IReservation, unit: Unit):
+    def transfer_in(self, *, reservation: IReservation, unit: Unit):
         try:
             # record the node in the database
-            self.get_substrate_database().add_unit(unit)
+            self.get_substrate_database().add_unit(u=unit)
             # prepare the transfer
-            self.prepare_transfer_in(reservation, unit)
+            self.prepare_transfer_in(reservation=reservation, unit=unit)
             # update the unit database record
             # since prepareTransferIn may have added new properties.
-            self.db.update_unit(unit)
+            self.db.update_unit(u=unit)
             # perform the node configuration
-            self.do_transfer_in(reservation, unit)
+            self.do_transfer_in(reservation=reservation, unit=unit)
         except Exception as e:
-            self.fail_and_update(unit, "transferIn error", e)
+            self.fail_and_update(unit=unit, message="transferIn error", e=e)
 
-    def transfer_out(self, reservation: IReservation, unit: Unit):
+    def transfer_out(self, *, reservation: IReservation, unit: Unit):
         try:
             # prepare the transfer out
-            self.prepare_transfer_out(reservation, unit)
+            self.prepare_transfer_out(reservation=reservation, unit=unit)
             # update the unit database record
-            self.get_substrate_database().update_unit(unit)
+            self.get_substrate_database().update_unit(u=unit)
             # perform the node configuration
-            self.do_transfer_out(reservation, unit)
+            self.do_transfer_out(reservation=reservation, unit=unit)
         except Exception as e:
-            self.fail_and_update(unit, "transferOut error", e)
+            self.fail_and_update(unit=unit, message="transferOut error", e=e)
 
-    def modify(self, reservation: IReservation, unit: Unit):
+    def modify(self, *, reservation: IReservation, unit: Unit):
         try:
             # prepare the transfer out
-            self.prepare_modify(reservation, unit)
+            self.prepare_modify(reservation=reservation, unit=unit)
             # update the unit database record
-            self.db.update_unit(unit)
+            self.db.update_unit(u=unit)
             # perform the node configuration
-            self.do_modify(reservation, unit)
+            self.do_modify(reservation=reservation, unit=unit)
         except Exception as e:
-            self.fail_and_update(unit, "modify error", e)
+            self.fail_and_update(unit=unit, message="modify error", e=e)
 
-    def prepare_transfer_in(self, reservation: IReservation, unit: Unit):
+    def prepare_transfer_in(self, *, reservation: IReservation, unit: Unit):
         """
         Performs additional setup operations before configuring the unit. This is
         an optional step of the transfer in process and can be used to set custom
@@ -116,7 +116,7 @@ class Substrate(BasePlugin, ISubstrate):
         """
         return
 
-    def prepare_transfer_out(self, reservation: IReservation, unit: Unit):
+    def prepare_transfer_out(self, *, reservation: IReservation, unit: Unit):
         """
         Prepares the unit for transfer out. Note: resources assigned in
         prepareTransferIn cannot be released yet, since they are still in use.
@@ -128,7 +128,7 @@ class Substrate(BasePlugin, ISubstrate):
         """
         return
 
-    def prepare_modify(self, reservation: IReservation, unit: Unit):
+    def prepare_modify(self, *, reservation: IReservation, unit: Unit):
         """
         Prepares the unit for modification.
         @param reservation reservation containing the unit
@@ -137,71 +137,71 @@ class Substrate(BasePlugin, ISubstrate):
         """
         return
 
-    def get_config_properties_from_reservation(self, reservation: IReservation, unit: Unit) -> dict:
+    def get_config_properties_from_reservation(self, *, reservation: IReservation, unit: Unit) -> dict:
         temp = reservation.get_resources().get_local_properties()
-        temp = PropList.merge_properties(reservation.get_slice().get_local_properties(), temp)
+        temp = PropList.merge_properties(incoming=reservation.get_slice().get_local_properties(), outgoing=temp)
 
         if self.is_site_authority():
-            temp = PropList.merge_properties(reservation.get_resources().get_config_properties(), temp)
-            temp = PropList.merge_properties(reservation.get_slice().get_config_properties(), temp)
+            temp = PropList.merge_properties(incoming=reservation.get_resources().get_config_properties(), outgoing=temp)
+            temp = PropList.merge_properties(incoming=reservation.get_slice().get_config_properties(), outgoing=temp)
 
             if reservation.get_requested_resources() is not None:
                 ticket = reservation.get_requested_resources().get_resources()
-                temp = PropList.merge_properties(ticket.get_properties(), temp)
+                temp = PropList.merge_properties(incoming=ticket.get_properties(), outgoing=temp)
                 rticket = ticket.get_ticket()
-                temp = PropList.merge_properties(rticket.get_properties(), temp)
+                temp = PropList.merge_properties(incoming=rticket.get_properties(), outgoing=temp)
 
-        temp = PropList.merge_properties(unit.get_properties(), temp)
+        temp = PropList.merge_properties(incoming=unit.get_properties(), outgoing=temp)
 
         return temp
 
-    def do_transfer_in(self, reservation: IReservation, unit: Unit):
-        prop = self.get_config_properties_from_reservation(reservation, unit)
-        self.config.join(unit, prop)
+    def do_transfer_in(self, *, reservation: IReservation, unit: Unit):
+        prop = self.get_config_properties_from_reservation(reservation=reservation, unit=unit)
+        self.config.join(token=unit, properties=prop)
 
-    def do_transfer_out(self, reservation: IReservation, unit: Unit):
-        prop = self.get_config_properties_from_reservation(reservation, unit)
-        self.config.leave(unit, prop)
+    def do_transfer_out(self, *, reservation: IReservation, unit: Unit):
+        prop = self.get_config_properties_from_reservation(reservation=reservation, unit=unit)
+        self.config.leave(token=unit, properties=prop)
 
-    def do_modify(self, reservation: IReservation, unit: Unit):
-        prop = self.get_config_properties_from_reservation(reservation, unit)
-        self.config.modify(unit, prop)
+    def do_modify(self, *, reservation: IReservation, unit: Unit):
+        prop = self.get_config_properties_from_reservation(reservation=reservation, unit=unit)
+        self.config.modify(token=unit, properties=prop)
 
-    def fail_and_update(self, unit: Unit, message: str, e: Exception):
+    def fail_and_update(self, *, unit: Unit, message: str, e: Exception):
         self.logger.error(message)
         self.logger.error(str(e))
 
         try:
-            unit.fail(message, e)
-            self.db.update_unit(unit)
+            unit.fail(message=message, exception=e)
+            self.db.update_unit(u=unit)
         except Exception as e:
             self.logger.error("could not update unit in database")
             self.logger.error(e)
 
-    def fail_no_update(self, unit: Unit, message: str, e: Exception = None):
+    def fail_no_update(self, *, unit: Unit, message: str, e: Exception = None):
         self.logger.error(message)
         if e:
             self.logger.error(e)
-        unit.fail(message, e)
+        unit.fail(message=message, exception=e)
 
-    def fail_modify_no_update(self, unit: Unit, message: str, e: Exception = None):
+    def fail_modify_no_update(self, *, unit: Unit, message: str, e: Exception = None):
         self.logger.error(message)
         if e:
             self.logger.error(e)
-        unit.fail_on_modify(message, e)
+        unit.fail_on_modify(message=message, exception=e)
 
-    def merge_unit_properties(self, unit: Unit, properties: dict):
+    def merge_unit_properties(self, *, unit: Unit, properties: dict):
         # TODO
         return
 
-    def process_join_complete(self, token: ConfigToken, properties: dict):
+    def process_join_complete(self, *, token: ConfigToken, properties: dict):
         self.logger.debug("Join")
         self.logger.debug(properties)
 
         if self.actor.is_stopped():
             raise Exception("This actor cannot receive updates")
 
-        sequence = Config.get_action_sequence_number(properties)
+        sequence = Config.get_action_sequence_number(properties=properties)
         notice = None
         # TODO synchronized on token
         if sequence != token.get_sequence():
@@ -211,84 +211,85 @@ class Substrate(BasePlugin, ISubstrate):
         else:
             self.logger.debug("(join complete) incoming ({}) local: ({})".format(sequence, token.get_sequence()))
 
-        result = Config.get_result_code(properties)
-        msg = Config.get_exception_message(properties)
+        result = Config.get_result_code(properties=properties)
+        msg = Config.get_exception_message(properties=properties)
         if msg is None:
-            msg = Config.get_result_code_message(properties)
+            msg = Config.get_result_code_message(properties=properties)
 
         if result == 0:
             self.logger.debug("join code 0 (success)")
-            self.merge_unit_properties(token, properties)
+            self.merge_unit_properties(unit=token, properties=properties)
             token.activate()
 
         elif result == -1:
             self.logger.debug("join code -1 with message: {}".format(msg))
             notice = "Exception during join for unit: {} {}".format(token.get_id(), msg)
-            self.fail_no_update(token, notice)
+            self.fail_no_update(unit=token, message=notice)
 
         else:
             self.logger.debug("join code {} with message: {}".format(result, msg))
             notice = "Error code= {} during join for unit: {} with message: {}".format(result, token.get_id(), msg)
-            self.fail_no_update(token, notice)
+            self.fail_no_update(unit=token, message=notice)
 
         try:
-            self.get_substrate_database().update_unit(token)
+            self.get_substrate_database().update_unit(u=token)
         except Exception as e:
             self.logger.error(e)
         finally:
             self.logger.debug("process join complete")
 
-    def process_leave_complete(self, token: ConfigToken, properties: dict):
+    def process_leave_complete(self, *, token: ConfigToken, properties: dict):
         self.logger.debug("Leave")
         self.logger.debug(properties)
 
         if self.actor.is_stopped():
             raise Exception("This actor cannot receive updates")
 
-        sequence = Config.get_action_sequence_number(properties)
+        sequence = Config.get_action_sequence_number(properties=properties)
         notice = None
         # TODO synchronized on token
         if sequence != token.get_sequence():
-            self.logger.warning("(leave complete) sequences mismatch: incoming ({}) local: ({}). Ignoring event.".format(sequence, token.get_sequence()))
+            self.logger.warning("(leave complete) sequences mismatch: incoming ({}) local: ({}). Ignoring event.".format(
+                sequence, token.get_sequence()))
             return
         else:
             self.logger.debug("(leave complete) incoming ({}) local: ({})".format(sequence, token.get_sequence()))
 
-        result = Config.get_result_code(properties)
-        msg = Config.get_exception_message(properties)
+        result = Config.get_result_code(properties=properties)
+        msg = Config.get_exception_message(properties=properties)
         if msg is None:
-            msg = Config.get_result_code_message(properties)
+            msg = Config.get_result_code_message(properties=properties)
 
         if result == 0:
             self.logger.debug("leave code 0 (success)")
-            self.merge_unit_properties(token, properties)
+            self.merge_unit_properties(unit=token, properties=properties)
             token.close()
 
         elif result == -1:
             self.logger.debug("leave code -1 with message: {}".format(msg))
             notice = "Exception during join for unit: {} {}".format(token.get_id(), msg)
-            self.fail_no_update(token, notice)
+            self.fail_no_update(unit=token, message=notice)
 
         else:
             self.logger.debug("leave code {} with message: {}".format(result, msg))
             notice = "Error code= {} during join for unit: {} with message: {}".format(result, token.get_id(), msg)
-            self.fail_no_update(token, notice)
+            self.fail_no_update(unit=token, message=notice)
 
         try:
-            self.get_substrate_database().update_unit(token)
+            self.get_substrate_database().update_unit(u=token)
         except Exception as e:
             self.logger.error(e)
         finally:
             self.logger.debug("process leave complete")
 
-    def process_modify_complete(self, token: ConfigToken, properties: dict):
+    def process_modify_complete(self, *, token: ConfigToken, properties: dict):
         self.logger.debug("Modify")
         self.logger.debug(properties)
 
         if self.actor.is_stopped():
             raise Exception("This actor cannot receive updates")
 
-        sequence = Config.get_action_sequence_number(properties)
+        sequence = Config.get_action_sequence_number(properties=properties)
         notice = None
         # TODO synchronized on token
         if sequence != token.get_sequence():
@@ -299,28 +300,28 @@ class Substrate(BasePlugin, ISubstrate):
 
         # TODO properties
 
-        result = Config.get_result_code(properties)
-        msg = Config.get_exception_message(properties)
+        result = Config.get_result_code(properties=properties)
+        msg = Config.get_exception_message(properties=properties)
         if msg is None:
-            msg = Config.get_result_code_message(properties)
+            msg = Config.get_result_code_message(properties=properties)
 
         if result == 0:
             self.logger.debug("modify code 0 (success)")
-            self.merge_unit_properties(token, properties)
+            self.merge_unit_properties(unit=token, properties=properties)
             token.complete_modify()
 
         elif result == -1:
             self.logger.debug("modify code -1 with message: {}".format(msg))
             notice = "Exception during join for unit: {} {}".format(token.get_id(), msg)
-            self.fail_modify_no_update(token, notice)
+            self.fail_modify_no_update(unit=token, message=notice)
 
         else:
             self.logger.debug("modify code {} with message: {}".format(result, msg))
             notice = "Error code= {} during join for unit: {} with message: {}".format(result, token.get_id(), msg)
-            self.fail_modify_no_update(token, notice)
+            self.fail_modify_no_update(unit=token, message=notice)
 
         try:
-            self.get_substrate_database().update_unit(token)
+            self.get_substrate_database().update_unit(u=token)
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -329,14 +330,14 @@ class Substrate(BasePlugin, ISubstrate):
     def get_substrate_database(self) -> ISubstrateDatabase:
         return self.db
 
-    def set_database(self, db: IDatabase):
+    def set_database(self, *, db: IDatabase):
         if db is not None and not isinstance(db, ISubstrateDatabase):
             raise Exception("db must implement ISubstrateDatabase")
 
-        super().set_database(db)
+        super().set_database(db=db)
 
-    def update_props(self, reservation: IReservation, unit: Unit):
+    def update_props(self, *, reservation: IReservation, unit: Unit):
         try:
-            self.get_substrate_database().update_unit(unit)
+            self.get_substrate_database().update_unit(u=unit)
         except Exception as e:
-            self.fail_and_update(unit, "update properties error", e)
+            self.fail_and_update(unit=unit, message="update properties error", e=e)

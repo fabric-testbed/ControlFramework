@@ -26,13 +26,14 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Dict
 
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.resource_data import ResourceData
+from fabric.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
@@ -50,8 +51,8 @@ from fabric.actor.core.kernel.resource_set import ResourceSet
 
 
 class BrokerPolicy(Policy, IBrokerPolicy):
-    def __init__(self, actor: IBroker):
-        super().__init__(actor)
+    def __init__(self, *, actor: IBroker):
+        super().__init__(actor=actor)
         # If true, every allocated ticket will require administrative approval
         # before being sent back.
         self.required_approval = False
@@ -87,7 +88,7 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
 
-    def add_for_approval(self, reservation: IBrokerReservation):
+    def add_for_approval(self, *, reservation: IBrokerReservation):
         """
         Adds the reservation to the approval list.
 
@@ -95,14 +96,14 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         """
         try:
             self.lock.acquire()
-            self.for_approval.add(reservation)
+            self.for_approval.add(reservation=reservation)
         finally:
             self.lock.release()
 
-    def allocate(self, cycle: int):
+    def allocate(self, *, cycle: int):
         return
 
-    def approve(self, reservation: IBrokerReservation):
+    def approve(self, *, reservation: IBrokerReservation):
         """
         Approve a reservation. To be used by policies that require administrative
         intervention. Override to provide your own approval policy.
@@ -111,16 +112,16 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         """
         return
 
-    def bind(self, reservation: IBrokerReservation) -> bool:
+    def bind(self, *, reservation: IBrokerReservation) -> bool:
         return False
 
-    def demand(self, reservation: IClientReservation):
+    def demand(self, *, reservation: IClientReservation):
         return
 
-    def donate_reservation(self, reservation: IClientReservation):
+    def donate_reservation(self, *, reservation: IClientReservation):
         return
 
-    def extend_broker(self, reservation:IBrokerReservation) -> bool:
+    def extend_broker(self, *, reservation:IBrokerReservation) -> bool:
         return False
 
     def initialize(self):
@@ -128,7 +129,7 @@ class BrokerPolicy(Policy, IBrokerPolicy):
             super().initialize()
             self.initialized = True
 
-    def release_not_approved(self, reservation: IBrokerReservation):
+    def release_not_approved(self, *, reservation: IBrokerReservation):
         """
         Releases the resources for a reservation that was rejected by the
         administrator.
@@ -137,25 +138,25 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         """
         return
 
-    def remove_for_approval(self, reservation: IBrokerReservation):
+    def remove_for_approval(self, *, reservation: IBrokerReservation):
         try:
             self.lock.acquire()
-            self.for_approval.remove(reservation)
+            self.for_approval.remove(reservation=reservation)
         finally:
             self.lock.release()
 
-    def revisit(self, reservation: IReservation):
+    def revisit(self, *, reservation: IReservation):
         if isinstance(reservation, IClientReservation):
-            self.donate_reservation(reservation)
+            self.donate_reservation(reservation=reservation)
 
-    def ticket_satisfies(self, requested_resources: ResourceSet, actual_resources: ResourceSet,
+    def ticket_satisfies(self, *, requested_resources: ResourceSet, actual_resources: ResourceSet,
                          requested_term: Term, actual_term: Term):
         return
 
-    def update_ticket_complete(self, reservation: IClientReservation):
-        self.donate_reservation(reservation)
+    def update_ticket_complete(self, *, reservation: IClientReservation):
+        self.donate_reservation(reservation=reservation)
 
-    def extract(self, source: ResourceSet, delegation: ResourceDelegation) -> ResourceSet:
+    def extract(self, *, source: ResourceSet, delegation: ResourceDelegation) -> ResourceSet:
         """
         Creates a new resource set using the source and the specified delegation.
         
@@ -165,7 +166,8 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         @throws Exception in case of error
         """
         rd = ResourceData()
-        temp = PropList.merge_properties(source.get_resource_properties(), rd.get_resource_properties())
+        temp = PropList.merge_properties(incoming=source.get_resource_properties(),
+                                         outgoing=rd.get_resource_properties())
         rd.resource_properties = temp
 
         extracted = ResourceSet(units=delegation.get_units(), rtype=delegation.get_resource_type(), rdata=rd)
@@ -173,31 +175,32 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         ticket = source.get_resources()
         resource_ticket = source.get_resources().get_ticket()
 
-        new_ticket = self.actor.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=resource_ticket)
+        new_ticket = self.actor.get_plugin().get_ticket_factory().make_ticket(delegation=delegation,
+                                                                              source=resource_ticket)
 
         cset = Ticket(plugin=ticket.get_plugin(), ticket=new_ticket, authority=ticket.get_authority())
 
-        extracted.set_resources(cset)
+        extracted.set_resources(cset=cset)
         return extracted
 
-    def get_client_id(self, reservation: IServerReservation) -> ID:
+    def get_client_id(self, *, reservation: IServerReservation) -> ID:
         return reservation.get_client_auth_token().get_guid()
 
     @staticmethod
     def get_resource_pools_query() -> dict:
-        properties = {Constants.QueryAction : Constants.QueryActionDisctoverPools}
+        properties = {Constants.QueryAction : Constants.QueryActionDiscoverPools}
         return properties
 
     @staticmethod
-    def get_resource_pools(response: dict) -> dict:
+    def get_resource_pools(response: dict) -> Dict[ResourceType, ResourcePoolDescriptor]:
         result = {}
 
         try:
             if Constants.PoolsCount in response:
-                count = response[Constants.PoolsCount]
+                count = int(response[Constants.PoolsCount])
                 for i in range(count):
                     rd = ResourcePoolDescriptor()
-                    rd.reset(response, Constants.PoolPrefix + str(i) + ".")
+                    rd.reset(properties=response, prefix=Constants.PoolPrefix + str(i) + ".")
                     result[rd.get_resource_type()] = rd
 
         except Exception as e:

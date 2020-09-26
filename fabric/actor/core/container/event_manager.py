@@ -41,42 +41,44 @@ class EventManager:
     def __init__(self):
         self.subscriptions = {}
 
-    def create_subscription(self, token: AuthToken, filters: list, handler: IEventHandler) -> ID:
+    def create_subscription(self, *, token: AuthToken, filters: list, handler: IEventHandler) -> ID:
         if token is None:
             raise Exception("Invalid token")
 
         subscription = None
         if handler is None:
-            subscription = EventSubscription(token, filters)
+            subscription = EventSubscription(token=token, filters=filters)
         else:
-            subscription = SynchronousEventSubscription(handler, token, filters)
+            subscription = SynchronousEventSubscription(handler=handler, token=token, filters=filters)
 
         self.subscriptions[subscription.get_subscription_id()] = subscription
         return subscription.get_subscription_id()
 
-    def delete_subscription(self, sid: ID, token: AuthToken):
-        self.get_subscription(sid, token)
-        self.subscriptions.pop(sid)
+    def delete_subscription(self, *, sid: ID, token: AuthToken):
+        self.get_subscription(sid=sid, token=token)
+        if sid in self.subscriptions:
+            self.subscriptions.pop(sid)
 
-    def get_subscription(self, sid: ID, token: AuthToken) -> AEventSubscription:
+    def get_subscription(self, *, sid: ID, token: AuthToken) -> AEventSubscription:
         if not sid in self.subscriptions:
             raise Exception("Invalid subscription")
 
         subscription = self.subscriptions[id]
-        if not subscription.has_access(token):
+        if not subscription.has_access(token=token):
             raise Exception("Access denied")
         return subscription
 
-    def drain_events(self, sid: ID, token: AuthToken, timeout: int) -> list:
-        subscription = self.get_subscription(sid, token)
-        return subscription.drain_events(timeout)
+    def drain_events(self, *, sid: ID, token: AuthToken, timeout: int) -> list:
+        subscription = self.get_subscription(sid=sid, token=token)
+        return subscription.drain_events(timeout=timeout)
 
-    def dispatch_event(self, event: IEvent):
+    def dispatch_event(self, *, event: IEvent):
         try:
             for s in self.subscriptions.values():
                 if s.is_abandoned():
-                    self.subscriptions.pop(s.get_subscription_id())
+                    if s.get_subscription_id() in self.subscriptions:
+                        self.subscriptions.pop(s.get_subscription_id())
                 else:
-                    s.deliver_event(event)
+                    s.deliver_event(event=event)
         except Exception as e:
             print("Could not dispatch event {}".format(e))

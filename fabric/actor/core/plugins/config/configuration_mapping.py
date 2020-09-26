@@ -53,14 +53,14 @@ class ConfigurationMapping:
     def get_properties(self) -> dict:
         return self.properties
 
-    def set_class_name(self, class_name: str):
+    def set_class_name(self, *, class_name: str):
         self.class_name = class_name
 
-    def set_module_name(self, module_name: str):
+    def set_module_name(self, *, module_name: str):
         self.class_name = module_name
 
-    def set_key(self, key: str):
+    def set_key(self, *, key: str):
         self.type = key
 
-    def set_properties(self, properties: dict):
+    def set_properties(self, *, properties: dict):
         self.properties = properties

@@ -29,7 +29,7 @@ class EventMng:
         self.actor_id = None
         self.properties = None
 
-    def set_actor_id(self, value: str):
+    def set_actor_id(self, *, value: str):
         self.actor_id = value
 
     def get_actor_id(self) -> str:
@@ -38,5 +38,5 @@ class EventMng:
     def get_properties(self) -> dict:
         return self.properties
 
-    def set_properties(self, value: dict):
+    def set_properties(self, *, value: dict):
         self.properties = value

@@ -35,13 +35,13 @@ class ActiveStatusChecker(StatusChecker):
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def check_(self, controller: IMgmtActor, rid) -> Status:
+    def check_(self, *, controller: IMgmtActor, rid) -> Status:
         if not isinstance(rid, ID):
             return Status.NOTREADY
 
         try:
-            reservation = controller.get_reservation(rid)
-            units = controller.get_reservation_units(rid)
+            reservation = controller.get_reservation(rid=rid)
+            units = controller.get_reservation_units(rid=rid)
 
             if reservation is None:
                 raise Exception("Unable to obtain reservation information for {}".format(rid))

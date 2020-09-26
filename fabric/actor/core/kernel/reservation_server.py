@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
 from datetime import datetime
 
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
@@ -67,7 +68,7 @@ class ReservationServer(Reservation, IKernelServerReservation):
     PropertySequenceNumberIn = "ReservationServerSequenceIn"
     PropertySequenceNumberOut = "ReservationServerSequenceOut"
 
-    def __init__(self, rid: ID, resources: ResourceSet, term: Term, slice_object: IKernelSlice):
+    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_object: IKernelSlice):
         super().__init__(rid=rid, slice_object=slice_object)
         # Sequence number for incoming messages.
         self.sequence_in = 0
@@ -123,18 +124,18 @@ class ReservationServer(Reservation, IKernelServerReservation):
 
         self.policy = None
 
-    def prepare(self, callback: ICallbackProxy, logger):
-        self.internal_error("abstract method")
+    def prepare(self, *, callback: ICallbackProxy, logger):
+        self.internal_error(err="abstract method")
 
     def validate_incoming(self):
         if self.slice is None:
-            self.error("Missing slice")
+            self.error(err="Missing slice")
 
         if self.requested_resources is None:
-            self.error("Missing resource set")
+            self.error(err="Missing resource set")
 
         if self.requested_term is None:
-            self.error("Missing term")
+            self.error(err="Missing term")
 
         self.requested_resources.validate_incoming()
         self.requested_term.validate()
@@ -143,7 +144,7 @@ class ReservationServer(Reservation, IKernelServerReservation):
         """
         Checks reservation state prior to handling an incoming request. These
         checks are not applied to probes or closes.
-        
+
         @throws Exception
         """
         assert self.slice is not None
@@ -151,20 +152,20 @@ class ReservationServer(Reservation, IKernelServerReservation):
         # Disallow a request on a failed reservation, but always send an update to reset the client.
         if self.is_failed():
             self.generate_update()
-            self.error("server cannot satisfy request (marked failed)")
+            self.error(err="server cannot satisfy request (marked failed)")
 
         # Disallow any further requests on a closing reservation. Generate and update to reset the client.
         if self.is_closed() or self.pending_state == ReservationPendingStates.Closing:
             self.generate_update()
-            self.error("server cannot satisfy request closing")
+            self.error(err="server cannot satisfy request closing")
 
-    def update_lease(self, incoming: IReservation, update_data):
-        self.internal_error("Cannot update a server-side reservation")
+    def update_lease(self, *, incoming: IReservation, update_data):
+        self.internal_error(err="Cannot update a server-side reservation")
 
-    def update_ticket(self, incoming: IReservation, update_data):
-        self.internal_error("Cannot update a server-side reservation")
+    def update_ticket(self, *, incoming: IReservation, update_data):
+        self.internal_error(err="Cannot update a server-side reservation")
 
-    def handle_failed_rpc(self, failed: FailedRPC):
+    def handle_failed_rpc(self, *, failed: FailedRPC):
         if failed.get_error_type() == RPCError.NetworkError:
             if self.is_failed() or self.is_closed():
                 return
@@ -173,70 +174,70 @@ class ReservationServer(Reservation, IKernelServerReservation):
             RPCManagerSingleton.get().retry(failed.get_request())
             return
 
-        self.fail("Failing reservation due to non-recoverable RPC error {}".format(failed.get_error_type()),
-                  failed.get_error())
+        self.fail(message="Failing reservation due to non-recoverable RPC error {}".format(failed.get_error_type()),
+                  exception=failed.get_error())
 
     def clear_notice(self):
         self.update_data.clear()
 
-    def count_when(self, when: datetime):
+    def count_when(self, *, when: datetime):
         """
         Counts the number of active and pending units in the reservation at the
         given time instance.
-        
+
         @param when
                    time instance
-        
+
         @return counter of active and pending units
         """
         c = Reservation.CountHelper()
         if not self.is_terminal():
-            if self.term is not None and self.term.contains(when) and self.resources is not None:
-                c.active = self.resources.get_concrete_units(when)
+            if self.term is not None and self.term.contains(term=when) and self.resources is not None:
+                c.active = self.resources.get_concrete_units(when=when)
                 c.type = self.resources.type
             else:
                 if self.approved and self.approved_term is not None and self.approved_resources is not None:
-                    if self.approved_term.contains(when):
+                    if self.approved_term.contains(term=when):
                         c.active = self.approved_resources.units
                         c.type = self.approved_resources.type
                     else:
-                        if self.requested_term is not None and self.requested_term.contains(when) and \
+                        if self.requested_term is not None and self.requested_term.contains(term=when) and \
                                 self.requested_resources is not None:
                             c.pending = self.requested_resources.units
                             c.type = self.requested_resources.type
 
         return c
 
-    def count(self, rc: ResourceCount, time: datetime):
+    def count(self, *, rc: ResourceCount, time: datetime):
         if self.state == ReservationStates.Nascent or self.state ==  ReservationStates.Ticketed:
             c = self.count_when(when=time)
             if c.type is not None:
-                rc.tally_active(c.type, c.active)
-                rc.tally_pending(c.type, c.pending)
+                rc.tally_active(resource_type=c.type, count=c.active)
+                rc.tally_pending(resource_type=c.type, count=c.pending)
         elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait:
             if self.resources is not None:
-                rc.tally_close(self.resources.type, self.resources.get_units())
+                rc.tally_close(resource_type=self.resources.type, count=self.resources.get_units())
         elif self.state == ReservationStates.Failed:
             if self.resources is not None:
-                rc.tally_failed(self.resources.type, self.resources.get_units())
+                rc.tally_failed(resource_type=self.resources.type, count=self.resources.get_units())
 
-    def fail(self, message: str, exception: Exception = None):
-        self.update_data.error(message)
-        super().fail(message, exception)
+    def fail(self, *, message: str, exception: Exception = None):
+        self.update_data.error(message=message)
+        super().fail(message=message, exception=exception)
 
-    def fail_notify(self, message: str):
+    def fail_notify(self, *, message: str):
         self.generate_update()
-        self.fail(message, None)
+        self.fail(message=message, exception=None)
 
-    def fail_warn(self, message: str):
-        self.update_data.error(message)
-        super().fail_warn(message)
+    def fail_warn(self, *, message: str):
+        self.update_data.error(message=message)
+        super().fail_warn(message=message)
 
+    @abstractmethod
     def generate_update(self):
         """
         Generates an update to the callback object (if any) for this reservation.
         """
-        raise NotImplementedError("Should have implemented this")
 
     def get_callback(self) -> ICallbackProxy:
         return self.callback
@@ -260,7 +261,7 @@ class ReservationServer(Reservation, IKernelServerReservation):
 
     def get_update_data(self) -> UpdateData:
         result = UpdateData()
-        result.absorb(self.update_data)
+        result.absorb(other=self.update_data)
         return result
 
     def get_notices(self) -> str:
@@ -275,19 +276,19 @@ class ReservationServer(Reservation, IKernelServerReservation):
 
         return s
 
-    def set_owner(self, owner: AuthToken):
+    def set_owner(self, *, owner: AuthToken):
         self.owner = owner
 
-    def set_requested_resources(self, resources: ResourceSet):
+    def set_requested_resources(self, *, resources: ResourceSet):
         self.requested_resources = resources
 
-    def set_requested_term(self, term: Term):
+    def set_requested_term(self, *, term: Term):
         self.requested_term = term
 
-    def set_sequence_in(self, sequence: int):
+    def set_sequence_in(self, *, sequence: int):
         self.sequence_in = sequence
 
-    def set_sequence_out(self, sequence: int):
+    def set_sequence_out(self, *, sequence: int):
         self.sequence_out = sequence
 
     def get_client_auth_token(self) -> AuthToken:

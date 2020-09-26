@@ -40,55 +40,57 @@ class LocalBroker(LocalProxy, IBrokerProxy):
     """
     Local proxy for Broker. Allows communication with a Broker in the same container as the caller.
     """
-    def __init__(self, actor: IActor):
-        super().__init__(actor)
+    def __init__(self, *, actor: IActor):
+        super().__init__(actor=actor)
 
-    def prepare_ticket(self, reservation: IReservation, callback: IClientCallbackProxy,
+    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                        caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation, caller)
+        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_claim(self, reservation: IReservation, callback: IClientCallbackProxy,
+    def prepare_claim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                       caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation, caller)
+        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_reclaim(self, reservation: IReservation, callback: IClientCallbackProxy,
+    def prepare_reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                       caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation, caller)
+        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_extend_ticket(self, reservation: IReservation, callback: IClientCallbackProxy,
+    def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                               caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation, caller)
+        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_relinquish(self, reservation: IReservation, callback: IClientCallbackProxy,
+    def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                            caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation, caller)
+        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def pass_reservation(self, reservation: IClientReservation, auth: AuthToken) -> IBrokerReservation:
+    def pass_reservation(self, *, reservation: IClientReservation, auth: AuthToken) -> IBrokerReservation:
         slice_obj = reservation.get_slice().clone_request()
 
-        rset = self.abstract_clone_broker(reservation.get_requested_resources())
+        rset = self.abstract_clone_broker(rset=reservation.get_requested_resources())
         rset.get_resource_data().request_properties = ResourceData.merge_properties(
-            reservation.get_slice().get_request_properties(), rset.get_resource_data().get_request_properties())
+            from_props=reservation.get_slice().get_request_properties(),
+            to_props=rset.get_resource_data().get_request_properties())
 
         term = reservation.get_requested_term().clone()
 
-        broker_reservation = BrokerReservationFactory.create(reservation.get_reservation_id(), rset, term, slice_obj)
-        broker_reservation.set_sequence_in(reservation.get_ticket_sequence_out())
-        broker_reservation.set_owner(self.get_identity())
+        broker_reservation = BrokerReservationFactory.create(rid=reservation.get_reservation_id(), resources=rset,
+                                                             term=term, slice_obj=slice_obj)
+        broker_reservation.set_sequence_in(sequence=reservation.get_ticket_sequence_out())
+        broker_reservation.set_owner(owner=self.get_identity())
 
         return broker_reservation

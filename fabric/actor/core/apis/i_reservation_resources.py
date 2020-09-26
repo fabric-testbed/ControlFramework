@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
@@ -45,7 +47,8 @@ class IReservationResources:
         leasedResources: the concrete resources bound to the reservation.
     """
 
-    def count(self, rc: ResourceCount, time: datetime):
+    @abstractmethod
+    def count(self, *, rc: ResourceCount, time: datetime):
         """
         Counts the number of resources in the reservation relative to the specified time.
         The ResourceCount object is updated with the count of active, pending, expired, failed, etc. units.
@@ -55,8 +58,8 @@ class IReservationResources:
             rc: holder for counts
             time: time instance
         """
-        raise NotImplementedError( "Should have implemented this" )
-
+        
+    @abstractmethod
     def get_approved_resources(self) -> ResourceSet:
         """
         Returns the resources approved for this reservation by the last policy decision. If the policy has never
@@ -65,8 +68,8 @@ class IReservationResources:
         Returns:
             resources last approved for the reservation. None if no resources have ever been approved.
         """
-        raise NotImplementedError( "Should have implemented this" )
-
+        
+    @abstractmethod
     def get_approved_term(self) -> Term:
         """
         Returns the term approved for this reservation by the last policy decision. If the policy has never
@@ -75,8 +78,8 @@ class IReservationResources:
         Returns:
             term last approved for the reservation. None if no resources have ever been approved.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_approved_type(self) -> ResourceType:
         """
         Returns the resource type approved for this reservation by the last policy decision. If the policy has never
@@ -85,8 +88,8 @@ class IReservationResources:
         Returns:
             resource type last approved for the reservation. None if no resources have ever been approved.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_approved_units(self) -> int:
         """
         Returns the number of units approved for this reservation by the last policy decision. If the policy has never
@@ -95,8 +98,8 @@ class IReservationResources:
         Returns:
             number of units last approved for the reservation. None if no resources have ever been approved.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_leased_abstract_units(self) -> int:
         """
         Returns number of abstract units leased by the reservation. If the reservation does not represent leased
@@ -105,8 +108,8 @@ class IReservationResources:
         Returns:
             number of abstract units leased
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_leased_units(self) -> int:
         """
         Returns the number of concrete units leased by the reservation.
@@ -119,8 +122,8 @@ class IReservationResources:
         Returns:
             number of leased units
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_previous_resources(self) -> ResourceSet:
         """
         Returns the resources represented by/allocated to the reservation at the time before the last update.
@@ -129,8 +132,8 @@ class IReservationResources:
         Returns:
             resource represented by the reservation at the time before the last update. Can be None.
         """
-        raise NotImplementedError("Should have implemented this" )
 
+    @abstractmethod
     def get_previous_term(self) -> Term:
         """
         Returns the previously allocated term for the reservation.
@@ -139,8 +142,8 @@ class IReservationResources:
         Returns:
             previously allocated term. None if reservation has not yet been extended
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_requested_resources(self) -> ResourceSet:
         """
         Returns the resources requested for the reservation. If the kernel has not yet issued the resource request
@@ -149,8 +152,8 @@ class IReservationResources:
         Returns:
             resources requested for the reservation. null if no request has been made yet.
         """
-        raise NotImplementedError("Should have implemented this" )
 
+    @abstractmethod
     def get_requested_term(self) -> Term:
         """
         Returns the last requested term. If the kernel has not yet issued the resource request
@@ -159,8 +162,8 @@ class IReservationResources:
         Returns:
             last requested term. null if no request has been made yet.
         """
-        raise NotImplementedError("Should have implemented this" )
 
+    @abstractmethod
     def get_requested_type(self) -> ResourceType:
         """
         Returns the requested resource type.
@@ -168,8 +171,8 @@ class IReservationResources:
         Returns:
             requested resource type
         """
-        raise NotImplementedError("Should have implemented this" )
 
+    @abstractmethod
     def get_requested_units(self) -> int:
         """
         Returns the number of requested units. If no units have yet been requested, the method will return 0.
@@ -177,8 +180,8 @@ class IReservationResources:
         Returns:
             number of requested units
         """
-        raise NotImplementedError("Should have implemented this" )
 
+    @abstractmethod
     def get_resources(self) -> ResourceSet:
         """
         Returns the resources represented by/allocated to the reservation. If no resources have yet been allocated to
@@ -187,8 +190,8 @@ class IReservationResources:
         Returns:
             resources represented by the reservation. None if no resources have been allocated to the reservation.
         """
-        raise NotImplementedError("Should have implemented this" )
 
+    @abstractmethod
     def get_term(self) -> Term:
         """
         Returns the currently allocated term for the reservation. If no resources have yet been allocated to
@@ -197,9 +200,9 @@ class IReservationResources:
         Returns:
             currently allocated term. None if no resources have been allocated to the reservation.
         """
-        raise NotImplementedError("Should have implemented this" )
 
-    def get_units(self, when: datetime = None) -> int:
+    @abstractmethod
+    def get_units(self, *, when: datetime = None) -> int:
         """
         Returns the number of units assigned to the reservation at the specific time instance.
         If the time instance falls outside of the reservation term, this method will return 0.
@@ -209,8 +212,8 @@ class IReservationResources:
         Returns:
             number of units
         """
-        raise NotImplementedError("Should have implemented this" )
 
+    @abstractmethod
     def is_approved(self) -> bool:
         """
         Checks if the policy has made a decision for the reservation.
@@ -218,9 +221,9 @@ class IReservationResources:
         Returns:
             true if the policy has made a decision for the reservation
         """
-        raise NotImplementedError("Should have implemented this" )
 
-    def set_approved(self, term: Term = None, approved_resources: ResourceSet = None):
+    @abstractmethod
+    def set_approved(self, *, term: Term = None, approved_resources: ResourceSet = None):
         """
         Sets the term and resources approved for the reservation. This method should be called by the actor policy
         after it determines the resources and term for the reservation. The method also sets the approved flag.
@@ -229,9 +232,9 @@ class IReservationResources:
             term: term the policy approved
             approved_resources: resources the policy approved
         """
-        raise NotImplementedError("Should have implemented this" )
 
-    def set_approved_resources(self, approved_resources: ResourceSet):
+    @abstractmethod
+    def set_approved_resources(self, *, approved_resources: ResourceSet):
         """
         Sets the resources approved for the reservation. This method should be called by the actor policy after
         it determines the resources for the reservation. This method will not set the approved flag.
@@ -240,9 +243,9 @@ class IReservationResources:
         Args:
             approved_resources: resources the policy approved
         """
-        raise NotImplementedError("Should have implemented this" )
 
-    def set_approved_term(self, term: Term):
+    @abstractmethod
+    def set_approved_term(self, *, term: Term):
         """
         Sets the term approved for the reservation. This method should be called by the actor policy after it
         determines the term for the reservation. This method will not set the approved flag.
@@ -251,4 +254,3 @@ class IReservationResources:
         Args:
             term: approved term
         """
-        raise NotImplementedError("Should have implemented this" )

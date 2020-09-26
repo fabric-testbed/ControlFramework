@@ -23,7 +23,12 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
+
 
 class ITimerTask:
+    @abstractmethod
     def execute(self):
-        raise NotImplementedError("Should have implemented this")
+        """
+        Execute the timed task
+        """

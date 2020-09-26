@@ -1,9 +1,0 @@
-[Core]
-Name = controller
-Module = controller
-
-[Documentation]
-Author = Komal Thareja
-Version = 0.1
-Website = http://lotsofplugins.com
-Description = Controller Plugin

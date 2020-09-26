@@ -92,6 +92,13 @@ time:
   # manually (true)
   - time.manual: false
 
+neo4j:
+  url: neo4j://0.0.0.0:7687
+  user: neo4j
+  pass: password
+  import_host_dir: /host/directory/seen/by/neo4j/docker/as/imports
+  import_dir: /imports
+
 actor:
   - type: authority
   - name: fabric-site-am

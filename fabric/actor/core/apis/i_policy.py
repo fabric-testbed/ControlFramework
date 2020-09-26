@@ -24,7 +24,10 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
+
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -33,6 +36,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.reservation_set import ReservationSet
     from fabric.actor.core.kernel.resource_set import ResourceSet
+    from fabric.actor.core.util.id import ID
 
 
 class IPolicy:
@@ -63,7 +67,8 @@ class IPolicy:
     probePending on the requesting reservation. This causes the reservation to
     retry the pending operation.
     """
-    def prepare(self, cycle: int):
+    @abstractmethod
+    def prepare(self, *, cycle: int):
         """
         Informs the policy that processing for a new cycle is about to begin. The
         policy should initialize whatever internal state is necessary to process
@@ -72,9 +77,9 @@ class IPolicy:
         convenience. The policy can always obtain the cycle number by calling
         IActor.getCurrentCycle()
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def finish(self, cycle: int):
+    @abstractmethod
+    def finish(self, *, cycle: int):
         """
         Informs the policy that all processing for the specified cycle is
         complete. The policy can safely discard any state associated with the
@@ -83,9 +88,9 @@ class IPolicy:
         convenience. The policy can always obtain the cycle number by calling
         IActor.getCurrentCycle()
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def extend(self, reservation: IReservation, resources: ResourceSet, term: Term):
+    @abstractmethod
+    def extend(self, *, reservation: IReservation, resources: ResourceSet, term: Term):
         """
         Notifies the policy that a reservation is about to be extended. This
         method will be invoked only for reservations, whose extensions have not
@@ -96,9 +101,9 @@ class IPolicy:
         @params resources: resource set used for the extension
         @params term: term used for the extension
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def close(self, reservation: IReservation):
+    @abstractmethod
+    def close(self, *, reservation: IReservation):
         """
         Notifies the policy that a reservation is about to be closed. This method
         will be invoked for every reservation that is about to be closed, even if
@@ -108,9 +113,9 @@ class IPolicy:
         
         @params reservation: reservation about to be closed
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def closed(self, reservation: IReservation):
+    @abstractmethod
+    def closed(self, *, reservation: IReservation):
         """
         Notifies the policy that a reservation has been closed. This method will
         be invoked for every reservation that closes successfully. The policy
@@ -124,9 +129,9 @@ class IPolicy:
 
         @params reservation: closed reservation
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def remove(self, reservation: IReservation):
+    @abstractmethod
+    def remove(self, *, reservation: IReservation):
         """
         Notifies the policy that a reservation is about to be removed. This
         method will be invoked for each reservation that is to be removed from
@@ -138,9 +143,9 @@ class IPolicy:
 
         @params reservation: reservation to remove
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def query(self, p):
+    @abstractmethod
+    def query(self, *, p) -> dict:
         """
         Answers a query from another actor. This method is intended to be used to
         obtain policy-specific parameters and information. This method should be
@@ -158,34 +163,34 @@ class IPolicy:
                 collection is null or empty, should return all possible
                 properties that can be relevant to the caller.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def configuration_complete(self, action: str, token: ConfigToken, outProperties):
+    @abstractmethod
+    def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         """
         Notifies the policy that a configuration action for the object
         represented by the token parameter has completed.
         
         @params action : configuration action. See Config.Target*
         @params token : object or a token for the object whose configuration action has completed
-        @params outProperties : output properties produced by the configuration action
+        @params out_properties : output properties produced by the configuration action
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def reset(self):
         """
         Post recovery entry point. This method will be invoked once all revisit
         operations are complete and the actor is ready to operate normally.
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def recovery_starting(self):
         """
         Informs the policy that recovery is about to begin.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def revisit(self, reservation: IReservation):
+    @abstractmethod
+    def revisit(self, *, reservation: IReservation):
         """
         Informs the policy about a reservation. Called during recovery/startup.
         The policy must re-establish any state required for the management of the
@@ -194,23 +199,23 @@ class IPolicy:
         @params reservation: reservation being recovered
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def recovery_ended(self):
         """
         Informs the policy that recovery has completed.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_actor(self, actor: IActor):
+    @abstractmethod
+    def set_actor(self, *, actor: IActor):
         """
         Sets the actor the policy belongs to.
         
         @params actor : the actor the policy belongs to
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_closing(self, cycle: int) -> ReservationSet:
+    @abstractmethod
+    def get_closing(self, *, cycle: int) -> ReservationSet:
         """
         Returns a set of reservations that must be closed.
         
@@ -218,12 +223,11 @@ class IPolicy:
         
         @returns reservations to be closed
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_guid(self):
+    @abstractmethod
+    def get_guid(self) -> ID:
         """
         Returns the globally unique identifier of this policy object instance.
         
         @returns guid
         """
-        raise NotImplementedError("Should have implemented this")

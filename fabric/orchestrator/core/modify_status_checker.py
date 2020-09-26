@@ -36,12 +36,12 @@ class ModifyStatusChecker(StatusChecker):
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def check_(self, controller: IMgmtActor, rid) -> Status:
+    def check_(self, *, controller: IMgmtActor, rid) -> Status:
         if not isinstance(rid, ReservationIDWithModifyIndex):
             return Status.NOTREADY
 
         try:
-            reservation = controller.get_reservation(rid.get_reservation_id())
+            reservation = controller.get_reservation(rid=rid.get_reservation_id())
             if reservation is None:
                 raise Exception("Unable to obtain reservation information for {}".format(rid.get_reservation_id()))
 
@@ -55,7 +55,7 @@ class ModifyStatusChecker(StatusChecker):
                     reservation.get_pending_state() == ReservationStates.Closed:
                 return Status.NOTOK
 
-            units_list = controller.get_reservation_units(rid.get_reservation_id())
+            units_list = controller.get_reservation_units(rid=rid.get_reservation_id())
 
             if len(units_list) == 0:
                 raise Exception("No units associated with reservation {}".format(rid.get_reservation_id()))

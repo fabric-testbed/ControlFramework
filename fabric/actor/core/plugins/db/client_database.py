@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
+
 from fabric.actor.core.util.client import Client
 from fabric.actor.core.util.id import ID
 
@@ -32,43 +34,43 @@ class ClientDatabase:
     This interface describes the methods necessary to maintain information about
     the clients of an actor that acts in a server role.
     """
-    def add_client(self, client: Client):
+    @abstractmethod
+    def add_client(self, *, client: Client):
         """
         Adds a new database record representing this client
         @param client client
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def update_client(self, client: Client):
+    @abstractmethod
+    def update_client(self, *, client: Client):
         """
         Updates database record representing this client
         @param client client
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def remove_client(self, guid: ID):
+    @abstractmethod
+    def remove_client(self, *, guid: ID):
         """
         Removes the specified client record
         @param guid client guid
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_client(self, guid: ID) -> dict:
+    @abstractmethod
+    def get_client(self, *, guid: ID) -> dict:
         """
         Retrieves the specified client record
         @param guid client guid
         @return vector of properties
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_clients(self) -> list:
         """
         Retrieves all client records
         @return vector of properties
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

@@ -46,12 +46,12 @@ if TYPE_CHECKING:
 
 
 class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
-    def __init__(self, kafka_topic: str, identity: AuthToken, logger):
-        super().__init__(kafka_topic, identity, logger)
+    def __init__(self, *, kafka_topic: str, identity: AuthToken, logger):
+        super().__init__(kafka_topic=kafka_topic, identity=identity, logger=logger)
         self.type = KafkaProxy.TypeReturn
         self.callback = True
 
-    def execute(self, request: IRPCRequestState):
+    def execute(self, *, request: IRPCRequestState):
         avro_message = None
         if request.get_type() == RPCRequestType.UpdateTicket:
             avro_message = UpdateTicketAvro()
@@ -59,7 +59,7 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
             avro_message.reservation = request.reservation
             avro_message.callback_topic = request.callback_topic
             avro_message.update_data = request.udd
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.UpdateLease:
             avro_message = UpdateLeaseAvro()
@@ -67,34 +67,34 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
             avro_message.reservation = request.reservation
             avro_message.callback_topic = request.callback_topic
             avro_message.update_data = request.udd
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         else:
-            return super().execute(request)
+            return super().execute(request=request)
 
         if self.producer is None:
             self.producer = self.create_kafka_producer()
 
-        if self.producer is not None and self.producer.produce_sync(self.kafka_topic, avro_message):
+        if self.producer is not None and self.producer.produce_sync(topic=self.kafka_topic, record=avro_message):
             self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def prepare_update_ticket(self, reservation: IBrokerReservation, update_data: UpdateData,
+    def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
                               callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
-        request.reservation = self.pass_reservation(reservation, caller)
-        request.udd = Translate.translate_udd(update_data)
+        request.reservation = self.pass_reservation(reservation=reservation, auth=caller)
+        request.udd = Translate.translate_udd(udd=update_data)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request
 
-    def prepare_update_lease(self, reservation: IAuthorityReservation,  update_data: UpdateData,
+    def prepare_update_lease(self, *, reservation: IAuthorityReservation,  update_data: UpdateData,
                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
-        request.reservation = self.pass_reservation(reservation, caller)
-        request.udd = Translate.translate_udd(update_data)
+        request.reservation = self.pass_reservation(reservation=reservation, auth=caller)
+        request.udd = Translate.translate_udd(udd=update_data)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request
@@ -102,30 +102,33 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
     @staticmethod
     def pass_reservation(reservation: IServerReservation, auth: AuthToken) -> ReservationAvro:
         avro_reservation = ReservationAvro()
-        avro_reservation.slice = Translate.translate_slice_to_avro(reservation.get_slice())
+        avro_reservation.slice = Translate.translate_slice_to_avro(slice_obj=reservation.get_slice())
         term = None
         if reservation.get_term() is None:
             term = reservation.get_requested_term().clone()
         else:
             term = reservation.get_term().clone()
 
-        avro_reservation.term = Translate.translate_term(term)
+        avro_reservation.term = Translate.translate_term(term=term)
         avro_reservation.reservation_id = str(reservation.get_reservation_id())
 
         rset = None
         if reservation.get_resources() is None:
             from fabric.actor.core.kernel.resource_set import ResourceSet
             from fabric.actor.core.util.resource_data import ResourceData
-            rset = Translate.translate_resource_set(ResourceSet(units=0, rtype=reservation.get_requested_type(),
-                                                    rdata=ResourceData()), Translate.DirectionReturn)
+            rset = Translate.translate_resource_set(resource_set=ResourceSet(units=0,
+                                                                             rtype=reservation.get_requested_type(),
+                                                                             rdata=ResourceData()),
+                                                    direction=Translate.DirectionReturn)
         else:
-            rset = Translate.translate_resource_set(reservation.get_resources(), Translate.DirectionReturn)
+            rset = Translate.translate_resource_set(resource_set=reservation.get_resources(),
+                                                    direction=Translate.DirectionReturn)
 
         cset = reservation.get_resources().get_resources()
 
         encoded = None
         if cset is not None:
-            encoded = cset.encode(Constants.ProtocolKafka)
+            encoded = cset.encode(protocol=Constants.ProtocolKafka)
             if encoded is None:
                 raise Exception("Unsupported IConcreteSet: {}".format(type(cset)))
 

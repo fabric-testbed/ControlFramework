@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import threading
+from logging.handlers import RotatingFileHandler
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_mgmt_container import IMgmtContainer
@@ -92,17 +93,25 @@ class Globals:
         # Get the log level
         log_level = None
         if Constants.PropertyConfLogLevel in log_config :
-           log_level = log_config[Constants.PropertyConfLogLevel]
+           log_level = log_config.get(Constants.PropertyConfLogLevel, None)
 
         if log_level is None:
             log_level = logging.INFO
 
         # Set up the root logger
-        log = logging.getLogger(log_config[Constants.PropertyConfLogger])
+        log = logging.getLogger(log_config.get(Constants.PropertyConfLogger, None))
         log.setLevel(log_level)
-        log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
+        log_format = \
+            '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
 
-        logging.basicConfig(format=log_format, filename=log_path)
+        os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
+        backup_count = log_config.get(Constants.PropertyConfLogRetain, None)
+        max_log_size = log_config.get(Constants.PropertyConfLogSize, None)
+
+        file_handler = RotatingFileHandler(log_path, backupCount=int(backup_count), maxBytes=int(max_log_size))
+
+        logging.basicConfig(handlers=[file_handler], format=log_format)
 
         return log
 
@@ -110,7 +119,7 @@ class Globals:
         if os.path.isfile(Constants.SuperblockLocation):
             os.remove(Constants.SuperblockLocation)
 
-    def fail(self, e: Exception):
+    def fail(self, *, e: Exception):
         self.log.error("Critical error: Actor failed to initialize {}".format(e))
         exit(-1)
 
@@ -128,7 +137,7 @@ class Globals:
     def load_config(self):
         try:
             from fabric.actor.boot.configuration_loader import ConfigurationLoader
-            loader = ConfigurationLoader(self.ConfigFile)
+            loader = ConfigurationLoader(path=self.ConfigFile)
             self.config = loader.read_configuration()
         except Exception as e:
             raise RuntimeError("Unable to parse configuration file {}".format(e))
@@ -146,14 +155,14 @@ class Globals:
     def get_kafka_config_producer(self) -> dict:
         if self.config is None or self.config.get_runtime_config() is None:
             return None
-        bootstrap_server = self.config.get_runtime_config()[Constants.PropertyConfKafkaServer]
-        schema_registry = self.config.get_runtime_config()[Constants.PropertyConfKafkaSchemaRegistry]
-        security_protocol = self.config.get_runtime_config()[Constants.PropertyConfKafkaSecurityProtocol]
-        group_id = self.config.get_runtime_config()[Constants.PropertyConfKafkaGroupId]
-        ssl_ca_location = self.config.get_runtime_config()[Constants.PropertyConfKafkaSSlCaLocation]
-        ssl_certificate_location = self.config.get_runtime_config()[Constants.PropertyConfKafkaSslCertificateLocation]
-        ssl_key_location = self.config.get_runtime_config()[Constants.PropertyConfKafkaSslKeyLocation]
-        ssl_key_password = self.config.get_runtime_config()[Constants.PropertyConfKafkaSslKeyPassword]
+        bootstrap_server = self.config.get_runtime_config().get(Constants.PropertyConfKafkaServer, None)
+        schema_registry = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSchemaRegistry, None)
+        security_protocol = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSecurityProtocol, None)
+        group_id = self.config.get_runtime_config().get(Constants.PropertyConfKafkaGroupId, None)
+        ssl_ca_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSSlCaLocation, None)
+        ssl_certificate_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslCertificateLocation, None)
+        ssl_key_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyLocation, None)
+        ssl_key_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyPassword, None)
 
         conf = {'bootstrap.servers': bootstrap_server,
                 'security.protocol': security_protocol,
@@ -175,8 +184,8 @@ class Globals:
         return conf
 
     def get_kafka_schemas(self):
-        key_schema_file = self.config.get_runtime_config()[Constants.PropertyConfKafkaKeySchema]
-        value_schema_file = self.config.get_runtime_config()[Constants.PropertyConfKafkaValueSchema]
+        key_schema_file = self.config.get_runtime_config().get(Constants.PropertyConfKafkaKeySchema, None)
+        value_schema_file = self.config.get_runtime_config().get(Constants.PropertyConfKafkaValueSchema, None)
 
         from confluent_kafka import avro
         file = open(key_schema_file, "r")
@@ -195,16 +204,8 @@ class Globals:
         key_schema, val_schema = self.get_kafka_schemas()
 
         from fabric.message_bus.producer import AvroProducerApi
-        producer = AvroProducerApi(conf, key_schema, val_schema, self.get_logger())
+        producer = AvroProducerApi(conf=conf, key_schema=key_schema, record_schema=val_schema, logger=self.get_logger())
         return producer
-
-    def get_kafka_consumer(self):
-        conf = self.get_kafka_config_consumer()
-        key_schema, val_schema = self.get_kafka_schemas()
-
-        from fabric.message_bus.consumer import AvroConsumerApi
-        consumer = AvroConsumerApi(conf, key_schema, val_schema, self.get_logger())
-        return consumer
 
     def get_logger(self):
         if not self.initialized:
@@ -214,7 +215,7 @@ class Globals:
             self.log = self.make_logger()
         return self.log
 
-    def start(self, force_fresh: bool):
+    def start(self, *, force_fresh: bool):
         try:
             try:
                 self.lock.acquire()
@@ -233,7 +234,7 @@ class Globals:
                 self.container = Container()
                 self.log.info("Successfully instantiated the container implementation.")
                 self.log.info("Initializing container")
-                self.container.initialize(self.config)
+                self.container.initialize(config=self.config)
                 self.log.info("Successfully initialized the container")
                 self.start_completed = True
             finally:
@@ -241,7 +242,7 @@ class Globals:
         except Exception as e:
             # TODO
             raise e
-            self.fail(e)
+            self.fail(e=e)
 
     def stop(self):
         try:

@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
+import traceback
 
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_base_plugin import IBasePlugin
@@ -49,7 +50,7 @@ class Proxy(IProxy):
     PropertyProxyCallback = "ProxyCallback"
 
     @staticmethod
-    def get_callback(actor: IActor, protocol: str) -> ICallbackProxy:
+    def get_callback(*, actor: IActor, protocol: str) -> ICallbackProxy:
         """
         Obtains a callback for the specified actor
         @param actor actor
@@ -59,13 +60,13 @@ class Proxy(IProxy):
         if actor is None:
             raise Exception("actor cannot be None")
 
-        callback = ActorRegistrySingleton.get().get_callback(protocol, actor.get_name())
+        callback = ActorRegistrySingleton.get().get_callback(protocol=protocol, actor_name=actor.get_name())
         if callback is None:
             raise Exception("Could not obtain callback proxy: protocol={}".format(protocol))
         return callback
 
     @staticmethod
-    def get_proxy(properties: dict) -> IProxy:
+    def get_proxy(*, properties: dict) -> IProxy:
         """
         Obtains a proxy object from the specified properties list. If a suitable
         proxy object has already been created and registered with the
@@ -81,19 +82,19 @@ class Proxy(IProxy):
         is_callback = properties[Proxy.PropertyProxyCallback]
         proxy = None
         if is_callback:
-            proxy = ActorRegistrySingleton.get().get_callback(type, name)
+            proxy = ActorRegistrySingleton.get().get_callback(protocol=type, actor_name=name)
         else:
-            proxy = ActorRegistrySingleton.get().get_proxy(type, name)
+            proxy = ActorRegistrySingleton.get().get_proxy(protocol=type, actor_name=name)
 
         if proxy is None:
-            Proxy.recover_proxy(properties, True)
+            Proxy.recover_proxy(properties=properties, register=True)
         else:
             # TODO
-            proxy = Proxy.recover_proxy(properties, False)
+            proxy = Proxy.recover_proxy(properties=properties, register=False)
         return proxy
 
     @staticmethod
-    def recover_proxy(properties: dict, register: bool):
+    def recover_proxy(*, properties: dict, register: bool):
         """
         Creates a proxy list from a properties list representing the
         serialization of the proxy. Optionally, the resulting object may be
@@ -116,22 +117,24 @@ class Proxy(IProxy):
 
         if register:
             if proxy.callback:
-                ActorRegistrySingleton.get().register_callback(proxy)
+                ActorRegistrySingleton.get().register_callback(callback=proxy)
             else:
-                ActorRegistrySingleton.get().register_proxy(proxy)
+                ActorRegistrySingleton.get().register_proxy(proxy=proxy)
         return proxy
 
     @staticmethod
-    def decode(encoded, plugin: IBasePlugin) -> IConcreteSet:
+    def decode(*, encoded, plugin: IBasePlugin) -> IConcreteSet:
         try:
             decoded_resource = pickle.loads(encoded)
-            decoded_resource.restore(plugin, None)
+            print("Decoded object is of type={}".format(type(decoded_resource)))
+            decoded_resource.restore(plugin=plugin, reservation=None)
             return decoded_resource
         except Exception as e:
+            traceback.print_exc()
             print("Exception occurred while decoding {}".format(e))
         return None
 
-    def __init__(self, auth: AuthToken = None):
+    def __init__(self, *, auth: AuthToken = None):
         self.logger = None
         self.proxy_type = None
         self.callback = False
@@ -164,13 +167,13 @@ class Proxy(IProxy):
     def get_type(self) -> str:
         return self.proxy_type
 
-    def set_logger(self, logger):
+    def set_logger(self, *, logger):
         self.logger = logger
 
     def get_logger(self):
         return self.logger
 
-    def abstract_clone_authority(self, rset: ResourceSet) -> ResourceSet:
+    def abstract_clone_authority(self, *, rset: ResourceSet) -> ResourceSet:
         """
         Clones the resource set, but without any of the concrete sets. Preserves
         only the configuration properties. This method should be used when
@@ -187,11 +190,12 @@ class Proxy(IProxy):
         else:
             properties = properties.copy()
 
-        temp = ResourceData.merge_properties(properties, new_resource_data.get_configuration_properties())
+        temp = ResourceData.merge_properties(from_props=properties,
+                                             to_props=new_resource_data.get_configuration_properties())
         new_resource_data.configuration_properties = temp
         return ResourceSet(units=rset.get_units(), rtype=rset.get_type(), rdata=new_resource_data)
 
-    def abstract_clone_broker(self, rset: ResourceSet) -> ResourceSet:
+    def abstract_clone_broker(self, *, rset: ResourceSet) -> ResourceSet:
         """
         Clones the resource set, but without any of the concrete sets. Preserves
         only the configuration properties. This method should be used when
@@ -208,7 +212,7 @@ class Proxy(IProxy):
         else:
             properties = properties.copy()
 
-        temp = ResourceData.merge_properties(properties, new_resource_data.get_request_properties())
+        temp = ResourceData.merge_properties(from_props=properties, to_props=new_resource_data.get_request_properties())
         new_resource_data.request_properties = temp
         return ResourceSet(units=rset.get_units(), rtype=rset.get_type(), rdata=new_resource_data)
 
@@ -230,6 +234,6 @@ class Proxy(IProxy):
         else:
             properties = properties.copy()
 
-        temp = ResourceData.merge_properties(properties, new_resource_data.get_resource_properties())
+        temp = ResourceData.merge_properties(from_props=properties, to_props=new_resource_data.get_resource_properties())
         new_resource_data.resource_properties = temp
         return ResourceSet(units=rset.get_units(), rtype=rset.get_type(), rdata=new_resource_data)

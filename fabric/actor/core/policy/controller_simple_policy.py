@@ -79,7 +79,7 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
 
-    def formulate_bids(self, cycle: int) -> Bids:
+    def formulate_bids(self, *, cycle: int) -> Bids:
         """
         Form bids for expiring reservations and new demands. Return sets of reservations for new bids and renewals.
         formulateBids is unlocked on Controller. Note that a bidding policy never changes
@@ -93,20 +93,20 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         extending = None
         bidding = None
         try:
-            extending = self.process_renewing(cycle)
+            extending = self.process_renewing(cycle=cycle)
             # Select new reservations to bid, and bind to bid and term. Note:
             # here we issue all bids immediately. If we use a different policy,
             # it is our responsibility here to issue bids ahead of their
             # intended start cycles.
-            bidding = self.process_demand(cycle)
+            bidding = self.process_demand(cycle=cycle)
             self.logger.debug("bidForSources: cycle {} bids {}".format(cycle, bidding.size()))
         except Exception as e:
             self.logger.error("an error in formulateBids:{}".format(e))
             self.logger.error(traceback.format_exc())
 
-        return Bids(bidding, extending)
+        return Bids(ticketing=bidding, extending=extending)
 
-    def get_close(self, reservation: IClientReservation, term: Term) -> int:
+    def get_close(self, *, reservation: IClientReservation, term: Term) -> int:
         """
         Very simple policy - based on ADVANCE_CLOSE
         """
@@ -116,7 +116,7 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
             end_cycle = self.actor.get_actor_clock().cycle(when=term.get_end_time())
             return end_cycle - self.ADVANCE_CLOSE
 
-    def get_extend_term(self, suggested_term: Term, current_term: Term):
+    def get_extend_term(self, *, suggested_term: Term, current_term: Term):
         """
         Returns the extension term for a reservation.
         @params suggested_term suggested term
@@ -126,38 +126,38 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         """
         extend_term = None
         if suggested_term is not None:
-            if suggested_term.extends_term(current_term):
+            if suggested_term.extends_term(old_term=current_term):
                 extend_term = suggested_term
             else:
                 # extend the current term with the length of the term specified in suggested_term
                 length = suggested_term.get_length()
-                extend_term = current_term.extends_term(length)
+                extend_term = current_term.extend(length=length)
         else:
             # Extend the term by its previous length
             extend_term = current_term.extend()
         return extend_term
 
-    def get_redeem(self, reservation: IClientReservation) -> int:
+    def get_redeem(self, *, reservation: IClientReservation) -> int:
         new_start = self.clock.cycle(when=reservation.get_term().get_new_start_time())
         result = new_start - self.CLOCK_SKEW
         if result < self.actor.get_current_cycle():
             result = self.actor.get_current_cycle()
         return result
 
-    def get_renew(self, reservation: IClientReservation) -> int:
+    def get_renew(self, *, reservation: IClientReservation) -> int:
         """
         Call up to the agent to receive the advanceTime. Do time based on new_start so that requests are aligned.
         """
         new_start_cycle = self.actor.get_actor_clock().cycle(when=reservation.get_term().get_end_time()) + 1
         return new_start_cycle - BrokerSimplePolicy.ADVANCE_TIME - self.CLOCK_SKEW
 
-    def prepare(self, cycle: int):
+    def prepare(self, *, cycle: int):
         try:
             self.check_pending()
         except Exception as e:
             self.logger.error("Exception in prepare:{}".format(e))
 
-    def process_demand(self, cycle: int) -> ReservationSet:
+    def process_demand(self, *, cycle: int) -> ReservationSet:
         """
         For each newly requested reservation, assigns a term to request, and a broker to bid from.
         @param cycle cycle
@@ -178,17 +178,17 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         broker = self.actor.get_default_broker()
         for reservation in demand.values():
             if reservation.get_broker() is None:
-                reservation.set_broker(broker)
+                reservation.set_broker(broker=broker)
 
             rset = reservation.get_suggested_resources()
             term = reservation.get_suggested_term()
-            reservation.set_approved(term, rset)
-            outgoing.add(reservation)
-            self.calendar.add_pending(reservation)
-            self.calendar.remove_demand(reservation)
+            reservation.set_approved(term=term, approved_resources=rset)
+            outgoing.add(reservation=reservation)
+            self.calendar.add_pending(reservation=reservation)
+            self.calendar.remove_demand(reservation=reservation)
         return outgoing
 
-    def process_renewing(self, cycle: int) -> ReservationSet:
+    def process_renewing(self, *, cycle: int) -> ReservationSet:
         """
         Returns a fresh ReservationSet of expiring reservations to try to renew
         in this bidding cycle, and suggest new terms for them.
@@ -197,7 +197,7 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         @throws Exception in case of error rare
         """
         result = ReservationSet()
-        renewing = self.calendar.get_renewing(cycle)
+        renewing = self.calendar.get_renewing(cycle=cycle)
         if renewing is None or renewing.size() == 0:
             return result
 
@@ -214,18 +214,18 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
                     suggested_resources = reservation.get_suggested_resources()
                     current_term = reservation.get_term()
                     approved_resources = reservation.get_resources().abstract_clone()
-                    approved_resources = PropertiesManager.set_elastic_time(approved_resources, False)
+                    approved_resources = PropertiesManager.set_elastic_time(rset=approved_resources, value=False)
 
-                    approved_term = self.get_extend_term(suggested_term, current_term)
+                    approved_term = self.get_extend_term(suggested_term=suggested_term, current_term=current_term)
                     if suggested_resources is not None:
                         approved_resources.set_units(suggested_resources.get_units())
                         approved_resources.set_type(suggested_resources.get_type())
-                        approved_resources.get_resource_data().merge(suggested_resources.get_resource_data())
-                        approved_resources = PropertiesManager.set_elastic_time(approved_resources, False)
+                        approved_resources.get_resource_data().merge(other=suggested_resources.get_resource_data())
+                        approved_resources = PropertiesManager.set_elastic_time(rset=approved_resources, value=False)
 
                     reservation.set_approved(term=approved_term, approved_resources=approved_resources)
-                    result.add(reservation)
-                    self.calendar.add_pending(reservation)
+                    result.add(reservation=reservation)
+                    self.calendar.add_pending(reservation=reservation)
             else:
                 self.logger.error("A non-renewable reservation is on the renewing list")
         return result

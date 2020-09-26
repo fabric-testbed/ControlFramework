@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
@@ -36,7 +38,8 @@ class IBroker(IClientActor, IServerActor):
     """
     IBroker defines the interface for a actor acting in the broker role
     """
-    def extend_ticket_broker(self, reservation: IBrokerReservation):
+    @abstractmethod
+    def extend_ticket_broker(self, *, reservation: IBrokerReservation):
         """
         Processes an extend ticket request for the reservation.
        
@@ -45,9 +48,9 @@ class IBroker(IClientActor, IServerActor):
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def ticket_broker(self, reservation: IBrokerReservation):
+    @abstractmethod
+    def ticket_broker(self, *, reservation: IBrokerReservation):
         """
         Processes a ticket request for the reservation.
        
@@ -55,4 +58,3 @@ class IBroker(IClientActor, IServerActor):
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

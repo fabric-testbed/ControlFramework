@@ -106,9 +106,9 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     PropertyRelinquished = "ReservationClientRelinquished"
     PropertyClosedDuringRedeem = "ReservationClientClosedDuringRedeem"
 
-    def __init__(self, rid: ID, resources: ResourceSet = None, term: Term = None,
+    def __init__(self, *, rid: ID, resources: ResourceSet = None, term: Term = None,
                  slice_object: IKernelSlice = None, broker: IBrokerProxy = None):
-        super().__init__(rid, resources, term, slice_object)
+        super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_object)
         self.service_pending = JoinState.None_
         # Proxy to the broker that serves tickets for this reservation.
         self.broker = broker
@@ -229,14 +229,14 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
         self.suggested = True
 
-    def restore(self, actor: IActor, slice_obj: ISlice, logger):
+    def restore(self, *, actor: IActor, slice_obj: ISlice, logger):
         """
         Must be invoked after creating reservation from unpickling
         """
-        super().restore(actor, slice_obj, logger)
+        super().restore(actor=actor, slice_obj=slice_obj, logger=logger)
         self.suggested = False
 
-    def absorb_lease_update(self, incoming: IReservation, update_date: UpdateData):
+    def absorb_lease_update(self, *, incoming: IReservation, update_date: UpdateData):
         """
         Absorbs and incoming lease update.
 
@@ -255,10 +255,10 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             # resources and we do not want to process the joins. Just keep
             # waiting for the FIN. Essentially rejects the update without
             # transition to Failed.
-            update_date.post("reservation is closing, rejected lease is non-empty")
-            self.log_warning("non-empty lease update received in CloseWait: waiting for FIN")
+            update_date.post(event="reservation is closing, rejected lease is non-empty")
+            self.log_warning(message="non-empty lease update received in CloseWait: waiting for FIN")
         else:
-            self.leased_resources.update(self, incoming.get_resources())
+            self.leased_resources.update(reservation=self, resource_set=incoming.get_resources())
 
         # Remember the current term and lease term and absorb the incoming ones
         self.previous_term = self.term
@@ -266,7 +266,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         self.term = incoming.get_term()
         self.lease_term = self.term
 
-    def absorb_ticket_update(self, incoming: IReservation, update_data: UpdateData):
+    def absorb_ticket_update(self, *, incoming: IReservation, update_data: UpdateData):
         """
         Absorbs an incoming ticket update.
 
@@ -288,12 +288,12 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         self.ticket_term = incoming.get_term()
         self.term = self.ticket_term
 
-        self.resources.update(self, incoming.get_resources())
-        self.log_debug("absorb_update: {}".format(incoming))
+        self.resources.update(reservation=self, resource_set=incoming.get_resources())
+        self.log_debug(message="absorb_update: {}".format(incoming))
 
-        self.policy.update_ticket_complete(self)
+        self.policy.update_ticket_complete(reservation=self)
 
-    def accept_lease_update(self, incoming: IReservation, update_data: UpdateData) -> bool:
+    def accept_lease_update(self, *, incoming: IReservation, update_data: UpdateData) -> bool:
         """
         Determines whether the incoming lease update is acceptable and if so
         accepts it.
@@ -305,24 +305,27 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         @return true if the update was successful
         """
         # should we absorb this. What if decide not to accept the update?
-        self.last_lease_update.absorb(update_data)
+        self.last_lease_update.absorb(other=update_data)
 
         # Policy: if this lease update fails, then transition to Failed.
         # Alternative: could transition to (state, None) to allow retry of the
         # redeem/extend by a higher level.
         if update_data.failed:
-            self.transition("failed lease update", ReservationStates.Failed, ReservationPendingStates.None_)
+            self.transition(prefix="failed lease update", state=ReservationStates.Failed,
+                            pending=ReservationPendingStates.None_)
         else:
             try:
-                self.lease_update_satisfies(incoming, update_data)
-                self.absorb_lease_update(incoming, update_data)
+                self.lease_update_satisfies(incoming=incoming, update_data=update_data)
+                self.absorb_lease_update(incoming=incoming, update_date=update_data)
             except Exception as e:
-                self.transition("rejected lease update", ReservationStates.Failed, ReservationPendingStates.None_)
-                update_data.post_error(str(e))
-                self.log_error("accept_lease_update", e)
+                self.transition(prefix="rejected lease update",
+                                state=ReservationStates.Failed,
+                                pending=ReservationPendingStates.None_)
+                update_data.post_error(event=str(e))
+                self.log_error(message="accept_lease_update", exception=e)
         return update_data.successful()
 
-    def accept_ticket_update(self, incoming: IReservation, update_data: UpdateData):
+    def accept_ticket_update(self, *, incoming: IReservation, update_data: UpdateData):
         """
         Determines whether the incoming ticket update is acceptable and if so
         accepts it.
@@ -333,24 +336,26 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                    update data
         @return true if the update was successful
         """
-        self.last_ticket_update.absorb(update_data)
+        self.last_ticket_update.absorb(other=update_data)
         success = True
         if update_data.is_failed():
             success = False
         else:
             try:
-                self.ticket_update_satisfies(incoming, update_data)
-                self.absorb_ticket_update(incoming, update_data)
+                self.ticket_update_satisfies(incoming=incoming, update_data=update_data)
+                self.absorb_ticket_update(incoming=incoming, update_data=update_data)
             except Exception as e:
                 success = False
-                update_data.error(str(e))
-                self.log_error("accept_ticket_update", e)
+                update_data.error(message=str(e))
+                self.log_error(message="accept_ticket_update", exception=e)
 
         if not success:
             if self.state == ReservationStates.Nascent:
-                self.transition("failed ticket reserve", ReservationStates.Failed, ReservationPendingStates.None_)
+                self.transition(prefix="failed ticket reserve",
+                                state=ReservationStates.Failed, pending=ReservationPendingStates.None_)
             else:
-                self.transition("failed ticket update", self.state, ReservationPendingStates.None_)
+                self.transition(prefix="failed ticket update", state=self.state,
+                                pending=ReservationPendingStates.None_)
         return success
 
     def approve_join(self):
@@ -401,8 +406,8 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             if pred_state.get_reservation() is None or \
                     pred_state.get_reservation().is_failed() or \
                     pred_state.get_reservation().is_closed():
-                self.logger.error("redeem predecessor reservation is in a terminal state or reservatio is null. ignoring it: {}".
-                                  format(pred_state.get_reservation()))
+                self.logger.error("redeem predecessor reservation is in a terminal state or reservatio is null."
+                                  " ignoring it: {}".format(pred_state.get_reservation()))
                 continue
             if pred_state.get_reservation().is_active_joined():
                 approved = False
@@ -413,7 +418,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
         return approved
 
-    def can_redeem(self) ->bool:
+    def can_redeem(self) -> bool:
         if (((self.state == ReservationStates.ActiveTicketed) or (self.state == ReservationStates.Ticketed) or
              ((self.state == ReservationStates.Active) and self.pending_recover)) and
                 (self.pending_state == ReservationPendingStates.None_)):
@@ -456,18 +461,18 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             self.relinquished = True
             try:
                 if self.policy is not None:
-                    self.policy.closed(self)
+                    self.policy.closed(reservation=self)
                 else:
-                    self.log_warning("doRelinquish(): policy not set in reservation {}, unable to call policy.closed(),"
-                                     " continuing".format(self.rid))
+                    self.log_warning(message="doRelinquish(): policy not set in reservation {}, "
+                                             "unable to call policy.closed(), continuing".format(self.rid))
             except Exception as e:
-                self.log_error("close with policy", e)
+                self.log_error(message="close with policy", exception=e)
             if self.get_requested_resources() is not None:
                 try:
                     self.sequence_ticket_out += 1
-                    RPCManagerSingleton.get().relinquish(self)
+                    RPCManagerSingleton.get().relinquish(reservation=self)
                 except Exception as e:
-                    self.log_remote_error("broker reports relinquish error: ", e)
+                    self.log_remote_error(message="broker reports relinquish error: ", exception=e)
             else:
                 self.logger.info("Reservation #{} has not requested any resource yet. Nothing to relinquish.".
                                  format(self.rid))
@@ -475,14 +480,14 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     def close(self):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Failed:
             self.logger.debug("Reservation in Nascent or failed state, transition to close")
-            self.transition("close", ReservationStates.Closed, self.pending_state)
+            self.transition(prefix="close", state=ReservationStates.Closed, pending=self.pending_state)
             if self.broker is not None:
                 self.logger.debug("Triggering relinquish")
                 self.do_relinquish()
         elif self.state == ReservationStates.Ticketed:
             if self.pending_state != ReservationPendingStates.Redeeming:
                 self.logger.debug("Reservation in ticketed")
-                self.transition("close", ReservationStates.Closed, self.pending_state)
+                self.transition(prefix="close", state=ReservationStates.Closed, pending=self.pending_state)
                 self.logger.debug("Triggering relinquish")
                 self.do_relinquish()
             else:
@@ -495,89 +500,96 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             else:
                 if self.joinstate == JoinState.BlockedJoin:
                     # no join operations have taken place, so no need for local leave operations
-                    self.transition("close", ReservationStates.CloseWait, ReservationPendingStates.None_)
+                    self.transition(prefix="close", state=ReservationStates.CloseWait,
+                                    pending=ReservationPendingStates.None_)
                     try:
                         self.sequence_lease_out += 1
-                        RPCManagerSingleton.get().close(self)
+                        RPCManagerSingleton.get().close(reservation=self)
                     except Exception as e:
-                        self.log_remote_error("authority reports close error: ", e)
-                        self.transition("close", ReservationStates.Closed, ReservationPendingStates.None_)
+                        self.log_remote_error(message="authority reports close error: ", exception=e)
+                        self.transition(prefix="close", state=ReservationStates.Closed,
+                                        pending=ReservationPendingStates.None_)
                         self.do_relinquish()
                 else:
-                    self.transition_with_join("close", ReservationStates.Active, ReservationPendingStates.Closing,
-                                              JoinState.NoJoin)
+                    self.transition_with_join(prefix="close", state=ReservationStates.Active,
+                                              pending=ReservationPendingStates.Closing,
+                                              join_state=JoinState.NoJoin)
 
-    def count_with_time(self, when: datetime):
+    def count_with_time(self, *, when: datetime):
         result = Reservation.CountHelper()
         if not self.is_terminal():
-            if self.term is not None and self.term.contains(when) and self.resources is not None:
-                result.active = self.resources.get_concrete_units(when)
+            if self.term is not None and self.term.contains(term=when) and self.resources is not None:
+                result.active = self.resources.get_concrete_units(when=when)
                 result.type = self.resources.type
             else:
-                if self.approved and self.approved_term is not None and self.approved_term.contains(when) and \
+                if self.approved and self.approved_term is not None and self.approved_term.contains(term=when) and \
                         self.approved_resources is not None:
                     result.pending = self.approved_resources.units
                     result.type = self.approved_resources.type
         return result
 
-    def count(self, rc: ResourceCount, when: datetime):
+    def count(self, *, rc: ResourceCount, when: datetime):
         if self.state ==  ReservationStates.Nascent or self.state ==  ReservationStates.Active or \
                 self.state == ReservationStates.ActiveTicketed or self.state ==  ReservationStates.Ticketed:
-            c = self.count_with_time(when)
+            c = self.count_with_time(when=when)
             if c.type is not None:
-                rc.tally_active(c.type, c.active)
-                rc.tally_pending(c.type, c.pending)
-        elif self.state ==  ReservationStates.Closed or self.state ==  ReservationStates.CloseWait:
+                rc.tally_active(resource_type=c.type, count=c.active)
+                rc.tally_pending(resource_type=c.type, count=c.pending)
+        elif self.state == ReservationStates.Closed or self.state ==  ReservationStates.CloseWait:
             if self.resources is not None:
-                rc.tally_close(self.resources.type, self.resources.units)
-        elif self.state ==  ReservationStates.Failed:
+                rc.tally_close(resource_type=self.resources.type, count=self.resources.units)
+        elif self.state == ReservationStates.Failed:
             if self.resources is not None:
-                rc.tally_failed(self.resources.type, self.resources.units)
+                rc.tally_failed(resource_type=self.resources.type, count=self.resources.units)
 
     def extend_lease(self):
         # Not permitted if there is a pending operation.
         self.nothing_pending()
-        self.requested_term.enforce_extends_term(self.lease_term)
+        self.requested_term.enforce_extends_term(old_term=self.lease_term)
 
         if self.state == ReservationStates.ActiveTicketed:
-            self.transition("extend lease", ReservationStates.ActiveTicketed, ReservationPendingStates.ExtendingLease)
+            self.transition(prefix="extend lease", state=ReservationStates.ActiveTicketed,
+                            pending=ReservationPendingStates.ExtendingLease)
             self.sequence_lease_out += 1
-            RPCManagerSingleton.get().extend_lease(self.authority, self, self.slice.get_owner())
+            RPCManagerSingleton.get().extend_lease(proxy=self.authority, reservation=self, caller=self.slice.get_owner())
         else:
-            self. error("Wrong state to initiate extend lease: {}".format(ReservationStates(self.state).name))
+            self. error(err="Wrong state to initiate extend lease: {}".format(ReservationStates(self.state).name))
 
     def modify_lease(self):
         # Not permitted if there is a pending operation.
         self.nothing_pending()
 
         if self.state == ReservationStates.Active:
-            self.transition("modify lease", ReservationStates.Active, ReservationPendingStates.ModifyingLease)
+            self.transition(prefix="modify lease", state=ReservationStates.Active,
+                            pending=ReservationPendingStates.ModifyingLease)
             self.sequence_lease_out += 1
-            RPCManagerSingleton.get().modify_lease(self.authority, self, self.slice.get_owner())
+            RPCManagerSingleton.get().modify_lease(proxy=self.authority, reservation=self, caller=self.slice.get_owner())
         else:
-            self.error("Wrong state to initiate modify lease: {}".format(ReservationStates(self.state).name))
+            self.error(err="Wrong state to initiate modify lease: {}".format(ReservationStates(self.state).name))
 
-    def extend_ticket(self, actor: IActor):
+    def extend_ticket(self, *, actor: IActor):
         # Not permitted if there is a pending operation: cannot renew while a
         # previous renew or redeem is in progress (see note above).
         self.nothing_pending()
         assert self.broker is not None
 
-        self.approved_term.enforce_extends_term(self.term)
+        self.approved_term.enforce_extends_term(old_term=self.term)
         self.requested_term = self.requested_term
         self.requested_resources = self.approved_resources
 
         if self.state == ReservationStates.Ticketed:
-            if self.is_controller(actor):
-                self.transition("extend ticket", ReservationStates.Ticketed, ReservationPendingStates.ExtendingTicket)
+            if self.is_controller(actor=actor):
+                self.transition(prefix="extend ticket", state=ReservationStates.Ticketed,
+                                pending=ReservationPendingStates.ExtendingTicket)
             else:
                 raise Exception("Cannot extend ticket while in Ticketed")
         elif self.state == ReservationStates.Active:
-            self.transition("extend ticket", ReservationStates.Active, ReservationPendingStates.ExtendingTicket)
+            self.transition(prefix="extend ticket", state=ReservationStates.Active,
+                            pending=ReservationPendingStates.ExtendingTicket)
         else:
-            self.error("Wrong state to initiate extend ticket: {}".format(ReservationStates(self.state).name))
+            self.error(err="Wrong state to initiate extend ticket: {}".format(ReservationStates(self.state).name))
         self.sequence_ticket_out += 1
-        RPCManagerSingleton.get().extend_ticket(self)
+        RPCManagerSingleton.get().extend_ticket(reservation=self)
 
     def get_authority(self) -> IAuthorityProxy:
         return self.authority
@@ -632,7 +644,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         return self.renew_time
 
     def get_reservation_state(self) -> ReservationState:
-        return ReservationState(self.state, self.pending_state, self.joinstate)
+        return ReservationState(state=self.state, pending=self.pending_state, joining=self.joinstate)
 
     def get_suggested_resources(self) -> ResourceSet:
         return self.suggested_resources
@@ -693,22 +705,23 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     def is_exported(self) -> bool:
         return self.exported
 
-    def is_controller(self, actor: IActor):
+    def is_controller(self, *, actor: IActor):
         from fabric.actor.core.core.controller import Controller
         return isinstance(actor, Controller)
 
-    def lease_update_satisfies(self, incoming: IReservation, update_data: UpdateData):
+    def lease_update_satisfies(self, *, incoming: IReservation, update_data: UpdateData):
         try:
-            self.policy.lease_satisfies(self.resources, incoming.get_resources(), self.term, incoming.get_term())
+            self.policy.lease_satisfies(request_resources=self.resources, actual_resources=incoming.get_resources(),
+                                        requested_term=self.term, actual_term=incoming.get_term())
 
             if self.is_active_ticketed():
                 assert incoming.get_term().get_new_start_time() == self.term.get_new_start_time()
         except Exception as e:
             self.logger.warning("lease update does not satisfy ticket term (ignored)")
-            update_data.post("lease update does not satisfy ticket term (ignored)")
+            update_data.post(event="lease update does not satisfy ticket term (ignored)")
 
-    def prepare(self, callback: ICallbackProxy, logger):
-        self.set_logger(logger)
+    def prepare(self, *, callback: ICallbackProxy, logger):
+        self.set_logger(logger=logger)
         self.callback = callback
 
         if self.guard is None:
@@ -717,7 +730,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     def prepare_join(self):
         config = self.resources.get_local_properties()
         for pred_state in self.joinPredecessors.values():
-            pred_state.set_properties(config)
+            pred_state.set_properties(config=config)
 
     def prepare_probe(self):
         if self.leased_resources is not None:
@@ -727,13 +740,14 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     def prepare_redeem(self):
         config = self.resources.get_config_properties()
         for pred_state in self.redeemPredecessors.values():
-            pred_state.set_properties(config)
+            pred_state.set_properties(config=config)
 
     def probe_join_state(self):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Closed or\
                 self.state == ReservationStates.Failed:
-            self.transition_with_join("clearing join state for terminal reservation", self.state, self.pending_state,
-                                      JoinState.NoJoin)
+            self.transition_with_join(prefix="clearing join state for terminal reservation", state=self.state,
+                                      pending=self.pending_state,
+                                      join_state=JoinState.NoJoin)
             return
 
         if self.joinstate == JoinState.BlockedRedeem:
@@ -742,12 +756,12 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             assert self.state == ReservationStates.Ticketed
 
             if self.approve_redeem():
-                self.transition_with_join("unblock redeem", ReservationStates.Ticketed,
-                                          ReservationPendingStates.Redeeming, JoinState.NoJoin)
+                self.transition_with_join(prefix="unblock redeem", state=ReservationStates.Ticketed,
+                                          pending=ReservationPendingStates.Redeeming, join_state=JoinState.NoJoin)
                 self.sequence_lease_out += 1
                 # If redeem fails we should not fail the reservation!!! The
                 # failure may be due to the authority being unavailable
-                RPCManagerSingleton.get().redeem(self)
+                RPCManagerSingleton.get().redeem(reservation=self)
         elif self.joinstate == JoinState.BlockedJoin:
             # This reservation has a lease whose join processing was blocked
             # for a predecessor: see if we can get it going now. Note: if
@@ -761,7 +775,8 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             # the site, unblocking the reservation will result in an error.
             if not self.pending_recover and self.state != ReservationStates.ActiveTicketed:
                 if self.approve_join():
-                    self.transition_with_join("unblocked join", self.state, self.pending_state, JoinState.Joining)
+                    self.transition_with_join(prefix="unblocked join", state=self.state, pending=self.pending_state,
+                                              join_state=JoinState.Joining)
                     self.service_pending = JoinState.Joining
         elif self.joinstate == JoinState.Joining:
             # Tracking initial join processing for first lease on a service
@@ -779,13 +794,14 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             if self.service_pending == JoinState.None_ and self.leased_resources.is_active() \
                     and not self.pending_recover and self.state != ReservationStates.ActiveTicketed:
                 # join completed: go ahead and transition to NoJoin
-                self.transition_with_join("join complete", self.state, self.pending_state, JoinState.NoJoin)
+                self.transition_with_join(prefix="join complete", state=self.state, pending=self.pending_state,
+                                          join_state=JoinState.NoJoin)
                 if self.leased_resources.get_concrete_units() == 0:
                     if self.leased_resources.get_notices().get_notice() is not None:
-                        self.fail("resources failed to join: {}".
-                                  format(self.leased_resources.get_notices().get_notice()), None)
+                        self.fail(message="resources failed to join: {}".
+                                  format(self.leased_resources.get_notices().get_notice()), exception=None)
                     else:
-                        self.fail("resources failed to join: (no details)", None)
+                        self.fail(message="resources failed to join: (no details)", exception=None)
 
     def probe_pending(self):
         # Process join state to complete or restart join-related operations for Controller
@@ -803,28 +819,30 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             if self.leased_resources.is_closed():
                 self.logger.debug("LEASED RESOURCES are closed")
 
-                self.transition("local close complete", ReservationStates.CloseWait, ReservationPendingStates.None_)
+                self.transition(prefix="local close complete", state=ReservationStates.CloseWait,
+                                pending=ReservationPendingStates.None_)
 
                 try:
                     self.sequence_lease_out += 1
-                    RPCManagerSingleton.get().close(self)
+                    RPCManagerSingleton.get().close(reservation=self)
                 except Exception as e:
-                    self.log_remote_error("authority reports close error: {}".format(str(e)), e)
+                    self.log_remote_error(message="authority reports close error: {}".format(str(e)), exception=e)
                     # If the authority is unreachable or rejects the request,
                     # then purge it. This is useful because the authority may
                     # close first and reject this request, which could lead to
                     # large numbers of stuck CloseWaits hanging around if we
                     # don't complete close here. But if the authority is merely
                     # unreachable, it might be better to retry.
-                    self.transition("close complete", ReservationStates.Closed, ReservationPendingStates.None_)
+                    self.transition(prefix="close complete", state=ReservationStates.Closed,
+                                    pending=ReservationPendingStates.None_)
                     # Note: the broker does not have information to ensure we
                     # are not cheating
                     self.do_relinquish()
 
-    def set_policy(self, policy: IClientPolicy):
+    def set_policy(self, *, policy: IClientPolicy):
         self.policy = policy
 
-    def reserve(self, policy: IPolicy):
+    def reserve(self, *, policy: IPolicy):
         assert self.slice is not None
 
         self.nothing_pending()
@@ -838,7 +856,8 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             self.requested_term = self.approved_term
             self.requested_resources = self.approved_resources
 
-            self.transition("ticket", ReservationStates.Nascent, ReservationPendingStates.Ticketing)
+            self.transition(prefix="ticket", state=ReservationStates.Nascent,
+                            pending=ReservationPendingStates.Ticketing)
 
             if self.exported:
                 # We are a broker or service manager initiating a ticket claim
@@ -847,12 +866,12 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 # ticket has already been exported (e.g., any payment has
                 # already been tendered).
                 self.sequence_ticket_out += 1
-                RPCManagerSingleton.get().claim(self)
+                RPCManagerSingleton.get().claim(reservation=self)
             else:
                 # This is a regular request for new resources to an upstream
                 # broker.
                 self.sequence_ticket_out += 1
-                RPCManagerSingleton.get().ticket(self)
+                RPCManagerSingleton.get().ticket(reservation=self)
 
         elif self.state == ReservationStates.Ticketed:
             if self.exported:
@@ -862,12 +881,12 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 # now.
                 raise Exception("Invalid state for claim. Did you already claim this reservation?")
 
-            self.transition_with_join("redeem blocked", ReservationStates.Ticketed, self.pending_state,
-                                      JoinState.BlockedRedeem)
+            self.transition_with_join(prefix="redeem blocked", state=ReservationStates.Ticketed,
+                                      pending=self.pending_state, join_state=JoinState.BlockedRedeem)
 
         elif self.state == ReservationStates.Active:
-            self.sequence_lease_out =+ 1
-            RPCManagerSingleton.get().redeem(self)
+            self.sequence_lease_out += 1
+            RPCManagerSingleton.get().redeem(reservation=self)
 
         elif self.state == ReservationStates.ActiveTicketed:
             # If the service manager requests to redeem an extended ticket,
@@ -880,20 +899,21 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
         elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait or \
                 self.state == ReservationStates.Failed:
-            self.error("initiating reserve on defunct reservation")
+            self.error(err="initiating reserve on defunct reservation")
 
         elif self.state == ReservationStates.Reclaimed:
-            self.transition("claiming ticket post reclaim", ReservationStates.Reclaimed, ReservationPendingStates.Ticketing)
+            self.transition(prefix="claiming ticket post reclaim", state=ReservationStates.Reclaimed,
+                            pending=ReservationPendingStates.Ticketing)
             self.sequence_ticket_out += 1
-            RPCManagerSingleton.get().claim(self)
+            RPCManagerSingleton.get().claim(reservation=self)
 
     def setup(self):
         super().setup()
         if self.leased_resources is not None:
-            self.leased_resources.setup(self)
+            self.leased_resources.setup(reservation=self)
 
         if self.suggested_resources is not None:
-            self.suggested_resources.setup(self)
+            self.suggested_resources.setup(reservation=self)
 
     def service_close(self):
         if self.leased_resources is not None:
@@ -915,9 +935,9 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 # ensure that it will not honor the update if the reservation
                 # state has changed.
                 assert self.leased_resources is not None
-                self.leased_resources.service_update(self)
+                self.leased_resources.service_update(reservation=self)
         except Exception as e:
-            self.log_error("Controller failed service update", e)
+            self.log_error(message="Controller failed service update", exception=e)
 
         self.service_pending = JoinState.None_
 
@@ -930,7 +950,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 # BlockedJoin, then leave the update unserviced until a future
                 # probePending.
                 if self.joinstate != JoinState.BlockedJoin:
-                    self.leased_resources.service_update(self)
+                    self.leased_resources.service_update(reservation=self)
                     self.set_dirty()
 
                 # If subsequent lease updates come in (e.g., for an extend)
@@ -939,52 +959,52 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
     def service_update_ticket(self):
         if self.last_ticket_update.successful():
-            self.resources.service_update(self)
+            self.resources.service_update(reservation=self)
 
-    def set_broker(self, broker: IBrokerProxy) -> bool:
+    def set_broker(self, *, broker: IBrokerProxy) -> bool:
         if self.state != ReservationStates.Nascent:
-            self.error("setBroker on reservation while in use")
+            self.error(err="setBroker on reservation while in use")
             return False
 
         self.broker = broker
         return True
 
-    def set_exported(self, exported: bool):
+    def set_exported(self, *, exported: bool):
         self.exported = exported
 
-    def set_lease_sequence_in(self, sequence: int):
+    def set_lease_sequence_in(self, *, sequence: int):
         self.sequence_lease_in = sequence
 
-    def set_lease_sequence_out(self, sequence: int):
+    def set_lease_sequence_out(self, *, sequence: int):
         self.sequence_lease_out = sequence
 
-    def set_renewable(self, renewable: bool):
+    def set_renewable(self, *, renewable: bool):
         self.renewable = renewable
 
     def get_renewable(self) -> bool:
         return self.renewable
 
-    def set_renew_time(self, time: int):
+    def set_renew_time(self, *, time: int):
         self.renew_time = time
 
-    def set_suggested(self, term: Term, resources: ResourceSet):
+    def set_suggested(self, *, term: Term, resources: ResourceSet):
         self.suggested_resources = resources
         self.suggested_term = term
         self.suggested = True
 
-    def set_suggested_resources(self, resources: ResourceSet):
+    def set_suggested_resources(self, *, resources: ResourceSet):
         self.suggested_resources = resources
 
-    def set_suggested_term(self, term: Term):
+    def set_suggested_term(self, *, term: Term):
         self.suggested_term = term
 
-    def set_ticket_sequence_in(self, sequence: int):
+    def set_ticket_sequence_in(self, *, sequence: int):
         self.sequence_ticket_in = sequence
 
-    def set_ticket_sequence_out(self, sequence: int):
+    def set_ticket_sequence_out(self, *, sequence: int):
         self.sequence_lease_out = sequence
 
-    def ticket_update_satisfies(self, incoming: IReservation, update_data: UpdateData):
+    def ticket_update_satisfies(self, *, incoming: IReservation, update_data: UpdateData):
         """
         Enforce minimum standards for an arriving ticket update.
         @param incoming  incoming ticket update
@@ -994,55 +1014,58 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         """
         try:
             # Call the policy to determine if we can apply the incoming update.
-            self.policy.ticket_satisfies(self.requested_resources, incoming.get_resources(), self.requested_term,
-                                         incoming.get_term())
+            self.policy.ticket_satisfies(requested_resources=self.requested_resources,
+                                         actual_resources=incoming.get_resources(),
+                                         requested_term=self.requested_term,
+                                         actual_term=incoming.get_term())
 
             # If the policy was careless about the term, make sure that the
             # incoming term extends the current one.
             if self.pending_state == ReservationPendingStates.ExtendingTicket:
-                incoming.get_term().enforce_extends_term(self.term)
+                incoming.get_term().enforce_extends_term(old_term=self.term)
         except Exception as e:
-            self.error("incoming ticket does not satisfy our request: {}".format(e))
+            self.error(err="incoming ticket does not satisfy our request: {}".format(e))
 
-    def transition_with_join(self, prefix: str, state: ReservationStates, pending: ReservationPendingStates,
+    def transition_with_join(self, *, prefix: str, state: ReservationStates, pending: ReservationPendingStates,
                              join_state: JoinState):
         self.logger.debug("Reservation # {} {} transition for joinstate: {} -> {}".format(self.rid, prefix,
                                                                                           self.joinstate.name,
                                                                                           join_state.name))
         self.joinstate = join_state
 
-        self.transition(prefix, state, pending)
+        self.transition(prefix=prefix, state=state, pending=pending)
 
-    def update_lease(self, incoming: IReservation, update_data):
+    def update_lease(self, *, incoming: IReservation, update_data):
         if self.state == ReservationStates.Nascent:
-            self.error("Lease update for a reservation without a ticket")
+            self.error(err="Lease update for a reservation without a ticket")
 
         elif self.state == ReservationStates.Ticketed:
             if self.pending_state != ReservationPendingStates.Redeeming:
                 self.logger.warning("unsolicited lease update: Ticketed/None. Details: {}".format(incoming))
                 return
 
-            if self.accept_lease_update(incoming, update_data):
+            if self.accept_lease_update(incoming=incoming, update_data=update_data):
                 self.pending_recover = False
 
-                self.transition_with_join("lease arrival blocked join", ReservationStates.Active,
-                                          ReservationPendingStates.None_,
-                                          JoinState.BlockedJoin)
+                self.transition_with_join(prefix="lease arrival blocked join", state=ReservationStates.Active,
+                                          pending=ReservationPendingStates.None_,
+                                          join_state=JoinState.BlockedJoin)
 
             if self.closed_during_redeem:
                 self.logger.info("Received updateLease for a reservation closed in the Redeeming state. Issuing close.")
                 self.close()
 
         elif self.state == ReservationStates.Active:
-            if self.accept_lease_update(incoming, update_data):
+            if self.accept_lease_update(incoming=incoming, update_data=update_data):
                 if self.pending_state == ReservationPendingStates.ModifyingLease:
                     if self.joinstate == JoinState.Joining:
                         self.logger.warning("Received LeaseUpdate while in Joining")
 
-                    self.transition("modified lease", ReservationStates.Active, ReservationPendingStates.None_)
+                    self.transition(prefix="modified lease", state=ReservationStates.Active,
+                                    pending=ReservationPendingStates.None_)
 
         elif self.state == ReservationStates.ActiveTicketed:
-            if self.accept_lease_update(incoming, update_data):
+            if self.accept_lease_update(incoming=incoming, update_data=update_data):
                 # Tricky transition: take this lease as an extension if we
                 # already issued the lease extend request, else accept it as an
                 # unsolicited and stay in ActiveTicketed.
@@ -1050,8 +1073,10 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                     if self.joinstate == JoinState.Joining:
                         self.logger.warning("Received LeaseUpdate while in Joining")
 
-                    self.transition_with_join("extended lease", ReservationStates.Active,
-                                              ReservationPendingStates.None_, JoinState.Joining)
+                    self.transition_with_join(prefix="extended lease",
+                                              state=ReservationStates.Active,
+                                              pending=ReservationPendingStates.None_,
+                                              join_state=JoinState.Joining)
 
                 self.pending_recover = False
 
@@ -1060,24 +1085,25 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 self.close()
 
         elif self.state == ReservationStates.CloseWait:
-            close_wait_temp = self.accept_lease_update(incoming, update_data)
+            close_wait_temp = self.accept_lease_update(incoming=incoming, update_data=update_data)
 
             if not close_wait_temp:
-                self.log_warning("incoming lease update is not FIN or indicates a remote error. "
+                self.log_warning(message="incoming lease update is not FIN or indicates a remote error. "
                                  "Transitioning to close nevertheless.")
 
             self.pending_recover = False
 
-            self.transition("close complete", ReservationStates.Closed, ReservationPendingStates.None_)
+            self.transition(prefix="close complete", state=ReservationStates.Closed,
+                            pending=ReservationPendingStates.None_)
             self.do_relinquish()
 
         elif self.state == ReservationStates.Closed:
-            self.log_error("Lease update on closed reservation", None)
+            self.log_error(message="Lease update on closed reservation", exception=None)
 
         elif self.state == ReservationStates.Failed:
-            self.log_error("Lease update on failed reservation", None)
+            self.log_error(message="Lease update on failed reservation", exception=None)
 
-    def update_ticket(self, incoming: IReservation, update_data):
+    def update_ticket(self, *, incoming: IReservation, update_data):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Ticketed:
             if self.pending_state != ReservationPendingStates.Ticketing and \
                     self.pending_state != ReservationPendingStates.ExtendingTicket and \
@@ -1086,14 +1112,16 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 return
 
             if self.pending_state == ReservationPendingStates.Reclaiming:
-                self.transition("ticket update", ReservationStates.Reclaimed, ReservationPendingStates.None_)
+                self.transition(prefix="ticket update", state=ReservationStates.Reclaimed,
+                                pending=ReservationPendingStates.None_)
                 self.suggested = False
                 self.approved = False
                 self.pending_recover = False
                 return
 
-            if self.accept_ticket_update(incoming, update_data):
-                self.transition("ticket update", ReservationStates.Ticketed, ReservationPendingStates.None_)
+            if self.accept_ticket_update(incoming=incoming, update_data=update_data):
+                self.transition(prefix="ticket update", state=ReservationStates.Ticketed,
+                                pending=ReservationPendingStates.None_)
                 self.suggested = False
                 self.approved = False
                 self.pending_recover = False
@@ -1103,18 +1131,19 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 self.logger.warning("unsolicited ticket update. Ignoring it. Details: {}".format(incoming))
                 return
 
-            if self.accept_ticket_update(incoming, update_data):
+            if self.accept_ticket_update(incoming=incoming, update_data=update_data):
                 self.extended = True
-                self.transition("ticket update", ReservationStates.ActiveTicketed, ReservationPendingStates.None_)
+                self.transition(prefix="ticket update", state=ReservationStates.ActiveTicketed,
+                                pending=ReservationPendingStates.None_)
                 self.suggested = False
                 self.approved = False
                 self.pending_recover = False
 
         elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait:
-            self.log_warning("Ticket update after close")
+            self.log_warning(message="Ticket update after close")
 
         elif self.state == ReservationStates.Failed:
-            self.log_error("Ticket update on failed reservation", None)
+            self.log_error(message="Ticket update on failed reservation", exception=None)
 
         elif self.state == ReservationStates.Reclaimed:
             if self.pending_state != ReservationPendingStates.Ticketing :
@@ -1123,20 +1152,21 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
             # TODO KOMAL
             #if self.accept_ticket_update(incoming, update_data):
-            self.transition("ticket update", ReservationStates.Ticketed, ReservationPendingStates.None_)
+            self.transition(prefix="ticket update", state=ReservationStates.Ticketed,
+                            pending=ReservationPendingStates.None_)
             self.suggested = False
             self.approved = False
             self.pending_recover = False
 
     def validate_incoming(self):
         if self.slice is None:
-            self.error("no slice specified")
+            self.error(err="no slice specified")
 
         if self.resources is None:
-            self.error("no resource set specified")
+            self.error(err="no resource set specified")
 
         if self.term is None:
-            self.error("no term specified")
+            self.error(err="no term specified")
 
         self.term.validate()
 
@@ -1147,17 +1177,17 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
     def validate_incoming_ticket(self):
         self.validate_incoming()
-        self.resources.validate_incoming_ticket(self.term)
+        self.resources.validate_incoming_ticket(term=self.term)
 
     def validate_outgoing(self):
         if self.slice is None:
-            self.error("no slice specified")
+            self.error(err="no slice specified")
 
         if self.resources is None:
-            self.error("no resource set specified")
+            self.error(err="no resource set specified")
 
         if self.term is None:
-            self.error("no term specified")
+            self.error(err="no term specified")
 
         self.approved_term.validate()
 
@@ -1165,34 +1195,34 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
     def validate_redeem(self):
         if self.authority is None:
-            self.internal_error("no authority proxy for redeem")
+            self.internal_error(err="no authority proxy for redeem")
 
         if self.resources.get_units() == 0:
-            self.internal_error("redeeming a reservation for 0 resources!")
+            self.internal_error(err="redeeming a reservation for 0 resources!")
 
         if self.slice is None:
-            self.error("no slice specified")
+            self.error(err="no slice specified")
 
         if self.resources is None:
-            self.error("no resource set specified")
+            self.error(err="no resource set specified")
 
         if self.term is None:
-            self.error("no term specified")
+            self.error(err="no term specified")
 
-    def set_config_property(self, key: str, value: str):
+    def set_config_property(self, *, key: str, value: str):
         self.resources.get_config_properties()[key] = value
 
-    def set_request_property(self, key: str, value: str):
+    def set_request_property(self, *, key: str, value: str):
         self.resources.get_request_properties()[key] = value
 
-    def add_redeem_predecessor(self, reservation, filter: dict = None):
+    def add_redeem_predecessor(self, *, reservation, filter: dict = None):
         if reservation.get_reservation_id() not in self.redeemPredecessors:
-            state = PredecessorState(reservation, filter)
+            state = PredecessorState(reservation=reservation, filter=filter)
             self.redeemPredecessors[reservation.get_reservation_id()] = state
 
-    def add_join_predecessor(self, reservation, filter: dict = None):
+    def add_join_predecessor(self, *, reservation, filter: dict = None):
         if reservation.get_reservation_id() not in self.redeemPredecessors:
-            state = PredecessorState(reservation, filter)
+            state = PredecessorState(reservation=reservation, filter=filter)
             self.joinPredecessors[reservation.get_reservation_id()] = state
 
     def get_redeem_predecessors(self) -> list:
@@ -1210,7 +1240,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     def get_client_callback_proxy(self) -> IClientCallbackProxy:
         return self.callback
 
-    def handle_failed_rpc(self, failed: FailedRPC):
+    def handle_failed_rpc(self, *, failed: FailedRPC):
         remote_auth = failed.get_remote_auth()
         if failed.get_request_type() == RPCRequestType.Claim or \
                 failed.get_request_type() == RPCRequestType.Reclaim or \
@@ -1239,15 +1269,16 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
             if self.is_closing():
                 if self.leased_resources is None or self.leased_resources.is_closed():
-                    self.transition("close complete", ReservationStates.Closed, ReservationPendingStates.None_)
+                    self.transition(prefix="close complete", state=ReservationStates.Closed,
+                                    pending=ReservationPendingStates.None_)
                     self.do_relinquish()
                 return
 
             assert failed.has_request()
-            RPCManagerSingleton.get().retry(failed.get_request())
+            RPCManagerSingleton.get().retry(request=failed.get_request())
             return
 
-        self.fail("Failing reservation due to non-recoverable RPC error ({}) {}".
+        self.fail(message="Failing reservation due to non-recoverable RPC error ({}) {}".
                   format(failed.get_error_type(), failed.get_error()))
 
     def print_state(self):
@@ -1259,15 +1290,15 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
     def recover_nascent(self):
         if self.pending_state == ReservationPendingStates.None_:
-            self.actor.ticket(self)
+            self.actor.ticket(reservation=self)
             self.logger.debug("Issued ticket request for reservation #{} State={}".format(
                 self.get_reservation_id(), self.print_state()))
 
         elif self.pending_state == ReservationPendingStates.Ticketing:
-            self.set_pending_recover(True)
-            self.transition("[recovery]", self.state, ReservationPendingStates.None_)
-            self.set_ticket_sequence_out(self.get_ticket_sequence_out() - 1)
-            self.actor.ticket(self)
+            self.set_pending_recover(pending_recover=True)
+            self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
+            self.set_ticket_sequence_out(sequence=self.get_ticket_sequence_out() - 1)
+            self.actor.ticket(reservation=self)
             self.logger.debug("Issued ticket request for reservation #{} State={}".format(self.get_reservation_id(),
                                                                                           self.print_state()))
 
@@ -1277,18 +1308,18 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
                 self.get_reservation_id(), self.print_state()))
 
         elif self.pending_state == ReservationPendingStates.Redeeming:
-            self.set_pending_recover(True)
-            self.transition("[recovery]", self.state, ReservationPendingStates.None_)
-            self.set_lease_sequence_out(self.get_lease_sequence_out() - 1)
-            self.actor.redeem(self)
+            self.set_pending_recover(pending_recover=True)
+            self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
+            self.set_lease_sequence_out(sequence=self.get_lease_sequence_out() - 1)
+            self.actor.redeem(reservation=self)
             self.logger.debug("Issued redeem request for reservation #{} State={}".format(self.get_reservation_id(),
                                                                                           self.print_state()))
 
         elif self.pending_state == ReservationPendingStates.ExtendingTicket:
-            self.set_pending_recover(True)
-            self.transition("[recovery]", self.state, ReservationPendingStates.None_)
-            self.set_ticket_sequence_out(self.get_ticket_sequence_in() - 1)
-            self.actor.extend_ticket(self)
+            self.set_pending_recover(pending_recover=True)
+            self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
+            self.set_ticket_sequence_out(sequence=self.get_ticket_sequence_in() - 1)
+            self.actor.extend_ticket(reservation=self)
             self.logger.debug("Issued extendTicket request for reservation #{} State={}".format(
                 self.get_reservation_id(), self.print_state()))
 
@@ -1304,12 +1335,12 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
         elif self.joinstate == JoinState.Joining:
             self.logger.debug("Restarting configuration actions for reservation #{}".format(self.get_reservation_id()))
-            self.actor.get_plugin().restart_configuration_actions(self)
+            self.actor.get_plugin().restart_configuration_actions(reservation=self)
             self.logger.debug("Restarting configuration actions for reservation #{} complete".format(
                 self.get_reservation_id()))
-            self.set_pending_recover(True)
-            self.set_lease_sequence_out(self.get_lease_sequence_out() - 1)
-            self.actor.redeem(self)
+            self.set_pending_recover(pending_recover=True)
+            self.set_lease_sequence_out(sequence=self.get_lease_sequence_out() - 1)
+            self.actor.redeem(reservation=self)
             self.logger.debug(
                 "Issued redeem request for reservation #{} State={}".format(self.get_reservation_id(),
                                                                                   self.print_state()))
@@ -1320,9 +1351,9 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             # database, we will end in [Active, None, NoJoin], and then when we
             # try to recover we will assume (incorrectly) that the reservation
             # requires no recovery operations.
-            self.set_pending_recover(True)
-            self.set_lease_sequence_out(self.get_lease_sequence_out() - 1)
-            self.actor.redeem(self)
+            self.set_pending_recover(pending_recover=True)
+            self.set_lease_sequence_out(sequence=self.get_lease_sequence_out() - 1)
+            self.actor.redeem(reservation=self)
             self.logger.debug(
                 "Issued redeem request for reservation #{} State={}".format(self.get_reservation_id(),
                                                                             self.print_state()))
@@ -1336,14 +1367,14 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
 
         if self.joinstate == JoinState.Joining:
             self.logger.debug("Restarting configuration actions for reservation #{}".format(self.get_reservation_id()))
-            self.actor.get_plugin().restart_configuration_actions(self)
+            self.actor.get_plugin().restart_configuration_actions(reservation=self)
             self.logger.debug(
                 "Restarting configuration actions for reservation #{} complete".format(self.get_reservation_id()))
 
-        self.set_pending_recover(True)
-        self.transition("[recovery]", self.state, ReservationPendingStates.None_)
-        self.set_lease_sequence_out(self.get_lease_sequence_out() - 1)
-        self.actor.redeem(self)
+        self.set_pending_recover(pending_recover=True)
+        self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
+        self.set_lease_sequence_out(sequence=self.get_lease_sequence_out() - 1)
+        self.actor.redeem(reservation=self)
         self.logger.debug(
             "Issued redeem request for reservation #{} State={}".format(self.get_reservation_id(),
                                                                         self.print_state()))
@@ -1351,30 +1382,30 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
     def recover_active_extending_ticket(self):
         if self.joinstate == JoinState.Joining:
             self.logger.debug("Restarting configuration actions for reservation #{}".format(self.get_reservation_id()))
-            self.actor.get_plugin().restart_configuration_actions(self)
+            self.actor.get_plugin().restart_configuration_actions(reservation=self)
             self.logger.debug(
                 "Restarting configuration actions for reservation #{} complete".format(self.get_reservation_id()))
 
-        self.set_pending_recover(True)
-        self.transition("[recovery]", self.state, ReservationPendingStates.None_)
-        self.set_ticket_sequence_out(self.get_ticket_sequence_out() - 1)
-        self.actor.extend_ticket(self)
+        self.set_pending_recover(pending_recover=True)
+        self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
+        self.set_ticket_sequence_out(sequence=self.get_ticket_sequence_out() - 1)
+        self.actor.extend_ticket(reservation=self)
         self.logger.debug(
             "Issued extend ticket request for reservation #{} State={}".format(self.get_reservation_id(),
                                                                         self.print_state()))
 
     def recover_active_ticketed_extending_lease(self):
-        self.set_pending_recover(True)
-        self.transition("[recovery]", self.state, ReservationPendingStates.None_)
-        self.set_lease_sequence_out(self.get_lease_sequence_out() - 1)
+        self.set_pending_recover(pending_recover=True)
+        self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
+        self.set_lease_sequence_out(sequence=self.get_lease_sequence_out() - 1)
         self.actor.extend_lease(reservation=self)
         self.logger.debug(
             "Issued extend lease request for reservation #{} State={}".format(self.get_reservation_id(),
                                                                               self.print_state()))
 
     def recover_closing(self):
-        self.transition("[recovery]", self.state, ReservationPendingStates.None_)
-        self.actor.close(self)
+        self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
+        self.actor.close(reservation=self)
         self.logger.debug(
             "Issued close request for reservation #{} State={}".format(self.get_reservation_id(),
                                                                               self.print_state()))
@@ -1439,14 +1470,15 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
             # We are an agent asked to return a pre-reserved "will call" ticket
             # to a client. Set mustSendUpdate so that the update will be sent
             # on the next probe.
-            self.transition("reclaimed", ReservationStates.Ticketed, ReservationPendingStates.Reclaiming)
+            self.transition(prefix="reclaimed", state=ReservationStates.Ticketed,
+                            pending=ReservationPendingStates.Reclaiming)
             if self.state != ReservationStates.Failed:
                 self.service_reclaim()
         else:
-            self.error("Wrong reservation state for ticket reclaim")
+            self.error(err="Wrong reservation state for ticket reclaim")
 
     def service_reclaim(self):
-        self.log_debug("Generating reclaim")
+        self.log_debug(message="Generating reclaim")
         if self.callback is None:
             self.logger.warning("Cannot generate reclaim: no callback.")
             return
@@ -1455,9 +1487,9 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         try:
             if self.exported:
                 self.sequence_ticket_out += 1
-                RPCManagerSingleton.get().reclaim(self)
+                RPCManagerSingleton.get().reclaim(reservation=self)
         except Exception as e:
             # Note that this may result in a "stuck" reservation... not much we
             # can do if the receiver has failed or rejects our update. We will
             # regenerate on any user-initiated probe.
-            self.log_remote_error("callback failed", e)
+            self.log_remote_error(message="callback failed", exception=e)

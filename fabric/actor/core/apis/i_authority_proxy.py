@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
@@ -38,18 +40,43 @@ class IAuthorityProxy(IBrokerProxy):
     """
     IAuthorityProxy represents the proxy interface to an actor acting in the authority role.
     """
-    def prepare_close(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+    @abstractmethod
+    def prepare_close(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                       caller: AuthToken) -> IRPCRequestState:
-        raise NotImplementedError("Should have implemented this")
 
-    def prepare_extend_lease(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+        """
+        Prepare a close
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """
+
+    @abstractmethod
+    def prepare_extend_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Prepare an extend lease
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """
 
-    def prepare_modify_lease(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+    @abstractmethod
+    def prepare_modify_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Prepare a modify lease
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """
 
-    def prepare_redeem(self, reservation: IControllerReservation, callback: IControllerCallbackProxy, caller:
+    @abstractmethod
+    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy, caller:
     AuthToken) -> IRPCRequestState:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Prepare a redeem
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """

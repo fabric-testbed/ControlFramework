@@ -33,5 +33,5 @@ if TYPE_CHECKING:
 
 
 class ControllerService(ActorService):
-    def __init__(self, actor:IActor):
-        super().__init__(actor)
+    def __init__(self, *, actor:IActor):
+        super().__init__(actor=actor)

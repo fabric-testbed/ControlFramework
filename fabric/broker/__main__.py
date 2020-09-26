@@ -34,7 +34,7 @@ def main():
     try:
         Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/broker/config.broker.yaml"
         with GracefulInterruptHandler() as h:
-            GlobalsSingleton.get().start(True)
+            GlobalsSingleton.get().start(force_fresh=True)
             while True:
                 time.sleep(0.0001)
                 if h.interrupted:

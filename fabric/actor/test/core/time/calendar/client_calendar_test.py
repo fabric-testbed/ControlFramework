@@ -37,11 +37,11 @@ class ClientCalendarTest(unittest.TestCase):
     Length = 10
 
     def _get_calendar(self):
-        clock = ActorClock(self.Offset, self.Length)
-        return ClientCalendar(clock)
+        clock = ActorClock(beginning_of_time=self.Offset, cycle_millis=self.Length)
+        return ClientCalendar(clock=clock)
 
-    def _make_reservation(self, id: str):
-        return ClientReservationFactory.create(ID(id))
+    def _make_reservation(self, *, id: str):
+        return ClientReservationFactory.create(rid=ID(id=id))
 
     def test_create(self):
         cal = self._get_calendar()
@@ -53,60 +53,60 @@ class ClientCalendarTest(unittest.TestCase):
         self.assertIsNotNone(cal.get_demand())
         self.assertIsNotNone(cal.get_holdings())
         self.assertIsNotNone(cal.get_pending())
-        self.assertIsNotNone(cal.get_renewing(1000))
+        self.assertIsNotNone(cal.get_renewing(cycle=1000))
 
-    def check_set(self, rset: ReservationSet, check: ReservationSet):
+    def check_set(self, *, rset: ReservationSet, check: ReservationSet):
         self.assertIsNotNone(check)
         self.assertEqual(rset.size(), check.size())
         for r in rset.values():
-            self.assertTrue(check.contains(r))
+            self.assertTrue(check.contains(reservation=r))
 
     def test_demand(self):
         cal = self._get_calendar()
         rset = ReservationSet()
 
         for i in range(5):
-            r = self._make_reservation(str(i))
+            r = self._make_reservation(id=str(i))
             # add to the list
-            rset.add(r)
-            cal.add_demand(r)
+            rset.add(reservation=r)
+            cal.add_demand(reservation=r)
             # get the list and check it
             temp = cal.get_demand()
-            self.check_set(rset, temp)
+            self.check_set(rset=rset, check=temp)
             # remove from the returned set
-            temp.remove(r)
+            temp.remove(reservation=r)
             # make sure this did not affect the parent data structure
             temp = cal.get_demand()
-            self.check_set(rset, temp)
+            self.check_set(rset=rset, check=temp)
 
         for i in range(5):
-            r = self._make_reservation(str(i))
+            r = self._make_reservation(id=str(i))
             # add to the list
-            rset.remove(r)
-            cal.remove_demand(r)
+            rset.remove(reservation=r)
+            cal.remove_demand(reservation=r)
 
             # get the list and check it
             temp = cal.get_demand()
 
-            self.check_set(rset, temp)
+            self.check_set(rset=rset, check=temp)
 
     def test_pending(self):
         cal = self._get_calendar()
         rset = ReservationSet()
 
         for i in range(5):
-            r = self._make_reservation(str(i))
-            rset.add(r)
-            cal.add_pending(r)
+            r = self._make_reservation(id=str(i))
+            rset.add(reservation=r)
+            cal.add_pending(reservation=r)
             temp = cal.get_pending()
-            self.check_set(rset, temp)
-            temp.remove(r)
+            self.check_set(rset=rset, check=temp)
+            temp.remove(reservation=r)
             temp = cal.get_pending()
-            self.check_set(rset, temp)
+            self.check_set(rset=rset, check=temp)
 
         for i in range(5):
-            r = self._make_reservation(str(i))
-            rset.remove(r)
-            cal.remove_pending(r)
+            r = self._make_reservation(id=str(i))
+            rset.remove(reservation=r)
+            cal.remove_pending(reservation=r)
             temp = cal.get_pending()
-            self.check_set(rset, temp)
+            self.check_set(rset=rset, check=temp)

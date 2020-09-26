@@ -26,7 +26,7 @@
 
 
 class ProxyProtocolDescriptor:
-    def __init__(self, protocol: str = None, proxy_class: str = None, proxy_module: str = None):
+    def __init__(self, *, protocol: str = None, proxy_class: str = None, proxy_module: str = None):
         self.protocol = protocol
         self.proxy_class = proxy_class
         self.proxy_module = proxy_module
@@ -34,17 +34,17 @@ class ProxyProtocolDescriptor:
     def get_protocol(self) -> str:
         return self.protocol
 
-    def set_protocol(self, protocol: str):
+    def set_protocol(self, *, protocol: str):
         self.protocol = protocol
 
     def get_proxy_class(self) -> str:
         return self.proxy_class
 
-    def set_proxy_class(self, proxy_class:str):
+    def set_proxy_class(self, *, proxy_class:str):
         self.proxy_class = proxy_class
 
     def get_proxy_module(self) -> str:
         return self.proxy_module
 
-    def set_proxy_module(self, proxy_module: str):
+    def set_proxy_module(self, *, proxy_module: str):
         self.proxy_module = proxy_module

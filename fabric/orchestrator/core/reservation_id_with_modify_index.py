@@ -27,7 +27,7 @@ from fabric.actor.core.util.id import ID
 
 
 class ReservationIDWithModifyIndex:
-    def __init__(self, rid: ID, index: int):
+    def __init__(self, *, rid: ID, index: int):
         self.rid = rid
         self.index = index
 
@@ -37,7 +37,7 @@ class ReservationIDWithModifyIndex:
     def get_modify_index(self) -> int:
         return self.index
 
-    def override_modify_index(self, index: int):
+    def override_modify_index(self, *, index: int):
         self.index = index
 
     def __str__(self):

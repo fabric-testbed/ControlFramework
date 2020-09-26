@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
+
 from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.apis.i_kernel_server_reservation import IKernelServerReservation
 
@@ -31,16 +33,17 @@ class IKernelBrokerReservation(IKernelServerReservation, IBrokerReservation):
     """
     Kernel-level interface for broker reservations.
     """
+
+    @abstractmethod
     def is_exporting(self) -> bool:
         """
         Checks if the reservation is exporting.
        
         @return true if the reservation is exporting
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def set_exporting(self):
         """
         Marks the reservation as exporting.
         """
-        raise NotImplementedError("Should have implemented this")

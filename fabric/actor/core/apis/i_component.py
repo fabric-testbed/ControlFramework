@@ -23,14 +23,30 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
+from typing import List
+
+from fabric.actor.core.manage.messages.protocol_proxy_mng import ProtocolProxyMng
 
 
 class IComponent:
-    def get_protocols(self) -> list:
-        raise NotImplementedError
+    @abstractmethod
+    def get_protocols(self) -> List[ProtocolProxyMng]:
+        """
+        Protocols supported by this components
+        @return an list of ProtocolProxyMng
+        """
 
+    @abstractmethod
     def get_type_id(self) -> str:
-        raise NotImplementedError
+        """
+        Type identifier for the component.
+        @return returns type id
+        """
 
+    @abstractmethod
     def get_last_error(self):
-        raise NotImplementedError
+        """
+        Returns the last error/success for this component.
+        @return returns last error/success
+        """

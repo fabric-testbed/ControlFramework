@@ -59,7 +59,7 @@ class AuthorityPolicyTest(BaseTestCase):
     DonateStartCycle = 10
     DonateEndCycle = 100
     DonateUnits = 123
-    Type = ResourceType("1")
+    Type = ResourceType(resource_type="1")
     Label = "test resource"
 
     TicketStartCycle = DonateStartCycle + 1
@@ -75,20 +75,20 @@ class AuthorityPolicyTest(BaseTestCase):
     authority = None
 
     def make_actor_database(self) -> IDatabase:
-        db = SubstrateActorDatabase(self.DbUser, self.DbPwd, self.DbName, self.DbHost, self.Logger)
+        db = SubstrateActorDatabase(user=self.DbUser, password=self.DbPwd, database=self.DbName, db_host=self.DbHost,
+                                    logger=self.Logger)
         return db
 
     def make_plugin(self):
-        plugin = Substrate(None, None, None)
         config = Config()
-        plugin.set_config(config)
+        plugin = Substrate(actor=None, db=None, config=config)
         return plugin
 
     def get_authority(self, name: str = BaseTestCase.AuthorityName, guid: ID = BaseTestCase.AuthorityGuid):
         db = self.get_container_database()
         db.reset_db()
         authority = super().get_authority()
-        authority.set_recovered(True)
+        authority.set_recovered(value=True)
         Term.set_clock(authority.get_actor_clock())
         return authority
 
@@ -101,23 +101,24 @@ class AuthorityPolicyTest(BaseTestCase):
 
         delegation = actor.get_plugin().get_ticket_factory().make_delegation(units=units, term=term, rtype=rtype, properties=properties, holder=holder)
         ticket = actor.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=src_ticket)
-        cs = Ticket(ticket, actor.get_plugin(), None)
+        cs = Ticket(ticket=ticket, plugin=actor.get_plugin(), authority=None)
         return cs
 
     def get_request_slice(self):
-        return SliceFactory.create(ID(), "test-slice", ResourceData())
+        return SliceFactory.create(slice_id=ID(), name="test-slice", data=ResourceData())
 
     def get_request(self, units: int, rtype: ResourceType, term: Term, ticket: Ticket):
         rset = ResourceSet(units=units, rtype=rtype, rdata=ResourceData())
-        rset.set_resources(ticket)
+        rset.set_resources(cset=ticket)
         slice_object = self.get_request_slice()
-        return AuthorityReservationFactory.create(rset, term, slice_object, ID())
+        return AuthorityReservationFactory.create(resources=rset, term=term, slice_obj=slice_object, rid=ID())
 
     def get_request_from_request(self, request: IAuthorityReservation, units: int, rtype: ResourceType, term: Term, ticket: Ticket):
         rset = ResourceSet(units=units, rtype=rtype, rdata=ResourceData())
-        rset.set_resources(ticket)
-        result = AuthorityReservationFactory.create(rset, term, request.get_slice(), request.get_reservation_id())
-        result.set_sequence_in(request.get_sequence_in() + 1)
+        rset.set_resources(cset=ticket)
+        result = AuthorityReservationFactory.create(resources=rset, term=term, slice_obj=request.get_slice(),
+                                                    rid=request.get_reservation_id())
+        result.set_sequence_in(sequence=request.get_sequence_in() + 1)
         return result
 
     def check_before_donate(self, authority: IAuthority):
@@ -128,14 +129,14 @@ class AuthorityPolicyTest(BaseTestCase):
 
     def get_donate_source(self, actor: IActor) -> IClientReservation:
         slice_object = SliceFactory.create(slice_id=ID(), name="inventory-slice")
-        slice_object.set_inventory(True)
-        actor.register_slice(slice_object)
-        start = actor.get_actor_clock().cycle_start_date(self.DonateStartCycle)
-        end = actor.get_actor_clock().cycle_end_date(self.DonateEndCycle)
+        slice_object.set_inventory(value=True)
+        actor.register_slice(slice_object=slice_object)
+        start = actor.get_actor_clock().cycle_start_date(cycle=self.DonateStartCycle)
+        end = actor.get_actor_clock().cycle_end_date(cycle=self.DonateEndCycle)
         term = Term(start=start, end=end)
 
         source = self.get_source(self.DonateUnits, self.Type, term, actor, slice_object)
-        actor.register(source)
+        actor.register(reservation=source)
         return source
 
     def check_before_donate_set(self, authority: IAuthority):
@@ -148,17 +149,18 @@ class AuthorityPolicyTest(BaseTestCase):
         return ResourceSet(units=self.DonateUnits, rtype=self.Type, rdata=ResourceData())
 
     def get_redeem_request(self, authority: IAuthority, source: IClientReservation, identity: IActorIdentity):
-        req_start = authority.get_actor_clock().cycle_start_date(self.TicketStartCycle)
-        req_end = authority.get_actor_clock().cycle_end_date(self.TicketEndCycle)
+        req_start = authority.get_actor_clock().cycle_start_date(cycle=self.TicketStartCycle)
+        req_end = authority.get_actor_clock().cycle_end_date(cycle=self.TicketEndCycle)
         req_term = Term(start=req_start, end=req_end)
-        ticket = self.get_ticket(self.TicketUnits, self.Type, req_term, source, authority, identity.get_guid())
+        ticket = self.get_ticket(units=self.TicketUnits, rtype=self.Type, term=req_term, source=source,
+                                 actor=authority, holder=identity.get_guid())
         request = self.get_request(self.TicketUnits, self.Type, req_term, ticket)
         return request
 
     def get_extend_lease_request(self, authority: IAuthority, source: IClientReservation, identity: IActorIdentity, request: IAuthorityReservation):
-        req_start = authority.get_actor_clock().cycle_start_date(self.TicketStartCycle)
-        req_new_start = authority.get_actor_clock().cycle_start_date(self.TicketEndCycle + 1)
-        req_end = authority.get_actor_clock().cycle_end_date(self.TicketNewEndCycle)
+        req_start = authority.get_actor_clock().cycle_start_date(cycle=self.TicketStartCycle)
+        req_new_start = authority.get_actor_clock().cycle_start_date(cycle=self.TicketEndCycle + 1)
+        req_end = authority.get_actor_clock().cycle_end_date(cycle=self.TicketNewEndCycle)
         req_term = Term(start=req_start, end=req_end, new_start=req_new_start)
         ticket = self.get_ticket(self.TicketUnits, self.Type, req_term, source, authority, identity.get_guid())
         new_request = self.get_request_from_request(request, self.TicketUnits, self.Type, req_term, ticket)
@@ -185,7 +187,7 @@ class AuthorityPolicyTest(BaseTestCase):
         self.assertEqual(request.get_requested_units(), rset.get_units())
 
     def external_tick(self, site: IAuthority, cycle: int):
-        site.external_tick(cycle)
+        site.external_tick(cycle=cycle)
         while site.get_current_cycle() != cycle:
             time.sleep(0.001)
 
@@ -207,7 +209,7 @@ class AuthorityPolicyTest(BaseTestCase):
         policy = site.get_policy()
         self.check_before_donate(site)
         source = self.get_donate_source(site)
-        policy.donate_reservation(source)
+        policy.donate_reservation(reservation=source)
         self.check_after_donate(site, source)
 
     def test_c_donate_set(self):
@@ -215,24 +217,24 @@ class AuthorityPolicyTest(BaseTestCase):
         policy = site.get_policy()
         self.check_before_donate_set(site)
         rset = self.get_donate_set(site)
-        policy.donate(rset)
+        policy.donate(resources=rset)
         self.check_after_donate_set(site, rset)
 
     def test_d_redeem(self):
         site = self.get_authority()
         policy = site.get_policy()
         controller = self.get_controller()
-        proxy = ControllerCallbackHelper(controller.get_name(), controller.get_guid())
-        authority_proxy = ControllerCallbackHelper(site.get_name(), site.get_guid())
+        proxy = ControllerCallbackHelper(name=controller.get_name(), guid=controller.get_guid())
+        authority_proxy = ControllerCallbackHelper(name=site.get_name(), guid=site.get_guid())
 
-        ActorRegistrySingleton.get().register_callback(proxy)
-        ActorRegistrySingleton.get().register_callback(authority_proxy)
+        ActorRegistrySingleton.get().register_callback(callback=proxy)
+        ActorRegistrySingleton.get().register_callback(callback=authority_proxy)
 
         source = self.get_donate_source(site)
-        policy.donate_reservation(source)
+        policy.donate_reservation(reservation=source)
 
         source_set = self.get_donate_set(site)
-        policy.donate(source_set)
+        policy.donate(resources=source_set)
 
         request = self.get_redeem_request(site, source, proxy)
 
@@ -259,11 +261,11 @@ class AuthorityPolicyTest(BaseTestCase):
                 self.parent.assertFalse(self.waiting_for_close)
 
         handler = UpdateLeaseHandler(self)
-        proxy.set_update_lease_handler(handler)
+        proxy.set_update_lease_handler(handler=handler)
 
         self.external_tick(site, 0)
         print("Redeeming request...")
-        site.redeem(request, proxy, proxy.get_identity())
+        site.redeem(reservation=request, callback=proxy, caller=proxy.get_identity())
 
         for cycle in range(1, self.DonateEndCycle):
             self.external_tick(site, cycle)
@@ -274,15 +276,15 @@ class AuthorityPolicyTest(BaseTestCase):
         site = self.get_authority()
         policy = site.get_policy()
         controller = self.get_controller()
-        proxy = ControllerCallbackHelper(controller.get_name(), controller.get_guid())
-        auth_proxy = ControllerCallbackHelper(site.get_name(), site.get_guid())
-        ActorRegistrySingleton.get().register_callback(proxy)
-        ActorRegistrySingleton.get().register_callback(auth_proxy)
+        proxy = ControllerCallbackHelper(name=controller.get_name(), guid=controller.get_guid())
+        auth_proxy = ControllerCallbackHelper(name=site.get_name(), guid=site.get_guid())
+        ActorRegistrySingleton.get().register_callback(callback=proxy)
+        ActorRegistrySingleton.get().register_callback(callback=auth_proxy)
 
         source = self.get_donate_source(site)
-        policy.donate_reservation(source)
+        policy.donate_reservation(reservation=source)
         source_set = self.get_donate_set(site)
-        policy.donate(source_set)
+        policy.donate(resources=source_set)
         request = self.get_redeem_request(site, source, proxy)
         extend = self.get_extend_lease_request(site, source, proxy, request)
 
@@ -311,14 +313,14 @@ class AuthorityPolicyTest(BaseTestCase):
 
         handler = UpdateLeaseHandler(self)
 
-        proxy.set_update_lease_handler(handler)
+        proxy.set_update_lease_handler(handler=handler)
         self.external_tick(site, 0)
         print("Redeeming request")
-        site.redeem(request, proxy, proxy.get_identity())
+        site.redeem(reservation=request, callback=proxy, caller=proxy.get_identity())
         for cycle in range(self.DonateEndCycle):
             if cycle == self.TicketEndCycle - 50:
                 print("Extending Lease")
-                site.extend_lease(extend, proxy.get_identity())
+                site.extend_lease(reservation=extend, caller=proxy.get_identity())
             self.external_tick(site, cycle)
         handler.check_termination()
 
@@ -326,17 +328,17 @@ class AuthorityPolicyTest(BaseTestCase):
         site = self.get_authority()
         policy = site.get_policy()
         controller = self.get_controller()
-        proxy = ControllerCallbackHelper(controller.get_name(), controller.get_guid())
-        authority_proxy = ControllerCallbackHelper(site.get_name(), site.get_guid())
+        proxy = ControllerCallbackHelper(name=controller.get_name(), guid=controller.get_guid())
+        authority_proxy = ControllerCallbackHelper(name=site.get_name(), guid=site.get_guid())
 
-        ActorRegistrySingleton.get().register_callback(proxy)
-        ActorRegistrySingleton.get().register_callback(authority_proxy)
+        ActorRegistrySingleton.get().register_callback(callback=proxy)
+        ActorRegistrySingleton.get().register_callback(callback=authority_proxy)
 
         source = self.get_donate_source(site)
-        policy.donate_reservation(source)
+        policy.donate_reservation(reservation=source)
 
         source_set = self.get_donate_set(site)
-        policy.donate(source_set)
+        policy.donate(resources=source_set)
 
         request = self.get_redeem_request(site, source, proxy)
 
@@ -348,13 +350,15 @@ class AuthorityPolicyTest(BaseTestCase):
 
             def handle_update_lease(self, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
                 if self.waiting_for_lease:
-                    self.parent.check_incoming_lease(site, request, reservation, update_data)
+                    self.parent.check_incoming_lease(authority=site, request=request, incoming=reservation,
+                                                     udd=update_data)
                     self.waiting_for_lease = False
                     self.waiting_for_close = True
                 elif self.waiting_for_close:
                     print(site.get_current_cycle())
                     self.parent.assertTrue(site.get_current_cycle() < AuthorityPolicyTest.TicketEndCycle)
-                    self.parent.check_incoming_close_lease(site, request, reservation, update_data)
+                    self.parent.check_incoming_close_lease(authority=site, request=request, incoming=reservation,
+                                                           udd=update_data)
                     self.waiting_for_close = False
                 else:
                     raise Exception("Invalid state")
@@ -364,15 +368,15 @@ class AuthorityPolicyTest(BaseTestCase):
                 self.parent.assertFalse(self.waiting_for_close)
 
         handler = UpdateLeaseHandler(self)
-        proxy.set_update_lease_handler(handler)
+        proxy.set_update_lease_handler(handler=handler)
 
         self.external_tick(site, 0)
         print("Redeeming request...")
-        site.redeem(request, proxy, proxy.get_identity())
+        site.redeem(reservation=request, callback=proxy, caller=proxy.get_identity())
 
         for cycle in range(1, self.DonateEndCycle):
             if cycle == self.TicketEndCycle - 5:
-                site.close(request)
+                site.close(reservation=request)
             self.external_tick(site, cycle)
 
         handler.check_termination()

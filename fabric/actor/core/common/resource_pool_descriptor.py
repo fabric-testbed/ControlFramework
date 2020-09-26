@@ -64,16 +64,16 @@ class ResourcePoolDescriptor:
     def get_resource_type(self) -> ResourceType:
         return self.resource_type
 
-    def set_resource_type(self, rtype: ResourceType):
+    def set_resource_type(self, *, rtype: ResourceType):
         self.resource_type = rtype
 
     def get_handler_module(self) -> str:
         return self.handler_module
 
-    def set_handler_module(self, module: str):
+    def set_handler_module(self, *, module: str):
         self.handler_module = module
 
-    def set_handler_class(self, handler_class: str):
+    def set_handler_class(self, *, handler_class: str):
         self.handler_class = handler_class
 
     def get_handler_class(self) -> str:
@@ -82,68 +82,68 @@ class ResourcePoolDescriptor:
     def get_handler_properties(self) -> dict:
         return self.handler_properties
 
-    def set_handler_properties(self, properties: dict):
+    def set_handler_properties(self, *, properties: dict):
         self.handler_properties = properties
 
     def get_pool_properties(self) -> dict:
         return self.pool_properties
 
-    def set_pool_properties(self, properties: dict):
+    def set_pool_properties(self, *, properties: dict):
         self.pool_properties = properties
 
     def get_resource_type_label(self) -> str:
         return self.resource_label
 
-    def set_resource_type_label(self, rtype_label: str):
+    def set_resource_type_label(self, *, rtype_label: str):
         self.resource_label = rtype_label
 
     def get_units(self) -> int:
         return self.units
 
-    def set_units(self, units: int):
+    def set_units(self, *, units: int):
         self.units = units
 
     def get_start(self) -> datetime:
         return self.start
 
-    def set_start(self, start: datetime):
+    def set_start(self, *, start: datetime):
         self.start = start
 
     def get_end(self) -> datetime:
         return self.end
 
-    def set_end(self, end: datetime):
+    def set_end(self, *, end: datetime):
         self.end = end
 
     def get_description(self) -> str:
         return self.description
 
-    def set_description(self, description: str):
+    def set_description(self, *, description: str):
         self.description = description
 
     def get_pool_factory_module(self) -> str:
         return self.factory_module
 
-    def set_pool_factory_module(self, factory_module: str):
+    def set_pool_factory_module(self, *, factory_module: str):
         self.factory_module = factory_module
 
     def get_pool_factory_class(self) -> str:
         return self.factory_class
 
-    def set_pool_factory_class(self, factory_class: str):
+    def set_pool_factory_class(self, *, factory_class: str):
         self.factory_module = factory_class
 
-    def get_attribute(self, key: str) -> ResourcePoolAttributeDescriptor:
+    def get_attribute(self, *, key: str) -> ResourcePoolAttributeDescriptor:
         if key in self.attributes:
             return self.attributes[key]
 
     def get_attributes(self) -> list:
-        return self.attributes.values()
+        return [x for x in self.attributes.values()]
 
-    def add_attribute(self, attribute: ResourcePoolAttributeDescriptor):
+    def add_attribute(self, *, attribute: ResourcePoolAttributeDescriptor):
         self.attributes[attribute.get_key()] = attribute
 
-    def save(self, properties: dict, prefix: str) -> dict:
+    def save(self, *, properties: dict, prefix: str) -> dict:
         if prefix is None:
             prefix = ""
 
@@ -160,18 +160,18 @@ class ResourcePoolDescriptor:
                 temp = prefix + a.get_key() + "."
             else:
                 temp = a.get_key() + "."
-            properties = a.save(properties, temp)
+            properties = a.save(properties=properties, prefix=temp)
             i += 1
         return properties
 
-    def reset(self, properties: dict, prefix: str):
+    def reset(self, *, properties: dict, prefix: str):
         if prefix is None:
             prefix = ""
 
         if (prefix + self.PropertyType) not in properties:
             raise Exception("Missing resource type")
 
-        self.resource_type = ResourceType(properties[prefix + self.PropertyType])
+        self.resource_type = ResourceType(resource_type=properties[prefix + self.PropertyType])
 
         if (prefix + self.PropertyLabel) not in properties:
             raise Exception("Missing resource label")
@@ -197,16 +197,16 @@ class ResourcePoolDescriptor:
                 temp = key_value + "."
 
             attribute = ResourcePoolAttributeDescriptor()
-            attribute.reset(properties, temp)
-            attribute.set_key(key_value)
-            self.add_attribute(attribute)
+            attribute.reset(properties=properties, prefix=temp)
+            attribute.set_key(value=key_value)
+            self.add_attribute(attribute=attribute)
 
     def clone(self):
         properties = {}
-        self.save(properties, None)
+        self.save(properties=properties, prefix=None)
         copy = ResourcePoolDescriptor()
         try:
-            copy.reset(properties, None)
+            copy.reset(properties=properties, prefix=None)
         except Exception as e:
             raise Exception("Unexpected error during deserialization={}".format(e))
         return copy

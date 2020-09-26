@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
@@ -33,17 +35,18 @@ class IEvent:
     """
     IEvent defines an event interface for events raised by the core.
     """
+
+    @abstractmethod
     def get_actor_id(self) -> ID:
         """
         Returns the ID of the actor that contains the object that generated
         the event. Can be null for container-level events.
         @return actor id
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_properties(self) -> dict:
         """
         An optional properties list describing the event.
         @return properties
         """
-        raise NotImplementedError("Should have implemented this")

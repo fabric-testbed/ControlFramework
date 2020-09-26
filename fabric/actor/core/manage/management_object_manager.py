@@ -59,7 +59,7 @@ class ManagementObjectManager:
         self.initialized = False
         self.lock = threading.Lock()
 
-    def create_instance(self, mo_obj: dict) -> ManagementObject:
+    def create_instance(self, *, mo_obj: dict) -> ManagementObject:
         if Constants.PropertyClassName not in mo_obj or Constants.PropertyModuleName not in mo_obj:
             raise Exception("Missing class name")
 
@@ -68,31 +68,30 @@ class ManagementObjectManager:
 
         self.logger.debug("Creating management object: {}".format(class_name))
 
-        obj = ReflectionUtils.create_instance(module_name, class_name)
+        obj = ReflectionUtils.create_instance(module_name=module_name, class_name=class_name)
 
         if not isinstance(obj, ManagementObject):
             raise Exception("Object does not implement ManagementObject interface")
 
-        obj.reset(mo_obj)
+        obj.reset(properties=mo_obj)
         obj.initialize()
 
         return obj
 
-    def get_management_object(self, mid: ID):
+    def get_management_object(self, *, key: ID):
         """
         Retrieves the specified manager object.
-        @param mid object guid
+        @param key object guid
         @return returns Management object
         """
         try:
+            self.logger.debug("key: {} object: {}".format(key, self.objects.get(key, None)))
             self.lock.acquire()
-            if mid in self.objects:
-                return self.objects[mid]
+            return self.objects.get(key, None)
         finally:
             self.lock.release()
-        return None
 
-    def initialize(self, db: IContainerDatabase):
+    def initialize(self, *, db: IContainerDatabase):
         """
         Performs initialization. If the system is recovering after a
         shutdown/crash, loads all manager objects that pertain to the container.
@@ -110,15 +109,15 @@ class ManagementObjectManager:
                 self.load_container_manager_objects()
             self.initialized = True
 
-    def load_actor_manager_objects(self, actor_name: str):
+    def load_actor_manager_objects(self, *, actor_name: str):
         """
         Loads all manager objects associated with the specific actor.
         @param actor_name actor name
         @throws Exception in case of error
         """
         self.logger.info("Loading container-level management objects for actor: {}".format(actor_name))
-        manager_objects = self.db.get_manager_objects_by_actor_name(actor_name)
-        self.load_objects(manager_objects)
+        manager_objects = self.db.get_manager_objects_by_actor_name(act_name=actor_name)
+        self.load_objects(manager_objects=manager_objects)
         self.logger.info("Finished loading container-level management objects for actor: {}".format(actor_name))
 
     def load_container_manager_objects(self):
@@ -128,10 +127,10 @@ class ManagementObjectManager:
         """
         self.logger.info("Loading container-level management objects")
         manager_objects = self.db.get_manager_containers()
-        self.load_objects(manager_objects)
+        self.load_objects(manager_objects=manager_objects)
         self.logger.info("Finished loading container-level management objects")
 
-    def load_objects(self, manager_objects: list):
+    def load_objects(self, *, manager_objects: list):
         """
         Loads the specified management objects
         @param manager_objects list of properties
@@ -140,7 +139,7 @@ class ManagementObjectManager:
         if manager_objects is None:
             return
         for m in manager_objects:
-            manager = self.create_instance(m[Constants.PropertyPickleProperties])
+            manager = self.create_instance(mo_obj=m[Constants.PropertyPickleProperties])
             try:
                 self.lock.acquire()
                 if manager.get_id() in self.objects:
@@ -153,19 +152,19 @@ class ManagementObjectManager:
 
             self.logger.info("Loaded management object with id: {}".format(manager.get_id()))
 
-    def register_manager_object(self, manager: IManagementObject):
-        self.db.add_manager_object(manager)
+    def register_manager_object(self, *, manager: IManagementObject):
+        self.db.add_manager_object(manager=manager)
         try:
             self.lock.acquire()
             self.objects[manager.get_id()] = manager
         finally:
             self.lock.release()
 
-    def unload_actor_manager_objects(self, actor_name: str):
-        manager_objects = self.db.get_manager_objects_by_actor_name(actor_name)
-        self.unload_objects(manager_objects)
+    def unload_actor_manager_objects(self, *, actor_name: str):
+        manager_objects = self.db.get_manager_objects_by_actor_name(actor_name=actor_name)
+        self.unload_objects(manager_objects=manager_objects)
 
-    def unload_objects(self, manager_objects: list):
+    def unload_objects(self, *, manager_objects: list):
         if manager_objects is not None:
             for manager in manager_objects:
                 mgr_id = manager['mo_key']
@@ -176,7 +175,7 @@ class ManagementObjectManager:
                 finally:
                     self.lock.release()
 
-    def unregister_manager_object(self, mid: ID):
+    def unregister_manager_object(self, *, mid: ID):
         try:
             self.lock.acquire()
             if mid in self.objects:
@@ -184,4 +183,4 @@ class ManagementObjectManager:
         finally:
             self.lock.release()
 
-            self.db.remove_manager_object(mid)
+            self.db.remove_manager_object(manager_key=mid)

@@ -30,14 +30,14 @@ class BaseCalendar:
     """
     Base calendar class for all calendars
     """
-    def __init__(self, clock: ActorClock = None):
+    def __init__(self, *, clock: ActorClock = None):
         """
         Creates a new instance.
         @params clock: clock factory
         """
         self.clock = clock
 
-    def tick(self, cycle: int):
+    def tick(self, *, cycle: int):
         """
         Removes all reservations associated with time not after the specified cycle
         @params cycle cycle

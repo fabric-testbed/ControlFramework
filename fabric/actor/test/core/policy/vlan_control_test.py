@@ -56,7 +56,7 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
     Globals.ConfigFile = Constants.TestVmAmConfigurationFile
 
     from fabric.actor.core.container.globals import GlobalsSingleton
-    GlobalsSingleton.get().start(True)
+    GlobalsSingleton.get().start(force_fresh=True)
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
@@ -66,7 +66,7 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
 
         control = VlanControl()
         properties = {ResourceControl.PropertyControlResourceTypes: str(AuthorityCalendarPolicyTest.Type)}
-        control.configure(properties)
+        control.configure(properties=properties)
         return control
 
     def get_source(self, units: int, rtype: ResourceType, term: Term, actor: IActor, slice_obj: ISlice):
@@ -79,10 +79,11 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
 
         properties = {Constants.ResourceBandwidth: str(self.VlanBW)}
 
-        delegation = actor.get_plugin().get_ticket_factory().make_delegation(units=units, term=term, rtype=rtype, properties=properties)
-        ticket = actor.get_plugin().get_ticket_factory().make_ticket(delegation=delegation)
+        delegation = actor.get_plugin().get_ticket_factory().make_delegation(units=units, term=term, rtype=rtype,
+                                                                             properties=properties, vector=None)
+        ticket = actor.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
         cs = Ticket(ticket=ticket, plugin=actor.get_plugin())
-        resources.set_resources(cs)
+        resources.set_resources(cset=cs)
         source = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         return source
 
@@ -105,7 +106,8 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
 
     vlan_tag = 0
 
-    def check_incoming_lease(self, authority: IAuthority, request: IAuthorityReservation, incoming: IReservation, udd: UpdateData):
+    def check_incoming_lease(self, authority: IAuthority, request: IAuthorityReservation, incoming: IReservation,
+                             udd: UpdateData):
         super().check_incoming_lease(authority, request, incoming, udd)
         policy = authority.get_policy()
         control = self.get_control(policy)
@@ -116,13 +118,14 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         self.assertEqual(self.TicketUnits, uset.get_units())
 
         u = uset.get_set().values().__iter__().__next__()
-        stag = u.get_property(Constants.UnitVlanTag)
+        stag = u.get_property(name=Constants.UnitVlanTag)
         self.assertIsNotNone(stag)
         self.vlan_tag = int(stag)
         self.assertEqual(self.DonateUnits - 1, control.tags.get_free())
         self.assertEqual(1, control.tags.get_allocated())
 
-    def check_incoming_close_lease(self, authority: IAuthority, request: IAuthorityReservation, incoming: IReservation, udd: UpdateData):
+    def check_incoming_close_lease(self, authority: IAuthority, request: IAuthorityReservation, incoming: IReservation,
+                                   udd: UpdateData):
         super().check_incoming_close_lease(authority, request, incoming, udd)
         policy = authority.get_policy()
         control = self.get_control(policy)
@@ -134,7 +137,8 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         self.assertEqual(self.DonateUnits, control.tags.get_free())
         self.assertEqual(0, control.tags.get_allocated())
 
-    def check_incoming_extend_lease(self, authority: IAuthority, request: IAuthorityReservation, incoming: IReservation, update_data: UpdateData):
+    def check_incoming_extend_lease(self, authority: IAuthority, request: IAuthorityReservation, incoming: IReservation,
+                                    update_data: UpdateData):
         super().check_incoming_extend_lease(authority, request, incoming, update_data)
         policy = authority.get_policy()
         control = self.get_control(policy)

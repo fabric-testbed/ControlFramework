@@ -30,16 +30,16 @@ from fabric.actor.boot.configuration_processor import ConfigurationProcessor
 
 
 class ConfigurationLoader:
-    def __init__(self, path: str = None):
+    def __init__(self, *, path: str = None):
         self.path = path
         self.config = None
 
-    def process(self, config: Configuration = None):
+    def process(self, *, config: Configuration = None):
         if config is None:
             self.read_configuration()
         else:
             self.config = config
-        init = ConfigurationProcessor(self.config)
+        init = ConfigurationProcessor(config=self.config)
         init.process()
 
     def read_configuration(self) -> Configuration:
@@ -49,5 +49,5 @@ class ConfigurationLoader:
         config_dict = None
         with open(self.path) as f:
             config_dict = yaml.safe_load(f)
-        self.config = Configuration(config_dict)
+        self.config = Configuration(config=config_dict)
         return self.config

@@ -26,12 +26,14 @@
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.kernel.incoming_rpc import IncomingRPC
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
+from fabric.actor.core.util.id import ID
 from fabric.actor.security.auth_token import AuthToken
 
 
 class IncomingQueryRPC(IncomingRPC):
-    def __init__(self, message_id: str, query: dict, caller: AuthToken, request_id: str = None, callback: ICallbackProxy = None):
-        super().__init__(message_id, RPCRequestType.Query, callback, caller)
+    def __init__(self, *, request_type: RPCRequestType, message_id: ID, query: dict, caller: AuthToken, request_id: ID = None,
+                 callback: ICallbackProxy = None):
+        super().__init__(message_id=message_id, request_type=request_type, callback=callback, caller=caller)
         self.query = query
         self.request_id = request_id
 

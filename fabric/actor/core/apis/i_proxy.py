@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor_identity import IActorIdentity
@@ -35,16 +37,18 @@ class IProxy(IActorIdentity):
     """
     IProxy defines the base interface each actor proxy must implement.
     """
-    def get_type(self):
+
+    @abstractmethod
+    def get_type(self) -> str:
         """
         Returns the type of proxy
 
         Returns:
             proxy type
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def execute(self, request: IRPCRequestState):
+    @abstractmethod
+    def execute(self, *, request: IRPCRequestState):
         """
         Executes the specified request
 
@@ -54,7 +58,9 @@ class IProxy(IActorIdentity):
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_logger(self):
-        raise NotImplementedError( "Should have implemented this" )
+        """
+        Returns the logger
+        """

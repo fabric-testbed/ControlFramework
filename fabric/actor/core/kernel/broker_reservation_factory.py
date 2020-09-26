@@ -33,5 +33,5 @@ from fabric.actor.core.util.id import ID
 
 class BrokerReservationFactory(IBrokerReservationFactory):
     @staticmethod
-    def create(rid: ID, resources: ResourceSet, term: Term, slice_obj: ISlice):
-        return BrokerReservation(rid, resources, term, slice_obj)
+    def create(*, rid: ID, resources: ResourceSet, term: Term, slice_obj: ISlice):
+        return BrokerReservation(rid=rid, resources=resources, term=term, slice_obj=slice_obj)

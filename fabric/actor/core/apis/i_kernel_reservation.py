@@ -24,10 +24,11 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_reservation import IReservation
-
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -35,75 +36,78 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_policy import IPolicy
     from fabric.actor.core.apis.i_slice import ISlice
     from fabric.actor.core.kernel.failed_rpc import FailedRPC
+    from fabric.actor.core.util.update_data import UpdateData
 
 
 class IKernelReservation(IReservation):
     """
     Kernel-level reservation interface.
     """
-    def set_slice(self, slice_object: ISlice):
+
+    @abstractmethod
+    def set_slice(self, *, slice_object: ISlice):
         """
         Sets the slice the reservation belongs to.
        
         @param slice_object slice the reservation belongs to
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def can_redeem(self)->bool:
+    @abstractmethod
+    def can_redeem(self) -> bool:
         """
         Checks if the reservation can be redeemed at the current time.
        
         @return true if the reservation's current state allows it to be redeemed
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def can_renew(self) -> bool:
         """
         Checks if this reservation can be renewed at the current time.
 
         @return true if the reservation's current state allows it to be renewed
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def claim(self):
         """
         Claims an exported "will call" reservation.
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def reclaim(self):
         """
         Reclaims an exported "will call" reservation.
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def close(self):
         """
         Closes the reservation. Locked with the kernel lock.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def extend_lease(self):
         """
         Extends the reservation.
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def modify_lease(self):
         """
         Modifies the reservation.
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def extend_ticket(self, actor: IActor):
+    @abstractmethod
+    def extend_ticket(self, *, actor: IActor):
         """
         Extends the ticket.
        
@@ -111,26 +115,26 @@ class IKernelReservation(IReservation):
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_kernel_slice(self):
         """
         Returns the kernel slice.
        
         @return kernel slice
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def handle_duplicate_request(self, operation: int):
+    @abstractmethod
+    def handle_duplicate_request(self, *, operation: int):
         """
         Handles a duplicate request.
        
         @param operation operation type code
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def prepare(self, callback: ICallbackProxy, logger):
+    @abstractmethod
+    def prepare(self, *, callback: ICallbackProxy, logger):
         """
         Prepares for a ticket request on a new reservation object.
        
@@ -138,16 +142,16 @@ class IKernelReservation(IReservation):
         @param logger for diagnostic logging
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def prepare_probe(self):
         """
         Prepares a reservation probe.
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def probe_pending(self):
         """
         Probe a reservation with a pending request. On server, if the
@@ -156,9 +160,9 @@ class IKernelReservation(IReservation):
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def reserve(self, policy: IPolicy):
+    @abstractmethod
+    def reserve(self, *, policy: IPolicy):
         """
         Reserve resources: ticket() initiate or request, or redeem()
         request. New reservation.
@@ -167,103 +171,103 @@ class IKernelReservation(IReservation):
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_claim(self):
         """
         Finishes processing claim.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_reclaim(self):
         """
         Finishes processing reclaim.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_close(self):
         """
         Finishes processing close.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_extend_lease(self):
         """
         Finishes processing extend lease.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_modify_lease(self):
         """
         Finishes processing modify lease.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_extend_ticket(self):
         """
         Finishes processing extend ticket.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_probe(self):
         """
         Finishes processing probe.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_reserve(self):
         """
         Finishes processing reserve.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_update_lease(self):
         """
         Finishes processing update lease.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def service_update_ticket(self):
         """
         Finishes processing update ticket.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_actor(self, actor: IActor):
+    @abstractmethod
+    def set_actor(self, *, actor: IActor):
         """
         Sets the actor in control of the reservation.
        
         @param actor actor in control of the reservation
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_logger(self, logger):
+    @abstractmethod
+    def set_logger(self, *, logger):
         """
         Attaches the logger to use for the reservation.
        
         @param logger logger object
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_service_pending(self, code: int):
+    @abstractmethod
+    def set_service_pending(self, *, code: int):
         """
         Indicates there is a pending operation on the reservation.
        
         @param code operation code
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def update_lease(self, incoming: IReservation, update_data):
+    @abstractmethod
+    def update_lease(self, *, incoming: IReservation, update_data: UpdateData):
         """
         Handles an incoming lease update.
        
@@ -274,9 +278,9 @@ class IKernelReservation(IReservation):
                 reservation
         @throws Exception thrown if lease update is for closed reservation
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def update_ticket(self, incoming: IReservation, update_data):
+    @abstractmethod
+    def update_ticket(self, *,incoming: IReservation, update_data: UpdateData):
         """
         Handles an incoming ticket update.
        
@@ -285,26 +289,25 @@ class IKernelReservation(IReservation):
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def validate_incoming(self):
         """
         Validates a reservation as it arrives at an actor.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def validate_outgoing(self):
         """
         Validates a reservation as it is about to leave an actor.
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def handle_failed_rpc(self, failed: FailedRPC):
+    @abstractmethod
+    def handle_failed_rpc(self, *,failed: FailedRPC):
         """
         Processes a failed RPC request.
         @param failed failed
         """
-        raise NotImplementedError("Should have implemented this")

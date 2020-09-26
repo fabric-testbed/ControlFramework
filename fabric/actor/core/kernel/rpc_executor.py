@@ -35,18 +35,18 @@ from fabric.actor.core.kernel.failed_rpc_event import FailedRPCEvent
 
 
 class RPCExecutor:
-    def __init__(self, request: RPCRequest):
+    def __init__(self, *, request: RPCRequest):
         self.request = request
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def post_exception(self, e: RPCException):
+    def post_exception(self, *, e: RPCException):
         try:
             self.logger.error("An error occurred while performing RPC. Error type={} {}".format(e.get_error_type(), e))
             from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
             RPCManagerSingleton.get().remove_pending_request(self.request.request.get_message_id())
             failed = FailedRPC(e=e, request=self.request)
-            self.request.actor.queue_event(FailedRPCEvent(self.request.actor, failed))
+            self.request.actor.queue_event(FailedRPCEvent(actor=self.request.actor, failed=failed))
         except Exception as e:
             self.logger.error("postException failed = {}".format(e))
 
@@ -54,10 +54,10 @@ class RPCExecutor:
         self.logger.debug("Performing RPC: type={} to:{}".format(self.request.request.get_type(),
                                                                  self.request.proxy.get_name()))
         try:
-            self.request.proxy.execute(self.request.request)
+            self.request.proxy.execute(request=self.request.request)
             self.request.cancel_timer()
         except RPCException as e:
-            self.post_exception(e)
+            self.post_exception(e=e)
         finally:
             self.logger.debug("Completed RPC: type= {} to: {}".format(self.request.request.get_type(),
                                                                       self.request.proxy.get_name()))

@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 
 
 class Vmm:
-    def __init__(self, host: Unit, capacity: int):
+    def __init__(self, *, host: Unit, capacity: int):
         if host is None:
             raise Exception("host cannot be None")
         if capacity < 1:
@@ -64,7 +64,7 @@ class Vmm:
     def __hash__(self):
         return self._host.get_id().__hash__()
 
-    def release(self, vm: Unit):
+    def release(self, *, vm: Unit):
         if vm is None:
             raise Exception("vm cannot be None")
 
@@ -73,7 +73,7 @@ class Vmm:
 
         self.hosted.remove(vm)
 
-    def host(self, vm: Unit):
+    def host(self, *, vm: Unit):
         if vm is None:
             raise Exception("vm cannot be None")
 
@@ -99,7 +99,7 @@ class Vmm:
 
 
 class VmmPool:
-    def __init__(self, rtype: ResourceType, properties: dict):
+    def __init__(self, *, rtype: ResourceType, properties: dict):
         self.rtype = rtype
         self.properties = properties
         self.vmms = {}
@@ -109,7 +109,7 @@ class VmmPool:
         self.disk = 0
         self.capacity = 0
 
-    def donate(self, vm: Vmm):
+    def donate(self, *, vm: Vmm):
         if vm is None:
             raise Exception("vm cannot be None")
 
@@ -118,14 +118,13 @@ class VmmPool:
 
         self.vmms[vm.get_host().get_id()] = vm
 
-
-    def get_vmm_set(self) -> list:
+    def get_vmm_set(self) -> List[Vmm]:
         result = []
         for v in self.vmms.values():
             result.append(v)
         return result
 
-    def get_vmm(self, uid: ID) -> Vmm:
+    def get_vmm(self, *, uid: ID) -> Vmm:
         if uid in self.vmms:
             return self.vmms[uid]
         return None
@@ -139,31 +138,31 @@ class VmmPool:
     def get_memory(self) -> int:
         return self.memory
 
-    def set_memory(self, memory: int):
+    def set_memory(self, *, memory: int):
         self.memory = memory
 
     def get_cpu(self) -> int:
         return self.cpu
 
-    def set_cpu(self, cpu: int):
+    def set_cpu(self, *, cpu: int):
         self.cpu = cpu
 
     def get_bandwidth(self) -> int:
         return self.bandwidth
 
-    def set_bandwidth(self, bandwidth: int):
+    def set_bandwidth(self, *, bandwidth: int):
         self.bandwidth = bandwidth
 
     def get_disk(self) -> int:
         return self.disk
 
-    def set_disk(self, disk: int):
+    def set_disk(self, *, disk: int):
         self.disk = disk
 
     def get_capacity(self) -> int:
         return self.capacity
 
-    def set_capacity(self, capacity: int):
+    def set_capacity(self, *, capacity: int):
         self.capacity = capacity
 
     def get_type(self) -> ResourceType:
@@ -212,20 +211,20 @@ class VMControl(ResourceControl):
         self.gateway = None
         self.use_ip_set = False
 
-    def donate_reservation(self, reservation: IClientReservation):
+    def donate_reservation(self, *, reservation: IClientReservation):
         return
 
-    def donate(self, resource_set: ResourceSet):
+    def donate(self, *, resource_set: ResourceSet):
         rtype = resource_set.get_type()
         resource = resource_set.get_resource_properties()
         local = resource_set.get_local_properties()
 
         pool = self.inventory.get(rtype)
         if pool is None:
-            pool = VmmPool(rtype, resource)
+            pool = VmmPool(rtype=rtype, properties=resource)
             rd = ResourcePoolDescriptor()
-            rd.reset(resource, None)
-            memory = int(rd.get_attribute(Constants.ResourceMemory).get_value())
+            rd.reset(properties=resource, prefix=None)
+            memory = int(rd.get_attribute(key=Constants.ResourceMemory).get_value())
             capacity = 0
             if self.PropertyCapacity in local:
                 capacity = int(local[self.PropertyCapacity])
@@ -236,20 +235,20 @@ class VMControl(ResourceControl):
 
             if self.PropertyIPList in local:
                 temp = local[self.PropertyIPList]
-                self.ipset.add(temp)
+                self.ipset.add(ip_list=temp)
                 self.use_ip_set = True
 
-            pool.set_memory(memory)
-            pool.set_capacity(capacity)
+            pool.set_memory(memory=memory)
+            pool.set_capacity(capacity=capacity)
             self.inventory[rtype] = pool
 
         unit_set = resource_set.get_resources()
         for unit in unit_set.get_set().values():
-            vmm = Vmm(unit, pool.get_capacity())
-            pool.donate(vmm)
+            vmm = Vmm(host=unit, capacity=pool.get_capacity())
+            pool.donate(vm=vmm)
 
-    def assign(self, reservation: IAuthorityReservation) -> ResourceSet:
-        reservation.set_send_with_deficit(True)
+    def assign(self, *, reservation: IAuthorityReservation) -> ResourceSet:
+        reservation.set_send_with_deficit(value=True)
 
         if len(self.inventory) == 0:
             raise Exception("no inventory")
@@ -269,7 +268,7 @@ class VMControl(ResourceControl):
                 raise Exception("no resources of the specified pool")
 
             needed = ticket.get_units()
-            gained = self.get_vms(pool, needed)
+            gained = self.get_vms(pool=pool, needed=needed)
 
             if gained is None or gained.get_units() == 0:
                 self.logger.warning("Could not allocate any units for r: {}".format(reservation.get_reservation_id()))
@@ -281,17 +280,17 @@ class VMControl(ResourceControl):
             difference = ticket.get_units() - current_units
 
             if difference > 0:
-                gained = self.get_vms(pool, difference)
+                gained = self.get_vms(pool=pool, needed=difference)
             elif difference < 0:
                 unit_set = current.get_resources()
                 victims = request_properties[Constants.ConfigVictims]
-                to_take = unit_set.select_extract(-difference, victims)
-                lost = UnitSet(self.authority.get_plugin(), to_take)
+                to_take = unit_set.select_extract(count=-difference, victims=victims)
+                lost = UnitSet(plugin=self.authority.get_plugin(), units=to_take)
 
         return ResourceSet(gained=gained, lost=lost, rtype=rtype)
 
-    def get_vms(self, pool: VmmPool, needed: int) -> UnitSet:
-        uset = UnitSet(self.authority.get_plugin())
+    def get_vms(self, *, pool: VmmPool, needed: int) -> UnitSet:
+        uset = UnitSet(plugin=self.authority.get_plugin())
         vmms = pool.get_vmm_set()
         allocated = 0
 
@@ -304,44 +303,48 @@ class VMControl(ResourceControl):
                 to_allocate = min(available, needed - allocated)
                 for i in range(to_allocate):
                     vm = Unit(id=ID())
-                    vm.set_resource_type(pool.get_type())
-                    vm.set_parent_id(vmm.get_host().get_id())
-                    vm.set_property(Constants.UnitParentHostName, vmm.get_host().get_property(Constants.UnitHostName))
-                    vm.set_property(Constants.UnitControl, vmm.get_host().get_property(Constants.UnitControl))
-                    vm.set_property(Constants.UnitMemory, str(pool.get_memory()))
+                    vm.set_resource_type(rtype=pool.get_type())
+                    vm.set_parent_id(parent_id=vmm.get_host().get_id())
+                    vm.set_property(name=Constants.UnitParentHostName,
+                                    value=vmm.get_host().get_property(name=Constants.UnitHostName))
+                    vm.set_property(name=Constants.UnitControl,
+                                    value=vmm.get_host().get_property(name=Constants.UnitControl))
+                    vm.set_property(name=Constants.UnitMemory,
+                                    value=str(pool.get_memory()))
                     if self.use_ip_set:
-                        vm.set_property(Constants.UnitManagementIP, self.ipset.allocate())
+                        vm.set_property(name=Constants.UnitManagementIP,
+                                        value=self.ipset.allocate())
 
                     if self.subnet is not None:
-                        vm.set_property(Constants.UnitManageSubnet, self.subnet)
+                        vm.set_property(name=Constants.UnitManageSubnet, value=self.subnet)
 
                     if self.gateway is not None:
-                        vm.set_property(Constants.UnitManageGateway, self.gateway)
+                        vm.set_property(name=Constants.UnitManageGateway, value=self.gateway)
 
-                    vmm.host(vm)
-                    uset.add_unit(vm)
+                    vmm.host(vm=vm)
+                    uset.add_unit(u=vm)
                 allocated += to_allocate
             if allocated == needed or self.ipset.get_free_count() == 0:
                 break
 
         return uset
 
-    def free(self, uset: dict):
+    def free(self, *, uset: dict):
         if uset is not None:
             for u in uset.values():
                 try:
                     rtype = u.get_resource_type()
                     pool = self.inventory.get(rtype)
                     host = u.get_parent_id()
-                    vmm = pool.get_vmm(host)
-                    vmm.release(u)
+                    vmm = pool.get_vmm(uid=host)
+                    vmm.release(vm=u)
                     if self.use_ip_set:
-                        self.ipset.free(u.get_property(Constants.UnitManagementIP))
-                    self.logger.debug("Released unit: {}".format(e))
+                        self.ipset.free(ip=u.get_property(Constants.UnitManagementIP))
+                    self.logger.debug("Released unit: {}".format(u))
                 except Exception as e:
                     self.logger.error("Failed to release unit: {} exception:{}".format(u, e))
 
-    def revisit(self, reservation: IReservation):
+    def revisit(self, *, reservation: IReservation):
         unit_set = reservation.get_resources().get_resources()
         for u in unit_set.get_set().values:
             try:
@@ -354,12 +357,13 @@ class VMControl(ResourceControl):
                     rtype = u.get_resource_type()
                     pool = self.inventory.get(rtype)
                     id = u.get_parent_id()
-                    vmm = pool.get_vmm(id)
-                    vmm.host(u)
-                    self.logger.debug("VMControl.revisit(); recovering management IP {}".format(u.get_property(Constants.UnitManagementIP)))
-                    self.ipset.reserve(u.get_property(Constants.UnitManagementIP))
+                    vmm = pool.get_vmm(uid=id)
+                    vmm.host(vm=u)
+                    self.logger.debug("VMControl.revisit(); recovering management IP {}".format(
+                        u.get_property(name=Constants.UnitManagementIP)))
+                    self.ipset.reserve(ip=u.get_property(name=Constants.UnitManagementIP))
             except Exception as e:
-                self.fail(u, "revisit with vmcontrol", e)
+                self.fail(u=u, message="revisit with vmcontrol", e=e)
 
     def recovery_starting(self):
         self.logger.info("Beginning VMControl recovery")

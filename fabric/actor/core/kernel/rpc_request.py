@@ -32,7 +32,7 @@ from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 
 
 class RPCRequest:
-    def __init__(self, request: IRPCRequestState, actor: IActor, proxy: IProxy,
+    def __init__(self, *, request: IRPCRequestState, actor: IActor, proxy: IProxy,
                  reservation: IReservation, sequence: int, handler: IRPCResponseHandler):
         self.request = request
         self.actor = actor

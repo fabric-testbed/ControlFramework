@@ -34,7 +34,7 @@ from fabric.actor.core.util.resource_type import ResourceType
 
 class ControllerTestWrapper(Controller):
     def bid(self):
-        candidates = self.policy.formulate_bids(self.current_cycle)
+        candidates = self.policy.formulate_bids(cycle=self.current_cycle)
         if candidates is not None:
             ticketing = candidates.get_ticketing()
             if ticketing is not None:
@@ -55,8 +55,9 @@ class ControllerTestWrapper(Controller):
                     delegation = self.get_plugin().get_ticket_factory().make_delegation(
                         units=r.get_approved_resources().get_units(),
                         term=r.get_approved_term(),
-                        rtype=r.get_approved_type())
-                    ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation)
+                        rtype=r.get_approved_type(),
+                        vector= None)
+                    ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
                     cs = Ticket(ticket=ticket, plugin=self.get_plugin())
                     self.update_ticket_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs,
                                                r.get_approved_term())
@@ -68,21 +69,21 @@ class ControllerTestWrapper(Controller):
                     delegation = self.get_plugin().get_ticket_factory().make_delegation(
                         units=r.get_approved_resources().get_units(),
                         term=r.get_approved_term(),
-                        rtype=r.get_approved_type())
-                    ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation)
+                        rtype=r.get_approved_type(), vector=None)
+                    ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
                     cs = Ticket(ticket=ticket, plugin=self.get_plugin())
                     self.update_ticket_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs,
                                                r.get_approved_term())
 
     def close_expiring(self):
-        rset = self.policy.get_closing(self.current_cycle)
+        rset = self.policy.get_closing(cycle=self.current_cycle)
         if rset is not None:
             for r in rset.values():
                 print("cycle: {} closing reservation r: {}".format(self.current_cycle, r))
-                r.transition("close", ReservationStates.Closed, ReservationPendingStates.None_)
+                r.transition(prefix="close", state=ReservationStates.Closed, pending=ReservationPendingStates.None_)
 
     def process_redeeming(self):
-        rset = self.policy.get_redeeming(self.current_cycle)
+        rset = self.policy.get_redeeming(cycle=self.current_cycle)
         if rset is not None:
             for r in rset.values():
                 if r.get_state() == ReservationStates.Ticketed:
@@ -93,8 +94,8 @@ class ControllerTestWrapper(Controller):
                 try:
                     delegation = self.get_plugin().get_ticket_factory().make_delegation(units=r.resources.get_units(),
                                                                                         term=r.term,
-                                                                                        rtype=r.resources.get_type())
-                    ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation)
+                                                                                        rtype=r.resources.get_type(), vector=None)
+                    ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
                     cs = Ticket(ticket=ticket, plugin=self.get_plugin())
                     self.update_lease_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs, r.get_approved_term())
                 except Exception as e:
@@ -105,25 +106,25 @@ class ControllerTestWrapper(Controller):
             reservation.leased_resources = reservation.resources.abstract_clone()
             reservation.leased_resources.units = units
             reservation.leased_resources.type = rtype
-            reservation.leased_resources.set_resources(cs)
+            reservation.leased_resources.set_resources(cset=cs)
 
             reservation.previous_lease_term = None
             reservation.previous_term = reservation.term
             reservation.lease_term = term.clone()
             reservation.term = reservation.lease_term
 
-            reservation.transition("redeem", ReservationStates.Active, ReservationPendingStates.None_)
+            reservation.transition(prefix="redeem", state=ReservationStates.Active, pending=ReservationPendingStates.None_)
         else:
             reservation.leased_resources.units = units
             reservation.leased_resources.type = rtype
-            reservation.leased_resources.resources.change(cs, False)
+            reservation.leased_resources.resources.change(concrete_set=cs, configure=False)
 
             reservation.previous_lease_term = reservation.requested_term
             reservation.previous_term = reservation.term
             reservation.lease_term = term.clone()
             reservation.term = reservation.lease_term
 
-            reservation.transition("redeem", ReservationStates.Active, ReservationPendingStates.None_)
+            reservation.transition(prefix="redeem", state=ReservationStates.Active, pending=ReservationPendingStates.None_)
 
     def update_ticket_wrapper(self, reservation: ReservationClient, rtype: ResourceType, units: int,
                               ticket: Ticket, term: Term):
@@ -131,25 +132,25 @@ class ControllerTestWrapper(Controller):
             reservation.resources = reservation.get_approved_resources().abstract_clone()
             reservation.resources.units = units
             reservation.resources.type = rtype
-            reservation.resources.set_resources(ticket)
+            reservation.resources.set_resources(cset=ticket)
 
             reservation.previous_ticket_term = None
             reservation.previous_term = None
             reservation.term = term.clone()
             reservation.ticket_term = reservation.term
 
-            reservation.transition("ticket", ReservationStates.Ticketed, ReservationPendingStates.None_)
+            reservation.transition(prefix="ticket", state=ReservationStates.Ticketed, pending=ReservationPendingStates.None_)
         else:
             reservation.resources.units = units
             reservation.resources.type = rtype
-            reservation.resources.resources.change(ticket, False)
+            reservation.resources.resources.change(concrete_set=ticket, configure=False)
 
             reservation.previous_term = reservation.term
             reservation.previous_ticket_term = reservation.ticket_term
             reservation.term = term.clone()
             reservation.ticket_term = reservation.term
 
-            reservation.transition("extendticket", ReservationStates.ActiveTicketed, ReservationPendingStates.None_)
+            reservation.transition(prefix="extendticket", state=ReservationStates.ActiveTicketed, pending=ReservationPendingStates.None_)
 
     def fail_ticket(self, r: ReservationClient):
-        r.transition("fail", ReservationStates.Failed, ReservationPendingStates.None_)
+        r.transition(prefix="fail", state=ReservationStates.Failed, pending=ReservationPendingStates.None_)

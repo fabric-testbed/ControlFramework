@@ -79,16 +79,16 @@ class ResourcePoolFactory(IResourcePoolFactory):
         now = GlobalsSingleton.get().get_container().get_current_cycle()
         start = self.desc.get_start()
         if start is None:
-            start = clock.cycle_start_date(now)
+            start = clock.cycle_start_date(cycle=now)
         end = self.desc.get_end()
         if end is None:
             # export for one year
             length = 1000 * 60 * 60 * 24 * 365
-            end = clock.cycle_end_date(now + length)
+            end = clock.cycle_end_date(cycle=(now + length))
 
         return Term(start=start, end=end)
 
-    def create_resource_ticket(self, term: Term) -> ResourceTicket:
+    def create_resource_ticket(self, *, term: Term) -> ResourceTicket:
         """
         Creates the resource ticket for the source reservation
         @param term term
@@ -107,32 +107,33 @@ class ResourcePoolFactory(IResourcePoolFactory):
         rdata = ResourceData()
         rdata.resource_properties = self.slice_obj.get_resource_properties()
         rdata.local_properties = self.desc.get_pool_properties()
-        rdata.resource_properties['pool.name'] = self.slice_obj.get_name()
+        rdata.resource_properties[Constants.PoolName] = self.slice_obj.get_name()
         return rdata
 
-    def create_source_reservation(self, slice_obj: ISlice) -> IClientReservation:
+    def create_source_reservation(self, *, slice_obj: ISlice) -> IClientReservation:
         self.slice_obj = slice_obj
         term = self.create_term()
-        resource_ticket = self.create_resource_ticket(term)
+        resource_ticket = self.create_resource_ticket(term=term)
         ticket = Ticket(ticket=resource_ticket, plugin=self.substrate, authority=self.proxy)
         rdata = self.create_resource_data()
         resources = ResourceSet(concrete=ticket, rtype=self.desc.get_resource_type(), rdata=rdata)
         reservation = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
-        ClientReservationFactory.set_as_source(reservation)
+        ClientReservationFactory.set_as_source(reservation=reservation)
         return reservation
 
     def get_descriptor(self) -> ResourcePoolDescriptor:
         self.update_descriptor()
         return self.desc
 
-    def set_descriptor(self, descriptor: ResourcePoolDescriptor):
+    def set_descriptor(self, *, descriptor: ResourcePoolDescriptor):
         self.desc = descriptor
 
-    def set_substrate(self, substrate: ISubstrate):
+    def set_substrate(self, *, substrate: ISubstrate):
         self.substrate = substrate
         auth = self.substrate.get_actor().get_identity()
         try:
-            self.proxy = ActorRegistrySingleton.get().get_proxy(Constants.ProtocolKafka, auth.get_name())
+            self.proxy = ActorRegistrySingleton.get().get_proxy(protocol=Constants.ProtocolKafka,
+                                                                actor_name=auth.get_name())
             if self.proxy is None:
                 raise Exception("Missing proxy")
         except Exception as e:

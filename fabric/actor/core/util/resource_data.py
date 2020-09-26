@@ -67,17 +67,24 @@ class ResourceData:
     def get_configuration_properties(self) -> dict:
         return self.configuration_properties
 
-    def merge(self, other):
+    def merge(self, *, other):
         if other is None or not isinstance(other, ResourceData):
             raise Exception("Invalid object type")
 
-        self.local_properties = self.merge_properties(other.local_properties, self.local_properties)
-        self.request_properties = self.merge_properties(other.request_properties, self.request_properties)
-        self.resource_properties = self.merge_properties(other.resource_properties, self.resource_properties)
-        self.configuration_properties = self.merge_properties(other.configuration_properties, self.configuration_properties)
+        self.local_properties = self.merge_properties(from_props=other.local_properties,
+                                                      to_props=self.local_properties)
+
+        self.request_properties = self.merge_properties(from_props=other.request_properties,
+                                                        to_props=self.request_properties)
+
+        self.resource_properties = self.merge_properties(from_props=other.resource_properties,
+                                                         to_props=self.resource_properties)
+
+        self.configuration_properties = self.merge_properties(from_props=other.configuration_properties,
+                                                              to_props=self.configuration_properties)
 
     @staticmethod
-    def merge_properties(from_props: dict, to_props: dict) -> dict:
+    def merge_properties(*, from_props: dict, to_props: dict) -> dict:
         """
         Merges both properties lists. Elements in from overwrite elements in two.
 

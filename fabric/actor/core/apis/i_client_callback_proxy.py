@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
@@ -36,6 +38,13 @@ if TYPE_CHECKING:
 
 
 class IClientCallbackProxy(ICallbackProxy):
-    def prepare_update_ticket(self, reservation: IBrokerReservation, update_data: UpdateData,
+    @abstractmethod
+    def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
                               callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
-        pass
+        """
+        Prepare an update ticket
+        @params reservation: reservation
+        @params update_data: update data
+        @params callback: callback
+        @params caller: caller
+        """

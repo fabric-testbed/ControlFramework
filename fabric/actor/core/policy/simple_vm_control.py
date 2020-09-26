@@ -43,30 +43,30 @@ if TYPE_CHECKING:
 
 
 class PoolData:
-    def __init__(self, rtype: ResourceType, properties: dict):
+    def __init__(self, *, rtype: ResourceType, properties: dict):
         self.total = 0
         self.free_ = 0
         self.rtype = rtype
         self.pd = ResourcePoolDescriptor()
-        self.pd.reset(properties, None)
+        self.pd.reset(properties=properties, prefix=None)
 
-    def add_units(self, count: int):
+    def add_units(self, *, count: int):
         self.total += count
         self.free_ += count
 
-    def allocate(self, count: int):
+    def allocate(self, *, count: int):
         if self.free_ < count:
             raise Exception("insufficient units (allocate): needed= {} available: {}".format(count, self.free_))
 
         self.free_ -= count
 
-    def free(self, count: int):
+    def free(self, *, count: int):
         if self.free_ + count > self.total:
             raise Exception("too many units to free")
 
         self.free_ += count
 
-    def reserve(self, count: int):
+    def reserve(self, *, count: int):
         if self.free_ < count:
             raise Exception("insufficient units (allocate): needed= {} available: {}".format(count, self.free_))
 
@@ -127,7 +127,7 @@ class SimpleVMControl(ResourceControl):
         self.data_subnet = None
         self.use_ip_set = False
 
-    def donate_reservation(self, reservation: IClientReservation):
+    def donate_reservation(self, *, reservation: IClientReservation):
         rset = reservation.get_resources()
         rtype = rset.get_type()
         resource = rset.get_resource_properties()
@@ -135,8 +135,8 @@ class SimpleVMControl(ResourceControl):
 
         pool = self.inventory.get(rtype)
         if pool is None:
-            pool = PoolData(rtype, resource)
-            pool.add_units(rset.get_units())
+            pool = PoolData(rtype=rtype, properties=resource)
+            pool.add_units(count=rset.get_units())
             if VMControl.PropertyIPSubnet in local:
                 self.subnet = local[VMControl.PropertyIPSubnet]
             if VMControl.PropertyIPGateway in local:
@@ -145,14 +145,14 @@ class SimpleVMControl(ResourceControl):
                 self.data_subnet = local[VMControl.PropertyDataSubnet]
             if VMControl.PropertyIPList in local:
                 temp = local[VMControl.PropertyIPList]
-                self.ipset.add(temp)
+                self.ipset.add(ip_list=temp)
                 self.use_ip_set = True
             self.inventory[rtype] = pool
         else:
-            pool.add_units(rset.get_units())
+            pool.add_units(count=rset.get_units())
 
-    def assign(self, reservation: IAuthorityReservation) -> ResourceSet:
-        reservation.set_send_with_deficit(True)
+    def assign(self, *, reservation: IAuthorityReservation) -> ResourceSet:
+        reservation.set_send_with_deficit(value=True)
         if len(self.inventory) == 0:
             raise Exception("no inventory")
         requested = reservation.get_requested_resources()
@@ -173,7 +173,7 @@ class SimpleVMControl(ResourceControl):
                 raise Exception("no resources of the specified pool")
 
             needed = ticket.get_units()
-            gained = self.get_vms(pool, needed)
+            gained = self.get_vms(pool=pool, needed=needed)
             if gained is None or gained.get_units() == 0:
                 self.logger.warning("Could not allocate any units for r: {}".format(reservation.get_reservation_id()))
                 return None
@@ -183,64 +183,64 @@ class SimpleVMControl(ResourceControl):
             current_units = current.get_units()
             difference = ticket.get_units() - current_units
             if difference > 0:
-                gained = self.get_vms(pool, difference)
+                gained = self.get_vms(pool=pool, needed=difference)
             elif difference < 0:
                 uset = current.get_resources()
                 victims = request_properties[Constants.ConfigVictims]
-                to_take = uset.select_extract(-difference, victims)
-                lost = UnitSet(self.authority.get_plugin(), to_take)
+                to_take = uset.select_extract(count=-difference, victims=victims)
+                lost = UnitSet(plugin=self.authority.get_plugin(), units=to_take)
         return ResourceSet(gained=gained, lost=lost, rtype=rtype)
 
-    def get_vms(self, pool: PoolData, needed: int) -> UnitSet:
-        uset = UnitSet(self.authority.get_plugin())
+    def get_vms(self, *, pool: PoolData, needed: int) -> UnitSet:
+        uset = UnitSet(plugin=self.authority.get_plugin())
         available = min(needed, pool.get_free())
 
         if self.use_ip_set:
             available = min(available, self.ipset.get_free_count())
 
-            pool.allocate(available)
+            pool.allocate(count=available)
 
             self.logger.debug("Allocated {} units".format(available))
 
             for i in range(available):
                 vm = Unit(id=ID())
-                vm.set_resource_type(pool.get_type())
+                vm.set_resource_type(rtype=pool.get_type())
 
                 if self.use_ip_set:
-                    vm.set_property(Constants.UnitManagementIP, self.ipset.allocate())
+                    vm.set_property(name=Constants.UnitManagementIP, value=self.ipset.allocate())
 
                 if self.subnet is not None:
-                    vm.set_property(Constants.UnitManageSubnet, self.subnet)
+                    vm.set_property(name=Constants.UnitManageSubnet, value=self.subnet)
 
                 if self.data_subnet is not None:
-                    vm.set_property(Constants.UnitDataSubnet, self.data_subnet)
+                    vm.set_property(name=Constants.UnitDataSubnet, value=self.data_subnet)
 
                 if self.gateway is not None:
-                    vm.set_property(Constants.UnitManageGateway, self.gateway)
+                    vm.set_property(name=Constants.UnitManageGateway, value=self.gateway)
 
                 for att in pool.get_descriptor().get_attributes():
                     if att.get_value() is not None:
                         key = att.get_key()
                         key = key.replace("resource.", "unit.")
-                        vm.set_property(key, att.get_value())
+                        vm.set_property(name=key, value=att.get_value())
 
-                uset.add_unit(vm)
+                uset.add_unit(u=vm)
         return uset
 
-    def free(self, uset: dict):
+    def free(self, *, uset: dict):
         if uset is not None:
             for u in uset.values():
                 try:
                     self.logger.debug("Freeing 1 unit")
-                    rtype =  u.get_resource_type()
+                    rtype = u.get_resource_type()
                     pool = self.inventory.get(rtype)
-                    pool.free(1)
+                    pool.free(count=1)
                     if self.use_ip_set:
-                        self.ipset.free(u.get_property(Constants.UnitManagementIP))
+                        self.ipset.free(ip=u.get_property(name=Constants.UnitManagementIP))
                 except Exception as e:
                     self.logger.error("Failed to release vm {}".format(e))
 
-    def revisit(self, reservation: IReservation):
+    def revisit(self, *, reservation: IReservation):
         unit_set = reservation.get_resources().get_resources()
         for u in unit_set.get_set().values():
             try:
@@ -253,8 +253,8 @@ class SimpleVMControl(ResourceControl):
                     rtype = u.get_resource_type()
                     pool = self.inventory.get(rtype)
                     pool.reserve(1)
-                    mgmt_ip = u.get_property(Constants.UnitManagementIP)
+                    mgmt_ip = u.get_property(name=Constants.UnitManagementIP)
                     if mgmt_ip is not None:
-                        self.ipset.reserve(mgmt_ip)
+                        self.ipset.reserve(ip=mgmt_ip)
             except Exception as e:
-                self.fail(u, "revisit with simplemcontrol", e)
+                self.fail(u=u, message="revisit with simplemcontrol", e=e)

@@ -38,25 +38,25 @@ class SimplerUnitsInventory(InventoryForType):
         super().__init__()
         self.set = FreeAllocatedSet()
 
-    def donate(self, source: IClientReservation):
-        super().donate(source)
+    def donate(self, *, source: IClientReservation):
+        super().donate(source=source)
         rset = source.get_resources()
         cset = rset.get_resources()
         ticket = cset.get_ticket()
 
         for i in range(ticket.get_units()):
-            self.set.add_inventory(i)
+            self.set.add_inventory(item=i)
 
-    def allocate(self, count:int, request: dict, resource: dict = None) -> dict:
-        self.set.allocate(count)
+    def allocate(self, *, count:int, request: dict, resource: dict = None) -> dict:
+        self.set.allocate(count=count)
         result = {}
         return result
 
-    def allocate_revisit(self, count: int, resource: dict):
-        self.set.allocate(count)
+    def allocate_revisit(self, *, count: int, resource: dict):
+        self.set.allocate(count=count)
 
-    def free(self, count: int, request: dict = None, resource: dict = None) -> dict:
-        self.set.free(count)
+    def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
+        self.set.free(count=count)
         result = {}
         return result
 

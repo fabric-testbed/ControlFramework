@@ -134,18 +134,18 @@ class Container(IActorContainer):
         self.write_state_file()
 
     def create_database(self):
-        user = self.config.get_global_config().get_database()[Constants.PropertyConfDbUser]
-        password = self.config.get_global_config().get_database()[Constants.PropertyConfDbPassword]
-        dbname = self.config.get_global_config().get_database()[Constants.PropertyConfDbName]
-        dbhost = self.config.get_global_config().get_database()[Constants.PropertyConfDbHost]
-        self.db = ContainerDatabase(user, password, dbname, dbhost, self.logger)
+        user = self.config.get_global_config().get_database().get(Constants.PropertyConfDbUser, None)
+        password = self.config.get_global_config().get_database().get(Constants.PropertyConfDbPassword, None)
+        dbname = self.config.get_global_config().get_database().get(Constants.PropertyConfDbName, None)
+        dbhost = self.config.get_global_config().get_database().get(Constants.PropertyConfDbHost, None)
+        self.db = ContainerDatabase(user=user, password=password, database=dbname, db_host=dbhost, logger=self.logger)
         if self.is_fresh():
-            self.db.set_reset_state(True)
+            self.db.set_reset_state(value=True)
         else:
-            self.db.set_reset_state(False)
+            self.db.set_reset_state(value=False)
         self.db.initialize()
 
-    def initialize(self, config: Configuration):
+    def initialize(self, *, config: Configuration):
         if config is None:
             raise Exception("config cannot be null")
 
@@ -167,7 +167,7 @@ class Container(IActorContainer):
                 try:
                     from fabric.actor.boot.configuration_loader import ConfigurationLoader
                     loader = ConfigurationLoader()
-                    loader.process(self.config)
+                    loader.process(config=self.config)
                 except Exception as e:
                     traceback.print_exc()
                     self.logger.error("Failed to instantiate actors {}".format(e))
@@ -191,26 +191,26 @@ class Container(IActorContainer):
     def boot_common(self):
         self.logger.debug("Performing common boot tasks")
         self.define_protocols()
-        self.plugin_manager.initialize(self.db)
-        self.management_object_manager.initialize(self.db)
+        self.plugin_manager.initialize(db=self.db)
+        self.management_object_manager.initialize(db=self.db)
         from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
         RPCManagerSingleton.get().start()
 
     def define_protocols(self):
         self.logger.debug("Defining container protocols")
-        desc = ProtocolDescriptor(Constants.ProtocolLocal, None)
+        desc = ProtocolDescriptor(protocol=Constants.ProtocolLocal, location=None)
         self.logger.debug("Registering protocol {}".format(Constants.ProtocolLocal))
         self.register_protocol(protocol=desc)
 
         kafka_topic_name = self.get_config().get_actor().get_kafka_topic()
         self.logger.debug("Kafka Topic {}".format(kafka_topic_name))
         if kafka_topic_name is not None:
-            desc = ProtocolDescriptor(Constants.ProtocolKafka, kafka_topic_name)
+            desc = ProtocolDescriptor(protocol=Constants.ProtocolKafka, location=kafka_topic_name)
             self.logger.debug("Registering protocol {}".format(Constants.ProtocolKafka))
-            self.register_protocol(desc)
+            self.register_protocol(protocol=desc)
 
     def boot_basic(self):
-        self.guid = self.get_config().get_global_config().get_container()[Constants.PropertyConfContainerGuid]
+        self.guid = self.get_config().get_global_config().get_container().get(Constants.PropertyConfContainerGuid, None)
         self.logger.debug("Container guid is {}".format(self.guid))
         self.set_time()
         self.persist_basic()
@@ -229,27 +229,27 @@ class Container(IActorContainer):
                       self.PropertyBeginningOfTime: self.ticker.get_beginning_of_time(),
                       self.PropertyCycleMillis: self.ticker.get_cycle_millis(),
                       self.PropertyManualTicks: self.ticker.is_manual()}
-        self.db.add_time(properties)
+        self.db.add_time(properties=properties)
 
     def set_time(self):
-        start_time = int(self.config.get_global_config().get_time()[Constants.PropertyConfTimeStartTime])
+        start_time = int(self.config.get_global_config().get_time().get(Constants.PropertyConfTimeStartTime, None))
         if start_time == -1:
             start_time = ActorClock.get_current_milliseconds()
 
-        cycle_millis = int(self.config.get_global_config().get_time()[Constants.PropertyConfTimeCycleMillis])
+        cycle_millis = int(self.config.get_global_config().get_time().get(Constants.PropertyConfTimeCycleMillis, None))
 
         manual = False
-        if self.config.get_global_config().get_time()[Constants.PropertyConfTimeManual]:
+        if self.config.get_global_config().get_time().get(Constants.PropertyConfTimeManual, None):
             manual = True
 
-        self.create_and_start_tick(start_time, cycle_millis, manual)
+        self.create_and_start_tick(start_time=start_time, cycle_millis=cycle_millis, manual=manual)
 
-    def create_and_start_tick(self, start_time: int, cycle_millis: int, manual: bool):
+    def create_and_start_tick(self, *, start_time: int, cycle_millis: int, manual: bool):
         self.logger.debug("Creating container ticker")
         self.ticker = KernelTick()
-        self.ticker.set_beginning_of_time(start_time)
-        self.ticker.set_cycle_millis(cycle_millis)
-        self.ticker.set_manual(manual)
+        self.ticker.set_beginning_of_time(value=start_time)
+        self.ticker.set_cycle_millis(cycle_millis=cycle_millis)
+        self.ticker.set_manual(value=manual)
         self.ticker.initialize()
         self.ticker.start()
 
@@ -269,12 +269,12 @@ class Container(IActorContainer):
         self.logger.info("Creating container manager object")
         from fabric.actor.core.manage.container_management_object import ContainerManagementObject
         management_object = ContainerManagementObject()
-        self.management_object_manager.register_manager_object(management_object)
+        self.management_object_manager.register_manager_object(manager=management_object)
 
     def load_extensions(self):
         self.logger.info("Instantiating extensions...")
         # Load the core from the plugin directory.
-        plugin_dir = self.config.get_global_config().get_runtime()[Constants.PropertyConfPluginDir]
+        plugin_dir = self.config.get_global_config().get_runtime().get(Constants.PropertyConfPluginDir, None)
         manager = PluginManagerSingleton().get()
         manager.setPluginPlaces([plugin_dir])
         manager.collectPlugins()
@@ -295,105 +295,107 @@ class Container(IActorContainer):
         self.recover_time()
 
     def recover_guid(self):
-        self.logger.debug("Recoverying container GUID")
+        self.logger.debug("Recovering container GUID")
         # TODO
 
     def recover_time(self):
-        self.logger.debug("Recoverying container time settings")
+        self.logger.debug("Recovering container time settings")
         time_obj = self.db.get_time()
         if time_obj is None:
             raise Exception("Could not obtain container saved state from database")
-        properties = time_obj['properties']
-        beginning_of_time = properties[self.PropertyBeginningOfTime]
-        cycle_millis = properties[self.PropertyCycleMillis]
-        manual = properties[self.PropertyManualTicks]
+        properties = time_obj.get('properties', None)
+        beginning_of_time = properties.get(self.PropertyBeginningOfTime, None)
+        cycle_millis = properties.get(self.PropertyCycleMillis, None)
+        manual = properties.get(self.PropertyManualTicks, None)
 
-        self.create_and_start_tick(beginning_of_time, cycle_millis, manual)
+        self.create_and_start_tick(start_time=beginning_of_time, cycle_millis=cycle_millis, manual=manual)
 
     def recover_actors(self):
         self.logger.info("Recovering actors")
         # TODO
 
-    def recover_actor(self, properties: dict):
+    def recover_actor(self, *, properties: dict):
         self.logger.info("Recover actor")
         # TODO
 
-    def register(self, tickable: ITick):
-        self.ticker.add_tickable(tickable)
+    def register(self, *, tickable: ITick):
+        self.ticker.add_tickable(tickable=tickable)
 
-    def unregister(self, tickable: ITick):
-        self.ticker.remove_tickable(tickable)
+    def unregister(self, *, tickable: ITick):
+        self.ticker.remove_tickable(tickable=tickable)
 
-    def register_actor(self, actor: IActor):
-        self.db.add_actor(actor)
+    def register_actor(self, *, actor: IActor):
+        self.db.add_actor(actor=actor)
         actor.actor_added()
-        self.register_management_object(actor)
-        self.register_common(actor)
+        self.register_management_object(actor=actor)
+        self.register_common(actor=actor)
         self.actor = actor
         actor.start()
 
-    def unregister_actor(self, actor: IActor):
-        self.management_object_manager.unload_actor_manager_objects(actor.get_name())
-        ActorRegistrySingleton.get().unregister(actor)
+    def unregister_actor(self, *, actor: IActor):
+        self.management_object_manager.unload_actor_manager_objects(actor_name=actor.get_name())
+        ActorRegistrySingleton.get().unregister(actor=actor)
 
-    def register_common(self, actor: IActor):
-        ActorRegistrySingleton.get().register_actor(actor)
-        self.register_proxies(actor)
+    def register_common(self, *, actor: IActor):
+        ActorRegistrySingleton.get().register_actor(actor=actor)
+        self.register_proxies(actor=actor)
 
-        RemoteActorCacheSingleton.get().register_with_registry(actor)
+        RemoteActorCacheSingleton.get().register_with_registry(actor=actor)
 
-    def register_management_object(self, actor: IActor):
+    def register_management_object(self, *, actor: IActor):
         module_name = actor.get_management_object_module()
         class_name = actor.get_management_object_class()
-        mo = ReflectionUtils.create_instance(module_name, class_name)
-        mo.set_actor(actor)
+        mo = ReflectionUtils.create_instance(module_name=module_name, class_name=class_name)
+        mo.set_actor(actor=actor)
         mo.initialize()
-        self.management_object_manager.register_manager_object(mo)
+        self.management_object_manager.register_manager_object(manager=mo)
 
-    def remove_actor(self, actor_name: str):
-        self.db.remove_actor(actor_name)
-        actor = ActorRegistrySingleton.get().get_actor(actor_name)
+    def remove_actor(self, *, actor_name: str):
+        self.db.remove_actor(actor_name=actor_name)
+        actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=actor_name)
         if actor is not None:
-            ActorRegistrySingleton.get().unregister(actor)
+            ActorRegistrySingleton.get().unregister(actor=actor)
         actor.actor_removed()
 
-    def remove_actor_database(self, actor_nam: str):
-        self.db.remove_actor(actor_nam)
+    def remove_actor_database(self, *, actor_nam: str):
+        self.db.remove_actor(actor_name=actor_nam)
 
-    def register_protocol(self, protocol: ProtocolDescriptor):
+    def register_protocol(self, *, protocol: ProtocolDescriptor):
         self.protocols[protocol.get_protocol()] = protocol
         self.logger.debug("Registered container protocol: {}".format(protocol.get_protocol()))
 
-    def register_proxies(self, actor: IActor):
+    def register_proxies(self, *, actor: IActor):
         self.logger.debug("Registering proxies for actor: {}".format(actor.get_name()))
 
         for protocol in self.protocols.values():
             self.logger.debug("Processing protocol {}".format(protocol.get_protocol()))
             location = ActorLocation()
-            location.set_descriptor(protocol)
+            location.set_descriptor(descriptor=protocol)
 
-            proxy = ProxyFactorySingleton.get().new_proxy(protocol.get_protocol(), actor.get_identity(), location)
+            proxy = ProxyFactorySingleton.get().new_proxy(protocol=protocol.get_protocol(),
+                                                          identity=actor.get_identity(), location=location)
             if proxy is not None:
                 self.logger.debug(
                     "Registering proxy {} for protocol {}".format(actor.get_name(), protocol.get_protocol()))
-                ActorRegistrySingleton.get().register_proxy(proxy)
+                ActorRegistrySingleton.get().register_proxy(proxy=proxy)
 
-            callback = ProxyFactorySingleton.get().new_callback(protocol.get_protocol(), actor.get_identity(), location)
+            callback = ProxyFactorySingleton.get().new_callback(protocol=protocol.get_protocol(),
+                                                                identity=actor.get_identity(), location=location)
             if callback is not None:
                 self.logger.debug(
                     "Registering callback {} for protocol {}".format(actor.get_name(), protocol.get_protocol()))
-                ActorRegistrySingleton.get().register_callback(callback)
+                ActorRegistrySingleton.get().register_callback(callback=callback)
 
-    def register_recovered_actor(self, actor: IActor):
+    def register_recovered_actor(self, *, actor: IActor):
         self.logger.debug("Registering a recovered actor")
         actor.actor_added()
-        self.register_common(actor)
-        self.load_actor_management_objects(actor)
+        self.register_common(actor=actor)
+        self.load_actor_management_objects(actor=actor)
         actor.start()
 
-    def load_actor_management_objects(self, actor: IActor):
+    def load_actor_management_objects(self, *, actor: IActor):
         try:
-            self.management_object_manager.load_actor_manager_objects(actor.get_name())
+            self.management_object_manager.load_actor_manager_objects(actor_name=actor.get_name())
         except Exception as e:
             self.logger.error("Error while loading manager objects for actor: {} {}".format(actor.get_name(), e))
 
@@ -422,7 +424,7 @@ class Container(IActorContainer):
             for actor in actors:
                 self.logger.info("Stopping actor: {}".format(actor.get_name()))
                 actor.stop()
-                self.unregister_actor(actor)
+                self.unregister_actor(actor=actor)
 
             ActorRegistrySingleton.get().clear()
             self.logger.info("Container is no longer active")
@@ -444,7 +446,8 @@ class Container(IActorContainer):
     def get_actor_clock(self) -> ActorClock:
         if self.ticker is None:
             raise Exception("No tick")
-        return ActorClock(self.ticker.get_beginning_of_time(), self.ticker.get_cycle_millis())
+        return ActorClock(beginning_of_time=self.ticker.get_beginning_of_time(),
+                          cycle_millis=self.ticker.get_cycle_millis())
 
     def get_current_cycle(self):
         if self.ticker is None:
@@ -475,27 +478,25 @@ class Container(IActorContainer):
     def get_management_object_manager(self) -> ManagementObjectManager:
         return self.management_object_manager
 
-    def get_management_object(self, object_id: ID):
-        if object_id is None:
-            raise Exception("objectID cannot be null")
-        self.management_object_manager.get_management_object(object_id)
+    def get_management_object(self, *, key: ID):
+        if key is None:
+            raise Exception("key cannot be null")
+        return self.management_object_manager.get_management_object(key=key)
 
     def get_plugin_manager(self) -> PluginManager:
         return self.plugin_manager
 
-    def get_protocol_descriptor(self, protocol: str) -> ProtocolDescriptor:
-        return self.protocols[protocol]
+    def get_protocol_descriptor(self, *, protocol: str) -> ProtocolDescriptor:
+        return self.protocols.get(protocol, None)
 
     @staticmethod
     def get_proxy(protocol: str, identity: IActorIdentity, location: ActorLocation, type: str = None):
         try:
-            proxy = ActorRegistrySingleton.get().get_proxy(protocol, identity.get_name())
+            proxy = ActorRegistrySingleton.get().get_proxy(protocol=protocol, actor_name=identity.get_name())
             if proxy is None:
-                proxy = ProxyFactorySingleton.get().new_proxy(protocol, identity, location, type)
-                ActorRegistrySingleton.get().register_proxy(proxy)
+                proxy = ProxyFactorySingleton.get().new_proxy(protocol=protocol, identity=identity, location=location,
+                                                              type=type)
+                ActorRegistrySingleton.get().register_proxy(proxy=proxy)
             return proxy
         except Exception as e:
             raise e
-
-    def get_management_actor(self) -> IMgmtActor:
-        return self.get_management_object(self.actor.get_guid())

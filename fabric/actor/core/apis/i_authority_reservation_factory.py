@@ -34,13 +34,12 @@ if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
 
 
-
 class IAuthorityReservationFactory:
     """
     Factory for authority reservations.
     """
     @staticmethod
-    def create(resources: ResourceSet, term: Term, slice_obj: ISlice, rid: id):
+    def create(*, resources: ResourceSet, term: Term, slice_obj: ISlice, rid: id):
         """
         Creates a new instance of IAuthorityReservation
         @param resources resource set

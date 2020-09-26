@@ -36,7 +36,7 @@ class ReservationWrapper:
     """
     Internal class to represent a reservation.
     """
-    def __init__(self, reservation: IReservation, start: int, end: int):
+    def __init__(self, *, reservation: IReservation, start: int, end: int):
         self.start = start
         self.end = end
         self.reservation = reservation
@@ -87,7 +87,7 @@ class ReservationHoldings:
         # Map of reservations to ReservationWrappers. Needed when removing a reservation.
         self.map = {}
 
-    def add_reservation(self, reservation: IReservation, start: int, end: int):
+    def add_reservation(self, *, reservation: IReservation, start: int, end: int):
         """
         Adds a reservation to the collection for the specified period of time.
         The interval is closed on both sides.
@@ -105,14 +105,14 @@ class ReservationHoldings:
             if entry is not None:
                 assert ((start - entry.end) <= 1)
                 my_start = entry.start
-                self.remove_reservation(reservation)
+                self.remove_reservation(reservation=reservation)
 
-        entry = ReservationWrapper(reservation, my_start, end)
-        self.add_to_list(entry)
-        self.reservation_set.add(reservation)
+        entry = ReservationWrapper(reservation=reservation, start=my_start, end=end)
+        self.add_to_list(entry=entry)
+        self.reservation_set.add(reservation=reservation)
         self.map[reservation.get_reservation_id()] = entry
 
-    def add_to_list(self, entry: ReservationWrapper):
+    def add_to_list(self, *, entry: ReservationWrapper):
         """
         Adds the entry to the linked list. Maintains the list in sorted order.
         Cost: O(log(n)).
@@ -128,7 +128,7 @@ class ReservationHoldings:
         self.list.clear()
         self.reservation_set.clear()
 
-    def get_reservations(self, time: int = None, rtype: ResourceType = None) -> ReservationSet:
+    def get_reservations(self, *, time: int = None, rtype: ResourceType = None) -> ReservationSet:
         """
         Performs an intersection query: returns all reservations from the
         specified resource type present in the collection that are active at the
@@ -141,10 +141,10 @@ class ReservationHoldings:
             return self.reservation_set
 
         result = ReservationSet()
-        key = ReservationWrapper(None, time, time)
+        key = ReservationWrapper(reservation=None, start=time, end=time)
 
         # Find the location of key in the list.
-        index = binary_search(self.list, key)
+        index = binary_search(a=self.list, x=key)
         if index < 0:
             index = -index -1
 
@@ -156,7 +156,7 @@ class ReservationHoldings:
 
             if rtype is None or rtype == entry.reservation.getType():
                 if entry.start <= time <= entry.end:
-                    result.add(entry.reservation)
+                    result.add(reservation=entry.reservation)
             i += 1
 
         # Scan the lower part of the list until no further intersections are possible
@@ -168,22 +168,22 @@ class ReservationHoldings:
 
             if entry.start <= time:
                 if rtype is None or entry.reservation.getType() == rtype:
-                    result.add(entry.reservation)
+                    result.add(reservation=entry.reservation)
             i -= 1
 
         return result
 
-    def remove_from_list(self, entry: ReservationWrapper):
+    def remove_from_list(self, *, entry: ReservationWrapper):
         """
         Removes a reservation from the collection.
         @params reservation : reservation to remove
         """
-        index = binary_search(self.list, entry)
+        index = binary_search(a=self.list, x=entry)
 
         if index >= 0:
             self.list.pop(index)
 
-    def remove_reservation(self, reservation: IReservation):
+    def remove_reservation(self, *, reservation: IReservation):
         """
         Removes a reservation from the collection.
         @params reservation : reservation to remove
@@ -191,8 +191,8 @@ class ReservationHoldings:
         if reservation.get_reservation_id() in self.map:
             entry = self.map[reservation.get_reservation_id()]
             self.map.pop(reservation.get_reservation_id())
-            self.reservation_set.remove(reservation)
-            self.remove_from_list(entry)
+            self.reservation_set.remove(reservation=reservation)
+            self.remove_from_list(entry=entry)
 
     def size(self) -> int:
         """
@@ -201,7 +201,7 @@ class ReservationHoldings:
         """
         return self.reservation_set.size()
 
-    def tick(self, time: int):
+    def tick(self, *, time: int):
         """
         Removes all reservations that have end time not after the given cycle.
         @params time : time
@@ -211,7 +211,7 @@ class ReservationHoldings:
                 entry = self.list[0]
                 if entry.end <= time:
                     self.list.remove(entry)
-                    self.reservation_set.remove(entry.reservation)
+                    self.reservation_set.remove(reservation=entry.reservation)
                     self.map.pop(entry.reservation.get_reservation_id())
                 else:
                     break

@@ -27,14 +27,14 @@ from fabric.orchestrator.core.i_status_update_callback import IStatusUpdateCallb
 
 
 class WatchEntry:
-    def __init__(self, watch: list, rids: list, callback: IStatusUpdateCallback):
+    def __init__(self, *, watch: list, rids: list, callback: IStatusUpdateCallback):
         self.watch = watch
         self.act = rids
         self.callback = callback
 
 
 class TriggeredWatchEntry(WatchEntry):
-    def __init__(self, watch: list, rids: list, callback: IStatusUpdateCallback, ok: list, no_ok: list):
-        super().__init__(watch, rids, callback)
+    def __init__(self, *, watch: list, rids: list, callback: IStatusUpdateCallback, ok: list, no_ok: list):
+        super().__init__(watch=watch, rids=rids, callback=callback)
         self.ok = ok
         self.not_ok = no_ok

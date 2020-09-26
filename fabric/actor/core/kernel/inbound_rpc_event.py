@@ -35,7 +35,7 @@ from fabric.actor.core.apis.i_event import IEvent
 
 
 class InboundRPCEvent(IEvent):
-    def __init__(self, request: IncomingRPC, actor: IActor):
+    def __init__(self, *, request: IncomingRPC, actor: IActor):
         self.request = request
         self.actor = actor
 

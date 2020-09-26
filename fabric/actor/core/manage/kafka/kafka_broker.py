@@ -26,8 +26,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
-
+from typing import TYPE_CHECKING, List
 
 import traceback
 
@@ -46,6 +45,8 @@ from fabric.message_bus.messages.demand_reservation_avro import DemandReservatio
 from fabric.message_bus.messages.extend_reservation_avro import ExtendReservationAvro
 from fabric.message_bus.messages.get_actors_avro import GetActorsAvro
 from fabric.message_bus.messages.get_pool_info_avro import GetPoolInfoAvro
+from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
+from fabric.message_bus.messages.proxy_avro import ProxyAvro
 from fabric.message_bus.messages.reclaim_resources_avro import ReclaimResourcesAvro
 from fabric.message_bus.messages.reservation_mng import ReservationMng
 from fabric.message_bus.messages.result_avro import ResultAvro
@@ -56,11 +57,12 @@ if TYPE_CHECKING:
 
 
 class KafkaBroker(KafkaServerActor, IMgmtBroker):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
+    def __init__(self, *, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
                  message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
-        super().__init__(guid, kafka_topic, auth, logger, message_processor, producer)
+        super().__init__(guid=guid, kafka_topic=kafka_topic, auth=auth, logger=logger,
+                         message_processor=message_processor, producer=producer)
 
-    def add_reservation(self, reservation: TicketReservationAvro) -> ID:
+    def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -73,19 +75,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.callback_topic = self.callback_topic
             request.reservation_obj = reservation
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -108,7 +110,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def add_reservations(self, reservations: list) ->list:
+    def add_reservations(self, *, reservations: list) -> List[TicketReservationAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -121,19 +123,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.callback_topic = self.callback_topic
             request.reservation_list = reservations
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -156,7 +158,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def claim_resources_slice(self, broker: ID, slice_id: ID, rid: ID) -> ReservationMng:
+    def claim_resources_slice(self, *, broker: ID, slice_id: ID, rid: ID) -> ReservationMng:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -171,19 +173,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -207,7 +209,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def claim_resources(self, broker: ID, rid: ID) -> ReservationMng:
+    def claim_resources(self, *, broker: ID, rid: ID) -> ReservationMng:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -221,19 +223,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -256,7 +258,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def reclaim_resources(self, broker: ID, rid: ID) -> ReservationMng:
+    def reclaim_resources(self, *, broker: ID, rid: ID) -> ReservationMng:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -270,19 +272,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -305,7 +307,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def demand_reservation(self, reservation: ReservationMng) -> bool:
+    def demand_reservation(self, *, reservation: ReservationMng) -> bool:
         self.clear_last()
         status = ResultAvro()
 
@@ -317,19 +319,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.callback_topic = self.callback_topic
             request.reservation_obj = reservation
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -350,7 +352,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return status.code == 0
 
-    def demand_reservation_rid(self, rid: ID) -> bool:
+    def demand_reservation_rid(self, *, rid: ID) -> bool:
         self.clear_last()
         status = ResultAvro()
 
@@ -362,19 +364,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.callback_topic = self.callback_topic
             request.reservation_id = str(rid)
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -395,7 +397,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return status.code == 0
 
-    def get_brokers(self) -> list:
+    def get_brokers(self) -> List[ProxyAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -408,19 +410,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.callback_topic = self.callback_topic
             request.type = ActorType.Broker.name
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -443,7 +445,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def get_pool_info(self, broker: ID) -> list:
+    def get_pool_info(self, *, broker: ID) -> List[PoolInfoAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -456,19 +458,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.callback_topic = self.callback_topic
             request.broker_id = str(broker)
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -491,23 +493,23 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def extend_reservation_end_time(self, reservation: ID, new_end_time: datetime) -> bool:
+    def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.ExtendSameUnits, new_resource_type=None,
-                                       request_properties=None, config_properties=None)
+                                       new_units=Constants.ExtendSameUnits,
+                                       new_resource_type=None, request_properties=None, config_properties=None)
 
-    def extend_reservation_end_time_request(self, reservation: ID, new_end_time: datetime, request_properties: dict) -> bool:
+    def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime, request_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
                                        new_units=Constants.ExtendSameUnits, new_resource_type=None,
                                        request_properties=request_properties, config_properties=None)
 
-    def extend_reservation_end_time_request_config(self, reservation: ID, new_end_time: datetime,
+    def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
                                        new_units=Constants.ExtendSameUnits, new_resource_type=None,
                                        request_properties=request_properties, config_properties=config_properties)
 
-    def extend_reservation(self, reservation: ID, new_end_time: datetime, new_units: int,
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType, request_properties: dict,
                            config_properties: dict) -> bool:
         self.clear_last()
@@ -526,19 +528,19 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.request_properties = request_properties
             request.config_properties = config_properties
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:

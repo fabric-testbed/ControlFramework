@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 class PropList:
     @staticmethod
-    def merge_properties(incoming: dict, outgoing: dict):
+    def merge_properties(*, incoming: dict, outgoing: dict):
         if incoming is None:
             return outgoing
 
@@ -50,7 +50,7 @@ class PropList:
             return {**incoming, **outgoing}
 
     @staticmethod
-    def is_elastic_time(rset: ResourceSet):
+    def is_elastic_time(*, rset: ResourceSet):
         properties = rset.get_request_properties()
         if properties is not None and Constants.ElasticTime in properties:
             value = properties[Constants.ElasticTime]
@@ -60,7 +60,7 @@ class PropList:
         return False
 
     @staticmethod
-    def is_elastic_size(rset: ResourceSet):
+    def is_elastic_size(*, rset: ResourceSet):
         properties = rset.get_request_properties()
         if properties is not None and Constants.ElasticSize in properties:
             value = properties[Constants.ElasticSize]

@@ -38,13 +38,13 @@ class RPCRequestState(IRPCRequestState):
     def get_caller(self) -> AuthToken:
         return self.caller
 
-    def set_caller(self, caller: AuthToken):
+    def set_caller(self, *, caller: AuthToken):
         self.caller = caller
 
     def get_type(self) -> RPCRequestType:
         return self.rtype
 
-    def set_type(self, rtype: RPCRequestType):
+    def set_type(self, *, rtype: RPCRequestType):
         self.rtype = rtype
 
     def get_message_id(self) -> ID:

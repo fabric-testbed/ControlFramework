@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_proxy import IProxy
@@ -37,7 +39,8 @@ class IActorProxy(IProxy):
     """
     IActorProxy represents the proxy interface to a generic actor
     """
-    def prepare_query(self, callback: ICallbackProxy, query:dict, caller: AuthToken):
+    @abstractmethod
+    def prepare_query(self, *, callback: ICallbackProxy, query:dict, caller: AuthToken):
         """
         Prepares the query
 
@@ -46,4 +49,3 @@ class IActorProxy(IProxy):
             query: query
             caller: caller of the query
         """
-        raise NotImplementedError( "Should have implemented this" )

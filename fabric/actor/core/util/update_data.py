@@ -32,14 +32,14 @@ class UpdateData:
     PropertyEvents = "UpdateDataEvents"
     PropertyFailed = "UpdateDataFailed"
 
-    def __init__(self, message: str = None):
+    def __init__(self, *, message: str = None):
         self.message = message
         self.events = None
         self.failed = False
         if self.message is None:
             self.message = ""
 
-    def absorb(self, other):
+    def absorb(self, *, other):
         """
         Merges passed UpdateData into this. Posted events are extracted
         and merged into this. The status message from this is overwritten with
@@ -48,9 +48,9 @@ class UpdateData:
         if not isinstance(other, UpdateData):
             raise Exception("Invalid Argument")
 
-        self.post(other.events)
+        self.post(event=other.events)
         if self.message is not None:
-            self.post(self.message)
+            self.post(event=self.message)
         self.message = other.message
         self.failed = other.failed
 
@@ -60,7 +60,7 @@ class UpdateData:
         """
         self.events = None
 
-    def error(self, message: str):
+    def error(self, *, message: str):
         """
         Indicates that an error has occurred.
        
@@ -93,7 +93,7 @@ class UpdateData:
         """
         return self.message
 
-    def post(self, event: str):
+    def post(self, *, event: str):
         """
         Posts a human-readable string describing an event that the user
         may wish to know about. If the object already contains messages, the
@@ -107,7 +107,7 @@ class UpdateData:
         else:
             self.events = "{}\n{}".format(event, self.events)
 
-    def post_error(self, event: str):
+    def post_error(self, *, event: str):
         """
         Posts a human-readable string describing an event that the user
         may wish to know about, and also marks the UpdateData in a failed
@@ -115,8 +115,8 @@ class UpdateData:
        
         @param event message describing event
         """
-        self.post(event)
-        self.error(event)
+        self.post(event=event)
+        self.error(message=event)
 
     def successful(self):
         """

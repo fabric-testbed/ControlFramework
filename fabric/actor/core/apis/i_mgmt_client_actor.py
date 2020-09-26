@@ -25,10 +25,12 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from abc import abstractmethod
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_component import IComponent
+from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
 
 if TYPE_CHECKING:
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
@@ -39,7 +41,8 @@ if TYPE_CHECKING:
 
 
 class IMgmtClientActor(IComponent):
-    def add_reservation(self, reservation: TicketReservationAvro) -> ID:
+    @abstractmethod
+    def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
         """
         Adds the reservation to the actor's state and returns the assigned reservation ID.
         The reservation must refer to a valid slice.
@@ -47,71 +50,71 @@ class IMgmtClientActor(IComponent):
         @param reservation reservation
         @return null on failure, assigned reservation ID otherwise
         """
-        raise NotImplementedError
 
-    def add_reservations(self, reservations: list)->list:
+    @abstractmethod
+    def add_reservations(self, *, reservations: List[ReservationMng])->list:
         """
         Adds all reservations to the actor's state and returns the assigned reservation ID.
         Each reservation must refer to a valid slice.
         The reservation ID is also attached to the passed in reservation object.
         The operation is atomic: all of the reservations are added or none of them is added.
-        @param reservation reservation
+        @param reservations reservation
         @return null on failure, list of assigned ReservationIDs on success.
         """
-        raise NotImplementedError
 
-    def demand_reservation_rid(self, rid: ID) -> bool:
+    @abstractmethod
+    def demand_reservation_rid(self, *, rid: ID) -> bool:
         """
         Demands the specified reservation.
         A reservation can be demanded only if has been added and it is in the Nascent state.
-        @param reservationID reservation id
-        @return true for sucess; false otherwise
+        @param rid reservation id
+        @return true for success; false otherwise
         """
-        raise NotImplementedError
 
-    def demand_reservation(self, reservation: ReservationMng) -> bool:
+    @abstractmethod
+    def demand_reservation(self, *, reservation: ReservationMng) -> bool:
         """
         Updates the reservation and issues a demand for it.
         A reservation can be demanded only if has been added and it is in the Nascent state.
         The reservation must refer to a valid slice. It can also indicate
         redeem predecessors.
         @param reservation reservation
-        @return true for sucess; false otherwise
+        @return true for success; false otherwise
         """
-        raise NotImplementedError
 
-    def get_brokers(self) -> list:
+    @abstractmethod
+    def get_brokers(self) -> List[ProxyAvro]:
         """
         Retuns all brokers known to the actor.
         @return list of all brokers
         """
-        raise NotImplementedError
 
-    def get_broker(self, broker: ID) -> ProxyAvro:
+    @abstractmethod
+    def get_broker(self, *, broker: ID) -> ProxyAvro:
         """
         Returns the broker with the specified ID.
         @param broker broker id
         @return returns specified broker
         """
-        raise NotImplementedError
 
-    def add_broker(self, broker: ProxyAvro) -> bool:
+    @abstractmethod
+    def add_broker(self, *, broker: ProxyAvro) -> bool:
         """
         Adds a new broker.
         @param broker broker
         @return true for sucess; false otherwise
         """
-        raise NotImplementedError
 
-    def get_pool_info(self, broker: ID) -> list:
+    @abstractmethod
+    def get_pool_info(self, *, broker: ID) -> List[PoolInfoAvro]:
         """
         Obtains the resources available at the specified broker
         @param broker broker
         @return list of pool info
         """
-        raise NotImplementedError
 
-    def claim_resources_slice(self, broker: ID, slice_id: ID, rid: ID) -> ReservationMng:
+    @abstractmethod
+    def claim_resources_slice(self, *, broker: ID, slice_id: ID, rid: ID) -> ReservationMng:
         """
         Claims resources exported by the specified broker
         @param broker broker guid
@@ -119,28 +122,59 @@ class IMgmtClientActor(IComponent):
         @param rid reservation id
         @return reservation
         """
-        raise NotImplementedError
 
-    def claim_resources(self, broker: ID, rid: ID) -> ReservationMng:
+    @abstractmethod
+    def claim_resources(self, *, broker: ID, rid: ID) -> ReservationMng:
         """
         Claims resources exported by the specified broker
         @param broker broker guid
         @param rid reservation id
         @return reservation
         """
-        raise NotImplementedError
 
-    def extend_reservation(self, reservation: ID, new_end_time: datetime, new_units: int,
+    @abstractmethod
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType, request_properties: dict,
                            config_properties: dict) -> bool:
-        raise NotImplementedError
+        """
+        Extend a reservation
+        @params reservation: reservation id
+        @params new_end_time: new end time
+        @params new_units: new_units
+        @params new_resource_type: new_resource_type
+        @params request_properties: request_properties
+        @params config_properties: config_properties
+        @return true for success and false for failure
+        """
 
-    def extend_reservation_end_time(self, reservation: ID, new_end_time: datetime) -> bool:
-        raise NotImplementedError
+    @abstractmethod
+    def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
+        """
+        Extend a reservation
+        @params reservation: reservation id
+        @params new_end_time: new end time
+        @return true for success and false for failure
+        """
 
-    def extend_reservation_end_time_request(self, reservation: ID, new_end_time: datetime, request_properties: dict) -> bool:
-        raise NotImplementedError
+    @abstractmethod
+    def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime,
+                                            request_properties: dict) -> bool:
+        """
+        Extend a reservation
+        @params reservation: reservation id
+        @params new_end_time: new end time
+        @params request_properties: request_properties
+        @return true for success and false for failure
+        """
 
-    def extend_reservation_end_time_request_config(self, reservation: ID, new_end_time: datetime,
+    @abstractmethod
+    def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
-        raise NotImplementedError
+        """
+        Extend a reservation
+        @params reservation: reservation id
+        @params new_end_time: new end time
+        @params request_properties: request_properties
+        @params config_properties: config_properties
+        @return true for success and false for failure
+        """

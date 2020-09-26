@@ -24,11 +24,13 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.util.id import ID
-from fabric.actor.core.policy.i_resource_control import IResourceControl
+from fabric.actor.core.apis.i_resource_control import IResourceControl
 from fabric.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
@@ -45,7 +47,7 @@ class ResourceControl(IResourceControl):
     PropertyControlResourceTypes = "resource.types"
 
     @staticmethod
-    def get_substrate_file(reservation: IClientReservation):
+    def get_substrate_file(*, reservation: IClientReservation):
         rset = reservation.get_resources()
         substrate_file = None
         if ResourceControl.PropertySubstrateFile in rset.get_resource_properties():
@@ -82,53 +84,53 @@ class ResourceControl(IResourceControl):
             self.logger = self.authority.get_logger()
             self.initialized = True
 
-    def add_type(self, rtype: ResourceType):
+    def add_type(self, *, rtype: ResourceType):
         self.types.add(rtype)
 
-    def remove_type(self, rtype: ResourceControl):
+    def remove_type(self, *, rtype: ResourceControl):
         self.types.remove(rtype)
 
-    def donate_reservation(self, reservation: IClientReservation):
+    def donate_reservation(self, *, reservation: IClientReservation):
         return
 
-    def donate(self, resource_set: ResourceSet):
+    def donate(self, *, resource_set: ResourceSet):
         return
 
-    def available(self, resource_set: ResourceSet):
+    def available(self, *, resource_set: ResourceSet):
         return
 
-    def unavailable(self, resource_set: ResourceSet) -> int:
+    def unavailable(self, *, resource_set: ResourceSet) -> int:
         return -1
 
-    def eject(self, resource_set: ResourceSet):
+    def eject(self, *, resource_set: ResourceSet):
         return
 
-    def failed(self, resource_set: ResourceSet):
+    def failed(self, *, resource_set: ResourceSet):
         return
 
-    def recovered(self, resource_set: ResourceSet):
+    def recovered(self, *, resource_set: ResourceSet):
         return
 
-    def freed(self, resource_set: ResourceSet):
+    def freed(self, *, resource_set: ResourceSet):
         group = resource_set.get_resources()
         if group is None:
             raise Exception("Missing concrete set")
-        self.free(group.get_set())
+        self.free(uset=group.get_set())
 
-    def release(self, resource_set: ResourceSet):
+    def release(self, *, resource_set: ResourceSet):
         group = resource_set.get_resources()
         if group is None:
             raise Exception("Missing concrete set")
-        self.free(group.get_set())
+        self.free(uset=group.get_set())
 
-    def correct_deficit(self, reservation: IAuthorityReservation) -> ResourceSet:
-        self.assign(reservation)
+    def correct_deficit(self, *, reservation: IAuthorityReservation) -> ResourceSet:
+        return self.assign(reservation=reservation)
 
-    def configuration_complete(self, action:str, token: ConfigToken, out_properties: dict):
+    def configuration_complete(self, *, action:str, token: ConfigToken, out_properties: dict):
         self.logger.debug("configuration complete")
         return
 
-    def close(self, reservation: IReservation):
+    def close(self, *, reservation: IReservation):
         self.logger.debug("close")
         return
 
@@ -138,29 +140,33 @@ class ResourceControl(IResourceControl):
     def recovery_ended(self):
         return
 
-    def free(self, uset: dict):
-        raise ("Not implemented")
+    @abstractmethod
+    def free(self, *, uset: dict):
+        """
+        Free the Unit Set
+        @param uset: unit set
+        """
 
-    def fail(self, u: Unit, message: str, e: Exception = None):
+    def fail(self, *, u: Unit, message: str, e: Exception = None):
         if e is not None:
             self.logger.error(e)
         else:
             self.logger.error(message)
-        u.fail(u, message, e)
+        u.fail(message=message, exception=e)
 
-    def configure(self, properties: dict):
+    def configure(self, *, properties: dict):
         if self.PropertyControlResourceTypes in properties:
             temp = properties[self.PropertyControlResourceTypes]
             for name in temp.split(","):
-                self.add_type(ResourceType(name))
+                self.add_type(rtype=ResourceType(resource_type=name))
 
     def get_types(self) -> set:
         return self.types.copy()
 
-    def register_type(self, rtype: ResourceType):
+    def register_type(self, *, rtype: ResourceType):
         self.types.add(rtype)
 
-    def set_actor(self, actor: IActor):
+    def set_actor(self, *, actor: IActor):
         self.authority = actor
 
     def get_guid(self) -> ID:

@@ -37,13 +37,13 @@ class AccessMonitor:
     def __init__(self):
         return
 
-    def check_reserve(self, guard: Guard, requester: AuthToken):
-        guard.check_reserve(requester)
+    def check_reserve(self, *, guard: Guard, requester: AuthToken):
+        guard.check_reserve(requester=requester)
 
-    def check_update(self, guard: Guard, requester: AuthToken):
-        guard.check_update(requester)
+    def check_update(self, *, guard: Guard, requester: AuthToken):
+        guard.check_update(requester=requester)
 
-    def check_proxy(self, proxy: AuthToken, requester: AuthToken):
+    def check_proxy(self, *, proxy: AuthToken, requester: AuthToken):
         if requester is None:
             return proxy
 

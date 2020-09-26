@@ -1,5 +1,3 @@
-# MIT License
-#
 # Copyright (c) 2020 FABRIC Testbed
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,31 +18,24 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 #
-# Author Komal Thareja (kthare10@renci.org)
-
-# After making modifications to this file, please restart controller to re-read it.
-
-# This file is a sample; to alter a particular value, uncomment it, and set as desired.
-# actor will use sane defaults, in the absence of this configuration file.
-
-[runtime]
-port = 8081
-plugin_dir = controller/plugin
-
-[logging]
-## The directory in which actor should create log files.
-## This directory will be automatically created if it does not exist.
-log-directory = /var/log/
 #
-## The filename to be used for actor's log file.
-log-file = controller.log
-#
-## The default log level for actor.
-log-level = DEBUG
-#
-## actor rotates log files. You may specify how many archived log files to keep here.
-log-retain = 5
-#
-## actor rotates log files after they exceed a certain size.
-## You may specify the file size that results in a log file being rotated here.
-log-size = 5000000
+# Author: Komal Thareja (kthare10@renci.org)
+from fabric.actor.core.util.resource_type import ResourceType
+
+
+class SiteResourceType:
+    def __init__(self, *, rtype: ResourceType):
+        self.resource_type = rtype
+        self.available_units = 0
+
+    def get_resource_type(self) -> ResourceType:
+        return self.resource_type
+
+    def get_available_units(self) -> int:
+        return self.available_units
+
+    def set_available_units(self, *, available_units: int):
+        self.available_units = available_units
+
+    def __str__(self):
+        return "{'resource_type': {}, 'available_units': {}}".format(self.resource_type, self.available_units)

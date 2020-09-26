@@ -27,7 +27,7 @@ from fabric.message_bus.messages.result_avro import ResultAvro
 
 
 class Error:
-    def __init__(self, status: ResultAvro, e: Exception):
+    def __init__(self, *, status: ResultAvro, e: Exception):
         self.status = status
         self.exception = e
 

@@ -24,10 +24,14 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
+import os
+import signal
 import time
 import traceback
 
 import connexion
+import waitress
+from flask import jsonify
 
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
@@ -41,10 +45,14 @@ def main():
         Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/orchestrator/config.orchestrator.yaml"
         with GracefulInterruptHandler() as h:
 
-            GlobalsSingleton.get().start(True)
+            GlobalsSingleton.get().start(force_fresh=True)
 
-            from fabric.orchestrator.core.orchestrator_state import ControllerStateSingleton
-            #ControllerStateSingleton.get().start_threads()
+            while not GlobalsSingleton.get().start_completed:
+                time.sleep(0.001)
+
+            from fabric.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
+            OrchestratorStateSingleton.get()
+            #OrchestratorStateSingleton.get().start_threads()
 
             rest_port = GlobalsSingleton.get().get_config().get_runtime_config().get(
                 Constants.PropertyConfControllerRestPort, None)
@@ -55,18 +63,25 @@ def main():
             print("Starting REST")
 
             # start swagger
-            app = connexion.App(__name__, specification_dir='swagger_server.swagger/')
+            app = connexion.App(__name__, specification_dir='swagger_server/swagger/')
             app.app.json_encoder = encoder.JSONEncoder
             app.add_api('swagger.yaml', arguments={'title': 'Fabric Orchestrator API'}, pythonic_params=True)
-            app.run(port=rest_port)
+
+            # Start up the server to expose the metrics.
+            waitress.serve(app, port=rest_port)
 
             while True:
                 time.sleep(0.0001)
                 if h.interrupted:
                     GlobalsSingleton.get().stop()
-                    ControllerStateSingleton.get().stop_threads()
+                    OrchestratorStateSingleton.get().stop_threads()
     except Exception as e:
         traceback.print_exc()
+
+    @app.route('/stopServer', methods=['GET'])
+    def stopServer():
+        os.kill(os.getpid(), signal.SIGINT)
+        return jsonify({"success": True, "message": "Server is shutting down..."})
 
 
 if __name__ == '__main__':

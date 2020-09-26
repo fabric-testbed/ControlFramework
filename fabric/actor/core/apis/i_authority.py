@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_authority_public import IAuthorityPublic
@@ -41,7 +43,8 @@ class IAuthority(IServerActor, IAuthorityPublic):
     """
     IAuthority defines the interface for an actor acting in the authority role.
     """
-    def available(self, resources: ResourceSet):
+    @abstractmethod
+    def available(self, *, resources: ResourceSet):
         """
         Informs the actor that the following resources are available for
         allocation.
@@ -50,9 +53,9 @@ class IAuthority(IServerActor, IAuthorityPublic):
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def donate(self, resources: ResourceSet):
+    @abstractmethod
+    def donate(self, *, resources: ResourceSet):
         """
         Accepts concrete resources to be used for allocation of client
         requests.
@@ -62,9 +65,9 @@ class IAuthority(IServerActor, IAuthorityPublic):
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def eject(self, resources: ResourceSet):
+    @abstractmethod
+    def eject(self, *, resources: ResourceSet):
         """
         Ejects the specified resources from the inventory.
 
@@ -72,9 +75,9 @@ class IAuthority(IServerActor, IAuthorityPublic):
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def extend_lease(self, reservation:IAuthorityReservation, caller: AuthToken):
+    @abstractmethod
+    def extend_lease(self, *, reservation:IAuthorityReservation, caller: AuthToken):
         """
         Processes an extend lease request for the reservation.
 
@@ -84,9 +87,9 @@ class IAuthority(IServerActor, IAuthorityPublic):
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def modify_lease(self, reservation:IAuthorityReservation, caller: AuthToken):
+    @abstractmethod
+    def modify_lease(self, *, reservation:IAuthorityReservation, caller: AuthToken):
         """
         Processes an modify lease request for the reservation.
 
@@ -96,9 +99,9 @@ class IAuthority(IServerActor, IAuthorityPublic):
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def freed(self, resources: ResourceSet):
+    @abstractmethod
+    def freed(self, *, resources: ResourceSet):
         """
         Informs the actor that the given resources are no longer in use
         and can be considered as free, regardless of the state of the
@@ -108,9 +111,9 @@ class IAuthority(IServerActor, IAuthorityPublic):
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def redeem(self, reservation:IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
+    @abstractmethod
+    def redeem(self, *, reservation:IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
         """
         Processes a redeem request for the reservation.
 
@@ -119,9 +122,9 @@ class IAuthority(IServerActor, IAuthorityPublic):
         @params caller caller
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def unavailable(self, resources: ResourceSet) -> int:
+    @abstractmethod
+    def unavailable(self, *, resources: ResourceSet) -> int:
         """
         Informs the actor that previously donated resources are no
         longer available for allocation.
@@ -132,4 +135,3 @@ class IAuthority(IServerActor, IAuthorityPublic):
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

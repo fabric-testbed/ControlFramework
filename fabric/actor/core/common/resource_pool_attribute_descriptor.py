@@ -40,7 +40,6 @@ class ResourcePoolAttributeDescriptor:
     PropertyUnit = "unit"
     PropertyValue = "value"
     PropertyLabel = "label"
-    PropertyUnit = "unit"
 
     def __init__(self):
         self.key = None
@@ -52,7 +51,7 @@ class ResourcePoolAttributeDescriptor:
     def get_type(self) -> ResourcePoolAttributeType:
         return self.type
 
-    def set_type(self, rtype: ResourcePoolAttributeType):
+    def set_type(self, *, rtype: ResourcePoolAttributeType):
         self.type = rtype
 
     def get_value(self) -> str:
@@ -61,16 +60,16 @@ class ResourcePoolAttributeDescriptor:
     def get_int_value(self) -> int:
         return int(self.value)
 
-    def set_value(self, value: str):
+    def set_value(self, *, value: str):
         self.value = value
 
     def get_key(self) -> str:
         return self.key
 
-    def set_key(self, value: str):
+    def set_key(self, *, value: str):
         self.key = value
 
-    def set_label(self, label: str):
+    def set_label(self, *, label: str):
         self.label = label
 
     def get_label(self) -> str:
@@ -79,13 +78,13 @@ class ResourcePoolAttributeDescriptor:
     def get_unit(self) -> str:
         return self.unit
 
-    def set_unit(self, unit: str):
+    def set_unit(self, *, unit: str):
         self.unit = unit
 
     def __str__(self):
         return "{}:{}:{}".format(self.key, self.value, self.type)
 
-    def save(self, properties: dict, prefix: str) -> dict:
+    def save(self, *, properties: dict, prefix: str) -> dict:
         if prefix is None:
             prefix = ""
 
@@ -101,7 +100,7 @@ class ResourcePoolAttributeDescriptor:
 
         return properties
 
-    def reset(self, properties: dict, prefix: str):
+    def reset(self, *, properties: dict, prefix: str):
         if prefix is None:
             prefix = ""
 

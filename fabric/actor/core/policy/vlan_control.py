@@ -68,7 +68,7 @@ class VlanControl(ResourceControl):
         self.tags = FreeAllocatedSet()
         self.rtype = None
 
-    def donate_reservation(self, reservation: IClientReservation):
+    def donate_reservation(self, *, reservation: IClientReservation):
         self.logger.debug("VlanControl.donate(): donating resouces r={}".format(reservation))
 
         if self.tags.size() != 0:
@@ -96,19 +96,20 @@ class VlanControl(ResourceControl):
                         break
 
                     for j in range(start, end + 1):
-                        self.tags.add_inventory(j)
+                        self.tags.add_inventory(item=j)
 
                     size = size + (end - start + 1)
                     self.logger.info("VlanControl.donate(): Tag Donation:{}:{}-{}:{}".format(rtype, start, end, size))
 
         if size < reservation.get_units():
-            raise Exception("Insufficient vlan tags specified in donated reservation: donated {} rset says: {}".format(size, reservation.get_units()))
+            raise Exception("Insufficient vlan tags specified in donated reservation: donated {} rset says: {}".format(
+                size, reservation.get_units()))
 
-    def donate(self, resource_set: ResourceSet):
+    def donate(self, *, resource_set: ResourceSet):
         return
 
-    def assign(self, reservation: IAuthorityReservation) -> ResourceSet:
-        reservation.set_send_with_deficit(True)
+    def assign(self, *, reservation: IAuthorityReservation) -> ResourceSet:
+        reservation.set_send_with_deficit(value=True)
 
         if self.tags.size() == 0:
             raise Exception("no inventory")
@@ -124,7 +125,7 @@ class VlanControl(ResourceControl):
         if current is None:
             needed = ticket.get_units()
             if needed > 1:
-                reservation.fail("Cannot assign more than 1 VLAN per reservation", None)
+                reservation.fail(message="Cannot assign more than 1 VLAN per reservation", exception=None)
 
             config_tag = config_properties.get(Constants.ConfigUnitTag, None)
             static_tag = None
@@ -140,43 +141,43 @@ class VlanControl(ResourceControl):
 
                 rd = ResourceData()
                 rd.resource_properties[Constants.UnitVlanTag] = tag
-                gained = UnitSet(self.authority.get_plugin())
+                gained = UnitSet(plugin=self.authority.get_plugin())
                 unit = Unit(id=ID())
-                unit.set_resource_type(rtype)
-                unit.set_property(Constants.UnitVlanTag, str(tag))
+                unit.set_resource_type(rtype=rtype)
+                unit.set_property(name=Constants.UnitVlanTag, value=str(tag))
 
                 if Constants.ResourceBandwidth in ticket_properties:
                     bw = int(ticket_properties[Constants.ResourceBandwidth])
                     burst = bw/8
-                    unit.set_property(Constants.UnitVlanQoSRate, str(bw))
-                    unit.set_property(Constants.UnitVlanQoSBurstSize, str(burst))
-                gained.add_unit(unit)
+                    unit.set_property(name=Constants.UnitVlanQoSRate, value=str(bw))
+                    unit.set_property(name=Constants.UnitVlanQoSBurstSize, value=str(burst))
+                gained.add_unit(u=unit)
                 return ResourceSet(gained=gained, rtype=rtype, rdata=rd)
             else:
                 return None
         else:
             return ResourceSet(rtype=rtype)
 
-    def get_tag(self, u: Unit) -> int:
+    def get_tag(self, *, u: Unit) -> int:
         tag = None
-        if u.get_property(Constants.UnitVlanTag) is not None:
-            tag = int(u.get_property(Constants.UnitVlanTag))
+        if u.get_property(name=Constants.UnitVlanTag) is not None:
+            tag = int(u.get_property(name=Constants.UnitVlanTag))
         return tag
 
-    def free(self, uset: dict):
+    def free(self, *, uset: dict):
         if self is not None:
             for u in uset.values():
                 try:
-                    tag = self.get_tag(u)
+                    tag = self.get_tag(u=u)
                     if tag is None:
                         self.logger.error("VlanControl.free(): attempted to free a unit with a missing tag")
                     else:
                         self.logger.debug("VlanControl.free(): freeing tag: {}".format(tag))
-                    self.tags.free(tag)
+                    self.tags.free(item=tag)
                 except Exception as e:
                     self.logger.error("VlanControl.free(): Failed to release vlan tag {}".format(e))
 
-    def revisit(self, reservation: IReservation):
+    def revisit(self, *, reservation: IReservation):
         unit_set = reservation.get_resources().get_resources()
         for u in unit_set.get_set().values:
             try:
@@ -186,7 +187,7 @@ class VlanControl(ResourceControl):
                         u.get_state() == UnitState.PRIMING or \
                         u.get_state() == UnitState.ACTIVE or \
                         u.get_state() == UnitState.MODIFYING:
-                    tag = self.get_tag(u)
+                    tag = self.get_tag(u=u)
                     if tag is None:
                         self.logger.error("VlanControl.revisit(): Recoverying a unit without a tag")
                     else:
@@ -196,7 +197,7 @@ class VlanControl(ResourceControl):
                 elif u.get_state() == UnitState.CLOSED:
                     self.logger.debug("VlanControl.revisit(): node is closed. Nothing to recover")
             except Exception as e:
-                self.fail(u, "revisit with vmcontrol", e)
+                self.fail(u=u, message="revisit with vmcontrol", e=e)
 
     def recovery_starting(self):
         self.logger.info("Beginning VlanControl recovery")

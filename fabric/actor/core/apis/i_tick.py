@@ -23,6 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
+
+
 class ITick:
     """
     ITick defines the interface for objects that can be periodically "ticked".
@@ -44,7 +47,9 @@ class ITick:
     and perform or operations scheduled to be executed between the last and the
     current cycle.
     """
-    def external_tick(self, cycle: int):
+
+    @abstractmethod
+    def external_tick(self, *, cycle: int):
         """
         Processes a timer interrupt (a tick).
        
@@ -55,7 +60,10 @@ class ITick:
                 internally and only pass exceptions up the call stack when
                 critical conditions occur.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_name(self):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def get_name(self) -> str:
+        """
+        Return the name
+        @return name
+        """

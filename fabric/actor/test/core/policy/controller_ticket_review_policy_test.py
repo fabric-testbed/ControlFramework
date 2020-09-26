@@ -47,27 +47,27 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
         clock = controller.get_actor_clock()
         Term.clock = clock
 
-        resources = ResourceSet(units=1, rtype=ResourceType("1"), rdata=ResourceData())
-        slice_obj = SliceFactory.create(ID(), "fail")
-        controller.register_slice(slice_obj)
+        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"), rdata=ResourceData())
+        slice_obj = SliceFactory.create(slice_id=ID(), name="fail")
+        controller.register_slice(slice_object=slice_obj)
 
         start = 5
         end = 10
 
-        term = Term(start=clock.cycle_start_date(start), end=clock.cycle_end_date(end))
+        term = Term(start=clock.cycle_start_date(cycle=start), end=clock.cycle_end_date(cycle=end))
 
-        r1 = ControllerReservationFactory.create(ID(), resources=resources, term=term, slice_object=slice_obj)
-        r1.set_renewable(False)
-        controller.register(r1)
-        controller.demand(r1.get_reservation_id())
+        r1 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r1.set_renewable(renewable=False)
+        controller.register(reservation=r1)
+        controller.demand(rid=r1.get_reservation_id())
 
-        r2 = ControllerReservationFactory.create(ID(), resources=resources, term=term, slice_object=slice_obj)
-        r2.set_renewable(False)
-        controller.register(r2)
-        controller.demand(r2.get_reservation_id())
+        r2 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r2.set_renewable(renewable=False)
+        controller.register(reservation=r2)
+        controller.demand(rid=r2.get_reservation_id())
 
         for i in range(1, end + 3):
-            controller.external_tick(i)
+            controller.external_tick(cycle=i)
 
             while controller.get_current_cycle() != i:
                 time.sleep(0.001)
@@ -81,28 +81,28 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
         clock = controller.get_actor_clock()
         Term.clock = clock
 
-        resources = ResourceSet(units=1, rtype=ResourceType("1"), rdata=ResourceData())
-        slice_obj = SliceFactory.create(ID(), "nascent")
-        controller.register_slice(slice_obj)
+        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"), rdata=ResourceData())
+        slice_obj = SliceFactory.create(slice_id=ID(), name="nascent")
+        controller.register_slice(slice_object=slice_obj)
 
         start = 5
         end = 10
 
-        term = Term(start=clock.cycle_start_date(start), end=clock.cycle_end_date(end))
+        term = Term(start=clock.cycle_start_date(cycle=start), end=clock.cycle_end_date(cycle=end))
 
-        r1 = ControllerReservationFactory.create(ID(), resources=resources, term=term, slice_object=slice_obj)
-        r1.set_renewable(False)
-        controller.register(r1)
-        controller.demand(r1.get_reservation_id())
+        r1 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r1.set_renewable(renewable=False)
+        controller.register(reservation=r1)
+        controller.demand(rid=r1.get_reservation_id())
 
-        r2 = ControllerReservationFactory.create(ID(), resources=resources, term=term, slice_object=slice_obj)
-        r2.set_renewable(False)
-        controller.register(r2)
+        r2 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r2.set_renewable(renewable=False)
+        controller.register(reservation=r2)
 
         r2demanded = False
 
         for i in range(1, end + 3):
-            controller.external_tick(i)
+            controller.external_tick(cycle=i)
 
             while controller.get_current_cycle() != i:
                 time.sleep(0.001)
@@ -110,7 +110,7 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
             if i == (start -3) and not r2demanded:
                 self.assertTrue(r1.is_ticketed())
                 self.assertTrue(r2.is_nascent())
-                controller.demand(r2.get_reservation_id())
+                controller.demand(rid=r2.get_reservation_id())
                 r2demanded = True
 
             if i >= start and (i < end - 1):
@@ -126,32 +126,32 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
         clock = controller.get_actor_clock()
         Term.clock = clock
 
-        resources = ResourceSet(units=1, rtype=ResourceType("1"), rdata=ResourceData())
-        slice_obj = SliceFactory.create(ID(), "fail_nascent")
-        controller.register_slice(slice_obj)
+        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"), rdata=ResourceData())
+        slice_obj = SliceFactory.create(slice_id=ID(), name="fail_nascent")
+        controller.register_slice(slice_object=slice_obj)
 
         start = 10
         end = 15
 
-        term = Term(start=clock.cycle_start_date(start), end=clock.cycle_end_date(end))
+        term = Term(start=clock.cycle_start_date(cycle=start), end=clock.cycle_end_date(cycle=end))
 
-        r1 = ControllerReservationFactory.create(ID(), resources=resources, term=term, slice_object=slice_obj)
-        r1.set_renewable(False)
-        controller.register(r1)
-        controller.demand(r1.get_reservation_id())
+        r1 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r1.set_renewable(renewable=False)
+        controller.register(reservation=r1)
+        controller.demand(rid=r1.get_reservation_id())
 
-        r2 = ControllerReservationFactory.create(ID(), resources=resources, term=term, slice_object=slice_obj)
-        r2.set_renewable(False)
-        controller.register(r2)
+        r2 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r2.set_renewable(renewable=False)
+        controller.register(reservation=r2)
         r2demanded = False
 
-        r3 = ControllerReservationFactory.create(ID(), resources=resources, term=term, slice_object=slice_obj)
-        r3.set_renewable(False)
-        controller.register(r3)
-        controller.demand(r3.get_reservation_id())
+        r3 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r3.set_renewable(renewable=False)
+        controller.register(reservation=r3)
+        controller.demand(rid=r3.get_reservation_id())
 
         for i in range(1, end + 3):
-            controller.external_tick(i)
+            controller.external_tick(cycle=i)
 
             while controller.get_current_cycle() != i:
                 time.sleep(0.001)
@@ -162,7 +162,7 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
                 self.assertTrue(r3.is_ticketed())
 
                 if i > 6:
-                    controller.demand(r2.get_reservation_id())
+                    controller.demand(rid=r2.get_reservation_id())
                     r2demanded = True
 
             if (i >= start) and (i < (end - 1)):

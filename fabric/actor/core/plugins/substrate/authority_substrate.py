@@ -42,8 +42,8 @@ from fabric.actor.core.plugins.substrate.substrate import Substrate
 
 
 class AuthoritySubstrate(Substrate):
-    def __init__(self, actor: Actor, db: ISubstrateDatabase, config: Config):
-        super().__init__(actor, db, config)
+    def __init__(self, *, actor: Actor, db: ISubstrateDatabase, config: Config):
+        super().__init__(actor=actor, db=db, config=config)
         self.pool_manager = None
         self.initialized = False
 
@@ -71,33 +71,35 @@ class AuthoritySubstrate(Substrate):
     def initialize(self):
         if not self.initialized:
             super().initialize()
-            self.pool_manager = PoolManager(self.get_database(), self.actor, self.get_logger())
+            self.pool_manager = PoolManager(db=self.get_database(), identity=self.actor,
+                                            logger=self.get_logger())
             self.initialized = True
 
     def get_pool_manager(self) -> PoolManager:
         return self.pool_manager
 
-    def revisit(self, slice_obj: ISlice = None, reservation: IReservation = None):
+    def revisit(self, *, slice_obj: ISlice = None, reservation: IReservation = None):
         if slice_obj is not None:
             if slice_obj.is_inventory():
-                self.recover_inventory_slice(slice_obj)
+                self.recover_inventory_slice(slice_obj=slice_obj)
 
-    def recover_inventory_slice(self, slice_obj: ISlice):
+    def recover_inventory_slice(self, *, slice_obj: ISlice):
         try:
             rtype = slice_obj.get_resource_type()
-            uset = self.get_units(slice_obj)
+            uset = self.get_units(slice_obj=slice_obj)
             rd = ResourceData()
 
-            props = ResourceData.merge_properties(slice_obj.get_resource_properties(), rd.get_resource_properties())
+            props = ResourceData.merge_properties(from_props=slice_obj.get_resource_properties(),
+                                                  to_props=rd.get_resource_properties())
             rd.resource_properties = props
 
             rset = ResourceSet(concrete=uset, rtype=rtype, rdata=rd)
 
-            self.actor.donate(rset)
+            self.actor.donate(resources=rset)
         except Exception as e:
             raise e
 
-    def get_units(self, slice_obj: ISlice) -> UnitSet:
+    def get_units(self, *, slice_obj: ISlice) -> UnitSet:
         # TODO recovery from database
         return None
 

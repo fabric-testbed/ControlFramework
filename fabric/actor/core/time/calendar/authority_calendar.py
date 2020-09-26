@@ -45,13 +45,13 @@ class AuthorityCalendar(BaseCalendar):
     - outlays: a collection of active reservations (outlays)
     """
 
-    def __init__(self, clock: ActorClock):
+    def __init__(self, *, clock: ActorClock):
         """
         Creates a new instance.
         @params clock : clock factory
         """
         # List of incoming requests grouped by start cycle.
-        super().__init__(clock)
+        super().__init__(clock=clock)
         self.requests = ReservationList()
         # List of reservations to be closed grouped by cycle.
         self.closing = ReservationList()
@@ -68,19 +68,19 @@ class AuthorityCalendar(BaseCalendar):
         self.__dict__.update(state)
         self.lock = threading.Lock()
 
-    def remove(self, reservation: IReservation):
+    def remove(self, *, reservation: IReservation):
         """
         Removes the specified reservation from the calendar.
         @params reservation : reservation to remove
         """
         if isinstance(reservation, IServerReservation):
-            self.remove_request(reservation)
-            self.remove_closing(reservation)
+            self.remove_request(reservation=reservation)
+            self.remove_closing(reservation=reservation)
 
         if isinstance(reservation, IAuthorityReservation):
-            self.remove_outlay(reservation)
+            self.remove_outlay(reservation=reservation)
 
-    def remove_schedule_or_in_progress(self, reservation: IReservation):
+    def remove_schedule_or_in_progress(self, *, reservation: IReservation):
         """
         Removes the specified reservations from all internal calendar data
         structures that represent operations to be scheduled in the future or
@@ -89,10 +89,10 @@ class AuthorityCalendar(BaseCalendar):
         @params reservation: reservation to remove
         """
         if isinstance(reservation, IServerReservation):
-            self.remove_request(reservation)
-            self.remove_closing(reservation)
+            self.remove_request(reservation=reservation)
+            self.remove_closing(reservation=reservation)
 
-    def get_requests(self, cycle : int) -> ReservationSet:
+    def get_requests(self, *, cycle : int) -> ReservationSet:
         """
         Returns all client requests for the specified cycle.
         @params cycle:  cycle
@@ -100,11 +100,11 @@ class AuthorityCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            return self.requests.get_reservations(cycle)
+            return self.requests.get_reservations(cycle=cycle)
         finally:
             self.lock.release()
 
-    def add_request(self, reservation: IReservation, cycle: int):
+    def add_request(self, *, reservation: IReservation, cycle: int):
         """
         Adds a new client request.
         @params reservation: reservation to add
@@ -112,22 +112,22 @@ class AuthorityCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            self.requests.add_reservation(reservation, cycle)
+            self.requests.add_reservation(reservation=reservation, cycle=cycle)
         finally:
             self.lock.release()
 
-    def remove_request(self, reservation: IReservation):
+    def remove_request(self, *, reservation: IReservation):
         """
         Removes the specified reservation from the request list.
         @params reservation: reservation to remove
         """
         try:
             self.lock.acquire()
-            self.requests.remove_reservation(reservation)
+            self.requests.remove_reservation(reservation=reservation)
         finally:
             self.lock.release()
 
-    def get_closing(self, cycle: int) -> ReservationSet:
+    def get_closing(self, *, cycle: int) -> ReservationSet:
         """
         Returns all reservations scheduled for closing at the specified cycle.
         @params cycle: cycle
@@ -135,12 +135,12 @@ class AuthorityCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            result = self.closing.get_all_reservations(cycle)
+            result = self.closing.get_all_reservations(cycle=cycle)
             return result
         finally:
             self.lock.release()
 
-    def add_closing(self, reservation: IReservation, cycle: int):
+    def add_closing(self, *, reservation: IReservation, cycle: int):
         """
         Adds a reservation to the closing list.
         @params reservation: reservation to add
@@ -148,22 +148,22 @@ class AuthorityCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            self.closing.add_reservation(reservation, cycle)
+            self.closing.add_reservation(reservation=reservation, cycle=cycle)
         finally:
             self.lock.release()
 
-    def remove_closing(self, reservation: IReservation):
+    def remove_closing(self, *, reservation: IReservation):
         """
         Removes the specified reservation from the closing list.
         @params reservation: reservation to remove
         """
         try:
             self.lock.acquire()
-            self.closing.remove_reservation(reservation)
+            self.closing.remove_reservation(reservation=reservation)
         finally:
             self.lock.release()
 
-    def add_outlay(self, reservation: IReservation, start: datetime, end: datetime):
+    def add_outlay(self, *, reservation: IReservation, start: datetime, end: datetime):
         """
         Adds an allocated client reservation.
         @params reservation: reservation to add
@@ -172,23 +172,23 @@ class AuthorityCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            self.outlays.add_reservation(reservation, ActorClock.to_milliseconds(start),
-                                         ActorClock.to_milliseconds(end))
+            self.outlays.add_reservation(reservation=reservation, start=ActorClock.to_milliseconds(when=start),
+                                         end=ActorClock.to_milliseconds(when=end))
         finally:
             self.lock.release()
 
-    def remove_outlay(self, reservation: IReservation):
+    def remove_outlay(self, *, reservation: IReservation):
         """
         Removes a reservation from the outlays list.
         @params reservation: reservation to remove
         """
         try:
             self.lock.acquire()
-            self.outlays.remove_reservation(reservation)
+            self.outlays.remove_reservation(reservation=reservation)
         finally:
             self.lock.release()
 
-    def get_outlays(self, d: datetime = None) -> ReservationSet:
+    def get_outlays(self, *, d: datetime = None) -> ReservationSet:
         """
         Returns the active client reservations.
         @returns set of all active client reservations
@@ -198,18 +198,18 @@ class AuthorityCalendar(BaseCalendar):
             if d is None:
                 return self.outlays.get_reservations()
             else:
-                return self.outlays.get_reservations(ActorClock.to_milliseconds(d))
+                return self.outlays.get_reservations(time=ActorClock.to_milliseconds(when=d))
         finally:
             self.lock.release()
 
-    def tick(self, cycle: int):
+    def tick(self, *, cycle: int):
         try:
             self.lock.acquire()
-            super().tick(cycle)
-            self.requests.tick(cycle)
-            self.closing.tick(cycle)
+            super().tick(cycle=cycle)
+            self.requests.tick(cycle=cycle)
+            self.closing.tick(cycle=cycle)
 
-            ms = self.clock.cycle_end_in_millis(cycle)
-            self.outlays.tick(ms)
+            ms = self.clock.cycle_end_in_millis(cycle=cycle)
+            self.outlays.tick(time=ms)
         finally:
             self.lock.release()

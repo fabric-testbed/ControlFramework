@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+from abc import abstractmethod
 from datetime import datetime
 
 from fabric.actor.core.apis.i_ticker import ITicker
@@ -118,7 +119,7 @@ class Tick(ITicker):
         try:
             self.lock.acquire()
             if not self.initialized:
-                self.clock = ActorClock(self.beginning_of_time, self.cycle_millis)
+                self.clock = ActorClock(beginning_of_time=self.beginning_of_time, cycle_millis=self.cycle_millis)
                 if self.current_cycle == -1:
                     self.calculate_cycle()
                 self.initialized = True
@@ -129,17 +130,17 @@ class Tick(ITicker):
         self.check_initialized()
         return self.manual
 
+    @abstractmethod
     def next_tick(self):
         """
         Calculates and delivers the next tick.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_beginning_of_time(self, value: int):
+    def set_beginning_of_time(self, *, value: int):
         self.check_not_initialized()
         self.beginning_of_time = value
 
-    def set_current_cycle(self, cycle: int):
+    def set_current_cycle(self, *, cycle: int):
         try:
             self.lock.acquire()
             self.check_not_initialized()
@@ -147,11 +148,11 @@ class Tick(ITicker):
         finally:
             self.lock.release()
 
-    def set_cycle_millis(self, cycle_millis: int):
+    def set_cycle_millis(self, *, cycle_millis: int):
         self.check_not_initialized()
         self.cycle_millis = cycle_millis
 
-    def set_manual(self, value: bool):
+    def set_manual(self, *, value: bool):
         self.check_not_initialized()
         self.manual = value
 
@@ -167,11 +168,11 @@ class Tick(ITicker):
         finally:
             self.lock.release()
 
+    @abstractmethod
     def start_worker(self):
         """
         Starts the worker thread(s).
         """
-        raise NotImplementedError("Should have implemented this")
 
     def stop(self):
         try:
@@ -185,12 +186,12 @@ class Tick(ITicker):
         finally:
             self.lock.release()
 
+    @abstractmethod
     def stop_worker(self):
         """
         Stops the worker thread(s).
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
     def tick(self):
         self.check_initialized()

@@ -65,8 +65,8 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
     #  How far in the future is the broker allocating resources
     ADVANCE_TIME = 3
 
-    def __init__(self, actor: IBroker):
-        super().__init__(actor)
+    def __init__(self, *, actor: IBroker):
+        super().__init__(actor=actor)
         self.last_allocation = -1
         self.allocation_horizon = 0
         self.ready = False
@@ -108,13 +108,13 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
 
-    def configure(self, properties: dict):
+    def configure(self, *, properties: dict):
         if self.PropertyAllocationHorizon in properties:
             self.allocation_horizon = int(properties[self.PropertyAllocationHorizon])
         else:
             self.logger.warning("Invalid property value key: {}".format(self.PropertyAllocationHorizon))
 
-    def create_source_dict(self, sources: list) -> dict:
+    def create_source_dict(self, *, sources: list) -> dict:
         result = {}
         for s in sources:
             rtype = s.get_type()
@@ -124,20 +124,20 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
                 result[rtype] = s
         return result
 
-    def switch_source(self, sources: list, start_time: int, source_hash: dict):
+    def switch_source(self, *, sources: list, start_time: int, source_hash: dict):
         for s in sources:
-            extending_for_source =  self.calendar.get_request(s, start_time)
+            extending_for_source = self.calendar.get_request(source=s, cycle=start_time)
             for r in extending_for_source.values():
                 if r.get_requested_type() != s.get_type():
                     # this reservation has changed its type
                     if r.get_requested_type() in source_hash:
                         other_source = source_hash[r.get_requested_type()]
-                        self.calendar.remove_request(r, s)
-                        self.calendar.add_request(r, start_time, other_source)
+                        self.calendar.remove_request(reservation=r, source=s)
+                        self.calendar.add_request(reservation=r, cycle=start_time, source=other_source)
                     else:
                         r.fail_warn("This agent has no resources to satisfy a request for type: {}".format(r.get_requested_type()))
 
-    def allocate_extending(self, sources: list, start_time: int):
+    def allocate_extending(self, *, sources: list, start_time: int):
         """
         Iterates through all of the sources and allocates resources to
         their extending bids based on FIFO. Only allocates requests with types
@@ -149,7 +149,7 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         @throws Exception in case of error
         """
         for s in sources:
-            extending_for_source = self.calendar.get_request(s, start_time)
+            extending_for_source = self.calendar.get_request(source=s, cycle=start_time)
             if extending_for_source is None or extending_for_source.size() == 0:
                 self.logger.debug("There are no extends for source: {}".format(s))
             else:
@@ -162,13 +162,15 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
                     self.logger.debug("ASPPlugin:allocateBids: allocating source rid({}) to extendDynamicRes({}) that has props:{}".format(
                             s.get_reservation_id(), extend.get_reservation_id(),
                             extend.get_requested_resources().get_request_properties()))
-                    satisfy = self.verify_wanted_resources(extend, s, start_time, wanted)
+                    satisfy = self.verify_wanted_resources(reservation=extend, source=s, start_time=start_time,
+                                                           wanted=wanted)
 
                     if satisfy:
-                        self.satisfy_allocation(extend, s, wanted, start_time)
+                        self.satisfy_allocation(reservation=extend, source=s, resource_share=wanted,
+                                                start_res_time=start_time)
                     extending_for_source.remove(extend)
 
-    def allocate_new_bids(self, new_bids: list, source_hash: dict, start_time: int):
+    def allocate_new_bids(self, *, new_bids: list, source_hash: dict, start_time: int):
         """
         Iterates through all of the new bids and allocates resources
         based on FIFO. Only allocates requests with types specified in
@@ -187,15 +189,17 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
                     source = source_hash[reservation.get_requested_type()]
                     reservation.set_source(source)
                     wanted = reservation.get_requested_units()
-                    satisfy = self.verify_wanted_resources(reservation, source, start_time, wanted)
+                    satisfy = self.verify_wanted_resources(reservation=reservation, source=source, start_time=start_time,
+                                                           wanted=wanted)
                     if satisfy:
-                        self.satisfy_allocation(reservation, source, wanted, start_time)
+                        self.satisfy_allocation(reservation=reservation, source=source, resource_share=wanted,
+                                                start_res_time=start_time)
                 else:
                     reservation.fail("There are no sources of type {}".format(reservation.get_requested_type()))
 
             new_bids.remove(reservation)
 
-    def allocate(self, cycle: int):
+    def allocate(self, *, cycle: int):
         """
         Runs an allocation of requests against all sources, given a set
         of pending bids by using FCFS giving extends priority. This simple
@@ -211,15 +215,15 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         # This method should first decide whether to run an allocation on the
         # current cycle. If the answer is yes, then it has to decide on the
         # start time of reservations it is going to allocate.
-        if self.get_next_allocation(cycle) != cycle:
-            self.logger.debug("Next allocation cycle {} != {}".format(self.get_next_allocation(cycle), cycle))
+        if self.get_next_allocation(cycle=cycle) != cycle:
+            self.logger.debug("Next allocation cycle {} != {}".format(self.get_next_allocation(cycle=cycle), cycle))
             return
 
         self.last_allocation = cycle
         # Determine the cycle for which the agent is allocating resources
-        start_time = self.get_start_for_allocation(cycle)
+        start_time = self.get_start_for_allocation(allocation_cycle=cycle)
 
-        all_bids = self.calendar.get_requests(start_time)
+        all_bids = self.calendar.get_requests(cycle=start_time)
 
         # If there are no extending and no new requests - return
         if all_bids is None or all_bids.size() == 0:
@@ -231,25 +235,25 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         # Put source on a Hashtable for the new request allocation
         holdings = self.calendar.get_holdings(self.clock.cycle(cycle=start_time))
         sources = holdings.values()
-        source_hash = self.create_source_dict(sources)
+        source_hash = self.create_source_dict(sources=sources)
 
-        self.switch_source(sources, start_time, source_hash)
+        self.switch_source(sources=sources, start_time=start_time, source_hash=source_hash)
 
-        self.allocate_extending(sources, start_time)
+        self.allocate_extending(sources=sources, start_time=start_time)
 
-        self.allocate_new_bids(all_bids.values(), source_hash, start_time)
+        self.allocate_new_bids(new_bids=all_bids.values(), source_hash=source_hash, start_time=start_time)
 
-    def bind(self, reservation: IBrokerReservation) -> bool:
+    def bind(self, *, reservation: IBrokerReservation) -> bool:
         term = reservation.get_requested_term()
         self.logger.info("SlottedAgent bind arrived at cycle {} requested term {}".format(self.actor.get_current_cycle(), term))
 
-        bid_cycle = self.get_allocation(reservation)
+        bid_cycle = self.get_allocation(reservation=reservation)
 
-        self.calendar.add_request(reservation, bid_cycle)
+        self.calendar.add_request(reservation=reservation, cycle=bid_cycle)
 
         return False
 
-    def calculate_available(self, start_time: int, source: IClientReservation) -> int:
+    def calculate_available(self, *, start_time: int, source: IClientReservation) -> int:
         """
         Calculates the available resources from the specified source for
         the specified start time.
@@ -259,71 +263,75 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
        
         @return number of available units
         """
-        start_date = self.clock.cycle_start_date(start_time)
+        start_date = self.clock.cycle_start_date(cycle=start_time)
 
-        outlays = self.calendar.get_outlays(source, start_date)
-        c = self.count(outlays, start_date)
-        active = c.count_active(source.get_type())
+        outlays = self.calendar.get_outlays(source=source, time=start_date)
+        c = self.count(rvset=outlays, when=start_date)
+        active = c.count_active(resource_type=source.get_type())
 
-        available = source.get_units(start_date) - active
+        available = source.get_units(when=start_date) - active
 
         self.logger.debug("There are {} resources available - extend".format(available))
         self.logger.debug("There are {} resources active".format(active))
         return available
 
-    def extend_broker(self, reservation:IBrokerReservation) -> bool:
+    def extend_broker(self, *, reservation:IBrokerReservation) -> bool:
         requested_term = reservation.get_requested_term()
         self.logger.info("SlottedAgent extend arrived at cycle {} requested term {}".format(self.actor.get_current_cycle(), requested_term))
 
         source = reservation.get_source()
 
         if source is None:
-            self.error("cannot find parent ticket for extend")
+            self.error(message="cannot find parent ticket for extend")
 
         if source.is_failed():
-            self.error("parent ticket could not be renewed")
+            self.error(message="parent ticket could not be renewed")
 
-        bid_cycle = self.get_allocation(reservation)
+        bid_cycle = self.get_allocation(reservation=reservation)
 
-        self.calendar.add_request(reservation, bid_cycle, source)
-        self.calendar.add_request(reservation, bid_cycle)
+        self.calendar.add_request(reservation=reservation, cycle=bid_cycle, source=source)
+        self.calendar.add_request(reservation=reservation, cycle=bid_cycle)
 
         return False
 
-    def extract_ticket(self, reservation: IBrokerReservation, source: IClientReservation, approved: Term, resource_share: int):
+    def extract_ticket(self, *, reservation: IBrokerReservation, source: IClientReservation, approved: Term, resource_share: int):
         mine = None
         ticket = source.get_resources()
         try:
             if not source.get_term().contains(term=approved):
-                reservation.fail("Source term does not contain requested term or reservation is not elastic in time: sourceterm={} resterm={}".format(source.get_term(), approved), None)
+                reservation.fail(message="Source term does not contain requested term or reservation is not elastic in "
+                                         "time: sourceterm={} resterm={}".format(source.get_term(), approved),
+                                 exception=None)
             else:
-                delegation = self.actor.get_plugin().get_ticket_factory().make_delegation(units=resource_share, term=approved, rtype=ticket.get_type(), holder=self.get_client_id(reservation))
-                mine = self.extract(ticket, delegation)
+                delegation = self.actor.get_plugin().get_ticket_factory().make_delegation(
+                    units=resource_share, term=approved, rtype=ticket.get_type(),
+                    holder=self.get_client_id(reservation=reservation))
+                mine = self.extract(source=ticket, delegation=delegation)
 
                 req_properties = reservation.get_requested_resources().get_request_properties()
-                mine.set_request_properties(req_properties)
+                mine.set_request_properties(p=req_properties)
         except Exception as e:
             self.logger.error("Term not satisfied: Mapper extract failed: has: {} {}".format(ticket.get_concrete_units(), e))
             raise Exception("Term not satisfied: Mapper extract failed: has: {} {}".format(ticket.get_concrete_units(), e))
 
         if mine is not None and not reservation.is_failed():
-            reservation.set_approved(approved, mine)
-            reservation.set_source(source)
+            reservation.set_approved(term=approved, approved_resources=mine)
+            reservation.set_source(source=source)
 
             self.logger.debug("allocated: {} for term {}".format(mine.get_units(), approved))
             self.logger.debug("resource_share {} mine {}".format(resource_share, mine.get_units()))
 
         return mine
 
-    def formulate_bids(self, cycle: int) -> Bids:
+    def formulate_bids(self, *, cycle: int) -> Bids:
         pending = self.calendar.get_pending()
-        renewing = self.calendar.get_renewing(cycle)
-        extending = self.process_renewing(renewing, pending)
-        return Bids(ReservationSet(), extending)
+        renewing = self.calendar.get_renewing(cycle=cycle)
+        extending = self.process_renewing(renewing=renewing, pending=pending)
+        return Bids(ticketing=ReservationSet(), extending=extending)
 
-    def get_allocation(self, reservation: IBrokerReservation) -> int:
+    def get_allocation(self, *, reservation: IBrokerReservation) -> int:
         if not self.ready:
-            self.error("Agent not ready to accept bids")
+            self.error(message="Agent not ready to accept bids")
 
         start = self.clock.cycle(when=reservation.get_requested_term().get_new_start_time())
 
@@ -338,25 +346,25 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
 
         return start
 
-    def get_approved_term(self, reservation: IBrokerReservation) -> Term:
+    def get_approved_term(self, *, reservation: IBrokerReservation) -> Term:
         return Term(start=reservation.get_requested_term().get_start_time(),
                     end=reservation.get_requested_term().get_end_time(),
                     new_start=reservation.get_requested_term().get_new_start_time())
 
-    def get_next_allocation(self, cycle: int) -> int:
+    def get_next_allocation(self, *, cycle: int) -> int:
         return self.last_allocation + self.CALL_INTERVAL
 
-    def get_renew(self, reservation: IClientReservation) -> int:
+    def get_renew(self, *, reservation: IClientReservation) -> int:
         new_start_cycle = self.actor.get_actor_clock().cycle(when=reservation.get_term().get_end_time()) + 1
         return new_start_cycle - self.ADVANCE_TIME - self.CLOCK_SKEW
 
-    def get_start_for_allocation(self, allocation_cycle: int) -> int:
+    def get_start_for_allocation(self, *, allocation_cycle: int) -> int:
         return allocation_cycle + self.ADVANCE_TIME
 
-    def get_end_for_allocation(self, allocation_cycle: int) -> int:
+    def get_end_for_allocation(self, *, allocation_cycle: int) -> int:
         return allocation_cycle + self.ADVANCE_TIME + self.allocation_horizon
 
-    def prepare(self, cycle: int):
+    def prepare(self, *, cycle: int):
         if not self.ready:
             self.last_allocation = cycle - self.CALL_INTERVAL
             self.ready = True
@@ -366,7 +374,7 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         except Exception as e:
             self.logger.error("Exception in prepare {}".format(e))
 
-    def process_renewing(self, renewing: ReservationSet, pending: ReservationSet) -> ReservationSet:
+    def process_renewing(self, *, renewing: ReservationSet, pending: ReservationSet) -> ReservationSet:
         """
         Performs checks on renewing reservations. Updates the terms to
         suggest new terms, stores the extend on the pending list. Returns a
@@ -394,28 +402,28 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
 
                 term = term.extend()
 
-                reservation.set_approved(term, reservation.get_resources().abstract_clone())
+                reservation.set_approved(term=term, approved_resources=reservation.get_resources().abstract_clone())
 
-                result.add(reservation)
-                self.calendar.add_pending(reservation)
+                result.add(reservation=reservation)
+                self.calendar.add_pending(reservation=reservation)
             else:
                 self.logger.debug("This is not a renewable expiring res")
 
         return result
 
-    def query(self, p: dict) -> dict:
+    def query(self, *, p: dict) -> dict:
         """
         Returns the ADVANCE_TIME of an agent's allocation
         in the properties. This is used so that orchestrator and downstream
         brokers know how early to bid. If the requested properties is null, the
         agent returns all of the properties that it has defined.
         """
-        result =  super().query(p)
+        result =  super().query(p=p)
 
         result["advanceTime"] = self.ADVANCE_TIME
         return result
 
-    def satisfy_allocation(self, reservation: IBrokerReservation, source: IClientReservation, resource_share: int,
+    def satisfy_allocation(self, *, reservation: IBrokerReservation, source: IClientReservation, resource_share: int,
                            start_res_time: int):
         """
         These are request upcalls from the mapper with the manager lock held.
@@ -436,17 +444,18 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         @throws Exception in case of error
         """
         mine = None
-        approved = self.get_approved_term(reservation)
+        approved = self.get_approved_term(reservation=reservation)
 
         # Shift the requested term to start at the start time
         if self.clock.cycle(when=approved.get_new_start_time()) != start_res_time:
-            if PropList.is_elastic_time(reservation.get_requested_resources()):
+            if PropList.is_elastic_time(rset=reservation.get_requested_resources()):
                 self.logger.debug("Reservation {} was schedules to start at {} is being shifted to {}"
                                   .format(reservation, self.clock.cycle(when=approved.get_new_start_time()),
                                           start_res_time))
-                approved = approved.shift(self.clock.cycle_start_date(start_res_time))
+                approved = approved.shift(date=self.clock.cycle_start_date(cycle=start_res_time))
             else:
-                reservation.fail("Reservation has a different start time and time shifting is not allowed", None)
+                reservation.fail(message="Reservation has a different start time and time shifting is not allowed",
+                                 exception=None)
 
         # Make sure the term end is aligned on a cycle boundary. NOTE: this
         # should also be aligned on call interval boundary!
@@ -457,21 +466,22 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         end_millis = self.clock.cycle_end_in_millis(cycle)
 
         # get the date that represents the end of the cycle
-        aligned_end = ActorClock.from_milliseconds(end_millis)
+        aligned_end = ActorClock.from_milliseconds(milli_seconds=end_millis)
         # update the term end
-        approved.set_end_time(aligned_end)
+        approved.set_end_time(date=aligned_end)
 
         # Get the ticket with the correct resources
-        mine = self.extract_ticket(reservation, source, approved, resource_share)
+        mine = self.extract_ticket(reservation=reservation, source=source, approved=approved,
+                                   resource_share=resource_share)
 
         # Add to the calendar
-        self.add_to_calendar(reservation)
+        self.add_to_calendar(reservation=reservation)
 
         # Whatever happened up there, this bid is no longer pending. It either
         # succeeded or is now marked failed. (Could/should assert.)
-        reservation.set_bid_pending(False)
+        reservation.set_bid_pending(value=False)
 
-    def verify_wanted_resources(self, reservation: IBrokerReservation, source: IClientReservation, start_time: int,
+    def verify_wanted_resources(self, *, reservation: IBrokerReservation, source: IClientReservation, start_time: int,
                                 wanted: int):
         """
         Ensures that there are sufficient resources to allocate the
@@ -488,7 +498,7 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         @throws Exception in case of error
         """
         # calculate the number of available units
-        available = self.calculate_available(start_time, source)
+        available = self.calculate_available(start_time=start_time, source=source)
         mywanted = wanted
 
         self.logger.debug("ASPPlugin:allocateBids: allocating source rid({}) to newDynamicRes({}) that has props:{}"
@@ -499,11 +509,11 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         # Check if we have sufficient resources. If the reservation is flexible
         # adjust its resource demand to what is available.
         if wanted > available:
-            if PropList.is_elastic_size(reservation.get_requested_resources()) and available > 0:
+            if PropList.is_elastic_size(rset=reservation.get_requested_resources()) and available > 0:
                 self.logger.debug("broker is shrinking an elastic request")
                 mywanted = available
         else:
-            reservation.fail_warn("Selected source holding has insufficient resources: source {} available {}; request {}"
+            reservation.fail_warn(message="Selected source holding has insufficient resources: source {} available {}; request {}"
                                   .format(source, available, reservation))
 
         # If the (possibly adjusted) demand fits in what we've got, then try to

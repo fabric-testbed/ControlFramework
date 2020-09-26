@@ -37,7 +37,7 @@ class FreeAllocatedSet:
         # Allocated set.
         self.allocated = set()
 
-    def add_inventory(self, item):
+    def add_inventory(self, *, item):
         """
         Adds an inventory item to the set.
         @param item item to add
@@ -50,7 +50,7 @@ class FreeAllocatedSet:
 
         self.free_set.add(item)
 
-    def allocate(self, tag=None, config_tag: bool = None, count: int = None):
+    def allocate(self, *, tag=None, config_tag: bool = None, count: int = None):
         """
         Allocates an item from the set.
         @param tag tag
@@ -76,7 +76,7 @@ class FreeAllocatedSet:
                 self.allocated.add(item)
         return item
 
-    def allocate_count(self, count: int):
+    def allocate_count(self, *, count: int):
         item = None
         if len(self.free_set) > 0:
             item = []
@@ -86,7 +86,7 @@ class FreeAllocatedSet:
                 item.append(val)
         return item
 
-    def free(self, item=None, count: int = None):
+    def free(self, *, item=None, count: int = None):
         if item is None and count is None:
             if len(self.allocated) == 0:
                 raise Exception("no items have been allocated")
@@ -109,7 +109,7 @@ class FreeAllocatedSet:
                 item = self.allocated.pop()
                 self.free_set.add(item)
 
-    def free_list(self, items: list):
+    def free_list(self, *, items: list):
         for i in items:
             self.free(item=i)
 

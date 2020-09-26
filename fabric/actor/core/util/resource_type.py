@@ -31,10 +31,10 @@ class ResourceType:
     single string describing the particular resource type. ResourceType is a read-only class:
     once created it cannot be modified.
     """
-    def __init__(self, resource_type: str = None):
+    def __init__(self, *, resource_type: str = None):
         self.resource_type = resource_type
 
-    def get_type(self):
+    def get_type(self) -> str:
         return self.resource_type
 
     def __eq__(self, other):
@@ -43,6 +43,13 @@ class ResourceType:
             return NotImplemented
 
         return self.resource_type == other.resource_type
+
+    def __lt__(self, other):
+        if not isinstance(other, ResourceType):
+            # don't attempt to compare against unrelated types
+            return NotImplemented
+
+        return self.resource_type < other.resource_type
 
     def __str__(self):
         return self.resource_type

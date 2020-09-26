@@ -38,14 +38,14 @@ class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
     Globals.ConfigFile = Constants.TestVmAmConfigurationFile
 
     from fabric.actor.core.container.globals import GlobalsSingleton
-    GlobalsSingleton.get().start(True)
+    GlobalsSingleton.get().start(force_fresh=True)
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
     def get_clean_database(self) -> IDatabase:
         db = self.get_actor_database()
-        db.set_actor_name(self.ActorName)
-        db.set_reset_state(True)
+        db.set_actor_name(name=self.ActorName)
+        db.set_reset_state(state=True)
         db.initialize()
         return db
 
@@ -55,8 +55,8 @@ class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
     def prepare_actor_database(self):
         container_db = self.get_container_database()
         actor = self.get_actor()
-        container_db.remove_actor(actor.get_name())
-        container_db.add_actor(actor)
+        container_db.remove_actor(actor_name=actor.get_name())
+        container_db.add_actor(actor=actor)
         actor.actor_added()
         return actor
 
@@ -69,11 +69,11 @@ class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
 
     def test_c_add_slice(self):
         db = self.get_database_to_test()
-        slice_obj = SliceFactory.create(ID(), "slice_to_add")
+        slice_obj = SliceFactory.create(slice_id=ID(), name="slice_to_add")
         self.assertEqual("slice_to_add", slice_obj.get_name())
-        db.add_slice(slice_obj)
-        result = db.get_slice(slice_obj.get_slice_id())
+        db.add_slice(slice_object=slice_obj)
+        result = db.get_slice(slice_id=slice_obj.get_slice_id())
         self.assertIsNotNone(result)
-        slice2 = SliceFactory.create_instance(result)
+        slice2 = SliceFactory.create_instance(properties=result)
         self.assertIsNotNone(slice2)
-        db.remove_slice(slice_obj.get_slice_id())
+        db.remove_slice(slice_id=slice_obj.get_slice_id())

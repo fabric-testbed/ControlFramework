@@ -36,7 +36,7 @@ class ActorClock:
     continue until the last millisecond of the end time of the term. The lease
     interval of a term is closed on both sides.
     """
-    def __init__(self, beginning_of_time: int, cycle_millis: int):
+    def __init__(self, *, beginning_of_time: int, cycle_millis: int):
         """
         Constructor
         @params beginning_of_time : time offset (milliseconds)
@@ -49,7 +49,7 @@ class ActorClock:
         self.beginning_of_time = beginning_of_time
         self.cycle_millis = cycle_millis
 
-    def convert_millis(self, millis:int) -> int:
+    def convert_millis(self, *, millis: int) -> int:
         """
         Returns the number of cycles those milliseconds represent.
         @params millis : milliseconds
@@ -61,7 +61,7 @@ class ActorClock:
 
         return int(millis / self.cycle_millis)
 
-    def cycle(self, when: datetime) -> int:
+    def cycle(self, *, when: datetime) -> int:
         """
         Converts date/milliseconds to cycles.
         @params date : date
@@ -70,7 +70,7 @@ class ActorClock:
         if when is None:
             raise Exception("Invalid arguments")
 
-        millis = self.to_milliseconds(when)
+        millis = self.to_milliseconds(when=when)
 
         if millis < self.beginning_of_time:
             return 0
@@ -78,7 +78,7 @@ class ActorClock:
         difference = millis - self.beginning_of_time
         return int(difference / self.cycle_millis)
 
-    def cycle_end_date(self, cycle: int) -> datetime:
+    def cycle_end_date(self, *, cycle: int) -> datetime:
         """
         Calculates the last millisecond of the given cycle.
         @params cycle: cycle
@@ -89,17 +89,17 @@ class ActorClock:
 
         millis = (self.beginning_of_time + ((cycle + 1) * self.cycle_millis)) - 1
 
-        return self.from_milliseconds(millis)
+        return self.from_milliseconds(milli_seconds=millis)
 
-    def cycle_end_in_millis(self, cycle:int) -> int:
+    def cycle_end_in_millis(self, *, cycle: int) -> int:
         """
         Calculates the last millisecond of the given cycle.
         @params cycle : cycle
         @returns the last millisecond of the cycle
         """
-        return int((self.cycle_start_in_millis(cycle) + self.cycle_millis) - 1)
+        return int((self.cycle_start_in_millis(cycle=cycle) + self.cycle_millis) - 1)
 
-    def cycle_start_date(self, cycle: int) -> datetime:
+    def cycle_start_date(self, *, cycle: int) -> datetime:
         """
         Calculates the first millisecond of the given cycle.
         @params cycle : cycle
@@ -108,9 +108,9 @@ class ActorClock:
         if cycle < 0:
             raise Exception("Invalid arguments")
 
-        return self.date(cycle)
+        return self.date(cycle=cycle)
 
-    def cycle_start_in_millis(self, cycle: int) -> int:
+    def cycle_start_in_millis(self, *, cycle: int) -> int:
         """
         Calculates the first millisecond of the given cycle.
         @params cycle: cycle
@@ -118,7 +118,7 @@ class ActorClock:
         """
         return int(self.beginning_of_time + (cycle * self.cycle_millis))
 
-    def date(self, cycle) -> datetime:
+    def date(self, *, cycle) -> datetime:
         """
         Converts a cycle to a date.
         @params cycle: cycle
@@ -129,7 +129,7 @@ class ActorClock:
             raise Exception("Invalid arguments")
 
         millis = self.beginning_of_time + (cycle * self.cycle_millis)
-        return self.from_milliseconds(millis)
+        return self.from_milliseconds(milli_seconds=millis)
 
     def get_beginning_of_time(self) -> int:
         """
@@ -145,7 +145,7 @@ class ActorClock:
         """
         return self.cycle_millis
 
-    def get_millis(self, cycle: int) -> int:
+    def get_millis(self, *, cycle: int) -> int:
         """
         Returns the number of milliseconds for a specified number of
         cycles. Does not look at beginning of time. This is useful for knowing
@@ -176,11 +176,11 @@ class ActorClock:
         return int((when - epoch).total_seconds() * 1000)
 
     @staticmethod
-    def from_milliseconds(milli_seconds) -> datetime:
+    def from_milliseconds(*, milli_seconds) -> datetime:
         result = datetime.utcfromtimestamp(milli_seconds//1000).replace(microsecond=milli_seconds%1000*1000)
         return result
 
     @staticmethod
-    def to_milliseconds(when: datetime) -> int:
+    def to_milliseconds(*, when: datetime) -> int:
         epoch = datetime.utcfromtimestamp(0)
         return int((when - epoch).total_seconds() * 1000)

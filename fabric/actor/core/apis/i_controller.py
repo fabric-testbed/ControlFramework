@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_client_actor import IClientActor
@@ -38,7 +40,8 @@ class IController(IClientActor, IControllerPublic):
     """
     IController defines the interface for a actor acting in the orchestrator role.
     """
-    def extend_lease(self, reservation: IControllerReservation = None, rset: ReservationSet = None):
+    @abstractmethod
+    def extend_lease(self, *, reservation: IControllerReservation = None, rset: ReservationSet = None):
         """
         Issues an extend lease request for the given reservation. Note:
         the reservation must have already been registered with the actor.
@@ -54,9 +57,9 @@ class IController(IClientActor, IControllerPublic):
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def redeem(self, reservation: IControllerReservation):
+    @abstractmethod
+    def redeem(self, *, reservation: IControllerReservation):
         """
         Issues a redeem request for the given reservation. Note: the
         reservation must have already been registered with the actor.
@@ -65,9 +68,9 @@ class IController(IClientActor, IControllerPublic):
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def redeem_reservations(self, rset: ReservationSet):
+    @abstractmethod
+    def redeem_reservations(self, *, rset: ReservationSet):
         """
         Issues a redeem request for every reservation in the set. All
         exceptions are caught and logged but no exception is propagated. No
@@ -78,4 +81,3 @@ class IController(IClientActor, IControllerPublic):
        
         @param rset set of reservations to redeem
         """
-        raise NotImplementedError("Should have implemented this")

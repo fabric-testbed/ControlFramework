@@ -34,8 +34,8 @@ if TYPE_CHECKING:
 
 
 class AllActorEventsFilter(IEventFilter):
-    def __init__(self, actor_guid: id):
+    def __init__(self, *, actor_guid: id):
         self.id = actor_guid
 
-    def matches(self, event: IEvent) -> bool:
+    def matches(self, *, event: IEvent) -> bool:
         return self.id == event.get_actor_id()

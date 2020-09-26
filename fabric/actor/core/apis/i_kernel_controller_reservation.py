@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
+
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric.actor.core.apis.i_kernel_client_reservation import IKernelClientReservation
 
@@ -31,6 +33,8 @@ class IKernelControllerReservation(IKernelClientReservation, IControllerReservat
     """
     Kernel-level interface for orchestrator reservations.
     """
+
+    @abstractmethod
     def prepare_join(self):
         """
         Prepares the reservation for processing a join operation.
@@ -39,8 +43,8 @@ class IKernelControllerReservation(IKernelClientReservation, IControllerReservat
         the property list or other attributes prior to the join. void.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def prepare_redeem(self):
         """
         Prepares the reservation for processing a redeem operation.
@@ -49,12 +53,11 @@ class IKernelControllerReservation(IKernelClientReservation, IControllerReservat
         property list or other attributes prior to the redeem.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def validate_redeem(self):
         """
         Validates an outgoing redeem request.
        
         @throws Exception if validation fails
         """
-        raise NotImplementedError("Should have implemented this")

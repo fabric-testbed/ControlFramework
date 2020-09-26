@@ -24,7 +24,9 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
+from abc import abstractmethod
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_slice import ISlice
 if TYPE_CHECKING:
@@ -39,36 +41,38 @@ class IKernelSlice(ISlice):
     """
     Kernel-level interface for slice objects.
     """
+
+    @abstractmethod
     def get_guard(self) -> Guard:
         """
         Returns the slice guard.
        
         @return the guard
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def set_broker_client(self):
         """
         Marks the slice as a broker client slice (a client slice within
         an authority that represents a broker).
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def set_client(self):
         """
          Marks the slice as a client slice.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_reservations(self)->ReservationSet:
+    @abstractmethod
+    def get_reservations(self) -> ReservationSet:
         """
         Returns the reservation set.
        
         @return reservation set
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_reservations_list(self)->list:
+    @abstractmethod
+    def get_reservations_list(self) -> List[IKernelReservation]:
         """
         Returns the reservation set represented as a list. Must be
         called with the kernel lock on to prevent exceptions due to concurrent
@@ -76,16 +80,16 @@ class IKernelSlice(ISlice):
        
         @return a list of reservation
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def is_empty(self) -> bool:
         """
         Checks if the slice is empty.
        
         @return true if there are no reservations in the slice
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def prepare(self):
         """
         Prepares to register a new slice.  Clears previous state, such
@@ -93,9 +97,9 @@ class IKernelSlice(ISlice):
        
         @raises Exception if validity checks fail
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def register(self, reservation: IKernelReservation):
+    @abstractmethod
+    def register(self, *, reservation: IKernelReservation):
         """
         Registers a new reservation.
        
@@ -103,9 +107,9 @@ class IKernelSlice(ISlice):
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def soft_lookup(self, rid: ID):
+    @abstractmethod
+    def soft_lookup(self, *, rid: ID):
         """
         Looks up a reservation by ID but does not throw error if the
         reservation is not present in the slice.
@@ -114,20 +118,19 @@ class IKernelSlice(ISlice):
        
         @returns the reservation with that ID
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def unregister(self, reservation: IKernelReservation):
+    @abstractmethod
+    def unregister(self, *, reservation: IKernelReservation):
         """
         Unregisters the reservation from the slice.
        
         @param reservation reservation to unregister
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_owner(self, auth: AuthToken):
+    @abstractmethod
+    def set_owner(self, *, owner: AuthToken):
         """
         Sets the slice owner.
        
         @param auth the slice owner
         """
-        raise NotImplementedError("Should have implemented this")

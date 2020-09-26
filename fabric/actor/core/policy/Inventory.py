@@ -43,7 +43,7 @@ class Inventory:
     def __init__(self):
         self.map = {}
 
-    def contains_type(self, resource_type: ResourceType):
+    def contains_type(self, *, resource_type: ResourceType):
         if resource_type is None:
             raise Exception("Invalid argument")
 
@@ -52,13 +52,13 @@ class Inventory:
 
         return False
 
-    def get(self, resource_type: ResourceType) -> InventoryForType:
+    def get(self, *, resource_type: ResourceType) -> InventoryForType:
         if resource_type is None:
             raise Exception("Invalid argument")
 
         return self.map.get(resource_type, None)
 
-    def remove(self, source: IClientReservation):
+    def remove(self, *, source: IClientReservation):
         """
         Removes the inventory derived from the specified source.
         @param source source reservation
@@ -74,7 +74,7 @@ class Inventory:
 
         return False
 
-    def get_new(self, reservation: IClientReservation):
+    def get_new(self, *, reservation: IClientReservation):
         if reservation is None:
             raise Exception("Invalid argument")
 
@@ -90,21 +90,21 @@ class Inventory:
         ticket = cset.get_ticket()
 
         properties = ticket.get_properties()
-        properties = PropList.merge_properties(rset.get_resource_properties(), properties)
+        properties = PropList.merge_properties(incoming=rset.get_resource_properties(), outgoing=properties)
         rpd = ResourcePoolDescriptor()
-        rpd.reset(properties, None)
+        rpd.reset(properties=properties, prefix=None)
 
-        desc_attr = rpd.get_attribute(Constants.ResourceClassInventoryForType)
+        desc_attr = rpd.get_attribute(key=Constants.ResourceClassInventoryForType)
         inv = None
         if desc_attr is not None:
             module_name, class_name = desc_attr.get_value().rsplit(".", 1)
-            inv = ReflectionUtils.create_instance(module_name, class_name)
+            inv = ReflectionUtils.create_instance(module_name=module_name, class_name=class_name)
         else:
             inv = SimplerUnitsInventory()
 
-        inv.set_type(rtype)
-        inv.set_descriptor(rpd)
-        inv.donate(reservation)
+        inv.set_type(rtype=rtype)
+        inv.set_descriptor(rpd=rpd)
+        inv.donate(source=reservation)
 
         self.map[rtype] = inv
         return inv
@@ -118,12 +118,12 @@ class Inventory:
         for inv in self.map.values():
             rpd = inv.get_descriptor().clone()
             attr = ResourcePoolAttributeDescriptor()
-            attr.set_type(ResourcePoolAttributeType.INTEGER)
-            attr.set_key(Constants.ResourceAvailableUnits)
-            attr.set_value(str(inv.get_free()))
-            rpd.add_attribute(attr)
-            result = rpd.save(result, Constants.PoolPrefix + str(count) + ".")
+            attr.set_type(rtype=ResourcePoolAttributeType.INTEGER)
+            attr.set_key(value=Constants.ResourceAvailableUnits)
+            attr.set_value(value=str(inv.get_free()))
+            rpd.add_attribute(attribute=attr)
+            result = rpd.save(properties=result, prefix=Constants.PoolPrefix + str(count) + ".")
             count += 1
 
-        result[Constants.PoolsCount] = len(self.map)
+        result[Constants.PoolsCount] = str(len(self.map))
         return result

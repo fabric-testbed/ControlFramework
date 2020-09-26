@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import traceback
 from enum import Enum
 from typing import TYPE_CHECKING
 
@@ -55,20 +56,20 @@ class PoolManager:
             self.code = PoolManagerError.ErrorNone
             self.slice = None
 
-    def __init__(self, db: IDatabase, identity: IActorIdentity, logger):
+    def __init__(self, *, db: IDatabase, identity: IActorIdentity, logger):
         if db is None or identity is None or logger is None:
             raise Exception("Invalid arguments {} {} {}".format(db, identity, logger))
         self.db = db
         self.identity = identity
         self.logger = logger
 
-    def create_pool(self, slice_id: ID, name: str, rtype: ResourceType, resource_data: ResourceData) -> CreatePoolResult:
+    def create_pool(self, *, slice_id: ID, name: str, rtype: ResourceType, resource_data: ResourceData) -> CreatePoolResult:
         result = self.CreatePoolResult()
         if slice_id is None or name is None or rtype is None:
             result.code = PoolManagerError.ErrorInvalidArguments
             return result
         try:
-            temp = self.db.get_slice(slice_id)
+            temp = self.db.get_slice(slice_id=slice_id)
 
             if temp is not None and len(temp) > 0:
                 result.code = PoolManagerError.ErrorPoolExists
@@ -77,39 +78,41 @@ class PoolManager:
             temp = self.db.get_inventory_slices()
             if temp is not None and len(temp) > 0:
                 for properties in temp:
-                    slice_obj = SliceFactory.create_instance(properties)
+                    slice_obj = SliceFactory.create_instance(properties=properties)
                     rt = slice_obj.get_resource_type()
                     if rt == rtype:
                         result.slice = slice_obj
                         result.code = PoolManagerError.ErrorTypeExists
                         return result
 
-            slice_obj = SliceFactory.create(slice_id, name, resource_data.clone())
-            slice_obj.set_inventory(True)
-            slice_obj.set_owner(self.identity.get_identity())
-            slice_obj.set_resource_type(rtype)
+            slice_obj = SliceFactory.create(slice_id=slice_id, name=name, data=resource_data.clone())
+            slice_obj.set_inventory(value=True)
+            slice_obj.set_owner(owner=self.identity.get_identity())
+            slice_obj.set_resource_type(resource_type=rtype)
 
             try:
-                self.db.add_slice(slice_obj)
+                self.db.add_slice(slice_object=slice_obj)
                 result.slice = slice_obj
             except Exception as e:
+                traceback.print_exc()
                 result.code = PoolManagerError.ErrorDatabaseError
         except Exception as e:
+            traceback.print_exc()
             result.code = PoolManagerError.ErrorInternalError
         return result
 
-    def update_pool(self, slice_obj: ISlice):
+    def update_pool(self, *, slice_obj: ISlice):
         try:
-            self.db.update_slice(slice_obj)
+            self.db.update_slice(slice_object=slice_obj)
         except Exception as e:
             raise Exception("Could not update slice {}".format(e))
 
-    def remove_pool(self, pool_id: ID, rtype: ResourceType):
-        temp = self.db.get_slice(pool_id)
+    def remove_pool(self, *, pool_id: ID, rtype: ResourceType):
+        temp = self.db.get_slice(slice_id=pool_id)
 
         if temp is not None and len(temp) > 0:
-            slice_obj = SliceFactory.create_instance(temp)
+            slice_obj = SliceFactory.create_instance(properties=temp)
             if not slice_obj.is_inventory() or rtype != slice_obj.get_resource_type():
                 raise Exception("Invalid arguments")
 
-            self.db.remove_slice(pool_id)
+            self.db.remove_slice(slice_id=pool_id)

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_reservation import IReservation
@@ -38,42 +40,44 @@ class IServerReservation(IReservation):
     """
     IServerReservation defines the reservation interface for actors acting as servers for other actors.
     """
+
+    @abstractmethod
     def get_callback(self) -> ICallbackProxy:
         """
         Returns the callback proxy.
         @return callback proxy
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_client_auth_token(self) -> AuthToken:
         """
         Returns the identity of the user represented by the reservation.
         @returns identity of user
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_sequence_in(self):
         """
         Returns the sequence number of the last received message.
         @returns sequence number of the last received message
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_sequence_out(self):
         """
         Returns the sequence number of the last sent message.
         @returns sequence number of the last sent message
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_bid_pending(self) -> bool:
         """
         Checks if the reservation is in progress of being allocated resources
         @returns true if the reservation is in the process of being allocated resources
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_bid_pending(self, value: bool):
+    @abstractmethod
+    def set_bid_pending(self, *, value: bool):
         """
         Indicates whether the reservation is in the progress of
         obtaining resources. This flag should be set (true) when the actor
@@ -81,22 +85,22 @@ class IServerReservation(IReservation):
         when the policy completes the allocation process.
         @params value : value for the bid pending flag
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_sequence_in(self, sequence: int):
+    @abstractmethod
+    def set_sequence_in(self, *, sequence: int):
         """
         Sets the sequence number of the last received message.
         @params sequence : incoming message sequence number
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_sequence_out(self, sequence: int):
+    @abstractmethod
+    def set_sequence_out(self, *, sequence: int):
         """
         Sets the sequence number of the last sent message.
         @params sequence : outgoing message sequence number
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_update_data(self) -> UpdateData:
         """
         Returns data to be sent back to the client in an update message.

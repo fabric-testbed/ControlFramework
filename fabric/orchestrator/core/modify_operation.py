@@ -28,8 +28,8 @@ from fabric.orchestrator.core.reservation_id_with_modify_index import Reservatio
 
 
 class ModifyOperation:
-    def __init__(self, rid: ID, index: int, modify_sub_command: str, properties: dict):
-        self.res_id = ReservationIDWithModifyIndex(rid, index)
+    def __init__(self, *, rid: ID, index: int, modify_sub_command: str, properties: dict):
+        self.res_id = ReservationIDWithModifyIndex(rid=rid, index=index)
         self.modify_sub_command = modify_sub_command
         self.properties = properties
 
@@ -42,8 +42,8 @@ class ModifyOperation:
     def get_properties(self) -> dict:
         return self.properties
 
-    def override_index(self, index: int):
-        self.res_id.override_modify_index(index)
+    def override_index(self, *, index: int):
+        self.res_id.override_modify_index(index=index)
 
     def __str__(self):
         return "{}/{}".format(self.modify_sub_command, self.res_id)

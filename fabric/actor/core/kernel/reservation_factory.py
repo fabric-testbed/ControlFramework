@@ -34,7 +34,7 @@ from fabric.actor.core.util.id import ID
 
 class ReservationFactory:
     @staticmethod
-    def create_instance(properties: dict, actor: IActor, slice_obj: ISlice, logger) -> IReservation:
+    def create_instance(*, properties: dict, actor: IActor, slice_obj: ISlice, logger) -> IReservation:
         """
         Creates and initializes a new reservation from a saved
         properties list.
@@ -53,13 +53,13 @@ class ReservationFactory:
         deserialized_reservation = None
         try:
             deserialized_reservation = pickle.loads(serialized_reservation)
-            deserialized_reservation.restore(actor, slice_obj, logger)
+            deserialized_reservation.restore(actor=actor, slice_obj=slice_obj, logger=logger)
         except Exception as e:
             raise e
         return deserialized_reservation
 
     @staticmethod
-    def get_reservation_id(properties: dict) -> ID:
+    def get_reservation_id(*, properties: dict) -> ID:
         """
         Extracts the reservation identifier from the properties list.
 
@@ -70,10 +70,10 @@ class ReservationFactory:
         @throws Exception if the properties list does not contain a reservation
                 identifier
         """
-        return ID(properties[IReservation.PropertyID])
+        return ID(id=properties[IReservation.PropertyID])
 
     @staticmethod
-    def get_slice_name(properties: dict) -> str:
+    def get_slice_name(*, properties: dict) -> str:
         """
         Extracts the slice name from the properties list.
 

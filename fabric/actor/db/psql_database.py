@@ -49,7 +49,7 @@ def session_scope(psql_db_engine):
 
 
 class PsqlDatabase:
-    def __init__(self, user: str, password: str, database: str, db_host: str, logger):
+    def __init__(self, *, user: str, password: str, database: str, db_host: str, logger):
         # Connecting to PostgreSQL server at localhost using psycopg2 DBAPI
         self.db_engine = create_engine("postgresql+psycopg2://{}:{}@{}/{}".format(user, password, db_host, database))
         self.logger = logger
@@ -75,7 +75,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def add_actor(self, name: str, guid: str, act_type: int, properties):
+    def add_actor(self, *, name: str, guid: str, act_type: int, properties):
         try:
             # Save the actor in the database
             actor_obj = Actors(act_name=name, act_guid=guid, act_type=act_type, properties=properties)
@@ -86,7 +86,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def update_actor(self, name: str, properties):
+    def update_actor(self, *, name: str, properties):
         try:
             with session_scope(self.db_engine) as session:
                 actor = session.query(Actors).filter_by(act_name=name).first()
@@ -97,7 +97,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_actor(self, name: str):
+    def remove_actor(self, *, name: str):
         try:
             # Delete the actor in the database
             with session_scope(self.db_engine) as session:
@@ -121,7 +121,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_actors_by_name_and_type(self, actor_name: str, act_type: int) -> list:
+    def get_actors_by_name_and_type(self, *, actor_name: str, act_type: int) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -135,7 +135,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_actors_by_name(self, act_name: str) -> list:
+    def get_actors_by_name(self, *, act_name: str) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -149,7 +149,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_actor(self, name: str) -> dict:
+    def get_actor(self, *, name: str) -> dict:
         result = {}
         try:
             with session_scope(self.db_engine) as session:
@@ -168,7 +168,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_miscellaneous(self, name: str, properties: dict):
+    def add_miscellaneous(self, *, name: str, properties: dict):
         try:
             msc_obj = Miscellaneous(msc_path=name, properties=properties)
             with session_scope(self.db_engine) as session:
@@ -178,7 +178,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def get_miscellaneous(self, name: str) -> dict:
+    def get_miscellaneous(self, *, name: str) -> dict:
         result = {}
         try:
             with session_scope(self.db_engine) as session:
@@ -192,7 +192,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_manager_object(self, manager_key: str, properties: dict, act_id: int = None):
+    def add_manager_object(self, *, manager_key: str, properties: dict, act_id: int = None):
         try:
             if act_id is not None:
                 mng_obj = ManagerObjects(mo_key=manager_key, mo_act_id=act_id, properties=properties)
@@ -205,7 +205,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_manager_object(self, manager_key: str):
+    def remove_manager_object(self, *, manager_key: str):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(ManagerObjects).filter(ManagerObjects.mo_key == manager_key).delete()
@@ -213,7 +213,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_manager_object_by_actor(self, act_id: int):
+    def remove_manager_object_by_actor(self, *, act_id: int):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(ManagerObjects).filter(ManagerObjects.mo_act_id == act_id).delete()
@@ -221,7 +221,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def get_manager_objects(self, act_id: int = None) -> list:
+    def get_manager_objects(self, *, act_id: int = None) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -243,18 +243,18 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_manager_objects_by_actor_name(self, act_name: str = None) -> list:
+    def get_manager_objects_by_actor_name(self, *, act_name: str = None) -> list:
         result = []
         try:
-            act_obj = self.get_actor(act_name)
+            act_obj = self.get_actor(name=act_name)
             act_id = act_obj['act_id']
-            result = self.get_manager_objects(act_id)
+            result = self.get_manager_objects(act_id=act_id)
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
         return result
 
-    def get_manager_object(self, mo_key: str) -> dict:
+    def get_manager_object(self, *, mo_key: str) -> dict:
         result = {}
         try:
             with session_scope(self.db_engine) as session:
@@ -285,7 +285,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_slice(self, act_id: int, slc_guid: str, slc_name: str, slc_type: int,
+    def add_slice(self, *, act_id: int, slc_guid: str, slc_name: str, slc_type: int,
                   slc_resource_type: str, properties):
         try:
             slc_obj = Slices(slc_guid=slc_guid, slc_name=slc_name, slc_type=slc_type,
@@ -296,7 +296,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def update_slice(self, act_id: int, slc_guid: str, slc_name: str, slc_type: int,
+    def update_slice(self, *, act_id: int, slc_guid: str, slc_name: str, slc_type: int,
                   slc_resource_type: str, properties):
         try:
             with session_scope(self.db_engine) as session:
@@ -312,7 +312,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_slice(self, act_id: int, slc_guid: str):
+    def remove_slice(self, *, act_id: int, slc_guid: str):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(Slices).filter(Slices.slc_guid == slc_guid).delete()
@@ -320,7 +320,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def get_slices(self, act_id: int) -> list:
+    def get_slices(self, *, act_id: int) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -335,7 +335,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slice_ids(self, act_id: int) -> list:
+    def get_slice_ids(self, *, act_id: int) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -346,7 +346,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slice(self, act_id: int, slice_guid: str) -> dict:
+    def get_slice(self, *, act_id: int, slice_guid: str) -> dict:
         result = {}
         try:
             with session_scope(self.db_engine) as session:
@@ -362,7 +362,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slice_by_id(self, act_id: int, id: int) -> dict:
+    def get_slice_by_id(self, *, act_id: int, id: int) -> dict:
         result = {}
         try:
             with session_scope(self.db_engine) as session:
@@ -378,7 +378,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slices_by_type(self, act_id: int, slc_type: int):
+    def get_slices_by_type(self, *, act_id: int, slc_type: int):
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -393,7 +393,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slices_by_types(self, act_id: int, slc_type1: int, slc_type2: int):
+    def get_slices_by_types(self, *, act_id: int, slc_type1: int, slc_type2: int):
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -409,7 +409,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slices_by_resource_type(self, act_id: int, slc_resource_type: str):
+    def get_slices_by_resource_type(self, *, act_id: int, slc_resource_type: str):
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -424,10 +424,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_reservation(self, act_id: int, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
+    def add_reservation(self, *, act_id: int, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                         rsv_pending: int, rsv_joining: int, properties):
         try:
-            slc_obj = self.get_slice(act_id, slc_guid)
+            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             rsv_obj = Reservations(rsv_slc_id=slc_obj['slc_id'], rsv_resid=rsv_resid, rsv_category=rsv_category,
                                    rsv_state=rsv_state, rsv_pending=rsv_pending, rsv_joining=rsv_joining,
                                    properties=properties)
@@ -437,10 +437,10 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def update_reservation(self, act_id: int, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
+    def update_reservation(self, *, act_id: int, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                            rsv_pending: int, rsv_joining: int, properties):
         try:
-            slc_obj = self.get_slice(act_id, slc_guid)
+            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             with session_scope(self.db_engine) as session:
                 rsv_obj = session.query(Reservations).filter(Reservations.rsv_slc_id == slc_obj['slc_id']).filter(Reservations.rsv_resid == rsv_resid).first()
                 if rsv_obj is not None:
@@ -452,11 +452,11 @@ class PsqlDatabase:
                 else:
                     raise Exception("Reservation not found")
         except Exception as e:
-            print("Exception occurred while updating reservation {}".format(self.get_slices(act_id)))
+            print("Exception occurred while updating reservation {}".format(self.get_slices(act_id=act_id)))
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_reservation(self, act_id: int, rsv_resid: str):
+    def remove_reservation(self, *, act_id: int, rsv_resid: str):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(Reservations).filter(Reservations.rsv_resid == rsv_resid).delete()
@@ -464,10 +464,10 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def get_reservations(self, act_id: int) -> list:
+    def get_reservations(self, *, act_id: int) -> list:
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id)
+            slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
                 raise Exception("Slice for {} not found".format(act_id))
             with session_scope(self.db_engine) as session:
@@ -483,10 +483,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id(self, act_id: int, slc_guid: str) -> list:
+    def get_reservations_by_slice_id(self, *, act_id: int, slc_guid: str) -> list:
         result = []
         try:
-            slc_obj = self.get_slice(act_id, slc_guid)
+            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None :
                 raise Exception("Slice for {} not found".format(slc_guid))
             with session_scope(self.db_engine) as session:
@@ -502,10 +502,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_state(self, act_id: int, rsv_state: int) -> list:
+    def get_reservations_by_state(self, *, act_id: int, rsv_state: int) -> list:
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id)
+            slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
                 raise Exception("Slice for {} not found".format(act_id))
             with session_scope(self.db_engine) as session:
@@ -522,10 +522,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id_state(self, act_id: int, slc_guid: str, rsv_state: int) -> list:
+    def get_reservations_by_slice_id_state(self, *, act_id: int, slc_guid: str, rsv_state: int) -> list:
         result = []
         try:
-            slc_obj = self.get_slice(act_id, slc_guid)
+            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None :
                 raise Exception("Slice for {} not found".format(slc_guid))
             with session_scope(self.db_engine) as session:
@@ -542,10 +542,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_2_category(self, act_id: int, rsv_cat1: int, rsv_cat2: int) -> list:
+    def get_reservations_by_2_category(self, *, act_id: int, rsv_cat1: int, rsv_cat2: int) -> list:
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id)
+            slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
                 raise Exception("Slice for {} not found".format(act_id))
             with session_scope(self.db_engine) as session:
@@ -563,10 +563,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_category(self, act_id: int, rsv_cat: int) -> list:
+    def get_reservations_by_category(self, *, act_id: int, rsv_cat: int) -> list:
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id)
+            slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
                 raise Exception("Slice for {} not found".format(act_id))
             with session_scope(self.db_engine) as session:
@@ -584,10 +584,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id_by_2_category(self, act_id: int, slc_guid: str, rsv_cat1: int, rsv_cat2: int) -> list:
+    def get_reservations_by_slice_id_by_2_category(self, *, act_id: int, slc_guid: str, rsv_cat1: int, rsv_cat2: int) -> list:
         result = []
         try:
-            slc_obj = self.get_slice(act_id, slc_guid)
+            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None :
                 raise Exception("Slice for {} not found".format(slc_guid))
             with session_scope(self.db_engine) as session:
@@ -605,10 +605,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id_by_category(self, act_id: int, slc_guid: str, rsv_cat: int) -> list:
+    def get_reservations_by_slice_id_by_category(self, *, act_id: int, slc_guid: str, rsv_cat: int) -> list:
         result = []
         try:
-            slc_obj = self.get_slice(act_id, slc_guid)
+            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None :
                 raise Exception("Slice for {} not found".format(slc_guid))
             with session_scope(self.db_engine) as session:
@@ -625,10 +625,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservation(self, act_id: int, rsv_resid: str) -> dict:
+    def get_reservation(self, *, act_id: int, rsv_resid: str) -> dict:
         result = None
         try:
-            slc_id_list = self.get_slice_ids(act_id)
+            slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
                 raise Exception("Slice for {} not found".format(act_id))
             with session_scope(self.db_engine) as session:
@@ -646,10 +646,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_rids(self, act_id: int, rsv_resid_list: list) -> list:
+    def get_reservations_by_rids(self, *, act_id: int, rsv_resid_list: list) -> list:
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id)
+            slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
                 raise Exception("Slice for {} not found".format(act_id))
             with session_scope(self.db_engine) as session:
@@ -666,7 +666,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_proxy(self, act_id: int, prx_name: str, properties):
+    def add_proxy(self, *, act_id: int, prx_name: str, properties):
         try:
             prx_obj = Proxies(prx_act_id=act_id, prx_name=prx_name, properties=properties)
             with session_scope(self.db_engine) as session:
@@ -675,7 +675,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def update_proxy(self, act_id: int, prx_name: str, properties):
+    def update_proxy(self, *, act_id: int, prx_name: str, properties):
         try:
             with session_scope(self.db_engine) as session:
                 prx_obj = session.query(Proxies).filter(Proxies.prx_act_id == act_id).filter(Proxies.prx_name == prx_name).first()
@@ -687,7 +687,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_proxy(self, act_id: int, prx_name: str):
+    def remove_proxy(self, *, act_id: int, prx_name: str):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(Proxies).filter(Proxies.prx_act_id == act_id).filter(Proxies.prx_name == prx_name).delete()
@@ -695,7 +695,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def get_proxies(self, act_id: int) -> list:
+    def get_proxies(self, *, act_id: int) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -709,7 +709,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_config_mapping(self, act_id: int, cfgm_type: str, cfgm_path: str, properties: dict):
+    def add_config_mapping(self, *, act_id: int, cfgm_type: str, cfgm_path: str, properties: dict):
         try:
             cfg_obj = ConfigMappings(cfgm_act_id=act_id, cfgm_type=cfgm_type, cfgm_path=cfgm_path,
                                      properties=properties)
@@ -719,7 +719,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def update_config_mapping(self, act_id: int, cfgm_type: str, cfgm_path: str, properties: dict):
+    def update_config_mapping(self, *, act_id: int, cfgm_type: str, cfgm_path: str, properties: dict):
         try:
             with session_scope(self.db_engine) as session:
                 cfg_obj = session.query(ConfigMappings).filter(ConfigMappings.cfgm_act_id == act_id).filter(ConfigMappings.cfgm_type == cfgm_type).first()
@@ -732,7 +732,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_config_mapping(self, act_id: int, cfgm_type: str):
+    def remove_config_mapping(self, *, act_id: int, cfgm_type: str):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(ConfigMappings).filter(ConfigMappings.cfgm_type == cfgm_type).delete()
@@ -740,7 +740,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def get_config_mappings(self, act_id: int) -> list:
+    def get_config_mappings(self, *, act_id: int) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -754,7 +754,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_config_mappings_by_type(self, act_id: int, cfgm_type: str) -> list:
+    def get_config_mappings_by_type(self, *, act_id: int, cfgm_type: str) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -768,7 +768,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_client(self, act_id: int, clt_name: str, clt_guid: str, properties):
+    def add_client(self, *, act_id: int, clt_name: str, clt_guid: str, properties):
         try:
             clt_obj = Clients(clt_act_id=act_id, clt_name=clt_name, clt_guid=clt_guid,
                                      properties=properties)
@@ -778,7 +778,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def update_client(self, act_id: int, clt_name: str, properties):
+    def update_client(self, *, act_id: int, clt_name: str, properties):
         try:
             with session_scope(self.db_engine) as session:
                 clt_obj = session.query(Clients).filter(Clients.clt_act_id == act_id).filter(Clients.clt_name == clt_name).first()
@@ -790,7 +790,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_client_by_name(self, act_id: int, clt_name: str):
+    def remove_client_by_name(self, *, act_id: int, clt_name: str):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(Clients).filter(Clients.clt_act_id == act_id).filter(Clients.clt_name == clt_name).delete()
@@ -798,7 +798,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_client_by_guid(self, act_id: int, clt_guid: str):
+    def remove_client_by_guid(self, *, act_id: int, clt_guid: str):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(Clients).filter(Clients.clt_act_id == act_id).filter(Clients.clt_guid == clt_guid).delete()
@@ -806,7 +806,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def get_client_by_name(self, act_id: int, clt_name: str) -> dict:
+    def get_client_by_name(self, *, act_id: int, clt_name: str) -> dict:
         result = None
         try:
             with session_scope(self.db_engine) as session:
@@ -820,7 +820,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_client_by_guid(self, act_id: int, clt_guid: str) -> dict:
+    def get_client_by_guid(self, *, act_id: int, clt_guid: str) -> dict:
         result = None
         try:
             with session_scope(self.db_engine) as session:
@@ -834,7 +834,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_clients(self, act_id: int) -> list:
+    def get_clients(self, *, act_id: int) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -848,13 +848,13 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_unit(self, act_id: int, slc_guid: str, rsv_resid: str, unt_uid: str, unt_unt_id: int, unt_type: int,
+    def add_unit(self, *, act_id: int, slc_guid: str, rsv_resid: str, unt_uid: str, unt_unt_id: int, unt_type: int,
                  unt_state: int, properties):
         try:
-            slc_obj = self.get_slice(act_id, slc_guid)
+            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None:
                 raise Exception("Slice {} not found".format(slc_guid))
-            rsv_obj = self.get_reservation(act_id, rsv_resid)
+            rsv_obj = self.get_reservation(act_id=act_id, rsv_resid=rsv_resid)
             if rsv_obj is None:
                 raise Exception("Reservation {} not found".format(rsv_resid))
             if slc_obj['slc_id'] != rsv_obj['rsv_slc_id']:
@@ -872,7 +872,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def get_unit(self, act_id: int, unt_uid: str):
+    def get_unit(self, *, act_id: int, unt_uid: str):
         result = None
         try:
             with session_scope(self.db_engine) as session:
@@ -889,10 +889,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_units(self, act_id: int, rsv_resid: str):
+    def get_units(self, *, act_id: int, rsv_resid: str):
         result = []
         try:
-            rsv_obj = self.get_reservation(act_id, rsv_resid)
+            rsv_obj = self.get_reservation(act_id=act_id, rsv_resid=rsv_resid)
             if rsv_obj is None:
                 raise Exception("Reservation {} not found".format(rsv_resid))
 
@@ -909,7 +909,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def remove_unit(self, act_id: int, unt_uid: str):
+    def remove_unit(self, *, act_id: int, unt_uid: str):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(Units).filter(Units.unt_uid == unt_uid).delete()
@@ -917,7 +917,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def update_unit(self, act_id: int, unt_uid: str, properties):
+    def update_unit(self, *, act_id: int, unt_uid: str, properties):
         result = None
         try:
             with session_scope(self.db_engine) as session:
@@ -930,7 +930,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_plugin(self, plugin_id: str, plg_type: int, plg_actor_type: int, properties):
+    def add_plugin(self, *, plugin_id: str, plg_type: int, plg_actor_type: int, properties):
         try:
             plg_obj = Plugins(plg_local_id=plugin_id, plg_type=plg_type, plg_actor_type=plg_actor_type,
                               properties=properties)
@@ -940,7 +940,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def remove_plugin(self, plugin_id: str):
+    def remove_plugin(self, *, plugin_id: str):
         try:
             with session_scope(self.db_engine) as session:
                 session.query(Plugins).filter(Plugins.plg_local_id == plugin_id).delete()
@@ -948,7 +948,7 @@ class PsqlDatabase:
             self.logger.error("Exception occurred " + str(e))
             raise e
 
-    def get_plugins(self, plg_type: int, plg_actor_type: int) -> list:
+    def get_plugins(self, *, plg_type: int, plg_actor_type: int) -> list:
         result = []
         try:
             with session_scope(self.db_engine) as session:
@@ -962,7 +962,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_plugin(self, plugin_id: str) -> dict:
+    def get_plugin(self, *, plugin_id: str) -> dict:
         result = None
         try:
             with session_scope(self.db_engine) as session:
@@ -979,117 +979,126 @@ class PsqlDatabase:
 
 def test():
     Logger = logging.getLogger('PsqlDatabase')
-    db = PsqlDatabase('fabric', 'fabric', 'am', '127.0.0.1:8432', Logger)
+    db = PsqlDatabase(user='fabric', password='fabric', database='am', db_host='127.0.0.1:8432', logger=Logger)
     db.create_db()
     db.reset_db()
 
     # Actor Operations
     prop = {'abc':'def'}
 
-    db.add_actor("test-actor1", "12345", 1, pickle.dumps(prop))
+    db.add_actor(name="test-actor1", guid="12345", act_type=1, properties=pickle.dumps(prop))
     print("All actors: {}".format(db.get_actors()))
-    print("one actor {}".format(db.get_actor("test-actor1")))
+    print("one actor {}".format(db.get_actor(name="test-actor1")))
     prop['pqr'] = 'stu'
-    db.update_actor("test-actor1", pickle.dumps(prop))
-    print("actor after update {}".format(db.get_actor("test-actor1")))
-    db.remove_actor("test-actor1")
+    db.update_actor(name="test-actor1", properties=pickle.dumps(prop))
+    print("actor after update {}".format(db.get_actor(name="test-actor1")))
+    db.remove_actor(name="test-actor1")
     print("actors after delete: {}".format(db.get_actors()))
 
     # Miscellaneous operations
-    db.add_miscellaneous('time', prop)
-    print(db.get_miscellaneous('time'))
+    db.add_miscellaneous(name='time', properties=prop)
+    print(db.get_miscellaneous(name='time'))
 
     # Manager Object operations
-    db.add_actor("test-actor1", "12345", 1, pickle.dumps(prop))
+    db.add_actor(name="test-actor1", guid="12345", act_type=1, properties=pickle.dumps(prop))
     print("All actors: {}".format(db.get_actors()))
-    actor = db.get_actor("test-actor1")
+    actor = db.get_actor(name="test-actor1")
     actor_id = actor['act_id']
-    db.add_manager_object("mgr-1234", prop, actor_id)
-    db.add_manager_object("mgr-1235", prop)
+    db.add_manager_object(manager_key="mgr-1234", properties=prop, act_id=actor_id)
+    db.add_manager_object(manager_key="mgr-1235", properties=prop)
     print(db.get_manager_objects())
-    print("Get specific MO {}".format(db.get_manager_object("mgr-1234")))
-    print("Get MO by actor {}".format(db.get_manager_objects(actor_id)))
+    print("Get specific MO {}".format(db.get_manager_object(mo_key="mgr-1234")))
+    print("Get MO by actor {}".format(db.get_manager_objects(act_id=actor_id)))
     print("Get MO with no actor {}".format(db.get_manager_containers()))
-    db.remove_manager_object("mgr-1235")
+    db.remove_manager_object(manager_key="mgr-1235")
     print("After removing MO by key {}".format(db.get_manager_objects()))
-    db.remove_manager_object_by_actor(actor_id)
+    db.remove_manager_object_by_actor(act_id=actor_id)
     print("After removing MO by actor {}".format(db.get_manager_objects()))
 
     # Slice operations
-    db.add_slice(actor_id, "1234", "test-slice", 1, "def", pickle.dumps(prop))
-    print("Slices after add slice {}".format(db.get_slices(actor_id)))
+    db.add_slice(act_id=actor_id, slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop))
+    print("Slices after add slice {}".format(db.get_slices(act_id=actor_id)))
     prop['fabric'] = 'testbed'
-    db.update_slice(actor_id, "1234", "test-slice", 1, "def",  pickle.dumps(prop))
-    print("Get slice after update {}".format(db.get_slice(actor_id, "1234")))
+    db.update_slice(act_id=actor_id, slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
+                    properties=pickle.dumps(prop))
+    print("Get slice after update {}".format(db.get_slice(act_id=actor_id, slice_guid="1234")))
 
-    print("Get slice by type after update {}".format(db.get_slices_by_type(actor_id, 1)))
-    print("Get slice by type after update {}".format(db.get_slices_by_resource_type(actor_id, "def")))
-    db.remove_slice(actor_id, "1234")
-    print("Get all slices {} after delete".format(db.get_slices(actor_id)))
+    print("Get slice by type after update {}".format(db.get_slices_by_type(act_id=actor_id, slc_type=1)))
+    print("Get slice by type after update {}".format(db.get_slices_by_resource_type(act_id=actor_id,
+                                                                                    slc_resource_type="def")))
+    db.remove_slice(act_id=actor_id, slc_guid="1234")
+    print("Get all slices {} after delete".format(db.get_slices(act_id=actor_id)))
 
     # Reservation operations
-    db.add_slice(actor_id, "1234", "test-slice", 1, "def", pickle.dumps(prop))
-    print("Get all slices {} after add".format(db.get_slices(actor_id)))
+    db.add_slice(act_id=actor_id, slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop))
+    print("Get all slices {} after add".format(db.get_slices(act_id=actor_id)))
     prop['rsv'] = 'test'
-    db.add_reservation(actor_id, "1234", "rsv_567", 1, 2, 3, 4, pickle.dumps(prop))
-    print("Reservations after add {}".format(db.get_reservations(actor_id)))
+    db.add_reservation(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
+                       rsv_pending=3, rsv_joining=4, properties=pickle.dumps(prop))
+    print("Reservations after add {}".format(db.get_reservations(act_id=actor_id)))
     prop['update'] = 'test'
-    db.update_reservation(actor_id, "1234", "rsv_567", 1, 2, 3, 5, pickle.dumps(prop))
-    print("Reservations after update {}".format(db.get_reservations(actor_id)))
-    print("Reservations after by state {}".format(db.get_reservations_by_slice_id_state(actor_id, "1234", 2)))
+    db.update_reservation(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
+                          rsv_pending=3, rsv_joining=5, properties=pickle.dumps(prop))
+    print("Reservations after update {}".format(db.get_reservations(act_id=actor_id)))
+    print("Reservations after by state {}".format(db.get_reservations_by_slice_id_state(act_id=actor_id, slc_guid="1234", rsv_state=2)))
 
-    print("Reservations after by rid {}".format(db.get_reservation(actor_id, "rsv_567")))
-    print("Reservations after by rid list {}".format(db.get_reservations_by_rids(actor_id, ["rsv_567"])))
+    print("Reservations after by rid {}".format(db.get_reservation(act_id=actor_id, rsv_resid="rsv_567")))
+    print("Reservations after by rid list {}".format(db.get_reservations_by_rids(act_id=actor_id, rsv_resid_list=["rsv_567"])))
 
-    db.remove_reservation(actor_id, "rsv_567")
-    print("Reservations after delete {}".format(db.get_reservations(actor_id)))
+    db.remove_reservation(act_id=actor_id, rsv_resid="rsv_567")
+    print("Reservations after delete {}".format(db.get_reservations(act_id=actor_id)))
 
     # Proxy operations
-    db.add_proxy(actor_id, "prx-123", pickle.dumps(prop))
-    print("Proxies after add {}".format(db.get_proxies(actor_id)))
+    db.add_proxy(act_id=actor_id, prx_name="prx-123", properties=pickle.dumps(prop))
+    print("Proxies after add {}".format(db.get_proxies(act_id=actor_id)))
     prop['prx-update'] = 'fly'
-    db.update_proxy(actor_id, "prx-123", pickle.dumps(prop))
-    print("Proxies after update {}".format(db.get_proxies(actor_id)))
-    db.remove_proxy(actor_id, "prx-123")
-    print("Proxies after remove {}".format(db.get_proxies(actor_id)))
+    db.update_proxy(act_id=actor_id, prx_name="prx-123", properties=pickle.dumps(prop))
+    print("Proxies after update {}".format(db.get_proxies(act_id=actor_id)))
+    db.remove_proxy(act_id=actor_id, prx_name="prx-123")
+    print("Proxies after remove {}".format(db.get_proxies(act_id=actor_id)))
 
     # Config Mapping operations
-    db.add_config_mapping(actor_id, "cfg-1", "/abc/def", prop)
-    print("Config Mappings after add {}".format(db.get_config_mappings(actor_id)))
+    db.add_config_mapping(act_id=actor_id, cfgm_type="cfg-1", cfgm_path="/abc/def", properties=prop)
+    print("Config Mappings after add {}".format(db.get_config_mappings(act_id=actor_id)))
     prop['cfg-update'] = 'done'
-    db.update_config_mapping(actor_id, "cfg-1", "/abc/def", prop)
-    print("Config Mappings after update by type {}".format(db.get_config_mappings_by_type(actor_id, "cfg-1")))
-    db.remove_config_mapping(actor_id, "cfg-1")
-    print("Config Mappings after remove {}".format(db.get_config_mappings(actor_id)))
+    db.update_config_mapping(act_id=actor_id, cfgm_type="cfg-1", cfgm_path="/abc/def", properties=prop)
+    print("Config Mappings after update by type {}".format(db.get_config_mappings_by_type(act_id=actor_id, cfgm_type="cfg-1")))
+    db.remove_config_mapping(act_id=actor_id, cfgm_type="cfg-1")
+    print("Config Mappings after remove {}".format(db.get_config_mappings(act_id=actor_id)))
 
     # Client operations
-    db.add_client(actor_id, "clt-test", "clt-1234", pickle.dumps(prop))
-    print("Clients after add {}".format(db.get_clients(actor_id)))
-    print("Clients after by guid {}".format(db.get_client_by_guid(actor_id, "clt-1234")))
+    db.add_client(act_id=actor_id, clt_name="clt-test", clt_guid="clt-1234", properties=pickle.dumps(prop))
+    print("Clients after add {}".format(db.get_clients(act_id=actor_id)))
+    print("Clients after by guid {}".format(db.get_client_by_guid(act_id=actor_id, clt_guid="clt-1234")))
     prop['clt-up']='done'
-    db.update_client(actor_id, "clt-test", pickle.dumps(prop))
-    print("Clients after by name {}".format(db.get_client_by_name(actor_id, "clt-test")))
-    db.remove_client_by_guid(actor_id, "clt-1234")
-    print("Clients after remove {}".format(db.get_clients(actor_id)))
+    db.update_client(act_id=actor_id, clt_name="clt-test", properties=pickle.dumps(prop))
+    print("Clients after by name {}".format(db.get_client_by_name(act_id=actor_id, clt_name="clt-test")))
+    db.remove_client_by_guid(act_id=actor_id, clt_guid="clt-1234")
+    print("Clients after remove {}".format(db.get_clients(act_id=actor_id)))
 
     # Unit operations
-    db.add_reservation(actor_id, "1234", "rsv_567", 1, 2, 3, 4, pickle.dumps(prop))
-    db.add_unit(actor_id, "1234", "rsv_567", "unt_123", None, 1, 2, pickle.dumps(prop))
-    print("Unit after add {}".format(db.get_units(actor_id,  "rsv_567")))
-    prop['update_unit'] = 'done'
-    db.update_unit(actor_id, "unt_123", pickle.dumps(prop))
-    print("Unit after update {}".format(db.get_unit(actor_id, "unt_123")))
-    db.remove_unit(actor_id, "unt_123")
-    print("Unit after remove {}".format(db.get_units(actor_id, "rsv_567")))
+    db.add_reservation(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
+                       rsv_pending=3, rsv_joining=4, properties=pickle.dumps(prop))
 
-    db.remove_reservation(actor_id, "rsv_567")
+    db.add_unit(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", unt_uid="unt_123", unt_unt_id=None, unt_type=1,
+                unt_state=2, properties=pickle.dumps(prop))
+    print("Unit after add {}".format(db.get_units(act_id=actor_id,  rsv_resid="rsv_567")))
+    prop['update_unit'] = 'done'
+    db.update_unit(act_id=actor_id, unt_uid="unt_123", properties=pickle.dumps(prop))
+    print("Unit after update {}".format(db.get_unit(act_id=actor_id, unt_uid="unt_123")))
+    db.remove_unit(act_id=actor_id, unt_uid="unt_123")
+    print("Unit after remove {}".format(db.get_units(act_id=actor_id, rsv_resid="rsv_567")))
+
+    db.remove_reservation(act_id=actor_id, rsv_resid="rsv_567")
     db.reset_db()
     print("Get all actors after reset {}".format(db.get_actors()))
 
 
 def test2():
     Logger = logging.getLogger('PsqlDatabase')
-    db = PsqlDatabase('fabric', 'fabric', 'am', '127.0.0.1:8432', Logger)
+    db = PsqlDatabase(user='fabric', password='fabric', database='am', db_host='127.0.0.1:8432', logger=Logger)
     print("Get all actors after reset {}".format(db.get_actors()))
 
 if __name__ == '__main__':

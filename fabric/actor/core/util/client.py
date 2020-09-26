@@ -41,13 +41,13 @@ class Client:
     def __setstate__(self, state):
         self.__dict__.update(state)
 
-    def set_name(self, name: str):
+    def set_name(self, *, name: str):
         self.name = name
 
-    def set_guid(self, guid: ID):
+    def set_guid(self, *, guid: ID):
         self.guid = guid
 
-    def set_type(self, client_type: str):
+    def set_type(self, *, client_type: str):
         self.type = client_type
 
     def get_name(self) -> str:
@@ -62,7 +62,7 @@ class Client:
     def get_kafka_topic(self) -> str:
         return self.kafka_topic
 
-    def set_kafka_topic(self, kafka_topic: str):
+    def set_kafka_topic(self, *, kafka_topic: str):
         self.kafka_topic = kafka_topic
 
     def get_auth_token(self) -> AuthToken:

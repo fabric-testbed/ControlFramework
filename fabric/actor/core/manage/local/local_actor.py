@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
@@ -40,16 +40,16 @@ if TYPE_CHECKING:
 
 
 class LocalActor(LocalProxy, IMgmtActor):
-    def __init__(self, manager: ManagementObject = None, auth: AuthToken = None):
-        super().__init__(manager, auth)
+    def __init__(self, *, manager: ManagementObject, auth: AuthToken):
+        super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, ActorManagementObject):
             raise Exception("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
-    def get_slices(self) -> list:
+    def get_slices(self) -> List[SliceAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_slices(self.auth)
+            result = self.manager.get_slices(caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -59,23 +59,23 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return None
 
-    def get_slice(self, slice_id: ID) -> SliceAvro:
+    def get_slice(self, *, slice_id: ID) -> SliceAvro:
         self.clear_last()
         try:
-            result = self.manager.get_slice(slice_id, self.auth)
+            result = self.manager.get_slice(slice_id=slice_id, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return self.get_first(result.result)
+                return self.get_first(result_list=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def remove_slice(self, slice_id: ID) -> bool:
+    def remove_slice(self, *, slice_id: ID) -> bool:
         self.clear_last()
         try:
-            result = self.manager.remove_slice(slice_id, self.auth)
+            result = self.manager.remove_slice(slice_id=slice_id, caller=self.auth)
             self.last_status = result
 
             return result.code() == 0
@@ -84,10 +84,10 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def get_reservations(self) -> list:
+    def get_reservations(self) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_reservations(self.auth)
+            result = self.manager.get_reservations(caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -98,10 +98,10 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return None
 
-    def get_reservations_by_state(self, state: int) -> list:
+    def get_reservations_by_state(self, *, state: int) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_reservations(self.auth, state)
+            result = self.manager.get_reservations(caller=self.auth, state=state)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -112,10 +112,10 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return None
 
-    def remove_reservation(self, rid: ID) -> bool:
+    def remove_reservation(self, *, rid: ID) -> bool:
         self.clear_last()
         try:
-            result = self.manager.remove_reservation(self.auth, rid)
+            result = self.manager.remove_reservation(caller=self.auth, rid=rid)
             self.last_status = result
 
             return result.code() == 0
@@ -125,10 +125,10 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def close_reservation(self, rid: ID) -> bool:
+    def close_reservation(self, *, rid: ID) -> bool:
         self.clear_last()
         try:
-            result = self.manager.close_reservation(self.auth, rid)
+            result = self.manager.close_reservation(caller=self.auth, rid=rid)
             self.last_status = result
 
             return result.code() == 0
@@ -144,24 +144,24 @@ class LocalActor(LocalProxy, IMgmtActor):
     def get_guid(self) -> ID:
         return self.manager.get_actor().get_guid()
 
-    def add_slice(self, slice_obj: SliceAvro) -> ID:
+    def add_slice(self, *, slice_obj: SliceAvro) -> ID:
         self.clear_last()
         try:
-            result = self.manager.add_slice(slice_obj, self.auth)
+            result = self.manager.add_slice(slice_obj=slice_obj, caller=self.auth)
             self.last_status = result.status
 
             if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(result.result)
+                return ID(id=result.result)
 
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def update_slice(self, slice_obj: SliceAvro) -> bool:
+    def update_slice(self, *, slice_obj: SliceAvro) -> bool:
         self.clear_last()
         try:
-            result = self.manager.add_slice(slice_obj, self.auth)
+            result = self.manager.add_slice(slice_obj=slice_obj, caller=self.auth)
             self.last_status = result
 
             if self.last_status.get_code() == 0:
@@ -175,21 +175,21 @@ class LocalActor(LocalProxy, IMgmtActor):
     def create_event_subscription(self) -> ID:
         self.clear_last()
         try:
-            result = self.manager.create_event_subscription(self.auth)
+            result = self.manager.create_event_subscription(caller=self.auth)
             self.last_status = result.status
 
             if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(self.get_first(result.result))
+                return ID(id=self.get_first(result_list=result.result))
 
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def delete_event_subscription(self, subscription_id: ID) -> bool:
+    def delete_event_subscription(self, *, subscription_id: ID) -> bool:
         self.clear_last()
         try:
-            result = self.manager.delete_event_subscription(self.auth, subscription_id)
+            result = self.manager.delete_event_subscription(caller=self.auth, subscription_id=subscription_id)
             self.last_status = result
 
             if self.last_status.get_code() == 0:
@@ -200,10 +200,10 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def drain_events(self, subscription_id: ID, timeout: int) -> list:
+    def drain_events(self, *, subscription_id: ID, timeout: int) -> list:
         self.clear_last()
         try:
-            result = self.manager.drain_events(self.auth, subscription_id, timeout)
+            result = self.manager.drain_events(caller=self.auth, subscription_id=subscription_id, timeout=timeout)
             self.last_status = result.status
 
             if self.last_status.get_code() == 0:
@@ -215,12 +215,12 @@ class LocalActor(LocalProxy, IMgmtActor):
         return None
 
     def clone(self):
-        return LocalActor(self.manager, self.auth)
+        return LocalActor(manager=self.manager, auth=self.auth)
 
-    def get_reservations_by_slice_id_and_state(self, slice_id: ID, state: int) -> list:
+    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int) -> list:
         self.clear_last()
         try:
-            result = self.manager.get_reservations_by_slice_id_state(self.auth, slice_id, state)
+            result = self.manager.get_reservations_by_slice_id_state(caller=self.auth, slice_id=slice_id, state=state)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -231,10 +231,10 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return None
 
-    def update_reservation(self, reservation: ReservationMng) -> bool:
+    def update_reservation(self, *, reservation: ReservationMng) -> bool:
         self.clear_last()
         try:
-            result = self.manager.update_reservation(reservation, self.auth)
+            result = self.manager.update_reservation(reservation=reservation, caller=self.auth)
             self.last_status = result
 
             if self.last_status.get_code() == 0:
@@ -245,10 +245,10 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def close_reservations(self, slice_id: ID) -> bool:
+    def close_reservations(self, *, slice_id: ID) -> bool:
         self.clear_last()
         try:
-            result = self.manager.close_slice_reservations(self.auth, slice_id)
+            result = self.manager.close_slice_reservations(caller=self.auth, slice_id=slice_id)
             self.last_status = result
 
             if self.last_status.get_code() == 0:
@@ -259,10 +259,10 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def get_reservation_state(self, rid: ID) -> ReservationStateAvro:
+    def get_reservation_state(self, *, rid: ID) -> ReservationStateAvro:
         self.clear_last()
         try:
-            result = self.manager.get_reservation_state(self.auth, rid)
+            result = self.manager.get_reservation_state(caller=self.auth, rid=rid)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -273,10 +273,10 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return None
 
-    def get_reservation_state_for_reservations(self, reservation_list: list) -> list:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID]) -> List[ReservationStateAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_reservation_state_for_reservations(self.auth, reservation_list)
+            result = self.manager.get_reservation_state_for_reservations(caller=self.auth, rids=reservation_list)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

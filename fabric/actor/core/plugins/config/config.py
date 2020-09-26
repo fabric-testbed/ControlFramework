@@ -84,14 +84,14 @@ class Config:
             self.logger = self.plugin.get_logger()
             self.initialized = True
 
-    def add_config_mapping(self, mapping: ConfigurationMapping):
+    def add_config_mapping(self, *, mapping: ConfigurationMapping):
         try:
             self.lock.acquire()
             self.config_mappings[mapping.get_key()] = mapping
         finally:
             self.lock.release()
 
-    def join(self, token: ConfigToken, properties: dict):
+    def join(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Join")
 
         # TODO
@@ -99,10 +99,10 @@ class Config:
                   self.PropertyTargetResultCode: self.ResultCodeOK,
                   self.PropertyActionSequenceNumber: 0 }
 
-        self.plugin.configuration_complete(token, result)
+        self.plugin.configuration_complete(token=token, properties=result)
         self.logger.info("Executing Join completed")
 
-    def leave(self, token: ConfigToken, properties: dict):
+    def leave(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Leave")
 
         # TODO
@@ -110,10 +110,10 @@ class Config:
                   self.PropertyTargetResultCode: self.ResultCodeOK,
                   self.PropertyActionSequenceNumber: 0}
 
-        self.plugin.configuration_complete(token, result)
+        self.plugin.configuration_complete(token=token, properties=result)
         self.logger.info("Executing Leave completed")
 
-    def modify(self, token: ConfigToken, properties: dict):
+    def modify(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Modify")
 
         # TODO
@@ -121,17 +121,17 @@ class Config:
                   self.PropertyTargetResultCode: self.ResultCodeOK,
                   self.PropertyActionSequenceNumber: 0}
 
-        self.plugin.configuration_complete(token, result)
+        self.plugin.configuration_complete(token=token, properties=result)
         self.logger.info("Executing Modify completed")
 
-    def set_logger(self, logger):
+    def set_logger(self, *, logger):
         self.logger = logger
 
-    def set_slices_plugin(self, plugin: BasePlugin):
+    def set_slices_plugin(self, *, plugin: BasePlugin):
         self.plugin = plugin
 
     @staticmethod
-    def get_action_sequence_number(properties: dict):
+    def get_action_sequence_number(*, properties: dict):
         if properties is None:
             raise Exception("Invalid Argument")
 
@@ -141,7 +141,7 @@ class Config:
         raise Exception("Action Sequence Number not found")
 
     @staticmethod
-    def get_result_code(properties: dict):
+    def get_result_code(*, properties: dict):
         if properties is None:
             raise Exception("Invalid Argument")
 
@@ -151,7 +151,7 @@ class Config:
         raise Exception("Target Result code not found")
 
     @staticmethod
-    def get_result_code_message(properties: dict):
+    def get_result_code_message(*, properties: dict):
         if properties is None:
             raise Exception("Invalid Argument")
 
@@ -161,7 +161,7 @@ class Config:
         return None
 
     @staticmethod
-    def get_exception_message(properties: dict):
+    def get_exception_message(*, properties: dict):
         if properties is None:
             raise Exception("Invalid Argument")
 

@@ -46,15 +46,18 @@ if TYPE_CHECKING:
 
 
 class AuthorityManagementObject(ServerActorManagementObject):
-    def __init__(self, authority: IAuthority = None):
-        super().__init__(authority)
+    def __init__(self, *, authority: IAuthority = None):
+        super().__init__(sa=authority)
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_authority import LocalAuthority
-        local = ProxyProtocolDescriptor(Constants.ProtocolLocal, LocalAuthority.__name__, LocalAuthority.__module__)
+        local = ProxyProtocolDescriptor(protocol=Constants.ProtocolLocal, 
+                                        proxy_class=LocalAuthority.__name__, 
+                                        proxy_module=LocalAuthority.__module__)
 
         from fabric.actor.core.manage.kafka.kafka_authority import KafkaAuthority
-        kakfa = ProxyProtocolDescriptor(Constants.ProtocolKafka, KafkaAuthority.__name__, KafkaAuthority.__module__)
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.ProtocolKafka, proxy_class=KafkaAuthority.__name__, 
+                                        proxy_module=KafkaAuthority.__module__)
 
         self.proxies = []
         self.proxies.append(local)
@@ -62,12 +65,12 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = AuthorityManagementObject.__name__,
-        properties[Constants.PropertyModuleName] = AuthorityManagementObject.__name__
+        properties[Constants.PropertyClassName] = AuthorityManagementObject.__name__
+        properties[Constants.PropertyModuleName] = AuthorityManagementObject.__module__
 
         return properties
 
-    def get_authority_reservations(self, caller: AuthToken) -> ResultReservationAvro:
+    def get_authority_reservations(self, *, caller: AuthToken) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -83,17 +86,18 @@ class AuthorityManagementObject(ServerActorManagementObject):
                 self.logger.error("get_authority_reservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
                 result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result.status, e)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_obj = self.get_slice_by_id(r['slc_id'])
-                    rsv_obj = ReservationFactory.create_instance(r, self.actor, slice_obj,
-                                                                 self.actor.get_logger())
+                    slice_obj = self.get_slice_by_id(id=r['slc_id'])
+                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
+                                                                 slice_obj=slice_obj,
+                                                                 logger=self.actor.get_logger())
                     if rsv_obj is not None:
-                        rr = Converter.fill_reservation(rsv_obj, False)
+                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
                         result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("get_authority_reservations: {}".format(e))
@@ -103,14 +107,14 @@ class AuthorityManagementObject(ServerActorManagementObject):
             self.logger.error("get_authority_reservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
     def get_substrate_database(self) -> ISubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
-    def get_reservation_units(self, caller: AuthToken, rid: ID) -> ResultUnitAvro:
+    def get_reservation_units(self, *, caller: AuthToken, rid: ID) -> ResultUnitAvro:
         result = ResultUnitAvro()
         result.status = ResultAvro()
 
@@ -121,25 +125,25 @@ class AuthorityManagementObject(ServerActorManagementObject):
         try:
             units_list = None
             try:
-                units_list = self.db.get_units(rid)
+                units_list = self.db.get_units(rid=rid)
             except Exception as e:
                 self.logger.error("get_reservation_units:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
                 result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result.status, e)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if units_list is not None:
-                result.result = Converter.fill_units(units_list)
+                result.result = Converter.fill_units(unit_list=units_list)
         except Exception as e:
             self.logger.error("get_reservation_units: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def get_reservation_unit(self, caller: AuthToken, uid: ID) -> ResultUnitAvro:
+    def get_reservation_unit(self, *, caller: AuthToken, uid: ID) -> ResultUnitAvro:
         result = ResultUnitAvro()
         result.status = ResultAvro()
 
@@ -150,21 +154,21 @@ class AuthorityManagementObject(ServerActorManagementObject):
         try:
             units_list = None
             try:
-                unit = self.db.get_unit(uid)
+                unit = self.db.get_unit(uid=uid)
                 units_list = [unit]
             except Exception as e:
                 self.logger.error("get_reservation_unit:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
                 result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result.status, e)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if units_list is not None:
-                result.result = Converter.fill_units(units_list)
+                result.result = Converter.fill_units(unit_list=units_list)
         except Exception as e:
             self.logger.error("get_reservation_unit: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result

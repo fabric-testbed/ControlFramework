@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.manage.error import Error
@@ -42,8 +42,8 @@ if TYPE_CHECKING:
 
 
 class KafkaProxy(IComponent):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger, message_processor: KafkaMgmtMessageProcessor,
-                 producer: AvroProducerApi = None):
+    def __init__(self, *, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
+                 message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
         self.management_id = guid
         self.auth = auth
         self.logger = logger
@@ -75,13 +75,13 @@ class KafkaProxy(IComponent):
         self.last_status = ResultAvro()
 
     def get_last_error(self) -> Error:
-        return Error(self.last_status, self.last_exception)
+        return Error(status=self.last_status, e=self.last_exception)
 
-    def get_protocols(self) -> list:
+    def get_protocols(self) -> List[ProtocolProxyMng]:
         proto = ProtocolProxyMng()
-        proto.set_protocol(Constants.ProtocolKafka)
-        proto.set_proxy_class(KafkaProxy.__class__.__name__)
-        proto.set_proxy_module(KafkaProxy.__module__)
+        proto.set_protocol(protocol=Constants.ProtocolKafka)
+        proto.set_proxy_class(proxy_class=KafkaProxy.__class__.__name__)
+        proto.set_proxy_module(proxy_module=KafkaProxy.__module__)
         result = [proto]
         return result
 

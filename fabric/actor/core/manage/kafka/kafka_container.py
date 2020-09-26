@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 import traceback
+from typing import List
 
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_mgmt_container import IMgmtContainer
@@ -32,6 +33,7 @@ from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.actor_avro import ActorAvro
 from fabric.message_bus.messages.auth_avro import AuthAvro
 from fabric.message_bus.messages.get_actors_avro import GetActorsAvro
 from fabric.message_bus.messages.result_actor_avro import ResultActorAvro
@@ -40,11 +42,12 @@ from fabric.message_bus.producer import AvroProducerApi
 
 
 class KafkaContainer(KafkaProxy, IMgmtContainer):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
+    def __init__(self, *, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
                  message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
-        super().__init__(guid, kafka_topic, auth, logger, message_processor, producer)
+        super().__init__(guid=guid, kafka_topic=kafka_topic, auth=auth, logger=logger,
+                         message_processor=message_processor, producer=producer)
 
-    def do_get_actors(self, type: int) -> list:
+    def do_get_actors(self, *, type: int) -> List[ActorAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -57,19 +60,19 @@ class KafkaContainer(KafkaProxy, IMgmtContainer):
             request.callback_topic = self.callback_topic
             request.type = type
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
@@ -92,14 +95,14 @@ class KafkaContainer(KafkaProxy, IMgmtContainer):
 
         return rret_val
 
-    def get_actors(self) -> list:
-        return self.do_get_actors(ActorType.All.value)
+    def get_actors(self) -> List[ActorAvro]:
+        return self.do_get_actors(type=ActorType.All.value)
 
-    def get_authorities(self) -> list:
-        return self.do_get_actors(ActorType.Authority.value)
+    def get_authorities(self) -> List[ActorAvro]:
+        return self.do_get_actors(type=ActorType.Authority.value)
 
-    def get_brokers(self) -> list:
-        return self.do_get_actors(ActorType.Broker.value)
+    def get_brokers(self) -> List[ActorAvro]:
+        return self.do_get_actors(type=ActorType.Broker.value)
 
-    def get_controllers(self) -> list:
-        return self.do_get_actors(ActorType.Controller.value)
+    def get_controllers(self) -> List[ActorAvro]:
+        return self.do_get_actors(type=ActorType.Orchestrator.value)

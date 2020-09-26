@@ -24,8 +24,9 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
+
 class RequestWorkflow:
-    def __init__(self, cloud_handler):
+    def __init__(self, *, cloud_handler):
         self.cloud_handler = cloud_handler
 
     def close(self):

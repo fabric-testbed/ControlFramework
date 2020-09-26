@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_database import IDatabase
@@ -34,29 +36,37 @@ if TYPE_CHECKING:
 
 
 class ISubstrateDatabase(IDatabase):
-    def add_unit(self, u: Unit):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def add_unit(self, *, u: Unit):
+        """
+        Add a unit
+        @param u: Unit to be added
+        """
 
-    def update_unit(self, u: Unit):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def update_unit(self, *, u: Unit):
+        """
+        Update a unit
+        @param u: Unit to be updated
+        """
 
-    def remove_unit(self, uid: ID):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def remove_unit(self, *, uid: ID):
+        """
+        Remove a unit
+        @param uid: Unit ID of unit to be removed
+        """
 
-    def get_unit(self, uid: ID):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def get_unit(self, *, uid: ID):
+        """
+        Get a unit
+        @param uid: Unit ID of unit to be fetched
+        """
 
-    def get_units(self, rid: ID):
-        raise NotImplementedError("Should have implemented this")
-
-    #def get_inventory(self):
-    #    raise NotImplementedError("Should have implemented this")
-
-    #def get_inventory_by_slice_id(self, slice_id: ID):
-    #    raise NotImplementedError("Should have implemented this")
-
-    #def transfer(self, uid: ID, slice_id: ID):
-    #    raise NotImplementedError("Should have implemented this")
-
-    #def untransfer(self, uid: ID):
-    #    raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def get_units(self, *, rid: ID):
+        """
+        Get Units
+        @param rid: reservation ID
+        """

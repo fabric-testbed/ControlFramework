@@ -24,11 +24,12 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.manage.authority_management_object import AuthorityManagementObject
 from fabric.actor.core.apis.i_mgmt_authority import IMgmtAuthority
 from fabric.actor.core.manage.local.local_server_actor import LocalServerActor
+from fabric.message_bus.messages.reservation_mng import ReservationMng
 
 if TYPE_CHECKING:
     from fabric.actor.core.manage.management_object import ManagementObject
@@ -39,16 +40,16 @@ if TYPE_CHECKING:
 
 
 class LocalAuthority(LocalServerActor, IMgmtAuthority):
-    def __init__(self, manager: ManagementObject = None, auth: AuthToken = None):
-        super().__init__(manager, auth)
+    def __init__(self, *, manager: ManagementObject, auth: AuthToken):
+        super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, AuthorityManagementObject):
             raise Exception("Invalid manager object. Required: {}".format(type(AuthorityManagementObject)))
 
-    def get_authority_reservations(self) -> list:
+    def get_authority_reservations(self) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_authority_reservations(self.auth)
+            result = self.manager.get_authority_reservations(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -57,10 +58,10 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
 
         return None
 
-    def get_reservation_units(self, rid: ID) -> list:
+    def get_reservation_units(self, *, rid: ID) -> List[UnitAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_reservation_units(self.auth, rid)
+            result = self.manager.get_reservation_units(caller=self.auth, rid=rid)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -69,17 +70,17 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
 
         return None
 
-    def get_reservation_unit(self, uid: ID) -> UnitAvro:
+    def get_reservation_unit(self, *, uid: ID) -> UnitAvro:
         self.clear_last()
         try:
-            result = self.manager.get_reservation_unit(self.auth, uid)
+            result = self.manager.get_reservation_unit(caller=self.auth, uid=uid)
             self.last_status = result.status
             if result.get_status().get_code() == 0:
-                return self.get_first(result.result)
+                return self.get_first(result_list=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
     def clone(self) -> IMgmtActor:
-        return LocalAuthority(self.manager, self.auth)
+        return LocalAuthority(manager=self.manager, auth=self.auth)

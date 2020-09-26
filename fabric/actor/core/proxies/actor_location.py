@@ -30,17 +30,17 @@ if TYPE_CHECKING:
 
 
 class ActorLocation:
-    def __init__(self, location: str = None):
+    def __init__(self, *, location: str = None):
         self.location = location
         self.descriptor = None
 
     def get_location(self) -> str:
         return self.location
 
-    def set_location(self, location: str):
+    def set_location(self, *, location: str):
         self.location = location
 
-    def set_descriptor(self, descriptor: ProtocolDescriptor):
+    def set_descriptor(self, *, descriptor: ProtocolDescriptor):
         self.descriptor = descriptor
 
     def get_descriptor(self) -> ProtocolDescriptor:

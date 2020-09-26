@@ -29,7 +29,7 @@ class ProtocolDescriptor:
     PropertyProtocol = "protocol"
     PropertyLocation = "location"
 
-    def __init__(self, protocol: str, location: str):
+    def __init__(self, *, protocol: str, location: str):
         self.protocol = protocol
         # location carries kafka topic
         self.location = location

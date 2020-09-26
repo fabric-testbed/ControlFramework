@@ -47,7 +47,7 @@ class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
     Globals.ConfigFile = Constants.TestControllerConfigurationFile
 
     from fabric.actor.core.container.globals import GlobalsSingleton
-    GlobalsSingleton.get().start(True)
+    GlobalsSingleton.get().start(force_fresh=True)
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
@@ -55,7 +55,7 @@ class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
         db = self.get_container_database()
         db.reset_db()
         controller = super().get_controller()
-        controller.set_recovered(True)
+        controller.set_recovered(value=True)
         Term.set_clock(controller.get_actor_clock())
         return controller
 
@@ -69,28 +69,28 @@ class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
     def test_a_create(self):
         controller = self.get_controller()
         for i in range(1, 101):
-            controller.external_tick(i)
+            controller.external_tick(cycle=i)
 
     def test_b_demand(self):
         controller = self.get_controller()
         clock = controller.get_actor_clock()
         Term.clock = clock
-        resources = ResourceSet(units=1, rtype=ResourceType("1"), rdata=ResourceData())
-        slice_obj = SliceFactory.create(ID(), "myslice")
-        controller.register_slice(slice_obj)
+        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"), rdata=ResourceData())
+        slice_obj = SliceFactory.create(slice_id=ID(), name="myslice")
+        controller.register_slice(slice_object=slice_obj)
 
         start = 5
         end = 10
 
-        term = Term(start=clock.cycle_start_date(start), end=clock.cycle_end_date(end))
+        term = Term(start=clock.cycle_start_date(cycle=start), end=clock.cycle_end_date(cycle=end))
 
-        reservation = ControllerReservationFactory.create(ID(), resources=resources, term=term, slice_object=slice_obj)
-        reservation.set_renewable(False)
-        controller.register(reservation)
-        controller.demand(reservation.get_reservation_id())
+        reservation = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        reservation.set_renewable(renewable=False)
+        controller.register(reservation=reservation)
+        controller.demand(rid=reservation.get_reservation_id())
 
         for i in range(1, end+3):
-            controller.external_tick(i)
+            controller.external_tick(cycle=i)
             while controller.get_current_cycle() != i:
                 time.sleep(0.001)
 

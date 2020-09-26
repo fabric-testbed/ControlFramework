@@ -75,7 +75,7 @@ class Plugin:
         """
         return self.factory
 
-    def set_factory(self, factory: bool):
+    def set_factory(self, *, factory: bool):
         """
         Sets the factory flag. A plugin is a factory if it is used to create the
         actual plugin rather than it being the plugin itself.
@@ -90,7 +90,7 @@ class Plugin:
         """
         return self.id
 
-    def set_id(self, id: str):
+    def set_id(self, *, id: str):
         """
         @param id the id to set
         """
@@ -102,7 +102,7 @@ class Plugin:
         """
         return self.plugin_type
 
-    def set_plugin_type(self, plugin_type: int):
+    def set_plugin_type(self, *, plugin_type: int):
         """
         @param pluginType the pluginType to set
         """
@@ -114,7 +114,7 @@ class Plugin:
         """
         return self.class_name
 
-    def set_class_name(self, class_name: str):
+    def set_class_name(self, *, class_name: str):
         """
         @param class_name the className to set
         """
@@ -123,23 +123,23 @@ class Plugin:
     def get_config_properties(self) -> dict:
         return self.config_properties
 
-    def set_config_properties(self, config_properties: dict):
+    def set_config_properties(self, *, config_properties: dict):
         self.config_properties = config_properties
 
     def get_config_template(self) -> str:
         return self.config_template
 
-    def set_config_template(self, config_template: str):
+    def set_config_template(self, *, config_template: str):
         self.config_template = config_template
 
     def get_name(self) -> str:
         return self.name
 
-    def set_name(self, name: str):
+    def set_name(self, *, name: str):
         self.name = name
 
     def get_actor_type(self) -> int:
-        self.actor_type
+        return self.actor_type
 
-    def set_actor_type(self, actor_type: int):
+    def set_actor_type(self, *, actor_type: int):
         self.actor_type = actor_type

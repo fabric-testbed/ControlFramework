@@ -40,14 +40,14 @@ from fabric.actor.test.client_callback_helper import ClientCallbackHelper
 
 class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
     class IUpdateLeaseHandler:
-        def handle_update_lease(self, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
+        def handle_update_lease(self, *, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
             pass
 
         def check_termination(self):
             pass
 
-    def __init__(self, name: str, guid: ID):
-        super().__init__(name, guid)
+    def __init__(self, *, name: str, guid: ID):
+        super().__init__(name=name, guid=guid)
         self.called_for_lease = 0
         self.lease = None
         self.updateLeaseHandler = None
@@ -61,24 +61,25 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
         self.__dict__.update(state)
         self.updateLeaseHandler = None
 
-    def prepare_update_lease(self, reservation: IAuthorityReservation, update_data: UpdateData,
+    def prepare_update_lease(self, *, reservation: IAuthorityReservation, update_data: UpdateData,
                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
         state = ClientCallbackHelper.MyRequestState()
-        state.reservation = LocalReturn.pass_reservation(reservation,
-                                                         ActorRegistrySingleton.get().get_actor(
-                                                             self.token.get_name()).get_plugin())
+        state.reservation = LocalReturn.pass_reservation(reservation=reservation,
+                                                         plugin=ActorRegistrySingleton.get().get_actor(
+                                                             actor_name_or_guid=self.token.get_name()).get_plugin())
         state.update_data = UpdateData()
-        state.update_data.absorb(update_data)
+        state.update_data.absorb(other=update_data)
         return state
 
-    def execute(self, request: IRPCRequestState):
+    def execute(self, *, request: IRPCRequestState):
         if request.get_type() == RPCRequestType.UpdateLease:
             self.lease = request.reservation
             self.called_for_lease += 1
             if self.updateLeaseHandler is not None:
-                self.updateLeaseHandler.handle_update_lease(self.lease, request.update_data, request.get_caller())
+                self.updateLeaseHandler.handle_update_lease(reservation=self.lease, update_data=request.update_data,
+                                                            caller=request.get_caller())
             else:
-                super().execute(request)
+                super().execute(request=request)
 
     def get_lease(self) -> IReservation:
         return self.lease
@@ -86,7 +87,7 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
     def get_called_for_lease(self):
         return self.called_for_lease
 
-    def set_update_lease_handler(self, handler: IUpdateLeaseHandler):
+    def set_update_lease_handler(self, *, handler: IUpdateLeaseHandler):
         self.updateLeaseHandler = handler
 
     def get_called(self) -> int:
@@ -107,9 +108,9 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
     def get_type(self):
         return Constants.ProtocolLocal
 
-    def prepare_query_result(self, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
+    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
         raise Exception("Not implemented")
 
-    def prepare_failed_request(self, request_id: str, failed_request_type,
+    def prepare_failed_request(self, *, request_id: str, failed_request_type,
                                failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
         raise ("Not implemented")

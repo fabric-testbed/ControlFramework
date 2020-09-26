@@ -62,11 +62,11 @@ class KernelWrapper:
     invoking these calls. The internal kernel methods can only be invoked through
     an instance of the kernel wrapper.
     """
-    def __init__(self, actor: IActor, plugin: IBasePlugin, policy: IPolicy, monitor: AccessMonitor, guard: Guard):
+    def __init__(self, *, actor: IActor, plugin: IBasePlugin, policy: IPolicy, monitor: AccessMonitor, guard: Guard):
         # The actor linked by the wrapper to the kernel.
         self.actor = actor
         # The kernel instance.
-        self.kernel = Kernel(plugin, policy, actor.get_logger())
+        self.kernel = Kernel(plugin=plugin, policy=policy, logger=actor.get_logger())
         # Access control monitor.
         self.monitor = monitor
         # Access control lists.
@@ -81,7 +81,7 @@ class KernelWrapper:
         """
         self.kernel.await_nothing_pending()
 
-    def claim_request(self, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy):
+    def claim_request(self, *, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy):
         if reservation is None or caller is None or callback is None:
             raise Exception("Invalid argument")
 
@@ -89,11 +89,11 @@ class KernelWrapper:
         # validate(ReservationID) instead of validate(Reservation).
         exported = self.kernel.validate(rid=reservation.get_reservation_id())
         # check access
-        self.monitor.check_reserve(exported.get_slice().get_guard(), caller)
-        exported.prepare(callback, self.logger)
-        self.kernel.claim(exported)
+        self.monitor.check_reserve(guard=exported.get_slice().get_guard(), requester=caller)
+        exported.prepare(callback=callback, logger=self.logger)
+        self.kernel.claim(reservation=exported)
 
-    def reclaim_request(self, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy):
+    def reclaim_request(self, *, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy):
         if reservation is None or caller is None or callback is None:
             raise Exception("Invalid argument")
 
@@ -101,11 +101,11 @@ class KernelWrapper:
         # validate(ReservationID) instead of validate(Reservation).
         exported = self.kernel.validate(rid=reservation.get_reservation_id())
         # check access
-        self.monitor.check_reserve(exported.get_slice().get_guard(), caller)
-        exported.prepare(callback, self.logger)
-        self.kernel.reclaim(exported)
+        self.monitor.check_reserve(guard=exported.get_slice().get_guard(), requester=caller)
+        exported.prepare(callback=callback, logger=self.logger)
+        self.kernel.reclaim(reservation=exported)
 
-    def fail(self, rid: ID, message: str):
+    def fail(self, *, rid: ID, message: str):
         """
         Fails the specified reservation.
         @param rid reservation id
@@ -116,10 +116,10 @@ class KernelWrapper:
             raise Exception("Invalid argument")
 
         target = self.kernel.validate(rid=rid)
-        self.monitor.check_reserve(target.get_slice().get_guard(), self.actor.get_identity())
-        self.kernel.fail(target, message)
+        self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=self.actor.get_identity())
+        self.kernel.fail(reservation=target, message=message)
 
-    def close(self, rid: ID):
+    def close(self, *, rid: ID):
         """
         Closes the reservation, potentially initiating a close request to another
         actor. If the reservation has concrete resources bound to it, this method
@@ -133,23 +133,23 @@ class KernelWrapper:
         target = self.kernel.validate(rid=rid)
         # NOTE: this call does not require access control check, since
         # it is executed in the context of the actor represented by KernelWrapper.
-        self.kernel.close(target)
+        self.kernel.close(reservation=target)
 
-    def close_slice_reservations(self, slice_id: ID):
+    def close_slice_reservations(self, *, slice_id: ID):
         if slice_id is None:
             raise Exception("Invalid argument")
 
-        if not self.kernel.is_known_slice(slice_id):
-            raise SliceNotFoundException(str(slice_id))
+        if not self.kernel.is_known_slice(slice_id=slice_id):
+            raise SliceNotFoundException(slice_id=str(slice_id))
 
-        reservations = self.get_reservations(slice_id)
+        reservations = self.get_reservations(slice_id=slice_id)
         for r in reservations:
             try:
-                self.kernel.close(r)
+                self.kernel.close(reservation=r)
             except Exception as e:
                 self.logger.error("Error during close: {}".format(e))
 
-    def close_request(self, reservation: IReservation, caller: AuthToken, compare_sequence_numbers: bool):
+    def close_request(self, *, reservation: IReservation, caller: AuthToken, compare_sequence_numbers: bool):
         """
         Processes an incoming request to close a reservation.
         Role: Authority
@@ -167,26 +167,27 @@ class KernelWrapper:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
             auth_properties = reservation.get_requested_resources().get_config_properties()
             # TODO
-            requester = self.monitor.check_proxy(caller, None)
-            self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+            requester = self.monitor.check_proxy(proxy=caller, requester=None)
+            self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
 
-            sequence_number_compare = self.kernel.compare_and_update_ignore_pending(reservation, target)
+            sequence_number_compare = self.kernel.compare_and_update_ignore_pending(incoming=reservation,
+                                                                                    current=target)
             if sequence_number_compare == SequenceComparisonCodes.SequenceGreater:
-                self.kernel.close(target)
+                self.kernel.close(reservation=target)
             elif sequence_number_compare == SequenceComparisonCodes.SequenceSmaller:
                 self.logger.warning("closeRequest with a smaller sequence number")
             elif sequence_number_compare == SequenceComparisonCodes.SequenceEqual:
                 self.logger.warning("duplicate closeRequest")
-                self.kernel.handle_duplicate_request(target, RequestTypes.RequestClose)
+                self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestClose)
         else:
             target = self.kernel.validate(reservation=reservation)
             # TODO
             auth_properties = reservation.get_requested_resources().get_config_properties()
-            requester = self.monitor.check_proxy(caller, None)
-            self.monitor.check_reserve(target.get_slice().get_guard(), requester)
-            self.kernel.close(target)
+            requester = self.monitor.check_proxy(proxy=caller, requester=None)
+            self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
+            self.kernel.close(reservation=target)
 
-    def export(self, reservation: IBrokerReservation, client: AuthToken):
+    def export(self, *, reservation: IBrokerReservation, client: AuthToken):
         """
         Initiates a ticket export.
         Role: Broker or Authority
@@ -198,12 +199,12 @@ class KernelWrapper:
         if reservation is None or reservation.get_slice() is None:
             raise Exception("Invalid argument")
 
-        reservation.prepare(None, self.logger)
+        reservation.prepare(callback=None, logger=self.logger)
         reservation.client = client
         reservation.get_slice().set_broker_client()
-        self.handle_reserve(reservation, client, False, False)
+        self.handle_reserve(reservation=reservation, identity=client, create_new_slice=False, verify_credentials=False)
 
-    def extend_lease(self, reservation: IControllerReservation):
+    def extend_lease(self, *, reservation: IControllerReservation):
         if reservation is None:
             raise Exception("Invalid argument")
 
@@ -214,12 +215,12 @@ class KernelWrapper:
             return
 
         auth_properties = reservation.get_requested_resources().get_request_properties()
-        requester = self.monitor.check_proxy(self.actor.get_identity(), None)
-        self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+        requester = self.monitor.check_proxy(proxy=self.actor.get_identity(), requester=None)
+        self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
         target.validate_redeem()
-        self.kernel.extend_lease(reservation)
+        self.kernel.extend_lease(reservation=reservation)
 
-    def extend_lease_request(self, reservation: IAuthorityReservation, caller: AuthToken, compare_sequence_numbers: bool):
+    def extend_lease_request(self, *, reservation: IAuthorityReservation, caller: AuthToken, compare_sequence_numbers: bool):
         """
         Processes an incoming request for a lease extension.
         Role: Authority
@@ -237,29 +238,29 @@ class KernelWrapper:
             reservation.validate_incoming()
             target = self.kernel.validate(rid=reservation.get_reservation_id())
             auth_properties = reservation.get_requested_resources().get_config_properties()
-            requester = self.monitor.check_proxy(caller, None)
-            self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+            requester = self.monitor.check_proxy(proxy=caller, requester=None)
+            self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
 
-            sequence_compare = self.kernel.compare_and_update(reservation, target)
+            sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
             if sequence_compare == SequenceComparisonCodes.SequenceGreater:
                 target.prepare_extend_lease()
-                self.kernel.extend_lease(target)
+                self.kernel.extend_lease(reservation=target)
 
             elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
                 self.logger.warning("extendLeaseRequest with a smaller sequence number")
 
             elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
                 self.logger.warning("duplicate extendLease request")
-                self.kernel.handle_duplicate_request(target, RequestTypes.RequestExtendLease)
+                self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestExtendLease)
         else:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
             auth_properties = reservation.get_requested_resources().get_config_properties()
             # TODO
-            requester = self.monitor.check_proxy(caller, None)
-            self.monitor.check_reserve(target.get_slice().get_guard(), requester)
-            self.kernel.extend_lease(target)
+            requester = self.monitor.check_proxy(proxy=caller, requester=None)
+            self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
+            self.kernel.extend_lease(reservation=target)
 
-    def modify_lease_request(self, reservation: IAuthorityReservation, caller: AuthToken, compare_sequence_numbers: bool):
+    def modify_lease_request(self, *, reservation: IAuthorityReservation, caller: AuthToken, compare_sequence_numbers: bool):
         """
         Processes an incoming request for a lease modification.
         Role: Authority
@@ -278,30 +279,30 @@ class KernelWrapper:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
             auth_properties = reservation.get_requested_resources().get_config_properties()
             # TODO
-            requester = self.monitor.check_proxy(caller, None)
-            self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+            requester = self.monitor.check_proxy(proxy=caller, requester=None)
+            self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
 
-            sequence_compare = self.kernel.compare_and_update(reservation, target)
+            sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
 
             if sequence_compare == SequenceComparisonCodes.SequenceGreater:
                 target.prepare_modify_lease()
-                self.kernel.modify_lease(reservation)
+                self.kernel.modify_lease(reservation=reservation)
 
             elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
                 self.logger.warning("modifyLeaseRequest with a smaller sequence number")
 
             elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
                 self.logger.warning("duplicate extendLease request")
-                self.kernel.handle_duplicate_request(target, RequestTypes.RequestModifyLease)
+                self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestModifyLease)
         else:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
             auth_properties = reservation.get_requested_resources().get_config_properties()
             # TODO
-            requester = self.monitor.check_proxy(caller, None)
-            self.monitor.check_reserve(target.get_slice().get_guard(), requester)
-            self.kernel.modify_lease(target)
+            requester = self.monitor.check_proxy(proxy=caller, requester=None)
+            self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
+            self.kernel.modify_lease(reservation=target)
 
-    def extend_reservation(self, rid: ID, resources: ResourceSet, term: Term) -> int:
+    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term) -> int:
         """
         Extends the reservation with the given resources and term.
         @param rid identifier of reservation to extend
@@ -313,9 +314,9 @@ class KernelWrapper:
         if rid is None or resources is None or term is None:
             raise Exception("Invalid argument")
 
-        return self.kernel.extend_reservation(rid, resources, term)
+        return self.kernel.extend_reservation(rid=rid, resources=resources, term=term)
 
-    def extend_ticket(self, reservation: IClientReservation):
+    def extend_ticket(self, *, reservation: IClientReservation):
         """
         Initiates a request to extend a ticket.
         Role: Broker or Controller
@@ -332,14 +333,14 @@ class KernelWrapper:
 
         auth_properties = reservation.get_resources().get_request_properties()
         # TODO
-        requester = self.monitor.check_proxy(self.actor.get_identity(), None)
+        requester = self.monitor.check_proxy(proxy=self.actor.get_identity(), requester=None)
 
-        self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+        self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
 
         target.validate_outgoing()
-        self.kernel.extend_ticket(target)
+        self.kernel.extend_ticket(reservation=target)
 
-    def extend_ticket_request(self, reservation: IBrokerReservation, caller: AuthToken, compare_sequence_numbers: bool):
+    def extend_ticket_request(self, *, reservation: IBrokerReservation, caller: AuthToken, compare_sequence_numbers: bool):
         """
         Processes an incoming request for a ticket extension.
         Role: Broker
@@ -357,14 +358,14 @@ class KernelWrapper:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
             auth_properties = reservation.get_requested_resources().get_request_properties()
             # TODO
-            requester = self.monitor.check_proxy(caller, None)
-            self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+            requester = self.monitor.check_proxy(proxy=caller, requester=None)
+            self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
 
-            sequence_compare = self.kernel.compare_and_update(reservation, target)
+            sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
 
             if sequence_compare == SequenceComparisonCodes.SequenceGreater:
                 self.logger.debug("extend_ticket SequenceGreater")
-                self.kernel.extend_ticket(target)
+                self.kernel.extend_ticket(reservation=target)
 
             elif sequence_compare == SequenceComparisonCodes.SequenceInProgress:
                 self.logger.warning("New request for a reservation with a pending action")
@@ -374,17 +375,17 @@ class KernelWrapper:
 
             elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
                 self.logger.warning("Duplicate extendTicket request")
-                self.kernel.handle_duplicate_request(target, RequestTypes.RequestExtendTicket)
+                self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestExtendTicket)
         else:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
             auth_properties = reservation.get_resources().get_request_properties()
             # TODO
-            requester = self.monitor.check_proxy(caller, None)
-            self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+            requester = self.monitor.check_proxy(proxy=caller, requester=None)
+            self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
             self.logger.debug("extend_ticket No sequence number comparison")
-            self.extend_ticket(target)
+            self.extend_ticket(reservation=target)
 
-    def modify_lease(self, reservation: IControllerReservation):
+    def modify_lease(self, *, reservation: IControllerReservation):
         """
         Initiates a request to modify a lease.
         Role: Controller
@@ -401,14 +402,14 @@ class KernelWrapper:
 
         auth_properties = reservation.get_resources().get_request_properties()
         # TODO
-        requester = self.monitor.check_proxy(self.actor.get_identity(), None)
+        requester = self.monitor.check_proxy(proxy=self.actor.get_identity(), requester=None)
 
-        self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+        self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
 
         target.validate_redeem()
-        self.kernel.modify_lease(target)
+        self.kernel.modify_lease(reservation=target)
 
-    def relinquish_request(self, reservation: IBrokerReservation, caller: AuthToken):
+    def relinquish_request(self, *, reservation: IBrokerReservation, caller: AuthToken):
         if reservation is None or caller is None:
             raise Exception("Invalid argument")
 
@@ -420,21 +421,21 @@ class KernelWrapper:
             return
 
         # TODO
-        requester = self.monitor.check_proxy(caller, None)
+        requester = self.monitor.check_proxy(proxy=caller, requester=None)
 
-        self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+        self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
 
-        sequence_compare = self.kernel.compare_and_update(reservation, target)
+        sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
 
         if sequence_compare == SequenceComparisonCodes.SequenceGreater or sequence_compare == SequenceComparisonCodes.SequenceInProgress:
-            self.kernel.close(target)
+            self.kernel.close(reservation=target)
 
         elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
             self.logger.warning("Incoming relinquish request has smaller sequence number")
 
         elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
             self.logger.warning("Duplicate relinquish request")
-            self.kernel.handle_duplicate_request(target, RequestTypes.RequestRelinquish)
+            self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestRelinquish)
 
     def get_client_slices(self) -> list:
         """
@@ -450,7 +451,7 @@ class KernelWrapper:
         """
         return self.kernel.get_inventory_slices()
 
-    def get_reservation(self, rid: ID) -> IReservation:
+    def get_reservation(self, *, rid: ID) -> IReservation:
         """
         Returns the reservation with the given reservation identifier.
         @param rid reservation identifier
@@ -458,9 +459,9 @@ class KernelWrapper:
         """
         if rid is None:
             raise Exception("Invalid argument")
-        return self.kernel.get_reservation(rid)
+        return self.kernel.get_reservation(rid=rid)
 
-    def get_reservations(self, slice_id: ID) -> list:
+    def get_reservations(self, *, slice_id: ID) -> list:
         """
         Returns all reservations in the given slice
         @param slice_id identifier of slice
@@ -469,9 +470,9 @@ class KernelWrapper:
         if slice_id is None:
             raise Exception("Invalid argument")
 
-        return self.kernel.get_reservations(slice_id)
+        return self.kernel.get_reservations(slice_id=slice_id)
 
-    def get_slice(self, slice_id: ID) -> ISlice:
+    def get_slice(self, *, slice_id: ID) -> ISlice:
         """
         Returns the slice with the given name.
         @param slice_id identifier of slice to return
@@ -480,7 +481,7 @@ class KernelWrapper:
         """
         if slice_id is None:
             raise Exception("Invalid argument")
-        return self.kernel.get_slice(slice_id)
+        return self.kernel.get_slice(slice_id=slice_id)
 
     def get_slices(self) -> list:
         """
@@ -489,7 +490,7 @@ class KernelWrapper:
         """
         return self.kernel.get_slices()
 
-    def handle_reserve(self, reservation: IKernelReservation, identity: AuthToken, create_new_slice: bool,
+    def handle_reserve(self, *, reservation: IKernelReservation, identity: AuthToken, create_new_slice: bool,
                        verify_credentials: bool):
         """
         Handles a reserve, i.e., obtain a new ticket or lease. Called from both
@@ -522,15 +523,16 @@ class KernelWrapper:
             auth_properties = reservation.get_resources().get_request_properties()
 
         if verify_credentials:
-            identity = self.monitor.check_proxy(identity, None)
+            identity = self.monitor.check_proxy(proxy=identity, requester=None)
 
         # Obtain the previously created slice or create a new slice. When this
         # function returns we will have a slice object that is registered with the kernel
-        s = self.kernel.get_or_create_local_slice(identity, reservation, create_new_slice)
+        s = self.kernel.get_or_create_local_slice(identity=identity, reservation=reservation,
+                                                  create_new_slice=create_new_slice)
 
         if verify_credentials:
             if auth_properties is not None:
-                self.monitor.check_reserve(s.get_guard(), identity)
+                self.monitor.check_reserve(guard=s.get_guard(), requester=identity)
 
         # Determine if this is a new or an already existing reservation. We
         # will register new reservations and call reserve for them. For
@@ -544,12 +546,12 @@ class KernelWrapper:
         temp = self.kernel.soft_validate(reservation=reservation)
 
         if temp is None:
-            self.kernel.register_reservation(reservation)
-            self.kernel.reserve(reservation)
+            self.kernel.register_reservation(reservation=reservation)
+            self.kernel.reserve(reservation=reservation)
         else:
-            self.kernel.amend_reserve(temp)
+            self.kernel.amend_reserve(reservation=temp)
 
-    def handle_update_reservation(self, reservation: IKernelReservation, auth: AuthToken):
+    def handle_update_reservation(self, *, reservation: IKernelReservation, auth: AuthToken):
         """
         Amend a reservation request or initiation, i.e., to issue a new bid on a
         previously filed request.
@@ -558,22 +560,22 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         auth_properties = reservation.get_requested_resources().get_request_properties()
-        requester = self.monitor.check_proxy(auth, None)
+        requester = self.monitor.check_proxy(proxy=auth, requester=None)
 
-        self.monitor.check_reserve(reservation.get_slice().get_guard(), requester)
+        self.monitor.check_reserve(guard=reservation.get_slice().get_guard(), requester=requester)
 
-        self.kernel.amend_reserve(reservation)
+        self.kernel.amend_reserve(reservation=reservation)
 
-    def query(self, properties: dict, caller: AuthToken):
+    def query(self, *, properties: dict, caller: AuthToken):
         """
         Processes an incoming query request.
         @param properties query
         @param caller caller identity
         @return query response
         """
-        return self.kernel.query(properties)
+        return self.kernel.query(properties=properties)
 
-    def redeem(self, reservation: IControllerReservation):
+    def redeem(self, *, reservation: IControllerReservation):
         """
         Initiates a request to redeem a ticketed reservation.
         Role: Controller
@@ -594,13 +596,13 @@ class KernelWrapper:
             self.logger.error("Redeem on a reservation not registered with the kernel")
 
         auth_properties = reservation.get_resources().get_request_properties()
-        requester = self.monitor.check_proxy(self.actor.get_identity(), None)
-        self.monitor.check_reserve(target.get_slice().get_guard(), requester)
+        requester = self.monitor.check_proxy(proxy=self.actor.get_identity(), requester=None)
+        self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
 
         target.validate_redeem()
-        self.kernel.redeem(target)
+        self.kernel.redeem(reservation=target)
 
-    def redeem_request(self, reservation: IAuthorityReservation, caller: AuthToken,
+    def redeem_request(self, *, reservation: IAuthorityReservation, caller: AuthToken,
                        callback: IControllerCallbackProxy, compare_sequence_numbers: bool):
         """
         Processes an incoming request for a new lease.
@@ -622,25 +624,27 @@ class KernelWrapper:
                 reservation.validate_incoming()
                 reservation.get_slice().set_client()
 
-                s = self.kernel.get_slice(reservation.get_slice().get_slice_id())
+                s = self.kernel.get_slice(slice_id=reservation.get_slice().get_slice_id())
 
                 if s is not None:
                     target = self.kernel.soft_validate(rid=reservation.get_reservation_id())
 
                     if target is not None:
-                        self.kernel.handle_duplicate_request(target, RequestTypes.RequestRedeem)
+                        self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestRedeem)
 
-                reservation.prepare(callback, self.logger)
-                self.handle_reserve(reservation, callback, True, True)
+                reservation.prepare(callback=callback, logger=self.logger)
+                self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True,
+                                    verify_credentials=True)
             else:
                 reservation.set_logger(self.logger)
-                self.handle_reserve(reservation, reservation.get_client_auth_token(), True, True)
+                self.handle_reserve(reservation=reservation, identity=reservation.get_client_auth_token(),
+                                    create_new_slice=True, verify_credentials=True)
         except Exception as e:
             traceback.print_exc()
             self.logger.error("Exception occurred in processing redeem request {}".format(e))
-            reservation.fail_notify(str(e))
+            reservation.fail_notify(message=str(e))
 
-    def register_reservation(self, reservation: IReservation):
+    def register_reservation(self, *, reservation: IReservation):
         """
         Registers the given reservation with the kernel. Adds a database record
         for the reservation. The containing slice should have been previously
@@ -660,9 +664,9 @@ class KernelWrapper:
         if reservation is None or not isinstance(reservation, IKernelReservation):
             raise Exception("Invalid argument")
 
-        self.kernel.register_reservation(reservation)
+        self.kernel.register_reservation(reservation=reservation)
 
-    def register_slice(self, slice_object: ISlice):
+    def register_slice(self, *, slice_object: ISlice):
         """
         Registers the slice with the kernel: adds the slice object to the kernel
         data structures and adds a database record for the slice.
@@ -674,10 +678,10 @@ class KernelWrapper:
         if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, IKernelSlice):
             raise Exception("Invalid argument {}".format(slice_object))
 
-        slice_object.set_owner(self.actor.get_identity())
-        self.kernel.register_slice(slice_object)
+        slice_object.set_owner(owner=self.actor.get_identity())
+        self.kernel.register_slice(slice_object=slice_object)
 
-    def remove_reservation(self, rid: ID):
+    def remove_reservation(self, *, rid: ID):
         """
         Unregisters the reservation from the kernel data structures and removes
         its record from the database.
@@ -689,9 +693,9 @@ class KernelWrapper:
         if rid is None:
             raise Exception("Invalid argument")
 
-        self.kernel.remove_reservation(rid)
+        self.kernel.remove_reservation(rid=rid)
 
-    def remove_slice(self, slice_id: ID):
+    def remove_slice(self, *, slice_id: ID):
         """
         Unregisters the slice (if it is registered with the kernel) and removes
         it from the database.
@@ -705,9 +709,9 @@ class KernelWrapper:
         if slice_id is None:
             raise Exception("Invalid argument")
 
-        self.kernel.remove_slice(slice_id)
+        self.kernel.remove_slice(slice_id=slice_id)
 
-    def re_register_reservation(self, reservation: IReservation):
+    def re_register_reservation(self, *, reservation: IReservation):
         """
          Registers a previously unregistered reservation with the kernel. The
         containing slice should have been previously registered with the kernel
@@ -727,9 +731,9 @@ class KernelWrapper:
         if reservation is None or not isinstance(reservation, IKernelReservation):
             raise Exception("Invalid argument")
 
-        self.kernel.re_register_reservation(reservation)
+        self.kernel.re_register_reservation(reservation=reservation)
 
-    def re_register_slice(self, slice_object: ISlice):
+    def re_register_slice(self, *, slice_object: ISlice):
         """
         Registers the slice with the kernel: adds the slice object to the kernel
         data structures. The slice object must have an existing database record.
@@ -741,7 +745,7 @@ class KernelWrapper:
         if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, IKernelSlice):
             return Exception("Invalid argument")
 
-        self.kernel.re_register_slice(slice_object)
+        self.kernel.re_register_slice(slice_object=slice_object)
 
     def tick(self):
         """
@@ -754,7 +758,7 @@ class KernelWrapper:
         except Exception as e:
             traceback.print_exc()
 
-    def ticket(self, reservation: IClientReservation, destination: IActorIdentity):
+    def ticket(self, *, reservation: IClientReservation, destination: IActorIdentity):
         """
         Initiates a ticket request. If the exported flag is set, this is a claim
         on a pre-reserved "will call" ticket.
@@ -767,15 +771,17 @@ class KernelWrapper:
             raise Exception("Invalid arguments")
 
         protocol = reservation.get_broker().get_type()
-        callback = ActorRegistrySingleton.get().get_callback(protocol, destination.get_name())
+        callback = ActorRegistrySingleton.get().get_callback(protocol=protocol, actor_name=destination.get_name())
         if callback is None:
             raise Exception("Unsupported")
 
-        reservation.prepare(callback, self.logger)
+        reservation.prepare(callback=callback, logger=self.logger)
         reservation.validate_outgoing()
-        self.handle_reserve(reservation, destination.get_identity(), False, False)
+        self.handle_reserve(reservation=reservation, identity=destination.get_identity(), create_new_slice=False,
+                            verify_credentials=False)
 
-    def ticket_request(self, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy, compare_seq_numbers: bool):
+    def ticket_request(self, *, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy,
+                       compare_seq_numbers: bool):
         """
         Processes an incoming request for a new ticket.
         Role: Broker
@@ -799,19 +805,19 @@ class KernelWrapper:
                 # This reservation has just arrived at this actor from another
                 # actor. Attach the current actor object to the reservation so
                 # that operations on this reservation can get access to it.
-                reservation.set_actor(self.kernel.get_plugin().get_actor())
+                reservation.set_actor(actor=self.kernel.get_plugin().get_actor())
 
                 # If the slice referenced in the reservation exists, then we
                 # must check the incoming sequence number to determine if this
                 # request is fresh.
-                s = self.kernel.get_slice(reservation.get_slice().get_slice_id())
+                s = self.kernel.get_slice(slice_id=reservation.get_slice().get_slice_id())
 
                 if s is not None:
                     target = self.kernel.soft_validate(rid=reservation.get_reservation_id())
                     if target is not None:
-                        seq_num = self.kernel.compare_and_update(reservation, target)
+                        seq_num = self.kernel.compare_and_update(incoming=reservation, current=target)
                         if seq_num == SequenceComparisonCodes.SequenceGreater:
-                            self.handle_update_reservation(target, caller)
+                            self.handle_update_reservation(reservation=target, auth=caller)
 
                         elif seq_num == SequenceComparisonCodes.SequenceSmaller:
                             self.logger.warning("Incoming request has a smaller sequence number")
@@ -820,24 +826,27 @@ class KernelWrapper:
                             self.logger.warning("New request for a reservation with a pending action")
 
                         elif seq_num == SequenceComparisonCodes.SequenceEqual:
-                            self.kernel.handle_duplicate_request(target, RequestTypes.RequestTicket)
+                            self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestTicket)
                     else:
                         # This is a new reservation. No need to check sequence numbers
-                        reservation.prepare(callback, self.logger)
-                        self.handle_reserve(reservation, callback, True, True)
+                        reservation.prepare(callback=callback, logger=self.logger)
+                        self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True,
+                                            verify_credentials=True)
                 else:
                     # New reservation for a new slice.
-                    reservation.prepare(callback, self.logger)
-                    self.handle_reserve(reservation, callback, True, True)
+                    reservation.prepare(callback=callback, logger=self.logger)
+                    self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True,
+                                        verify_credentials=True)
             else:
                 # This is most likely a reservation being recovered. Do not compare sequence numbers, just trigger reserve.
-                reservation.set_logger(self.logger)
-                self.handle_reserve(reservation, reservation.get_client_auth_token(), True, True)
+                reservation.set_logger(logger=self.logger)
+                self.handle_reserve(reservation=reservation, identity=reservation.get_client_auth_token(),
+                                    create_new_slice=True, verify_credentials=True)
         except Exception as e:
             self.logger.error("ticketRequest{}".format(e))
-            reservation.fail_notify(str(e))
+            reservation.fail_notify(message=str(e))
 
-    def unregister_reservation(self, rid: ID):
+    def unregister_reservation(self, *, rid: ID):
         """
         Unregisters the reservation from the kernel data structures.
          Note:does not remove the reservation database record.
@@ -849,9 +858,9 @@ class KernelWrapper:
         if rid is None:
             raise Exception("Invalid arguments")
 
-        self.kernel.unregister_reservation(rid)
+        self.kernel.unregister_reservation(rid=rid)
 
-    def unregister_slice(self, slice_id: ID):
+    def unregister_slice(self, *, slice_id: ID):
         """
         Unregisters the slice and releases any resources that it may hold.
         Note: A slice can be unregistered only if it contains only closed
@@ -862,9 +871,9 @@ class KernelWrapper:
         if slice_id is None:
             raise Exception("Invalid arguments")
 
-        self.kernel.unregister_slice(slice_id)
+        self.kernel.unregister_slice(slice_id=slice_id)
 
-    def update_lease(self, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
+    def update_lease(self, *, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
         """
         Handles a lease update from an authority.
         Role: Controller
@@ -878,13 +887,13 @@ class KernelWrapper:
 
         target = self.kernel.validate(rid=reservation.get_reservation_id())
         auth_properties = reservation.get_resources().get_request_properties()
-        requester = self.monitor.check_proxy(caller, None)
+        requester = self.monitor.check_proxy(proxy=caller, requester=None)
 
-        self.monitor.check_update(target.get_slice().get_guard(), requester)
+        self.monitor.check_update(guard=target.get_slice().get_guard(), requester=requester)
         reservation.validate_incoming()
-        self.kernel.update_lease(target, reservation, update_data)
+        self.kernel.update_lease(reservation=target, update=reservation, update_data=update_data)
 
-    def update_ticket(self, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
+    def update_ticket(self, *, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
         """
         Handles a ticket update from upstream broker.
         Role: Agent or Controller.
@@ -898,12 +907,12 @@ class KernelWrapper:
 
         target = self.kernel.validate(rid=reservation.get_reservation_id())
         auth_properties = reservation.get_resources().get_request_properties()
-        requester = self.monitor.check_proxy(caller, None)
-        self.monitor.check_update(target.get_slice().get_guard(), requester)
+        requester = self.monitor.check_proxy(proxy=caller, requester=None)
+        self.monitor.check_update(guard=target.get_slice().get_guard(), requester=requester)
         reservation.validate_incoming_ticket()
-        self.kernel.update_ticket(target, reservation, update_data)
+        self.kernel.update_ticket(reservation=target, update=reservation, update_data=update_data)
 
-    def process_failed_rpc(self, rid: ID, rpc: FailedRPC):
+    def process_failed_rpc(self, *, rid: ID, rpc: FailedRPC):
         if rid is None:
             raise Exception("Invalid arguments")
 
@@ -911,7 +920,4 @@ class KernelWrapper:
         if target is None:
             self.logger.warning("Could not find reservation #{} while processing a failed RPC.".format(rid))
             return
-        self.kernel.handle_failed_rpc(target, rpc)
-
-
-
+        self.kernel.handle_failed_rpc(reservation=target, rpc=rpc)

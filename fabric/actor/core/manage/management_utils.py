@@ -55,7 +55,7 @@ class MyQueryResponseHandler(IQueryResponseHandler):
         self.error = None
         self.condition = threading.Condition()
 
-    def handle(self, status, result):
+    def handle(self, *, status: RPCException, result: dict):
         with self.condition:
             self.error = status
             self.result = result
@@ -64,18 +64,18 @@ class MyQueryResponseHandler(IQueryResponseHandler):
 
 class ManagementUtils:
     @staticmethod
-    def update_slice(slice_obj: ISlice, slice_mng: SliceAvro) -> ISlice:
-        return Translate.absorb_properties(slice_mng, slice_obj)
+    def update_slice(*, slice_obj: ISlice, slice_mng: SliceAvro) -> ISlice:
+        return Translate.absorb_properties(slice_mng=slice_mng, slice_obj=slice_obj)
 
     @staticmethod
-    def update_reservation(res_obj: IReservation, rsv_mng: ReservationMng) -> IReservation:
+    def update_reservation(*, res_obj: IReservation, rsv_mng: ReservationMng) -> IReservation:
         if isinstance(res_obj, IClientReservation):
-            res_obj.set_renewable(rsv_mng.is_renewable())
+            res_obj.set_renewable(renewable=rsv_mng.is_renewable())
 
-        return Converter.absorb_res_properties(rsv_mng, res_obj)
+        return Converter.absorb_res_properties(rsv_mng=rsv_mng, res_obj=res_obj)
 
     @staticmethod
-    def query(actor: IActor, actor_proxy: IActorProxy, query: dict):
+    def query(*, actor: IActor, actor_proxy: IActorProxy, query: dict):
         handler = MyQueryResponseHandler()
 
         actor.query(query=query, actor_proxy=actor_proxy, handler=handler)
@@ -85,7 +85,7 @@ class ManagementUtils:
                 handler.condition.wait()
                 # TODO InterruptedException
             except Exception as e:
-                raise RPCException(str(e), RPCError.LocalError)
+                raise RPCException(message=str(e), error=RPCError.LocalError)
 
         if handler.error is not None:
             raise handler.error
@@ -93,14 +93,21 @@ class ManagementUtils:
         return handler.result
 
     @staticmethod
-    def get_local_container(caller: AuthToken):
+    def get_local_actor():
+        from fabric.actor.core.container.globals import GlobalsSingleton
+        local_actor = GlobalsSingleton.get().get_container().get_actor()
+        local_mgmt_container = ManagementUtils.get_local_container(caller=local_actor.get_identity())
+        return local_mgmt_container.get_actor(guid=local_actor.get_guid())
+
+    @staticmethod
+    def get_local_container(*, caller: AuthToken):
         from fabric.actor.core.container.globals import GlobalsSingleton
         manager = GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(
-            ID(Constants.ContainerManagmentObjectID))
-        proxy = LocalContainer(manager, caller)
+            key=ID(id=Constants.ContainerManagmentObjectID))
+        proxy = LocalContainer(manager=manager, auth=caller)
         return proxy
 
     @staticmethod
-    def connect(caller: AuthToken) -> IMgmtContainer():
-        return ManagementUtils.get_local_container(caller)
+    def connect(*, caller: AuthToken) -> IMgmtContainer():
+        return ManagementUtils.get_local_container(caller=caller)
 

@@ -35,9 +35,9 @@ class DummyProxy(Proxy):
         def __init__(self):
             self.reservation = None
 
-    def __init__(self, auth: AuthToken = None):
-        super().__init__(auth)
+    def __init__(self, *, auth: AuthToken = None):
+        super().__init__(auth=auth)
         self.proxy_type = Constants.ProtocolLocal
 
-    def execute(self, request: IRPCRequestState):
+    def execute(self, *, request: IRPCRequestState):
         raise NotImplementedError

@@ -37,7 +37,7 @@ class ISliceFactory:
     Factory for slice objects.
     """
     @staticmethod
-    def create(slice_id: ID, name: str = None, data: ResourceData = None) -> ISlice:
+    def create(*, slice_id: ID, name: str = None, data: ResourceData = None) -> ISlice:
         """
         Creates a new slice with the specified id, name, and resource
         properties.
@@ -51,5 +51,5 @@ class ISliceFactory:
         raise NotImplementedError("Should have implemented this")
 
     @staticmethod
-    def create_instance(properties: dict) -> ISlice:
+    def create_instance(*, properties: dict) -> ISlice:
         raise NotImplementedError("Should have implemented this")

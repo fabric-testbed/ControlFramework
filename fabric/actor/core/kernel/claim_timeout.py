@@ -32,7 +32,7 @@ from fabric.actor.core.apis.i_timer_task import ITimerTask
 
 
 class ClaimTimeout(ITimerTask):
-    def __init__(self, req: RPCRequest):
+    def __init__(self, *, req: RPCRequest):
         self.req = req
 
     def execute(self):
@@ -44,8 +44,9 @@ class ClaimTimeout(ITimerTask):
         else:
             self.req.actor.get_logger().debug("Claim has already completed")
 
+
 class ReclaimTimeout(ITimerTask):
-    def __init__(self, req: RPCRequest):
+    def __init__(self, *, req: RPCRequest):
         self.req = req
 
     def execute(self):

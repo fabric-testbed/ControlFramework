@@ -25,9 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from abc import abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor_event import IActorEvent
@@ -38,6 +40,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.time.actor_clock import ActorClock
     from fabric.actor.core.util.id import ID
     from fabric.actor.security.auth_token import AuthToken
+    from fabric.actor.core.apis.i_policy import IPolicy
 
 from fabric.actor.core.apis.i_timer_queue import ITimerQueue
 from fabric.actor.core.apis.i_actor_identity import IActorIdentity
@@ -48,20 +51,19 @@ from fabric.actor.core.apis.i_tick import ITick
 
 class ActorType(Enum):
     All = 0
-    Controller = 1
+    Orchestrator = 1
     Broker = 2
     Authority = 3
 
     @staticmethod
-    def get_actor_type_from_string(actor_type: str) -> ActorType:
-        if actor_type.lower() == ActorType.Controller.name.lower():
-            return ActorType.Controller
+    def get_actor_type_from_string(*, actor_type: str) -> ActorType:
+        if actor_type.lower() == ActorType.Orchestrator.name.lower():
+            return ActorType.Orchestrator
         if actor_type.lower() == ActorType.Broker.name.lower():
             return ActorType.Broker
         if actor_type.lower() == ActorType.Authority.name.lower():
             return ActorType.Authority
         return ActorType.All
-
 
 class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, ITimerQueue):
     """
@@ -90,6 +92,7 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
     PropertyName = "ActorName"
     PropertyType = "ActorType"
 
+    @abstractmethod
     def actor_added(self):
         """
         Informs the actor that it has been integrated in the container. This
@@ -100,15 +103,15 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         Raises:
             Exception: if a critical error occurs while processing the event
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def actor_removed(self):
         """
         Informs the actor that it has been removed. This method should finish the
         shutdown/cleanup of the actor.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_actor_clock(self) -> ActorClock:
         """
         Returns the actor clock used by the actor.
@@ -116,8 +119,8 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         Returns:
             actor clock
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_current_cycle(self) -> int:
         """
         Returns the cycle this actor is processing.
@@ -125,8 +128,8 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         Returns:
             current clock cycle
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_description(self) -> str:
         """
         Returns the description for the actor.
@@ -134,26 +137,26 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         Returns:
             description for the actor.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_policy(self):
+    @abstractmethod
+    def get_policy(self) -> IPolicy:
         """
         Returns the policy used by the actor.
 
         Returns:
             policy used by the actor.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_plugin(self):
+    @abstractmethod
+    def get_plugin(self) -> IBasePlugin:
         """
         Returns the plugin used by the actor.
 
         Returns:
             plugin used by the actor.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_type(self) -> ActorType:
         """
         Returns the type of the actor.
@@ -161,8 +164,8 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         Returns:
             type of the actor.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def initialize(self):
         """
         Initializes the actor.
@@ -170,26 +173,26 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         Raises:
             Exception: if a critical error occurs while initialization
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def is_recovered(self):
+    @abstractmethod
+    def is_recovered(self) -> bool:
         """
         Checks if the actor has completed recovery.
 
         Returns:
             true if this actor has completed recovery
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def is_stopped(self):
+    @abstractmethod
+    def is_stopped(self) -> bool:
         """
         Checks if the actor has completed stopped.
 
         Returns:
             true if this actor has been stopped
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def recover(self):
         """
         Recovers the actor from saved state.
@@ -197,85 +200,85 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         Raises:
             Exception: if an error occurs during recovery
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_actor_clock(self, clock):
+    @abstractmethod
+    def set_actor_clock(self, *, clock: ActorClock):
         """
         Sets the actor clock to be used by the actor.
 
         Args:
             clock: actor clock
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_description(self, description: str):
+    @abstractmethod
+    def set_description(self, *, description: str):
         """
         Sets the description for the actor.
 
         Args:
             description: actor description
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_identity(self, token: AuthToken):
+    @abstractmethod
+    def set_identity(self, *, token: AuthToken):
         """
         Sets the identity of this actor. Must be called before initialize.
 
         Args:
             token: actor's identity token
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_policy(self, policy):
+    @abstractmethod
+    def set_policy(self, *, policy: IPolicy):
         """
         Sets the policy of this actor. Must be called before initialize.
 
         Args:
             policy: policy implementation to use
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_recovered(self, value: bool):
+    @abstractmethod
+    def set_recovered(self, *, value: bool):
         """
         Sets the recovered flag.
 
         Args:
             value: flag value
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_plugin(self, plugin: IBasePlugin):
+    @abstractmethod
+    def set_plugin(self, *, plugin: IBasePlugin):
         """
         Sets the plugin of this actor. Must be called before initialize.
 
         Args:
             plugin: plugin to use.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def start(self):
         """
         Performs all required actions when starting an actor.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def stop(self):
         """
         Performs all required actions when stopping an actor.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def queue_event(self, incoming: IActorEvent):
+    @abstractmethod
+    def queue_event(self, *, incoming: IActorEvent):
         """
         Adds an event.
 
         Args:
             incoming: incoming event
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def query(self, query: dict = None, caller: AuthToken= None,
-              actor_proxy: IActorProxy= None, handler: IQueryResponseHandler= None):
+    @abstractmethod
+    def query(self, *, query: dict = None, caller: AuthToken = None,
+              actor_proxy: IActorProxy = None, handler: IQueryResponseHandler = None):
         """
         Processes a query request from the specified caller.
 
@@ -288,43 +291,67 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         Returns:
             query response
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def execute_on_actor_thread_and_wait(self, r):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def execute_on_actor_thread_and_wait(self, *, runnable: IActorRunnable):
+        """
+        Execute on Actor Thread and Wait until response is processed
+        @params runnable: reservation to be processed
+        """
 
+    @abstractmethod
     def await_no_pending_reservations(self):
-        raise NotImplementedError("Should have implemented this")
+        """
+        Await for pending reservations
+        """
 
+    @abstractmethod
     def get_logger(self):
         """
         Return the logger
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def handle_failed_rpc(self, rid: ID, rpc: FailedRPC):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def handle_failed_rpc(self, *, rid: ID, rpc: FailedRPC):
+        """
+        Handle a failed rpc
+        @params rid: reservation id
+        @params rpc: failed rpc
+        """
 
     @staticmethod
     def get_management_object_class() -> str:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Get Management Object class Name
+        """
+        
 
     @staticmethod
     def get_management_object_module() -> str:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Get Management Object class Module name
+        """
 
     @staticmethod
     def get_kafka_service_class() -> str:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Get Kafka Service Class Name
+        """
 
     @staticmethod
     def get_kafka_service_module() -> str:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Get Kafka Service Class Module Name
+        """
 
     @staticmethod
     def get_mgmt_kafka_service_class() -> str:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Get Management Kafka Service Class Name
+        """
 
     @staticmethod
     def get_mgmt_kafka_service_module() -> str:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Get Management Kafka Service Class Module Name
+        """

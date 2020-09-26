@@ -60,7 +60,7 @@ class Translate:
     DirectionAuthority = 2
     DirectionReturn = 3
     @staticmethod
-    def translate_reservation_to_avro(reservation: IReservation):
+    def translate_reservation_to_avro(*, reservation: IReservation):
         result = None
         try:
             result = pickle.dumps(reservation)
@@ -70,7 +70,7 @@ class Translate:
         return result
 
     @staticmethod
-    def translate_reservation_from_avro(reservation) -> IReservation:
+    def translate_reservation_from_avro(*, reservation) -> IReservation:
         result = None
         try:
             result = pickle.loads(reservation)
@@ -80,41 +80,41 @@ class Translate:
         return result
 
     @staticmethod
-    def translate_udd(udd: UpdateData) -> UpdateDataAvro:
+    def translate_udd(*, udd: UpdateData) -> UpdateDataAvro:
         result = UpdateDataAvro()
         result.message = udd.get_message()
         result.failed = udd.is_failed()
         return result
 
     @staticmethod
-    def translate_udd_from_avro(udd: UpdateDataAvro) -> UpdateData:
+    def translate_udd_from_avro(*, udd: UpdateDataAvro) -> UpdateData:
         if udd.failed:
-            return UpdateData(udd.message)
+            return UpdateData(message=udd.message)
         else:
             return UpdateData()
 
     @staticmethod
-    def translate_slice(slice_id: ID, slice_name: str) -> ISlice:
+    def translate_slice(*, slice_id: ID, slice_name: str) -> ISlice:
         if slice_id is None and slice_name is None:
             return None
 
         if slice_id is None:
             raise Exception("Missing guid")
 
-        slice_obj = SliceFactory.create(slice_id, slice_name)
+        slice_obj = SliceFactory.create(slice_id=slice_id, name=slice_name)
         return slice_obj
 
     @staticmethod
-    def translate_slice_to_avro(slice_obj: ISlice) -> SliceAvro:
+    def translate_slice_to_avro(*, slice_obj: ISlice) -> SliceAvro:
         avro_slice = SliceAvro()
         avro_slice.slice_name = slice_obj.get_name()
         avro_slice.guid = str(slice_obj.get_slice_id())
         avro_slice.description = slice_obj.get_description()
-        avro_slice.owner = Translate.translate_auth_to_avro(slice_obj.get_owner())
+        avro_slice.owner = Translate.translate_auth_to_avro(auth=slice_obj.get_owner())
         return avro_slice
 
     @staticmethod
-    def translate_auth_to_avro(auth: AuthToken) -> AuthAvro:
+    def translate_auth_to_avro(*, auth: AuthToken) -> AuthAvro:
         result = AuthAvro()
         result.name = auth.name
         result.guid = str(auth.guid)
@@ -122,7 +122,7 @@ class Translate:
         return result
 
     @staticmethod
-    def translate_auth_from_avro(auth_avro: AuthAvro) -> AuthToken:
+    def translate_auth_from_avro(*, auth_avro: AuthAvro) -> AuthToken:
         if auth_avro is None:
             return None
         result = AuthToken()
@@ -132,24 +132,24 @@ class Translate:
         return result
 
     @staticmethod
-    def translate_term(term: Term) -> TermAvro:
+    def translate_term(*, term: Term) -> TermAvro:
         avro_term = TermAvro()
         if term.get_start_time() is not None:
-            avro_term.start_time = ActorClock.to_milliseconds(term.get_start_time())
+            avro_term.start_time = ActorClock.to_milliseconds(when=term.get_start_time())
         else:
             term.start_time = 0
         if term.get_end_time() is not None:
-            avro_term.end_time = ActorClock.to_milliseconds(term.get_end_time())
+            avro_term.end_time = ActorClock.to_milliseconds(when=term.get_end_time())
         else:
             term.end_time = 0
         if term.get_new_start_time() is not None:
-            avro_term.new_start_time = ActorClock.to_milliseconds(term.get_new_start_time())
+            avro_term.new_start_time = ActorClock.to_milliseconds(when=term.get_new_start_time())
         else:
             avro_term.new_start_time = 0
         return avro_term
 
     @staticmethod
-    def translate_resource_data(resource_data: ResourceData, direction: int) -> ResourceDataAvro:
+    def translate_resource_data(*, resource_data: ResourceData, direction: int) -> ResourceDataAvro:
         if resource_data is None:
             return None
 
@@ -159,7 +159,7 @@ class Translate:
             avro_rdata.request_properties = properties
 
         elif direction == Translate.DirectionAuthority:
-            properties = resource_data.get_config_properties()
+            properties = resource_data.get_configuration_properties()
             avro_rdata.config_properties = properties
 
         elif direction == Translate.DirectionReturn:
@@ -171,15 +171,16 @@ class Translate:
         return avro_rdata
 
     @staticmethod
-    def translate_resource_set(resource_set: ResourceSet, direction: int) -> ResourceSetAvro:
+    def translate_resource_set(*, resource_set: ResourceSet, direction: int) -> ResourceSetAvro:
         avro_rset = ResourceSetAvro()
         avro_rset.type = str(resource_set.get_type())
         avro_rset.units = resource_set.get_units()
-        avro_rset.resource_data = Translate.translate_resource_data(resource_set.get_resource_data(), direction)
+        avro_rset.resource_data = Translate.translate_resource_data(resource_data=resource_set.get_resource_data(),
+                                                                    direction=direction)
         return avro_rset
 
     @staticmethod
-    def translate_resource_data_from_avro(rdata: ResourceDataAvro) -> ResourceData:
+    def translate_resource_data_from_avro(*, rdata: ResourceDataAvro) -> ResourceData:
         result = ResourceData()
         properties = rdata.config_properties
         if properties is not None:
@@ -197,34 +198,34 @@ class Translate:
 
 
     @staticmethod
-    def translate_term_from_avro(term: TermAvro) -> Term:
+    def translate_term_from_avro(*, term: TermAvro) -> Term:
         start_time = None
         end_time = None
         new_start_time = None
         if term.start_time > 0:
-            start_time = ActorClock.from_milliseconds(term.start_time)
+            start_time = ActorClock.from_milliseconds(milli_seconds=term.start_time)
 
         if term.end_time > 0:
-            end_time = ActorClock.from_milliseconds(term.end_time)
+            end_time = ActorClock.from_milliseconds(milli_seconds=term.end_time)
 
         if term.new_start_time > 0:
-            new_start_time = ActorClock.from_milliseconds(term.new_start_time)
+            new_start_time = ActorClock.from_milliseconds(milli_seconds=term.new_start_time)
 
         return Term(start=start_time, end=end_time, new_start=new_start_time)
 
     @staticmethod
-    def translate_resource_set_from_avro(rset: ResourceSetAvro) -> ResourceSet:
-        rdata = Translate.translate_resource_data_from_avro(rset.resource_data)
-        result = ResourceSet(units=rset.units, rtype=ResourceType(rset.type), rdata=rdata)
+    def translate_resource_set_from_avro(*, rset: ResourceSetAvro) -> ResourceSet:
+        rdata = Translate.translate_resource_data_from_avro(rdata=rset.resource_data)
+        result = ResourceSet(units=rset.units, rtype=ResourceType(resource_type=rset.type), rdata=rdata)
         return result
 
     @staticmethod
-    def fill_slice(slice_obj: ISlice) -> SliceAvro:
+    def fill_slice(*, slice_obj: ISlice) -> SliceAvro:
         result = SliceAvro()
         result.set_slice_name(slice_obj.get_name())
         result.set_description(slice_obj.get_description())
         result.set_slice_id(str(slice_obj.get_slice_id()))
-        result.set_owner(Translate.translate_auth_to_avro(slice_obj.get_owner()))
+        result.set_owner(Translate.translate_auth_to_avro(auth=slice_obj.get_owner()))
 
         if slice_obj.get_resource_type() is not None:
             result.set_resource_type(str(slice_obj.get_resource_type()))
@@ -234,7 +235,7 @@ class Translate:
         return result
 
     @staticmethod
-    def attach_properties(slice_mng: SliceAvro, slice_obj: ISlice) -> SliceAvro:
+    def attach_properties(*, slice_mng: SliceAvro, slice_obj: ISlice) -> SliceAvro:
         if slice_obj.get_request_properties() is not None:
             slice_mng.set_request_properties(slice_obj.get_request_properties())
 
@@ -250,29 +251,29 @@ class Translate:
         return slice_mng
 
     @staticmethod
-    def fill_slices(slice_list: list, full: bool) -> list:
+    def fill_slices(*, slice_list: list, full: bool) -> list:
         result = []
         for s in slice_list:
-            slice_obj = SliceFactory.create_instance(s)
+            slice_obj = SliceFactory.create_instance(properties=s)
             if slice_obj is not None:
-                ss = Translate.fill_slice(slice_obj)
+                ss = Translate.fill_slice(slice_obj=slice_obj)
                 if full:
-                    ss = Translate.attach_properties(ss, slice_obj)
+                    ss = Translate.attach_properties(slice_mng=ss, slice_obj=slice_obj)
                 result.append(ss)
         return result
 
     @staticmethod
-    def absorb_properties(slice_mng: SliceAvro, slice_obj: ISlice) -> ISlice:
-        slice_obj.set_local_properties(
-            PropList.merge_properties(slice_mng.get_local_properties(), slice_obj.get_local_properties()))
+    def absorb_properties(*, slice_mng: SliceAvro, slice_obj: ISlice) -> ISlice:
+        slice_obj.set_local_properties(value=PropList.merge_properties(
+            incoming=slice_mng.get_local_properties(), outgoing=slice_obj.get_local_properties()))
 
-        slice_obj.set_config_properties(
-            PropList.merge_properties(slice_mng.get_config_properties(), slice_obj.get_config_properties()))
+        slice_obj.set_config_properties(value=PropList.merge_properties(
+            incoming=slice_mng.get_config_properties(), outgoing=slice_obj.get_config_properties()))
 
-        slice_obj.set_request_properties(
-            PropList.merge_properties(slice_mng.get_request_properties(), slice_obj.get_request_properties()))
+        slice_obj.set_request_properties(value=PropList.merge_properties(
+            incoming=slice_mng.get_request_properties(), outgoing=slice_obj.get_request_properties()))
 
-        slice_obj.set_resource_properties(
-            PropList.merge_properties(slice_mng.get_resource_properties(), slice_obj.get_resource_properties()))
+        slice_obj.set_resource_properties(value=PropList.merge_properties(
+            incoming=slice_mng.get_resource_properties(), outgoing=slice_obj.get_resource_properties()))
 
         return slice_obj

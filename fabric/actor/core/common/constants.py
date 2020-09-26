@@ -99,8 +99,8 @@ class Constants:
     ProtocolKafka = "kafka"
 
     # TODO change after testing
-    HomeDirectory = '/usr/src/app/'
-    #HomeDirectory = '/Users/komalthareja/renci/code/fabric/ActorBase/'
+    #HomeDirectory = '/usr/src/app/'
+    HomeDirectory = '/Users/komalthareja/renci/code/fabric/ActorBase/'
     SuperblockLocation = HomeDirectory + "state_recovery.lock"
     ControllerLockLocation = HomeDirectory + "controller_recovery.lock"
     ConfigurationFile = "/etc/fabric/actor/config/config.yaml"
@@ -115,6 +115,7 @@ class Constants:
     ElasticTime = "request.elasticTime"
     ElasticSize = "request.elasticSize"
 
+    PoolName = 'pool.name'
     PoolPrefix = "pool."
     PoolsCount = "pools.count"
     QueryActionDiscoverPools = "discover.pools"
@@ -202,3 +203,6 @@ class Constants:
     PropertyConfControllerRestPort = "orchestrator.rest.port"
     PropertyConfControllerCreateWaitTimeMs = "orchestrator.create.wait.time.ms"
     PropertyConfControllerDelayResourceTypes = "orchestrator.delay.resource.types"
+
+    PropertySubstrateFile = "substrate.file"
+

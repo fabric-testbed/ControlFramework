@@ -56,8 +56,8 @@ class TickTest(unittest.TestCase):
         cycle_length = 234
 
         tick = self.get_tick()
-        tick.set_beginning_of_time(beginning)
-        tick.set_cycle_millis(cycle_length)
+        tick.set_beginning_of_time(value=beginning)
+        tick.set_cycle_millis(cycle_millis=cycle_length)
         tick.initialize()
 
         self.assertEqual(beginning, tick.get_beginning_of_time())
@@ -66,7 +66,7 @@ class TickTest(unittest.TestCase):
         failed = False
 
         try:
-            tick.set_cycle_millis(cycle_length + 10)
+            tick.set_cycle_millis(cycle_millis=cycle_length + 10)
         except Exception as e:
             failed = True
 

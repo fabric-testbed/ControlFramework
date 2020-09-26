@@ -23,6 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import List
+
+from fabric.actor.core.util.id import ID
 from fabric.orchestrator.core.i_status_update_callback import IStatusUpdateCallback
 from fabric.message_bus.messages.reservation_mng import ReservationMng
 
@@ -31,14 +34,14 @@ class ReservationDependencyStatusUpdate(IStatusUpdateCallback):
     def __init__(self):
         self.reservation = None
 
-    def success(self, ok: list, act_on: list):
+    def success(self, *, ok: List[ID], act_on: List[ID]):
         from fabric.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
         # TODO
 
         logger.debug("Success")
 
-    def failure(self, failed: list, ok: list, act_on: list):
+    def failure(self, *, failed: List[ID], ok: List[ID], act_on: List[ID]):
         from fabric.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
 
@@ -48,5 +51,5 @@ class ReservationDependencyStatusUpdate(IStatusUpdateCallback):
     def get_reservation(self) -> ReservationMng:
         return self.reservation
 
-    def set_reservation(self, reservation: ReservationMng):
+    def set_reservation(self, *, reservation: ReservationMng):
         self.reservation = reservation

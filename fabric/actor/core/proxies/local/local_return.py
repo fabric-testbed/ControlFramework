@@ -44,31 +44,31 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class LocalReturn(LocalProxy, IControllerCallbackProxy):
-    def __init__(self, actor: IActor):
-        super().__init__(actor)
+    def __init__(self, *, actor: IActor):
+        super().__init__(actor=actor)
         self.callback = True
 
-    def prepare_update_ticket(self, reservation: IBrokerReservation, update_data: UpdateData,
+    def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
                               callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
 
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = LocalReturn.pass_reservation(reservation, self.get_actor().get_plugin())
+        state.reservation = LocalReturn.pass_reservation(reservation=reservation, plugin=self.get_actor().get_plugin())
         state.update_data = UpdateData()
-        state.update_data.absorb(update_data)
+        state.update_data.absorb(other=update_data)
         state.callback = callback
         return state
 
-    def prepare_update_lease(self, reservation: IAuthorityReservation,  update_data, callback: ICallbackProxy,
+    def prepare_update_lease(self, *, reservation: IAuthorityReservation,  update_data, callback: ICallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = LocalReturn.pass_reservation(reservation, self.get_actor().get_plugin())
+        state.reservation = LocalReturn.pass_reservation(reservation=reservation, plugin=self.get_actor().get_plugin())
         state.update_data = UpdateData()
-        state.update_data.absorb(update_data)
+        state.update_data.absorb(other=update_data)
         state.callback = callback
         return state
 
     @staticmethod
-    def pass_reservation(reservation: IServerReservation, plugin: IBasePlugin) -> IReservation:
+    def pass_reservation(*, reservation: IServerReservation, plugin: IBasePlugin) -> IReservation:
         slice_obj = reservation.get_slice().clone_request()
         term = None
 
@@ -82,31 +82,31 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
         if reservation.get_resources() is None:
             rset = ResourceSet(units=0, rtype=reservation.get_requested_type(), rdata=ResourceData())
         else:
-            rset = LocalReturn.abstract_clone_return(reservation.get_resources())
+            rset = LocalReturn.abstract_clone_return(rset=reservation.get_resources())
 
             concrete = reservation.get_resources().get_resources()
 
             if concrete is not None:
                 cset = None
                 try:
-                    encoded = concrete.encode(Constants.ProtocolLocal)
-                    cset = Proxy.decode(encoded, plugin)
+                    encoded = concrete.encode(protocol=Constants.ProtocolLocal)
+                    cset = Proxy.decode(encoded=encoded, plugin=plugin)
                 except Exception as e:
                     raise Exception("Error while encoding concrete set {}".format(e))
 
                 if cset is None:
                     raise Exception("Unsupported ConcreteSet type: {}".format(type(concrete)))
 
-                rset.set_resources(cset)
+                rset.set_resources(cset=cset)
 
         if isinstance(reservation, IBrokerReservation):
             client_reservation = ClientReservationFactory.create(rid=reservation.get_reservation_id(),
                                                                  resources=rset, term=term, slice_object=slice_obj)
-            client_reservation.set_ticket_sequence_in(reservation.get_sequence_out())
+            client_reservation.set_ticket_sequence_in(sequence=reservation.get_sequence_out())
             return client_reservation
         else:
             controller_reservation = ControllerReservationFactory.create(rid=reservation.get_reservation_id(),
                                                                          resources=rset, term=term,
                                                                          slice_object=slice_obj)
-            controller_reservation.set_lease_sequence_in(reservation.get_sequence_out())
+            controller_reservation.set_lease_sequence_in(sequence=reservation.get_sequence_out())
             return controller_reservation

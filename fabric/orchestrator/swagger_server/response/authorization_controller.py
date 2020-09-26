@@ -8,6 +8,6 @@ https://connexion.readthedocs.io/en/latest/security.html
 """
 def check_bearerAuth(token):
     orchestrator = OrchestratorHandler()
-    return orchestrator.validate_credentials(token)
+    return orchestrator.validate_credentials(token=token)
 
 

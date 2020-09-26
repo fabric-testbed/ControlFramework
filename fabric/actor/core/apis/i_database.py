@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -39,6 +41,8 @@ class IDatabase:
     IDatabase is the base database layer interface. It specifies methods for managing slices, reservations,
     broker proxies, and configuration mapping files.
     """
+
+    @abstractmethod
     def actor_added(self):
         """
         Performs initialization actions as a result of the actor being
@@ -46,9 +50,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def add_broker(self, broker: IBrokerProxy):
+    @abstractmethod
+    def add_broker(self, *, broker: IBrokerProxy):
         """
         Adds a new broker proxy record.
        
@@ -56,9 +60,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def add_reservation(self, reservation: IReservation):
+    @abstractmethod
+    def add_reservation(self, *, reservation: IReservation):
         """
         Adds a new record to the database representing this reservation
         object.
@@ -67,9 +71,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def add_slice(self, slice_object: ISlice):
+    @abstractmethod
+    def add_slice(self, *, slice_object: ISlice):
         """
         Adds a new record to the database representing this slice
         object.
@@ -78,9 +82,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def remove_broker(self, broker: IBrokerProxy):
+    @abstractmethod
+    def remove_broker(self, *, broker: IBrokerProxy):
         """
         Removes the specified broker proxy record.
        
@@ -88,9 +92,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def remove_reservation(self, rid: ID):
+    @abstractmethod
+    def remove_reservation(self, *, rid: ID):
         """
         Removes the corresponding reservation object.
        
@@ -98,9 +102,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def remove_slice(self, slice_id: ID):
+    @abstractmethod
+    def remove_slice(self, *, slice_id: ID):
         """
         Removes the corresponding database slice record.
        
@@ -108,17 +112,17 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_actor_name(self, name: str):
+    @abstractmethod
+    def set_actor_name(self, *, name: str):
         """
         Sets the name of the actor this database belongs to.
        
         @param name actor name
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def update_broker(self, broker: IBrokerProxy):
+    @abstractmethod
+    def update_broker(self, *, broker: IBrokerProxy):
         """
         Updates the specified broker proxy record.
        
@@ -126,9 +130,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def update_reservation(self, reservation: IReservation):
+    @abstractmethod
+    def update_reservation(self, *, reservation: IReservation):
         """
         Updates the corresponding reservation object.
        
@@ -136,9 +140,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def update_slice(self, slice_object: ISlice):
+    @abstractmethod
+    def update_slice(self, *, slice_object: ISlice):
         """
         Updates the corresponding database slice record.
        
@@ -146,8 +150,8 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_reservations(self) -> list:
         """
         Retrieves the reservations.
@@ -156,9 +160,9 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_reservation(self, rid: ID) -> dict:
+    @abstractmethod
+    def get_reservation(self, *, rid: ID) -> dict:
         """
         Retrieves the specified reservation record.
        
@@ -168,9 +172,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_reservations_by_slice_id(self, slice_id: ID) -> list:
+    @abstractmethod
+    def get_reservations_by_slice_id(self, *, slice_id: ID) -> list:
         """
         Retrieves the specified reservations for a slice
 
@@ -180,9 +184,9 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_reservations_by_slice_id_state(self, slice_id: ID, state: int) -> list:
+    @abstractmethod
+    def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: int) -> list:
         """
         Retrieves the specified reservations for a slice in a specific state
 
@@ -193,8 +197,8 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_client_reservations(self) -> list:
         """
         Retrieves the client reservations
@@ -203,9 +207,9 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_client_reservations_by_slice_id(self, slice_id: ID) -> list:
+    @abstractmethod
+    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> list:
         """
         Retrieves the client reservations
 
@@ -214,9 +218,9 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_slice(self, slice_id: ID) -> dict:
+    @abstractmethod
+    def get_slice(self, *, slice_id: ID) -> dict:
         """
         Retrieves the specified slice record.
 
@@ -226,9 +230,9 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_slice_by_resource_type(self, rtype: ResourceType) -> dict:
+    @abstractmethod
+    def get_slice_by_resource_type(self, *, rtype: ResourceType) -> dict:
         """
         Retrieves the specified slice record.
 
@@ -238,8 +242,8 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_slices(self) -> list:
         """
         Retrieves all slice records.
@@ -249,8 +253,8 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_inventory_slices(self) -> list:
         """
         Retrieves all inventory slice records.
@@ -260,8 +264,8 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_client_slices(self) -> list:
         """
         Retrieves all client slice records.
@@ -271,16 +275,16 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def initialize(self):
         """
         Initializes the object.
       
         @throws Exception if initialization fails
         """
-        raise NotImplementedError("Should have implemented this")
-    
+
+    @abstractmethod
     def get_holdings(self) -> list:
         """
         Retrieves all reservations representing resources held by this
@@ -290,9 +294,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_holdings_by_slice_id(self, slice_id: ID) -> list:
+    @abstractmethod
+    def get_holdings_by_slice_id(self, *, slice_id: ID) -> list:
         """
         Retrieves all reservations representing resources held by this
         actor Broker/Controller.
@@ -302,8 +306,8 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_broker_reservations(self) -> list:
         """
         Retrieves all reservations for which this actor acts as a
@@ -313,8 +317,8 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_authority_reservations(self) -> list:
         """
         Retrieves all reservations for which this actor acts as a site.
@@ -323,9 +327,9 @@ class IDatabase:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_reservations_by_state(self, state: int) -> list:
+    @abstractmethod
+    def get_reservations_by_state(self, *, state: int) -> list:
         """
         Retrieves the reservations in a specific state
 
@@ -335,9 +339,9 @@ class IDatabase:
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_reservations_by_rids(self, rid: list):
+    @abstractmethod
+    def get_reservations_by_rids(self, *, rid: list):
         """
         Retrieves the specified reservation records.
         The order in the return vector is the same order as @rids
@@ -345,4 +349,3 @@ class IDatabase:
         @return list of properties
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

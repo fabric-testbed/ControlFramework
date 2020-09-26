@@ -84,7 +84,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
         """
         # add all of our pendingRedeem, so they can be checked
         for reservation in self.pending_redeem.values():
-            self.calendar.add_pending(reservation)
+            self.calendar.add_pending(reservation=reservation)
 
         # get set of reservations that need to be redeemed
         my_pending = self.calendar.get_pending()
@@ -157,15 +157,15 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                         self.logger.info("Closing reservation {} due to failure in slice {}".format(
                             reservation.get_reservation_id(), slice_obj.get_name()))
 
-                        self.actor.close(reservation)
-                        self.calendar.remove_pending(reservation)
-                        self.pending_notify.remove(reservation)
+                        self.actor.close(reservation=reservation)
+                        self.calendar.remove_pending(reservation=reservation)
+                        self.pending_notify.remove(reservation=reservation)
 
                 elif slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
                     self.logger.info(
                         "Moving reservation {} to pending redeem list due to nascent reservation in slice {}"
                         .format(reservation.get_reservation_id(), slice_obj.get_name()))
-                    self.pending_redeem.add(reservation)
-                    self.calendar.remove_pending(reservation)
+                    self.pending_redeem.add(reservation=reservation)
+                    self.calendar.remove_pending(reservation=reservation)
 
         super().check_pending()

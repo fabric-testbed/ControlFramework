@@ -33,28 +33,28 @@ class IPv4Set:
     SubnetMark = "/"
     RangeMark = "-"
 
-    def __init__(self, ip_list: str = None):
+    def __init__(self, *, ip_list: str = None):
         self.free_set = set()
         self.allocated = set()
 
         if ip_list:
-            self.add(ip_list)
+            self.add(ip_list=ip_list)
 
-    def add(self, ip_list: str):
+    def add(self, *, ip_list: str):
         for token in ip_list.split(self.EntrySeparator):
             if token.find(self.SubnetMark) > -1:
-                self.process_subnet(token)
+                self.process_subnet(token=token)
             elif token.find(self.RangeMark) > -1:
-                self.process_range(token)
+                self.process_range(token=token)
             else:
-                self.process_single(token)
+                self.process_single(token=token)
 
-    def process_subnet(self, token: str):
+    def process_subnet(self, *, token: str):
         tokens = token.split(self.SubnetMark)
         if len(tokens) != 2:
             raise Exception("Invalid subnet: {}".find(token))
 
-        base = self.to_IP4(tokens[0])
+        base = self.to_IP4(ip=tokens[0])
 
         size = int(tokens[1])
 
@@ -71,19 +71,19 @@ class IPv4Set:
             self.free_set.add(start)
             start += 1
 
-    def process_range(self, token: str):
+    def process_range(self, *, token: str):
         tokens = token.split(self.RangeMark)
         if len(tokens) != 2:
             raise Exception("Invalid range: {}".find(token))
 
-        start = str(self.pad_if_needed(tokens[0]))
-        start_ip = self.to_IP4(start)
+        start = str(self.pad_if_needed(token=tokens[0]))
+        start_ip = self.to_IP4(ip=start)
         end = tokens[1]
 
         if end.find(".") == -1:
             end = start[0:start.rfind(".")] + "." + end
 
-        end_ip = self.to_IP4(end)
+        end_ip = self.to_IP4(ip=end)
 
         size = end_ip - start_ip + 1
 
@@ -93,7 +93,7 @@ class IPv4Set:
         for i in range(size):
             self.free_set.add(start_ip + i)
 
-    def pad_if_needed(self, token: str):
+    def pad_if_needed(self, *, token: str):
         index = 0
         count = 0
         index = token.find(".")
@@ -107,39 +107,39 @@ class IPv4Set:
 
         return token
 
-    def process_single(self, token: str):
-        self.free_set.add(self.to_IP4(token))
+    def process_single(self, *, token: str):
+        self.free_set.add(self.to_IP4(ip=token))
 
     def allocate(self):
         item = self.free_set.pop()
         self.allocated.add(item)
-        ret_val = self.int_to_IP4(item)
+        ret_val = self.int_to_IP4(ip=item)
         return ret_val
 
-    def free(self, ip: str):
-        val = self.to_IP4(ip)
+    def free(self, *, ip: str):
+        val = self.to_IP4(ip=ip)
         self.allocated.remove(val)
         self.free_set.add(val)
 
-    def reserve(self, ip: str):
-        val = self.to_IP4(ip)
+    def reserve(self, *, ip: str):
+        val = self.to_IP4(ip=ip)
         self.free_set.remove(val)
         self.allocated.add(val)
 
     def get_free_count(self) -> int:
         return len(self.free_set)
 
-    def is_free(self, ip: int) -> bool:
+    def is_free(self, *, ip: int) -> bool:
         if ip in self.free_set:
             return True
         return False
 
-    def is_allocated(self, ip: int) -> bool:
+    def is_allocated(self, *, ip: int) -> bool:
         if ip in self.allocated:
             return True
         return False
 
-    def to_IP4(self, ip: str):
+    def to_IP4(self, *, ip: str):
         tokens = ip.split(".")
         if len(tokens) != 4:
             raise Exception("Invalid ip address: {}".format(ip))
@@ -152,7 +152,7 @@ class IPv4Set:
 
         return result
 
-    def int_to_IP4(self, ip: int):
+    def int_to_IP4(self, *, ip: int):
         result = None
         try:
             result = ipaddress.ip_address(ip).__str__()

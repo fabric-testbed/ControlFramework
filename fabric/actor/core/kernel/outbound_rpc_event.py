@@ -33,7 +33,7 @@ from fabric.actor.core.apis.i_event import IEvent
 
 
 class OutboundRPCEvent(IEvent):
-    def __init__(self, request: RPCRequest):
+    def __init__(self, *, request: RPCRequest):
         self.request = request
 
     def get_actor_id(self) -> ID:

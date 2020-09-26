@@ -55,11 +55,11 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class Kernel:
-    def __init__(self, plugin: IBasePlugin, mapper: IPolicy, logger):
+    def __init__(self, *, plugin: IBasePlugin, policy: IPolicy, logger):
         # The plugin.
         self.plugin = plugin
         # Policy
-        self.policy = mapper
+        self.policy = policy
         # Logger
         self.logger = logger
         # All slices managed by the kernel
@@ -69,7 +69,7 @@ class Kernel:
         self.lock = threading.Lock()
         self.nothing_pending = threading.Condition()
 
-    def amend_reserve(self, reservation: IKernelReservation):
+    def amend_reserve(self, *, reservation: IKernelReservation):
         """
         Amends a previous reserve operation (both client and server side) for the
         reservation.
@@ -78,13 +78,14 @@ class Kernel:
         """
         try:
             reservation.reserve(policy=self.policy)
-            self.plugin.get_database().update_reservation(reservation)
+            self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
                 reservation.service_reserve()
         except Exception as e:
-            self.error("An error occurred during amend reserve for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during amend reserve for reservation #{}".format(
+                reservation.get_reservation_id()), e=e)
 
-    def claim(self, reservation: IKernelBrokerReservation):
+    def claim(self, *, reservation: IKernelBrokerReservation):
         """
         Processes a requests to claim new ticket for previously exported
         resources (broker role). On the client side this request is issued by
@@ -93,11 +94,12 @@ class Kernel:
         """
         try:
             reservation.claim()
-            self.plugin.get_database().update_reservation(reservation)
+            self.plugin.get_database().update_reservation(reservation=reservation)
         except Exception as e:
-            self.error("An error occurred during claim for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during claim for reservation #{}".format(
+                reservation.get_reservation_id()), e=e)
 
-    def reclaim(self, reservation: IKernelBrokerReservation):
+    def reclaim(self, *, reservation: IKernelBrokerReservation):
         """
         Processes a requests to claim new ticket for previously exported
         resources (broker role). On the client side this request is issued by
@@ -106,16 +108,17 @@ class Kernel:
         """
         try:
             reservation.reclaim()
-            self.plugin.get_database().update_reservation(reservation)
+            self.plugin.get_database().update_reservation(reservation=reservation)
         except Exception as e:
-            self.error("An error occurred during claim for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during claim for reservation #{}".format(
+                reservation.get_reservation_id()), e=e)
 
-    def fail(self, reservation: IKernelReservation, message: str):
+    def fail(self, *, reservation: IKernelReservation, message: str):
         if not reservation.is_failed() and not reservation.is_closed():
-            reservation.fail(message, None)
-        self.plugin.get_database().update_reservation(reservation)
+            reservation.fail(message=message, exception=None)
+        self.plugin.get_database().update_reservation(reservation=reservation)
 
-    def close(self, reservation: IKernelReservation):
+    def close(self, *, reservation: IKernelReservation):
         """
         Handles a close operation for the reservation.
         Client: perform local close operations and issue close request to
@@ -127,15 +130,16 @@ class Kernel:
         """
         try:
             if not reservation.is_closed() and not reservation.is_closing():
-                self.policy.close(reservation)
+                self.policy.close(reservation=reservation)
                 reservation.close()
-                self.plugin.get_database().update_reservation(reservation)
+                self.plugin.get_database().update_reservation(reservation=reservation)
                 reservation.service_close()
         except Exception as e:
             traceback.print_exc()
-            self.error("An error occurred during close for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during close for reservation #{}".format(
+                reservation.get_reservation_id()), e=e)
 
-    def compare_and_update(self, incoming: IKernelServerReservation, current: IKernelServerReservation):
+    def compare_and_update(self, *, incoming: IKernelServerReservation, current: IKernelServerReservation):
         """
         Compares the incoming request to the corresponding reservation stored at
         this actor. First compares sequence numbers. If the incoming request has
@@ -151,15 +155,15 @@ class Kernel:
         if current.get_sequence_in() < incoming.get_sequence_in():
             if current.is_no_pending():
                 code = SequenceComparisonCodes.SequenceGreater
-                current.set_sequence_in(incoming.get_sequence_in())
-                current.set_requested_resources(incoming.get_requested_resources())
-                current.set_requested_term(incoming.get_requested_term())
+                current.set_sequence_in(sequence=incoming.get_sequence_in())
+                current.set_requested_resources(resources=incoming.get_requested_resources())
+                current.set_requested_term(term=incoming.get_requested_term())
         else:
             if current.get_sequence_in() > incoming.get_sequence_in():
                 code = SequenceComparisonCodes.SequenceSmaller
         return code
 
-    def compare_and_update_ignore_pending(self, incoming: IKernelServerReservation, current: IKernelServerReservation):
+    def compare_and_update_ignore_pending(self, *, incoming: IKernelServerReservation, current: IKernelServerReservation):
         """
         Compares the incoming request to the corresponding reservation stored at
         this actor. First compares sequence numbers. If the incoming request has
@@ -174,15 +178,15 @@ class Kernel:
         code = SequenceComparisonCodes.SequenceEqual
         if current.get_sequence_in() < incoming.get_sequence_in():
             code = SequenceComparisonCodes.SequenceGreater
-            current.set_sequence_in(incoming.get_sequence_in())
-            current.set_requested_resources(incoming.get_requested_resources())
-            current.set_requested_term(incoming.get_requested_term())
+            current.set_sequence_in(sequence=incoming.get_sequence_in())
+            current.set_requested_resources(resources=incoming.get_requested_resources())
+            current.set_requested_term(term=incoming.get_requested_term())
         else:
             if current.get_sequence_in() > incoming.get_sequence_in():
                 code = SequenceComparisonCodes.SequenceSmaller
         return code
 
-    def error(self, err: str, e: Exception):
+    def error(self, *, err: str, e: Exception):
         """
         Logs the specified exception and re-throws it.
         @param err error message
@@ -191,7 +195,7 @@ class Kernel:
         self.logger.error("Error: {} Exception: {}".format(err, e))
         raise e
 
-    def extend_lease(self, reservation: IKernelReservation):
+    def extend_lease(self, *, reservation: IKernelReservation):
         """
         Handles an extend lease operation for the reservation.
         Client: issue an extend lease request.
@@ -201,13 +205,14 @@ class Kernel:
         """
         try:
             reservation.extend_lease()
-            self.plugin.get_database().update_reservation(reservation)
+            self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
                 reservation.service_extend_lease()
         except Exception as e:
-            self.error("An error occurred during extend lease for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during extend lease for reservation #{}".format(
+                reservation.get_reservation_id()), e=e)
 
-    def modify_lease(self, reservation: IKernelReservation):
+    def modify_lease(self, *, reservation: IKernelReservation):
         """
         Handles a modify lease operation for the reservation.
         Client: issue a modify lease request.
@@ -218,13 +223,14 @@ class Kernel:
         """
         try:
             reservation.modify_lease()
-            self.plugin.get_database().update_reservation(reservation)
+            self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
                 reservation.service_modify_lease()
         except Exception as e:
-            self.error("An error occurred during modify lease for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during modify lease for reservation #{}".format(
+                reservation.get_reservation_id()), e=e)
 
-    def extend_reservation(self, rid: ID, resources: ResourceSet, term: Term) -> int:
+    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term) -> int:
         """
         Extends the reservation with the given resources and term.
         @param rid reservation identifier of reservation to extend
@@ -235,7 +241,7 @@ class Kernel:
                 operation from being initiated.
         @throws Exception
         """
-        real = self.reservations.get(rid)
+        real = self.reservations.get(rid=rid)
         ticket = True
 
         if real is None:
@@ -246,19 +252,19 @@ class Kernel:
             return Constants.ReservationHasPendingOperation
 
         # attach the desired extension term and resource set
-        real.set_approved(term, resources)
+        real.set_approved(term=term, approved_resources=resources)
         # notify the policy that a reservation is about to be extended
-        self.policy.extend(real, resources, term)
+        self.policy.extend(reservation=real, resources=resources, term=term)
 
         if isinstance(real, AuthorityReservation):
             ticket = False
 
         if ticket:
-            real.extend_ticket(self.plugin.get_actor())
+            real.extend_ticket(actor=self.plugin.get_actor())
         else:
             real.extend_lease()
 
-        self.plugin.get_database().update_reservation(real)
+        self.plugin.get_database().update_reservation(reservation=real)
 
         if not real.is_failed():
             if ticket:
@@ -268,7 +274,7 @@ class Kernel:
 
         return 0
 
-    def extend_ticket(self, reservation: IKernelReservation):
+    def extend_ticket(self, *, reservation: IKernelReservation):
         """
         Handles an extend ticket operation for the reservation.
         Client: issue an extend ticket request.
@@ -279,16 +285,18 @@ class Kernel:
         try:
             self.logger.debug("Processing extend ticket for reservation={}".format(type(reservation)))
             if reservation.can_renew():
-                reservation.extend_ticket(self.plugin.get_actor())
+                reservation.extend_ticket(actor=self.plugin.get_actor())
             else:
                 raise Exception("The reservation state prevents it from extending its ticket.")
 
-            self.plugin.get_database().update_reservation(reservation)
+            self.plugin.get_database().update_reservation(reservation=reservation)
 
             if not reservation.is_failed():
                 reservation.service_extend_ticket()
         except Exception as e:
-            self.error("An error occurred during extend ticket for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.logger.error(traceback.format_exc())
+            self.error(err="An error occurred during extend ticket for reservation #{}".format(
+                reservation.get_reservation_id()), e=e)
 
     def get_client_slices(self) -> list:
         """
@@ -304,7 +312,7 @@ class Kernel:
         """
         return self.slices.get_inventory_slices()
 
-    def get_local_slice(self, slice_object: ISlice) -> IKernelSlice:
+    def get_local_slice(self, *, slice_object: ISlice) -> IKernelSlice:
         """
         Returns the slice object registered with the kernel that corresponds to
         the argument.
@@ -316,9 +324,10 @@ class Kernel:
         if slice_object is None or slice_object.get_slice_id() is None:
             raise Exception("Invalid Argument")
 
-        return self.slices.get(slice_object.get_slice_id(), True)
+        return self.slices.get(slice_id=slice_object.get_slice_id(), raise_exception=True)
 
-    def get_or_create_local_slice(self, identity: AuthToken, reservation: IKernelReservation, create_new_slice: bool) -> IKernelSlice:
+    def get_or_create_local_slice(self, *, identity: AuthToken, reservation: IKernelReservation,
+                                  create_new_slice: bool) -> IKernelSlice:
         """
         Returns the slice specified in the reservation or creates a new slice
         with the given parameters. Newly created slices are registered with the
@@ -332,10 +341,10 @@ class Kernel:
         slice_name = reservation.get_slice().get_name()
         slice_id = reservation.get_slice().get_slice_id()
 
-        result = self.get_slice(slice_id)
+        result = self.get_slice(slice_id=slice_id)
         if result is None:
             if create_new_slice:
-                result = self.plugin.create_slice(slice_id, slice_name, ResourceData())
+                result = self.plugin.create_slice(slice_id=slice_id, name=slice_name, properties=ResourceData())
                 if reservation.get_slice().is_broker_client():
                     result.set_broker_client()
                 else:
@@ -344,21 +353,21 @@ class Kernel:
             else:
                 result = reservation.get_kernel_slice()
 
-            result.set_owner(identity)
-            self.register_slice(result)
+            result.set_owner(owner=identity)
+            self.register_slice(slice_object=result)
         return result
 
-    def get_reservation(self, rid: ID) -> IKernelReservation:
+    def get_reservation(self, *, rid: ID) -> IKernelReservation:
         """
         Returns the specified reservation.
         @param rid reservation id
         @return reservation
         """
         if rid is not None:
-            return self.reservations.get(rid)
+            return self.reservations.get(rid=rid)
         return None
 
-    def get_reservations(self, slice_id: ID) -> list:
+    def get_reservations(self, *, slice_id: ID) -> list:
         """
         Returns all reservations in the specified slice.
         @param slice_id slice id
@@ -366,7 +375,7 @@ class Kernel:
         """
         result = None
         if slice_id is not None:
-            sl = self.slices.get(slice_id)
+            sl = self.slices.get(slice_id=slice_id)
             result = sl.get_reservations_list()
         return result
 
@@ -377,7 +386,7 @@ class Kernel:
         """
         return self.plugin
 
-    def get_slice(self, slice_id: ID) -> IKernelSlice:
+    def get_slice(self, *, slice_id: ID) -> IKernelSlice:
         """
         Returns a slice previously registered with the kernel.
         @param slice_id slice identifier
@@ -386,12 +395,12 @@ class Kernel:
         if slice_id is None:
             raise Exception("Invalid argument")
 
-        return self.slices.get(slice_id)
+        return self.slices.get(slice_id=slice_id)
 
-    def is_known_slice(self, slice_id: ID) -> bool:
+    def is_known_slice(self, *, slice_id: ID) -> bool:
         if slice_id is None:
             raise Exception("Invalid argument")
-        return self.slices.contains(slice_id)
+        return self.slices.contains(slice_id=slice_id)
 
     def get_slices(self) -> list:
         """
@@ -400,15 +409,15 @@ class Kernel:
         """
         return self.slices.get_slices()
 
-    def handle_duplicate_request(self, current: IKernelReservation, operation: RequestTypes):
+    def handle_duplicate_request(self, *, current: IKernelReservation, operation: RequestTypes):
         """
         Handles a duplicate request.
         @param current reservation
         @param operation operation code
         """
-        current.handle_duplicate_request(operation)
+        current.handle_duplicate_request(operation=operation)
 
-    def probe_pending(self, reservation: IKernelReservation):
+    def probe_pending(self, *, reservation: IKernelReservation):
         """
         Probes to check for completion of pending operation.
         @param reservation the reservation being probed
@@ -417,11 +426,12 @@ class Kernel:
         try:
             reservation.prepare_probe()
             reservation.probe_pending()
-            self.plugin.get_database().update_reservation(reservation)
+            self.plugin.get_database().update_reservation(reservation=reservation)
             reservation.service_probe()
         except Exception as e:
             traceback.print_exc()
-            self.error("An error occurred during probe pending for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during probe pending for reservation #{}".format(
+                reservation.get_reservation_id()), e=e)
 
     def purge(self):
         """
@@ -431,36 +441,38 @@ class Kernel:
         for reservation in self.reservations.values():
             if reservation.is_closed():
                 try:
-                    reservation.get_kernel_slice().unregister(reservation)
+                    reservation.get_kernel_slice().unregister(reservation=reservation)
                 except Exception as e:
-                    self.logger.error("An error occurred during purge for reservation #{}".format(reservation.get_reservation_id()), e)
+                    self.logger.error("An error occurred during purge for reservation #{}".format(
+                        reservation.get_reservation_id()), e)
                 finally:
-                    GlobalsSingleton.get().event_manager.dispatch_event(ReservationPurgedEvent(reservation))
-                    self.reservations.remove(reservation)
+                    GlobalsSingleton.get().event_manager.dispatch_event(event=ReservationPurgedEvent(
+                        reservation=reservation))
+                    self.reservations.remove(reservation=reservation)
 
-    def query(self, properties: dict):
+    def query(self, *, properties: dict):
         """
         Processes a query request.
         @param properties query
         @return query response
         """
-        return self.policy.query(properties)
+        return self.policy.query(p=properties)
 
-    def redeem(self, reservation: IKernelControllerReservation):
+    def redeem(self, *, reservation: IKernelControllerReservation):
         try:
             if reservation.can_redeem():
-                reservation.reserve(self.policy)
+                reservation.reserve(policy=self.policy)
             else:
                 raise Exception("The current reservation state prevent it from being redeemed")
 
-            self.plugin.get_database().update_reservation(reservation)
+            self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
                 reservation.service_reserve()
         except Exception as e:
             self.logger.error(
                 "An error occurred during redeem for reservation #{}".format(reservation.get_reservation_id()), e)
 
-    def register(self, reservation: IKernelReservation, slice_object: IKernelSlice) -> bool:
+    def register(self, *, reservation: IKernelReservation, slice_object: IKernelSlice) -> bool:
         """
         Registers a new reservation with its slice and the kernel reservation
         table. Must be called with the kernel lock on.
@@ -471,7 +483,7 @@ class Kernel:
         @throws Exception
         """
         add = False
-        reservation.set_logger(self.logger)
+        reservation.set_logger(logger=self.logger)
 
         if not reservation.is_closed():
             # Note: as of now slice.register must be the first operation in
@@ -479,26 +491,26 @@ class Kernel:
             # reservation is already present in the slice table.
 
             # register with the local slice
-            slice_object.register(reservation)
+            slice_object.register(reservation=reservation)
 
             # register with the reservations table
-            if self.reservations.contains(reservation):
-                slice_object.unregister(reservation)
+            if self.reservations.contains(reservation=reservation):
+                slice_object.unregister(reservation=reservation)
                 raise Exception("There is already a reservation with the given identifier")
 
-            self.reservations.add(reservation)
+            self.reservations.add(reservation=reservation)
 
             # attach actor to the reservation
-            reservation.set_actor(self.plugin.get_actor())
+            reservation.set_actor(actor=self.plugin.get_actor())
             # attach the local slice object
-            reservation.set_slice(slice_object)
+            reservation.set_slice(slice_object=slice_object)
             add = True
         else:
             self.logger.warning("Attempting to register a closed reservation #{}".format(reservation.get_reservation_id()))
 
         return add
 
-    def register_reservation(self, reservation: IKernelReservation):
+    def register_reservation(self, *, reservation: IKernelReservation):
         """
         Re-registers the reservation.
         @param reservation reservation
@@ -511,32 +523,32 @@ class Kernel:
         local_slice = None
         add = False
 
-        local_slice = self.slices.get(reservation.get_slice().get_slice_id(), True)
-        add = self.register(reservation, local_slice)
+        local_slice = self.slices.get(slice_id=reservation.get_slice().get_slice_id(), raise_exception=True)
+        add = self.register(reservation=reservation, slice_object=local_slice)
 
         if add :
             try:
-                self.plugin.get_database().add_reservation(reservation)
+                self.plugin.get_database().add_reservation(reservation=reservation)
             except Exception as e:
-                self.unregister_no_check(reservation, local_slice)
+                self.unregister_no_check(reservation=reservation, slice_object=local_slice)
                 raise e
 
-    def register_slice(self, slice_object: IKernelSlice):
+    def register_slice(self, *, slice_object: IKernelSlice):
         """
         Registers the specified slice with the kernel.
         @param slice_object slice to register
         @throws Exception if the slice cannot be registered
         """
         slice_object.prepare()
-        self.slices.add(slice_object)
+        self.slices.add(slice_object=slice_object)
 
         try:
-            self.plugin.get_database().add_slice(slice_object)
+            self.plugin.get_database().add_slice(slice_object=slice_object)
         except Exception as e:
-            self.slices.remove(slice_object.get_slice_id())
-            self.error("could not register slice", e)
+            self.slices.remove(slice_id=slice_object.get_slice_id())
+            self.error(err="could not register slice", e=e)
 
-    def remove_reservation(self, rid: ID):
+    def remove_reservation(self, *, rid: ID):
         """
         Removes the reservation.
         @param rid reservation id.
@@ -545,20 +557,20 @@ class Kernel:
         if rid is None:
             raise Exception("Invalid Argument")
 
-        real = self.reservations.get(rid)
+        real = self.reservations.get(rid=rid)
 
         if real is not None:
             if real.is_closed() or real.is_failed() or real.get_state() == ReservationStates.CloseWait:
-                self.unregister_reservation(rid)
+                self.unregister_reservation(rid=rid)
             else:
                 raise Exception("Only reservations in failed, closed, or closewait state can be removed.")
         else:
             self.logger.debug("Reservation # {} not found".format(rid))
 
-        self.plugin.get_database().remove_reservation(rid)
+        self.plugin.get_database().remove_reservation(rid=rid)
         self.logger.debug("Reservation # {} removed from DB".format(rid))
 
-    def remove_slice(self, slice_id: ID):
+    def remove_slice(self, *, slice_id: ID):
         """
         Removes the specified slice.
         @param slice_id slice identifier
@@ -568,25 +580,25 @@ class Kernel:
             raise Exception("Invalid argument")
 
         possible = False
-        slice_object = self.get_slice(slice_id)
+        slice_object = self.get_slice(slice_id=slice_id)
 
         if slice_object is None:
             self.logger.debug("Slice object not found in local data structure, removing from database")
-            self.plugin.get_database().remove_slice(slice_id)
+            self.plugin.get_database().remove_slice(slice_id=slice_id)
         else:
             possible = (slice_object.get_reservations().size() == 0)
 
             if possible:
                 # remove the slice from the slices table
-                self.slices.remove(slice_id)
+                self.slices.remove(slice_id=slice_id)
                 # release any resources assigned to the slice: unlocked,
                 # because it may be blocking. The plugin is responsible for
                 # synchronization.
-                self.plugin.release_slice(slice_object)
+                self.plugin.release_slice(slice_obj=slice_object)
                 # remove from the database
-                self.plugin.get_database().remove_slice(slice_id)
+                self.plugin.get_database().remove_slice(slice_id=slice_id)
 
-    def re_register_reservation(self, reservation: IKernelReservation):
+    def re_register_reservation(self, *, reservation: IKernelReservation):
         """
         Re-registers the reservation.
         @param reservation reservation
@@ -597,46 +609,46 @@ class Kernel:
             raise Exception("Invalid argument")
 
         local_slice = None
-        local_slice = self.slices.get(reservation.get_slice().get_slice_id(), True)
+        local_slice = self.slices.get(slice_id=reservation.get_slice().get_slice_id(), raise_exception=True)
 
         if local_slice is None:
             raise Exception("slice not registered with the kernel")
         else:
-            self.register(reservation, local_slice)
+            self.register(reservation=reservation, slice_object=local_slice)
 
         # Check if the reservation has a database record.
         temp = None
         try:
-            temp = self.plugin.get_database().get_reservation(reservation.get_reservation_id())
+            temp = self.plugin.get_database().get_reservation(rid=reservation.get_reservation_id())
         except Exception as e:
             raise e
 
         if temp is None or len(temp) == 0:
-            self.unregister_no_check(reservation, local_slice)
+            self.unregister_no_check(reservation=reservation, slice_object=local_slice)
             raise Exception("The reservation has no database record")
 
-    def re_register_slice(self, slice_object: IKernelSlice):
+    def re_register_slice(self, *, slice_object: IKernelSlice):
         """
         Re-registers the specified slice with the kernel.
         @param slice_object slice to re-register
         @throws Exception if the slice cannot be registered
         """
         slice_object.prepare()
-        self.slices.add(slice_object)
+        self.slices.add(slice_object=slice_object)
 
         try:
-            temp = self.plugin.get_database().get_slice(slice_object.get_slice_id())
+            temp = self.plugin.get_database().get_slice(slice_id=slice_object.get_slice_id())
             if temp is None:
                 raise Exception("The slice does not have a database record")
         except Exception as e:
             try:
                 self.lock.acquire()
-                self.slices.remove(slice_object.get_slice_id())
+                self.slices.remove(slice_id=slice_object.get_slice_id())
             finally:
                 self.lock.release()
-            self.error("could not reregister slice", e)
+            self.error(err="could not reregister slice", e=e)
 
-    def reserve(self, reservation: IKernelReservation):
+    def reserve(self, *, reservation: IKernelReservation):
         """
         Handles a reserve operation for the reservation.
         Client: issue a ticket request or a claim request.
@@ -647,15 +659,16 @@ class Kernel:
         @throws Exception
         """
         try:
-            reservation.reserve(self.policy)
-            self.plugin.get_database().update_reservation(reservation)
+            reservation.reserve(policy=self.policy)
+            self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
                 reservation.service_reserve()
         except Exception as e:
             traceback.print_exc()
-            self.error("An error occurred during reserve for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during reserve for reservation #{}".format(
+                reservation.get_reservation_id()), e=e)
 
-    def soft_validate(self, reservation: IKernelReservation = None, rid: ID = None) -> IKernelReservation:
+    def soft_validate(self, *, reservation: IKernelReservation = None, rid: ID = None) -> IKernelReservation:
         """
         Retrieves the locally registered reservation that corresponds to the
         passed reservation. Obtains the reservation from the containing slice
@@ -678,12 +691,12 @@ class Kernel:
             # set in the kernel, and (2) inside the local slice object. Here we
             # will check to see if the local slice exists and will retrieve the
             # reservation from the local slice.
-            s = self.get_local_slice(reservation.get_slice())
+            s = self.get_local_slice(slice_object=reservation.get_slice())
 
-            result = s.soft_lookup(reservation.get_reservation_id())
+            result = s.soft_lookup(rid=reservation.get_reservation_id())
 
         if rid is not None:
-            result = self.reservations.get(rid)
+            result = self.reservations.get(rid=rid)
 
         return result
 
@@ -694,13 +707,13 @@ class Kernel:
         """
         try:
             for reservation in self.reservations.values():
-                self.probe_pending(reservation)
+                self.probe_pending(reservation=reservation)
 
             self.purge()
             self.check_nothing_pending()
         except Exception as e:
             traceback.print_exc()
-            self. error("exception in Kernel.tick", e)
+            self.error(err="exception in Kernel.tick", e=e)
 
     def has_something_pending(self) -> bool:
         for reservation in self.reservations.values():
@@ -718,7 +731,7 @@ class Kernel:
         with self.nothing_pending:
             self.nothing_pending.wait()
 
-    def unregister(self, reservation: IKernelReservation, slice_object: IKernelSlice):
+    def unregister(self, *, reservation: IKernelReservation, slice_object: IKernelSlice):
         """
         Unregisters a reservation from the kernel data structures. Must be called
         with the kernel lock on. Performs state checks.
@@ -727,12 +740,12 @@ class Kernel:
         @throws Exception
         """
         if reservation.is_closed() or reservation.is_failed() or reservation.get_state() == ReservationStates.CloseWait:
-            slice_object.unregister(reservation)
-            self.reservations.remove(reservation)
+            slice_object.unregister(reservation=reservation)
+            self.reservations.remove(reservation=reservation)
         else:
             raise Exception("Only reservations in failed, closed, or closewait state can be unregistered.")
 
-    def unregister_no_check(self, reservation: IKernelReservation, slice_object: IKernelSlice):
+    def unregister_no_check(self, *, reservation: IKernelReservation, slice_object: IKernelSlice):
         """
         Unregisters a reservation from the kernel data structures. Must be called
         with the kernel lock on. Does not perform state checks.
@@ -740,10 +753,10 @@ class Kernel:
         @param slice_object local slice object
         @throws Exception
         """
-        slice_object.unregister(reservation)
-        self.reservations.remove(reservation)
+        slice_object.unregister(reservation=reservation)
+        self.reservations.remove(reservation=reservation)
 
-    def unregister_reservation(self, rid: ID):
+    def unregister_reservation(self, *, rid: ID):
         """
         Unregisters the reservation
         @param rid reservation id
@@ -751,12 +764,12 @@ class Kernel:
         """
         if rid is None:
             raise Exception("Invalid argument")
-        local_reservation = self.reservations.get_exception(rid)
-        self.unregister(local_reservation, local_reservation.get_kernel_slice())
+        local_reservation = self.reservations.get_exception(rid=rid)
+        self.unregister(reservation=local_reservation, slice_object=local_reservation.get_kernel_slice())
 
-        self.policy.remove(local_reservation)
+        self.policy.remove(reservation=local_reservation)
 
-    def unregister_slice(self, slice_id: ID):
+    def unregister_slice(self, *, slice_id: ID):
         """
         Unregisters the specified slice.
         @param slice_id slice id
@@ -767,18 +780,18 @@ class Kernel:
         if slice_id is None:
             raise Exception("Invalid argument")
 
-        s = self.get_slice(slice_id)
+        s = self.get_slice(slice_id=slice_id)
 
         if s is None:
             raise Exception("Trying to unregister a slice, which is not registered with the kernel")
 
         if s.get_reservations().size() == 0:
-            self.slices.remove(slice_id)
-            self.plugin.release_slice(s)
+            self.slices.remove(slice_id=slice_id)
+            self.plugin.release_slice(slice_obj=s)
         else:
             raise Exception("Slice cannot be unregistered: not empty")
 
-    def update_lease(self, reservation: IKernelReservation, update: Reservation, update_data: UpdateData):
+    def update_lease(self, *, reservation: IKernelReservation, update: Reservation, update_data: UpdateData):
         """
         Handles an incoming update lease operation (client side only).
         @param reservation local reservation
@@ -788,7 +801,7 @@ class Kernel:
         """
         try:
             self.logger.debug("updateLease: Incoming term {}".format(update.get_term()))
-            reservation.update_lease(update, update_data)
+            reservation.update_lease(incoming=update, update_data=update_data)
 
             # NOTE: the database update has to happen BEFORE the service
             # update: we need to record the fact that we received a concrete
@@ -797,14 +810,15 @@ class Kernel:
             # in Ticketed, Redeeming with state in the database that will
             # prevent us from incorporating a leaseUpdate.
 
-            self.plugin.get_database().update_reservation(reservation)
+            self.plugin.get_database().update_reservation(reservation=reservation)
 
             if not reservation.is_failed():
                 reservation.service_update_lease()
         except Exception as e:
-            self.error("An error occurred during update lease for reservation # {}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during update lease for reservation # {}".format(
+                reservation.get_reservation_id()), e=e)
 
-    def update_ticket(self, reservation: IKernelReservation, update: Reservation, update_data: UpdateData):
+    def update_ticket(self, *, reservation: IKernelReservation, update: Reservation, update_data: UpdateData):
         """
         Handles an incoming update ticket operation (client side only).
         @param reservation local reservation
@@ -813,14 +827,15 @@ class Kernel:
         @throws Exception
         """
         try:
-            reservation.update_ticket(update, update_data)
-            self.plugin.get_database().update_reservation(reservation)
+            reservation.update_ticket(incoming=update, update_data=update_data)
+            self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
                 reservation.service_update_ticket()
         except Exception as e:
-            self.error("An error occurred during update ticket for reservation # {}".format(reservation.get_reservation_id()), e)
+            self.error(err="An error occurred during update ticket for reservation # {}".format(
+                reservation.get_reservation_id()), e=e)
 
-    def validate(self, reservation: IKernelReservation = None, rid: ID = None):
+    def validate(self, *, reservation: IKernelReservation = None, rid: ID = None):
         """
         Retrieves the locally registered reservation that corresponds to the
         passed reservation. Obtains the reservation from the containing slice
@@ -838,14 +853,14 @@ class Kernel:
         if reservation is not None:
             local = self.soft_validate(reservation=reservation)
             if local is None:
-                self.error("reservation not found", ReservationNotFoundException(rid=rid))
+                self.error(err="reservation not found", e=ReservationNotFoundException(rid=rid))
             return local
 
         if rid is not None:
             local = self.soft_validate(rid=rid)
             if local is None:
-                self.error("reservation not found", ReservationNotFoundException(rid=rid))
+                self.error(err="reservation not found", e=ReservationNotFoundException(rid=rid))
             return local
 
-    def handle_failed_rpc(self, reservation: IKernelReservation, rpc: FailedRPC):
-        reservation.handle_failed_rpc(rpc)
+    def handle_failed_rpc(self, *, reservation: IKernelReservation, rpc: FailedRPC):
+        reservation.handle_failed_rpc(failed=rpc)

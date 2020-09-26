@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -35,7 +37,8 @@ class IReservationStatus:
     IReservationStatus defines a set of predicates that can be used to query the state of a reservation.
     """
 
-    def fail(self, message: str, exception: Exception = None):
+    @abstractmethod
+    def fail(self, *, message: str, exception: Exception = None):
         """
         Marks an operation failure. Transitions the reservation to the failed state and logs the message as an error.
 
@@ -43,17 +46,17 @@ class IReservationStatus:
               message: error message
               exception: exception
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def fail_warn(self, message: str):
+    @abstractmethod
+    def fail_warn(self, *, message: str):
         """
         Marks an operation failure. Transitions the reservation to the failed state and logs the message as an error.
 
         Args:
               message: error message
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_action(self) -> bool:
         """
         Checks if the reservation is active.
@@ -61,8 +64,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is active
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_active(self) -> bool:
         """
         Checks if the reservation is active.
@@ -70,8 +73,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is active
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_active_ticketed(self) -> bool:
         """
         Checks if the reservation is activeTicketed.
@@ -79,8 +82,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is activeTicketed
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_closed(self) -> bool:
         """
         Checks if the reservation is closed.
@@ -88,8 +91,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is closed
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_closing(self) -> bool:
         """
         Checks if the reservation is closing.
@@ -97,9 +100,9 @@ class IReservationStatus:
         Returns:
             true if the reservation is pending closing
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def is_expired(self, t: datetime = None) -> bool:
+    @abstractmethod
+    def is_expired(self, *, t: datetime = None) -> bool:
         """
         Checks if the reservation has expired before time t.
 
@@ -108,8 +111,8 @@ class IReservationStatus:
         Returns:
             true if the reservation has expired before t
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_extended(self) -> bool:
         """
         Checks if the reservation has extended at least once.
@@ -117,8 +120,8 @@ class IReservationStatus:
         Returns:
             true if the reservation has extended at least once
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_extending_lease(self) -> bool:
         """
         Checks if the reservation is extending a lease.
@@ -126,8 +129,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is extending a lease
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_extending_ticket(self) -> bool:
         """
         Checks if the reservation is extending a ticket.
@@ -135,8 +138,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is extending a ticket
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_failed(self) -> bool:
         """
         Checks if the reservation has failed.
@@ -144,8 +147,8 @@ class IReservationStatus:
         Returns:
             true if the reservation has failed
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_nascent(self) -> bool:
         """
         Checks if the reservation is nascent.
@@ -153,8 +156,8 @@ class IReservationStatus:
         Returns:
             true if the reservation pending is nascent
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_no_pending(self) -> bool:
         """
         Checks if there is no pending operation.
@@ -162,8 +165,8 @@ class IReservationStatus:
         Returns:
             true if there is no pending operation
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_priming(self) -> bool:
         """
         Checks if the reservation is priming.
@@ -171,8 +174,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is priming
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_redeeming(self) -> bool:
         """
         Checks if the reservation is redeeming.
@@ -180,8 +183,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is redeeming
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_terminal(self) -> bool:
         """
         Checks if the reservation is terminal, e.g., closing, closed, or failed.
@@ -189,8 +192,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is terminal.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_ticketed(self) -> bool:
         """
         Check if the reservation is ticketed.
@@ -198,8 +201,8 @@ class IReservationStatus:
         Returns:
             true if the reservation is ticketed.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def is_ticketing(self) -> bool:
         """
         Checks if the reservation is obtaining a new ticket.
@@ -207,13 +210,12 @@ class IReservationStatus:
         Returns:
             true if the reservation is obtaining a ticket
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_expired(self, value: bool):
+    @abstractmethod
+    def set_expired(self, *, value: bool):
         """
         Sets the expiration flag.
 
         Args:
             value: true if the reservation is expired
         """
-        raise NotImplementedError( "Should have implemented this" )

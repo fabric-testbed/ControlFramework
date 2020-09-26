@@ -83,12 +83,12 @@ class ReservationTracker(IReservationTracker, IEventHandler):
         self.__dict__.update(state)
         self.lock = threading.Lock()
 
-    def handle_state_transition(self, e: ReservationStateTransitionEvent):
+    def handle_state_transition(self, *, e: ReservationStateTransitionEvent):
         ts = None
         try:
             self.lock.acquire()
             if e.get_reservation_id() in self.state:
-                ts = self.state.get(e.get_reservation_id())
+                ts = self.state.get(e.get_reservation_id(), None)
             if ts is None:
                 ts = ReservationTracker.ReservationTrackerState()
                 ts.state = e.get_state()
@@ -96,7 +96,7 @@ class ReservationTracker(IReservationTracker, IEventHandler):
         finally:
             self.lock.release()
 
-    def handle_reservation_purged(self, e: ReservationPurgedEvent):
+    def handle_reservation_purged(self, *, e: ReservationPurgedEvent):
         ts = None
         try:
             self.lock.acquire()
@@ -106,13 +106,13 @@ class ReservationTracker(IReservationTracker, IEventHandler):
         finally:
             self.lock.release()
 
-    def handle(self, event: IEvent):
+    def handle(self, *, event: IEvent):
         if isinstance(event, ReservationStateTransitionEvent):
-            self.handle_state_transition(event)
+            self.handle_state_transition(e=event)
         elif isinstance(event, ReservationPurgedEvent):
-            self.handle_reservation_purged(event)
+            self.handle_reservation_purged(e=event)
 
-    def get_state(self, rid: ID) -> ReservationState:
+    def get_state(self, *, rid: ID) -> ReservationState:
         ret_val = None
         try:
             self.lock.acquire()

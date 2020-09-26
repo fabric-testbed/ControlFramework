@@ -28,7 +28,7 @@ from fabric.actor.core.common.constants import Constants
 
 class RuntimeConfig:
 
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.kafka_config = {}
 
         for prop in config:
@@ -73,7 +73,7 @@ class RuntimeConfig:
 
 
 class LogConfig:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.log_dir = None
         self.log_file = None
         self.log_level = None
@@ -116,7 +116,7 @@ class LogConfig:
 
 
 class AuthConfig:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.name = None
         self.guid = None
 
@@ -135,7 +135,7 @@ class AuthConfig:
 
 
 class Peer:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.name = None
         self.type = None
         self.guid = None
@@ -166,13 +166,13 @@ class Peer:
 
 class Configuration:
     def __init__(self, config: dict):
-        self.runtime = RuntimeConfig(config[Constants.ConfigSectionRuntime])
-        self.logging = LogConfig(config[Constants.ConfigLoggingSection])
-        self.auth = AuthConfig(config['auth'])
+        self.runtime = RuntimeConfig(config=config[Constants.ConfigSectionRuntime])
+        self.logging = LogConfig(config=config[Constants.ConfigLoggingSection])
+        self.auth = AuthConfig(config=config['auth'])
         self.peers = []
         if 'peers' in config:
             for e in config['peers']:
-                self.peers.append(Peer(e['peer']))
+                self.peers.append(Peer(config=e['peer']))
 
     def get_runtime_config(self) -> RuntimeConfig:
         return self.runtime

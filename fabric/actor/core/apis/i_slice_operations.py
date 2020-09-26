@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
@@ -37,6 +39,7 @@ class ISliceOperations:
     ISliceOperations defines a common set of management operations for slices.
     This interface is implemented by each  actor.
     """
+    @abstractmethod
     def get_client_slices(self):
         """
         Returns all client slices registered with the actor.
@@ -44,8 +47,8 @@ class ISliceOperations:
         Returns:
             an array of client slices
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_slices(self):
         """
         Returns all slices registered with the actor.
@@ -53,9 +56,9 @@ class ISliceOperations:
         Returns:
             an array of slices
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_slice(self, slice_id: ID) -> ISlice:
+    @abstractmethod
+    def get_slice(self, *, slice_id: ID) -> ISlice:
         """
         Returns the slice with the given id.
 
@@ -64,32 +67,32 @@ class ISliceOperations:
         Returns:
             the slice
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def register_slice(self, slice:ISlice):
+    @abstractmethod
+    def register_slice(self, *, slice_object:ISlice):
         """
         Registers the slice with the actor. The slice must be a newly created one without a database record.
         If the slice is a recovered/previously unregistered one use re_register_slice(Slice) instead.
 
         Args:
-            slice: slice
+            slice_object: slice
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def remove_slice(self, slice: ISlice):
+    @abstractmethod
+    def remove_slice(self, *, slice_object: ISlice):
         """
         Removes the specified slice. Purges slice-related state from the database.
 
         Args:
-            slice: slice
+            slice_object: slice
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def remove_slice_by_slice_id(self, slice_id: ID):
+    @abstractmethod
+    def remove_slice_by_slice_id(self, *, slice_id: ID):
         """
         Removes the specified slice. Purges slice-related state from the database.
 
@@ -98,31 +101,31 @@ class ISliceOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def re_register_slice(self, slice: ISlice):
+    @abstractmethod
+    def re_register_slice(self, *, slice_object: ISlice):
         """
         Re-registers the slice with the actor. The slice must already have a database record.
 
         Args:
-            slice: slice
+            slice_object: slice
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def unregister_slice(self, slice: ISlice):
+    @abstractmethod
+    def unregister_slice(self, *, slice_object: ISlice):
         """
         Unregisters the slice. Does not purge slice-related state from the database.
 
         Args:
-            slice: slice
+            slice_object: slice
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def unregister_slice_by_slice_id(self, slice_id: ID):
+    @abstractmethod
+    def unregister_slice_by_slice_id(self, *, slice_id: ID):
         """
         Unregisters the slice. Does not purge slice-related state from the database.
 
@@ -131,9 +134,9 @@ class ISliceOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def close_slice_reservations(self, slice_id: ID):
+    @abstractmethod
+    def close_slice_reservations(self, *, slice_id: ID):
         """
         Close slice reservations
 
@@ -142,4 +145,3 @@ class ISliceOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor import IActor
@@ -47,7 +49,8 @@ class IServerActor(IActor, IServerPublic):
     IServerActor defines the common functionality for actors
     acting as servers for other actors (brokers and site authorities).
     """
-    def donate_reservation(self, reservation: IClientReservation):
+    @abstractmethod
+    def donate_reservation(self, *, reservation: IClientReservation):
         """
         Accepts ticketed resources to be used for allocation of client
         requests.
@@ -57,9 +60,9 @@ class IServerActor(IActor, IServerPublic):
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def export(self, reservation: IBrokerReservation, resources: ResourceSet, term: Term, client: AuthToken) -> ID:
+    @abstractmethod
+    def export(self, *, reservation: IBrokerReservation, resources: ResourceSet, term: Term, client: AuthToken) -> ID:
         """
         Exports the specified resources for the given period of time to
         the client.
@@ -72,42 +75,42 @@ class IServerActor(IActor, IServerPublic):
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def register_client_slice(self, slice:ISlice):
+    @abstractmethod
+    def register_client_slice(self, *, slice:ISlice):
         """
         Registers a new client slice.
         @params slice: client slice
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def register_client(self, client: Client):
+    @abstractmethod
+    def register_client(self, *, client: Client):
         """
         Registers the specified client.
         @param client client to register
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def unregister_client(self, guid:ID):
+    @abstractmethod
+    def unregister_client(self, *, guid:ID):
         """
         Unregisters the specified client.
         @params guid : client guid
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_client(self, guid: ID) -> Client:
+    @abstractmethod
+    def get_client(self, *, guid: ID) -> Client:
         """
         Get a client specified by GUID
         @params guid: guid
         @returns client: specified by GUID
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def claim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    @abstractmethod
+    def claim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         """
         Processes an incoming claim request.
         @params reservation: reservation
@@ -115,9 +118,9 @@ class IServerActor(IActor, IServerPublic):
         @params caller: caller
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    @abstractmethod
+    def reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         """
         Processes an incoming claim request.
         @params reservation: reservation
@@ -125,9 +128,9 @@ class IServerActor(IActor, IServerPublic):
         @params caller: caller
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    @abstractmethod
+    def ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         """
         Processes an incoming ticket request.
         @params reservation: reservation
@@ -135,23 +138,23 @@ class IServerActor(IActor, IServerPublic):
         @params caller: caller
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def extend_ticket(self, reservation: IReservation, caller: AuthToken):
+    @abstractmethod
+    def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
         """
         Processes an incoming extend_ticket request.
         @params reservation: reservation
         @params caller: caller
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def relinquish(self, reservation: IReservation, caller: AuthToken):
+    @abstractmethod
+    def relinquish(self, *, reservation: IReservation, caller: AuthToken):
         """
         Processes an incoming relinquish request.
         @params reservation: reservation
         @params caller: caller
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
+        
 

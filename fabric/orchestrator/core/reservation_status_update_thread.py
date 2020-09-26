@@ -24,8 +24,10 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+from typing import List
 
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric.actor.core.util.id import ID
 from fabric.orchestrator.core.active_status_checker import ActiveStatusChecker
 from fabric.orchestrator.core.i_status_update_callback import IStatusUpdateCallback
 from fabric.orchestrator.core.modify_status_checker import ModifyStatusChecker
@@ -72,7 +74,7 @@ class ReservationStatusUpdateThread:
         while not self.stopped_worker.wait(timeout=self.get_period()):
             self.run()
 
-    def add_active_status_watch(self, watch: list, act: list, callback: IStatusUpdateCallback):
+    def add_active_status_watch(self, *, watch: List[ID], act: List[ID], callback: IStatusUpdateCallback):
         """
         Watch for transition to Active or Failed. Callback is called when ALL reservations in the watch list have reached
         Active or Failed or Closed state. If all reservations on the watch list went to Active or Closed, the success
@@ -88,11 +90,11 @@ class ReservationStatusUpdateThread:
 
         try:
             self.lock.acquire()
-            self.active_watch.append(WatchEntry(watch, act, callback))
+            self.active_watch.append(WatchEntry(watch=watch, rids=act, callback=callback))
         finally:
             self.lock.release()
 
-    def add_modify_status_watch(self, watch, act, callback: IStatusUpdateCallback):
+    def add_modify_status_watch(self, *, watch, act, callback: IStatusUpdateCallback):
         """
         Watch for OK unit modify status (or not OK). Callback is called when ALL reservations in the watch list have
         reached some sort of modify status (OK or not OK) If all reservations on the watch list went to OK, the success
@@ -108,11 +110,11 @@ class ReservationStatusUpdateThread:
 
         try:
             self.lock.acquire()
-            self.modify_watch.append(WatchEntry(watch, act, callback))
+            self.modify_watch.append(WatchEntry(watch=watch, rids=act, callback=callback))
         finally:
             self.lock.release()
 
-    def check_watch_entry(self, controller: IMgmtActor, watch_entry: WatchEntry,
+    def check_watch_entry(self, *, controller: IMgmtActor, watch_entry: WatchEntry,
                           status_checker: StatusChecker) -> TriggeredWatchEntry:
 
         ok = []
@@ -120,7 +122,7 @@ class ReservationStatusUpdateThread:
 
         ready = True
         for rid in watch_entry.watch:
-            status = status_checker.check(controller, rid, ok, notok)
+            status = status_checker.check(controller=controller, rid=rid, ok=ok, not_ok=notok)
             if status == Status.NOTREADY:
                 ready = False
 
@@ -128,9 +130,10 @@ class ReservationStatusUpdateThread:
             self.logger.debug("Reservation watch not ready for reservations {}".format(watch_entry.watch))
             return None
 
-        return TriggeredWatchEntry(watch_entry.watch, watch_entry.act, watch_entry.callback, ok, notok)
+        return TriggeredWatchEntry(watch=watch_entry.watch, rids=watch_entry.act, callback=watch_entry.callback, ok=ok,
+                                   no_ok=notok)
 
-    def process_callback(self, watch_entry: TriggeredWatchEntry):
+    def process_callback(self, *, watch_entry: TriggeredWatchEntry):
         if len(watch_entry.not_ok) == 0:
             self.logger.debug("Invoking success callback for reservations: {}".format(watch_entry.watch))
             watch_entry.callback.success(watch_entry.ok, watch_entry.act)
@@ -138,7 +141,7 @@ class ReservationStatusUpdateThread:
             self.logger.debug("Invoking failure callback for reservations: {}".format(watch_entry.watch))
             watch_entry.callback.failure(watch_entry.not_ok, watch_entry.ok, watch_entry.act)
 
-    def process_watch_list(self, controller: IMgmtActor, watch_list: list, watch_type: str,
+    def process_watch_list(self, *, controller: IMgmtActor, watch_list: List[WatchEntry], watch_type: str,
                            status_checker: StatusChecker):
         to_remove = []
         self.logger.debug("Scanning {} watch list".format(watch_type))
@@ -146,7 +149,8 @@ class ReservationStatusUpdateThread:
         try:
             self.lock.acquire()
             for watch_entry in watch_list:
-                twe = self.check_watch_entry(controller, watch_entry, status_checker)
+                twe = self.check_watch_entry(controller=controller, watch_entry=watch_entry,
+                                             status_checker=status_checker)
                 if twe is not None:
                     to_process.append(twe)
                     to_remove.append(twe)
@@ -160,7 +164,7 @@ class ReservationStatusUpdateThread:
         self.logger.debug("Processing {} triggered {} callbacks".format(len(to_process), watch_type))
         for we in to_process:
             try:
-                self.process_callback(we)
+                self.process_callback(watch_entry=we)
             except Exception as e:
                 self.logger.error("Triggered {} watch entry for reservations {} returned with callback exception e: {}".
                                   format(watch_type, we.watch, e))
@@ -177,10 +181,12 @@ class ReservationStatusUpdateThread:
         # and only then call the callbacks
 
         try:
-            from fabric.orchestrator.core.orchestrator_state import ControllerStateSingleton
-            controller = ControllerStateSingleton.get().get_management_actor()
-            self.process_watch_list(controller, self.active_watch, "active", ActiveStatusChecker())
-            self.process_watch_list(controller, self.modify_watch, "modify", ModifyStatusChecker())
+            from fabric.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
+            controller = OrchestratorStateSingleton.get().get_management_actor()
+            self.process_watch_list(controller=controller, watch_list=self.active_watch, watch_type="active",
+                                    status_checker=ActiveStatusChecker())
+            self.process_watch_list(controller=controller, watch_list=self.modify_watch, watch_type="modify",
+                                    status_checker=ModifyStatusChecker())
         except Exception as e:
             self.logger.error("RuntimeException: {} continuing".format(e))
 

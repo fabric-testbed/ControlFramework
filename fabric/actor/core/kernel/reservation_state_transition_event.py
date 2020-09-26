@@ -30,7 +30,7 @@ from fabric.actor.core.util.reservation_state import ReservationState
 
 
 class ReservationStateTransitionEvent(IEvent):
-    def __init__(self, reservation: IReservation, state: ReservationState):
+    def __init__(self, *, reservation: IReservation, state: ReservationState):
         self.actor_id = reservation.get_actor().get_guid()
         self.rid = reservation.get_reservation_id()
         self.slice_id = reservation.get_slice_id()

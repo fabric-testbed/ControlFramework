@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_base_plugin import IBasePlugin
@@ -35,43 +37,44 @@ if TYPE_CHECKING:
 
 
 class ISubstrate(IBasePlugin):
+    @abstractmethod
     def get_substrate_database(self) -> ISubstrateDatabase:
         """
         Returns the substrate database.
         @return the substrate database
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def transfer_in(self, reservation: IReservation, unit: Unit):
+    @abstractmethod
+    def transfer_in(self, *, reservation: IReservation, unit: Unit):
         """
         Transfers in a new unit into the substrate. Transfer in involves
         configuring the unit so that it is part of the substrate.
         @param reservation reservation that contains the unit
         @param unit unit to be transferred
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def transfer_out(self, reservation: IReservation, unit: Unit):
+    @abstractmethod
+    def transfer_out(self, *, reservation: IReservation, unit: Unit):
         """
         Transfers an existing unit out of the substrate. Transfer out involves
         unconfiguring the unit, so that it is no longer part of the substrate.
         @param reservation reservation that contains the unit
         @param unit unit to be transferred
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def modify(self, reservation: IReservation, unit: Unit):
+    @abstractmethod
+    def modify(self, *, reservation: IReservation, unit: Unit):
         """
         Modifies an existing unit that is already part of the substrate.
         @param reservation reservation that contains the unit
         @param unit unit to be modified.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def update_props(self, reservation: IReservation, unit: Unit):
+    @abstractmethod
+    def update_props(self, *, reservation: IReservation, unit: Unit):
         """
         Updates only the properties of an existing unit that is already part of the substrate.
         @param reservation reservation that contains the unit
         @param unit unit to be modified.
         """
-        raise NotImplementedError("Should have implemented this")
+

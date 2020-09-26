@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -35,7 +37,9 @@ class IControllerPublic:
     """
     IControllerPublic represents the public cross-actor interface for actors acting in the orchestrator role.
     """
-    def update_lease(self, reservation: IReservation, update_data, caller: AuthToken):
+
+    @abstractmethod
+    def update_lease(self, *, reservation: IReservation, update_data, caller: AuthToken):
         """
         Handles an incoming lease update.
        
@@ -47,4 +51,3 @@ class IControllerPublic:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

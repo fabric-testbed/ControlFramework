@@ -33,7 +33,7 @@ class ReservationSetWrapper:
     """
     Internal representation for all reservations associated with a cycle.
     """
-    def __init__(self, reservation_set: ReservationSet, cycle: int):
+    def __init__(self, *, reservation_set: ReservationSet, cycle: int):
         """
         Constructor
         @params reservation_set: Reservation set
@@ -87,7 +87,7 @@ class ReservationList:
         # map of <reservation_id, int(cycle)>
         self.reservation_id_to_cycle = {}
 
-    def add_reservation(self, reservation: IReservation, cycle: int):
+    def add_reservation(self, *, reservation: IReservation, cycle: int):
         """
         Adds a reservation associated with a given cycle.
         @params reservation:  the reservation
@@ -111,26 +111,26 @@ class ReservationList:
         else:
             reservation_set = ReservationSet()
 
-        if reservation_set.contains(reservation) is False:
-            reservation_set.add(reservation)
+        if reservation_set.contains(reservation=reservation) is False:
+            reservation_set.add(reservation=reservation)
             self.count += 1
 
         if cycle not in self.cycle_to_rset:
-            self.add_to_list(reservation_set, cycle)
+            self.add_to_list(reservation_set=reservation_set, cycle=cycle)
             self.cycle_to_rset[cycle] = reservation_set
 
         self.reservation_id_to_cycle[reservation.get_reservation_id()] = cycle
 
-    def add_to_list(self, reservation_set:ReservationSet, cycle: int):
+    def add_to_list(self, *, reservation_set:ReservationSet, cycle: int):
         """
         Adds an entry to the sorted list
         @params reservation_set: reservation set
         @params cycle: cycle
         """
-        entry = ReservationSetWrapper(reservation_set, cycle)
+        entry = ReservationSetWrapper(reservation_set=reservation_set, cycle=cycle)
         bisect.insort(self.rset_wrapper_list, entry)
 
-    def get_all_reservations(self, cycle: int) -> ReservationSet:
+    def get_all_reservations(self, *, cycle: int) -> ReservationSet:
         """
         Returns all reservations associated with cycles up to and including the specified cycle
         @params cycle : cycle
@@ -141,12 +141,12 @@ class ReservationList:
         for entry in self.rset_wrapper_list:
             if entry.cycle <= cycle:
                 for reservation in entry.reservation_set.values():
-                    result.add(reservation)
+                    result.add(reservation=reservation)
             else:
                 break
         return result
 
-    def get_reservations(self, cycle: int) -> ReservationSet:
+    def get_reservations(self, *, cycle: int) -> ReservationSet:
         """
         Returns all reservations associated with the specified cycle.
         @params cycle : cycle
@@ -160,7 +160,7 @@ class ReservationList:
 
         return result
 
-    def remove_reservation(self, reservation: IReservation):
+    def remove_reservation(self, *, reservation: IReservation):
         """
         Removes a reservation from the list.
         @params reservation: reservation to remove
@@ -172,7 +172,7 @@ class ReservationList:
 
             if cycle in self.cycle_to_rset:
                 reservation_set = self.cycle_to_rset[cycle]
-                reservation_set.remove(reservation)
+                reservation_set.remove(reservation=reservation)
 
                 if reservation_set.size() == 0:
                     self.cycle_to_rset.pop(cycle)
@@ -185,7 +185,7 @@ class ReservationList:
         """
         return self.count
 
-    def tick(self, cycle: int):
+    def tick(self, *, cycle: int):
         """
         Removes reservations associated with cycles less than or equal to the given cycle
         @params cycle: cycle

@@ -37,7 +37,7 @@ class Policy(IPolicy):
     """
     Base class for all policy implementations.
     """
-    def __init__(self, actor: IActor = None):
+    def __init__(self, *, actor: IActor = None):
         """
         Creates a new instance.
         @params actor : actor this policy belongs to
@@ -72,21 +72,21 @@ class Policy(IPolicy):
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
 
-    def close(self, reservation:IReservation):
+    def close(self, *, reservation:IReservation):
         """
         Close a reservation
         @params reservation: reservation about to be closed
         """
         return
 
-    def closed(self, reservation: IReservation):
+    def closed(self, *, reservation: IReservation):
         """
         Notifies the policy that a reservation has been closed.
         @params reservation: reservation about to be closed
         """
         return
 
-    def configuration_complete(self, action: str, token: ConfigToken, out_properties: dict):
+    def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         """
         Notifies the policy that a configuration action for the object
         represented by the token parameter has completed.
@@ -97,7 +97,7 @@ class Policy(IPolicy):
         """
         return
 
-    def error(self, message: str):
+    def error(self, *, message: str):
         """
         Logs the specified error and throws an exception.
         @params message: error message
@@ -106,13 +106,13 @@ class Policy(IPolicy):
         self.logger.error(message)
         raise Exception(message)
 
-    def extend(self, reservation: IReservation, resources: ResourceSet, term: Term):
+    def extend(self, *, reservation: IReservation, resources: ResourceSet, term: Term):
         return
 
-    def finish(self, cycle: int):
+    def finish(self, *, cycle: int):
         return
 
-    def get_closing(self, cycle: int) -> ReservationSet:
+    def get_closing(self, *, cycle: int) -> ReservationSet:
         return None
 
     def get_guid(self) -> ID:
@@ -137,7 +137,7 @@ class Policy(IPolicy):
 
             self.initialized = True
 
-    def internal_error(self, message: str):
+    def internal_error(self, *, message: str):
         """
         Logs the specified error and throws an exception.
         @params message: error message
@@ -146,27 +146,27 @@ class Policy(IPolicy):
         self.logger.error("Internal error: " + message)
         raise Exception("Internal error: " + message)
 
-    def log_error(self, message: str):
+    def log_error(self, *, message: str):
         """
         logs an error
         @params message: error message
         """
         self.logger.error("Internal mapper error: " + message)
 
-    def log_warn(self, message: str):
+    def log_warn(self, *, message: str):
         """
         logs a warning
         @params message: warning message
         """
         self.logger.warning("Internal mapper warning: " + message)
 
-    def prepare(self, cycle: int):
+    def prepare(self, *, cycle: int):
         return
 
-    def query(self, p):
+    def query(self, *, p):
         return None
 
-    def remove(self, reservation: IReservation):
+    def remove(self, *, reservation: IReservation):
         return
 
     def reset(self):
@@ -175,11 +175,11 @@ class Policy(IPolicy):
     def recovery_starting(self):
         return
 
-    def revisit(self, reservation: IReservation):
-        reservation
+    def revisit(self, *, reservation: IReservation):
+        return
 
     def recovery_ended(self):
         return
 
-    def set_actor(self, actor: IActor):
+    def set_actor(self, *, actor: IActor):
         self.actor = actor

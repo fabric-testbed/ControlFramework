@@ -71,7 +71,7 @@ class RPCManager:
         self.stats_lock = threading.Condition()
 
     @staticmethod
-    def validate(reservation: IReservation, check_requested: bool = False):
+    def validate(*, reservation: IReservation, check_requested: bool = False):
         if reservation is None:
             raise Exception("Missing reservation")
 
@@ -105,12 +105,12 @@ class RPCManager:
     def stop(self):
         self.do_stop()
 
-    def retry(self, request: RPCRequest):
+    def retry(self, *, request: RPCRequest):
         if request is None:
             raise Exception("Missing request")
-        self.do_retry(request)
+        self.do_retry(rpc=request)
 
-    def failed_rpc(self, actor: IActor, rpc: IncomingRPC, e: Exception):
+    def failed_rpc(self, *, actor: IActor, rpc: IncomingRPC, e: Exception):
         if actor is None:
             raise Exception("Missing actor")
 
@@ -123,85 +123,85 @@ class RPCManager:
         if isinstance(rpc, IncomingFailedRPC):
             raise Exception("Cannot reply to a FailedRPC with a FailedRPC")
 
-        self.do_failed_rpc(actor, rpc.get_callback(), rpc, e, actor.get_identity())
+        self.do_failed_rpc(actor=actor, proxy=rpc.get_callback(), rpc=rpc, e=e, caller=actor.get_identity())
 
-    def claim(self, reservation: IClientReservation):
-        self.validate(reservation)
-        self.do_claim(reservation.get_actor(), reservation.get_broker(),
-                      reservation, reservation.get_client_callback_proxy(),
-                      reservation.get_slice().get_owner())
+    def claim(self, *, reservation: IClientReservation):
+        self.validate(reservation=reservation)
+        self.do_claim(actor=reservation.get_actor(), proxy=reservation.get_broker(),
+                      reservation=reservation, callback=reservation.get_client_callback_proxy(),
+                      caller=reservation.get_slice().get_owner())
 
-    def reclaim(self, reservation: IClientReservation):
-        self.validate(reservation)
-        self.do_reclaim(reservation.get_actor(), reservation.get_broker(),
-                      reservation, reservation.get_client_callback_proxy(),
-                      reservation.get_slice().get_owner())
+    def reclaim(self, *, reservation: IClientReservation):
+        self.validate(reservation=reservation)
+        self.do_reclaim(actor=reservation.get_actor(), proxy=reservation.get_broker(),
+                        reservation=reservation, callback=reservation.get_client_callback_proxy(),
+                        caller=reservation.get_slice().get_owner())
 
-    def ticket(self, reservation: IClientReservation):
-        self.validate(reservation, True)
-        self.do_ticket(reservation.get_actor(), reservation.get_broker(),
-                       reservation, reservation.get_client_callback_proxy(),
-                       reservation.get_slice().get_owner())
+    def ticket(self, *, reservation: IClientReservation):
+        self.validate(reservation=reservation, check_requested=True)
+        self.do_ticket(actor=reservation.get_actor(), proxy=reservation.get_broker(),
+                       reservation=reservation, callback=reservation.get_client_callback_proxy(),
+                       caller=reservation.get_slice().get_owner())
 
-    def extend_ticket(self, reservation: IClientReservation):
-        self.validate(reservation, True)
-        self.do_extend_ticket(reservation.get_actor(), reservation.get_broker(),
-                              reservation, reservation.get_client_callback_proxy(),
-                              reservation.get_slice().get_owner())
+    def extend_ticket(self, *, reservation: IClientReservation):
+        self.validate(reservation=reservation, check_requested=True)
+        self.do_extend_ticket(actor=reservation.get_actor(), proxy=reservation.get_broker(),
+                              reservation=reservation, callback=reservation.get_client_callback_proxy(),
+                              caller=reservation.get_slice().get_owner())
 
-    def relinquish(self, reservation: IClientReservation):
-        self.validate(reservation)
-        self.do_relinquish(reservation.get_actor(), reservation.get_broker(),
-                           reservation, reservation.get_client_callback_proxy(),
-                           reservation.get_slice().get_owner())
+    def relinquish(self, *, reservation: IClientReservation):
+        self.validate(reservation=reservation)
+        self.do_relinquish(actor=reservation.get_actor(), proxy=reservation.get_broker(),
+                           reservation=reservation, callback=reservation.get_client_callback_proxy(),
+                           caller=reservation.get_slice().get_owner())
 
-    def redeem(self, reservation: IControllerReservation):
-        self.validate(reservation, True)
-        self.do_redeem(reservation.get_actor(), reservation.get_authority(),
-                       reservation, reservation.get_client_callback_proxy(),
-                       reservation.get_slice().get_owner())
+    def redeem(self, *, reservation: IControllerReservation):
+        self.validate(reservation=reservation, check_requested=True)
+        self.do_redeem(actor=reservation.get_actor(), proxy=reservation.get_authority(),
+                       reservation=reservation, callback=reservation.get_client_callback_proxy(),
+                       caller=reservation.get_slice().get_owner())
 
-    def extend_lease(self, proxy: IAuthorityProxy, reservation: IControllerReservation, caller: AuthToken):
-        self.validate(reservation, True)
-        self.do_extend_lease(reservation.get_actor(), reservation.get_authority(),
-                             reservation, reservation.get_client_callback_proxy(),
-                             reservation.get_slice().get_owner())
+    def extend_lease(self, *, proxy: IAuthorityProxy, reservation: IControllerReservation, caller: AuthToken):
+        self.validate(reservation=reservation, check_requested=True)
+        self.do_extend_lease(actor=reservation.get_actor(), proxy=reservation.get_authority(),
+                             reservation=reservation, callback=reservation.get_client_callback_proxy(),
+                             caller=reservation.get_slice().get_owner())
 
-    def modify_lease(self, proxy: IAuthorityProxy, reservation: IControllerReservation, caller: AuthToken):
-        self.validate(reservation, True)
-        self.do_modify_lease(reservation.get_actor(), reservation.get_authority(),
-                             reservation, reservation.get_client_callback_proxy(),
-                             reservation.get_slice().get_owner())
+    def modify_lease(self, *, proxy: IAuthorityProxy, reservation: IControllerReservation, caller: AuthToken):
+        self.validate(reservation=reservation, check_requested=True)
+        self.do_modify_lease(actor=reservation.get_actor(), proxy=reservation.get_authority(),
+                             reservation=reservation, callback=reservation.get_client_callback_proxy(),
+                             caller=reservation.get_slice().get_owner())
 
-    def close(self, reservation: IControllerReservation):
-        self.validate(reservation)
-        self.do_close(reservation.get_actor(), reservation.get_authority(),
-                      reservation, reservation.get_client_callback_proxy(),
-                      reservation.get_slice().get_owner())
+    def close(self, *, reservation: IControllerReservation):
+        self.validate(reservation=reservation)
+        self.do_close(actor=reservation.get_actor(), proxy=reservation.get_authority(),
+                      reservation=reservation, callback=reservation.get_client_callback_proxy(),
+                      caller=reservation.get_slice().get_owner())
 
-    def update_ticket(self, reservation: IBrokerReservation):
-        self.validate(reservation)
+    def update_ticket(self, *, reservation: IBrokerReservation):
+        self.validate(reservation=reservation)
         # get a callback to the actor calling updateTicket, so that any
         # failures in the remote actor can be delivered back
-        callback = Proxy.get_callback(reservation.get_actor(), reservation.get_callback().get_type())
+        callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
         if callback is None:
             raise Exception("Missing callback")
-        self.do_update_ticket(reservation.get_actor(), reservation.get_callback(),
-                              reservation, reservation.get_update_data(),
-                              callback, reservation.get_actor().get_identity())
+        self.do_update_ticket(actor=reservation.get_actor(), proxy=reservation.get_callback(),
+                              reservation=reservation, update_data=reservation.get_update_data(),
+                              callback=callback, caller=reservation.get_actor().get_identity())
 
-    def update_lease(self, reservation: IAuthorityReservation):
-        self.validate(reservation)
+    def update_lease(self, *, reservation: IAuthorityReservation):
+        self.validate(reservation=reservation)
         # get a callback to the actor calling updateTicket, so that any
         # failures in the remote actor can be delivered back
-        callback = Proxy.get_callback(reservation.get_actor(), reservation.get_callback().get_type())
+        callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
         if callback is None:
             raise Exception("Missing callback")
-        self.do_update_lease(reservation.get_actor(), reservation.get_callback(),
-                             reservation, reservation.get_update_data(),
-                             callback, reservation.get_actor().get_identity())
+        self.do_update_lease(actor=reservation.get_actor(), proxy=reservation.get_callback(),
+                             reservation=reservation, update_data=reservation.get_update_data(),
+                             callback=callback, caller=reservation.get_actor().get_identity())
 
-    def query(self, actor: IActor, remote_actor: IActorProxy, callback: ICallbackProxy,
+    def query(self, *, actor: IActor, remote_actor: IActorProxy, callback: ICallbackProxy,
               query: dict, handler: IQueryResponseHandler):
         if actor is None:
             raise Exception("Missing actor")
@@ -213,9 +213,10 @@ class RPCManager:
             raise Exception("Missing query")
         if handler is None:
             raise Exception("Missing handler")
-        self.do_query(actor, remote_actor, callback, query, handler, callback.get_identity())
+        self.do_query(actor=actor, remote_actor=remote_actor, local_actor=callback, query=query,
+                      handler=handler, caller=callback.get_identity())
 
-    def query_result(self, actor: IActor, remote_actor: ICallbackProxy, request_id: str, response: dict,
+    def query_result(self, *, actor: IActor, remote_actor: ICallbackProxy, request_id: str, response: dict,
                      caller: AuthToken):
         if actor is None:
             raise Exception("Missing actor")
@@ -227,14 +228,15 @@ class RPCManager:
             raise Exception("Missing response")
         if caller is None:
             raise Exception("Missing caller")
-        self.do_query_result(actor, remote_actor, request_id, response, caller)
+        self.do_query_result(actor=actor, remote_actor=remote_actor, request_id=request_id, response=response,
+                             caller=caller)
 
-    def dispatch_incoming(self, actor: IActor, rpc: IncomingRPC):
+    def dispatch_incoming(self, *, actor: IActor, rpc: IncomingRPC):
         if actor is None:
             raise Exception("Missing actor")
         if rpc is None:
             raise Exception("Missing rpc")
-        self.do_dispatch_incoming_rpc(actor, rpc)
+        self.do_dispatch_incoming_rpc(actor=actor, rpc=rpc)
 
     def await_nothing_pending(self):
         self.do_await_nothing_pending()
@@ -260,9 +262,9 @@ class RPCManager:
         finally:
             self.pending_lock.release()
 
-    def do_failed_rpc(self, actor: IActor, proxy: ICallbackProxy, rpc: IncomingRPC, e: Exception, caller: AuthToken):
+    def do_failed_rpc(self, *, actor: IActor, proxy: ICallbackProxy, rpc: IncomingRPC, e: Exception, caller: AuthToken):
         proxy.get_logger().info("Outbound failedRPC request from <{}>: requestID={}".format(caller.get_name(),
-                                                                                            rpc.getMessageID()))
+                                                                                            rpc.get_message_id()))
         message = "RPC failed at remote actor."
         if e is not None:
             message += " message:{}".format(e)
@@ -271,162 +273,176 @@ class RPCManager:
         if isinstance(rpc, IncomingReservationRPC):
             rid = rpc.get_reservation().get_reservation_id()
 
-        state = proxy.prepare_failed_request(rpc.get_message_id(),
-                                             rpc.get_request_type(),
-                                             rid, message, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.FailedRPC)
-        outgoing = RPCRequest(state, actor, proxy, None, 0, None)
-        self.enqueue(outgoing)
+        state = proxy.prepare_failed_request(request_id=str(rpc.get_message_id()),
+                                             failed_request_type=rpc.get_request_type(),
+                                             failed_reservation_id=rid, error=message, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.FailedRPC)
+        outgoing = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=None, sequence=0, handler=None)
+        self.enqueue(rpc=outgoing)
 
-    def do_claim(self, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
+    def do_claim(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
                  callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound claim request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_claim(reservation, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.Claim)
+        state = proxy.prepare_claim(reservation=reservation, callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.Claim)
 
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_ticket_sequence_out(), None)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_ticket_sequence_out(), handler=None)
         # Schedule a timeout
-        rpc.timer = KernelTimer.schedule(actor, ClaimTimeout(rpc), self.CLAIM_TIMEOUT_MS)
-        self.enqueue(rpc)
+        rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_MS)
+        self.enqueue(rpc=rpc)
 
-    def do_reclaim(self, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
+    def do_reclaim(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
                  callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound reclaim request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_reclaim(reservation, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.Reclaim)
+        state = proxy.prepare_reclaim(reservation=reservation, callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.Reclaim)
 
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_ticket_sequence_out(), None)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_ticket_sequence_out(), handler=None)
         # Schedule a timeout
-        rpc.timer = KernelTimer.schedule(actor, ReclaimTimeout(rpc), self.CLAIM_TIMEOUT_MS)
-        self.enqueue(rpc)
+        rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_MS)
+        self.enqueue(rpc=rpc)
 
-    def do_ticket(self, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
+    def do_ticket(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
                  callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound ticket request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_ticket(reservation, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.Ticket)
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_ticket_sequence_out(), None)
-        self.enqueue(rpc)
+        state = proxy.prepare_ticket(reservation=reservation, callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.Ticket)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_ticket_sequence_out(), handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_extend_ticket(self, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
+    def do_extend_ticket(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
                          callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound extend ticket request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_extend_ticket(reservation, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.ExtendTicket)
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_ticket_sequence_out(), None)
-        self.enqueue(rpc)
+        state = proxy.prepare_extend_ticket(reservation=reservation, callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.ExtendTicket)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_ticket_sequence_out(), handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_relinquish(self, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
+    def do_relinquish(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
                          callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound relinquish request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_relinquish(reservation, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.Relinquish)
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_ticket_sequence_out(), None)
-        self.enqueue(rpc)
+        state = proxy.prepare_relinquish(reservation=reservation, callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.Relinquish)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_ticket_sequence_out(), handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_redeem(self, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
+    def do_redeem(self, *, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
                          callback: IControllerCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound relinquish redeem from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_redeem(reservation, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.Redeem)
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_ticket_sequence_out(), None)
-        self.enqueue(rpc)
+        state = proxy.prepare_redeem(reservation=reservation, callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.Redeem)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_ticket_sequence_out(), handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_extend_lease(self, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
+    def do_extend_lease(self, *, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
                         callback: IControllerCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound extend lease request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_extend_lease(reservation, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.ExtendLease)
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_lease_sequence_out(), None)
-        self.enqueue(rpc)
+        state = proxy.prepare_extend_lease(reservation=reservation, callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.ExtendLease)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_lease_sequence_out(), handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_modify_lease(self, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
+    def do_modify_lease(self, *, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
                          callback: IControllerCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound modify lease request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_modify_lease(reservation, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.ModifyLease)
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_lease_sequence_out(), None)
-        self.enqueue(rpc)
+        state = proxy.prepare_modify_lease(reservation=reservation, callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.ModifyLease)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_lease_sequence_out(), handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_close(self, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
+    def do_close(self, *, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
                  callback: IControllerCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound close request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_close(reservation, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.Close)
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_lease_sequence_out(), None)
-        self.enqueue(rpc)
+        state = proxy.prepare_close(reservation=reservation, callback=callback, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.Close)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_lease_sequence_out(), handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_update_ticket(self, actor: IActor, proxy: IClientCallbackProxy, reservation: IBrokerReservation,
+    def do_update_ticket(self, *, actor: IActor, proxy: IClientCallbackProxy, reservation: IBrokerReservation,
                          update_data: UpdateData, callback: ICallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound update ticket request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_update_ticket(reservation, update_data, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.UpdateTicket)
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_sequence_out(), None)
-        self.enqueue(rpc)
+        state = proxy.prepare_update_ticket(reservation=reservation, update_data=update_data, callback=callback,
+                                            caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.UpdateTicket)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_sequence_out(), handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_update_lease(self, actor: IActor, proxy: IControllerCallbackProxy, reservation: IAuthorityReservation,
+    def do_update_lease(self, *, actor: IActor, proxy: IControllerCallbackProxy, reservation: IAuthorityReservation,
                         update_data: UpdateData, callback: ICallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound update lease request from <{}>: {}".format(caller.get_name(), reservation))
 
-        state = proxy.prepare_update_lease(reservation, update_data, callback, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.UpdateLease)
-        rpc = RPCRequest(state, actor, proxy, reservation, reservation.get_sequence_out(), None)
-        self.enqueue(rpc)
+        state = proxy.prepare_update_lease(reservation=reservation, update_data=update_data, callback=callback,
+                                           caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.UpdateLease)
+        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
+                         sequence=reservation.get_sequence_out(), handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_query(self, actor: IActor, remote_actor: IActorProxy, local_actor: ICallbackProxy,
+    def do_query(self, *, actor: IActor, remote_actor: IActorProxy, local_actor: ICallbackProxy,
                  query: dict, handler: IQueryResponseHandler, caller: AuthToken):
         remote_actor.get_logger().info("Outbound query request from <{}>".format(caller.get_name()))
 
-        state = remote_actor.prepare_query(local_actor, query, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.Query)
-        rpc = RPCRequest(state, actor, remote_actor, None, None, handler)
+        state = remote_actor.prepare_query(callback=local_actor, query=query, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.Query)
+        rpc = RPCRequest(request=state, actor=actor, proxy=remote_actor, reservation=None, sequence=None, 
+                         handler=handler)
         # Timer
-        rpc.timer = KernelTimer.schedule(actor, QueryTimeout(rpc), self.QUERY_TIMEOUT_MS)
-        self.enqueue(rpc)
+        rpc.timer = KernelTimer.schedule(queue=actor, task=QueryTimeout(req=rpc), delay=self.QUERY_TIMEOUT_MS)
+        self.enqueue(rpc=rpc)
 
-    def do_query_result(self, actor: IActor, remote_actor: ICallbackProxy, request_id: str,
+    def do_query_result(self, *, actor: IActor, remote_actor: ICallbackProxy, request_id: str,
                         response: dict, caller: AuthToken):
         remote_actor.get_logger().info("Outbound query_result request from <{}>".format(caller.get_name()))
 
-        state = remote_actor.prepare_query_result(request_id, response, caller)
-        state.set_caller(caller)
-        state.set_type(RPCRequestType.QueryResult)
-        rpc = RPCRequest(state, actor, remote_actor, None, None, None)
-        self.enqueue(rpc)
+        state = remote_actor.prepare_query_result(request_id=request_id, response=response, caller=caller)
+        state.set_caller(caller=caller)
+        state.set_type(rtype=RPCRequestType.QueryResult)
+        rpc = RPCRequest(request=state, actor=actor, proxy=remote_actor, reservation=None, sequence=None, handler=None)
+        self.enqueue(rpc=rpc)
 
-    def do_dispatch_incoming_rpc(self, actor: IActor, rpc: IncomingRPC):
+    def do_dispatch_incoming_rpc(self, *, actor: IActor, rpc: IncomingRPC):
         # see if this is a response for an earlier request that has an
         # associated handler function. If a handler exists, attach the handler
         # to the incoming rpc object.
         request = None
         if rpc.get_request_id() is not None:
-            request = self.remove_pending_request(rpc.get_request_id())
+            request = self.remove_pending_request(guid=rpc.get_request_id())
             if request is not None:
                 if request.handler is not None:
-                    rpc.set_response_handler(request.handler)
+                    rpc.set_response_handler(response_handler=request.handler)
 
         if rpc.get_request_type() == RPCRequestType.Query:
             actor.get_logger().info("Inbound query from <{}>".format(rpc.get_caller().get_name()))
@@ -484,7 +500,7 @@ class RPCManager:
         if rpc.get_request_type() == RPCRequestType.FailedRPC:
             actor.get_logger().debug("Failed RPC")
             failed = None
-            exception = RPCException(rpc.get_error_details(), RPCError.RemoteError)
+            exception = RPCException(message=rpc.get_error_details(), error=RPCError.RemoteError)
             if request is not None:
                 if request.proxy.get_identity() == rpc.get_caller():
                     failed = FailedRPC(e=exception, request=request)
@@ -499,33 +515,41 @@ class RPCManager:
                 failed = FailedRPC(e=exception, request_type=rpc.get_failed_request_type(), auth=rpc.caller)
 
             if failed is not None:
-                actor.queue_event(FailedRPCEvent(actor, failed))
+                actor.queue_event(incoming=FailedRPCEvent(actor=actor, failed=failed))
 
         else:
             actor.get_logger().debug("Added to actor queue to be processed")
             from fabric.actor.core.container.globals import GlobalsSingleton
-            GlobalsSingleton.get().event_manager.dispatch_event(InboundRPCEvent(rpc, actor))
-            actor.queue_event(IncomingRPCEvent(actor, rpc))
+            GlobalsSingleton.get().event_manager.dispatch_event(event=InboundRPCEvent(request=rpc, actor=actor))
+            actor.queue_event(incoming=IncomingRPCEvent(actor=actor, rpc=rpc))
 
-    def do_retry(self, rpc: RPCRequest):
+    def do_retry(self, *, rpc: RPCRequest):
         rpc.retry_count += 1
         from fabric.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
         logger.debug("Retrying RPC({}) count={} actor={}".format(rpc.get_request_type(), rpc.retry_count,
-                                                          rpc.getActor().getName()))
-        self.enqueue(rpc)
+                                                          rpc.get_actor().get_name()))
+        self.enqueue(rpc=rpc)
 
-    def add_pending_request(self, guid: str, request: RPCRequest):
+    def add_pending_request(self, *, guid: str, request: RPCRequest):
         try:
             self.pending_lock.acquire()
+            from fabric.actor.core.container.globals import GlobalsSingleton
+            logger = GlobalsSingleton.get().get_logger()
+            logger.debug("Added request with rid: {}".format(guid))
             self.pending[guid] = request
+            logger.debug("Pending Queue: {}".format(self.pending))
         finally:
             self.pending_lock.release()
 
-    def remove_pending_request(self, guid: str) -> RPCRequest:
+    def remove_pending_request(self, *, guid: str) -> RPCRequest:
         result = None
         try:
             self.pending_lock.acquire()
+            from fabric.actor.core.container.globals import GlobalsSingleton
+            logger = GlobalsSingleton.get().get_logger()
+            logger.debug("Removing request with rid: {}".format(guid))
+            logger.debug("Pending Queue: {}".format(self.pending))
             result = self.pending.pop(guid)
         finally:
             self.pending_lock.release()
@@ -546,19 +570,19 @@ class RPCManager:
             if self.numQueued == 0:
                 self.stats_lock.notify_all()
 
-    def enqueue(self, rpc: RPCRequest):
+    def enqueue(self, *, rpc: RPCRequest):
         if not self.started:
             print("Ignoring RPC request: container is shutting down")
             return
         if rpc.handler is not None:
-            self.add_pending_request(rpc.request.get_message_id(), rpc)
+            self.add_pending_request(guid=rpc.request.get_message_id(), request=rpc)
 
         from fabric.actor.core.container.globals import GlobalsSingleton
-        GlobalsSingleton.get().event_manager.dispatch_event(OutboundRPCEvent(rpc))
+        GlobalsSingleton.get().event_manager.dispatch_event(event=OutboundRPCEvent(request=rpc))
 
         try:
             self.queued()
-            rpc_executor = RPCExecutor(rpc)
+            rpc_executor = RPCExecutor(request=rpc)
             # TODO Thread Pool
             thread = threading.Thread(target=rpc_executor.run())
             thread.setName("RPCExecutor {}".format(rpc.request.get_message_id()))
@@ -567,5 +591,5 @@ class RPCManager:
             print("Exception occurred while starting RPC Executor {}".format(e))
             self.de_queued()
             if rpc.handler is not None:
-                self.remove_pending_request(rpc.request.get_message_id())
+                self.remove_pending_request(guid=rpc.request.get_message_id())
             raise e

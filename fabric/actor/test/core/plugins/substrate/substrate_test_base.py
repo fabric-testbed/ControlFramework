@@ -36,12 +36,13 @@ class SubstrateTestBase(BaseTestCase, unittest.TestCase):
     Globals.ConfigFile = Constants.TestVmAmConfigurationFile
 
     from fabric.actor.core.container.globals import GlobalsSingleton
-    GlobalsSingleton.get().start(True)
+    GlobalsSingleton.get().start(force_fresh=True)
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
     def make_actor_database(self) -> IDatabase:
-        db = SubstrateActorDatabase(self.DbUser, self.DbPwd, self.DbName, self.DbHost, self.Logger)
+        db = SubstrateActorDatabase(user=self.DbUser, password=self.DbPwd, database=self.DbName, db_host=self.DbHost,
+                                    logger=self.Logger)
         return db
 
     def test_actor(self):

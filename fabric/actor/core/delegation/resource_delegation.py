@@ -36,8 +36,8 @@ class ResourceDelegation:
     stored in one or more resource bins and covers a fixed time interval (term). Individual units
     in a delegation are indistinguishable from each other.
     """
-    def __init__(self, units: int = None, vector: ResourceVector = None, term: Term = None, rtype: ResourceType = None,
-                 sources: list = None, bins: list = None, properties : dict = None,
+    def __init__(self, *, units: int = None, vector: ResourceVector = None, term: Term = None,
+                 rtype: ResourceType = None, sources: list = None, bins: list = None, properties: dict = None,
                  issuer : ID = None, holder: ID = None):
         # The delegation's unique identifier.
         self.guid = ID()
@@ -108,13 +108,13 @@ class ResourceDelegation:
     def get_holder(self) -> ID:
         return self.holder
 
-    def set_issuer(self, id: ID):
+    def set_issuer(self, *, id: ID):
         self.issuer = id
 
-    def set_holder(self, id: ID):
+    def set_holder(self, *, id: ID):
         self.holder = id
 
-    def set_units(self, units: int):
+    def set_units(self, *, units: int):
         self.units = units
 
     def get_map(self):

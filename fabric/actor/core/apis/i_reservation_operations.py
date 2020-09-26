@@ -25,6 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from abc import abstractmethod
+
 from fabric.actor.core.util.id import ID
 
 from typing import TYPE_CHECKING
@@ -39,7 +41,8 @@ class IReservationOperations:
     """
     ReservationOperations</code> defines the core reservations management operations supported by each actor.
     """
-    def fail(self, rid: ID, message: str):
+    @abstractmethod
+    def fail(self, *, rid: ID, message: str):
         """
         Fails the specified reservation.
 
@@ -49,9 +52,9 @@ class IReservationOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def close_by_rid(self, rid: ID):
+    @abstractmethod
+    def close_by_rid(self, *, rid: ID):
         """
         Closes the reservation. Note: the reservation must have already been registered with the actor.
         This method may involve either a client or a server side action or both. When called on a broker,
@@ -62,9 +65,9 @@ class IReservationOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this" )
-
-    def close(self, reservation: IReservation):
+        
+    @abstractmethod
+    def close(self, *, reservation: IReservation):
         """
         Closes the reservation. Note: the reservation must have already been registered with the actor.
         This method may involve either a client or a server side action or both. When called on a broker,
@@ -75,9 +78,9 @@ class IReservationOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def close_reservations(self, reservations: ReservationSet):
+    @abstractmethod
+    def close_reservations(self, *, reservations: ReservationSet):
         """
         Issues a close for every reservation in the set. All exceptions are caught and logged but no exception
         is propagated. No information will be delivered to indicate that some failure has taken place, e.g.,
@@ -89,9 +92,9 @@ class IReservationOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def extend(self, rid: ID, resources: ResourceSet, term: Term):
+    @abstractmethod
+    def extend(self, *, rid: ID, resources: ResourceSet, term: Term):
         """
         Extends the reservation. Note: the reservation must have already been registered with the actor.
         This method may involve either a client or a server side action or both. When called on a broker,
@@ -106,9 +109,9 @@ class IReservationOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_reservation(self, rid: ID) -> IReservation:
+    @abstractmethod
+    def get_reservation(self, *, rid: ID) -> IReservation:
         """
         Returns the specified reservation.
 
@@ -117,9 +120,9 @@ class IReservationOperations:
         Returns:
             reservation
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_reservations(self, slice_id: ID) -> list:
+    @abstractmethod
+    def get_reservations(self, *, slice_id: ID) -> list:
         """
         Returns all reservations in the given slice.
 
@@ -128,9 +131,9 @@ class IReservationOperations:
         Returns:
             reservations
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def register(self, reservation: IReservation):
+    @abstractmethod
+    def register(self, *, reservation: IReservation):
         """
         Registers the reservation with the actor. The reservation must not have been previously
         registered with the actor: there should be no database record for the reservation.
@@ -140,9 +143,9 @@ class IReservationOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def remove_reservation(self, reservation: IReservation = None, rid: ID = None):
+    @abstractmethod
+    def remove_reservation(self, *, reservation: IReservation = None, rid: ID = None):
         """
         Removes the specified reservation. Note: the reservation must have already been registered with the actor.
         This method will unregister the reservation and remove it from the underlying database.
@@ -154,9 +157,9 @@ class IReservationOperations:
         Raises:
             Exception if an error occurs or when trying to remove a reservation that is neither failed or closed.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def re_register(self, reservation: IReservation):
+    @abstractmethod
+    def re_register(self, *, reservation: IReservation):
         """
         Registers a previously registered reservation with the actor. The reservation must have a database record.
 
@@ -165,9 +168,9 @@ class IReservationOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def unregister(self, reservation: IReservation, rid: ID):
+    @abstractmethod
+    def unregister(self, *, reservation: IReservation, rid: ID):
         """
         Unregisters the reservation with the actor. The reservation's database record will not be removed.
 
@@ -177,4 +180,3 @@ class IReservationOperations:
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )

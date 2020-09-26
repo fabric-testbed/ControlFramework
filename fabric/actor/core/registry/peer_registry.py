@@ -53,7 +53,7 @@ class PeerRegistry:
     def actor_added(self):
         self.load_from_db()
 
-    def add_broker(self, broker: IBrokerProxy):
+    def add_broker(self, *, broker: IBrokerProxy):
         try:
             self.lock.acquire()
             self.brokers[broker.get_identity().get_guid()] = broker
@@ -64,12 +64,12 @@ class PeerRegistry:
             self.lock.release()
 
         try:
-            self.plugin.get_database().add_broker(broker)
+            self.plugin.get_database().add_broker(broker=broker)
             self.logger.info("Added {} as broker".format(broker.get_name()))
         except Exception as e:
             self.plugin.get_logger().error("Error while adding broker {}".format(e))
 
-    def get_broker(self, guid: ID) -> IBrokerProxy:
+    def get_broker(self, *, guid: ID) -> IBrokerProxy:
         ret_val = None
         try:
             self.lock.acquire()
@@ -79,10 +79,11 @@ class PeerRegistry:
         return ret_val
 
     def get_brokers(self) -> list:
-        ret_val = None
+        ret_val = []
         try:
             self.lock.acquire()
-            ret_val = self.brokers.values()
+            for b in self.brokers.values():
+                ret_val.append(b)
         finally:
             self.lock.release()
         return ret_val
@@ -105,13 +106,13 @@ class PeerRegistry:
         brokers = self.plugin.get_database().get_brokers()
         count = 0
         for b in brokers:
-            agent = Proxy.get_proxy(b)
+            agent = Proxy.get_proxy(properties=b)
             self.brokers[agent.get_identity().get_guid()] = agent
             if count == 0:
                 self.default_broker = agent
             count += 1
 
-    def remove_broker(self, broker: IBrokerProxy):
+    def remove_broker(self, *, broker: IBrokerProxy):
         try:
             self.lock.acquire()
             if broker.get_identity() in self.brokers:
@@ -119,6 +120,6 @@ class PeerRegistry:
         finally:
             self.lock.release()
 
-    def set_slices_plugin(self, plugin: IBasePlugin):
+    def set_slices_plugin(self, *, plugin: IBasePlugin):
         self.plugin = plugin
 

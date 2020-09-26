@@ -29,7 +29,7 @@ from fabric.actor.core.apis.i_kernel_controller_reservation import IKernelContro
 class PredecessorState:
     PredecessorPrefix = "predecessor."
 
-    def __init__(self, reservation: IKernelControllerReservation, filter: dict = None):
+    def __init__(self, *, reservation: IKernelControllerReservation, filter: dict = None):
         if reservation is None:
             raise Exception("Invalid Arguments")
         self.reservation = reservation
@@ -38,14 +38,15 @@ class PredecessorState:
     def get_reservation(self) -> IKernelControllerReservation:
         return self.reservation
 
+    def set_properties(self, config: dict):
+        return
+
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['reservation']
-        state['reservation_id'] = self.reservation.get_reservation_id()
         return state
 
     def __setstate__(self, state):
         reservation_id = state['reservation_id']
         # TODO setup reservation pointer
-        del state['reservation_id']
         self.__dict__.update(state)

@@ -26,11 +26,13 @@
 import logging
 
 from fabric.actor.core.apis.i_actor import IActor, ActorType
+from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.apis.i_broker import IBroker
 from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
 from fabric.actor.core.apis.i_container_database import IContainerDatabase
+from fabric.actor.core.apis.i_controller import IController
 from fabric.actor.core.apis.i_controller_policy import IControllerPolicy
 from fabric.actor.core.apis.i_database import IDatabase
 from fabric.actor.core.apis.i_policy import IPolicy
@@ -82,7 +84,9 @@ class BaseTestCase:
         return GlobalsSingleton.get().get_container().get_actor_clock()
 
     def make_actor_database(self) -> IDatabase:
-        return ActorDatabase(self.DbUser, self.DbPwd, self.DbName, self.DbHost, self.Logger)
+        return ActorDatabase(user=self.DbUser, password=self.DbPwd, database=self.DbName,
+                             db_host=self.DbHost,
+                             logger=self.Logger)
 
     def make_controller_database(self) -> IDatabase:
         return self.make_actor_database()
@@ -93,68 +97,68 @@ class BaseTestCase:
     def make_authority_database(self) -> IDatabase:
         return self.make_actor_database()
 
-    def initialize_database(self, db: ActorDatabase, name: str):
-        db.set_actor_name(name)
+    def initialize_database(self, *, db: ActorDatabase, name: str):
+        db.set_actor_name(name=name)
         db.initialize()
 
-    def get_actor_database(self, name: str = None):
+    def get_actor_database(self, *, name: str = None) -> IDatabase:
         if name is None:
             name = self.ActorName
         db = self.make_actor_database()
-        self.initialize_database(db, name)
+        self.initialize_database(db=db, name=name)
         return db
 
-    def get_controller_database(self, name: str):
+    def get_controller_database(self, *, name: str) -> IDatabase:
         db = self.make_controller_database()
-        db.set_actor_name(name)
+        db.set_actor_name(name=name)
         db.initialize()
         return db
 
-    def get_authority_database(self, name: str):
+    def get_authority_database(self, *, name: str) -> IDatabase:
         db = self.make_authority_database()
-        db.set_actor_name(name)
+        db.set_actor_name(name=name)
         db.initialize()
         return db
 
-    def get_broker_database(self, name: str):
+    def get_broker_database(self, *, name: str) -> IDatabase:
         db = self.make_broker_database()
-        db.set_actor_name(name)
+        db.set_actor_name(name=name)
         db.initialize()
         return db
 
     def make_plugin(self) -> IBasePlugin:
-        return BasePlugin(None, None, None)
+        return BasePlugin(actor=None, db=None, config=None)
 
-    def get_plugin(self, name: str = None) -> IBasePlugin:
+    def get_plugin(self, *, name: str = None) -> IBasePlugin:
         if name is None:
             name = self.ActorName
         plugin = self.make_plugin()
-        plugin.set_database(self.get_actor_database(name))
+        plugin.set_database(db=self.get_actor_database(name=name))
         return plugin
 
-    def get_controller_plugin(self, name: str) -> IBasePlugin:
+    def get_controller_plugin(self, *, name: str) -> IBasePlugin:
         plugin = self.make_plugin()
-        plugin.set_database(self.get_controller_database(name))
+        plugin.set_database(db=self.get_controller_database(name=name))
         return plugin
 
-    def get_broker_plugin(self, name: str) -> IBasePlugin:
+    def get_broker_plugin(self, *, name: str) -> IBasePlugin:
         plugin = self.make_plugin()
-        plugin.set_database(self.get_broker_database(name))
+        plugin.set_database(db=self.get_broker_database(name=name))
         return plugin
 
-    def get_authority_plugin(self, name: str) -> IBasePlugin:
+    def get_authority_plugin(self, *, name: str) -> IBasePlugin:
         plugin = self.make_plugin()
-        plugin.set_database(self.get_authority_database(name))
+        plugin.set_database(db=self.get_authority_database(name=name))
         return plugin
 
     def get_policy(self) -> IPolicy:
         return Policy()
 
     def get_authority_policy(self) -> IAuthorityPolicy:
-        return AuthorityPolicy(None)
+        return AuthorityPolicy(actor=None)
 
     def get_broker_policy(self) -> IBrokerPolicy:
-        return BrokerPolicy(None)
+        return BrokerPolicy(actor=None)
 
     def get_controller_policy(self) -> IControllerPolicy:
         return ControllerCalendarPolicy()
@@ -177,88 +181,88 @@ class BaseTestCase:
         from fabric.actor.core.core.controller import Controller
         return Controller()
 
-    def get_uninitialized_actor(self, name: str, guid: ID):
+    def get_uninitialized_actor(self, *, name: str, guid: ID) -> IActor:
         actor = self.get_actor_instance()
-        token = AuthToken(name, guid)
-        actor.set_identity(token)
-        actor.set_actor_clock(self.get_actor_clock())
-        actor.set_policy(self.get_policy())
-        actor.set_plugin(self.get_plugin(name))
+        token = AuthToken(name=name, guid=guid)
+        actor.set_identity(token=token)
+        actor.set_actor_clock(clock=self.get_actor_clock())
+        actor.set_policy(policy=self.get_policy())
+        actor.set_plugin(plugin=self.get_plugin(name=name))
         tf = SimpleResourceTicketFactory()
-        tf.set_actor(actor)
-        actor.get_plugin().set_ticket_factory(tf)
+        tf.set_actor(actor=actor)
+        actor.get_plugin().set_ticket_factory(ticket_factory=tf)
         return actor
 
-    def get_uninitialized_controller(self, name: str, guid: ID):
+    def get_uninitialized_controller(self, *, name: str, guid: ID) -> IController:
         actor = self.get_controller_instance()
-        token = AuthToken(name, guid)
-        actor.set_identity(token)
-        actor.set_actor_clock(self.get_actor_clock())
-        actor.set_policy(self.get_controller_policy())
-        actor.set_plugin(self.get_plugin(name))
+        token = AuthToken(name=name, guid=guid)
+        actor.set_identity(token=token)
+        actor.set_actor_clock(clock=self.get_actor_clock())
+        actor.set_policy(policy=self.get_controller_policy())
+        actor.set_plugin(plugin=self.get_plugin(name=name))
         tf = SimpleResourceTicketFactory()
-        tf.set_actor(actor)
-        actor.get_plugin().set_ticket_factory(tf)
+        tf.set_actor(actor=actor)
+        actor.get_plugin().set_ticket_factory(ticket_factory=tf)
         return actor
 
-    def get_uninitialized_broker(self, name: str, guid: ID):
+    def get_uninitialized_broker(self, *, name: str, guid: ID) -> IBroker:
         actor = self.get_broker_instance()
-        token = AuthToken(name, guid)
-        actor.set_identity(token)
-        actor.set_actor_clock(self.get_actor_clock())
-        actor.set_policy(self.get_broker_policy())
-        actor.set_plugin(self.get_plugin(name))
+        token = AuthToken(name=name, guid=guid)
+        actor.set_identity(token=token)
+        actor.set_actor_clock(clock=self.get_actor_clock())
+        actor.set_policy(policy=self.get_broker_policy())
+        actor.set_plugin(plugin=self.get_plugin(name=name))
         tf = SimpleResourceTicketFactory()
-        tf.set_actor(actor)
-        actor.get_plugin().set_ticket_factory(tf)
+        tf.set_actor(actor=actor)
+        actor.get_plugin().set_ticket_factory(ticket_factory=tf)
         return actor
 
-    def get_uninitialized_authority(self, name: str, guid: ID):
+    def get_uninitialized_authority(self, *, name: str, guid: ID) -> IAuthority:
         actor = self.get_authority_instance()
-        token = AuthToken(name, guid)
-        actor.set_identity(token)
-        actor.set_actor_clock(self.get_actor_clock())
-        actor.set_policy(self.get_authority_policy())
-        actor.set_plugin(self.get_plugin(name))
+        token = AuthToken(name=name, guid=guid)
+        actor.set_identity(token=token)
+        actor.set_actor_clock(clock=self.get_actor_clock())
+        actor.set_policy(policy=self.get_authority_policy())
+        actor.set_plugin(plugin=self.get_plugin(name=name))
         tf = SimpleResourceTicketFactory()
-        tf.set_actor(actor)
-        actor.get_plugin().set_ticket_factory(tf)
+        tf.set_actor(actor=actor)
+        actor.get_plugin().set_ticket_factory(ticket_factory=tf)
         return actor
 
-    def get_actor(self, name: str = ActorName, guid: ID = ActorGuid):
-        actor = self.get_uninitialized_actor(name, guid)
+    def get_actor(self, *, name: str = ActorName, guid: ID = ActorGuid) -> IActor:
+        actor = self.get_uninitialized_actor(name=name, guid=guid)
         actor.initialize()
-        self.register_new_actor(actor)
+        self.register_new_actor(actor=actor)
         return actor
 
-    def get_controller(self, name: str = ControllerName, guid: ID = ControllerGuid):
-        actor = self.get_uninitialized_controller(name, guid)
+    def get_controller(self, *, name: str = ControllerName, guid: ID = ControllerGuid) -> IController:
+        actor = self.get_uninitialized_controller(name=name, guid=guid)
         actor.initialize()
-        self.register_new_actor(actor)
+        self.register_new_actor(actor=actor)
         return actor
 
-    def get_broker(self, name: str = BrokerName, guid: ID = BrokerGuid) -> IBroker:
-        actor = self.get_uninitialized_broker(name, guid)
+    def get_broker(self, *, name: str = BrokerName, guid: ID = BrokerGuid) -> IBroker:
+        actor = self.get_uninitialized_broker(name=name, guid=guid)
         actor.initialize()
-        self.register_new_actor(actor)
+        self.register_new_actor(actor=actor)
         return actor
 
-    def get_authority(self, name: str = AuthorityName, guid: ID = AuthorityGuid):
-        actor = self.get_uninitialized_authority(name, guid)
+    def get_authority(self, *, name: str = AuthorityName, guid: ID = AuthorityGuid) -> IAuthority:
+        actor = self.get_uninitialized_authority(name=name, guid=guid)
         actor.initialize()
-        self.register_new_actor(actor)
+        self.register_new_actor(actor=actor)
         return actor
 
-    def register_new_actor(self, actor: IActor):
+    def register_new_actor(self, *, actor: IActor):
         db = self.get_container_database()
-        db.remove_actor(actor.get_name())
-        db.add_actor(actor)
-        ActorRegistrySingleton.get().unregister(actor)
-        ActorRegistrySingleton.get().register_actor(actor)
+        db.remove_actor(actor_name=actor.get_name())
+        db.add_actor(actor=actor)
+        ActorRegistrySingleton.get().unregister(actor=actor)
+        ActorRegistrySingleton.get().register_actor(actor=actor)
         actor.actor_added()
         actor.start()
 
     def get_registered_new_actor(self) -> IActor:
         actor = self.get_actor()
-        self.register_new_actor(actor)
+        self.register_new_actor(actor=actor)
         return actor

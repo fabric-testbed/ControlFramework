@@ -24,7 +24,9 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
+from abc import abstractmethod
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.util.iterable_queue import IterableQueue
 
@@ -33,14 +35,30 @@ if TYPE_CHECKING:
 
 
 class QueueWrapper:
-    def add(self, reservation: IBrokerReservation):
-        raise Exception("Not implemented")
+    @abstractmethod
+    def add(self, *, reservation: IBrokerReservation):
+        """
+        Add a reservation
+        @param reservation: reservation
+        """
 
-    def remove(self, reservation: IBrokerReservation):
-        raise Exception("Not implemented")
+    @abstractmethod
+    def remove(self, *, reservation: IBrokerReservation):
+        """
+        Remove a reservation
+        @param reservation: reservation
+        """
 
+    @abstractmethod
     def size(self) -> int:
-        raise Exception("Not implemented")
+        """
+        Return the size of queue
+        @return size of queue
+        """
 
-    def iterator(self) -> IterableQueue:
-        raise Exception("Not implemented")
+    @abstractmethod
+    def values(self) -> List[IBrokerReservation]:
+        """
+        Return values
+        @return values
+        """

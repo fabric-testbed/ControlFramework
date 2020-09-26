@@ -87,8 +87,8 @@ class ResourceSet:
     Calls that "reach around" ResourceSet to the concrete set are
     discouraged/deprecated.
     """
-    def __init__(self, concrete: IConcreteSet = None, gained: IConcreteSet = None, lost: IConcreteSet = None,
-                 modified: IConcreteSet = None,
+    def __init__(self, *, concrete: IConcreteSet = None, gained: IConcreteSet = None,
+                 lost: IConcreteSet = None, modified: IConcreteSet = None,
                  rtype: resource_type = None, rdata: ResourceData = None, units: int = None):
         # What type of resources does this set contain. The meaning/assignment of
         # type values is an externally defined convention of interacting actors.
@@ -154,7 +154,7 @@ class ResourceSet:
         self.rid = None
         self.is_closing = False
 
-    def restore(self, rid: ID):
+    def restore(self, *, rid: ID):
         self.rid = rid
 
     def abstract_clone(self):
@@ -181,12 +181,12 @@ class ResourceSet:
             rset = ResourceSet(concrete=self.released, rtype=self.type, rdata=ResourceData())
         return rset
 
-    def internal_error(self, message: str):
+    def internal_error(self, *, message: str):
         raise Exception("internal error: " + message)
 
-    def merge_properties(self, reservation: IReservation, resource_set):
+    def merge_properties(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            self.error("Invalid argument")
+            self.error(message="Invalid argument")
 
         if self.properties is None:
             self.properties = ResourceData()
@@ -200,7 +200,8 @@ class ResourceSet:
             from fabric.actor.core.core.ticket import Ticket
             if self.resources is None and isinstance(resource_set.get_resources(), Ticket):
                 self.properties.resource_properties = ResourceData.merge_properties(
-                    resource_set.get_resource_properties(), self.properties.resource_properties)
+                    from_props=resource_set.get_resource_properties(),
+                    to_props=self.properties.resource_properties)
 
         elif reservation.get_category() == ReservationCategory.Broker:
             # On a broker we will store in the resulting resource set only
@@ -212,7 +213,8 @@ class ResourceSet:
             # of new properties.
             if self.resources is None:
                 self.properties.resource_properties = ResourceData.merge_properties(
-                    resource_set.get_resource_properties(), self.properties.resource_properties)
+                    from_props=resource_set.get_resource_properties(),
+                    to_props=self.properties.resource_properties)
 
         elif reservation.get_category() == ReservationCategory.Authority:
             # On an authority we will take the local (provided by the
@@ -221,14 +223,16 @@ class ResourceSet:
             # merged for each update, as they may contain additional
             # information required by the configuration handlers.
             self.properties.local_properties = ResourceData.merge_properties(
-                resource_set.get_local_properties(), self.properties.local_properties)
+                from_props=resource_set.get_local_properties(),
+                to_props=self.properties.local_properties)
 
             self.properties.configuration_properties = ResourceData.merge_properties(
-                resource_set.get_config_properties(), self.properties.configuration_properties)
+                from_props=resource_set.get_config_properties(),
+                to_props=self.properties.configuration_properties)
 
-    def delta_update(self, reservation: IReservation, resource_set):
+    def delta_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            self.error("Invalid argument")
+            self.error(message="Invalid argument")
 
         if self.resources is None:
             # in case of close for a canceled reservation.
@@ -243,14 +247,14 @@ class ResourceSet:
             self.units = resource_set.gained.get_units()
             self.type = resource_set.type
             self.resources = resource_set.gained.clone_empty()
-            self.resources.setup(reservation)
-            self.merge_properties(reservation, resource_set)
+            self.resources.setup(reservation=reservation)
+            self.merge_properties(reservation=reservation, resource_set=resource_set)
             self.gained = resource_set.gained
         else:
             self.type = resource_set.type
             difference = 0
             if resource_set.gained is None or resource_set.lost is not None or resource_set.modified is not None:
-                self.internal_error("service overrun in hardChange")
+                self.internal_error(message="service overrun in hardChange")
 
             if resource_set.gained is not None:
                 self.gained = resource_set.gained
@@ -265,9 +269,9 @@ class ResourceSet:
 
             self.units += difference
             self.previous_properties = self.properties
-            self.merge_properties(reservation, resource_set)
+            self.merge_properties(reservation=reservation, resource_set=resource_set)
 
-    def error(self, message: str):
+    def error(self, *, message: str):
         raise Exception(message)
 
     def fix_abstract_units(self):
@@ -279,25 +283,25 @@ class ResourceSet:
         else:
             self.units = 0
 
-    def full_update(self, reservation:IReservation, resource_set):
+    def full_update(self, *, reservation:IReservation, resource_set):
         if reservation is None or resource_set is None:
-            self.error("Invalid argument")
+            self.error(message="Invalid argument")
 
         # take the units and the type
         self.units = resource_set.units
         self.type = resource_set.type
         # take in the properties
         self.previous_properties = self.properties
-        self.merge_properties(reservation, resource_set)
+        self.merge_properties(reservation=reservation, resource_set=resource_set)
 
         # make a concrete set if the current concrete set is None
         if self.resources is None:
             self.resources = resource_set.resources.clone_empty()
-            self.resources.setup(reservation)
+            self.resources.setup(reservation=reservation)
         # remember the update so that it can be processed later
         self.updated = resource_set.resources
 
-    def get_concrete_units(self, when: datetime = None) -> int:
+    def get_concrete_units(self, *, when: datetime = None) -> int:
         """
         Estimate the concrete resource units the resource set will contain at the
         specified date.
@@ -309,7 +313,7 @@ class ResourceSet:
         elif when is None:
             return self.resources.get_units()
         else:
-            return self.resources.holding(when)
+            return self.resources.holding(when=when)
 
     def get_config_properties(self) -> dict:
         """
@@ -466,7 +470,7 @@ class ResourceSet:
 
     def service_check(self):
         if self.resources is None:
-            self.internal_error("WARNING: service post-op call on non-concrete reservation")
+            self.internal_error(message="WARNING: service post-op call on non-concrete reservation")
 
     def close(self):
         """
@@ -500,11 +504,11 @@ class ResourceSet:
         my_modified = self.modified
         self.modified = None
         if my_gained is not None:
-            self.resources.add(my_gained, True)
+            self.resources.add(concrete_set=my_gained, configure=True)
         if my_lost is not None:
-            self.resources.remove(my_lost, True)
+            self.resources.remove(concrete_set=my_lost, configure=True)
         if my_modified is not None:
-            self.resources.modify(my_modified, True)
+            self.resources.modify(concrete_set=my_modified, configure=True)
 
     def service_modify(self):
         """
@@ -512,7 +516,7 @@ class ResourceSet:
         @raises Exception in case of error
         """
         self.service_check()
-        self.resources.modify(self.resources, True)
+        self.resources.modify(concrete_set=self.resources, configure=True)
 
     def service_reserve_site(self):
         cs = None
@@ -521,9 +525,9 @@ class ResourceSet:
             self.gained = None
 
         if cs is not None:
-            self.resources.add(cs, True)
+            self.resources.add(concrete_set=cs, configure=True)
 
-    def service_update(self, reservation: IReservation):
+    def service_update(self, *, reservation: IReservation):
         """
         Service a resource set update. Any changes to existing
         concrete resources should have been left in "updated" by an update
@@ -536,79 +540,79 @@ class ResourceSet:
             cs = self.updated
             self.updated = None
         if cs is not None:
-            self.resources.change(cs, True)
+            self.resources.change(concrete_set=cs, configure=True)
 
-    def set_config_properties(self, p:dict):
+    def set_config_properties(self, *, p: dict):
         """
         Sets the configuration properties.
         @params p : configuration properties list
         """
         if self.properties is None:
             self.properties = ResourceData()
-        self.properties.merge_properties(p, self.properties.get_configuration_properties())
+        self.properties.merge_properties(from_props=p, to_props=self.properties.get_configuration_properties())
 
-    def set_local_properties(self, p: dict):
+    def set_local_properties(self, *, p: dict):
         """
         Sets the local properties.
         @params p : local properties list
         """
         if self.properties is None:
             self.properties = ResourceData()
-        self.properties.merge_properties(p, self.properties.get_local_properties())
+        self.properties.merge_properties(from_props=p, to_props=self.properties.get_local_properties())
 
-    def set_request_properties(self, p: dict):
+    def set_request_properties(self, *, p: dict):
         """
         Sets the request properties.
         @params p : request properties list
         """
         if self.properties is None:
             self.properties = ResourceData()
-        self.properties.merge_properties(p, self.properties.get_request_properties())
+        self.properties.merge_properties(from_props=p, to_props=self.properties.get_request_properties())
 
-    def set_reservation_id(self, rid: ID):
+    def set_reservation_id(self, *, rid: ID):
         """
         Attaches the reservation identifier to the set.
         @params rid reservation identifier
         """
         self.rid = rid
 
-    def set_resource_properties(self, p: dict):
+    def set_resource_properties(self, *, p: dict):
         """
         Sets the resource properties.
         @params p : resource properties list
         """
         if self.properties is None:
             self.properties = ResourceData()
-        self.properties.merge_properties(p, self.properties.get_resource_properties())
+        self.properties.merge_properties(from_props=p, to_props=self.properties.get_resource_properties())
 
-    def set_resources(self, cset:IConcreteSet):
+    def set_resources(self, *, cset:IConcreteSet):
         """
         Set the concrete resources. Used by proxies.
         @params cset :concrete resource set
         """
         self.resources = cset
 
-    def set_type(self, rtype: resource_type):
+    def set_type(self, *, rtype: resource_type):
         """
         Sets the resource type for the set.
         @params rtype : resource type
         """
         self.type = rtype
 
-    def set_units(self, units: int):
+    def set_units(self, *, units: int):
         """
         Sets the number of abstract units in the set.
         @params units: number of abstract units
         """
         self.units = units
 
-    def setup(self, reservation: IReservation):
+    def setup(self, *, reservation: IReservation):
         """
         Passes information about the containing reservation to the concrete set.
         @params reservation: containing reservation
         """
         if self.resources is not None:
-            self.resources.setup(reservation)
+            self.resources.setup(reservation=reservation)
 
     def __str__(self):
         result = "rset: units=[{}] ".format(self.units)
@@ -619,20 +623,20 @@ class ResourceSet:
             result += " properties: [{}]".format(self.properties)
         return result
 
-    def update(self, reservation: IReservation, resource_set: ResourceSet):
+    def update(self, *, reservation: IReservation, resource_set: ResourceSet):
         if reservation is None or resource_set is None:
-            self.error("Invalid argument")
+            self.error(message="Invalid argument")
 
         if resource_set.resources is not None:
-            self.full_update(reservation, resource_set)
+            self.full_update(reservation=reservation, resource_set=resource_set)
         else:
-            self.delta_update(reservation, resource_set)
+            self.delta_update(reservation=reservation, resource_set=resource_set)
 
-    def update_properties(self, reservation: IReservation, resource_set):
+    def update_properties(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            self.error("Invalid argument")
+            self.error(message="Invalid argument")
 
-        self.merge_properties(reservation, resource_set)
+        self.merge_properties(reservation=reservation, resource_set=resource_set)
 
     def validate(self):
         """
@@ -640,7 +644,7 @@ class ResourceSet:
         @raises Exception in case of error thrown if the set is determined to be invalid
         """
         if self.units < 0:
-            self.error("invalid unit count:{}".format(self.units))
+            self.error(message="invalid unit count:{}".format(self.units))
 
     def validate_incoming(self):
         """
@@ -654,7 +658,7 @@ class ResourceSet:
         if self.resources is not None:
             return self.resources.validate_incoming()
 
-    def validate_incoming_ticket(self, term: Term):
+    def validate_incoming_ticket(self, *, term: Term):
         """
         Validate match between abstract and concrete ResourceSet in a ResourceSet
         representing an incoming ticket.
@@ -663,11 +667,11 @@ class ResourceSet:
         """
         if self.resources is None:
             if self.units != 0:
-                self.error("no resources to back incoming ticket")
+                self.error(message="no resources to back incoming ticket")
             return
         if self.resources.get_units() != self.units:
-            self.error("size mismatch on incoming ticket {} != {}".format(self.resources.get_units(), self.units))
-        self.resources.validate_concrete(self.type, self.units, term)
+            self.error(message="size mismatch on incoming ticket {} != {}".format(self.resources.get_units(), self.units))
+        self.resources.validate_concrete(rtype=self.type, units=self.units, term=term)
 
     def validate_outgoing(self):
         """

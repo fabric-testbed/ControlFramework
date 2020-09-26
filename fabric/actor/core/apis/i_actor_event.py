@@ -23,12 +23,14 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
 
 
 class IActorEvent:
     """
      IActorEvent defines the interface for the events handled by an actor.
      """
+    @abstractmethod
     def process(self):
         """
         Performs the required action on receipt of a specific event
@@ -36,4 +38,3 @@ class IActorEvent:
         Raises:
             Exception in case of failure
         """
-        raise NotImplementedError( "Should have implemented this" )

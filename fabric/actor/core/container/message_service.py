@@ -39,9 +39,10 @@ if TYPE_CHECKING:
 
 
 class MessageService(AvroConsumerApi):
-    def __init__(self, kafka_service: ActorService, kafka_mgmt_service: KafkaActorService, conf: dict, key_schema,
+    def __init__(self, *, kafka_service: ActorService, kafka_mgmt_service: KafkaActorService, conf: dict, key_schema,
                  record_schema, topics, batchSize=5, logger=None):
-        super().__init__(conf, key_schema, record_schema, topics, batchSize, logger)
+        super().__init__(conf=conf, key_schema=key_schema, record_schema=record_schema, topics=topics,
+                         batchSize=batchSize, logger=logger)
         self.thread_lock = threading.Lock()
         self.thread = None
         self.kafka_service = kafka_service
@@ -79,7 +80,7 @@ class MessageService(AvroConsumerApi):
             if self.thread_lock is not None and self.thread_lock.locked():
                 self.thread_lock.release()
 
-    def handle_message(self, message: IMessageAvro):
+    def handle_message(self, *, message: IMessageAvro):
         try:
             if message.get_message_name() == IMessageAvro.ClaimResources or \
                     message.get_message_name() == IMessageAvro.ReclaimResources or \
@@ -96,9 +97,9 @@ class MessageService(AvroConsumerApi):
                     message.get_message_name() == IMessageAvro.UpdateReservation or \
                     message.get_message_name() == IMessageAvro.RemoveReservation or \
                     message.get_message_name() == IMessageAvro.ExtendReservation:
-                self.kafka_mgmt_service.process(message)
+                self.kafka_mgmt_service.process(message=message)
             else:
-                self.kafka_service.process(message)
+                self.kafka_service.process(message=message)
         except Exception as e:
             traceback.print_exc()
             self.logger.error(e)

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_tick import ITick
@@ -34,50 +36,51 @@ class IContainerClock:
     """
     IContainerClock describes the time-related container API.
     """
-    def get_actor_clock(self)-> ActorClock:
+
+    @abstractmethod
+    def get_actor_clock(self) -> ActorClock:
         """
         Returns an instance of the container's clock factory.
         @return container clock factory
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def tick(self):
         """
         Advances the container clock with one cycle (only if isManualClock() is true).
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_current_cycle(self):
         """
         Returns the current cycle.
         @return current clock cycle
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def stop(self):
         """
         Stops the clock.
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def register(self, tickable: ITick):
+    @abstractmethod
+    def register(self, *, tickable: ITick):
         """
         Registers an object with the ticker.
         @param tickable object to register
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def unregister(self, tickable: ITick):
+    @abstractmethod
+    def unregister(self, *, tickable: ITick):
         """
         Unregisters an object with the ticker.
         @param tickable object to register
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def is_manual_clock(self) -> bool:
         """
         Checks if the container clock advances manually.
         @return true if the container clock advances manually
         """
-        raise NotImplementedError("Should have implemented this")

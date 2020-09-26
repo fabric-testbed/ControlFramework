@@ -24,8 +24,10 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from enum import Enum
+from typing import List
 
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric.actor.core.util.id import ID
 
 
 class Status(Enum):
@@ -36,13 +38,13 @@ class Status(Enum):
 
 class StatusChecker:
 
-    def check(self, controller: IMgmtActor, rid, ok: list, not_ok: list) -> Status:
-        result = self.check_(controller, 0)
+    def check(self, *, controller: IMgmtActor, rid, ok: List[ID], not_ok: List[ID]) -> Status:
+        result = self.check_(controller=controller, rid=0)
         if result == Status.OK:
             ok.append(rid)
         elif result == Status.NOTOK:
             not_ok.append(rid)
         return result
 
-    def check_(self, controller: IMgmtActor, rid) -> Status:
+    def check_(self, *, controller: IMgmtActor, rid) -> Status:
         raise NotImplementedError

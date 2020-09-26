@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -31,14 +33,29 @@ if TYPE_CHECKING:
 
 
 class IManagementObject:
+    @abstractmethod
     def initialize(self):
-        raise NotImplementedError("Should have implemented this")
+        """
+        Initialize the object
+        """
 
+    @abstractmethod
     def get_id(self) -> ID:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Returns Object Id
+        @returns object id
+        """
 
+    @abstractmethod
     def get_actor_name(self) -> str:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Return actor name
+        @param actor name
+        """
 
+    @abstractmethod
     def save(self) -> dict:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Save the object
+        @return dictionary representing the object
+        """

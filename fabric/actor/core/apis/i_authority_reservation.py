@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_server_reservation import IServerReservation
@@ -35,25 +37,25 @@ class IAuthorityReservation(IServerReservation):
     """
     IAuthorityReservation defines the reservation interface for authorities(AM) processing requests for resources.
     """
+    @abstractmethod
     def get_deficit(self):
         """
         Returns the number of concrete units this reservation is short or in excess of.
         @returns number of concrete units this reservation is short or in excess of
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_ticket(self) -> ResourceSet:
         """
         Returns the ticket backing the reservation.
         @returns ticket
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_send_with_deficit(self, value: bool):
+    @abstractmethod
+    def set_send_with_deficit(self, *, value: bool):
         """
         Sets the "send with deficit" flag.
         @params value : true, reservations with no pending operations but with a
                  deficit will be sent back without attempting to fix the deficit,
                 false - if a deficit exists, the system will attempt to fix it.
         """
-        raise NotImplementedError( "Should have implemented this" )

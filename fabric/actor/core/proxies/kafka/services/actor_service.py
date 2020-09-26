@@ -54,14 +54,14 @@ if TYPE_CHECKING:
 
 
 class ActorService:
-    def __init__(self, actor: IActor):
+    def __init__(self, *, actor: IActor):
         self.actor = actor
         self.logger = self.actor.get_logger()
 
-    def get_callback(self, kafka_topic: str, auth: AuthToken):
-        return KafkaReturn(kafka_topic, auth, self.actor.get_logger())
+    def get_callback(self, *, kafka_topic: str, auth: AuthToken):
+        return KafkaReturn(kafka_topic=kafka_topic, identity=auth, logger=self.actor.get_logger())
 
-    def get_concrete(self, reservation:ReservationAvro) -> IConcreteSet:
+    def get_concrete(self, *, reservation:ReservationAvro) -> IConcreteSet:
         encoded = reservation.resource_set.concrete
         try:
             decoded = pickle.loads(encoded)
@@ -70,96 +70,103 @@ class ActorService:
             self.logger.error("Exception occurred while decoding {}".format(e))
         return None
 
-    def pass_client(self, reservation:ReservationAvro) -> IClientReservation:
-        slice_obj = Translate.translate_slice(reservation.slice.guid, reservation.slice.slice_name)
-        term = Translate.translate_term_from_avro(reservation.term)
+    def pass_client(self, *, reservation:ReservationAvro) -> IClientReservation:
+        slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
+        term = Translate.translate_term_from_avro(term=reservation.term)
 
-        resource_set = Translate.translate_resource_set_from_avro(reservation.resource_set)
-        resource_set.set_resources(self.get_concrete(reservation))
+        resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)
+        resource_set.set_resources(cset=self.get_concrete(reservation=reservation))
 
-        return ClientReservationFactory.create(ID(reservation.reservation_id), resources=resource_set, term=term,
+        return ClientReservationFactory.create(rid=ID(id=reservation.reservation_id), resources=resource_set, term=term,
                                                slice_object=slice_obj, actor=self.actor)
 
-    def do_dispatch(self, rpc: IncomingRPC):
+    def do_dispatch(self, *, rpc: IncomingRPC):
         try:
-            RPCManagerSingleton.get().dispatch_incoming(self.actor, rpc)
+            RPCManagerSingleton.get().dispatch_incoming(actor=self.actor, rpc=rpc)
         except Exception as e:
             msg = "An error occurred while dispatching request"
             self.logger.error("{} e={}".format(msg, e))
             raise e
 
-    def query(self, request: QueryAvro):
+    def query(self, *, request: QueryAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             query = request.properties
-            callback = self.get_callback(request.callback_topic, authToken)
-            rpc = IncomingQueryRPC(request.get_message_id(), query, authToken, callback=callback)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            rpc = IncomingQueryRPC(request_type=RPCRequestType.Query, message_id=ID(id=request.get_message_id()),
+                                   query=query, caller=authToken, callback=callback)
         except Exception as e:
             self.logger.error("Invalid query request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def query_result(self, request: QueryResultAvro):
+    def query_result(self, *, request: QueryResultAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             query = request.properties
-            rpc = IncomingQueryRPC(request.get_message_id(), query, authToken, request_id=request.request_id)
+            rpc = IncomingQueryRPC(request_type=RPCRequestType.QueryResult, message_id=ID(id=request.get_message_id()),
+                                   query=query, caller=authToken,request_id=ID(id=request.request_id))
         except Exception as e:
             self.logger.error("Invalid queryResult request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def update_lease(self, request: UpdateLeaseAvro):
+    def update_lease(self, *, request: UpdateLeaseAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
-            rsvn = self.pass_client(request.reservation)
-            udd = Translate.translate_udd_from_avro(request.update_data)
-            rpc = IncomingReservationRPC(request.message_id, RPCRequestType.UpdateLease, rsvn, None, udd, authToken)
+            rsvn = self.pass_client(reservation=request.reservation)
+            udd = Translate.translate_udd_from_avro(udd=request.update_data)
+            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.UpdateLease,
+                                         reservation=rsvn, update_data=udd, caller=authToken)
         except Exception as e:
             self.logger.error("Invalid updateLease request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def update_ticket(self, request: UpdateTicketAvro):
+    def update_ticket(self, *, request: UpdateTicketAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
-            rsvn = self.pass_client(request.reservation)
-            udd = Translate.translate_udd_from_avro(request.update_data)
-            rpc = IncomingReservationRPC(request.message_id, RPCRequestType.UpdateTicket, rsvn, None, udd, authToken)
+            rsvn = self.pass_client(reservation=request.reservation)
+            udd = Translate.translate_udd_from_avro(udd=request.update_data)
+            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id),
+                                         request_type=RPCRequestType.UpdateTicket, reservation=rsvn, update_data=udd,
+                                         caller=authToken)
         except Exception as e:
             self.logger.error("Invalid updateTicket request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def failed_rpc(self, request: FailedRPCAvro):
+    def failed_rpc(self, *, request: FailedRPCAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             failed_request_type = RPCRequestType(request.request_type)
             if request.reservation_id is not None and request.reservation_id != "":
-                rpc = IncomingFailedRPC(request.message_id, failed_request_type, request.request_id,
-                                        ID(request.reservation_id), request.error_details, authToken)
+                rpc = IncomingFailedRPC(message_id=ID(id=request.message_id), failed_request_type=failed_request_type,
+                                        request_id=request.request_id, failed_reservation_id=ID(id=request.reservation_id),
+                                        error_details=request.error_details, caller=authToken)
             else:
-                rpc = IncomingFailedRPC(request.message_id, failed_request_type, request.request_id,
-                                        None, request.error_details, authToken)
+                rpc = IncomingFailedRPC(message_id=ID(id=request.message_id), failed_request_type=failed_request_type,
+                                        request_id=request.request_id, failed_reservation_id=None,
+                                        error_details=request.error_details, caller=authToken)
         except Exception as e:
             self.logger.error("Invalid failedRequest request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def process(self, message: IMessageAvro):
+    def process(self, *, message: IMessageAvro):
         if message.get_message_name() == IMessageAvro.Query:
-            self.query(message)
+            self.query(request=message)
         elif message.get_message_name() == IMessageAvro.QueryResult:
-            self.query_result(message)
+            self.query_result(request=message)
         elif message.get_message_name() == IMessageAvro.UpdateLease:
-            self.update_lease(message)
+            self.update_lease(request=message)
         elif message.get_message_name() == IMessageAvro.UpdateTicket:
-            self.update_ticket(message)
+            self.update_ticket(request=message)
         else:
             self.logger.error("Unsupported message {}".format(message))
             raise Exception("Unsupported message {}".format(message.get_message_name()))

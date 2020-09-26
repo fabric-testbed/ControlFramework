@@ -60,8 +60,8 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
     # Pool the client requested its resources to be allocated from.
     PropertyPoolId = "pool.id"
 
-    def __init__(self, actor: IBroker):
-        super().__init__(actor)
+    def __init__(self, *, actor: IBroker):
+        super().__init__(actor=actor)
         self.queue = None
 
     def __getstate__(self):
@@ -104,13 +104,13 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
 
-    def configure(self, properties: dict):
+    def configure(self, *, properties: dict):
         """
         Processes a list of configuration properties
         @param properties properties
         @throws Exception in case of error
         """
-        super().configure(properties)
+        super().configure(properties=properties)
 
         if self.PropertyQueueType in properties:
             queue_type = properties[self.PropertyQueueType]
@@ -121,7 +121,7 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
             else:
                 raise Exception("Unsupported queue type: {}".format(queue_type))
 
-    def align_end(self, when: datetime) -> datetime:
+    def align_end(self, *, when: datetime) -> datetime:
         """
         Aligns the specified date with the end of the closest cycle.
        
@@ -130,10 +130,10 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
         @return date aligned with the end of the closes cycle
         """
         cycle = self.clock.cycle(when=when)
-        time = self.clock.cycle_end_in_millis(cycle)
-        return ActorClock.from_milliseconds(time)
+        time = self.clock.cycle_end_in_millis(cycle=cycle)
+        return ActorClock.from_milliseconds(milli_seconds=time)
 
-    def align_start(self, when: datetime) -> datetime:
+    def align_start(self, *, when: datetime) -> datetime:
         """
         Aligns the specified date with the start of the closest cycle.
 
@@ -142,13 +142,13 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
         @return date aligned with the start of the closes cycle
         """
         cycle = self.clock.cycle(when=when)
-        time = self.clock.cycle_start_in_millis(cycle)
-        return ActorClock.from_milliseconds(time)
+        time = self.clock.cycle_start_in_millis(cycle=cycle)
+        return ActorClock.from_milliseconds(milli_seconds=time)
 
-    def get_current_pool_id(self, reservation: IBrokerReservation) -> ResourceType:
+    def get_current_pool_id(self, *, reservation: IBrokerReservation) -> ResourceType:
         return reservation.get_source().get_type()
 
-    def get_requested_pool_id(self, reservation: IBrokerReservation):
+    def get_requested_pool_id(self, *, reservation: IBrokerReservation):
         if reservation.get_requested_resources() is not None:
             if reservation.get_requested_resources().get_request_properties() is not None:
                 if self.PropertyPoolId in reservation.get_requested_resources().get_request_properties():

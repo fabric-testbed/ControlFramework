@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor import IActor
@@ -48,16 +50,19 @@ class IClientActor(IActor, IClientPublic):
     role are explicitly managed. Proxies for actors acting in the site authority
     role are automatically managed as they are embedded in tickets sent from brokers.
     """
-    def add_broker(self, broker: IBrokerProxy):
+
+    @abstractmethod
+    def add_broker(self, *, broker: IBrokerProxy):
         """
         Registers a broker. If this is the first broker to be registered, it is
         set as the default broker.
         
         @params broker broker to register
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def claim_client(self, reservation_id: ID = None, resources: ResourceSet = None, slice_object: ISlice = None, broker: IBrokerProxy = None) -> IClientReservation:
+    @abstractmethod
+    def claim_client(self, *, reservation_id: ID = None, resources: ResourceSet = None, slice_object: ISlice = None,
+                     broker: IBrokerProxy = None) -> IClientReservation:
         """
         Claims already exported resources from the given broker. The reservation
         will be stored in the default slice.
@@ -70,12 +75,16 @@ class IClientActor(IActor, IClientPublic):
         @returns reservation
         @raises Exception in case of failure
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def demand(self, reservation: ID):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def demand(self, *, rid: ID):
+        """
+        Demand a reservation
+        @params reservation: reservation
+        """
 
-    def extend_ticket_client(self, reservation: IClientReservation):
+    @abstractmethod
+    def extend_ticket_client(self, *, reservation: IClientReservation):
         """
         Issues a ticket extend request for the given reservation. Note: the
         reservation must have already been registered with the actor.
@@ -85,9 +94,9 @@ class IClientActor(IActor, IClientPublic):
         
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def extend_tickets_client(self, rset: ReservationSet):
+    @abstractmethod
+    def extend_tickets_client(self, *, rset: ReservationSet):
         """
         Issues a ticket extend request for the given reservation. Note: the
         reservation must have already been registered with the actor.
@@ -97,9 +106,9 @@ class IClientActor(IActor, IClientPublic):
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def get_broker(self, guid: ID) -> IBrokerProxy:
+    @abstractmethod
+    def get_broker(self, *, guid: ID) -> IBrokerProxy:
         """
         Gets the broker proxy with the given guid
         
@@ -107,25 +116,25 @@ class IClientActor(IActor, IClientPublic):
         
         @return requested broker
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_brokers(self) -> list:
         """
         Returns all brokers registered with the actor.
         
         @return an array of brokers
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_default_broker(self) -> IBrokerProxy:
         """
         Returns the default broker.
         
         @return the default broker
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def ticket_client(self, reservation: IClientReservation):
+    @abstractmethod
+    def ticket_client(self, *, reservation: IClientReservation):
         """
         Issues a ticket request for the given reservation. Note: the reservation
         must have already been registered with the actor.
@@ -139,9 +148,9 @@ class IClientActor(IActor, IClientPublic):
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def tickets_client(self, rset: ReservationSet):
+    @abstractmethod
+    def tickets_client(self, *, rset: ReservationSet):
         """
         Issues a ticket request for the given reservation. Note: the reservation
         must have already been registered with the actor.
@@ -155,9 +164,9 @@ class IClientActor(IActor, IClientPublic):
 
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def modify(self, reservation_id: ID, modify_properties: dict):
+    @abstractmethod
+    def modify(self, *, reservation_id: ID, modify_properties: dict):
         """
         Issue modify request for given reservation. Note: the reservation
         must have already been registered with the actor.
@@ -166,4 +175,3 @@ class IClientActor(IActor, IClientPublic):
         @param modify_properties property list for modify
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

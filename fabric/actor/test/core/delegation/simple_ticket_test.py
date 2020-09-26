@@ -40,7 +40,7 @@ class SimpleTicketTest(BaseTestCase, unittest.TestCase):
     Globals.ConfigFile = Constants.TestVmAmConfigurationFile
 
     from fabric.actor.core.container.globals import GlobalsSingleton
-    GlobalsSingleton.get().start(True)
+    GlobalsSingleton.get().start(force_fresh=True)
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
@@ -49,7 +49,7 @@ class SimpleTicketTest(BaseTestCase, unittest.TestCase):
         self.now = datetime.utcnow()
         self.end = self.now.replace(day=1)
         self.term = Term(start=self.now, end=self.end)
-        self.type = ResourceType(str(ID()))
+        self.type = ResourceType(resource_type=str(ID()))
         self.units = 100
         self.create_factories()
 
@@ -57,24 +57,24 @@ class SimpleTicketTest(BaseTestCase, unittest.TestCase):
         return SimpleResourceTicketFactory()
 
     def create_factories(self):
-        actor = self.get_actor("site0", ID())
+        actor = self.get_actor(name="site0", guid=ID())
         self.factory = self.make_ticket_factory()
-        self.factory.set_actor(actor)
+        self.factory.set_actor(actor=actor)
         self.factory.initialize()
 
     def test_simple_ticket(self):
         d0 = self.factory.make_delegation(units=self.units, term=self.term, rtype=self.type)
         ticket0 = self.factory.make_ticket(delegation=d0)
 
-        print(self.factory.toJson(ticket0))
+        print(self.factory.toJson(ticket=ticket0))
 
     def test_simple_ticket_with_bins(self):
         bin0 = ResourceBin(physical_units=self.units, term=self.term)
         source_list = [bin0.get_guid()]
         bin_list = [bin0]
         d0 = self.factory.make_delegation(units=self.units, term=self.term, rtype=self.type, sources=source_list,
-                                          bins=bin_list, holder=ID(self.factory.get_actor().get_name()))
+                                          bins=bin_list, holder=ID(id=self.factory.get_actor().get_name()))
         ticket0 = self.factory.make_ticket(delegation=d0)
 
-        print(self.factory.toJson(ticket0))
+        print(self.factory.toJson(ticket=ticket0))
 

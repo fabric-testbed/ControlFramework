@@ -34,7 +34,8 @@ class ResourceBin:
     Each resource bin consists of one or more physical units with a given resource vector.
     Each resource bin has a unique identifier and a unique parent resource bin.
     """
-    def __init__(self, parent_guid: ID = None, physical_units:int = None, vector:ResourceVector = None, term:Term = None):
+    def __init__(self, *, parent_guid: ID = None, physical_units:int = None, vector:ResourceVector = None,
+                 term:Term = None):
         self.guid = ID()
         self.parent_guid = parent_guid
         self.physical_units = physical_units

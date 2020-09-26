@@ -24,27 +24,25 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
-import queue
+from typing import List
 
 from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.policy.queue_wrapper import QueueWrapper
-from fabric.actor.core.util.iterable_queue import IterableQueue
 
 
 class FIFOQueue(QueueWrapper):
     def __init__(self):
-        self.queue = queue.Queue()
+        self.queue = []
 
-    def iterator(self) -> IterableQueue:
-        return IterableQueue(self.queue)
+    def values(self) -> List[IBrokerReservation]:
+        return self.queue.copy()
 
-    def add(self, reservation: IBrokerReservation):
-        self.queue.put(reservation)
+    def add(self, *, reservation: IBrokerReservation):
+        self.queue.append(reservation)
 
-    def remove(self, reservation: IBrokerReservation):
-        self.queue.get(reservation)
+    def remove(self, *, reservation: IBrokerReservation):
+        self.queue.remove(reservation)
 
     def size(self) -> int:
-        return self.queue.qsize()
+        return len(self.queue)

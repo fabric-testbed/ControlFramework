@@ -104,13 +104,14 @@ class ManagementObject(IManagementObject):
         if self.type_id is not None:
             properties[Constants.PropertyTypeID] = str(self.type_id)
 
-        self.save_protocols(properties)
+        self.save_protocols(properties=properties)
 
-        properties[Constants.PropertyActorName] = self.get_actor_name()
+        if self.get_actor_name() is not None:
+            properties[Constants.PropertyActorName] = self.get_actor_name()
 
         return properties
 
-    def save_protocols(self, properties: dict) -> dict:
+    def save_protocols(self, *, properties: dict) -> dict:
         if self.proxies is not None:
             properties[Constants.PropertyProxiesLength] = len(self.proxies)
             i = 0
@@ -124,26 +125,26 @@ class ManagementObject(IManagementObject):
                 i += 1
         return properties
 
-    def load_protocols(self, properties: dict):
+    def load_protocols(self, *, properties: dict):
         if Constants.PropertyProxiesLength in properties:
             count = int(properties[Constants.PropertyProxiesLength])
             self.proxies = []
             for i in range(count):
                 proxy = ProxyProtocolDescriptor()
-                proxy.set_protocol(properties[
+                proxy.set_protocol(protocol=properties[
                     Constants.PropertyProxiesPrefix + str(i) + Constants.PropertyProxiesProtocol])
-                proxy.set_proxy_class(properties[
+                proxy.set_proxy_class(proxy_class=properties[
                     Constants.PropertyProxiesPrefix + str(i) + Constants.PropertyProxiesClass])
-                proxy.set_proxy_module(properties[
+                proxy.set_proxy_module(proxy_module=properties[
                     Constants.PropertyProxiesPrefix + str(i) + Constants.PropertyProxiesModule])
 
-    def reset(self, properties: dict):
-        self.id = ID(properties[Constants.PropertyID])
+    def reset(self, *, properties: dict):
+        self.id = ID(id=properties[Constants.PropertyID])
 
         if Constants.PropertyTypeID in properties:
-            self.type_id = ID(properties[Constants.PropertyTypeID])
+            self.type_id = ID(id=properties[Constants.PropertyTypeID])
 
-        self.load_protocols(properties)
+        self.load_protocols(properties=properties)
 
         self.serial = properties
 
@@ -167,7 +168,7 @@ class ManagementObject(IManagementObject):
         return self.proxies
 
     @staticmethod
-    def set_exception_details(result: ResultAvro, e: Exception):
+    def set_exception_details(*, result: ResultAvro, e: Exception):
         result.message += str(e)
         result.set_details(traceback.format_exc())
         return result

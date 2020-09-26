@@ -38,7 +38,7 @@ class SourceCalendar:
     The calendar also maintains a list of incoming extension requests for
     reservations that have been satisfied from the underlying source reservations.
     """
-    def __init__(self, clock: ActorClock, source: IReservation):
+    def __init__(self, *, clock: ActorClock, source: IReservation):
         """
         Constructor
         @params clock: clock
@@ -53,7 +53,7 @@ class SourceCalendar:
         # Incoming extension requests.
         self.extending = ReservationList()
 
-    def tick(self, cycle: int):
-        ms = self.clock.cycle_end_in_millis(cycle)
-        self.outlays.tick(ms)
-        self.extending.tick(cycle)
+    def tick(self, *, cycle: int):
+        ms = self.clock.cycle_end_in_millis(cycle=cycle)
+        self.outlays.tick(time=ms)
+        self.extending.tick(cycle=cycle)

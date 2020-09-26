@@ -46,91 +46,96 @@ if TYPE_CHECKING:
 
 
 class BrokerService(ActorService):
-    def __init__(self, actor:IActor):
-        super().__init__(actor)
+    def __init__(self, *, actor:IActor):
+        super().__init__(actor=actor)
 
-    def pass_agent(self, reservation: ReservationAvro) -> IBrokerReservation:
-        slice_obj = Translate.translate_slice(reservation.slice.guid, reservation.slice.slice_name)
-        term = Translate.translate_term_from_avro(reservation.term)
-        resource_set = Translate.translate_resource_set_from_avro(reservation.resource_set)
-        rid = ID(reservation.reservation_id)
+    def pass_agent(self, *, reservation: ReservationAvro) -> IBrokerReservation:
+        slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
+        term = Translate.translate_term_from_avro(term=reservation.term)
+        resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)
+        rid = ID(id=reservation.reservation_id)
 
-        result = BrokerReservationFactory.create(rid, resource_set, term, slice_obj)
-        result.set_owner(self.actor.get_identity())
-        result.set_sequence_in(reservation.sequence)
+        result = BrokerReservationFactory.create(rid=rid, resources=resource_set, term=term, slice_obj=slice_obj)
+        result.set_owner(owner=self.actor.get_identity())
+        result.set_sequence_in(sequence=reservation.sequence)
 
         return result
 
-    def ticket(self, request: TicketAvro):
+    def ticket(self, *, request: TicketAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
-            rsvn = self.pass_agent(request.reservation)
-            callback = self.get_callback(request.callback_topic, authToken)
-            rpc = IncomingReservationRPC(request.message_id, RPCRequestType.Ticket, rsvn, callback, None, authToken)
+            rsvn = self.pass_agent(reservation=request.reservation)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Ticket,
+                                         reservation=rsvn, callback=callback, caller=authToken)
         except Exception as e:
             self.logger.error("Invalid Ticket request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def claim(self, request: ClaimAvro):
+    def claim(self, *, request: ClaimAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
-            rsvn = self.pass_agent(request.reservation)
-            callback = self.get_callback(request.callback_topic, authToken)
-            rpc = IncomingReservationRPC(request.message_id, RPCRequestType.Claim, rsvn, callback, None, authToken)
+            rsvn = self.pass_agent(reservation=request.reservation)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Claim,
+                                         reservation=rsvn, callback=callback, caller=authToken)
         except Exception as e:
             self.logger.error("Invalid Claim request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def reclaim(self, request: ReclaimAvro):
+    def reclaim(self, *, request: ReclaimAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
-            rsvn = self.pass_agent(request.reservation)
-            callback = self.get_callback(request.callback_topic, authToken)
-            rpc = IncomingReservationRPC(request.message_id, RPCRequestType.Reclaim, rsvn, callback, None, authToken)
+            rsvn = self.pass_agent(reservation=request.reservation)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Reclaim,
+                                         reservation=rsvn, callback=callback, caller=authToken)
         except Exception as e:
             self.logger.error("Invalid reclaim request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def extend_ticket(self, request: ExtendTicketAvro):
+    def extend_ticket(self, *, request: ExtendTicketAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
-            rsvn = self.pass_agent(request.reservation)
-            callback = self.get_callback(request.callback_topic, authToken)
-            rpc = IncomingReservationRPC(request.message_id, RPCRequestType.ExtendTicket, rsvn, None, None, authToken)
+            rsvn = self.pass_agent(reservation=request.reservation)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.ExtendTicket,
+                                         reservation=rsvn, caller=authToken)
         except Exception as e:
             self.logger.error("Invalid extend_ticket request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def relinquish(self, request: RelinquishAvro):
+    def relinquish(self, *, request: RelinquishAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(request.auth)
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
-            rsvn = self.pass_agent(request.reservation)
-            callback = self.get_callback(request.callback_topic, authToken)
-            rpc = IncomingReservationRPC(request.message_id, RPCRequestType.Relinquish, rsvn, None, None, authToken)
+            rsvn = self.pass_agent(reservation=request.reservation)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Relinquish,
+                                         reservation=rsvn, caller=authToken)
         except Exception as e:
             self.logger.error("Invalid extend_ticket request: {}".format(e))
             raise e
-        self.do_dispatch(rpc)
+        self.do_dispatch(rpc=rpc)
 
-    def process(self, message: IMessageAvro):
+    def process(self, *, message: IMessageAvro):
         if message.get_message_name() == IMessageAvro.Ticket:
-            self.ticket(message)
+            self.ticket(request=message)
         elif message.get_message_name() == IMessageAvro.Claim:
-            self.claim(message)
+            self.claim(request=message)
         elif message.get_message_name() == IMessageAvro.Reclaim:
-            self.reclaim(message)
+            self.reclaim(request=message)
         elif message.get_message_name() == IMessageAvro.ExtendTicket:
-            self.extend_ticket(message)
+            self.extend_ticket(request=message)
         elif message.get_message_name() == IMessageAvro.Relinquish:
-            self.relinquish(message)
+            self.relinquish(request=message)
         else:
-            super().process(message)
+            super().process(message=message)

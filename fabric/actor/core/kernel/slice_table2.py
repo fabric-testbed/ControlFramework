@@ -44,7 +44,7 @@ class SliceTable2:
         # to be unique per slice.
         self.slices_by_name = {}
 
-    def add(self, slice_object: IKernelSlice):
+    def add(self, *, slice_object: IKernelSlice):
         """
         Adds the given slice to the slice table.
        
@@ -84,7 +84,7 @@ class SliceTable2:
         finally:
             self.lock.release()
 
-    def contains(self, slice_id: ID) -> bool:
+    def contains(self, *, slice_id: ID) -> bool:
         """
         Checks if the specified slice is contained in the table.
        
@@ -100,7 +100,7 @@ class SliceTable2:
             self.lock.release()
         return ret_val
 
-    def get(self, slice_id: ID, raise_exception: bool = False) -> IKernelSlice:
+    def get(self, *, slice_id: ID, raise_exception: bool = False) -> IKernelSlice:
         """
         Returns the specified slice.
        
@@ -110,7 +110,8 @@ class SliceTable2:
         @return slice or null if the slice is not present in the table
         """
         if slice_id is None:
-            return Exception("Invalid argument")
+            raise Exception("Invalid argument")
+
         result = None
         try:
             self.lock.acquire()
@@ -123,7 +124,7 @@ class SliceTable2:
             raise Exception("not registered")
         return result
 
-    def get_slice_name(self, slice_name: str) -> list:
+    def get_slice_name(self, *, slice_name: str) -> list:
         """
         Returns all slices with the given name.
        
@@ -210,7 +211,7 @@ class SliceTable2:
             self.lock.release()
         return ret_val
 
-    def remove(self, slice_id: ID):
+    def remove(self, *, slice_id: ID):
         """
         Removes the specified slice.
        

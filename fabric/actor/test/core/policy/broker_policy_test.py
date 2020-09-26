@@ -60,7 +60,7 @@ class BrokerPolicyTest(BaseTestCase):
         db = self.get_container_database()
         db.reset_db()
         broker = super().get_broker()
-        broker.set_recovered(True)
+        broker.set_recovered(value=True)
         Term.set_clock(broker.get_actor_clock())
         return broker
 
@@ -83,13 +83,13 @@ class BrokerPolicyTest(BaseTestCase):
         self.assertEqual(end, r.get_term().get_end_time())
 
     def get_authority_proxy(self) -> IAuthorityProxy:
-        auth = AuthToken("mysite", ID())
+        auth = AuthToken(name="mysite", guid=ID())
         from fabric.actor.core.container.globals import GlobalsSingleton
-        proxy = KafkaAuthorityProxy("test-topic", auth, GlobalsSingleton.get().get_logger())
+        proxy = KafkaAuthorityProxy(kafka_topic="test-topic", identity=auth, logger=GlobalsSingleton.get().get_logger())
 
         try:
             if ActorRegistrySingleton.get().get_proxy(Constants.ProtocolLocal, "mysite") is None:
-                dummy = DummyAuthorityProxy(auth)
+                dummy = DummyAuthorityProxy(auth=auth)
                 ActorRegistrySingleton.get().register_proxy(dummy)
         except Exception as e:
             raise e
@@ -111,34 +111,34 @@ class BrokerPolicyTest(BaseTestCase):
         broker = self.get_broker()
         controller = self.get_controller()
         clock = broker.get_actor_clock()
-        rtype = ResourceType("1")
+        rtype = ResourceType(resource_type="1")
 
-        proxy = ClientCallbackHelper(controller.get_name(), controller.get_guid())
-        broker_callback = ClientCallbackHelper(broker.get_name(), broker.get_guid())
+        proxy = ClientCallbackHelper(name=controller.get_name(), guid=controller.get_guid())
+        broker_callback = ClientCallbackHelper(name=broker.get_name(), guid=broker.get_guid())
         ActorRegistrySingleton.get().register_callback(proxy)
         ActorRegistrySingleton.get().register_callback(broker_callback)
         last_called = proxy.get_called()
 
-        inv_slice = SliceFactory.create(ID(), name="inventory-slice")
-        inv_slice.set_inventory(True)
+        inv_slice = SliceFactory.create(slice_id=ID(), name="inventory-slice")
+        inv_slice.set_inventory(value=True)
         source = self.get_source(1, rtype, broker, inv_slice)
 
-        broker.donate_reservation(source)
+        broker.donate_reservation(reservation=source)
 
         cycle = 1
-        broker.external_tick(cycle)
+        broker.external_tick(cycle=cycle)
         cycle += 1
 
         units = 1
-        start = clock.cycle_start_date(self.DonateStartCycle)
-        end = clock.cycle_end_date(self.DonateEndCycle - 1)
+        start = clock.cycle_start_date(cycle=self.DonateStartCycle)
+        end = clock.cycle_end_date(cycle=self.DonateEndCycle - 1)
 
         request = self.get_request(units, rtype, start, end)
 
-        broker.ticket(request, proxy, proxy.get_identity())
+        broker.ticket(reservation=request, callback=proxy, caller=proxy.get_identity())
 
         for c in range(cycle, self.DonateEndCycle):
-            broker.external_tick(c)
+            broker.external_tick(cycle=c)
             while broker.get_current_cycle() != c:
                 time.sleep(0.001)
 
@@ -160,35 +160,35 @@ class BrokerPolicyTest(BaseTestCase):
         broker = self.get_broker()
         controller = self.get_controller()
         clock = broker.get_actor_clock()
-        rtype = ResourceType("1")
+        rtype = ResourceType(resource_type="1")
 
-        proxy = ClientCallbackHelper(controller.get_name(), controller.get_guid())
-        broker_callback = ClientCallbackHelper(broker.get_name(), broker.get_guid())
+        proxy = ClientCallbackHelper(name=controller.get_name(), guid=controller.get_guid())
+        broker_callback = ClientCallbackHelper(name=broker.get_name(), guid=broker.get_guid())
         ActorRegistrySingleton.get().register_callback(proxy)
         ActorRegistrySingleton.get().register_callback(broker_callback)
         last_called = proxy.get_called()
 
-        inv_slice = SliceFactory.create(ID(), name="inventory-slice")
-        inv_slice.set_inventory(True)
+        inv_slice = SliceFactory.create(slice_id=ID(), name="inventory-slice")
+        inv_slice.set_inventory(value=True)
         source = self.get_source(1, rtype, broker, inv_slice)
 
-        broker.donate_reservation(source)
+        broker.donate_reservation(reservation=source)
 
         cycle = 1
-        broker.external_tick(cycle)
+        broker.external_tick(cycle=cycle)
         cycle += 1
 
         units = 1
-        start = clock.cycle_start_date(self.DonateStartCycle)
+        start = clock.cycle_start_date(cycle=self.DonateStartCycle)
         cycle_end = self.DonateEndCycle - 50
-        end = clock.cycle_end_date(cycle_end)
+        end = clock.cycle_end_date(cycle=cycle_end)
 
         request = self.get_request(units, rtype, start, end)
 
-        broker.ticket(request, proxy, proxy.get_identity())
+        broker.ticket(reservation=request, callback=proxy, caller=proxy.get_identity())
 
         for c in range(cycle, self.DonateEndCycle):
-            broker.external_tick(c)
+            broker.external_tick(cycle=c)
             while broker.get_current_cycle() != c:
                 time.sleep(0.001)
 
@@ -200,10 +200,10 @@ class BrokerPolicyTest(BaseTestCase):
                 broker.await_no_pending_reservations()
                 self.assertTrue(request.is_closed())
                 self.assertEqual(1, proxy.get_called())
-                start = clock.cycle_start_date(cycle_end + 1)
-                end = clock.cycle_end_date(self.DonateEndCycle - 1)
+                start = clock.cycle_start_date(cycle=cycle_end + 1)
+                end = clock.cycle_end_date(cycle=self.DonateEndCycle - 1)
                 request = self.get_request(units, rtype, start, end)
-                broker.ticket(request, proxy, proxy.get_identity())
+                broker.ticket(reservation=request, callback=proxy, caller=proxy.get_identity())
 
         broker.await_no_pending_reservations()
 
@@ -219,36 +219,36 @@ class BrokerPolicyTest(BaseTestCase):
         broker = self.get_broker()
         controller = self.get_controller()
         clock = broker.get_actor_clock()
-        rtype = ResourceType("1")
+        rtype = ResourceType(resource_type="1")
 
-        proxy = ClientCallbackHelper(controller.get_name(), controller.get_guid())
-        broker_callback = ClientCallbackHelper(broker.get_name(), broker.get_guid())
-        ActorRegistrySingleton.get().register_callback(proxy)
-        ActorRegistrySingleton.get().register_callback(broker_callback)
+        proxy = ClientCallbackHelper(name=controller.get_name(), guid=controller.get_guid())
+        broker_callback = ClientCallbackHelper(name=broker.get_name(), guid=broker.get_guid())
+        ActorRegistrySingleton.get().register_callback(callback=proxy)
+        ActorRegistrySingleton.get().register_callback(callback=broker_callback)
         last_called = proxy.get_called()
 
-        inv_slice = SliceFactory.create(ID(), name="inventory-slice")
-        inv_slice.set_inventory(True)
+        inv_slice = SliceFactory.create(slice_id=ID(), name="inventory-slice")
+        inv_slice.set_inventory(value=True)
         source = self.get_source(1, rtype, broker, inv_slice)
 
-        broker.donate_reservation(source)
+        broker.donate_reservation(reservation=source)
 
         cycle = 1
-        broker.external_tick(cycle)
+        broker.external_tick(cycle=cycle)
         cycle += 1
 
         units = 1
-        start = clock.cycle_start_date(self.DonateStartCycle)
+        start = clock.cycle_start_date(cycle=self.DonateStartCycle)
         cycle_end = self.DonateEndCycle - 50
-        end = clock.cycle_end_date(cycle_end)
+        end = clock.cycle_end_date(cycle=cycle_end)
 
         request = self.get_request(units, rtype, start, end)
         reservation = request
 
-        broker.ticket(request, proxy, proxy.get_identity())
+        broker.ticket(reservation=request, callback=proxy, caller=proxy.get_identity())
 
         for c in range(cycle, self.DonateEndCycle):
-            broker.external_tick(c)
+            broker.external_tick(cycle=c)
             while broker.get_current_cycle() != c:
                 time.sleep(0.001)
 
@@ -258,10 +258,10 @@ class BrokerPolicyTest(BaseTestCase):
 
             if c == cycle_end - 10:
                 self.assertEqual(1, proxy.get_called())
-                start = ActorClock.from_milliseconds(ActorClock.to_milliseconds(end) + 1)
-                end = clock.cycle_end_date(self.DonateEndCycle - 1)
+                start = ActorClock.from_milliseconds(milli_seconds=ActorClock.to_milliseconds(when=end) + 1)
+                end = clock.cycle_end_date(cycle=self.DonateEndCycle - 1)
                 request = self.get_request_from_request(request, units, rtype, start, end)
-                broker.extend_ticket(request, proxy.get_identity())
+                broker.extend_ticket(reservation=request, caller=proxy.get_identity())
                 print("Extend done")
 
         broker.await_no_pending_reservations()

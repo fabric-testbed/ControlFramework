@@ -31,11 +31,11 @@ from fabric.message_bus.messages.auth_avro import AuthAvro
 
 
 class ConfigProcessor:
-    def __init__(self, path: str = None):
+    def __init__(self, *, path: str = None):
         self.path = path
         self.config = None
 
-    def process(self, config: Configuration = None):
+    def process(self, *, config: Configuration = None):
         if config is None:
             self.read_configuration()
         else:

@@ -29,7 +29,7 @@ from fabric.actor.core.common.constants import Constants
 
 
 class GlobalConfig:
-    def __init__(self, config: dict):
+    def __init__(self, *, config: dict):
         self.runtime = {}
         if Constants.ConfigSectionRuntime in config:
             for prop in config[Constants.ConfigSectionRuntime]:
@@ -81,7 +81,7 @@ class GlobalConfig:
 
 
 class HandlerConfig:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.module_name = None
         self.class_name = None
         self.properties = {}
@@ -107,7 +107,7 @@ class HandlerConfig:
 
 
 class Attribute:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.key = None
         self.type = None
         self.value = None
@@ -131,7 +131,7 @@ class Attribute:
 
 
 class PoolConfig:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.description = None
         self.attributes = []
         self.type = None
@@ -167,10 +167,10 @@ class PoolConfig:
                 elif key == 'factory.module':
                     self.factory_module = value
                 elif key == 'handler':
-                    self.handler = HandlerConfig(value)
+                    self.handler = HandlerConfig(config=value)
                 elif key == 'attributes':
                     for a in value:
-                        self.attributes.append(Attribute(a['attribute']))
+                        self.attributes.append(Attribute(config=a['attribute']))
 
     def get_type(self) -> str:
         return self.type
@@ -207,7 +207,7 @@ class PoolConfig:
 
 
 class ControlConfig:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.type = None
         self.module_name = None
         self.class_name = None
@@ -231,7 +231,7 @@ class ControlConfig:
 
 
 class PolicyConfig:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.module_name = None
         self.class_name = None
         self.properties = {}
@@ -257,7 +257,7 @@ class PolicyConfig:
 
 
 class ActorConfig:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.policy = None
         self.description = None
         self.pools = []
@@ -281,12 +281,12 @@ class ActorConfig:
                     self.kafka_topic = value
                 elif key == 'pools':
                     for p in value:
-                        self.pools.append(PoolConfig(p['pool']))
+                        self.pools.append(PoolConfig(config=p['pool']))
                 elif key == 'controls':
                     for c in value:
-                        self.controls.append(ControlConfig(c['control']))
+                        self.controls.append(ControlConfig(config=c['control']))
                 elif key == 'policy':
-                    self.policy = PolicyConfig(value)
+                    self.policy = PolicyConfig(config=value)
 
     def get_type(self) -> str:
         return self.type
@@ -314,7 +314,7 @@ class ActorConfig:
 
 
 class RsetConfig:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.type = None
         self.units = None
         now = datetime.utcnow()
@@ -345,7 +345,7 @@ class RsetConfig:
 
 
 class Peer:
-    def __init__(self, config: list):
+    def __init__(self, *, config: list):
         self.name = None
         self.type = None
         self.guid = None
@@ -363,7 +363,7 @@ class Peer:
                     self.kafka_topic = value
                 elif key == 'rsets':
                     for r in value:
-                        self.rsets.append(RsetConfig(r['rset']))
+                        self.rsets.append(RsetConfig(config=r['rset']))
 
     def get_name(self) -> str:
         return self.name
@@ -382,13 +382,13 @@ class Peer:
 
 
 class Configuration:
-    def __init__(self, config: dict):
-        self.global_config = GlobalConfig(config)
-        self.actor = ActorConfig(config['actor'])
+    def __init__(self, *, config: dict):
+        self.global_config = GlobalConfig(config=config)
+        self.actor = ActorConfig(config=config['actor'])
         self.peers = []
         if 'peers' in config:
             for e in config['peers']:
-                self.peers.append(Peer(e['peer']))
+                self.peers.append(Peer(config=e['peer']))
 
     def get_global_config(self) -> GlobalConfig:
         return self.global_config

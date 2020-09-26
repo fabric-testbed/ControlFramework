@@ -34,7 +34,7 @@ class Credentials:
     """
     Credentials represents an Fabric Identity token used for authenticating/authorization on behalf of the experimentor
     """
-    def __init__(self, id_token: str = None, properties: dict = None):
+    def __init__(self, *, id_token: str = None, properties: dict = None):
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.id_token = id_token
         self.jwks_url = GlobalsSingleton.get().get_config().get("oauth", "oauth-jwks-url")

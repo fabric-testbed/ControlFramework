@@ -28,18 +28,11 @@ from functools import total_ordering
 
 
 class ID:
-    def __init__(self, id: str = None):
+    def __init__(self, *, id: str = None):
         if id is None:
             self.id = uuid.uuid4().__str__()
         else:
             self.id = id
-
-    def __eq__(self, other):
-        if not isinstance(other, ID):
-            # don't attempt to compare against unrelated types
-            return NotImplemented
-
-        return self.id == other.id
 
     def __str__(self):
         return str(self.id)
@@ -69,7 +62,7 @@ def main():
     id = ID()
     id.print()
     print(id.__hash__())
-    id1 = ID("manager")
+    id1 = ID(id="manager")
     id1.print()
     print(id1.__hash__())
 

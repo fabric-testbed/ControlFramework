@@ -24,11 +24,18 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_event import IEvent
 
 
 class IEventFilter:
-    def matches(self, event: IEvent) -> bool:
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def matches(self, *, event: IEvent) -> bool:
+        """
+        Checks if the event matches the filter
+        @params event: event
+        @return true if matches; false otherwise
+        """

@@ -50,28 +50,28 @@ class ProxyRegistry:
         for protocol in self.protocols.values():
             protocol.clear()
 
-    def get_broker_proxies(self, protocol: str):
+    def get_broker_proxies(self, *, protocol: str):
         if protocol not in self.protocols:
             return None
 
         entry = self.protocols[protocol]
         return entry.broker_proxies
 
-    def get_site_proxies(self, protocol: str):
+    def get_site_proxies(self, *, protocol: str):
         if protocol not in self.protocols:
             return None
 
         entry = self.protocols[protocol]
         return entry.site_proxies
 
-    def get_proxies(self, protocol: str):
+    def get_proxies(self, *, protocol: str):
         if protocol not in self.protocols:
             return None
 
         entry = self.protocols[protocol]
         return entry.proxies.values()
 
-    def get_proxy(self, protocol: str, actor_name: str):
+    def get_proxy(self, *, protocol: str, actor_name: str):
         if protocol not in self.protocols:
             return None
         entry = self.protocols[protocol]
@@ -79,7 +79,7 @@ class ProxyRegistry:
             return None
         return entry.proxies[actor_name]
 
-    def register_proxy(self, proxy: IProxy):
+    def register_proxy(self, *, proxy: IProxy):
         protocol = proxy.get_type()
 
         entry = None
@@ -99,7 +99,7 @@ class ProxyRegistry:
             if isinstance(proxy, IBrokerProxy):
                 entry.broker_proxies.append(proxy)
 
-    def unregister(self, actor_name: str):
+    def unregister(self, *, actor_name: str):
         for protocol in self.protocols.values():
             if actor_name in protocol.proxies:
                 proxy = protocol.proxies[actor_name]

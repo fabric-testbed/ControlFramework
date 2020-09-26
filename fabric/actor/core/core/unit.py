@@ -46,7 +46,7 @@ class UnitState(Enum):
 
 
 class Unit(ConfigToken):
-    def __init__(self, id: ID, rid: ID = None, slice_id: ID = None, actor_id: ID = None,
+    def __init__(self, *, id: ID, rid: ID = None, slice_id: ID = None, actor_id: ID = None,
                  properties: dict = None, state: UnitState = None):
         # Unique identifier.
         self.id = id
@@ -91,37 +91,37 @@ class Unit(ConfigToken):
         self.modified = False
         self.reservation = None
 
-    def transition(self, to_state: UnitState):
+    def transition(self, *, to_state: UnitState):
         self.state = to_state
 
-    def merge_properties(self, incoming: dict):
+    def merge_properties(self, *, incoming: dict):
         self.properties = {**incoming, **self.properties}
 
-    def fail(self, message: str, exception: Exception = None):
-        self.notices.add(message, exception)
-        self.transition(UnitState.FAILED)
+    def fail(self, *, message: str, exception: Exception = None):
+        self.notices.add(msg=message, ex=exception)
+        self.transition(to_state=UnitState.FAILED)
 
-    def fail_on_modify(self, message: str, exception: Exception = None):
-        self.notices.add(message, exception)
-        self.transition(UnitState.ACTIVE)
-        self.merge_properties(self.modified.properties)
+    def fail_on_modify(self, *, message: str, exception: Exception = None):
+        self.notices.add(msg=message, ex=exception)
+        self.transition(to_state=UnitState.ACTIVE)
+        self.merge_properties(incoming=self.modified.properties)
 
-    def set_state(self, state: UnitState):
-        self.transition(state)
+    def set_state(self, *, state: UnitState):
+        self.transition(to_state=state)
 
     def start_close(self):
-        self.transition(UnitState.CLOSING)
+        self.transition(to_state=UnitState.CLOSING)
         self.transfer_out_started = True
 
     def start_prime(self) -> bool:
         if self.state == UnitState.DEFAULT or self.state == UnitState.PRIMING:
-            self.transition(UnitState.PRIMING)
+            self.transition(to_state=UnitState.PRIMING)
             return True
         return False
 
     def start_modify(self) -> bool:
         if self.state == UnitState.ACTIVE or self.state == UnitState.MODIFYING:
-            self.transition(UnitState.MODIFYING)
+            self.transition(to_state=UnitState.MODIFYING)
             return True
         return False
 
@@ -137,10 +137,10 @@ class Unit(ConfigToken):
     def get_properties(self) -> dict:
         return self.properties
 
-    def set_property(self, name: str, value: str):
+    def set_property(self, *, name: str, value: str):
         self.properties[name] = value
 
-    def get_property(self, name: str) -> str:
+    def get_property(self, *, name: str) -> str:
         ret_val = None
         if name in self.properties:
             ret_val = self.properties[name]
@@ -171,14 +171,14 @@ class Unit(ConfigToken):
         ret_val = self.sequence
         return ret_val
 
-    def set_reservation(self, reservation: IReservation):
+    def set_reservation(self, *, reservation: IReservation):
         self.reservation = reservation
         self.reservation_id = reservation.get_reservation_id()
 
-    def set_slice_id(self, slice_id: ID):
+    def set_slice_id(self, *, slice_id: ID):
         self.slice_id = slice_id
 
-    def set_actor_id(self, actor_id: ID):
+    def set_actor_id(self, *, actor_id: ID):
         self.actor_id = actor_id
 
     def is_failed(self) -> bool:
@@ -194,10 +194,11 @@ class Unit(ConfigToken):
         return ret_val
 
     def has_pending_action(self) -> bool:
-        ret_val = self.state == UnitState.MODIFYING or self.state == UnitState.PRIMING or self.state == UnitState.CLOSING
+        ret_val = self.state == UnitState.MODIFYING or self.state == UnitState.PRIMING or \
+                  self.state == UnitState.CLOSING
         return ret_val
 
-    def set_modified(self, modified):
+    def set_modified(self, *, modified):
         self.modified = modified
 
     def get_modified(self):
@@ -220,12 +221,12 @@ class Unit(ConfigToken):
         ret_val = self.parent_id
         return ret_val
 
-    def set_parent_id(self, parent_id: ID):
+    def set_parent_id(self, *, parent_id: ID):
         self.parent_id = parent_id
 
     def complete_modify(self):
-        self.transition(UnitState.ACTIVE)
-        self.merge_properties(self.modified.properties)
+        self.transition(to_state=UnitState.ACTIVE)
+        self.merge_properties(incoming=self.modified.properties)
 
     def get_actor_id(self) -> ID:
         ret_val = self.actor_id
@@ -235,7 +236,7 @@ class Unit(ConfigToken):
         ret_val = self.rtype
         return ret_val
 
-    def set_resource_type(self, rtype: ResourceType):
+    def set_resource_type(self, *, rtype: ResourceType):
         self.rtype = rtype
 
     def __eq__(self, other):
@@ -248,8 +249,8 @@ class Unit(ConfigToken):
         ret_val = self.notices
         return ret_val
 
-    def add_notice(self, notice: str):
-        self.notices.add(notice)
+    def add_notice(self, *, notice: str):
+        self.notices.add(msg=notice)
 
     def __str__(self):
         return "[unit: {} reservation: {} actor: {} state: {}]".format(self.id, self.reservation_id, self.actor_id, self.state)

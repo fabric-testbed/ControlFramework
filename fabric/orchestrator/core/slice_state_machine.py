@@ -24,10 +24,12 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from enum import Enum
+from typing import List
 
 from fabric.actor.core.core.controller import Controller
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.reservation_mng import ReservationMng
 
 
 class SliceState(Enum):
@@ -62,13 +64,13 @@ class StateBins:
     def __init__(self):
         self.bins = {}
 
-    def add(self, s: SliceState):
+    def add(self, *, s: ReservationStates):
         if s not in self.bins:
             self.bins[s] = 1
         else:
             self.bins[s] += 1
 
-    def has_state(self, s: SliceState) -> bool:
+    def has_state(self, *, s: ReservationStates) -> bool:
         count = self.bins.get(s, None)
         if count is not None and count > 0:
             return True
@@ -82,7 +84,7 @@ class StateBins:
 
         count1 = 0
         for state in states:
-            if self.has_state(state):
+            if self.has_state(s=state):
                 count1 += 1
 
         if count1 == count and count > 0:
@@ -102,19 +104,19 @@ class SliceStateMachine:
     REEVALUATE = SliceOperation(SliceCommand.Reevaluate, SliceState.Nascent, SliceState.StableOk,
                                 SliceState.StableError, SliceState.Configuring, SliceState.Dead, SliceState.Closing)
 
-    def __init__(self, slice_id: ID, recover: bool):
+    def __init__(self, *, slice_id: ID, recover: bool):
         self.slice_guid = slice_id
         if recover:
             self.state = SliceState.Configuring
         else:
             self.state = SliceState.Nascent
 
-    def get_slice_reservations(self) -> list:
+    def get_slice_reservations(self) -> List[ReservationMng]:
         controller = Controller()
         try:
             # TODO
             # orchestrator = fetch from Controller state
-            return controller.get_reservations(self.slice_guid)
+            return controller.get_reservations(slice_id=self.slice_guid)
         except Exception as e:
             return None
 
@@ -122,14 +124,14 @@ class SliceStateMachine:
         all_res = self.get_slice_reservations()
         bins = StateBins()
         for r in all_res:
-            bins.add(r.get_state())
+            bins.add(s=ReservationStates(r.get_state()))
 
         if not bins.has_state_other_than(ReservationStates.Failed):
             return True
 
         return False
 
-    def transition_slice(self, operation: SliceOperation) -> SliceState:
+    def transition_slice(self, *, operation: SliceOperation) -> SliceState:
         if self.state not in operation.valid_from_states:
             raise Exception("Operation: {} cannot transition from state {}".format(operation, self.state))
 
@@ -150,7 +152,7 @@ class SliceStateMachine:
 
             bins = StateBins()
             for r in all_res:
-                bins.add(r.get_state())
+                bins.add(s=ReservationStates(r.get_state()))
 
             if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
 

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_policy import IPolicy
@@ -39,7 +41,9 @@ class IServerPolicy(IPolicy):
     IServerPolicy defines the policy interface for an actor acting
     as a server for another actor (broker or a site authority).
     """
-    def allocate(self, cycle: int):
+
+    @abstractmethod
+    def allocate(self, *, cycle: int):
         """
         Allocates resources to all clients who have requested them. This method
         is called by the policy once per cycle. The method should determine
@@ -50,9 +54,9 @@ class IServerPolicy(IPolicy):
         
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def bind(self, reservation: IReservation) -> bool:
+    @abstractmethod
+    def bind(self, *, reservation: IReservation) -> bool:
         """
         Handles an incoming request to allocate resources and issue a ticket for
         the reservation. The requested resources can be obtained by calling
@@ -80,9 +84,9 @@ class IServerPolicy(IPolicy):
                 of resources will be delayed until a later time.
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def donate_reservation(self, reservation: IClientReservation):
+    @abstractmethod
+    def donate_reservation(self, *, reservation: IClientReservation):
         """
         Accepts ticketed resources to be used for allocation of client requests.
         The policy should add the resources represented by this reservation to
@@ -96,9 +100,9 @@ class IServerPolicy(IPolicy):
         
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def extend_broker(self, reservation:IBrokerReservation) -> bool:
+    @abstractmethod
+    def extend_broker(self, *, reservation:IBrokerReservation) -> bool:
         """
         Handles an incoming request to extend previously allocated resources and
         issue a ticket for the reservation. The requested resources can be
@@ -133,4 +137,3 @@ class IServerPolicy(IPolicy):
                 of resources will be delayed until a later time.
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

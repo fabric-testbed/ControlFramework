@@ -39,7 +39,7 @@ class IClientReservationFactory:
     Factory for client reservations.
     """
     @staticmethod
-    def create(rid: ID, resources: ResourceSet = None, term: Term = None, slice_object: ISlice = None,
+    def create(*, rid: ID, resources: ResourceSet = None, term: Term = None, slice_object: ISlice = None,
                broker: IBrokerProxy = None):
         """
         Creates an instance of IClientReservation
@@ -55,7 +55,7 @@ class IClientReservationFactory:
         raise NotImplementedError("Should have implemented this")
 
     @staticmethod
-    def set_as_source(reservation: IClientReservation):
+    def set_as_source(*, reservation: IClientReservation):
         """
         Updates the reservation to represent a source for a site resource pool.
         @param reservation client reservation

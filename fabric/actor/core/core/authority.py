@@ -56,8 +56,8 @@ class Authority(Actor, IAuthority):
     """
     Authority is the base implementation for a site authority actor.
     """
-    def __init__(self, identity: AuthToken = None, clock: ActorClock = None):
-        super().__init__(identity, clock)
+    def __init__(self, *, identity: AuthToken = None, clock: ActorClock = None):
+        super().__init__(auth=identity, clock=clock)
         self.type = ActorType.Authority
         # Initialization status.
         self.initialized = False
@@ -120,157 +120,162 @@ class Authority(Actor, IAuthority):
         self.extending_lease = ReservationSet()
         self.modifying_lease = ReservationSet()
 
-    def register_client_slice(self, slice_obj:ISlice):
-        self.wrapper.register_slice(slice_obj)
+    def register_client_slice(self, *, slice_obj:ISlice):
+        self.wrapper.register_slice(slice_object=slice_obj)
 
-    def available(self, resources: ResourceSet):
-        self.policy.available(resources)
+    def available(self, *, resources: ResourceSet):
+        self.policy.available(resources=resources)
 
-    def claim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    def claim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         slice_obj = reservation.get_slice()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.claim_request(reservation, caller, callback)
+        self.wrapper.claim_request(reservation=reservation, caller=caller, callback=callback)
 
-    def reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    def reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         slice_obj = reservation.get_slice()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.reclaim_request(reservation, caller, callback)
+        self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
 
-    def close_by_caller(self, reservation:IReservation, caller: AuthToken):
+    def close_by_caller(self, *, reservation:IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
 
-        self.wrapper.close_request(reservation, caller, True)
+        self.wrapper.close_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
-    def close_expiring(self, cycle: int):
+    def close_expiring(self, *, cycle: int):
         """
         Closes the expiring reservations for the specified cycle.
 
         @param cycle
                    cycle number
         """
-        expired = self.policy.get_closing(cycle)
+        expired = self.policy.get_closing(cycle=cycle)
         if expired is not None:
             # self.logger.info("Authority expiring for cycle {} = {}".format(cycle, expired))
-            self.close_reservations(expired)
+            self.close_reservations(reservations=expired)
 
-    def donate(self, resources: ResourceSet):
-        self.policy.donate(resources)
+    def donate(self, *, resources: ResourceSet):
+        self.policy.donate(resources=resources)
 
-    def donate_reservation(self, reservation: IClientReservation):
-        self.policy.donate_reservation(reservation)
+    def donate_reservation(self, *, reservation: IClientReservation):
+        self.policy.donate_reservation(reservation=reservation)
 
-    def eject(self, resources: ResourceSet):
-        self.policy.eject(resources)
+    def eject(self, *, resources: ResourceSet):
+        self.policy.eject(resources=resources)
 
-    def export(self, reservation: IBrokerReservation = None, resources: ResourceSet = None, term: Term = None, client: AuthToken = None) -> ID:
+    def export(self, *, reservation: IBrokerReservation = None, resources: ResourceSet = None,
+               term: Term = None, client: AuthToken = None) -> ID:
         if reservation is None:
-            slice_obj = SliceFactory.create(ID(), client.get_name(), ResourceData())
-            slice_obj.set_owner(client)
+            slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
+            slice_obj.set_owner(owner=client)
             slice_obj.set_broker_client()
 
-            reservation = BrokerReservationFactory.create(ID(), resources, term, slice_obj)
-            reservation.set_owner(self.identity)
+            reservation = BrokerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_obj=slice_obj)
+            reservation.set_owner(owner=self.identity)
 
-        self.wrapper.export(reservation, client)
+        self.wrapper.export(reservation=reservation, client=client)
         return reservation.get_reservation_id()
 
-    def extend_lease(self, reservation:IAuthorityReservation, caller: AuthToken):
+    def extend_lease(self, *, reservation:IAuthorityReservation, caller: AuthToken):
         if caller is None:
             if not self.recovered:
-                self.extending_lease.add(reservation)
+                self.extending_lease.add(reservation=reservation)
             else:
-                self.wrapper.extend_lease_request(reservation, reservation.get_client_auth_token(), False)
+                self.wrapper.extend_lease_request(reservation=reservation, caller=reservation.get_client_auth_token(),
+                                                  compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.is_stopped():
                 raise Exception("This actor cannot receive calls")
-            self.wrapper.extend_lease_request(reservation, caller, True)
+            self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
-    def modify_lease(self, reservation:IAuthorityReservation, caller: AuthToken):
+    def modify_lease(self, *, reservation:IAuthorityReservation, caller: AuthToken):
         if caller is None:
             if not self.recovered:
-                self.modifying_lease.add(reservation)
+                self.modifying_lease.add(reservation=reservation)
             else:
-                self.wrapper.modify_lease_request(reservation, reservation.get_client_auth_token(), False)
+                self.wrapper.modify_lease_request(reservation=reservation, caller=reservation.get_client_auth_token(),
+                                                  compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.stopped:
                 raise Exception("This actor cannot receive calls")
-            self.wrapper.modify_lease_request(reservation, caller, True)
+            self.wrapper.modify_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
-    def extend_ticket(self, reservation: IReservation, caller: AuthToken):
+    def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
         slice_obj = reservation.get_slice()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.extend_ticket_request(reservation, caller, True)
+        self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
-    def relinquish(self, reservation: IReservation, caller: AuthToken):
+    def relinquish(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.stopped:
             raise Exception("This actor cannot receive calls")
-        self.wrapper.relinquish_request(reservation, caller)
+        self.wrapper.relinquish_request(reservation=reservation, caller=caller)
 
-    def freed(self, resources: ResourceSet):
-        self.policy.freed(resources)
+    def freed(self, *, resources: ResourceSet):
+        self.policy.freed(resources=resources)
 
-    def redeem(self, reservation: IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
+    def redeem(self, *, reservation: IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
         if callback is None and caller is None:
             if not self.recovered:
-                self.redeeming.add(reservation)
+                self.redeeming.add(reservation=reservation)
             else:
-                self.wrapper.redeem_request(reservation, reservation.get_client_auth_token(), reservation.get_callback(), False)
+                self.wrapper.redeem_request(reservation=reservation, caller=reservation.get_client_auth_token(),
+                                            callback=reservation.get_callback(), compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.is_stopped():
                 raise Exception("This actor cannot receive calls")
 
-            if self.plugin.validate_incoming(reservation, caller):
-                self.wrapper.redeem_request(reservation, caller, callback, True)
+            if self.plugin.validate_incoming(reservation=reservation, auth=caller):
+                self.wrapper.redeem_request(reservation=reservation, caller=caller, callback=callback,
+                                            compare_sequence_numbers=True)
             else:
                 self.logger.error("the redeem request is invalid")
         self.logger.debug("Completed processing Redeem Request")
 
-    def ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    def ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         slice_obj = reservation.get_slice()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.ticket_request(reservation, caller, callback, True)
+        self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback, compare_seq_numbers=True)
 
     def tick_handler(self):
         # close expired reservations
-        self.close_expiring(self.current_cycle)
+        self.close_expiring(cycle=self.current_cycle)
         # process all requests for the current cycle
-        self.policy.assign(self.current_cycle)
+        self.policy.assign(cycle=self.current_cycle)
 
-    def unavailable(self, resources: ResourceSet) -> int:
-        return self.policy.unavailable(resources)
+    def unavailable(self, *, resources: ResourceSet) -> int:
+        return self.policy.unavailable(resources=resources)
 
-    def register_client(self, client: Client):
+    def register_client(self, *, client: Client):
         db = self.plugin.get_database()
 
         try:
-            db.get_client(client.get_guid())
+            db.get_client(guid=client.get_guid())
         except Exception as e:
             self.logger.debug("Client does not exist")
 
         try:
-            db.add_client(client)
+            db.add_client(client=client)
         except Exception as e:
             raise e
 
-    def unregister_client(self, guid:ID):
+    def unregister_client(self, *, guid:ID):
         db = self.plugin.get_database()
-        db.remove_client(guid)
+        db.remove_client(guid=guid)
 
-    def get_client(self, guid: ID) -> Client:
+    def get_client(self, *, guid: ID) -> Client:
         db = self.plugin.get_database()
 
-        return db.get_client(guid)
+        return db.get_client(guid=guid)
 
-    def redeem_reservations(self, rset: ReservationSet):
+    def redeem_reservations(self, *, rset: ReservationSet):
         """
         Redeem all reservations:
         @param rset: reservation set
@@ -278,28 +283,29 @@ class Authority(Actor, IAuthority):
         for reservation in rset.values():
             try:
                 if isinstance(reservation, IAuthorityReservation):
-                    self.redeem(reservation, None, None)
+                    self.redeem(reservation=reservation, callback=None, caller=None)
                 else:
                     self.logger.warning("Reservation # {} cannot be redeemed".format(reservation.get_reservation_id()))
             except Exception as e:
                 self.logger.error("Could not redeem for # {} {}".format(reservation.get_reservation_id(), e))
 
-    def extend_lease_reservations(self, rset: ReservationSet):
+    def extend_lease_reservations(self, *, rset: ReservationSet):
         """
         Extend all reservations:
         @param rset: reservation set
         """
         for reservation in rset.values():
             try:
-                self.extend_lease(reservation, None)
+                self.extend_lease(reservation=reservation, caller=None)
             except Exception as e:
                 self.logger.error("Could not redeem for # {} {}".format(reservation.get_reservation_id(), e))
 
     def issue_delayed(self):
         super().issue_delayed()
-        self.redeem_reservations(self.redeeming)
+        self.redeem_reservations(rset=self.redeeming)
         self.redeeming.clear()
-        self.extend_lease
+        self.extend_lease_reservations(rset=self.extending_lease)
+        self.extending_lease.clear()
 
     @staticmethod
     def get_management_object_class() -> str:

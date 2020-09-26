@@ -30,10 +30,10 @@ class ClientMng:
         self.name = None
         self.guid = None
 
-    def set_name(self, name: str):
+    def set_name(self, *, name: str):
         self.name = name
 
-    def set_guid(self, guid: str):
+    def set_guid(self, *, guid: str):
         self.guid = guid
 
     def get_name(self) -> str:

@@ -46,89 +46,94 @@ if TYPE_CHECKING:
 
 
 class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
-    def __init__(self, kafka_topic: str, identity: AuthToken, logger):
-        super().__init__(kafka_topic, identity, logger)
+    def __init__(self, *, kafka_topic: str, identity: AuthToken, logger):
+        super().__init__(kafka_topic=kafka_topic, identity=identity, logger=logger)
         self.type = KafkaProxy.TypeBroker
 
-    def execute(self, request: IRPCRequestState):
+    def execute(self, *, request: IRPCRequestState):
         avro_message = None
         if request.get_type() == RPCRequestType.Ticket:
             avro_message = TicketAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.reservation = request.reservation
             avro_message.callback_topic = request.callback_topic
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.Claim:
             avro_message = ClaimAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.reservation = request.reservation
             avro_message.callback_topic = request.callback_topic
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.Reclaim:
             avro_message = ReclaimAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.reservation = request.reservation
             avro_message.callback_topic = request.callback_topic
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.ExtendTicket:
             avro_message = ExtendTicketAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.reservation = request.reservation
             avro_message.callback_topic = request.callback_topic
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.Relinquish:
             avro_message = RelinquishAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.reservation = request.reservation
             avro_message.callback_topic = request.callback_topic
-            avro_message.auth = Translate.translate_auth_to_avro(request.caller)
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
         else:
-            return super().execute(request)
+            return super().execute(request=request)
 
         if self.producer is None:
             self.producer = self.create_kafka_producer()
 
-        if self.producer is not None and self.producer.produce_sync(self.kafka_topic, avro_message):
+        if self.producer is not None and self.producer.produce_sync(topic=self.kafka_topic, record=avro_message):
             self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def prepare_ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                       caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation, caller)
+        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request
 
-    def prepare_claim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_claim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                      caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation, caller)
+        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request
 
-    def prepare_reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                        caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation, caller)
+        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request
 
-    def prepare_extend_ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                              caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation, caller)
+        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request
 
-    def prepare_relinquish(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                           caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation, caller)
+        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request
@@ -136,17 +141,18 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
     @staticmethod
     def pass_broker_reservation(reservation: IReservation, auth: AuthToken) -> ReservationAvro:
         avro_reservation = ReservationAvro()
-        avro_reservation.slice = Translate.translate_slice_to_avro(reservation.get_slice())
-        avro_reservation.term = Translate.translate_term(reservation.get_requested_term())
+        avro_reservation.slice = Translate.translate_slice_to_avro(slice_obj=reservation.get_slice())
+        avro_reservation.term = Translate.translate_term(term=reservation.get_requested_term())
         avro_reservation.reservation_id = str(reservation.get_reservation_id())
         avro_reservation.sequence = reservation.get_ticket_sequence_out()
 
-        rset = Translate.translate_resource_set(reservation.get_requested_resources(), Translate.DirectionAgent)
+        rset = Translate.translate_resource_set(resource_set=reservation.get_requested_resources(),
+                                                direction=Translate.DirectionAgent)
         cset = reservation.get_requested_resources().get_resources()
 
         encoded = None
         if cset is not None:
-            encoded = cset.encode(Constants.ProtocolKafka)
+            encoded = cset.encode(protocol=Constants.ProtocolKafka)
             if encoded is None:
                 raise Exception("Unsupported IConcreteSet: {}".format(type(cset)))
 

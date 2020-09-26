@@ -25,19 +25,31 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+from abc import abstractmethod
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_mgmt_client_actor import IMgmtClientActor
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 
 if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
+    from fabric.message_bus.messages.unit_avro import UnitAvro
 
 
 class IMgmtController(IMgmtActor, IMgmtClientActor):
-    def get_reservation_units(self, rid: ID) -> list:
-        raise NotImplementedError
+    @abstractmethod
+    def get_reservation_units(self, *, rid: ID) -> List[UnitAvro]:
+        """
+        Return reservation units
+        @params rid: reservation is
+        @returns list of units
+        """
 
-    def modify_reservation(self, rid: ID, modify_properties: dict) -> bool:
-        raise NotImplementedError
+    @abstractmethod
+    def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:
+        """
+        Modify a reservation
+        @params rid: reservation id
+        @params modify_properties: modify_properties
+        @returns true for success and false for failure
+        """

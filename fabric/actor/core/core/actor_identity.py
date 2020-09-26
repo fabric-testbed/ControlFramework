@@ -34,7 +34,7 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class ActorIdentity(IActorIdentity):
-    def __init__(self, name: str, guid: ID):
+    def __init__(self, *, name: str, guid: ID):
         self.auth = AuthToken(name=name, guid=guid)
 
     def get_guid(self) -> ID:

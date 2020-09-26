@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
@@ -37,35 +37,35 @@ if TYPE_CHECKING:
 
 
 class IResourcePoolFactory:
-    def set_substrate(self, substrate: ISubstrate):
+    @abstractmethod
+    def set_substrate(self, *, substrate: ISubstrate):
         """
         Sets the substrate.
         @param substrate substrate
         @throws Exception in case of error
         """
-        raise Exception("Not implemented")
 
-    def set_descriptor(self, descriptor: ResourcePoolDescriptor):
+    @abstractmethod
+    def set_descriptor(self, *, descriptor: ResourcePoolDescriptor):
         """
         Sets the initial resource pools descriptor. The factory can modify the descriptor as needed.
         @param descriptor descriptor
         @throws Exception in case of error
         """
-        raise Exception("Not implemented")
 
+    @abstractmethod
     def get_descriptor(self) -> ResourcePoolDescriptor:
         """
         Returns the final pool descriptor.
         @return ResourcePoolDescriptor
         @throws Exception in case of error
         """
-        raise Exception("Not implemented")
 
-    def create_source_reservation(self, slice_obj: ISlice) -> IClientReservation:
+    @abstractmethod
+    def create_source_reservation(self, *, slice_obj: ISlice) -> IClientReservation:
         """
         Returns the source reservation for this resource pool.
         @param slice_obj slice
         @return IClientReservation
         @throws Exception in case of error
         """
-        raise Exception("Not implemented")

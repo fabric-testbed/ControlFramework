@@ -26,7 +26,7 @@ from bisect import bisect_left, bisect_right
 from datetime import datetime
 
 
-def binary_search(a, x):
+def binary_search(*, a, x):
     """
     Binary search element x in list a
     """

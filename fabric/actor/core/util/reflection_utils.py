@@ -28,13 +28,13 @@ import importlib
 
 class ReflectionUtils:
     @staticmethod
-    def create_instance(module_name: str, class_name: str):
+    def create_instance(*, module_name: str, class_name: str):
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
         return class_()
 
     @staticmethod
-    def create_instance_with_params(module_name: str, class_name: str):
+    def create_instance_with_params(*, module_name: str, class_name: str):
         module = importlib.import_module(module_name)
         class_ = getattr(module, class_name)
         return class_

@@ -40,7 +40,7 @@ class FreeAllocatedSetTest(unittest.TestCase):
 
             self.assertFalse(free_set.free_set.__contains__(i))
             self.assertFalse(free_set.allocated.__contains__(i))
-            free_set.add_inventory(i)
+            free_set.add_inventory(item=i)
             self.assertTrue(free_set.free_set.__contains__(i))
             self.assertFalse(free_set.allocated.__contains__(i))
 
@@ -57,7 +57,7 @@ class FreeAllocatedSetTest(unittest.TestCase):
         self.assertFalse(free_set.allocated.__contains__(i))
         self.assertTrue(free_set.free_set.__contains__(i))
 
-        ll = free_set.allocate_count(25)
+        ll = free_set.allocate_count(count=25)
         self.assertEqual(25, len(ll))
 
         for i in ll:
@@ -68,7 +68,7 @@ class FreeAllocatedSetTest(unittest.TestCase):
 
         sub1 = ll[0:10]
         sub2 = ll[10:25]
-        free_set.free_list(sub1)
+        free_set.free_list(items=sub1)
 
         self.assertEqual(35, free_set.get_free())
         self.assertEqual(15, free_set.get_allocated())
@@ -81,7 +81,7 @@ class FreeAllocatedSetTest(unittest.TestCase):
             self.assertFalse(free_set.free_set.__contains__(i))
             self.assertTrue(free_set.allocated.__contains__(i))
 
-        free_set.free_list(sub2)
+        free_set.free_list(items=sub2)
 
         self.assertEqual(50, free_set.get_free())
         self.assertEqual(0, free_set.get_allocated())

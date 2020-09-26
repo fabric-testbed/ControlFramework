@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -31,5 +33,9 @@ if TYPE_CHECKING:
 
 
 class ITimerQueue:
-    def queue_timer(self, timer: ITimerTask):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def queue_timer(self, *, timer: ITimerTask):
+        """
+        Queue a timer
+        @param timer timer
+        """

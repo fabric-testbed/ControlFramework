@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_server_policy import IServerPolicy
@@ -37,7 +39,8 @@ class IAuthorityPolicy(IServerPolicy):
     """
     IAuthorityPolicy defines the policy interface for an actor acting in the authority role.
     """
-    def donate(self, resources: ResourceSet):
+    @abstractmethod
+    def donate(self, *, resources: ResourceSet):
         """
         Accepts inventory resources to be used for allocation of client requests.
         The policy should add the resources represented by this resource set to
@@ -47,9 +50,9 @@ class IAuthorityPolicy(IServerPolicy):
         
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def eject(self, resources: ResourceSet):
+    @abstractmethod
+    def eject(self, *, resources: ResourceSet):
         """
         Ejects resources from the inventory. Resource ejection is unconditional:
         the policy must remove the specified concrete nodes from its inventory.
@@ -60,9 +63,9 @@ class IAuthorityPolicy(IServerPolicy):
         
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def bind(self, reservation: IAuthorityReservation) -> bool:
+    @abstractmethod
+    def bind(self, *, reservation: IAuthorityReservation) -> bool:
         """
         Handles a requests to allocate resources for a ticketed reservation. The
         requested resources can be obtained by calling
@@ -92,9 +95,9 @@ class IAuthorityPolicy(IServerPolicy):
                 of resources will be delayed until a later time.
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def assign(self, cycle: int):
+    @abstractmethod
+    def assign(self, *, cycle: int):
         """
         Assigns leases to incoming tickets. This method is called by the policy
         once per cycle. The method should determine whether to perform resource
@@ -105,9 +108,9 @@ class IAuthorityPolicy(IServerPolicy):
         
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def correct_deficit(self, reservation: IAuthorityReservation):
+    @abstractmethod
+    def correct_deficit(self, *, reservation: IAuthorityReservation):
         """
         Informs the policy that a reservation has a deficit and allows the policy
         to correct the deficit. The policy can attempt to correct the deficit,
@@ -119,9 +122,9 @@ class IAuthorityPolicy(IServerPolicy):
         
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def extend_authority(self, reservation:IAuthorityReservation) -> bool:
+    @abstractmethod
+    def extend_authority(self, *, reservation:IAuthorityReservation) -> bool:
         """
         Handles a requests to extend the allocation of previously allocated
         resources. The requested resources can be obtained by calling
@@ -152,9 +155,9 @@ class IAuthorityPolicy(IServerPolicy):
                 of resources will be delayed until a later time.
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def release(self, resources: ResourceSet):
+    @abstractmethod
+    def release(self, *, resources: ResourceSet):
         """
         Releases allocated resources that are no longer in use. The set may
         represent active as well as failed resources. The policy must decide what
@@ -173,9 +176,9 @@ class IAuthorityPolicy(IServerPolicy):
         
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def freed(self, resources: ResourceSet):
+    @abstractmethod
+    def freed(self, *, resources: ResourceSet):
         """
         Informs the policy that a set of allocated resources can be considered as
         free. Most probably these resources represent previously failed
@@ -188,9 +191,9 @@ class IAuthorityPolicy(IServerPolicy):
         
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def unavailable(self, resources: ResourceSet) -> int:
+    @abstractmethod
+    def unavailable(self, *, resources: ResourceSet) -> int:
         """
         Informs the policy that inventory resources are about to become
         unavailable. The policy should stop using the concrete resources but
@@ -210,18 +213,18 @@ class IAuthorityPolicy(IServerPolicy):
         
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def available(self, resources: ResourceSet):
+    @abstractmethod
+    def available(self, *, resources: ResourceSet):
         """
         Informs the policy that inventory resources have failed. This is a new
         method, which may change in the future.
         
         @params resources: set of failed inventory resources
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def failed(self, resources: ResourceSet):
+    @abstractmethod
+    def failed(self, *, resources: ResourceSet):
         """
         Informs the policy that inventory resources have failed. This is a new
         method, which may change in the future.
@@ -229,9 +232,9 @@ class IAuthorityPolicy(IServerPolicy):
         @params resources
                    set of failed inventory resources
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def recovered(self, resources: ResourceSet):
+    @abstractmethod
+    def recovered(self, *, resources: ResourceSet):
         """
         Informs the policy that previously failed inventory nodes have been
         recovered and now are ready to use. This is a new method and may change
@@ -239,4 +242,3 @@ class IAuthorityPolicy(IServerPolicy):
         
         @params resources: set of recovered inventory resources
         """
-        raise NotImplementedError("Should have implemented this")

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
@@ -42,49 +44,50 @@ class IActorContainer(IContainerClock):
     """
     IActorContainer is the public interface for container
     """
-    def initialize(self, config: Configuration):
+    @abstractmethod
+    def initialize(self, *, config: Configuration):
         """
         Initializes the container manager.
         @param config container configuration
         @throws ContainerInitializationException if the configuration is invalid
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_guid(self) -> ID:
         """
         Returns the container GUID.
         @return container GUID
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_config(self) -> Configuration:
         """
         Return the container configuration
         @return container configuration
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_database(self):
         """
         Returns the container database.
         @return container database
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def is_recovered(self):
         """
         Checks if the container has completed recovery.
         @return TRUE if recovery is complete, FALSE otherwise
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def shutdown(self):
         """
         Shuts down the container.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def register_actor(self, actor: IActor):
+    @abstractmethod
+    def register_actor(self, *, actor: IActor):
         """
         Registers a new actor: adds the actor to the database, deploys services
         required by the actor, registers actor proxies and callbacks. Must not
@@ -93,37 +96,68 @@ class IActorContainer(IContainerClock):
         @param actor actor to register
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def register_protocol(self, protocol: ProtocolDescriptor):
+    @abstractmethod
+    def register_protocol(self, *, protocol: ProtocolDescriptor):
         """
         Registers a communication protocol with the container. This protocol
         applies only for internal communication among actors; this is not a
         protocol used for managing the container.
         @param protocol protocol to register
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_plugin_manager(self) -> PluginManager:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Return PluginManager
+        @returns PluginManager
+        """
 
+    @abstractmethod
     def get_management_object_manager(self) -> ManagementObjectManager:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Returns Management Object Manager
+        @returns ManagementObjectManager
+        """
 
-    def get_protocol_descriptor(self, protocol: str) -> ProtocolDescriptor:
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def get_protocol_descriptor(self, *, protocol: str) -> ProtocolDescriptor:
+        """
+        Return Protocol Descriptor for a specific Protocol
+        @returns ProtocolDescriptor
+        """
 
+    @abstractmethod
     def is_fresh(self) -> bool:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Returns true if container was started fresh; false otherwise
+        @returns bool
+        """
 
-    def recover_actor(self, properties: dict):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def recover_actor(self, *, properties: dict):
+        """
+        Recover an actor
+        @params properties: properties
+        """
 
-    def unregister_actor(self, actor: IActor):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def unregister_actor(self, *, actor: IActor):
+        """
+        Un-register an actor
+        @params actor: actor
+        """
+        
+    @abstractmethod
+    def remove_actor(self, *, actor_name: str):
+        """
+        Remove an actor
+        @params actor_name: actor_name
+        """
 
-    def remove_actor(self, actor_name: str):
-        raise NotImplementedError("Should have implemented this")
-
-    def remove_actor_database(self, actor_nam: str):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def remove_actor_database(self, *, actor_name: str):
+        """
+        Remove Actor Database
+        @params actor_name: actor name
+        """

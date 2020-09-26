@@ -68,7 +68,7 @@ class LUNControl(ResourceControl):
         self.tags = FreeAllocatedSet()
         self.rtype = None
 
-    def donate_reservation(self, reservation: IClientReservation):
+    def donate_reservation(self, *, reservation: IClientReservation):
         if self.tags.size() != 0:
             Exception("only a single source reservation is supported")
 
@@ -93,7 +93,7 @@ class LUNControl(ResourceControl):
                     if start == 0 and end == 0:
                         break
                     for j in range(start, end):
-                        self.tags.add_inventory(j)
+                        self.tags.add_inventory(item=j)
 
                     size = size + (end - start + 1)
                     self.logger.info("Tag donation: {}:{}-{}:{}".format(self.rtype, start, end, size))
@@ -101,8 +101,8 @@ class LUNControl(ResourceControl):
         if size < reservation.get_units():
             raise Exception("Insufficient lun tags specified in donated reservation: donated {} rset says: {}".format(size, reservation.get_units()))
 
-    def assign(self, reservation: IAuthorityReservation) -> ResourceSet:
-        reservation.set_send_with_deficit(True)
+    def assign(self, *, reservation: IAuthorityReservation) -> ResourceSet:
+        reservation.set_send_with_deficit(value=True)
 
         if self.tags.size() == 0:
             raise Exception("no inventory")
@@ -117,47 +117,47 @@ class LUNControl(ResourceControl):
         if current is None:
             needed = ticket.get_units()
             if needed > 1:
-                reservation.fail("Cannot assign more than 1 LUN per reservation", None)
+                reservation.fail(message="Cannot assign more than 1 LUN per reservation", exception=None)
 
             if self.tags.get_free() > 0:
                 tag = self.tags.allocate()
                 rd = ResourceData()
                 rd.resource_properties[Constants.UnitLUNTag] = tag
-                gained = UnitSet(self.authority.get_plugin())
+                gained = UnitSet(plugin=self.authority.get_plugin())
                 u = Unit(id=ID())
-                u.set_resource_type(rtype)
-                u.set_property(Constants.UnitLUNTag, str(tag))
+                u.set_resource_type(rtype=rtype)
+                u.set_property(name=Constants.UnitLUNTag, value=str(tag))
                 if Constants.ResourceStorageCapacity in ticket_properties:
                     capacity = int(ticket_properties[Constants.ResourceStorageCapacity])
-                    u.set_property(Constants.UnitStorageCapacity, str(capacity))
+                    u.set_property(name=Constants.UnitStorageCapacity, value=str(capacity))
 
-                gained.add_unit(u)
+                gained.add_unit(u=u)
                 return ResourceSet(gained=gained, rtype=rtype, rdata=rd)
             else:
                 return None
         else:
             return ResourceSet(rtype=rtype)
 
-    def get_tag(self, u: Unit):
+    def get_tag(self, *, u: Unit):
         tag = None
-        if u.get_property(Constants.UnitLUNTag) is not None:
-            tag = int(u.get_property(Constants.UnitLUNTag))
+        if u.get_property(name=Constants.UnitLUNTag) is not None:
+            tag = int(u.get_property(name=Constants.UnitLUNTag))
         return tag
 
-    def free(self, uset: dict):
+    def free(self, *, uset: dict):
         if uset is not None:
             for u in uset:
                 try:
-                    tag = self.get_tag(u)
+                    tag = self.get_tag(u=u)
                     if tag is None:
                         self.logger.error("LUNControl.free(): attempted to free a unit with a missing tag")
                     else:
                         self.logger.debug("LUNControl.free(): freeing tag: {}".format(tag))
-                    self.tags.free(tag)
+                    self.tags.free(item=tag)
                 except Exception as e:
                     self.logger.error("Failed to release lun tag {}".format(e))
 
-    def revisit(self, reservation: IReservation):
+    def revisit(self, *, reservation: IReservation):
         unit_set = reservation.get_resources().get_resources()
         for u in unit_set.get_set().values:
             try:
@@ -167,7 +167,7 @@ class LUNControl(ResourceControl):
                         u.get_state() == UnitState.PRIMING or \
                         u.get_state() == UnitState.ACTIVE or \
                         u.get_state() == UnitState.MODIFYING:
-                    tag = self.get_tag(u)
+                    tag = self.get_tag(u=u)
                     if tag is None:
                         self.logger.error("LUNControl.revisit(): Recoverying a unit without a tag")
                     else:
@@ -177,7 +177,7 @@ class LUNControl(ResourceControl):
                 elif u.get_state() == UnitState.CLOSED:
                     self.logger.debug("LUNControl.revisit(): node is closed. Nothing to recover")
             except Exception as e:
-                self.fail(u, "revisit with vmcontrol", e)
+                self.fail(u=u, message="revisit with vmcontrol", e=e)
 
     def recovery_starting(self):
         self.logger.info("Beginning LUNControl recovery")

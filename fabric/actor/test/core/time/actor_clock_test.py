@@ -30,7 +30,7 @@ from fabric.actor.core.time.actor_clock import ActorClock
 
 class ActorClockTest(unittest.TestCase):
     def _get_clock(self, offset: int, length: int):
-        return ActorClock(offset, length)
+        return ActorClock(beginning_of_time=offset, cycle_millis=length)
 
     def test_create(self):
         clock = self._get_clock(0, 1)
@@ -53,14 +53,14 @@ class ActorClockTest(unittest.TestCase):
         ms = offset
         for i in range(100):
             exp = i
-            self.assertEqual(exp, clock.cycle(when=ActorClock.from_milliseconds(ms)))
+            self.assertEqual(exp, clock.cycle(when=ActorClock.from_milliseconds(milli_seconds=ms)))
             ms += length
 
         ms = offset
         for i in range(100):
             exp = i
             for j in range(length):
-                self.assertEqual(exp, clock.cycle(when=ActorClock.from_milliseconds(ms)))
+                self.assertEqual(exp, clock.cycle(when=ActorClock.from_milliseconds(milli_seconds=ms)))
                 ms += 1
 
     def test_date(self):
@@ -70,7 +70,7 @@ class ActorClockTest(unittest.TestCase):
 
         ms = offset
         for i in range(100):
-            self.assertEqual(ActorClock.from_milliseconds(ms), clock.date(i))
+            self.assertEqual(ActorClock.from_milliseconds(milli_seconds=ms), clock.date(cycle=i))
             ms += length
 
     def test_cycle_start_end_date(self):
@@ -82,10 +82,10 @@ class ActorClockTest(unittest.TestCase):
         end = offset + length - 1
 
         for i in range(100):
-            self.assertEqual(ActorClock.from_milliseconds(start), clock.cycle_start_date(i))
-            self.assertEqual(ActorClock.from_milliseconds(end), clock.cycle_end_date(i))
-            self.assertEqual(start, clock.cycle_start_in_millis(i))
-            self.assertEqual(end, clock.cycle_end_in_millis(i))
+            self.assertEqual(ActorClock.from_milliseconds(milli_seconds=start), clock.cycle_start_date(cycle=i))
+            self.assertEqual(ActorClock.from_milliseconds(milli_seconds=end), clock.cycle_end_date(cycle=i))
+            self.assertEqual(start, clock.cycle_start_in_millis(cycle=i))
+            self.assertEqual(end, clock.cycle_end_in_millis(cycle=i))
             start += length
             end += length
 
@@ -96,9 +96,9 @@ class ActorClockTest(unittest.TestCase):
 
         ms = 0
         for i in range(100):
-            temp = clock.get_millis(i)
+            temp = clock.get_millis(cycle=i)
             self.assertEqual(ms, temp)
-            self.assertEqual(i, clock.convert_millis(temp))
+            self.assertEqual(i, clock.convert_millis(millis=temp))
             ms += length
 
 

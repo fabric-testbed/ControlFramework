@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
@@ -38,17 +40,53 @@ class IBrokerProxy(IServerProxy):
     """
     IBrokerProxy represents the proxy interface to an actor acting in the broker role.
     """
-    def prepare_claim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
-        pass
 
-    def prepare_reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
-        pass
+    @abstractmethod
+    def prepare_claim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                      caller: AuthToken) -> IRPCRequestState:
+        """
+        Prepare a claim
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """
 
-    def prepare_ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
-        pass
+    @abstractmethod
+    def prepare_reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                        caller: AuthToken) -> IRPCRequestState:
+        """
+        Prepare a reclaim
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """
 
-    def prepare_extend_ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
-        pass
+    @abstractmethod
+    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                       caller: AuthToken) -> IRPCRequestState:
+        """
+        Prepare a ticket
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """
 
-    def prepare_relinquish(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
-        pass
+    @abstractmethod
+    def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                              caller: AuthToken) -> IRPCRequestState:
+        """
+        Prepare an extend ticket
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """
+
+    @abstractmethod
+    def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                           caller: AuthToken) -> IRPCRequestState:
+        """
+        Prepare a relinquish
+        @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """

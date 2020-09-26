@@ -55,7 +55,7 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
     def get_issuer_id(self):
         return self.actor.get_identity().get_guid()
 
-    def make_delegation(self, units: int = None, vector: ResourceVector = None, term: Term = None,
+    def make_delegation(self, *, units: int = None, vector: ResourceVector = None, term: Term = None,
                         rtype: ResourceType = None, sources: list = None, bins: list = None,
                         properties: dict = None, holder: ID = None) -> ResourceDelegation:
 
@@ -68,30 +68,30 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
         return ResourceDelegation(units=units, vector=vector, term=term, rtype=rtype, sources=sources, bins=bins,
                                   properties=properties, issuer=issuer, holder=holder)
 
-    def make_ticket(self, delegation: ResourceDelegation = None, source: ResourceTicket = None) -> ResourceTicket:
+    def make_ticket(self, *, delegation: ResourceDelegation = None, source: ResourceTicket = None) -> ResourceTicket:
         self.ensure_initialized()
-        return ResourceTicket(self, delegation, source)
+        return ResourceTicket(factory=self, delegation=delegation, source=source)
 
-    def set_actor(self, actor: IActor):
+    def set_actor(self, *, actor: IActor):
         self.actor = actor
 
     def get_actor(self) -> IActor:
         return self.actor
 
-    def clone(self, original: ResourceTicket) -> ResourceTicket:
+    def clone(self, *, original: ResourceTicket) -> ResourceTicket:
         self.ensure_initialized()
-        ticket_json = self.toJson(original)
-        result = self.fromJson(ticket_json)
+        ticket_json = self.toJson(ticket=original)
+        result = self.fromJson(incoming=ticket_json)
         return result
 
-    def toJson(self, ticket: ResourceTicket) -> dict:
+    def toJson(self, *, ticket: ResourceTicket) -> dict:
         outgoing_ticket = {}
         delegation_list = []
         for delegation in ticket.delegations:
             d = {'guid': delegation.get_guid()}
-            t = {'start_time': ActorClock.to_milliseconds(delegation.get_term().get_start_time()),
-                 'end_time': ActorClock.to_milliseconds(delegation.get_term().get_end_time()),
-                 'new_start_time': ActorClock.to_milliseconds(delegation.get_term().get_new_start_time())}
+            t = {'start_time': ActorClock.to_milliseconds(when=delegation.get_term().get_start_time()),
+                 'end_time': ActorClock.to_milliseconds(when=delegation.get_term().get_end_time()),
+                 'new_start_time': ActorClock.to_milliseconds(when=delegation.get_term().get_new_start_time())}
             d['term'] = t
             d['units'] = delegation.get_units()
             d['type'] = delegation.get_resource_type()
@@ -112,9 +112,9 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                     if b.get_parent_guid() is not None:
                         b['parent_guid'] = b.get_parent_guid()
 
-                    term = {'start_time': ActorClock.to_milliseconds(b.get_term().get_start_time()),
-                            'end_time': ActorClock.to_milliseconds(b.get_term().get_end_time()),
-                            'new_start_time': ActorClock.to_milliseconds(b.get_term().get_new_start_time())}
+                    term = {'start_time': ActorClock.to_milliseconds(when=b.get_term().get_start_time()),
+                            'end_time': ActorClock.to_milliseconds(when=b.get_term().get_end_time()),
+                            'new_start_time': ActorClock.to_milliseconds(when=b.get_term().get_new_start_time())}
 
                     bin['term'] = term
                     bin_list.append(bin)
@@ -124,7 +124,7 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
         outgoing_ticket['delegations'] = delegation_list
         return {'ticket': outgoing_ticket}
 
-    def fromJson(self, incoming: dict) -> ResourceTicket:
+    def fromJson(self, *, incoming: dict) -> ResourceTicket:
         ticket = None
 
         incoming_ticket = incoming.get('ticket', None)
@@ -139,8 +139,9 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                         start_time = term_dict.get('start_time', None)
                         end_time = term_dict.get('end_time', None)
                         new_start_time = term_dict.get('new_start_time', None)
-                        term = Term(start=ActorClock.from_milliseconds(start_time), end=ActorClock.from_milliseconds(end_time),
-                                    new_start=ActorClock.from_milliseconds(new_start_time))
+                        term = Term(start=ActorClock.from_milliseconds(milli_seconds=start_time),
+                                    end=ActorClock.from_milliseconds(milli_seconds=end_time),
+                                    new_start=ActorClock.from_milliseconds(milli_seconds=new_start_time))
                         dd.term = term
                     dd.units = d.get('units', 0)
                     dd.type = d.get('type', None)
@@ -165,13 +166,13 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                                 start_time = term_dict.get('start_time', None)
                                 end_time = term_dict.get('end_time', None)
                                 new_start_time = term_dict.get('new_start_time', None)
-                                term = Term(start=ActorClock.from_milliseconds(start_time),
-                                            end=ActorClock.from_milliseconds(end_time),
-                                            new_start=ActorClock.from_milliseconds(new_start_time))
-                            bb.term = term
+                                term = Term(start=ActorClock.from_milliseconds(milli_seconds=start_time),
+                                            end=ActorClock.from_milliseconds(milli_seconds=end_time),
+                                            new_start=ActorClock.from_milliseconds(milli_seconds=new_start_time))
+                                bb.term = term
                             dd.bins.append(bb)
                     if ticket is None:
-                        ticket = ResourceTicket(self, delegation=dd, source=None)
+                        ticket = ResourceTicket(factory=self, delegation=dd, source=None)
                     else:
                         ticket.delegations.append(dd)
 

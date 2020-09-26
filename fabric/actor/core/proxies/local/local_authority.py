@@ -38,59 +38,61 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class LocalAuthority(LocalBroker, IAuthorityProxy):
-    def __init__(self, actor: IActor):
-        super().__init__(actor)
+    def __init__(self, *, actor: IActor):
+        super().__init__(actor=actor)
 
-    def prepare_redeem(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                        caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation_authority(reservation, caller)
+        state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_extend_lease(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+    def prepare_extend_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation_authority(reservation, caller)
+        state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_modify_lease(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+    def prepare_modify_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation_authority(reservation, caller)
+        state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_close(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+    def prepare_close(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                       caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation_authority(reservation, caller)
+        state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def pass_reservation_authority(self, reservation: IControllerReservation, auth: AuthToken) -> IReservation:
+    def pass_reservation_authority(self, *, reservation: IControllerReservation, auth: AuthToken) -> IReservation:
         if reservation.get_resources().get_resources() is None:
             raise Exception("Missing ticket")
 
         slice_obj = reservation.get_slice().clone_request()
         term = reservation.get_term().clone()
 
-        rset = self.abstract_clone_authority(reservation.get_resources())
+        rset = self.abstract_clone_authority(rset=reservation.get_resources())
         rset.get_resource_data().configuration_properties = ResourceData.merge_properties(
-            reservation.get_slice().get_config_properties(), rset.get_resource_data().get_configuration_properties())
+            from_props=reservation.get_slice().get_config_properties(),
+            to_props=rset.get_resource_data().get_configuration_properties())
 
         original_ticket = reservation.get_resources().get_resources()
         try:
-            encoded_ticket = original_ticket.encode(Constants.ProtocolLocal)
+            encoded_ticket = original_ticket.encode(protocol=Constants.ProtocolLocal)
             from fabric.actor.core.proxies.proxy import Proxy
-            decoded_ticket = Proxy.decode(encoded_ticket, self.get_actor().get_plugin())
-            rset.set_resources(decoded_ticket)
+            decoded_ticket = Proxy.decode(encoded=encoded_ticket, plugin=self.get_actor().get_plugin())
+            rset.set_resources(cset=decoded_ticket)
         except Exception as e:
             raise e
 
-        authority_reservation = AuthorityReservationFactory.create(rset, term, slice_obj, reservation.get_reservation_id())
-        authority_reservation.set_sequence_in(reservation.get_lease_sequence_out())
-        authority_reservation.set_owner(self.get_identity())
+        authority_reservation = AuthorityReservationFactory.create(resources=rset, term=term, slice_obj=slice_obj,
+                                                                   rid=reservation.get_reservation_id())
+        authority_reservation.set_sequence_in(sequence=reservation.get_lease_sequence_out())
+        authority_reservation.set_owner(owner=self.get_identity())
 
         return authority_reservation

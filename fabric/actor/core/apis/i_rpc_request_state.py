@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -33,17 +35,37 @@ if TYPE_CHECKING:
 
 
 class IRPCRequestState:
+    @abstractmethod
     def get_caller(self) -> AuthToken:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Return the caller
+        @return caller
+        """
 
-    def set_caller(self, caller: AuthToken):
-        raise NotImplementedError("Should have implemented this")
-
+    @abstractmethod
+    def set_caller(self, *, caller: AuthToken):
+        """
+        Set the caller
+        @param caller caller
+        """
+        
+    @abstractmethod
     def get_type(self) -> RPCRequestType:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Return RPC request type
+        @return rpc request type
+        """
 
-    def set_type(self, rtype: RPCRequestType):
-        raise NotImplementedError("Should have implemented this")
-
+    @abstractmethod
+    def set_type(self, *, rtype: RPCRequestType):
+        """
+        Set Request Type
+        @param rtype: rpc request type
+        """
+        
+    @abstractmethod
     def get_message_id(self) -> ID:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Return Message Id
+        @return message id
+        """

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -31,5 +33,9 @@ if TYPE_CHECKING:
 
 
 class IEventHandler:
+    @abstractmethod
     def handle(self, event: IEvent):
-        raise NotImplementedError("Should have implemented this")
+        """
+        Handle the incoming event
+        @param event: event
+        """

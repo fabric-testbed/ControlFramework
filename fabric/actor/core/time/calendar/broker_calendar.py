@@ -43,12 +43,12 @@ class BrokerCalendar(ClientCalendar):
     - requests: list of incoming requests
     - source calendars for each source reservation
     """
-    def __init__(self, clock: ActorClock):
+    def __init__(self, *, clock: ActorClock):
         """
         Constructor
         @params clock: clock factory
         """
-        super().__init__(clock)
+        super().__init__(clock=clock)
         # List of reservations grouped by closing time.
         self.closing = ReservationList()
         # Reservation requests grouped by start cycle.
@@ -57,29 +57,29 @@ class BrokerCalendar(ClientCalendar):
         # <ReservationID, SourceCalendar>
         self.sources = {}
 
-    def remove(self, reservation: IReservation):
-        super().remove(reservation)
-        self.remove_closing(reservation)
+    def remove(self, *, reservation: IReservation):
+        super().remove(reservation=reservation)
+        self.remove_closing(reservation=reservation)
         if isinstance(reservation, IBrokerReservation):
-            self.remove_request(reservation)
+            self.remove_request(reservation=reservation)
 
             source = reservation.get_source()
             if source is not None:
-                self.remove_request(reservation, source)
-                self.remove_outlay(source, reservation)
+                self.remove_request(reservation=reservation, source=source)
+                self.remove_outlay(source=source, client=reservation)
 
-    def remove_scheduled_or_in_progress(self, reservation: IReservation):
-        super().remove_scheduled_or_in_progress(reservation)
-        self.remove_closing(reservation)
+    def remove_scheduled_or_in_progress(self, *, reservation: IReservation):
+        super().remove_scheduled_or_in_progress(reservation=reservation)
+        self.remove_closing(reservation=reservation)
 
         if isinstance(reservation, IBrokerReservation) :
-            self.remove_request(reservation)
+            self.remove_request(reservation=reservation)
 
             source = reservation.get_source()
             if source is not None:
-                self.remove_request(reservation, source)
+                self.remove_request(reservation=reservation, source=source)
 
-    def get_requests(self, cycle: int) -> ReservationSet:
+    def get_requests(self, *, cycle: int) -> ReservationSet:
         """
         Returns all client requests for the given cycle.
         @params cycle: cycle
@@ -87,11 +87,11 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            return self.requests.get_reservations(cycle)
+            return self.requests.get_reservations(cycle=cycle)
         finally:
             self.lock.release()
 
-    def get_all_requests(self, cycle: int) -> ReservationSet:
+    def get_all_requests(self, *, cycle: int) -> ReservationSet:
         """
         Returns all client requests up the the given cycle.
         @params cycle: cycle
@@ -99,11 +99,11 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            return self.requests.get_all_reservations(cycle)
+            return self.requests.get_all_reservations(cycle=cycle)
         finally:
             self.lock.release()
 
-    def add_request(self, reservation: IReservation, cycle: int, source: IReservation = None):
+    def add_request(self, *, reservation: IReservation, cycle: int, source: IReservation = None):
         """
         Adds a client request.
 
@@ -114,14 +114,14 @@ class BrokerCalendar(ClientCalendar):
         try:
             self.lock.acquire()
             if source is None:
-                self.requests.add_reservation(reservation, cycle)
+                self.requests.add_reservation(reservation=reservation, cycle=cycle)
             else:
-                calendar = self.get_source_calendar(source)
-                calendar.extending.add_reservation(reservation, cycle)
+                calendar = self.get_source_calendar(source=source)
+                calendar.extending.add_reservation(reservation=reservation, cycle=cycle)
         finally:
             self.lock.release()
 
-    def get_request(self, source: IReservation, cycle: int) -> ReservationSet:
+    def get_request(self, *, source: IReservation, cycle: int) -> ReservationSet:
         """
         Returns the extending requests for the given source reservation.
 
@@ -133,12 +133,12 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            calendar = self.get_source_calendar(source)
-            return calendar.extending.get_reservations(cycle)
+            calendar = self.get_source_calendar(source=source)
+            return calendar.extending.get_reservations(cycle=cycle)
         finally:
             self.lock.release()
 
-    def remove_request(self, reservation: IReservation, source: IReservation = None):
+    def remove_request(self, *, reservation: IReservation, source: IReservation = None):
         """
         Removes the specified reservation from the requests list.
         @params reservation:  reservation to remove
@@ -147,14 +147,14 @@ class BrokerCalendar(ClientCalendar):
         try:
             self.lock.acquire()
             if source is not None:
-                calendar = self.get_source_calendar(source)
-                calendar.extending.remove_reservation(reservation)
+                calendar = self.get_source_calendar(source=source)
+                calendar.extending.remove_reservation(reservation=reservation)
             else:
-                self.requests.remove_reservation(reservation)
+                self.requests.remove_reservation(reservation=reservation)
         finally:
             self.lock.release()
 
-    def add_outlay(self, source: IReservation, client: IReservation, start: datetime, end: datetime):
+    def add_outlay(self, *, source: IReservation, client: IReservation, start: datetime, end: datetime):
         """
          Adds an outlay reservation.
 
@@ -165,13 +165,13 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            calendar = self.get_source_calendar(source)
-            calendar.outlays.add_reservation(client, ActorClock.to_milliseconds(start),
-                                             ActorClock.to_milliseconds(end))
+            calendar = self.get_source_calendar(source=source)
+            calendar.outlays.add_reservation(reservation=client, start=ActorClock.to_milliseconds(when=start),
+                                             end=ActorClock.to_milliseconds(when=end))
         finally:
             self.lock.release()
 
-    def remove_outlay(self, source: IReservation, client: IReservation):
+    def remove_outlay(self, *, source: IReservation, client: IReservation):
         """
         Removes an outlay reservation.
 
@@ -180,12 +180,12 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            calendar = self.get_source_calendar(source)
-            calendar.outlays.remove_reservation(client)
+            calendar = self.get_source_calendar(source=source)
+            calendar.outlays.remove_reservation(reservation=client)
         finally:
             self.lock.release()
 
-    def add_source(self, source: IClientReservation):
+    def add_source(self, *, source: IClientReservation):
         """
         Adds a source reservation. Creates a placeholder if necessary
         and adds the reservation to the holdings list.
@@ -195,13 +195,13 @@ class BrokerCalendar(ClientCalendar):
         term = None
         try:
             self.lock.acquire()
-            self.get_source_calendar(source)
+            self.get_source_calendar(source=source)
             term = source.get_term()
         finally:
             self.lock.release()
-        self.add_holdings(source, term.get_new_start_time(), term.get_end_time())
+        self.add_holdings(reservation=source, start=term.get_new_start_time(), end=term.get_end_time())
 
-    def get_source_calendar(self, source: IReservation) -> SourceCalendar:
+    def get_source_calendar(self, *, source: IReservation) -> SourceCalendar:
         """
         Returns the outlay calendar for the given source reservation.
 
@@ -211,11 +211,11 @@ class BrokerCalendar(ClientCalendar):
         """
         calendar = self.sources.get(source.get_reservation_id())
         if calendar is None:
-            calendar = SourceCalendar(self.clock, source)
+            calendar = SourceCalendar(clock=self.clock, source=source)
             self.sources[source.get_reservation_id()] = calendar
         return calendar
 
-    def remove_source_calendar(self, source: IReservation):
+    def remove_source_calendar(self, *, source: IReservation):
         """
         Removes any data structures associated with a source
         reservation.
@@ -229,7 +229,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def get_outlays(self, source: IReservation, time: datetime = None) -> ReservationSet:
+    def get_outlays(self, *, source: IReservation, time: datetime = None) -> ReservationSet:
         """
         Returns the client reservations satisfied from the given source
         reservation at the specified time.
@@ -241,15 +241,15 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            calendar = self.get_source_calendar(source)
+            calendar = self.get_source_calendar(source=source)
             if time is None:
                 return calendar.outlays.get_reservations()
             else:
-                return calendar.outlays.get_reservations(ActorClock.to_milliseconds(time))
+                return calendar.outlays.get_reservations(time=ActorClock.to_milliseconds(when=time))
         finally:
             self.lock.release()
 
-    def get_closing(self, cycle: int) -> ReservationSet:
+    def get_closing(self, *, cycle: int) -> ReservationSet:
         """
         Returns all reservations that need to be closed on the specified
         cycle.
@@ -260,11 +260,11 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            return self.closing.get_all_reservations(cycle)
+            return self.closing.get_all_reservations(cycle=cycle)
         finally:
             self.lock.release()
 
-    def add_closing(self, reservation: IReservation, cycle: int):
+    def add_closing(self, *, reservation: IReservation, cycle: int):
         """
         Adds a reservation to be closed on the specified cycle
 
@@ -273,11 +273,11 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            self.closing.add_reservation(reservation, cycle)
+            self.closing.add_reservation(reservation=reservation, cycle=cycle)
         finally:
             self.lock.release()
 
-    def remove_closing(self, reservation: IReservation):
+    def remove_closing(self, *, reservation: IReservation):
         """
         Removes the specified reservation from the list of closing
         reservations.
@@ -286,18 +286,18 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            self.closing.remove_reservation(reservation)
+            self.closing.remove_reservation(reservation=reservation)
         finally:
             self.lock.release()
 
-    def tick(self, cycle: int):
-        super().tick(cycle)
+    def tick(self, *, cycle: int):
+        super().tick(cycle=cycle)
         try:
             self.lock.acquire()
-            self.requests.tick(cycle)
-            self.closing.tick(cycle)
+            self.requests.tick(cycle=cycle)
+            self.closing.tick(cycle=cycle)
 
             for calendar in self.sources.values():
-                calendar.tick(cycle)
+                calendar.tick(cycle=cycle)
         finally:
             self.lock.release()

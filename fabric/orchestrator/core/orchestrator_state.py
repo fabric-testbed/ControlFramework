@@ -26,8 +26,10 @@
 import threading
 
 from datetime import datetime
+from typing import List
 
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric.actor.core.manage.management_utils import ManagementUtils
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 from fabric.orchestrator.core.orchestrator_slice import OrchestratorSlice
@@ -48,11 +50,8 @@ class OrchestratorState:
         self.broker = None
         self.logger = None
         self.controller = None
-        from fabric.actor.core.container.globals import GlobalsSingleton
-        self.logger = GlobalsSingleton.get().get_logger()
-        self.controller = GlobalsSingleton.get().get_container().get_management_actor()
 
-    def set_broker(self, broker: str):
+    def set_broker(self, *, broker: str):
         self.broker = broker
 
     def get_broker(self) -> str:
@@ -64,7 +63,15 @@ class OrchestratorState:
     def get_sdt(self) -> SliceDeferThread:
         return self.sdt
 
+    def get_logger(self):
+        if self.logger is None:
+            from fabric.actor.core.container.globals import GlobalsSingleton
+            self.logger = GlobalsSingleton.get().get_logger()
+        return self.logger
+
     def get_management_actor(self) -> IMgmtActor:
+        if self.controller is None:
+            self.controller = ManagementUtils.get_local_actor()
         return self.controller
 
     def stop_threads(self):
@@ -75,15 +82,15 @@ class OrchestratorState:
             self.sut.stop()
 
     def start_threads(self):
-        self.logger.debug("Starting Slice Defer Thread")
+        self.get_logger().debug("Starting Slice Defer Thread")
         self.sdt = SliceDeferThread()
         self.sdt.start()
 
-        self.logger.debug("Starting ReservationStatusUpdateThread")
+        self.get_logger().debug("Starting ReservationStatusUpdateThread")
         self.sut = ReservationStatusUpdateThread()
         self.sut.start()
 
-    def add_slice(self, controller_slice: OrchestratorSlice):
+    def add_slice(self, *, controller_slice: OrchestratorSlice):
         if controller_slice is not None:
             try:
                 self.lock.acquire()
@@ -91,7 +98,7 @@ class OrchestratorState:
             finally:
                 self.lock.release()
 
-    def remove_slice(self, controller_slice: OrchestratorSlice):
+    def remove_slice(self, *, controller_slice: OrchestratorSlice):
         if controller_slice is not None:
             try:
                 self.lock.acquire()
@@ -101,7 +108,7 @@ class OrchestratorState:
             finally:
                 self.lock.release()
 
-    def get_slice(self, slice_id: ID) -> OrchestratorSlice:
+    def get_slice(self, *, slice_id: ID) -> OrchestratorSlice:
         if slice_id is None:
             return None
 
@@ -119,8 +126,8 @@ class OrchestratorState:
                 if slice_obj is None:
                     continue
                 try:
-                    last_attempt =  slice_obj.get_delete_attempt()
-                    self.logger.debug("Slice {}/{} is_dead_or_closing: {} last_delete_attempt: {}".
+                    last_attempt = slice_obj.get_delete_attempt()
+                    self.get_logger().debug("Slice {}/{} is_dead_or_closing: {} last_delete_attempt: {}".
                                       format(slice_obj.get_slice_urn(), slice_id,
                                              slice_obj.is_dead_or_closing(), last_attempt))
                     if slice_obj.is_dead_or_closing():
@@ -128,46 +135,46 @@ class OrchestratorState:
                             if last_attempt is not None:
                                 delta_ms = Term.delta(last_attempt, datetime.utcnow())
                                 if delta_ms >= self.DELETE_TIMEOUT:
-                                    self.logger.debug("Deleting all failed slice {}/{} after 24 hours".format(
+                                    self.get_logger().debug("Deleting all failed slice {}/{} after 24 hours".format(
                                         slice_obj.get_slice_urn(), slice_id))
                                     remove_slices.append(slice_obj)
                             else:
                                 slice_obj.mark_delete_attempt()
                         else:
-                            self.logger.debug("Deleting slice {}/{}".format(slice_obj.get_slice_urn(), slice_id))
+                            self.get_logger().debug("Deleting slice {}/{}".format(slice_obj.get_slice_urn(), slice_id))
                             remove_slices.append(slice_obj)
                 except Exception as e:
-                    self.logger.error("Slice {}/{} owned by {} has encountered a state "
+                    self.get_logger().error("Slice {}/{} owned by {} has encountered a state "
                                       "transition problem at garbage collection".format(slice_obj.get_slice_urn(),
                                                                                         slice_id,
                                                                                         slice_obj.get_user_dn()))
             for slice_obj in remove_slices:
                 try:
                     slice_obj.lock()
-                    all_res = slice_obj.get_all_reservations(self.controller)
+                    all_res = slice_obj.get_all_reservations(self.get_management_actor())
                     if all_res is not None:
                         for res in all_res:
-                            self.release_address_assignment(res)
-                            self.mark_failed_missed_tag(res)
-                    self.remove_slice(slice_obj)
+                            self.release_address_assignment(reservation=res)
+                            self.mark_failed_missed_tag(reservation=res)
+                    self.remove_slice(controller_slice=slice_obj)
                 except Exception as e:
-                    self.logger.error("Exception occurred in slice cleanup e={}".format(e))
+                    self.get_logger().error("Exception occurred in slice cleanup e={}".format(e))
                 finally:
                     slice_obj.unlock()
         except Exception as e:
-            self.logger.error("Unable to close slices due to e={}".format(e))
+            self.get_logger().error("Unable to close slices due to e={}".format(e))
         finally:
             self.lock.release()
 
-    def release_address_assignment(self, reservation: ReservationMng):
+    def release_address_assignment(self, *, reservation: ReservationMng):
         # TODO
         return
 
-    def mark_failed_missed_tag(self, reservation: ReservationMng):
+    def mark_failed_missed_tag(self, *, reservation: ReservationMng):
         # TODO
         return
 
-    def get_slices(self, user_dn: str) -> list:
+    def get_slices(self, *, user_dn: str) -> List[ID]:
         if user_dn is None:
             return None
 
@@ -186,7 +193,8 @@ class OrchestratorState:
         # TODO
         return
 
-    def recover_slice(self, controller: IMgmtActor, slice_id: str, slice_name: str, user_dn: str, ssh_credentials: list):
+    def recover_slice(self, *, controller: IMgmtActor, slice_id: str, slice_name: str, user_dn: str,
+                      ssh_credentials: list):
         # TODO
         return
 

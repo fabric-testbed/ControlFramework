@@ -78,8 +78,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     PropertyAuthority = "AgentReservationAuthority"
     PropertyMustSendUpdate = "AgentReservationMustSendUpdate"
 
-    def __init__(self, rid: ID, resources: ResourceSet, term: Term, slice_obj: IKernelSlice):
-        super().__init__(rid, resources, term, slice_obj)
+    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_obj: IKernelSlice):
+        super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_obj)
         # Reservation backing the ticket granted to this reservation. For now only
         # one source reservation can be used to issue a ticket to satisfy a client
         # request.
@@ -138,11 +138,11 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         self.notified_failed = False
         self.closed_in_priming = False
 
-    def restore(self, actor: IActor, slice_obj: ISlice, logger):
+    def restore(self, *, actor: IActor, slice_obj: ISlice, logger):
         """
         Must be invoked after creating reservation from unpickling
         """
-        super().restore(actor, slice_obj, logger)
+        super().restore(actor=actor, slice_obj=slice_obj, logger=logger)
         self.source = None
         self.notified_failed = False
         self.closed_in_priming = False
@@ -155,7 +155,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         return "[{},{}] ({})({})".format(self.get_state_name(), self.get_pending_state_name(), self.get_sequence_in(),
                                          self.get_sequence_out())
 
-    def recover(self, parent, saved_state):
+    def recover(self, *, parent, saved_state):
         if isinstance(self.policy, IAuthorityPolicy):
             self.logger.debug("No recovery necessary for reservation #{}".format(self.get_reservation_id()))
             return
@@ -170,8 +170,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                     self.logger.info("Added reservation #{} to the ticketing list. State={}".format(self.get_reservation_id(), self.print_state()))
 
                 elif self.pending_state == ReservationPendingStates.Ticketing:
-                    self.set_pending_recover(True)
-                    self.transition("[recovery]", self.state, ReservationPendingStates.None_)
+                    self.set_pending_recover(pending_recover=True)
+                    self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
                     self.actor.ticket(self)
                     self.logger.info(
                         "Added reservation #{} to the ticketing list. State={}".format(self.get_reservation_id(),
@@ -182,13 +182,14 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
 
             elif self.state == ReservationStates.Ticketed:
                 if self.pending_state == ReservationPendingStates.None_ or self.pending_state == ReservationPendingStates.Priming:
-                    self.set_service_pending(ReservationPendingStates.None_)
+                    self.set_service_pending(code=ReservationPendingStates.None_)
                     self.logger.debug("No recovery necessary for reservation #{}".format(self.get_reservation_id()))
 
                 elif self.pending_state == ReservationPendingStates.ExtendingTicket:
-                    self.set_pending_recover(True)
-                    self.transition("[recovery]", self.state, ReservationPendingStates.None_)
-                    self.actor.extend_ticket(self)
+                    self.set_pending_recover(pending_recover=True)
+                    self.transition(prefix="[recovery]", state=self.state,
+                                    pending=ReservationPendingStates.None_)
+                    self.actor.extend_ticket(reservation=self)
                     self.logger.info(
                         "Added reservation #{} to the extending list. State={}".format(self.get_reservation_id(),
                                                                                        self.print_state()))
@@ -203,7 +204,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         except Exception as e:
             raise e
 
-    def handle_failed_rpc(self, failed: FailedRPC):
+    def handle_failed_rpc(self, *, failed: FailedRPC):
         # make sure that the failed RPC came from the callback identity
         remote_auth = failed.get_remote_auth()
         if failed.get_request_type() == RPCRequestType.UpdateTicket:
@@ -212,10 +213,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         else:
             Exception("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(failed.get_request_type()))
 
-        super().handle_failed_rpc(failed)
+        super().handle_failed_rpc(failed=failed)
 
-    def prepare(self, callback: ICallbackProxy, logger, reclaim: bool=False):
-        self.set_logger(logger)
+    def prepare(self, *, callback: ICallbackProxy, logger, reclaim: bool=False):
+        self.set_logger(logger=logger)
         self.callback = callback
 
         # Null callback indicates a locally initiated request to create an
@@ -224,11 +225,11 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
 
         if self.callback is not None:
             if self.rid is None:
-                self.error("no reservation ID specified for request")
+                self.error(err="no reservation ID specified for request")
 
         self.set_dirty()
 
-    def reserve(self, policy: IPolicy):
+    def reserve(self, *, policy: IPolicy):
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
         # protocol: so we may receive a reserve or extend when there is already
@@ -244,15 +245,16 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         self.policy = policy
         self.approved = False
         self.bid_pending = True
-        self.map_and_update(False)
+        self.map_and_update(ticketed=False)
 
     def service_reserve(self):
         # resources is null initially. It becomes non-null once the
         # policy completes its allocation.
         if self.resources is not None:
-            self.resources.service_update(self)
+            self.resources.service_update(reservation=self)
             if not self.is_failed():
-                self.transition("update absorbed", ReservationStates.Ticketed, ReservationPendingStates.None_)
+                self.transition(prefix="update absorbed", state=ReservationStates.Ticketed,
+                                pending=ReservationPendingStates.None_)
                 self.generate_update()
 
     def claim(self):
@@ -263,10 +265,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             # on the next probe.
             self.must_send_update = True
         elif self.state == ReservationStates.Reclaimed:
-            self.transition("claim", ReservationStates.Ticketed, ReservationPendingStates.None_)
+            self.transition(prefix="claim", state=ReservationStates.Ticketed, pending=ReservationPendingStates.None_)
             self.must_send_update = True
         else:
-            self.error("Wrong reservation state for ticket claim")
+            self.error(err="Wrong reservation state for ticket claim")
 
     def reclaim(self):
         self.approved = False
@@ -274,34 +276,37 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             # We are an agent asked to return a pre-reserved "will call" ticket
             # to a client. Set mustSendUpdate so that the update will be sent
             # on the next probe.
-            self.transition("reclaimed", ReservationStates.Reclaimed, ReservationPendingStates.None_)
+            self.transition(prefix="reclaimed", state=ReservationStates.Reclaimed,
+                            pending=ReservationPendingStates.None_)
             self.must_send_update = True
         else:
-            self.error("Wrong reservation state for ticket reclaim")
+            self.error(err="Wrong reservation state for ticket reclaim")
 
-    def extend_ticket(self, actor: IActor):
+    def extend_ticket(self, *, actor: IActor):
         self.incoming_request()
 
         # State must be ticketed. The reservation may be active, but the agent wouldn't know that
         if self.state != ReservationStates.Ticketed:
-            self.error("extending unticketed reservation")
+            self.error(err="extending unticketed reservation")
 
-        if self.pending_state != ReservationPendingStates.None_ and self.pending_state != ReservationPendingStates.ExtendingTicket:
-            self.error("extending reservation with another pending request")
+        if self.pending_state != ReservationPendingStates.None_ and self.pending_state != \
+                ReservationPendingStates.ExtendingTicket:
+            self.error(err="extending reservation with another pending request")
 
-        if not self.requested_term.extends_term(self.term):
-            self.error("new term does not extend current term")
+        if not self.requested_term.extends_term(old_term=self.term):
+            self.error(err="new term does not extend current term")
 
         self.approved = False
         self.bid_pending = True
         self.pending_recover = False
-        self.map_and_update(True)
+        self.map_and_update(ticketed=True)
 
     def service_extend_ticket(self):
         if self.pending_state == ReservationPendingStates.None_:
             self.resources.service_update(self)
             if not self.is_failed():
-                self.transition("update absorbed", ReservationStates.Ticketed, ReservationPendingStates.None_)
+                self.transition(prefix="update absorbed", state=ReservationStates.Ticketed,
+                                pending=ReservationPendingStates.None_)
                 self.generate_update()
 
     def close(self):
@@ -324,16 +329,16 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.logger.debug("closing reservation #{} while in Priming".format(self.rid))
                 self.closed_in_priming = True
 
-            self.transition("closed", ReservationStates.Closed, ReservationPendingStates.None_)
-            self.policy.close(self)
+            self.transition(prefix="closed", state=ReservationStates.Closed, pending=ReservationPendingStates.None_)
+            self.policy.close(reservation=self)
 
         if send_notification:
-            self.update_data.error("Closed while allocating ticket")
+            self.update_data.error(message="Closed while allocating ticket")
             self.generate_update()
 
     def probe_pending(self):
         if self.service_pending != ReservationPendingStates.None_:
-            self.internal_error("service overrun in probePending")
+            self.internal_error(err="service overrun in probePending")
 
         if self.is_failed() and not self.notified_failed:
             self.generate_update()
@@ -341,12 +346,12 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         else:
             if self.pending_state == ReservationPendingStates.Ticketing:
                 # Check for a pending ticket operation that may have completed
-                if not self.bid_pending and self.map_and_update(False):
+                if not self.bid_pending and self.map_and_update(ticketed=False):
                     self.service_pending = ReservationPendingStates.AbsorbUpdate
 
             elif self.pending_state == ReservationPendingStates.ExtendingTicket:
                 # Check for a pending extendTicket operation
-                if not self.bid_pending and self.map_and_update(True):
+                if not self.bid_pending and self.map_and_update(ticketed=True):
                     self.service_pending = ReservationPendingStates.AbsorbUpdate
 
             elif self.pending_state == ReservationPendingStates.Redeeming:
@@ -365,21 +370,22 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     def service_probe(self):
         try:
             if self.service_pending == ReservationPendingStates.AbsorbUpdate:
-                self.resources.service_update(self)
+                self.resources.service_update(reservation=self)
                 if not self.is_failed():
-                    self.transition("update absorbed", ReservationStates.Ticketed, ReservationPendingStates.None_)
+                    self.transition(prefix="update absorbed", state=ReservationStates.Ticketed,
+                                    pending=ReservationPendingStates.None_)
                     self.generate_update()
 
             elif self.service_pending == ReservationPendingStates.SendUpdate:
                 self.generate_update()
 
         except Exception as e:
-            self.log_error("failed while servicing probe", e)
-            self.fail_notify(str(e))
+            self.log_error(message="failed while servicing probe", exception=e)
+            self.fail_notify(message=str(e))
 
         self.service_pending = ReservationPendingStates.None_
 
-    def handle_duplicate_request(self, operation: RequestTypes):
+    def handle_duplicate_request(self, *, operation: RequestTypes):
         # The general idea is to do nothing if we are in the process of
         # performing a pending operation or about to reissue a
         # ticket/extendTicket after recovery. If there is nothing pending for
@@ -393,13 +399,13 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.generate_update()
 
         elif operation == RequestTypes.RequestRelinquish:
-            self.log_debug("no op")
+            self.log_debug(message="no op")
 
         else:
             raise Exception("unsupported operation {}".format(RequestTypes(operation).name))
 
     def generate_update(self):
-        self.log_debug("Generating update")
+        self.log_debug(message="Generating update")
         if self.callback is None:
             self.logger.warning("Cannot generate update: no callback.")
             return
@@ -408,14 +414,14 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         try:
             self.update_count += 1
             self.sequence_out += 1
-            RPCManagerSingleton.get().update_ticket(self)
+            RPCManagerSingleton.get().update_ticket(reservation=self)
         except Exception as e:
             # Note that this may result in a "stuck" reservation... not much we
             # can do if the receiver has failed or rejects our update. We will
             # regenerate on any user-initiated probe.
-            self.log_remote_error("callback failed", e)
+            self.log_remote_error(message="callback failed", exception=e)
 
-    def map_and_update(self, ticketed: bool):
+    def map_and_update(self, *, ticketed: bool):
         """
         Call the policy to fill a request, with associated state transitions.
         Catch exceptions and report all errors using callback mechanism.
@@ -435,9 +441,9 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             self.generate_update()
         elif self.state == ReservationStates.Nascent:
             if ticketed:
-                self.fail_notify("reservation is not yet ticketed")
+                self.fail_notify(message="reservation is not yet ticketed")
             else:
-                self.log_debug("Using policy {} to bind reservation".format(self.policy.__class__.__name__))
+                self.log_debug(message="Using policy {} to bind reservation".format(self.policy.__class__.__name__))
                 try:
                     granted = False
                     # If the policy has processed this reservation, granted should
@@ -449,15 +455,16 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                     # come back to this method after the policy has done its job.
                     if self.is_bid_pending():
                         if not self.is_exporting():
-                            granted = self.policy.bind(self)
+                            granted = self.policy.bind(reservation=self)
                         else:
-                            self.internal_error("Exporting reservations not implemented")
+                            self.internal_error(err="Exporting reservations not implemented")
                     else:
                         granted = True
-                    self.transition("ticket request", ReservationStates.Nascent, ReservationPendingStates.Ticketing)
+                    self.transition(prefix="ticket request", state=ReservationStates.Nascent,
+                                    pending=ReservationPendingStates.Ticketing)
                 except Exception as e:
-                    self.log_error("mapAndUpdate bindTicket failed for ticketRequest:", e)
-                    self.fail_notify(str(e))
+                    self.log_error(message="mapAndUpdate bindTicket failed for ticketRequest:", exception=e)
+                    self.fail_notify(message=str(e))
                     return success
 
                 if granted:
@@ -466,18 +473,19 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                         success = True
                         self.term = self.approved_term
                         self.resources = self.approved_resources.abstract_clone()
-                        self.resources.update(self, self.approved_resources)
-                        self.transition("ticketed", ReservationStates.Ticketed, ReservationPendingStates.Priming)
+                        self.resources.update(reservation=self, resource_set=self.approved_resources)
+                        self.transition(prefix="ticketed", state=ReservationStates.Ticketed,
+                                        pending=ReservationPendingStates.Priming)
                     except Exception as e:
-                        self.log_error("mapAndUpdate ticket failed for ticketRequest", e)
-                        self.fail_notify(str(e))
+                        self.log_error(message="mapAndUpdate ticket failed for ticketRequest", exception=e)
+                        self.fail_notify(message=str(e))
         elif self.state == ReservationStates.Ticketed:
             if not ticketed:
-                self.fail_notify("reservation is already ticketed")
+                self.fail_notify(message="reservation is already ticketed")
             else:
                 try:
-                    self.transition("extending ticket", ReservationStates.Ticketed,
-                                    ReservationPendingStates.ExtendingTicket)
+                    self.transition(prefix="extending ticket", state=ReservationStates.Ticketed,
+                                    pending=ReservationPendingStates.ExtendingTicket)
 
                     # If the policy has processed this reservation, set granted to
                     # true so that we can send the ticket back to the client. If
@@ -490,29 +498,30 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                     granted = False
 
                     if self.is_bid_pending():
-                        granted = self.policy.extend_broker(self)
+                        granted = self.policy.extend_broker(reservation=self)
                     else:
                         granted = True
                 except Exception as e:
-                    self.log_error("mapAndUpdate extendTicket failed for ticketRequest:", e)
-                    self.fail_notify(str(e))
+                    self.log_error(message="mapAndUpdate extendTicket failed for ticketRequest:", exception=e)
+                    self.fail_notify(message=str(e))
                     return success
 
                 if granted:
                     try:
                         success = True
                         self.extended = True
-                        self.transition("extended ticket", ReservationStates.Ticketed, ReservationPendingStates.Priming)
+                        self.transition(prefix="extended ticket", state=ReservationStates.Ticketed,
+                                        pending=ReservationPendingStates.Priming)
                         self.previous_term = self.term
                         self.previous_resources = self.resources.clone()
                         self.term = self.approved_term
-                        self.resources.update(self, self.approved_resources)
+                        self.resources.update(reservation=self, resource_set=self.approved_resources)
                     except Exception as e:
-                        self.log_error("mapAndUpdate ticket failed for ticketRequest", e)
-                        self.fail_notify(str(e))
+                        self.log_error(message="mapAndUpdate ticket failed for ticketRequest", exception=e)
+                        self.fail_notify(message=str(e))
         else:
-            self.log_error("broker mapAndUpdate: unexpected state", None)
-            self.fail_notify("invalid operation for the current reservation state")
+            self.log_error(message="broker mapAndUpdate: unexpected state", exception=None)
+            self.fail_notify(message="invalid operation for the current reservation state")
 
         return success
 
@@ -522,10 +531,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     def get_source(self) -> IClientReservation:
         return self.source
 
-    def get_units(self, when: datetime = None) -> int:
+    def get_units(self, *, when: datetime = None) -> int:
         hold = 0
         if not self.is_terminal():
-            hold = self.resources.get_concrete_units(when)
+            hold = self.resources.get_concrete_units(when=when)
 
         return hold
 
@@ -538,8 +547,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     def set_exporting(self):
         self.exporting = True
 
-    def set_source(self, source: IClientReservation):
+    def set_source(self, *, source: IClientReservation):
         self.source = source
 
-    def set_authority(self, authority: IAuthorityProxy):
+    def set_authority(self, *, authority: IAuthorityProxy):
         self.authority = authority

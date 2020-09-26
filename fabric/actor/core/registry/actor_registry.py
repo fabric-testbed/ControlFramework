@@ -39,17 +39,17 @@ class ActorRegistry:
     getActor(String) now looks up EITHER by name or guid - tries one, then the other
     """
     class ActorRegistryEntry:
-        def __init__(self, actor: IActor):
+        def __init__(self, *, actor: IActor):
             self.actor = actor
             self.kafka_topics = {}
 
         def get_actor(self) -> IActor:
             return self.actor
 
-        def get_kafka_topic(self, protocol: str) -> str:
+        def get_kafka_topic(self, *, protocol: str) -> str:
             return self.kafka_topics[protocol]
 
-        def register_kafka_topic(self, protocol: str, kafka_topic: str):
+        def register_kafka_topic(self, *, protocol: str, kafka_topic: str):
             self.kafka_topics[protocol] = kafka_topic
 
     def __init__(self):
@@ -69,7 +69,7 @@ class ActorRegistry:
         finally:
             self.lock.release()
 
-    def get_actor(self, actor_name_or_guid: str) -> IActor:
+    def get_actor(self, *, actor_name_or_guid: str) -> IActor:
         result = None
         entry = None
         try:
@@ -96,25 +96,25 @@ class ActorRegistry:
             self.lock.release()
         return result
 
-    def get_broker_proxies(self, protocol: str) -> list:
+    def get_broker_proxies(self, *, protocol: str) -> list:
         result = None
         try:
             self.lock.acquire()
-            result = self.proxies.get_broker_proxies(protocol)
+            result = self.proxies.get_broker_proxies(protocol=protocol)
         finally:
             self.lock.release()
         return result
 
-    def get_callback(self, protocol: str, actor_name: str) -> ICallbackProxy:
+    def get_callback(self, *, protocol: str, actor_name: str) -> ICallbackProxy:
         result = None
         try:
             self.lock.acquire()
-            result = self.callbacks.get_callback(protocol, actor_name)
+            result = self.callbacks.get_callback(protocol=protocol, actor_name=actor_name)
         finally:
             self.lock.release()
         return result
 
-    def get_kafka_topic(self, protocol: str, actor_name: str):
+    def get_kafka_topic(self, *, protocol: str, actor_name: str):
         result = None
         try:
             self.lock.acquire()
@@ -124,34 +124,34 @@ class ActorRegistry:
             self.lock.release()
         return result
 
-    def get_proxies(self, protocol: str) -> list:
+    def get_proxies(self, *, protocol: str) -> list:
         result = None
         try:
             self.lock.acquire()
-            result = self.proxies.get_proxies(protocol)
+            result = self.proxies.get_proxies(protocol=protocol)
         finally:
             self.lock.release()
         return result
 
-    def get_proxy(self, protocol: str, actor_name: str) -> IProxy:
+    def get_proxy(self, *, protocol: str, actor_name: str) -> IProxy:
         result = None
         try:
             self.lock.acquire()
-            result = self.proxies.get_proxy(protocol, actor_name)
+            result = self.proxies.get_proxy(protocol=protocol, actor_name=actor_name)
         finally:
             self.lock.release()
         return result
 
-    def get_site_proxies(self, protocol: str) -> list:
+    def get_site_proxies(self, *, protocol: str) -> list:
         result = None
         try:
             self.lock.acquire()
-            result = self.proxies.get_site_proxies(protocol)
+            result = self.proxies.get_site_proxies(protocol=protocol)
         finally:
             self.lock.release()
         return result
 
-    def register_actor(self, actor: IActor):
+    def register_actor(self, *, actor: IActor):
         actor_name = actor.get_name()
         guid = actor.get_guid()
 
@@ -160,20 +160,20 @@ class ActorRegistry:
             if actor_name in self.actors or guid in self.actors_by_guid:
                 raise Exception("An actor name {} already exists".format(actor_name))
 
-            entry = self.ActorRegistryEntry(actor)
+            entry = self.ActorRegistryEntry(actor=actor)
             self.actors_by_guid[guid] = entry
             self.actors[actor_name] = entry
         finally:
             self.lock.release()
 
-    def register_callback(self, callback: ICallbackProxy):
+    def register_callback(self, *, callback: ICallbackProxy):
         try:
             self.lock.acquire()
-            self.callbacks.register_callback(callback)
+            self.callbacks.register_callback(callback=callback)
         finally:
             self.lock.release()
 
-    def register_kafka_topic(self, actor_name: str, protocol: str, kafka_topic: str):
+    def register_kafka_topic(self, *, actor_name: str, protocol: str, kafka_topic: str):
         try:
             self.lock.acquire()
             if actor_name not in self.actors:
@@ -184,14 +184,14 @@ class ActorRegistry:
         finally:
             self.lock.release()
 
-    def register_proxy(self, proxy: IProxy):
+    def register_proxy(self, *, proxy: IProxy):
         try:
             self.lock.acquire()
-            self.proxies.register_proxy(proxy)
+            self.proxies.register_proxy(proxy=proxy)
         finally:
             self.lock.release()
 
-    def unregister(self, actor: IActor):
+    def unregister(self, *, actor: IActor):
         try:
             self.lock.acquire()
             actor_name = actor.get_name()
@@ -201,8 +201,8 @@ class ActorRegistry:
                 self.actors.pop(actor_name)
             if guid in self.actors_by_guid:
                 self.actors_by_guid.pop(guid)
-            self.callbacks.unregister(actor_name)
-            self.proxies.unregister(actor_name)
+            self.callbacks.unregister(actor_name=actor_name)
+            self.proxies.unregister(actor_name=actor_name)
         finally:
             self.lock.release()
 

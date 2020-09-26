@@ -23,13 +23,23 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
+
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_type import ResourceType
 
 
 class ConfigToken:
+    @abstractmethod
     def get_reservation_id(self) -> ID:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Return reservation id
+        @return reservation
+        """
 
+    @abstractmethod
     def get_resource_type(self) -> ResourceType:
-        raise NotImplementedError("Should have implemented this")
+        """
+        return resource type
+        @return resource type
+        """

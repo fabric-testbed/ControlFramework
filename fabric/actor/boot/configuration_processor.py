@@ -67,7 +67,7 @@ if TYPE_CHECKING:
 
 
 class ExportInfo:
-    def __init__(self, exporter: IMgmtActor, client: ClientMng, units: int, rtype: ResourceType, topic: str):
+    def __init__(self, *, exporter: IMgmtActor, client: ClientMng, units: int, rtype: ResourceType, topic: str):
         self.exporter = exporter
         self.client = client
         self.units = units
@@ -80,7 +80,7 @@ class ExportInfo:
 
 
 class ConfigurationProcessor:
-    def __init__(self, config: Configuration):
+    def __init__(self, *, config: Configuration):
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
         self.config = config
@@ -106,6 +106,7 @@ class ConfigurationProcessor:
             self.process_claims()
             self.logger.info("Processing claims completed")
         except Exception as e:
+            self.logger.error(traceback.format_exc())
             raise Exception("Unexpected error while processing configuration {}".format(e))
         self.logger.info("Finished instantiating actors.")
 
@@ -113,21 +114,21 @@ class ConfigurationProcessor:
         try:
             if self.config.get_actor() is not None:
                 self.logger.debug("Creating Actor: name={}".format(self.config.get_actor().get_name()))
-                self.actor = self.do_common(self.config.get_actor())
-                self.do_specific(self.actor, self.config.get_actor())
+                self.actor = self.do_common(actor_config=self.config.get_actor())
+                self.do_specific(actor=self.actor, config=self.config.get_actor())
         except Exception as e:
             raise Exception("Unexpected error while creating actor {}".format(e))
 
-    def do_common(self, actor_config: ActorConfig):
-        actor = self.make_actor_instance(actor_config)
-        actor.set_plugin(self.make_plugin_instance(actor, actor_config))
-        actor.set_policy(self.make_actor_policy(actor, actor_config))
+    def do_common(self, *, actor_config: ActorConfig):
+        actor = self.make_actor_instance(actor_config=actor_config)
+        actor.set_plugin(plugin=self.make_plugin_instance(actor=actor, actor_config=actor_config))
+        actor.set_policy(policy=self.make_actor_policy(actor=actor, config=actor_config))
         return actor
 
-    def make_actor_instance(self, actor_config: ActorConfig) -> IActor:
-        actor_type = ActorType.get_actor_type_from_string(actor_config.get_type())
+    def make_actor_instance(self, *, actor_config: ActorConfig) -> IActor:
+        actor_type = ActorType.get_actor_type_from_string(actor_type=actor_config.get_type())
         actor = None
-        if actor_type == ActorType.Controller:
+        if actor_type == ActorType.Orchestrator:
             actor = Controller()
         elif actor_type == ActorType.Broker:
             actor = Broker()
@@ -139,30 +140,30 @@ class ConfigurationProcessor:
         if actor is not None:
             actor_guid = ID()
             if actor_config.get_guid() is not None:
-                actor_guid = ID(actor_config.get_guid())
-            auth_token = AuthToken(actor_config.get_name(), actor_guid)
-            actor.set_identity(auth_token)
+                actor_guid = ID(id=actor_config.get_guid())
+            auth_token = AuthToken(name=actor_config.get_name(), guid=actor_guid)
+            actor.set_identity(token=auth_token)
             if actor_config.get_description() is not None:
-                actor.set_description(actor_config.get_description())
+                actor.set_description(description=actor_config.get_description())
 
             from fabric.actor.core.container.globals import GlobalsSingleton
-            actor.set_actor_clock(GlobalsSingleton.get().get_container().get_actor_clock())
+            actor.set_actor_clock(clock=GlobalsSingleton.get().get_container().get_actor_clock())
 
         return actor
 
-    def make_plugin_instance(self, actor: IActor, actor_config: ActorConfig):
+    def make_plugin_instance(self, *, actor: IActor, actor_config: ActorConfig):
         plugin = None
         if actor.get_plugin() is None:
             if actor.get_type() == ActorType.Authority:
                 # TODO replacement of ANT CONFIG
-                plugin = AuthoritySubstrate(actor, None, Config())
+                plugin = AuthoritySubstrate(actor=actor, db=None, config=Config())
 
-            elif actor.get_type() == ActorType.Controller:
+            elif actor.get_type() == ActorType.Orchestrator:
                 # TODO replacement of ANT CONFIG
-                plugin = Substrate(actor, None, Config())
+                plugin = Substrate(actor=actor, db=None, config=Config())
 
             elif actor.get_type() == ActorType.Broker:
-                plugin = BasePlugin(actor, None, Config())
+                plugin = BasePlugin(actor=actor, db=None, config=Config())
 
         if plugin is None:
             raise Exception("Cannot instantiate shirako plugin for actor: {}".format(actor_config.get_name()))
@@ -174,34 +175,34 @@ class ConfigurationProcessor:
             db_host = self.config.get_global_config().get_database()[Constants.PropertyConfDbHost]
             db_name = self.config.get_global_config().get_database()[Constants.PropertyConfDbName]
             if isinstance(plugin, Substrate):
-                db = SubstrateActorDatabase(user, password, db_name, db_host, self.logger)
+                db = SubstrateActorDatabase(user=user, password=password, database=db_name, db_host=db_host, logger=self.logger)
             else:
-                db = ServerActorDatabase(user, password, db_name, db_host, self.logger)
+                db = ServerActorDatabase(user=user, password=password, database=db_name, db_host=db_host, logger=self.logger)
 
-            plugin.set_database(db)
+            plugin.set_database(db=db)
 
         ticket_factory = SimpleResourceTicketFactory()
-        ticket_factory.set_actor(actor)
-        plugin.set_ticket_factory(ticket_factory)
+        ticket_factory.set_actor(actor=actor)
+        plugin.set_ticket_factory(ticket_factory=ticket_factory)
         return plugin
 
-    def make_actor_policy(self, actor: IActor, config: ActorConfig):
+    def make_actor_policy(self, *, actor: IActor, config: ActorConfig):
         policy = None
         if config.get_policy() is None:
             if actor.get_type() == ActorType.Authority:
-                policy = self.make_site_policy(config)
+                policy = self.make_site_policy(config=config)
             elif actor.get_type() == ActorType.Broker:
                 policy = BrokerSimplerUnitsPolicy()
-            elif actor.get_type() == ActorType.Controller:
+            elif actor.get_type() == ActorType.Orchestrator:
                 policy = ControllerSimplePolicy()
         else:
-            policy = self.make_policy(config.get_policy())
+            policy = self.make_policy(policy=config.get_policy())
 
         if policy is None:
             raise Exception("Could not instantiate policy for actor: {}".format(config.get_name()))
         return policy
 
-    def make_site_policy(self, config: ActorConfig):
+    def make_site_policy(self, *, config: ActorConfig):
         if config.get_controls() is None or len(config.get_controls()) == 0:
             raise Exception("Missing authority policy but no control has been specified")
 
@@ -211,29 +212,31 @@ class ConfigurationProcessor:
                 if c.get_module_name() is None or c.get_class_name() is None:
                     raise Exception("Missing control class name")
 
-                control = ReflectionUtils.create_instance(c.get_module_name(), c.get_class_name())
+                control = ReflectionUtils.create_instance(module_name=c.get_module_name(),
+                                                          class_name=c.get_class_name())
 
                 if c.get_type() is None:
                     raise Exception("No type specified for control")
 
-                control.add_type(ResourceType(c.get_type()))
-                policy.register_control(control)
+                control.add_type(rtype=ResourceType(resource_type=c.get_type()))
+                policy.register_control(control=control)
             except Exception as e:
+                traceback.print_exc()
                 raise Exception("Could not create control {}".format(e))
         return policy
 
-    def make_policy(self, policy: PolicyConfig):
+    def make_policy(self, *, policy: PolicyConfig):
         if policy.get_class_name() is None or policy.get_module_name() is None:
             raise Exception("Policy is missing class name")
 
-        return ReflectionUtils.create_instance(policy.get_module_name(), policy.get_class_name())
+        return ReflectionUtils.create_instance(module_name=policy.get_module_name(), class_name=policy.get_class_name())
 
-    def do_specific(self, actor: IActor, config: ActorConfig):
+    def do_specific(self, *, actor: IActor, config: ActorConfig):
         if isinstance(actor, IAuthority):
-            rd = self.read_resource_pools(config)
+            rd = self.read_resource_pools(config=config)
             self.pools[actor.get_guid()] = rd
 
-    def read_resource_pools(self, config: ActorConfig) -> dict:
+    def read_resource_pools(self, *, config: ActorConfig) -> dict:
         result = {}
         pools = config.get_pools()
         if pools is None or len(pools) == 0:
@@ -241,36 +244,36 @@ class ConfigurationProcessor:
 
         for p in pools:
             descriptor = ResourcePoolDescriptor()
-            descriptor.set_resource_type(ResourceType(p.get_type()))
-            descriptor.set_resource_type_label(p.get_label())
-            descriptor.set_units(p.get_units())
-            descriptor.set_start(p.get_start())
-            descriptor.set_end(p.get_end())
-            descriptor.set_pool_factory_class(p.get_factory_class())
-            descriptor.set_pool_factory_module(p.get_factory_module())
+            descriptor.set_resource_type(rtype=ResourceType(resource_type=p.get_type()))
+            descriptor.set_resource_type_label(rtype_label=p.get_label())
+            descriptor.set_units(units=p.get_units())
+            descriptor.set_start(start=p.get_start())
+            descriptor.set_end(end=p.get_end())
+            descriptor.set_pool_factory_class(factory_class=p.get_factory_class())
+            descriptor.set_pool_factory_module(factory_module=p.get_factory_module())
             handler = p.get_handler()
             if handler is not None:
-                descriptor.set_handler_class(handler.get_class_name())
-                descriptor.set_handler_module(handler.get_module_name())
-                descriptor.set_handler_properties(handler.get_properties())
+                descriptor.set_handler_class(handler_class=handler.get_class_name())
+                descriptor.set_handler_module(module=handler.get_module_name())
+                descriptor.set_handler_properties(properties=handler.get_properties())
 
             descriptor.pool_properties = p.get_properties()
 
             for attr in p.get_attributes():
                 attribute = ResourcePoolAttributeDescriptor()
-                attribute.set_key(attr.get_key())
-                attribute.set_value(attr.get_value())
+                attribute.set_key(value=attr.get_key())
+                attribute.set_value(value=attr.get_value())
                 if attr.get_type().lower() == "integer":
-                    attribute.set_type(ResourcePoolAttributeType.INTEGER)
+                    attribute.set_type(rtype=ResourcePoolAttributeType.INTEGER)
                 elif attr.get_type().lower() == "string":
-                    attribute.set_type(ResourcePoolAttributeType.STRING)
+                    attribute.set_type(rtype=ResourcePoolAttributeType.STRING)
                 elif attr.get_type().lower() == "neo4j":
-                    attribute.set_type(ResourcePoolAttributeType.NEO4J)
+                    attribute.set_type(rtype=ResourcePoolAttributeType.NEO4J)
                 elif attr.get_type().lower() == "class":
-                    attribute.set_type(ResourcePoolAttributeType.CLASS)
+                    attribute.set_type(rtype=ResourcePoolAttributeType.CLASS)
                 else:
                     raise Exception("Unsupported attribute type: {}".format(attr.get_type()))
-                descriptor.add_attribute(attribute)
+                descriptor.add_attribute(attribute=attribute)
 
             result[descriptor.get_resource_type()] = descriptor
         return result
@@ -285,16 +288,16 @@ class ConfigurationProcessor:
     def register_actor(self):
         try:
             from fabric.actor.core.container.globals import GlobalsSingleton
-            GlobalsSingleton.get().get_container().register_actor(self.actor)
+            GlobalsSingleton.get().get_container().register_actor(actor=self.actor)
         except Exception as e:
             raise Exception("Could not register actor: {} {}".format(self.actor.get_name(), e))
 
     def create_default_slice(self):
         if self.actor.get_type() != ActorType.Authority:
             slice_obj = SliceFactory.create(slice_id=ID(), name=self.actor.get_name())
-            slice_obj.set_inventory(True)
+            slice_obj.set_inventory(value=True)
             try:
-                self.actor.register_slice(slice_obj)
+                self.actor.register_slice(slice_object=slice_obj)
             except Exception as e:
                 Exception("Could not create default slice for actor: {} {}".format(self.actor.get_name(), e))
 
@@ -302,7 +305,7 @@ class ConfigurationProcessor:
         if isinstance(self.actor, IAuthority):
             if isinstance(self.actor.get_plugin(), AuthoritySubstrate):
                 descriptor = self.pools[self.actor.get_guid()]
-                creator = PoolCreator(self.actor.get_plugin(), descriptor)
+                creator = PoolCreator(substrate=self.actor.get_plugin(), pools=descriptor)
                 creator.process()
 
     def recover_actor(self):
@@ -313,28 +316,28 @@ class ConfigurationProcessor:
 
     def enable_ticking(self):
         from fabric.actor.core.container.globals import GlobalsSingleton
-        GlobalsSingleton.get().get_container().register(self.actor)
+        GlobalsSingleton.get().get_container().register(tickable=self.actor)
 
     def process_topology(self):
         if self.config.get_peers() is None or len(self.config.get_peers()) == 0:
             self.logger.debug("No peers specified")
         else:
-            self.create_proxies(self.config.get_peers())
+            self.create_proxies(peers=self.config.get_peers())
 
     def process_exports(self):
         for ei in self.to_export:
-            self.export(ei)
+            self.export(info=ei)
 
     def process_claims(self):
         self.logger.debug("process_claims {}".format(len(self.to_export)))
         for ei in self.to_export:
-            self.claim(ei)
+            self.claim(info=ei)
 
-    def create_proxies(self, peers: list):
+    def create_proxies(self, *, peers: list):
         for e in peers:
-            self.process_peer(e)
+            self.process_peer(peer=e)
 
-    def vertex_to_registry_cache(self, peer: Peer):
+    def vertex_to_registry_cache(self, *, peer: Peer):
         self.logger.debug("Adding vertex for {}".format(peer.get_name()))
 
         if peer.get_name() is None:
@@ -353,18 +356,18 @@ class ConfigurationProcessor:
 
         entry = {
             RemoteActorCache.ActorName: peer.get_name(),
-            RemoteActorCache.ActorGuid: ID(peer.get_guid()),
+            RemoteActorCache.ActorGuid: ID(id=peer.get_guid()),
             RemoteActorCache.ActorType: actor_type,
             RemoteActorCache.ActorProtocol: protocol
         }
         if kafka_topic is not None:
             entry[RemoteActorCache.ActorLocation] = kafka_topic
 
-        RemoteActorCacheSingleton.get().add_partial_cache_entry(ID(peer.get_guid()), entry)
+        RemoteActorCacheSingleton.get().add_partial_cache_entry(guid=ID(id=peer.get_guid()), entry=entry)
 
-    def process_peer(self, peer: Peer):
-        from_guid = ID(peer.get_guid())
-        from_type = ActorType.get_actor_type_from_string(peer.get_type())
+    def process_peer(self, *, peer: Peer):
+        from_guid = ID(id=peer.get_guid())
+        from_type = ActorType.get_actor_type_from_string(actor_type=peer.get_type())
         to_guid = self.actor.get_guid()
         to_type = self.actor.get_type()
 
@@ -379,7 +382,7 @@ class ConfigurationProcessor:
             from_type = to_type
             to_type = temp
 
-        if from_type == ActorType.Broker and to_type == ActorType.Controller:
+        if from_type == ActorType.Broker and to_type == ActorType.Orchestrator:
             temp = from_guid
             from_guid = to_guid
             to_guid = temp
@@ -391,23 +394,31 @@ class ConfigurationProcessor:
         if from_type == to_type and from_type != ActorType.Broker:
             raise Exception("Invalid peer type: broker can only talk to broker, orchestrator or site authority")
 
-        container = ManagementUtils.connect(self.actor.get_identity())
-        to_mgmt_actor = container.get_actor(to_guid)
-        from_mgmt_actor = container.get_actor(from_guid)
+        container = ManagementUtils.connect(caller=self.actor.get_identity())
+        to_mgmt_actor = container.get_actor(guid=to_guid)
+        if to_mgmt_actor is None:
+            self.logger.debug("to_mgmt_actor={} to_guid={}".format(type(to_mgmt_actor), to_guid))
+            self.logger.error(container.get_last_error())
+        from_mgmt_actor = container.get_actor(guid=from_guid)
+        if from_mgmt_actor is None:
+            self.logger.debug("from_mgmt_actor={} from_guid={}".format(type(from_mgmt_actor), from_guid))
+            self.logger.error(container.get_last_error())
 
-        self.vertex_to_registry_cache(peer)
+        self.vertex_to_registry_cache(peer=peer)
 
         try:
-            client = RemoteActorCacheSingleton.get().establish_peer(from_guid, from_mgmt_actor, to_guid, to_mgmt_actor)
+            client = RemoteActorCacheSingleton.get().establish_peer(from_guid=from_guid, from_mgmt_actor=from_mgmt_actor,
+                                                                    to_guid=to_guid, to_mgmt_actor=to_mgmt_actor)
             self.logger.debug("Client returned {}".format(client))
             if client is not None:
-                self.parse_exports(peer, client, to_mgmt_actor)
+                self.parse_exports(peer=peer, client=client, mgmt_actor=to_mgmt_actor)
         except Exception as e:
             Exception("Could not process exports from: {} to {}. e= {}" .format(peer.get_guid(), self.actor.get_guid(), e))
 
-    def parse_exports(self, peer: Peer, client: ClientMng, mgmt_actor: IMgmtActor):
+    def parse_exports(self, *, peer: Peer, client: ClientMng, mgmt_actor: IMgmtActor):
         for rset in peer.get_rsets():
-            info = ExportInfo(mgmt_actor, client, rset.get_units(), ResourceType(rset.get_type()), peer.get_kafka_topic())
+            info = ExportInfo(exporter=mgmt_actor, client=client, units=rset.get_units(),
+                              rtype=ResourceType(resource_type=rset.get_type()), topic=peer.get_kafka_topic())
             if rset.get_start() is not None:
                 info.start = rset.get_start()
             if rset.get_end() is not None:
@@ -415,37 +426,40 @@ class ConfigurationProcessor:
 
             self.to_export.append(info)
 
-    def export(self, info: ExportInfo):
+    def export(self, *, info: ExportInfo):
         from fabric.actor.core.container.globals import GlobalsSingleton
         now = GlobalsSingleton.get().get_container().get_current_cycle()
         start = info.start
         if start is None:
-            start = GlobalsSingleton.get().get_container().cycle_start_date(now)
+            start = GlobalsSingleton.get().get_container().cycle_start_date(cycle=now)
         end = info.end
         if end is None:
             # export for one year
             length = 1000 * 60 * 60 * 24 * 365
-            end = GlobalsSingleton.get().get_container().cycle_end_date(now + length)
+            end = GlobalsSingleton.get().get_container().cycle_end_date(cycle=now + length)
 
         self.logger.debug("Using Server Actor {} to export resources".format(info.exporter.__class__.__name__))
 
-        info.exported = info.exporter.export_resources(info.rtype, start, end, info.units, None, None, None,
-                                                       AuthToken(info.client.get_name(), ID(info.client.get_guid())))
+        info.exported = info.exporter.export_resources(rtype=info.rtype, start=start,
+                                                       end=end, units=info.units, ticket_properties=None,
+                                                       resource_properties=None, source_ticket_id=None,
+                                                       client=AuthToken(name=info.client.get_name(),
+                                                                        guid=ID(id=info.client.get_guid())))
 
         if info.exported is None:
             raise Exception("Could not export resources from actor: {} to actor: {} Error = {}".
                             format(info.exporter.get_name(), info.client.get_name(), info.exporter.get_last_error()))
 
     # TODO needs to be fixed
-    def claim(self, info: ExportInfo):
+    def claim(self, *, info: ExportInfo):
         if info.exported is None:
             self.logger.error("No reservation to export from {} to {}".format(info.exporter.get_name(), info.client.get_name()))
             return
 
         self.logger.debug("Claiming resources from {} to {}".format(info.exporter.get_name(), info.client.get_name()))
 
-        container = ManagementUtils.connect(self.actor.get_identity())
-        client_mgmt_actor = container.get_actor(ID(info.client.get_guid()))
+        container = ManagementUtils.connect(caller=self.actor.get_identity())
+        client_mgmt_actor = container.get_actor(guid=ID(id=info.client.get_guid()))
 
         if client_mgmt_actor is None:
             self.logger.info("{} is a remote client. Not performing claim".format(info.client.get_name()))
@@ -454,7 +468,7 @@ class ConfigurationProcessor:
 
         self.logger.info("Claiming resources from {} to {}".format(info.exporter.get_name(), info.client.get_name()))
 
-        reservation = client_mgmt_actor.claim_resources(info.exporter.get_guid(), info.exported)
+        reservation = client_mgmt_actor.claim_resources(broker=info.exporter.get_guid(), rid=info.exported)
 
         if reservation is not None:
             self.logger.info("Successfully initiated claim for resources from {} to {}".format(info.exporter.get_name(),
@@ -463,11 +477,11 @@ class ConfigurationProcessor:
             self.logger.error("Could not initiate claim for resources from {} to {}".format(info.exporter.get_name(),
                                                                                             info.client.get_name()))
 
-    def trigger_remote_claim(self, info: ExportInfo):
+    def trigger_remote_claim(self, *, info: ExportInfo):
         try:
             claim_req = ClaimResourcesAvro()
             claim_req.guid = info.client.guid
-            claim_req.auth = Translate.translate_auth_to_avro(self.actor.get_identity())
+            claim_req.auth = Translate.translate_auth_to_avro(auth=self.actor.get_identity())
             claim_req.broker_id = str(info.exporter.get_guid())
             claim_req.reservation_id = str(info.exported)
             claim_req.message_id = "test_claim_1"
@@ -477,7 +491,7 @@ class ConfigurationProcessor:
             # create a producer
             from fabric.actor.core.container.globals import GlobalsSingleton
             producer = GlobalsSingleton.get().get_kafka_producer()
-            if producer.produce_sync(info.client_topic, claim_req):
+            if producer.produce_sync(topic=info.client_topic, record=claim_req):
                 self.logger.debug("Message {} written to {}".format(claim_req.name, info.client_topic))
             else:
                 self.logger.error("Failed to send message {} to {}".format(claim_req.name, info.client_topic))

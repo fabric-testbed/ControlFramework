@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
@@ -52,7 +54,8 @@ class IConcreteSet:
     PropertyResourceType = "cs.resourceType"
     PropertyUnits = "cs.units"
 
-    def add(self, concrete_set: IConcreteSet, configure: bool):
+    @abstractmethod
+    def add(self, *, concrete_set: IConcreteSet, configure: bool):
         """
         Adds the passed set to the current set. Optionally triggers configuration
         actions on all added units.
@@ -61,9 +64,9 @@ class IConcreteSet:
                    added units
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def change(self, concrete_set: IConcreteSet, configure: bool):
+    @abstractmethod
+    def change(self, *, concrete_set: IConcreteSet, configure: bool):
         """
         Makes changes to the resources in the concrete set. The incoming concrete
         set represents the state that the current set has to be updated to. The
@@ -75,15 +78,15 @@ class IConcreteSet:
                    added, removed, or modified units
         @raises Exception thrown if something is wrong
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def close(self):
         """
         Initiates close operations on all resources contained in the set.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def encode(self, protocol: str):
+    @abstractmethod
+    def encode(self, *, protocol: str):
         """
         Encodes the concrete set into a properties list so that it can
         be passed to another actor.
@@ -91,9 +94,9 @@ class IConcreteSet:
         @returns a encoded concrete set
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def decode(self, encoded, plugin: IBasePlugin):
+    @abstractmethod
+    def decode(self, *, encoded, plugin: IBasePlugin):
         """
         Initializes the concrete set with information derived from the
         passed in properties list.
@@ -101,24 +104,24 @@ class IConcreteSet:
         @params plugin of containing actor
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def collect_released(self):
         """
         Collects any released (closed) and/or failed resources.
         @returns a concrete set containing released and or/failed resources
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_notices(self) -> Notice:
         """
         Gets a a collection of notices or events pertaining to the underlying
         resources. The event notices are consumed: subsequent calls return only
         new information. May return null.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_site_proxy(self) -> IAuthorityProxy:
         """
         Return a proxy or reference for the unique site that owns these
@@ -126,25 +129,25 @@ class IConcreteSet:
         @returns the authority that owns the resources
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def holding(self, when: datetime) -> int:
+    @abstractmethod
+    def holding(self, *, when: datetime) -> int:
         """
         Returns how many units are in the set at the given time instance.
         @params when: time instance
         @returns how many units will be in the set for at the given time instance.
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def is_active(self) -> bool:
         """
         Checks if the concrete set is active. A concrete set is active if all
         units contained in the set are active.
         @returns true if the set is active
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def modify(self, concrete_set: IConcreteSet, configure: bool):
+    @abstractmethod
+    def modify(self, *, concrete_set: IConcreteSet, configure: bool):
         """
         Updates the units in the current set with information contained in the
         passed set. Note that the passed set may contain only a subset of the
@@ -155,16 +158,16 @@ class IConcreteSet:
                    modified units
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def probe(self):
         """
         Checks the status of pending operations.
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def remove(self, concrete_set: IConcreteSet, configure: bool):
+    @abstractmethod
+    def remove(self, *, concrete_set: IConcreteSet, configure: bool):
         """
         Removes the passed set from the current set. Optionally triggers
         configuration actions for all removed units. If the lease term for the
@@ -175,18 +178,18 @@ class IConcreteSet:
                       removed units
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def setup(self, reservation: IReservation):
+    @abstractmethod
+    def setup(self, *, reservation: IReservation):
         """
         Initializes the concrete set with information about the containing
         reservation. This method is called with the manager lock on and hence
         should not block for long periods of time.
         @params reservation : reservation this concrete set belongs to
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def validate_concrete(self, rtype: ResourceType, units: int, term: Term):
+    @abstractmethod
+    def validate_concrete(self, *, rtype: ResourceType, units: int, term: Term):
         """
         Validate that the concrete set matches the abstract resource set
         parameters.
@@ -195,8 +198,8 @@ class IConcreteSet:
         @params term : abstract resources term
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def validate_incoming(self):
         """
         Validates a concrete set as it is received by an actor from another
@@ -212,8 +215,8 @@ class IConcreteSet:
 
         @raises Exception if validation fails
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def validate_outgoing(self):
         """
         Validates a concrete set as it is about to be sent from the actor to
@@ -227,8 +230,8 @@ class IConcreteSet:
 
         @raises Exception if validation fails
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def restart_actions(self):
         """
         This method will be called during recovery to ensure that all pending
@@ -236,16 +239,16 @@ class IConcreteSet:
         completed yet, that action would have to be restarted during this call.
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def clone_empty(self):
         """
         Makes an "empty" clone of this concrete set. An "empty" clone is a copy
         of a concrete set with the "set" removed from it.
         @returns an "empty" clone of this concrete set
         """
-        raise NotImplementedError("Should have implemented this")
-    
+
+    @abstractmethod
     def clone(self):
         """
         Makes a clone of the concrete set. Unlike clone_empty(), this
@@ -256,7 +259,7 @@ class IConcreteSet:
         original and the clone.
         @returns a clone of the concrete set
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_units(self) -> int:
         return 0

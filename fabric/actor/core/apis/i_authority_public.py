@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -36,7 +38,8 @@ class IAuthorityPublic:
     """
     IAuthorityPublic represents the public cross-actor interface for a site authority.
     """
-    def close_by_caller(self, reservation:IReservation, caller: AuthToken):
+    @abstractmethod
+    def close_by_caller(self, *, reservation:IReservation, caller: AuthToken):
         """
         Closes the reservation.
 
@@ -45,9 +48,9 @@ class IAuthorityPublic:
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def extend_lease(self, reservation:IReservation, caller: AuthToken):
+    @abstractmethod
+    def extend_lease(self, *, reservation:IReservation, caller: AuthToken):
         """
         Extends a lease.
 
@@ -56,9 +59,9 @@ class IAuthorityPublic:
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def modify_lease(self, reservation:IReservation, caller: AuthToken):
+    @abstractmethod
+    def modify_lease(self, *, reservation:IReservation, caller: AuthToken):
         """
         Modifies a lease.
 
@@ -67,9 +70,9 @@ class IAuthorityPublic:
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def redeem(self, reservation:IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
+    @abstractmethod
+    def redeem(self, *, reservation:IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
         """
         Redeems a lease.
 
@@ -79,4 +82,3 @@ class IAuthorityPublic:
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

@@ -38,17 +38,17 @@ class ReservationHoldingsTest(unittest.TestCase):
         self.assertIsNotNone(holdings.map)
         self.assertIsNotNone(holdings.reservation_set)
 
-    def print_list(self, holdings: ReservationHoldings):
+    def print_list(self, *, holdings: ReservationHoldings):
         output = ""
         for r in holdings.list:
             output += str(r)
             output += ","
         print(output)
 
-    def make_reservation(self, rid: str) -> IReservation:
-        return ClientReservationFactory.create(ID(rid))
+    def make_reservation(self, *, rid: str) -> IReservation:
+        return ClientReservationFactory.create(rid=ID(id=rid))
 
-    def check_exists(self, holdings: ReservationHoldings, reservation: IReservation):
+    def check_exists(self, *, holdings: ReservationHoldings, reservation: IReservation):
         rset = holdings.get_reservations()
         return rset.contains(reservation=reservation)
 
@@ -58,19 +58,19 @@ class ReservationHoldingsTest(unittest.TestCase):
         i = 0
         while i <= 5:
             self.assertEqual(i, holdings.size())
-            res = self.make_reservation(str(i))
-            exist = self.check_exists(holdings, res)
+            res = self.make_reservation(rid=str(i))
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertFalse(exist)
-            holdings.add_reservation(res, 5-i, 5-i + length)
-            exist = self.check_exists(holdings, res)
+            holdings.add_reservation(reservation=res, start=5-i, end=5-i + length)
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertTrue(exist)
             self.assertEqual(i + 1, len(holdings.list))
             self.assertEqual(i + 1, len(holdings.map))
             self.assertEqual(i + 1, holdings.reservation_set.size())
             i += 1
 
-        res = self.make_reservation("100")
-        holdings.add_reservation(res, 0, 8)
+        res = self.make_reservation(rid="100")
+        holdings.add_reservation(reservation=res, start=0, end=8)
 
     def test_remove_reservation(self):
         holdings = ReservationHoldings()
@@ -78,30 +78,30 @@ class ReservationHoldingsTest(unittest.TestCase):
         i = 0
         while i <= 5:
             self.assertEqual(i, holdings.size())
-            res = self.make_reservation(str(i))
-            exist = self.check_exists(holdings, res)
+            res = self.make_reservation(rid=str(i))
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertFalse(exist)
-            holdings.add_reservation(res, 5-i, 5-i + length)
-            exist = self.check_exists(holdings, res)
+            holdings.add_reservation(reservation=res, start=5-i, end=5-i + length)
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertTrue(exist)
             self.assertEqual(i + 1, len(holdings.list))
             self.assertEqual(i + 1, len(holdings.map))
             self.assertEqual(i + 1, holdings.reservation_set.size())
             i += 1
-            self.print_list(holdings)
+            self.print_list(holdings=holdings)
 
-        res = self.make_reservation("100")
-        holdings.add_reservation(res, 0, 8)
-        self.print_list(holdings)
+        res = self.make_reservation(rid="100")
+        holdings.add_reservation(reservation=res, start=0, end=8)
+        self.print_list(holdings=holdings)
 
-        exist = self.check_exists(holdings, res)
+        exist = self.check_exists(holdings=holdings, reservation=res)
         self.assertTrue(exist)
         self.assertEqual(i + 1, len(holdings.list))
         self.assertEqual(i + 1, len(holdings.map))
         self.assertEqual(i + 1, holdings.reservation_set.size())
 
-        holdings.remove_reservation(res)
-        exist = self.check_exists(holdings, res)
+        holdings.remove_reservation(reservation=res)
+        exist = self.check_exists(holdings=holdings, reservation=res)
         self.assertFalse(exist)
         self.assertEqual(i, len(holdings.list))
         self.assertEqual(i, len(holdings.map))
@@ -109,16 +109,16 @@ class ReservationHoldingsTest(unittest.TestCase):
 
         i = 0
         while i <= 5 :
-            res = self.make_reservation(str(i))
-            exist = self.check_exists(holdings, res)
+            res = self.make_reservation(rid=str(i))
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertTrue(exist)
             self.assertEqual(6 - i, len(holdings.list))
             self.assertEqual(6 - i, len(holdings.map))
             self.assertEqual(6 - i, holdings.reservation_set.size())
 
-            holdings.remove_reservation(res)
+            holdings.remove_reservation(reservation=res)
 
-            exist = self.check_exists(holdings, res)
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertFalse(exist)
             self.assertEqual(5 - i, len(holdings.list))
             self.assertEqual(5 - i, len(holdings.map))
@@ -132,24 +132,24 @@ class ReservationHoldingsTest(unittest.TestCase):
         i = 0
         while i <= 5:
             self.assertEqual(i, holdings.size())
-            res = self.make_reservation(str(i))
-            exist = self.check_exists(holdings, res)
+            res = self.make_reservation(rid=str(i))
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertFalse(exist)
-            holdings.add_reservation(res, 5-i, 5-i + length)
-            exist = self.check_exists(holdings, res)
+            holdings.add_reservation(reservation=res, start=5-i, end=5-i + length)
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertTrue(exist)
             self.assertEqual(i + 1, len(holdings.list))
             self.assertEqual(i + 1, len(holdings.map))
             self.assertEqual(i + 1, holdings.reservation_set.size())
             i += 1
-            self.print_list(holdings)
+            self.print_list(holdings=holdings)
 
-        res = self.make_reservation("100")
-        holdings.add_reservation(res, 0, 8)
-        self.print_list(holdings)
+        res = self.make_reservation(rid="100")
+        holdings.add_reservation(reservation=res, start=0, end=8)
+        self.print_list(holdings=holdings)
 
         for i in range(12):
-            holdings.tick(i)
+            holdings.tick(time=i)
             size = 0
             if i < 5:
                 size = 7
@@ -176,22 +176,22 @@ class ReservationHoldingsTest(unittest.TestCase):
         i = 0
         while i <= 5:
             self.assertEqual(i, holdings.size())
-            res = self.make_reservation(str(i))
-            exist = self.check_exists(holdings, res)
+            res = self.make_reservation(rid=str(i))
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertFalse(exist)
-            holdings.add_reservation(res, 5-i, 5-i + length)
-            exist = self.check_exists(holdings, res)
+            holdings.add_reservation(reservation=res, start=5-i, end=5-i + length)
+            exist = self.check_exists(holdings=holdings, reservation=res)
             self.assertTrue(exist)
             self.assertEqual(i + 1, len(holdings.list))
             self.assertEqual(i + 1, len(holdings.map))
             self.assertEqual(i + 1, holdings.reservation_set.size())
             i += 1
-            self.print_list(holdings)
+            self.print_list(holdings=holdings)
 
         results = [1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 0, 0]
         points = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 
         for i in range(len(points)):
-            rset = holdings.get_reservations(points[i])
+            rset = holdings.get_reservations(time=points[i])
             self.assertIsNotNone(rset)
             self.assertEqual(results[i], rset.size())

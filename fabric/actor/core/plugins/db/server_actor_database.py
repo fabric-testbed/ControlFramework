@@ -33,8 +33,8 @@ from fabric.actor.core.util.id import ID
 
 
 class ServerActorDatabase(ActorDatabase, ClientDatabase):
-    def __init__(self, user: str, password: str, database: str, db_host: str, logger):
-        super().__init__(user, password, database, db_host, logger)
+    def __init__(self, *, user: str, password: str, database: str, db_host: str, logger):
+        super().__init__(user=user, password=password, database=database, db_host=db_host, logger=logger)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -50,7 +50,8 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
     def __setstate__(self, state):
         self.__dict__.update(state)
         from fabric.actor.db.psql_database import PsqlDatabase
-        self.db = PsqlDatabase(self.user, self.password, self.database, self.db_host, None)
+        self.db = PsqlDatabase(user=self.user, password=self.password, database=self.database, db_host=self.db_host,
+                               logger=None)
         self.actor_name = None
         self.actor_id = None
         self.initialized = False
@@ -58,34 +59,35 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
         self.reset_state = False
         self.lock = threading.Lock()
 
-    def add_client(self, client: Client):
+    def add_client(self, *, client: Client):
         try:
             self.lock.acquire()
             properties = pickle.dumps(client)
-            self.db.add_client(self.actor_id, client.get_name(), str(client.get_guid()), properties)
+            self.db.add_client(act_id=self.actor_id, clt_name=client.get_name(), clt_guid=str(client.get_guid()),
+                               properties=properties)
         finally:
             self.lock.release()
 
-    def update_client(self, client: Client):
+    def update_client(self, *, client: Client):
         try:
             self.lock.acquire()
             properties = pickle.dumps(client)
-            self.db.update_client(self.actor_id, client.get_name(), properties)
+            self.db.update_client(act_id=self.actor_id, clt_name=client.get_name(), properties=properties)
         finally:
             self.lock.release()
 
-    def remove_client(self, guid: ID):
+    def remove_client(self, *, guid: ID):
         try:
             self.lock.acquire()
-            self.db.remove_client_by_guid(self.actor_id, str(guid))
+            self.db.remove_client_by_guid(act_id=self.actor_id, clt_guid=str(guid))
         finally:
             self.lock.release()
 
-    def get_client(self, guid: ID) -> dict:
+    def get_client(self, *, guid: ID) -> dict:
         result = None
         try:
             self.lock.acquire()
-            result = self.db.get_client_by_guid(self.actor_id, str(guid))
+            result = self.db.get_client_by_guid(act_id=self.actor_id, clt_guid=str(guid))
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -96,7 +98,7 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
         result = None
         try:
             self.lock.acquire()
-            result = self.db.get_clients(self.actor_id)
+            result = self.db.get_clients(act_id=self.actor_id)
         except Exception as e:
             self.logger.error(e)
         finally:

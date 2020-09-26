@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric.actor.core.common.constants import Constants, ErrorCodes
@@ -36,15 +36,17 @@ from fabric.actor.core.util.id import ID
 from fabric.message_bus.messages.auth_avro import AuthAvro
 from fabric.message_bus.messages.get_reservation_units_avro import GetReservationUnitsAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
+from fabric.message_bus.messages.unit_avro import UnitAvro
 from fabric.message_bus.producer import AvroProducerApi
 
 
 class KafkaController(KafkaActor, IMgmtController):
-    def __init__(self, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
+    def __init__(self, *, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
                  message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
-        super().__init__(guid, kafka_topic, auth, logger, message_processor, producer)
+        super().__init__(guid=guid, kafka_topic=kafka_topic, auth=auth, logger=logger,
+                         message_processor=message_processor, producer=producer)
 
-    def get_reservation_units(self, rid: ID) -> list:
+    def get_reservation_units(self, *, rid: ID) -> List[UnitAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -57,19 +59,19 @@ class KafkaController(KafkaActor, IMgmtController):
             request.callback_topic = self.callback_topic
             request.reservation_id = str(rid)
 
-            ret_val = self.producer.produce_sync(self.kafka_topic, request)
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
 
             if ret_val:
-                message_wrapper = self.message_processor.add_message(request)
+                message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
                     message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(request.get_message_id())
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:

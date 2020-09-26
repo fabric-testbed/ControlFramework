@@ -65,8 +65,8 @@ class Broker(Actor, IBroker):
     """
     Broker offers the base for all broker actors.
     """
-    def __init__(self, identity: AuthToken = None, clock: ActorClock = None):
-        super().__init__(identity, clock)
+    def __init__(self, *, identity: AuthToken = None, clock: ActorClock = None):
+        super().__init__(auth=identity, clock=clock)
         # Recovered reservations that need to obtain tickets (both server and client roles).
         self.ticketing = ReservationSet()
         # Recovered reservations that need to extend tickets (both server and client roles).
@@ -133,13 +133,13 @@ class Broker(Actor, IBroker):
         super().actor_added()
         self.registry.actor_added()
 
-    def add_broker(self, broker: IBrokerProxy):
-        self.registry.add_broker(broker)
+    def add_broker(self, *, broker: IBrokerProxy):
+        self.registry.add_broker(broker=broker)
 
-    def register_client_slice(self, slice:ISlice):
-        self.wrapper.register_slice(slice)
+    def register_client_slice(self, *, slice:ISlice):
+        self.wrapper.register_slice(slice_object=slice)
 
-    def bid(self, cycle: int):
+    def bid(self, *, cycle: int):
         """
         Bids for resources as dictated by the bidding policy for the current cycle.
 
@@ -148,21 +148,21 @@ class Broker(Actor, IBroker):
         @throws Exception in case of error
         """
         candidates = None
-        candidates = self.policy.formulate_bids(cycle)
+        candidates = self.policy.formulate_bids(cycle=cycle)
         if candidates is not None:
             for reservation in candidates.get_ticketing().values():
                 try:
-                    self.wrapper.ticket(reservation, self)
+                    self.wrapper.ticket(reservation=reservation, destination=self)
                 except Exception as e:
                     self.logger.error("unexpected ticket failure for #{}".format(reservation.get_reservation_id()))
 
             for reservation in candidates.get_extending().values():
                 try:
-                    self.wrapper.extend_ticket(reservation)
+                    self.wrapper.extend_ticket(reservation=reservation)
                 except Exception as e:
                     self.logger.error("unexpected extend failure for #{}".format(reservation.get_reservation_id()))
 
-    def claim_client(self, reservation_id: ID = None, resources: ResourceSet = None,
+    def claim_client(self, *, reservation_id: ID = None, resources: ResourceSet = None,
                      slice_object: ISlice = None, broker: IBrokerProxy = None) -> IClientReservation:
         if reservation_id is None:
             raise Exception("Invalid arguments")
@@ -171,22 +171,22 @@ class Broker(Actor, IBroker):
             slice_object = self.get_default_slice()
             if slice_object is None:
                 slice_object = SliceFactory.create(slice_id=ID(), name=self.identity.get_name())
-                slice_object.set_owner(self.identity)
-                slice_object.set_inventory(True)
+                slice_object.set_owner(owner=self.identity)
+                slice_object.set_inventory(value=True)
 
         end = datetime.utcnow()
         end.replace(year=end.year + 30)
-        term = Term(start=self.clock.cycle_start_date(0), end=end)
+        term = Term(start=self.clock.cycle_start_date(cycle=0), end=end)
 
         reservation = ClientReservationFactory.create(rid=reservation_id, resources=resources, term=term,
                                                       slice_object=slice_object, broker=broker, actor=self)
-        reservation.set_exported(True)
-        self.wrapper.ticket(reservation, self)
+        reservation.set_exported(exported=True)
+        self.wrapper.ticket(reservation=reservation, destination=self)
         return reservation
 
-    def reclaim_client(self, reservation_id: ID = None, resources: ResourceSet = None,
+    def reclaim_client(self, *, reservation_id: ID = None, resources: ResourceSet = None,
                        slice_object: ISlice = None, broker: IBrokerProxy = None,
-                       caller: AuthToken=None) -> IClientReservation:
+                       caller: AuthToken = None) -> IClientReservation:
         if reservation_id is None:
             raise Exception("Invalid arguments")
 
@@ -194,8 +194,8 @@ class Broker(Actor, IBroker):
             slice_object = self.get_default_slice()
             if slice_object is None:
                 slice_object = SliceFactory.create(slice_id=ID(), name=self.identity.get_name())
-                slice_object.set_owner(self.identity)
-                slice_object.set_inventory(True)
+                slice_object.set_owner(owner=self.identity)
+                slice_object.set_inventory(value=True)
 
         end = datetime.utcnow()
         end.replace(year=end.year + 30)
@@ -203,93 +203,94 @@ class Broker(Actor, IBroker):
 
         reservation = ClientReservationFactory.create(rid=reservation_id, resources=resources, term=term,
                                                       slice_object=slice_object, broker=broker, actor=self)
-        reservation.set_exported(True)
+        reservation.set_exported(exported=True)
 
         protocol = reservation.get_broker().get_type()
-        callback = ActorRegistrySingleton.get().get_callback(protocol, self.get_name())
+        callback = ActorRegistrySingleton.get().get_callback(protocol=protocol, actor_name=self.get_name())
         if callback is None:
             raise Exception("Unsupported")
 
-        reservation.prepare(callback, self.logger)
+        reservation.prepare(callback=callback, logger=self.logger)
         reservation.validate_outgoing()
-        self.wrapper.reclaim_request(reservation, caller, callback)
+        self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
 
         return reservation
 
-    def claim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    def claim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
-        self.wrapper.claim_request(reservation, caller, callback)
+        self.wrapper.claim_request(reservation=reservation, caller=caller, callback=callback)
 
-    def reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    def reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
-        self.wrapper.reclaim_request(reservation, caller, callback)
+        self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
 
-    def close_expiring(self, cycle: int):
+    def close_expiring(self, *, cycle: int):
         """
         Closes all expiring reservations.
         @param cycle cycle
         """
-        expired = self.policy.get_closing(cycle)
+        expired = self.policy.get_closing(cycle=cycle)
         if expired is not None:
             self.logger.info("Broker expiring for cycle {} = {}".format(cycle, expired))
-            self.close_reservations(expired)
+            self.close_reservations(reservations=expired)
 
-    def demand(self, reservation_id: ID):
-        if reservation_id is None:
+    def demand(self, *, rid: ID):
+        if rid is None:
             raise Exception("Invalid arguments")
-        reservation = self.get_reservation(reservation_id)
+        reservation = self.get_reservation(rid=rid)
         if reservation is None:
-            raise Exception("unknown reservation #{}".format(reservation_id))
+            raise Exception("unknown reservation #{}".format(rid))
 
-        self.policy.demand(reservation)
-        reservation.set_policy(self.policy)
+        self.policy.demand(reservation=reservation)
+        reservation.set_policy(policy=self.policy)
 
-    def donate_reservation(self, reservation: IClientReservation):
-        self.policy.donate_reservation(reservation)
+    def donate_reservation(self, *, reservation: IClientReservation):
+        self.policy.donate_reservation(reservation=reservation)
 
-    def export(self, reservation: IBrokerReservation, resources: ResourceSet, term: Term, client: AuthToken) -> ID:
+    def export(self, *, reservation: IBrokerReservation, resources: ResourceSet, term: Term, client: AuthToken) -> ID:
         if reservation is None:
             slice_object = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
             slice_object.set_client()
-            reservation = BrokerReservationFactory.create(ID(), resources, term, slice_object)
-            reservation.set_owner(self.identity)
+            reservation = BrokerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_obj=slice_object)
+            reservation.set_owner(owner=self.identity)
 
-        self.wrapper.export(reservation, client)
+        self.wrapper.export(reservation=reservation, client=client)
         return reservation.get_reservation_id()
 
-    def extend_ticket_client(self, reservation: IClientReservation):
+    def extend_ticket_client(self, *, reservation: IClientReservation):
         if not self.recovered:
-            self.extending.add(reservation)
+            self.extending.add(reservation=reservation)
         else:
-            self.wrapper.extend_ticket(reservation)
+            self.wrapper.extend_ticket(reservation=reservation)
 
-    def extend_tickets_client(self, rset: ReservationSet):
+    def extend_tickets_client(self, *, rset: ReservationSet):
         for reservation in rset.values():
             try:
                 if isinstance(reservation, IBrokerReservation):
-                    self.extend_ticket_broker(reservation)
+                    self.extend_ticket_broker(reservation=reservation)
                 elif isinstance(reservation, IClientReservation):
-                    self.extend_ticket_client(reservation)
+                    self.extend_ticket_client(reservation=reservation)
                 else:
                     self.logger.warning("Reservation #{} cannot be ticketed".format(reservation.get_reservation_id()))
             except Exception as e:
                 self.logger.error("Could not ticket for # {}".format(reservation.get_reservation_id()))
 
-    def extend_ticket_broker(self, reservation: IBrokerReservation):
+    def extend_ticket_broker(self, *, reservation: IBrokerReservation):
         if not self.recovered:
-            self.extending.add(reservation)
+            self.extending.add(reservation=reservation)
         else:
-            self.wrapper.extend_ticket_request(reservation, reservation.get_client_auth_token(), False)
+            self.wrapper.extend_ticket_request(reservation=reservation, caller=reservation.get_client_auth_token(),
+                                               compare_sequence_numbers=False)
 
-    def extend_ticket(self, reservation: IReservation, caller: AuthToken):
+    def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
         if not self.recovered or self.is_stopped():
             raise Exception("This actor cannot receive calls")
-        self.wrapper.extend_ticket_request(reservation, caller, True)
+        self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
-    def get_broker(self, guid: ID) -> IBrokerProxy:
-        return self.registry.get_broker(guid)
+    def get_broker(self, *, guid: ID) -> IBrokerProxy:
+        return self.registry.get_broker(guid=guid)
 
     def get_brokers(self) -> list:
         return self.registry.get_brokers()
@@ -297,7 +298,7 @@ class Broker(Actor, IBroker):
     def get_default_broker(self) -> IBrokerProxy:
         return self.registry.get_default_broker()
 
-    def get_default_slice(self)->ISlice:
+    def get_default_slice(self) -> ISlice:
         slice_list = self.get_inventory_slices()
         if slice_list is not None and len(slice_list) > 0:
             return slice_list[0]
@@ -306,95 +307,97 @@ class Broker(Actor, IBroker):
     def initialize(self):
         if not self.initialized:
             super().initialize()
-            self.registry.set_slices_plugin(self.plugin)
+            self.registry.set_slices_plugin(plugin=self.plugin)
             self.registry.initialize()
             self.initialized = True
 
     def issue_delayed(self):
         super().issue_delayed()
 
-        self.extend_tickets_client(self.extending)
+        self.extend_tickets_client(rset=self.extending)
         self.extending.clear()
 
-        self.tickets_client(self.ticketing)
+        self.tickets_client(rset=self.ticketing)
         self.ticketing.clear()
 
-    def ticket_client(self, reservation: IClientReservation):
+    def ticket_client(self, *, reservation: IClientReservation):
         if not self.recovered:
-            self.ticketing.add(reservation)
+            self.ticketing.add(reservation=reservation)
         else:
-            self.wrapper.ticket(reservation, self)
+            self.wrapper.ticket(reservation=reservation, destination=self)
 
-    def tickets_client(self, rset: ReservationSet):
+    def tickets_client(self, *, rset: ReservationSet):
         for reservation in rset.values():
             try:
                 if isinstance(reservation, IBrokerReservation):
-                    self.ticket_broker(reservation)
+                    self.ticket_broker(reservation=reservation)
                 elif isinstance(reservation, IClientReservation):
-                    self.ticket_client(reservation)
+                    self.ticket_client(reservation=reservation)
                 else:
                     self.logger.warning("Reservation #{} cannot be ticketed".format(reservation.get_reservation_id()))
             except Exception as e:
                 self.logger.error("Could not ticket for #{}".format(reservation.get_reservation_id()))
 
-    def ticket_broker(self, reservation: IBrokerReservation):
+    def ticket_broker(self, *, reservation: IBrokerReservation):
         if not self.recovered:
-            self.ticketing.add(reservation)
+            self.ticketing.add(reservation=reservation)
         else:
-            self.wrapper.ticket_request(reservation, reservation.get_client_auth_token(), reservation.get_callback(), False)
+            self.wrapper.ticket_request(reservation=reservation, caller=reservation.get_client_auth_token(),
+                                        callback=reservation.get_callback(), compare_seq_numbers=False)
 
-    def ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    def ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
 
-        self.wrapper.ticket_request(reservation, caller, callback, True)
+        self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback, compare_seq_numbers=True)
 
-    def relinquish(self, reservation: IReservation, caller: AuthToken):
+    def relinquish(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
-        self.wrapper.relinquish_request(reservation, caller)
+        self.wrapper.relinquish_request(reservation=reservation, caller=caller)
 
     def tick_handler(self):
-        self.policy.allocate(self.current_cycle)
-        self.bid(self.current_cycle)
-        self.close_expiring(self.current_cycle)
+        self.policy.allocate(cycle=self.current_cycle)
+        self.bid(cycle=self.current_cycle)
+        self.close_expiring(cycle=self.current_cycle)
 
-    def update_ticket(self, reservation: IReservation, update_data, caller: AuthToken):
+    def update_ticket(self, *, reservation: IReservation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
-        self.wrapper.update_ticket(reservation, update_data, caller)
+        self.wrapper.update_ticket(reservation=reservation, update_data=update_data, caller=caller)
 
-    def register_client(self, client: Client):
+    def register_client(self, *, client: Client):
         database = self.plugin.get_database()
 
         try:
-            database.get_client(client.get_guid())
+            database.get_client(guid=client.get_guid())
         except Exception as e:
             raise Exception("Failed to check if client is present in the database {}".format(e))
 
         try:
-            database.add_client(client)
+            database.add_client(client=client)
         except Exception as e:
             raise Exception("Failed to add client to the database{}".format(e))
 
-    def unregister_client(self, guid:ID):
+    def unregister_client(self, *, guid:ID):
         database = self.plugin.get_database()
 
         try:
-            database.get_client(guid)
+            database.get_client(guid=guid)
         except Exception as e:
             raise Exception("Failed to check if client is present in the database {}".format(e))
 
         try:
-            database.remove_client(guid)
+            database.remove_client(guid=guid)
         except Exception as e:
             raise Exception("Failed to add client to the database{}".format(e))
 
-    def get_client(self, guid: ID) -> Client:
+    def get_client(self, *, guid: ID) -> Client:
         database = self.plugin.get_database()
 
         try:
-            client_obj = database.get_client(guid)
+            client_obj = database.get_client(guid=guid)
+            return client_obj
         except Exception as e:
             raise Exception("Failed to check if client is present in the database {}".format(e))
 
@@ -402,7 +405,7 @@ class Broker(Actor, IBroker):
 
         return None
 
-    def modify(self, reservation_id: ID, modify_properties: dict):
+    def modify(self, *, reservation_id: ID, modify_properties: dict):
         return
 
     @staticmethod

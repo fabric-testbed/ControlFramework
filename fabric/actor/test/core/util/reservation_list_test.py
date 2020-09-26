@@ -40,7 +40,7 @@ class ReservationListTest(unittest.TestCase):
         self.assertEqual(r_list.count, 0)
 
     def make_reservation(self, rid: str) -> IReservation:
-        return ClientReservationFactory.create(ID(rid))
+        return ClientReservationFactory.create(rid=ID(id=rid))
 
     def test_add_reservation(self):
         r_list = ReservationList()
@@ -48,7 +48,7 @@ class ReservationListTest(unittest.TestCase):
             for j in range(10):
                 c = (i*10) + j
                 res = self.make_reservation(str(c))
-                r_list.add_reservation(res, i)
+                r_list.add_reservation(reservation=res, cycle=i)
                 self.assertEqual(c+1, r_list.size())
 
     def test_get_reservations(self):
@@ -57,14 +57,14 @@ class ReservationListTest(unittest.TestCase):
             for j in range(10):
                 c = (i * 10) + j
                 res = self.make_reservation(str(c))
-                r_list.add_reservation(res, i)
+                r_list.add_reservation(reservation=res, cycle=i)
                 self.assertEqual(c + 1, r_list.size())
 
         for i in range(10):
             low = 10 * i
             high = 10 * (i + 1)
 
-            rset = r_list.get_reservations(i)
+            rset = r_list.get_reservations(cycle=i)
             self.assertIsNotNone(rset)
             self.assertEqual(10, rset.size())
 
@@ -72,7 +72,7 @@ class ReservationListTest(unittest.TestCase):
                 value = int(str(r.get_reservation_id()))
                 self.assertTrue(low <= value < high)
 
-        rset = r_list.get_reservations(10)
+        rset = r_list.get_reservations(cycle=10)
         self.assertIsNotNone(rset)
         self.assertEqual(0, rset.size())
 
@@ -82,20 +82,20 @@ class ReservationListTest(unittest.TestCase):
             for j in range(10):
                 c = (i*10) + j
                 res = self.make_reservation(str(c))
-                r_list.add_reservation(res, i)
+                r_list.add_reservation(reservation=res, cycle=i)
                 self.assertEqual(c+1, r_list.size())
                 self.assertEqual(c+1, len(r_list.reservation_id_to_cycle))
 
         for i in range(10):
-            rset = r_list.get_reservations(i)
+            rset = r_list.get_reservations(cycle=i)
             self.assertIsNotNone(rset)
             self.assertEqual(10, rset.size())
 
             expected_size = (10 - i) * 10
             self.assertEqual(expected_size, r_list.size())
-            r_list.tick(i)
+            r_list.tick(cycle=i)
 
-            rset = r_list.get_reservations(i)
+            rset = r_list.get_reservations(cycle=i)
 
             self.assertIsNotNone(rset)
             self.assertEqual(0, rset.size())
@@ -104,7 +104,7 @@ class ReservationListTest(unittest.TestCase):
         self.assertEqual(0, len(r_list.reservation_id_to_cycle))
 
     def check_exists(self, holdings: ReservationList, reservation: IReservation, cycle: int):
-        rset = holdings.get_reservations(cycle)
+        rset = holdings.get_reservations(cycle=cycle)
         return rset.contains(reservation=reservation)
 
     def test_remove_reservation(self):
@@ -113,7 +113,7 @@ class ReservationListTest(unittest.TestCase):
             for j in range(10):
                 c = (i*10) + j
                 res = self.make_reservation(str(c))
-                r_list.add_reservation(res, i)
+                r_list.add_reservation(reservation=res, cycle=i)
                 self.assertEqual(c+1, r_list.size())
                 self.assertEqual(c+1, len(r_list.reservation_id_to_cycle))
 
@@ -123,6 +123,6 @@ class ReservationListTest(unittest.TestCase):
                 res = self.make_reservation(str(c))
                 exist = self.check_exists(r_list, res, i)
                 self.assertTrue(exist)
-                r_list.remove_reservation(res)
-                exist = self.check_exists(r_list, res, i)
+                r_list.remove_reservation(reservation=res)
+                exist = self.check_exists(holdings=r_list, reservation=res, cycle=i)
                 self.assertTrue(not exist)

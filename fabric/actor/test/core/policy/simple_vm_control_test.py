@@ -58,7 +58,7 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
     Globals.ConfigFile = Constants.TestVmAmConfigurationFile
 
     from fabric.actor.core.container.globals import GlobalsSingleton
-    GlobalsSingleton.get().start(True)
+    GlobalsSingleton.get().start(force_fresh=True)
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
@@ -68,20 +68,20 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
 
         control = SimpleVMControl()
         properties = {ResourceControl.PropertyControlResourceTypes: str(self.Type)}
-        control.configure(properties)
+        control.configure(properties=properties)
         return control
 
     def get_pool_descriptor(self) -> ResourcePoolDescriptor:
         rd = ResourcePoolDescriptor()
-        rd.set_resource_type(self.Type)
-        rd.set_resource_type_label(self.Label)
+        rd.set_resource_type(rtype=self.Type)
+        rd.set_resource_type_label(rtype_label=self.Label)
         ad = ResourcePoolAttributeDescriptor()
-        ad.set_key(Constants.ResourceMemory)
-        ad.set_label("Memory")
-        ad.set_unit("MB")
-        ad.set_type(ResourcePoolAttributeType.INTEGER)
-        ad.set_value(self.AttributeValueMemory)
-        rd.add_attribute(ad)
+        ad.set_key(value=Constants.ResourceMemory)
+        ad.set_label(label="Memory")
+        ad.set_unit(unit="MB")
+        ad.set_type(rtype=ResourcePoolAttributeType.INTEGER)
+        ad.set_value(value=self.AttributeValueMemory)
+        rd.add_attribute(attribute=ad)
         return rd
 
     def get_source(self, units: int, rtype: ResourceType, term: Term, actor: IActor, slice_obj: ISlice):
@@ -89,16 +89,17 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
 
         properties = resources.get_resource_properties()
         rd = self.get_pool_descriptor()
-        resources.set_resource_properties(rd.save(properties, None))
+        resources.set_resource_properties(p=rd.save(properties=properties, prefix=None))
 
         local = resources.get_local_properties()
         local[VMControl.PropertyIPSubnet] = "255.255.255.0"
         local[VMControl.PropertyIPList] = "192.168.1.2/24"
 
-        delegation = actor.get_plugin().get_ticket_factory().make_delegation(units=units, term=term, rtype=rtype)
-        ticket = actor.get_plugin().get_ticket_factory().make_ticket(delegation=delegation)
+        delegation = actor.get_plugin().get_ticket_factory().make_delegation(units=units, term=term, rtype=rtype,
+                                                                             vector=None)
+        ticket = actor.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
         cs = Ticket(ticket=ticket, plugin=actor.get_plugin())
-        resources.set_resources(cs)
+        resources.set_resources(cset=cs)
         source = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         return source
 
@@ -124,7 +125,7 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
 
     def check_incoming_lease(self, authority: IAuthority, request: IAuthorityReservation,
                              incoming: IReservation, udd: UpdateData):
-        super().check_incoming_lease(authority, request, incoming, udd)
+        super().check_incoming_lease(authority=authority, request=request, incoming=incoming, udd=udd)
         policy = authority.get_policy()
         control = self.get_control(policy)
         rset = incoming.get_resources()
@@ -133,9 +134,9 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         self.assertEqual(self.TicketUnits, uset.get_units())
 
         u = uset.get_set().values().__iter__().__next__()
-        self.assertEqual(self.AttributeValueMemory, u.get_property(Constants.UnitMemory))
-        self.assertIsNotNone(u.get_property(Constants.UnitManagementIP))
-        self.assertIsNotNone(u.get_property(Constants.UnitManageSubnet))
+        self.assertEqual(self.AttributeValueMemory, u.get_property(name=Constants.UnitMemory))
+        self.assertIsNotNone(u.get_property(name=Constants.UnitManagementIP))
+        self.assertIsNotNone(u.get_property(name=Constants.UnitManageSubnet))
         pool = control.inventory.get(self.Type)
         self.assertIsNotNone(pool)
         self.assertEqual(1, pool.get_allocated())
@@ -173,9 +174,9 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         self.assertEqual(self.TicketUnits, uset.get_units())
 
         u = uset.get_set().values().__iter__().__next__()
-        self.assertEqual(self.AttributeValueMemory, int(u.get_property(Constants.UnitMemory)))
-        self.assertIsNotNone(u.get_property(Constants.UnitManagementIP))
-        self.assertIsNotNone(u.get_property(Constants.UnitManageSubnet))
+        self.assertEqual(self.AttributeValueMemory, int(u.get_property(name=Constants.UnitMemory)))
+        self.assertIsNotNone(u.get_property(name=Constants.UnitManagementIP))
+        self.assertIsNotNone(u.get_property(name=Constants.UnitManageSubnet))
 
         pool = control.inventory.get(self.Type)
         self.assertIsNotNone(pool)

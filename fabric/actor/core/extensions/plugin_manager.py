@@ -44,7 +44,7 @@ class PluginManager:
         self.logger = GlobalsSingleton.get().get_logger()
         self.initialized = False
 
-    def initialize(self, db: IContainerDatabase):
+    def initialize(self, *, db: IContainerDatabase):
         """
         Initializes the plugin manager. Called by the management layer.
         @param db ip database
@@ -56,7 +56,7 @@ class PluginManager:
             self.db = db
             self.initialized = True
 
-    def is_registered(self, plugin_id: str):
+    def is_registered(self, *, plugin_id: str):
         """
         Checks if the specified plugin has been already registered.
         @param plugin_id plugin id
@@ -70,26 +70,26 @@ class PluginManager:
             self.logger.error(e)
         return False
 
-    def register(self, plugin: Plugin):
+    def register(self, *, plugin: Plugin):
         """
         Registers this plugin. Throws an exception if an instance of this plugin
         has already been registered. Registration involves a database access.
         @param plugin plugin instance
         @throws Exception in case of error
         """
-        if self.is_registered(plugin.get_id()):
+        if self.is_registered(plugin_id=plugin.get_id()):
             raise Exception("A plugin with this id/package id already exists")
         else:
             # TODO add properties later
-            self.db.add_plugin(plugin)
+            self.db.add_plugin(plugin=plugin)
 
-    def unregister(self, plugin_id: str):
+    def unregister(self, *, plugin_id: str):
         """
         Unregisters this plugin.
         @param plugin_id plugin identifier
         @throws Exception in case of error
         """
-        self.db.remove_plugin(plugin_id)
+        self.db.remove_plugin(plugin_id=plugin_id)
 
 
 

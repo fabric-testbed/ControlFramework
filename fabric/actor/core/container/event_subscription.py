@@ -44,14 +44,14 @@ class EventSubscription(AEventSubscription):
     # abandoned if the time between drain calls exceeds this limit.
     MAX_IDLE_TIME = 5 * 60 * 1000 * 1000
 
-    def __init__(self, token: AuthToken, filters: list):
-        super().__init__(token, filters)
+    def __init__(self, *, token: AuthToken, filters: list):
+        super().__init__(token=token, filters=filters)
         self.queue = queue.Queue(maxsize=self.MAX_QUEUE_SIZE)
         self.last_drain_time_stamp = datetime.utcnow().timestamp()
         self.lock = threading.Lock()
 
-    def deliver_event(self, event: IEvent):
-        if not self.matches(event):
+    def deliver_event(self, *, event: IEvent):
+        if not self.matches(event=event):
             return
         try:
             self.lock.acquire()
@@ -63,12 +63,12 @@ class EventSubscription(AEventSubscription):
         finally:
             self.lock.release()
 
-    def drain_events(self, timeout: int) -> list:
+    def drain_events(self, *, timeout: int) -> list:
         self.last_drain_time_stamp = datetime.utcnow().timestamp()
         result = []
         try:
             self.lock.acquire()
-            for item in IterableQueue(self.queue):
+            for item in IterableQueue(source_queue=self.queue):
                 result.append(item)
         finally:
             self.lock.release()

@@ -26,33 +26,34 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.manage.broker_management_object import BrokerManagementObject
 from fabric.actor.core.apis.i_mgmt_broker import IMgmtBroker
 from fabric.actor.core.manage.local.local_server_actor import LocalServerActor
 from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
 
 if TYPE_CHECKING:
     from fabric.actor.core.manage.management_object import ManagementObject
     from fabric.actor.security.auth_token import AuthToken
-    from fabric.message_bus.messages.proxy_avro import ProxyMng
+    from fabric.message_bus.messages.proxy_avro import ProxyAvro
     from fabric.message_bus.messages.reservation_mng import ReservationMng
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.actor.core.util.resource_type import ResourceType
 
 
 class LocalBroker(LocalServerActor, IMgmtBroker):
-    def __init__(self, manager: ManagementObject = None, auth: AuthToken = None):
-        super().__init__(manager, auth)
+    def __init__(self, *, manager: ManagementObject, auth: AuthToken):
+        super().__init__(manager=manager, auth=auth)
         if not isinstance(manager, BrokerManagementObject):
             raise Exception("Invalid manager object. Required: {}".format(type(BrokerManagementObject)))
 
-    def add_broker(self, broker: ProxyMng) -> bool:
+    def add_broker(self, *, broker: ProxyAvro) -> bool:
         self.clear_last()
         try:
-            result = self.manager.add_broker(broker, self.auth)
+            result = self.manager.add_broker(broker=broker, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0
@@ -61,10 +62,10 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return False
 
-    def get_brokers(self) -> list:
+    def get_brokers(self) -> List[ProxyAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_brokers(self.auth)
+            result = self.manager.get_brokers(caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -74,23 +75,23 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return None
 
-    def get_broker(self, broker: ID) -> ProxyMng:
+    def get_broker(self, *, broker: ID) -> ProxyAvro:
         self.clear_last()
         try:
-            result = self.manager.get_broker(broker, self.auth)
+            result = self.manager.get_broker(broker_id=broker, caller=self.auth)
             self.last_status = result.status
 
             if result.get_status().get_code() == 0:
-                return self.get_first(result.result)
+                return self.get_first(result_list=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def get_pool_info(self, broker: ID) -> list:
+    def get_pool_info(self, *, broker: ID) -> List[PoolInfoAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_pool_info(broker, self.auth)
+            result = self.manager.get_pool_info(broker=broker, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -100,55 +101,55 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return None
 
-    def claim_resources_slice(self, broker: ID, slice_id: ID, rid: ID) -> ReservationMng:
+    def claim_resources_slice(self, *, broker: ID, slice_id: ID, rid: ID) -> ReservationMng:
         self.clear_last()
         try:
-            result = self.manager.claim_resources_slice(broker, slice_id, rid, self.auth)
+            result = self.manager.claim_resources_slice(broker=broker, slice_id=slice_id, rid=rid, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return self.get_first(result.result)
+                return self.get_first(result_list=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def claim_resources(self, broker: ID, rid: ID) -> ReservationMng:
+    def claim_resources(self, *, broker: ID, rid: ID) -> ReservationMng:
         self.clear_last()
         try:
-            result = self.manager.claim_resources(broker, rid, self.auth)
+            result = self.manager.claim_resources(broker=broker, rid=rid, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return self.get_first(result.result)
+                return self.get_first(result_list=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def add_reservation(self, reservation: TicketReservationAvro) -> ID:
+    def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
         self.clear_last()
         try:
-            result = self.manager.add_reservation(reservation, self.auth)
+            result = self.manager.add_reservation(reservation=reservation, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return ID(result.result)
+                return ID(id=result.result)
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def add_reservations(self, reservations: list) -> list:
+    def add_reservations(self, *, reservations: List[TicketReservationAvro]) -> List[ID]:
         self.clear_last()
         try:
-            result = self.manager.add_reservations(reservations, self.auth)
+            result = self.manager.add_reservations(reservations=reservations, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
                 rids = []
                 for r in result.result:
-                    rids.append(ID(r))
+                    rids.append(ID(id=r))
 
                 return rids
         except Exception as e:
@@ -156,10 +157,10 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return None
 
-    def demand_reservation_rid(self, rid: ID) -> bool:
+    def demand_reservation_rid(self, *, rid: ID) -> bool:
         self.clear_last()
         try:
-            result = self.manager.demand_reservation_rid(rid, self.auth)
+            result = self.manager.demand_reservation_rid(rid=rid, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0
@@ -168,10 +169,10 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return False
 
-    def demand_reservation(self, reservation: ReservationMng) -> bool:
+    def demand_reservation(self, *, reservation: ReservationMng) -> bool:
         self.clear_last()
         try:
-            result = self.manager.demand_reservation(reservation, self.auth)
+            result = self.manager.demand_reservation(reservation=reservation, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0
@@ -180,13 +181,15 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return False
 
-    def extend_reservation(self, reservation: id, new_end_time: datetime, new_units: int,
+    def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType, request_properties: dict,
                            config_properties: dict) -> bool:
         self.clear_last()
         try:
-            result = self.manager.extend_reservation(reservation, new_end_time, new_units, new_resource_type,
-                                                     request_properties, config_properties, self.auth)
+            result = self.manager.extend_reservation(reservation=reservation, new_end_time=new_end_time,
+                                                     new_units=new_units, new_resource_type=new_resource_type,
+                                                     request_properties=request_properties,
+                                                     config_properties=config_properties, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0
@@ -195,15 +198,20 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return False
 
-    def extend_reservation_end_time(self, reservation: id, new_end_time: datetime) -> bool:
-        return self.extend_reservation(reservation, new_end_time, Constants.ExtendSameUnits, None, None, None)
+    def extend_reservation_end_time(self, *, reservation: id, new_end_time: datetime) -> bool:
+        return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
+                                       new_units=Constants.ExtendSameUnits, new_resource_type=None,
+                                       request_properties=None, config_properties=None)
 
-    def extend_reservation_end_time_request(self, reservation: id, new_end_time: datetime,
+    def extend_reservation_end_time_request(self, *, reservation: id, new_end_time: datetime,
                                             request_properties: dict) -> bool:
-        return self.extend_reservation(reservation, new_end_time, Constants.ExtendSameUnits, None, request_properties,
-                                       None)
+        return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
+                                       new_units=Constants.ExtendSameUnits, new_resource_type=None,
+                                       request_properties=request_properties,
+                                       config_properties=None)
 
-    def extend_reservation_end_time_request_config(self, reservation: id, new_end_time: datetime,
+    def extend_reservation_end_time_request_config(self, *, reservation: id, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
-        return self.extend_reservation(reservation, new_end_time, Constants.ExtendSameUnits, None, request_properties,
-                                       config_properties)
+        return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
+                                       new_units=Constants.ExtendSameUnits, new_resource_type=None,
+                                       request_properties=request_properties, config_properties=config_properties)

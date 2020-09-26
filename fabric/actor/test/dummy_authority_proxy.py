@@ -35,39 +35,39 @@ from fabric.actor.test.dummy_proxy import DummyProxy
 
 
 class DummyAuthorityProxy(DummyProxy, IAuthorityProxy):
-    def __init__(self, auth: AuthToken = None):
+    def __init__(self, *, auth: AuthToken = None):
         super().__init__(auth)
 
-    def prepare_redeem(self, reservation: IControllerReservation, callback: IControllerCallbackProxy, caller:
+    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy, caller:
     AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_extend_lease(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+    def prepare_extend_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_modify_lease(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+    def prepare_modify_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_close(self, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+    def prepare_close(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                       caller: AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_claim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_claim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_reclaim(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_extend_ticket(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_relinquish(self, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_query(self, callback: ICallbackProxy, query:dict, caller: AuthToken):
+    def prepare_query(self, *, callback: ICallbackProxy, query:dict, caller: AuthToken):
         return None

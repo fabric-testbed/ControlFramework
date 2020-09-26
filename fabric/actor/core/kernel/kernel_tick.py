@@ -40,11 +40,11 @@ class KernelTick(Tick):
         self.to_tick = set()
         self.stopped_worker = threading.Event()
 
-    def add_tickable(self, tickable: ITick):
+    def add_tickable(self, *, tickable: ITick):
         with self.lock:
             self.to_tick.add(tickable)
 
-    def remove_tickable(self, tickable: ITick):
+    def remove_tickable(self, *, tickable: ITick):
         with self.lock:
             self.to_tick.remove(tickable)
 
@@ -69,7 +69,7 @@ class KernelTick(Tick):
             for t in self.to_tick:
                 try:
                     self.logger.info("Delivering external tick to {} cycle= {}".format(t.get_name(), self.current_cycle))
-                    t.external_tick(self.current_cycle)
+                    t.external_tick(cycle=self.current_cycle)
                 except Exception as e:
                     self.logger.error("Unexpected error while delivering tick notification for {} {}".format(t.get_name(), e))
 

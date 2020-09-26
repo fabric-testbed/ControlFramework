@@ -31,7 +31,7 @@ class ReservationState(IState):
     """
     Represents the state of a reservation.
     """
-    def __init__(self, state: ReservationStates, pending: ReservationPendingStates, joining: JoinState = -1):
+    def __init__(self, *, state: ReservationStates, pending: ReservationPendingStates, joining: JoinState = -1):
         self.state = state
         self.pending = pending
         self.joining = joining
@@ -69,7 +69,7 @@ class ReservationState(IState):
         """
         return self.pending
 
-    def get_pending_name(self) -> ReservationPendingStates:
+    def get_pending_name(self) -> str:
         """
         Returns the pending sub-state name.
 

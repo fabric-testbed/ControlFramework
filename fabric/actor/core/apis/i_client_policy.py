@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
@@ -42,7 +44,8 @@ class IClientPolicy(IPolicy):
     IClientPolicy defines the policy interface for an actor acting
     as a client of another actor (broker or a orchestrator).
     """
-    def demand(self, reservation: IClientReservation):
+    @abstractmethod
+    def demand(self, *, reservation: IClientReservation):
         """
         Injects a new resource demand into the demand stream. The reservation
         must be pre-initialized with resource set, term, properties, etc. The
@@ -54,9 +57,9 @@ class IClientPolicy(IPolicy):
         
         @params reservation : reservation representing resource demand
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def formulate_bids(self, cycle: int) -> Bids:
+    @abstractmethod
+    def formulate_bids(self, *, cycle: int) -> Bids:
         """
         Formulates bids to the upstream broker(s). The method should determine
         whether to issue bids in the current cycle. This method should consider
@@ -87,9 +90,9 @@ class IClientPolicy(IPolicy):
 
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def ticket_satisfies(self, requested_resources: ResourceSet, actual_resources: ResourceSet,
+    @abstractmethod
+    def ticket_satisfies(self, *, requested_resources: ResourceSet, actual_resources: ResourceSet,
                          requested_term: Term, actual_term: Term):
         """
         Checks if the resources and term received in a ticket are in compliance
@@ -102,9 +105,9 @@ class IClientPolicy(IPolicy):
         @params actual_term: term received from broker
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def update_ticket_complete(self, reservation: IClientReservation):
+    @abstractmethod
+    def update_ticket_complete(self, *, reservation: IClientReservation):
         """
         Notifies the policy that a ticket update operation has completed. The
         policy may use this upcall to update its internal state.
@@ -112,4 +115,3 @@ class IClientPolicy(IPolicy):
         @params reservation: reservation for which an update ticket operation has completed
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")

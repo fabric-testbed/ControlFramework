@@ -46,7 +46,7 @@ class KafkaServerActorService(KafkaActorService):
     def __init__(self):
         super().__init__()
 
-    def process(self, message: IMessageAvro):
+    def process(self, *, message: IMessageAvro):
         callback_topic = message.get_callback_topic()
         result = None
 
@@ -55,24 +55,24 @@ class KafkaServerActorService(KafkaActorService):
         if message.get_message_name() == IMessageAvro.GetReservationsRequest and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Broker.name:
-            self.get_broker_reservations(message)
+            self.get_broker_reservations(request=message)
         elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.InventorySlice.name:
-            self.get_inventory_slices(message)
+            self.get_inventory_slices(request=message)
         elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Client.name:
-            self.get_inventory_reservations(message)
+            self.get_inventory_reservations(request=message)
         elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.ClientSlice.name:
-            self.get_client_slices(message)
+            self.get_client_slices(request=message)
         elif message.get_message_name() == IMessageAvro.AddSlice and message.slice_obj is not None and \
                 (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
-            self.add_client_slice(message)
+            self.add_client_slice(request=message)
         else:
-            super().process(message)
+            super().process(message=message)
             return
 
         if callback_topic is None:
@@ -83,7 +83,7 @@ class KafkaServerActorService(KafkaActorService):
         else:
             self.logger.debug("Failed to send back response: {}".format(result.to_dict()))
 
-    def get_broker_reservations(self, request: GetReservationsRequestAvro) -> ResultReservationAvro:
+    def get_broker_reservations(self, *, request: GetReservationsRequestAvro) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
         try:
@@ -92,8 +92,8 @@ class KafkaServerActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
                 return result
 
-            auth = Translate.translate_auth_from_avro(request.auth)
-            mo = self.get_actor_mo(ID(request.guid))
+            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
+            mo = self.get_actor_mo(guid=ID(id=request.guid))
 
             result = mo.get_broker_reservations(auth)
             result.message_id = request.message_id
@@ -101,11 +101,11 @@ class KafkaServerActorService(KafkaActorService):
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def get_inventory_slices(self, request: GetSlicesRequestAvro) -> ResultSliceAvro:
+    def get_inventory_slices(self, *, request: GetSlicesRequestAvro) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
         try:
@@ -114,8 +114,8 @@ class KafkaServerActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
                 return result
 
-            auth = Translate.translate_auth_from_avro(request.auth)
-            mo = self.get_actor_mo(ID(request.guid))
+            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
+            mo = self.get_actor_mo(guid=ID(id=request.guid))
 
             result = mo.get_inventory_slices(auth)
             result.message_id = request.message_id
@@ -123,11 +123,11 @@ class KafkaServerActorService(KafkaActorService):
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def get_inventory_reservations(self, request: GetReservationsRequestAvro) -> ResultReservationAvro:
+    def get_inventory_reservations(self, *, request: GetReservationsRequestAvro) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
         try:
@@ -136,24 +136,24 @@ class KafkaServerActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
                 return result
 
-            auth = Translate.translate_auth_from_avro(request.auth)
-            mo = self.get_actor_mo(ID(request.guid))
+            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
+            mo = self.get_actor_mo(guid=ID(id=request.guid))
 
             if request.slice_id is not None:
-                result = mo.get_inventory_reservations_by_slice_id(auth, ID(request.slice_id))
+                result = mo.get_inventory_reservations_by_slice_id(caller=auth, slice_id=ID(id=request.slice_id))
             else:
-                result = mo.get_inventory_reservations(auth)
+                result = mo.get_inventory_reservations(caller=auth)
 
             result.message_id = request.message_id
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def get_client_slices(self, request: GetSlicesRequestAvro) -> ResultSliceAvro:
+    def get_client_slices(self, *, request: GetSlicesRequestAvro) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
         try:
@@ -162,20 +162,20 @@ class KafkaServerActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
                 return result
 
-            auth = Translate.translate_auth_from_avro(request.auth)
-            mo = self.get_actor_mo(ID(request.guid))
+            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
+            mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_client_slices(auth)
+            result = mo.get_client_slices(caller=auth)
             result.message_id = request.message_id
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def add_client_slice(self, request: AddSliceAvro) -> ResultStringAvro:
+    def add_client_slice(self, *, request: AddSliceAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
 
@@ -185,15 +185,15 @@ class KafkaServerActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
                 return result
 
-            auth = Translate.translate_auth_from_avro(request.auth)
-            mo = self.get_actor_mo(ID(request.guid))
+            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
+            mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.add_client_slice(auth, request.slice_obj)
+            result = mo.add_client_slice(caller=auth, slice_obj=request.slice_obj)
             result.message_id = request.message_id
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result.status, e)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result

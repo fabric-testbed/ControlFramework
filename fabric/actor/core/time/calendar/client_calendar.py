@@ -49,12 +49,12 @@ class ClientCalendar(BaseCalendar):
     time advances. The demand and pending list, however, must be purged manually by the
     user of this class.
     """
-    def __init__(self, clock: ActorClock):
+    def __init__(self, *, clock: ActorClock):
         """
         Constructor
         @params clock: clock factory
         """
-        super().__init__(clock)
+        super().__init__(clock=clock)
         # Set of reservations representing the current demand. Callers are
         # responsible for removing serviced reservations
         self.demand = ReservationSet()
@@ -77,17 +77,17 @@ class ClientCalendar(BaseCalendar):
         self.__dict__.update(state)
         self.lock = threading.Lock()
 
-    def remove(self, reservation: IReservation):
+    def remove(self, *, reservation: IReservation):
         """
         Removes the specified reservation from all internal calendar data structures
         @params reservation: reservation to remove
         """
-        self.remove_demand(reservation)
-        self.remove_pending(reservation)
-        self.remove_renewing(reservation)
-        self.remove_holdings(reservation)
+        self.remove_demand(reservation=reservation)
+        self.remove_pending(reservation=reservation)
+        self.remove_renewing(reservation=reservation)
+        self.remove_holdings(reservation=reservation)
 
-    def remove_scheduled_or_in_progress(self, reservation: IReservation):
+    def remove_scheduled_or_in_progress(self, *, reservation: IReservation):
         """
         Removes the specified reservations from all internal calendar data
         structures that represent operations to be scheduled in the future or
@@ -95,9 +95,9 @@ class ClientCalendar(BaseCalendar):
         reservation from the holdings list.
         @params reservation : reservation to remove
         """
-        self.remove_demand(reservation)
-        self.remove_pending(reservation)
-        self.remove_renewing(reservation)
+        self.remove_demand(reservation=reservation)
+        self.remove_pending(reservation=reservation)
+        self.remove_renewing(reservation=reservation)
 
     def get_demand(self) -> ReservationSet:
         """
@@ -110,25 +110,25 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def add_demand(self, reservation: IReservation):
+    def add_demand(self, *, reservation: IReservation):
         """
         Adds a reservation to the demand list.
         @params reservation: reservation to add
         """
         try:
             self.lock.acquire()
-            self.demand.add(reservation)
+            self.demand.add(reservation=reservation)
         finally:
             self.lock.release()
 
-    def remove_demand(self, reservation: IReservation):
+    def remove_demand(self, *, reservation: IReservation):
         """
         Removes a reservation to the demand list.
         @params reservation: reservation to remove
         """
         try:
             self.lock.acquire()
-            self.demand.remove(reservation)
+            self.demand.remove(reservation=reservation)
         finally:
             self.lock.release()
 
@@ -143,29 +143,29 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def add_pending(self, reservation: IReservation):
+    def add_pending(self, *, reservation: IReservation):
         """
         Adds a reservation to the pending list.
         @params reservation: reservation to add
         """
         try:
             self.lock.acquire()
-            self.pending.add(reservation)
+            self.pending.add(reservation=reservation)
         finally:
             self.lock.release()
 
-    def remove_pending(self, reservation: IReservation):
+    def remove_pending(self, *, reservation: IReservation):
         """
         Removes a reservation to the pending list.
         @params reservation: reservation to remove
         """
         try:
             self.lock.acquire()
-            self.pending.remove(reservation)
+            self.pending.remove(reservation=reservation)
         finally:
             self.lock.release()
 
-    def get_renewing(self, cycle: int) -> ReservationSet:
+    def get_renewing(self, *, cycle: int) -> ReservationSet:
         """
         Returns the reservations that need to be renewed on the specified cycle.
         @params cycle : cycle number
@@ -173,11 +173,11 @@ class ClientCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            return self.renewing.get_all_reservations(cycle)
+            return self.renewing.get_all_reservations(cycle=cycle)
         finally:
             self.lock.release()
 
-    def add_renewing(self, reservation: IReservation, cycle: int):
+    def add_renewing(self, *, reservation: IReservation, cycle: int):
         """
         Adds a reservation to the renewing list at the given cycle.
         @params reservation : reservation to add
@@ -185,22 +185,22 @@ class ClientCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            self.renewing.add_reservation(reservation, cycle)
+            self.renewing.add_reservation(reservation=reservation, cycle=cycle)
         finally:
             self.lock.release()
 
-    def remove_renewing(self, reservation: IReservation):
+    def remove_renewing(self, *, reservation: IReservation):
         """
         Removes the reservation from the renewing list.
         @params reservation : reservation to remove
         """
         try:
             self.lock.acquire()
-            self.renewing.remove_reservation(reservation)
+            self.renewing.remove_reservation(reservation=reservation)
         finally:
             self.lock.release()
 
-    def get_holdings(self, d: datetime = None, type: ResourceType = None) -> ReservationSet:
+    def get_holdings(self, *, d: datetime = None, type: ResourceType = None) -> ReservationSet:
         """
         Returns the resources of the specified type held by the client that are active at the specified time instance.
         @params d : datetime instance.
@@ -211,12 +211,12 @@ class ClientCalendar(BaseCalendar):
             self.lock.acquire()
             when = None
             if d is not None:
-                when = ActorClock.to_milliseconds(d)
-            return self.holdings.get_reservations(when, type)
+                when = ActorClock.to_milliseconds(when=d)
+            return self.holdings.get_reservations(time=when, rtype=type)
         finally:
             self.lock.release()
 
-    def add_holdings(self, reservation: IReservation, start: datetime, end: datetime):
+    def add_holdings(self, *, reservation: IReservation, start: datetime, end: datetime):
         """
         Adds a reservation to the holdings list.
         @params reservation : reservation to add
@@ -225,28 +225,28 @@ class ClientCalendar(BaseCalendar):
         """
         try:
             self.lock.acquire()
-            self.holdings.add_reservation(reservation, ActorClock.to_milliseconds(start),
-                                          ActorClock.to_milliseconds(end))
+            self.holdings.add_reservation(reservation=reservation, start=ActorClock.to_milliseconds(when=start),
+                                          end=ActorClock.to_milliseconds(when=end))
         finally:
             self.lock.release()
 
-    def remove_holdings(self, reservation: IReservation):
+    def remove_holdings(self, *, reservation: IReservation):
         """
         Removes the reservation from the renewing list.
         @params reservation : reservation to remove
         """
         try:
             self.lock.acquire()
-            self.holdings.remove_reservation(reservation)
+            self.holdings.remove_reservation(reservation=reservation)
         finally:
             self.lock.release()
 
-    def tick(self, cycle: int):
+    def tick(self, *, cycle: int):
         try:
             self.lock.acquire()
-            super().tick(cycle)
-            self.renewing.tick(cycle)
-            ms = self.clock.cycle_end_in_millis(cycle)
-            self.holdings.tick(ms)
+            super().tick(cycle=cycle)
+            self.renewing.tick(cycle=cycle)
+            ms = self.clock.cycle_end_in_millis(cycle=cycle)
+            self.holdings.tick(time=ms)
         finally:
             self.lock.release()

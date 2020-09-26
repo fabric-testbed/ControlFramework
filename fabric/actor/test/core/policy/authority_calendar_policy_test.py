@@ -31,7 +31,7 @@ from fabric.actor.core.policy.authority_calendar_policy import AuthorityCalendar
 class AuthorityCalendarPolicyTest(AuthorityPolicyTest):
     def get_authority_policy(self) -> IAuthorityPolicy:
         policy = AuthorityCalendarPolicy()
-        policy.register_control(self.get_control())
+        policy.register_control(control=self.get_control())
         return policy
 
     def get_control(self, policy: AuthorityCalendarPolicy = None):

@@ -26,7 +26,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+
 if TYPE_CHECKING:
+    from fabric.actor.core.util.id import ID
     from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
     from fabric.actor.core.apis.i_rpc_response_handler import IRPCResponseHandler
     from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
@@ -34,7 +36,7 @@ if TYPE_CHECKING:
 
 
 class IncomingRPC:
-    def __init__(self, message_id: str, request_type: RPCRequestType, callback: ICallbackProxy, caller: AuthToken):
+    def __init__(self, *, message_id: ID, request_type: RPCRequestType, callback: ICallbackProxy, caller: AuthToken):
         self.request_type = request_type
         self.message_id = message_id
         self.callback = callback
@@ -52,22 +54,22 @@ class IncomingRPC:
     def get_caller(self) -> AuthToken:
         return self.caller
 
-    def get_message_id(self) -> str:
+    def get_message_id(self) -> ID:
         return self.message_id
 
-    def set_response_handler(self, response_handler: IRPCResponseHandler):
+    def set_response_handler(self, *, response_handler: IRPCResponseHandler):
         self.response_handler = response_handler
 
     def get_response_handler(self) -> IRPCResponseHandler:
         return self.response_handler
 
-    def set_error(self, error: Exception):
+    def set_error(self, *, error: Exception):
         self.error = error
 
     def get_error(self) -> Exception:
         return self.error
 
-    def set_request_id(self, request_id: str):
+    def set_request_id(self, *, request_id: ID):
         self.request_id = request_id
 
     def get_request_id(self) -> str:
@@ -75,4 +77,4 @@ class IncomingRPC:
 
     def __str__(self):
         return "MessageID={} requestType={} caller={}:{}".format(self.message_id, self.request_type,
-                                                                 self.caller.get_name(), self.caller.getGuid())
+                                                                 self.caller.get_name(), self.caller.get_guid())

@@ -38,7 +38,7 @@ class IBrokerReservationFactory:
     Factory for broker reservations.
     """
     @staticmethod
-    def create(rid: ID, resources: ResourceSet, term: Term, slice_obj: ISlice):
+    def create(*, rid: ID, resources: ResourceSet, term: Term, slice_obj: ISlice):
         """
         Creates a new instance of IBrokerReservation
        

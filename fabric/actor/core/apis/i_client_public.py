@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -35,7 +37,9 @@ class IClientPublic:
     """
     IClientPublic represents the public cross-actor interface for actors acting as clients of other actors.
     """
-    def update_ticket(self, reservation: IReservation, update_data, caller: AuthToken):
+
+    @abstractmethod
+    def update_ticket(self, *, reservation: IReservation, update_data, caller: AuthToken):
         """
         Handles an incoming ticket update.
        
@@ -47,4 +51,4 @@ class IClientPublic:
        
         @throws Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
+        

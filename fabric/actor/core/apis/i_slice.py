@@ -24,13 +24,17 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
+    from fabric.actor.core.kernel.slice import SliceTypes
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.security.guard import Guard
+    from fabric.actor.core.util.id import ID
 
 
 class ISlice:
@@ -52,196 +56,197 @@ class ISlice:
     properties list.
     """
 
-    def get_config_properties(self):
+    @abstractmethod
+    def get_config_properties(self) -> dict:
         """
         Returns the slice configuration properties list
 
         Returns:
             configuration properties list
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_local_properties(self):
+    @abstractmethod
+    def get_local_properties(self) -> dict:
         """
         Returns the slice local properties list
 
         Returns:
             local properties list
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_description(self):
+    @abstractmethod
+    def get_description(self) -> str:
         """
         Returns the slice description
 
         Returns:
             slice description
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_name(self):
+    @abstractmethod
+    def get_name(self) -> str:
         """
         Returns the slice name
 
         Returns:
             slice name
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_owner(self):
+    @abstractmethod
+    def get_owner(self) -> AuthToken:
         """
         Returns the slice owner
 
         Returns:
             slice owner
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_properties(self):
+    @abstractmethod
+    def get_properties(self) -> dict:
         """
         Returns the slice properties
 
         Returns:
             slice properties
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_request_properties(self):
+    @abstractmethod
+    def get_request_properties(self) -> dict:
         """
         Returns the slice request properties list
 
         Returns:
             slice request properties list
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_resource_properties(self):
+    @abstractmethod
+    def get_resource_properties(self) -> dict:
         """
         Returns the slice resource properties list
 
         Returns:
             slice resource properties list
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_resource_type(self):
+    @abstractmethod
+    def get_resource_type(self) -> ResourceType:
         """
         Returns the resource type of the slice (if any).
 
         Returns:
             slice resource type
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def get_slice_id(self):
+    @abstractmethod
+    def get_slice_id(self) -> ID:
         """
         Returns the slice id.
 
         Returns:
             slice id
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def is_broker_client(self):
+    @abstractmethod
+    def is_broker_client(self) -> bool:
         """
         Checks if the slice is a broker client slice (a client slice within an authority that represents a broker).
 
         Returns:
             true if the slice is a broker client slice
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def is_client(self):
+    @abstractmethod
+    def is_client(self) -> bool:
         """
         Checks if the slice is a client slice.
 
         Returns:
             true if the slice is a client slice
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def is_inventory(self):
+    @abstractmethod
+    def is_inventory(self) -> bool:
         """
         Checks if the slice is a inventory slice.
 
         Returns:
             true if the slice is a inventory slice
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def set_broker_client(self):
         """
         Marks the slice as a broker client slice (a client slice within an authority that represents a broker).
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def set_client(self):
         """
         Marks the slice as a client slice.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_inventory(self, value: bool):
+    @abstractmethod
+    def set_inventory(self, *, value: bool):
         """
         Sets the inventory flag.
 
         Args:
             value: inventory status: true, inventory slice, false, client slice
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_description(self, description: str):
+    @abstractmethod
+    def set_description(self, *, description: str):
         """
         Sets the slice description.
 
         Args:
             description: description
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_name(self, name: str):
+    @abstractmethod
+    def set_name(self, *, name: str):
         """
         Sets the slice name.
 
         Args:
             name: name
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_owner(self, owner: AuthToken):
+    @abstractmethod
+    def set_owner(self, *, owner: AuthToken):
         """
         Sets the slice owner.
 
         Args:
             owner: owner
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_resource_type(self, resource_type: ResourceType):
+    @abstractmethod
+    def set_resource_type(self, *, resource_type: ResourceType):
         """
         Sets the resource type.
 
         Args:
             resource_type: resource type
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_guard(self) -> Guard:
         """
         Returns the slice guard.
        
         @return the guard
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_guard(self, g: Guard):
+    @abstractmethod
+    def set_guard(self, *, g: Guard):
         """
         Sets the slice guard.
        
         @param g the guard
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def clone_request(self):
         """
         Makes a minimal clone of the slice object sufficient for
@@ -249,16 +254,36 @@ class ISlice:
        
         @return a slice object to use when making cross-actor calls.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_local_properties(self, value: dict):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def set_local_properties(self, *, value: dict):
+        """
+        Set local properties
+        @param value: value
+        """
 
-    def set_config_properties(self, value: dict):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def set_config_properties(self, *, value: dict):
+        """
+        Set config properties
+        @param value: value
+        """
 
-    def set_request_properties(self, value: dict):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def set_request_properties(self, *, value: dict):
+        """
+        Set request properties
+        @param value: value
+        """
 
-    def set_resource_properties(self, value: dict):
-        raise NotImplementedError("Should have implemented this")
+    @abstractmethod
+    def set_resource_properties(self, *, value: dict):
+        """
+        Set resource properties
+        @param value: value
+        """
+    @abstractmethod
+    def get_slice_type(self) -> SliceTypes:
+        """
+        Return slice type
+        """

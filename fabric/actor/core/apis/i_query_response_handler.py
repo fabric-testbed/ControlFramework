@@ -23,12 +23,19 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
+
 from fabric.actor.core.apis.i_response_handler import IResponseHandler
+from fabric.actor.core.util.rpc_exception import RPCException
 
 
 class IQueryResponseHandler(IResponseHandler):
     """
     IQueryResponseHandler defines the base interface each query response handler must implement.
     """
-    def handle(self, status, result):
-        raise NotImplementedError( "Should have implemented this" )
+
+    @abstractmethod
+    def handle(self, *, status: RPCException, result: dict):
+        """
+        Handle Query Response
+        """

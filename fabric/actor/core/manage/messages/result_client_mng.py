@@ -37,7 +37,7 @@ class ResultClientMng:
     def get_status(self) -> ResultAvro:
         return self.status
 
-    def set_status(self, value: ResultAvro):
+    def set_status(self, *, value: ResultAvro):
         self.status = value
 
     def get_result(self) -> list:

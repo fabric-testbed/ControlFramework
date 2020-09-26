@@ -23,8 +23,12 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import abstractmethod
 
 
 class IActorRunnable:
+    @abstractmethod
     def run(self):
-        raise NotImplementedError("Should have implemented this")
+        """
+        Run
+        """

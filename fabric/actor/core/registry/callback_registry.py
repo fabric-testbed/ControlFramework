@@ -35,7 +35,7 @@ class CallbackRegistry:
             protocol.clear()
         self.protocols.clear()
 
-    def get_callback(self, protocol: str, actor_name: str):
+    def get_callback(self, *, protocol: str, actor_name: str):
         protocol_table = self.protocols.get(protocol, None)
 
         if protocol_table is None:
@@ -43,7 +43,7 @@ class CallbackRegistry:
 
         return protocol_table.get(actor_name, None)
 
-    def register_callback(self, callback: ICallbackProxy):
+    def register_callback(self, *, callback: ICallbackProxy):
         protocol = callback.get_type()
 
         entry = self.protocols.get(protocol, None)
@@ -54,7 +54,7 @@ class CallbackRegistry:
         entry[callback.get_identity().get_name()] = callback
         self.protocols[protocol] = entry
 
-    def unregister(self, actor_name: str):
+    def unregister(self, *, actor_name: str):
         for protocol in self.protocols:
             if actor_name in protocol:
                 protocol.pop(actor_name)

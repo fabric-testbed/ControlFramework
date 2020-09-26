@@ -24,7 +24,12 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
+
+from fabric.actor.core.util.id import ID
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
     from fabric.actor.core.apis.i_database import IDatabase
@@ -67,7 +72,8 @@ class IBasePlugin(IPlugin):
         # the `is_activated` property gets set.
         super(IBasePlugin, self).deactivate()
 
-    def configure(self, properties):
+    @abstractmethod
+    def configure(self, *, properties):
         """
         Processes a list of configuration properties. This method is called by the configuration engine.
 
@@ -77,8 +83,8 @@ class IBasePlugin(IPlugin):
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError
 
+    @abstractmethod
     def actor_added(self):
         """
         Performs initialization steps that require that the actor has been added
@@ -86,14 +92,14 @@ class IBasePlugin(IPlugin):
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def recovery_starting(self):
         """
         Informs the plugin that recovery is about to start.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def initialize(self):
         """
         Initializes the actor. Called early in the initialization process.
@@ -101,9 +107,9 @@ class IBasePlugin(IPlugin):
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def revisit(self, slice: ISlice = None, reservation: IReservation = None):
+    @abstractmethod
+    def revisit(self, *, slice: ISlice = None, reservation: IReservation = None):
         """
         Rebuilds plugin state associated with a restored slice/reservation. Called once for each restored slice/reservation.
 
@@ -113,15 +119,15 @@ class IBasePlugin(IPlugin):
         Raises:
             Exception if rebuilding state fails
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def recovery_ended(self):
         """
         Informs the plugin that recovery has completed.
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def restart_configuration_actions(self, reservation: IReservation):
+    @abstractmethod
+    def restart_configuration_actions(self, *, reservation: IReservation):
         """
         Restarts any pending configuration actions for the specified reservation
 
@@ -130,9 +136,9 @@ class IBasePlugin(IPlugin):
         Raises:
             Exception if restarting actions fails
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def create_slice(self, slice_id: str, name: str, properties: ResourceData):
+    @abstractmethod
+    def create_slice(self, *, slice_id: ID, name: str, properties: ResourceData):
         """
         Creates a new slice.
 
@@ -145,20 +151,20 @@ class IBasePlugin(IPlugin):
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def release_slice(self, slice: ISlice):
+    @abstractmethod
+    def release_slice(self, *, slice_obj: ISlice):
         """
         Releases any resources held by the slice.
 
         Args:
-            slice: slice
+            slice_obj: slice
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def validate_incoming(self, reservation: IReservation, auth: AuthToken):
+    @abstractmethod
+    def validate_incoming(self, *, reservation: IReservation, auth: AuthToken):
         """
         Validates an incoming reservation request
 
@@ -170,17 +176,17 @@ class IBasePlugin(IPlugin):
         Raises:
             Exception in case of error
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_actor(self, actor: IActor):
+    @abstractmethod
+    def set_actor(self, *, actor: IActor):
         """
         Sets the actor. Note: the actor has to be fully initialized.
 
         Args:
             actor: actor
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_actor(self):
         """
         Returns the actor associated with the plugin
@@ -188,17 +194,17 @@ class IBasePlugin(IPlugin):
         Returns:
             actor associated with the plugin
         """
-        raise NotImplementedError( "Should have implemented this" )
 
-    def set_ticket_factory(self, ticket_factory):
+    @abstractmethod
+    def set_ticket_factory(self, *, ticket_factory):
         """
         Sets the ticket factory
 
         Args:
             ticket_factory: ticket factory
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_ticket_factory(self) -> IResourceTicketFactory:
         """
         Returns the ticket factory.
@@ -206,29 +212,28 @@ class IBasePlugin(IPlugin):
         Returns:
              ticket factory
         """
-        raise NotImplementedError( "Should have implemented this" )
 
+    @abstractmethod
     def get_logger(self):
         """
         Returns the logger.
         
         @returns logger instance
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_database(self) -> IDatabase:
         """
         Obtains the actor's database instance.
         
         @return database instance
         """
-        raise NotImplementedError("Should have implemented this")
-
-    def set_database(self, db: IDatabase):
+        
+    @abstractmethod
+    def set_database(self, *, db: IDatabase):
         """
         Sets the actor's database instance.
         
         @param db
                    database instance
         """
-        raise NotImplementedError("Should have implemented this")

@@ -43,7 +43,7 @@ class Ticket(IConcreteSet):
     PropertyTicketAuthorityProxy = "ticket.authority.proxy"
     PropertyTicketResourceTicket = "ticket.resourceTicket"
 
-    def __init__(self, ticket: ResourceTicket = None, plugin: IBasePlugin = None, authority: IAuthorityProxy = None):
+    def __init__(self, *, ticket: ResourceTicket = None, plugin: IBasePlugin = None, authority: IAuthorityProxy = None):
         # The plugin object
         self.plugin = plugin
         self.logger = plugin.get_logger()
@@ -84,12 +84,12 @@ class Ticket(IConcreteSet):
         result += "]"
         return result
 
-    def restore(self,  plugin: IBasePlugin, reservation: IReservation):
+    def restore(self, *,  plugin: IBasePlugin, reservation: IReservation):
         self.plugin = plugin
         self.logger = self.plugin.get_logger()
         self.reservation = reservation
 
-    def encode(self, protocol: str):
+    def encode(self, *, protocol: str):
         try:
             encoded_ticket = pickle.dumps(self)
             return encoded_ticket
@@ -97,7 +97,7 @@ class Ticket(IConcreteSet):
             self.logger.error("Exception occurred while encoding {}".format(e))
         return None
 
-    def decode(self, encoded_ticket, plugin: IBasePlugin):
+    def decode(self, *, encoded_ticket, plugin: IBasePlugin):
         try:
             ticket = pickle.loads(encoded_ticket)
             ticket.plugin = plugin
@@ -114,10 +114,10 @@ class Ticket(IConcreteSet):
     def get_ticket(self) -> ResourceTicket:
         return self.resource_ticket
 
-    def add(self, rset, configure: bool):
+    def add(self, *, concrete_set, configure: bool):
         raise Exception("add() is not supported by Ticket")
 
-    def change(self, concrete_set: IConcreteSet, configure: bool):
+    def change(self, *, concrete_set: IConcreteSet, configure: bool):
         self.old_units = self.get_units()
 
         if not isinstance(concrete_set, Ticket):
@@ -126,15 +126,15 @@ class Ticket(IConcreteSet):
         assert concrete_set.resource_ticket is not None
 
         # TODO
-        self.resource_ticket = self.plugin.get_ticket_factory().clone(concrete_set.resource_ticket)
+        self.resource_ticket = self.plugin.get_ticket_factory().clone(original=concrete_set.resource_ticket)
 
     def clone(self):
-        result = Ticket(self.resource_ticket, self.plugin, self.authority)
+        result = Ticket(ticket=self.resource_ticket, plugin=self.plugin, authority=self.authority)
         result.old_units = self.old_units
         return result
 
     def clone_empty(self):
-        result = Ticket(self.resource_ticket, self.plugin, self.authority)
+        result = Ticket(ticket=self.resource_ticket, plugin=self.plugin, authority=self.authority)
         result.old_units = self.old_units
         return result
 
@@ -174,7 +174,7 @@ class Ticket(IConcreteSet):
             return None
         return self.resource_ticket.get_term()
 
-    def holding(self, when: datetime) -> int:
+    def holding(self, *, when: datetime) -> int:
         if when is None:
             raise Exception("InvalidArgument")
 
@@ -201,16 +201,16 @@ class Ticket(IConcreteSet):
         # valid tickets are always active, if anyone asks
         return True
 
-    def modify(self, concrete_set, configure: bool):
+    def modify(self, *, concrete_set, configure: bool):
         raise Exception("Not supported by TicketSet")
 
     def probe(self):
         return
 
-    def remove(self, concrete_set, configure: bool):
+    def remove(self, *, concrete_set, configure: bool):
         raise Exception("Not supported by TicketSet")
 
-    def setup(self, reservation: IReservation):
+    def setup(self, *, reservation: IReservation):
         """
         Indicates that we're committing resources to a client (on an an agent).
         May need to touch TicketSet database since we're committing it. On a
@@ -220,7 +220,7 @@ class Ticket(IConcreteSet):
         """
         self.reservation = reservation
 
-    def validate_concrete(self, rtype: ResourceType, units: int, term: Term):
+    def validate_concrete(self, *, rtype: ResourceType, units: int, term: Term):
         if self.get_units() < units:
             raise Exception("Ticket not valid for requested units")
 

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -44,7 +46,9 @@ class IResourceControl:
     Each resource pool is associated with a resource control object responsible
     for servicing requests for resources for the resource pool.
     """
-    def donate_reservation(self, reservation: IClientReservation):
+
+    @abstractmethod
+    def donate_reservation(self, *, reservation: IClientReservation):
         """
         Informs the control about a source ticket. Depending on the control
         implementation, the control may choose to treat each source ticket as
@@ -52,26 +56,26 @@ class IResourceControl:
         @params reservation reservation
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def donate(self, resource_set: ResourceSet):
+    @abstractmethod
+    def donate(self, *, resource_set: ResourceSet):
         """
         Informs the control about physical inventory.
         @params resource_set set of inventory resources (inventory units)
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def eject(self, resource_set: ResourceSet):
+    @abstractmethod
+    def eject(self, *, resource_set: ResourceSet):
         """
         Forcefully removes the specified resources from the control's inventory.
         @params resource_set set of resources to eject from the inventory (inventory
                    units)
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def release(self, resource_set: ResourceSet):
+    @abstractmethod
+    def release(self, *, resource_set: ResourceSet):
         """
         Releases previously allocated resources. Note that some of those
         resources may represent failed resource units. Failed units should not be
@@ -80,62 +84,62 @@ class IResourceControl:
         @params resource_set set of released resources (allocated units)
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def available(self, resource_set: ResourceSet):
+    @abstractmethod
+    def available(self, *, resource_set: ResourceSet):
         """
         Notifies the control that inventory resources are now available for use.
         @params resource_set inventory resources that have become available (inventory units)
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def unavailable(self, resource_set: ResourceSet) -> int:
+    @abstractmethod
+    def unavailable(self, *, resource_set: ResourceSet) -> int:
         """
         Indicates that some inventory resources should be marked as unavailable.
         @params resource_set resources (inventory units)
         @returns -1 if at least one resource unit is currently in use; 0 otherwise
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def freed(self, resource_set: ResourceSet):
+    @abstractmethod
+    def freed(self, *, resource_set: ResourceSet):
         """
         Indicates that previously committed resources have been freed. Most
         likely these resources represent failed allocations.
         @params resource_set set of freed resources (allocated units)
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def failed(self, resource_set: ResourceSet):
+    @abstractmethod
+    def failed(self, *, resource_set: ResourceSet):
         """
         Notifies the control that some inventory resources have failed and cannot
         be used to satisfy client requests.
         @params resource_set set of failed resources (inventory units)
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def recovered(self, resource_set: ResourceSet):
+    @abstractmethod
+    def recovered(self, *, resource_set: ResourceSet):
         """
         Notifies the policy that previously failed resources have been recovered
         and can be safely used to satisfy client requests.
         @params resource_set set of recovered resources
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def assign(self, reservation: IAuthorityReservation) -> ResourceSet:
+    @abstractmethod
+    def assign(self, *, reservation: IAuthorityReservation) -> ResourceSet:
         """
         Assigns resources to the reservation.
         @params reservation reservation
         @returns resources assigned to the reservation (allocated units)
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def correct_deficit(self, reservation: IAuthorityReservation) -> ResourceSet:
+    @abstractmethod
+    def correct_deficit(self, *, reservation: IAuthorityReservation) -> ResourceSet:
         """
         Informs the control that a reservation with previously allocated
         resources has a deficit. The deficit may be positive or negative. The
@@ -149,9 +153,9 @@ class IResourceControl:
         @returns resources allocated/removed so that the deficit is corrected (allocated units)
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def close(self, reservation: IReservation):
+    @abstractmethod
+    def close(self, *, reservation: IReservation):
         """
         Notifies the control that a reservation is about to be closed.
         This method will be invoked for every reservation that is about to be
@@ -161,29 +165,29 @@ class IResourceControl:
         lock on.
         @params reservation: reservation to close
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def recovery_starting(self):
         """
         Notifies the control that recovery is starting.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def revisit(self, reservation: IReservation):
+    @abstractmethod
+    def revisit(self, *, reservation: IReservation):
         """
         Recovers state for a reservation.
         @params reservation reservation
         @raises Exception in case of error
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def recovery_ended(self):
         """
         Notifies the control that recovery has ended.
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def configuration_complete(self, action:str, token: ConfigToken, out_properties: dict):
+    @abstractmethod
+    def configuration_complete(self, *, action:str, token: ConfigToken, out_properties: dict):
         """
         Notifies the control that a configuration action for the object
         represented by the token parameter has completed.
@@ -192,15 +196,15 @@ class IResourceControl:
         @params token object or a token for the object whose configuration action has completed
         @params out_properties output properties produced by the configuration action
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_guid(self) -> ID:
         """
         Returns the control guid. Every control must have a unique guid.
         @return resource control guid
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def get_types(self) -> set:
         """
         Returns the resource types this resource control handles. A resource
@@ -208,32 +212,32 @@ class IResourceControl:
         usually the mapping will be one-to-one.
         @returns list of resource types
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def add_type(self, rtype: ResourceType):
+    @abstractmethod
+    def add_type(self, *, rtype: ResourceType):
         """
         Instructs the control the handle the specified type.
         @param rtype type
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def remove_type(self, rtype: ResourceType):
+    @abstractmethod
+    def remove_type(self, *, rtype: ResourceType):
         """
         Instructs the control it no longer handle the specified type.
         @param rtype type
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def register_type(self, rtype: ResourceType):
+    @abstractmethod
+    def register_type(self, *, rtype: ResourceType):
         """
         Registers the specified resource type with the resource control.
         @param rtype type
         """
-        raise NotImplementedError("Should have implemented this")
 
-    def set_actor(self, actor: IActor):
+    @abstractmethod
+    def set_actor(self, *, actor: IActor):
         """
         Sets the actor the control is associated with.
         @params actor actor
         """
-        raise NotImplementedError("Should have implemented this")
+        

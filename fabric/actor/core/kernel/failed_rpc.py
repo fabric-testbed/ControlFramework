@@ -35,7 +35,8 @@ if TYPE_CHECKING:
 
 
 class FailedRPC:
-    def __init__(self, e: RPCException = None, request_type: RPCRequestType = None, rid: ID=None, auth: AuthToken=None, request: RPCRequest=None):
+    def __init__(self, *, e: RPCException = None, request_type: RPCRequestType = None, rid: ID=None,
+                 auth: AuthToken=None, request: RPCRequest=None):
         if e is None:
             raise Exception("error cannot be None")
 

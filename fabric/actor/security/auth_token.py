@@ -35,7 +35,7 @@ class AuthToken:
     """
     Represents the Authentication Token for a user
     """
-    def __init__(self, name: str = None, guid: ID = None, properties: dict = None):
+    def __init__(self, *, name: str = None, guid: ID = None, properties: dict = None):
         self.name = name
         self.guid = guid
         self.id_token = None
@@ -45,7 +45,7 @@ class AuthToken:
             if self.PropertyName in properties:
                 self.name = properties[self.PropertyName]
             if self.PropertyGuid in properties:
-                self.guid = ID(properties[self.PropertyGuid])
+                self.guid = ID(id=properties[self.PropertyGuid])
             if self.PropertyCred in properties:
                 self.cred = Credentials(properties=properties[self.PropertyCred])
 
@@ -66,8 +66,8 @@ class AuthToken:
     def get_guid(self) -> ID:
         return self.guid
 
-    def set_credentials(self, id_token: str):
-        self.cred = Credentials(id_token)
+    def set_credentials(self, *, id_token: str):
+        self.cred = Credentials(id_token=id_token)
 
     def get_credentials(self) -> Credentials:
         return self.cred

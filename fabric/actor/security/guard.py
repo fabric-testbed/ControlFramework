@@ -31,7 +31,7 @@ class Guard:
     PropertyOwner = "owner"
     PropertyObjectId = "object_id"
 
-    def __init__(self, properties: dict = None):
+    def __init__(self, *, properties: dict = None):
         self.owner = None
         self.object_id = None
 
@@ -40,26 +40,26 @@ class Guard:
                 self.owner = AuthToken(properties=properties[self.PropertyOwner])
 
             if self.PropertyObjectId in properties:
-                self.object_id = ID(properties[self.PropertyObjectId])
+                self.object_id = ID(id=properties[self.PropertyObjectId])
 
-    def check_reserve(self, requester: AuthToken):
-        self.check_privelege(requester)
+    def check_reserve(self, *, requester: AuthToken):
+        self.check_privelege(requester=requester)
 
-    def check_update(self, requester:AuthToken):
-        self.check_privelege(requester)
+    def check_update(self, *, requester:AuthToken):
+        self.check_privelege(requester=requester)
 
-    def check_privelege(self, requester:AuthToken):
+    def check_privelege(self, *, requester:AuthToken):
         # TDB add PDP validatation
         return
 
-    def check_owner(self, auth:AuthToken):
+    def check_owner(self, *, auth: AuthToken):
         if self.owner is not None:
             if self.owner != auth:
                 raise Exception("Authorization Exception")
 
-    def set_owner(self, owner:AuthToken):
+    def set_owner(self, *, owner:AuthToken):
         self.owner = owner
 
-    def set_object_id(self, object_id: ID):
+    def set_object_id(self, *, object_id: ID):
         self.object_id = object_id
 

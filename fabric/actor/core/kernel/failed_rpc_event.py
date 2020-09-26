@@ -36,7 +36,7 @@ from fabric.actor.core.apis.i_actor_event import IActorEvent
 
 
 class FailedRPCEvent(IActorEvent):
-    def __init__(self, actor: IActor, failed: FailedRPC):
+    def __init__(self, *, actor: IActor, failed: FailedRPC):
         self.actor = actor
         self.failed = failed
 
@@ -51,7 +51,7 @@ class FailedRPCEvent(IActorEvent):
         elif self.failed.get_request_type() == RPCRequestType.QueryResult:
             if self.failed.get_retry_count() < 10:
                 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-                RPCManagerSingleton.get().retry(self.failed.get_request())
+                RPCManagerSingleton.get().retry(request=self.failed.get_request())
             else:
                 self.actor.get_logger().warning("Cannot send query response. Giving up after 10 retries {}".format(self.failed.get_error()))
         elif self.failed.get_request_type() == RPCRequestType.Claim or \
@@ -68,6 +68,6 @@ class FailedRPCEvent(IActorEvent):
             rid = self.failed.get_reservation_id()
             if rid is None:
                 self.actor.get_logger().error("Could not process failed RPC: reservation id is null")
-            self.actor.handle_failed_rpc(rid, self.failed)
+            self.actor.handle_failed_rpc(rid=rid, rpc=self.failed)
         else:
             raise Exception("Unsupported RPC request type: {}".format(self.failed.get_request().get_request_type()))

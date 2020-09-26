@@ -31,8 +31,7 @@ from datetime import datetime
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.reservation_states import ReservationStates
 from fabric.actor.core.time.term import Term
-from fabric.orchestrator.core.orchestrator_slice import ControllerSlice
-
+from fabric.orchestrator.core.orchestrator_slice import OrchestratorSlice
 
 
 class SliceDeferThread:
@@ -74,7 +73,7 @@ class SliceDeferThread:
         else:
             self.delay_resource_types = delay_rtype.split(" ")
 
-    def put_tail(self, controller_slice: ControllerSlice):
+    def put_tail(self, *, controller_slice: OrchestratorSlice):
         try:
             self.queue_lock.acquire()
             if controller_slice is not None:
@@ -105,7 +104,7 @@ class SliceDeferThread:
         finally:
             self.queue_lock.release()
 
-    def update_last(self, controller_slice: ControllerSlice):
+    def update_last(self, *, controller_slice: OrchestratorSlice):
         if controller_slice is None:
             return
 
@@ -114,22 +113,22 @@ class SliceDeferThread:
         self.last_slice = controller_slice
         self.last_slice_time = datetime.utcnow()
 
-    def process_slice(self, controller_slice: ControllerSlice):
+    def process_slice(self, *, controller_slice: OrchestratorSlice):
         if controller_slice is None:
             return
 
-        if controller_slice != self.last_slice and self.check_computed_reservations(controller_slice) and \
-                self.delay_not_done(self.last_slice):
+        if controller_slice != self.last_slice and self.check_computed_reservations(controller_slice=controller_slice) and \
+                self.delay_not_done(controller_slice=self.last_slice):
             self.logger.info("Putting slice {}/{} on wait queue".format(controller_slice.get_slice_urn(),
                                                                         controller_slice.get_slice_id()))
-            self.put_tail(controller_slice)
+            self.put_tail(controller_slice=controller_slice)
         else:
             self.logger.info("Processing slice {}/{} immediately".format(controller_slice.get_slice_urn(),
                                                                          controller_slice.get_slice_id()))
-            if self.check_computed_reservations(controller_slice):
-                self.update_last(controller_slice)
+            if self.check_computed_reservations(controller_slice=controller_slice):
+                self.update_last(controller_slice=controller_slice)
 
-            self.demand_slice(controller_slice)
+            self.demand_slice(controller_slice=controller_slice)
 
     def start(self):
         self.logger.debug("KOMAL Start")
@@ -161,7 +160,7 @@ class SliceDeferThread:
                                                                                  self.last_slice.get_slice_id()))
             try:
                 self.last_slice.lock()
-                if self.delay_not_done(self.last_slice):
+                if self.delay_not_done(controller_slice=self.last_slice):
                     if Term.delta(self.last_slice, datetime.utcnow()) > self.max_create_wait_time:
                         self.logger.info("Maximum wait time exceeded for slice: {}/{}, proceeding anyway".format(
                             self.last_slice.get_slice_urn(), self.last_slice.get_slice_id()))
@@ -177,10 +176,10 @@ class SliceDeferThread:
             self.logger.info("Performing demand on deferred slice {}/{}".format(self.last_slice.get_slice_urn(),
                                                                                 self.last_slice.get_slice_id()))
 
-            self.update_last(controller_slice)
+            self.update_last(controller_slice=controller_slice)
             try:
                 controller_slice.lock()
-                self.demand_slice(controller_slice)
+                self.demand_slice(controller_slice=controller_slice)
             except Exception as e:
                 self.logger.error("Exception while demanding slice: {}/{} e: {}".format(self.last_slice.get_slice_urn(),
                                                                                         self.last_slice.get_slice_id(),
@@ -190,7 +189,7 @@ class SliceDeferThread:
 
             self.remove_head()
 
-    def demand_slice(self, controller_slice: ControllerSlice):
+    def demand_slice(self, *, controller_slice: OrchestratorSlice):
         if controller_slice is None:
             self.logger.error("demand slice was given a None slice")
             return
@@ -201,8 +200,8 @@ class SliceDeferThread:
             return
 
         try:
-            from fabric.orchestrator.core.orchestrator_state import ControllerStateSingleton
-            controller = ControllerStateSingleton.get().get_management_actor()
+            from fabric.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
+            controller = OrchestratorStateSingleton.get().get_management_actor()
             for reservation in computed_reservations:
                 self.logger.debug("Issuing demand for reservation: {}".format(reservation.get_reservation_id()))
 
@@ -215,14 +214,14 @@ class SliceDeferThread:
             self.logger.error("Unable to get orchestrator or demand reservation")
             return
 
-    def check_computed_reservations(self, controller_slice: ControllerSlice) -> bool:
+    def check_computed_reservations(self, *, controller_slice: OrchestratorSlice) -> bool:
         if controller_slice is None or controller_slice.get_computed_reservations() is None:
             self.logger.info("Empty slice or no computed reservations")
             return False
 
         for reservation in controller_slice.get_computed_reservations():
             for drt in self.delay_resource_types:
-                if drt == reservation.get_type():
+                if drt == reservation.get_resource_type():
                     self.logger.info("{}/{} has delayed domain".format(controller_slice.get_slice_urn(),
                                                                        controller_slice.get_slice_id()))
                     return True
@@ -232,7 +231,7 @@ class SliceDeferThread:
 
         return False
 
-    def delay_not_done(self, controller_slice: ControllerSlice) -> bool:
+    def delay_not_done(self, *, controller_slice: OrchestratorSlice) -> bool:
         if controller_slice is None:
             return False
 
@@ -243,9 +242,9 @@ class SliceDeferThread:
         all_reservations = None
 
         try:
-            from fabric.orchestrator.core.orchestrator_state import ControllerStateSingleton
-            controller = ControllerStateSingleton.get().get_management_actor()
-            all_reservations = controller_slice.get_all_reservations(controller)
+            from fabric.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
+            controller = OrchestratorStateSingleton.get().get_management_actor()
+            all_reservations = controller_slice.get_all_reservations(controller=controller)
         except Exception as e:
             self.logger.error("Exception in delay_not_done for slice: {}/{} e: {}".format(
                 controller_slice.get_slice_urn(), controller_slice.get_slice_id(), e))
@@ -254,15 +253,15 @@ class SliceDeferThread:
             self.logger.info("Slice: {}/{} has None reservations in delay_not_done".format(
                 controller_slice.get_slice_urn(), controller_slice.get_slice_id()))
 
-            return self.check_computed_reservations(controller_slice)
+            return self.check_computed_reservations(controller_slice=controller_slice)
         else:
             if len(all_reservations) <= 0:
                 self.logger.info("Slice: {}/{} has empty reservations in delay_not_done".format(
                     controller_slice.get_slice_urn(), controller_slice.get_slice_id()))
-                return self.check_computed_reservations(controller_slice)
+                return self.check_computed_reservations(controller_slice=controller_slice)
 
             for reservation in all_reservations:
-                rtype = reservation.get_type()
+                rtype = reservation.get_resource_type()
                 for drt in self.delay_resource_types:
                     if drt == rtype:
                         if reservation.get_state() != ReservationStates.Active and \

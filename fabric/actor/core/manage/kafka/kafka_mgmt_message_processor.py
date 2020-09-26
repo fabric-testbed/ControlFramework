@@ -31,7 +31,7 @@ from fabric.message_bus.messages.message import IMessageAvro
 
 
 class MessageWrapper:
-    def __init__(self, message: IMessageAvro):
+    def __init__(self, *, message: IMessageAvro):
         self.message = message
         self.condition = threading.Condition()
         self.done = False
@@ -39,8 +39,9 @@ class MessageWrapper:
 
 
 class KafkaMgmtMessageProcessor(AvroConsumerApi):
-    def __init__(self, conf: dict, key_schema, record_schema, topics, batchSize=5, logger=None):
-        super().__init__(conf, key_schema, record_schema, topics, batchSize, logger)
+    def __init__(self, *, conf: dict, key_schema, record_schema, topics, batchSize=5, logger=None):
+        super().__init__(conf=conf, key_schema=key_schema, record_schema=record_schema, topics=topics,
+                         batchSize=batchSize, logger=logger)
         self.thread_lock = threading.Lock()
         self.thread = None
         self.messages = {}
@@ -79,11 +80,11 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
             if self.thread_lock is not None and self.thread_lock.locked():
                 self.thread_lock.release()
 
-    def handle_message(self, message: IMessageAvro):
+    def handle_message(self, *, message: IMessageAvro):
         try:
             message_id = message.get_message_id()
 
-            request = self.remove_message(message_id)
+            request = self.remove_message(msg_id=message_id)
             if request is None:
                 self.logger.error("No corresponding request found for message_id: {}".format(message_id))
                 self.logger.error("Discarding the message: {}".format(message))
@@ -98,13 +99,13 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
             self.logger.error(e)
             self.logger.error("Discarding the incoming message {}".format(message))
 
-    def add_message(self, message: IMessageAvro) -> MessageWrapper:
+    def add_message(self, *, message: IMessageAvro) -> MessageWrapper:
         result = None
         try:
             msg_id = message.get_message_id()
             if msg_id is not None:
                 self.thread_lock.acquire()
-                result = MessageWrapper(message)
+                result = MessageWrapper(message=message)
                 if self.messages.get(msg_id, None) is not None:
                     print("Discarding the message, message with id: {} already exists".format(msg_id))
 
@@ -113,7 +114,7 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
             self.thread_lock.release()
         return result
 
-    def remove_message(self, msg_id: str):
+    def remove_message(self, *, msg_id: str):
         try:
             self.thread_lock.acquire()
             if self.messages.get(msg_id, None) is not None:

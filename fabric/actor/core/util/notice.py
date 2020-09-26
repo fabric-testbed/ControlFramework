@@ -31,7 +31,7 @@ class Notice:
     def get_notice(self):
         return self.notice_string
 
-    def add(self, msg: str, ex: Exception = None):
+    def add(self, *, msg: str, ex: Exception = None):
         if msg is None:
             return
 
@@ -41,7 +41,7 @@ class Notice:
             self.notice_string += msg
 
         if ex is not None:
-            self.notice_string += ex
+            self.notice_string += str(ex)
 
     def clear(self):
         self.notice_string = None

@@ -36,7 +36,7 @@ class ResourceTicket:
     ResourceTicket represents a sequence of one or more delegations of resources from one party to another.
     """
 
-    def __init__(self, factory: IResourceTicketFactory, delegation: ResourceDelegation, source):
+    def __init__(self, *, factory: IResourceTicketFactory, delegation: ResourceDelegation, source):
         """
         Creates a root ticket from the specified delegation.
         @params delegation: root delegation
@@ -115,5 +115,5 @@ class ResourceTicket:
     def get_factory(self) -> IResourceTicketFactory:
         return self.factory
 
-    def set_factory(self, factory: IResourceTicketFactory):
+    def set_factory(self, *, factory: IResourceTicketFactory):
         self.factory = factory

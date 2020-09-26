@@ -29,7 +29,7 @@ from fabric.actor.core.util.id import ID
 
 
 class ReservationPurgedEvent(IEvent):
-    def __init__(self, reservation: IReservation):
+    def __init__(self, *, reservation: IReservation):
         self.actor_id = reservation.get_actor().get_guid()
         self.rid = reservation.get_reservation_id()
         self.slice_id = reservation.get_slice_id()
