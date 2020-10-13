@@ -29,8 +29,8 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-server: localhost:19092
+  - kafka-schema-registry-url: http://localhost:8081
   - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
   - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
@@ -39,6 +39,7 @@ runtime:
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
+  - prometheus.port: 11000
 
 logging:
   ## The directory in which actor should create log files.
@@ -61,13 +62,13 @@ logging:
   - logger: fabric-site-am
 
 oauth:
-  - token-public-key: /etc/fabric/ssl/token_public.pem
+  - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
 
 database:
   - db-user: fabric
   - db-password: fabric
   - db-name: am
-  - db-host: actordb:5432
+  - db-host: localhost:8432
 
 container:
   - container.guid: fabric-site-am-conainer
@@ -96,7 +97,7 @@ neo4j:
   url: neo4j://0.0.0.0:7687
   user: neo4j
   pass: password
-  import_host_dir: /host/directory/seen/by/neo4j/docker/as/imports
+  import_host_dir: ./neo4j/imports/
   import_dir: /imports
 
 actor:
@@ -105,69 +106,50 @@ actor:
   - guid: fabric-site-am-guid
   - description: Site AM
   - kafka-topic: fabric-site-am-topic
-  - controls:
-      - control:
-        - type: site.vm
-        - module: fabric.actor.core.policy.simple_vm_control
-        - class: SimpleVMControl
-      - control:
-        - type: site.baremetalce
-        - module: fabric.actor.core.policy.simple_vm_control
-        - class: SimpleVMControl
-      - control:
-        - type: site.vlan
-        - module: fabric.actor.core.policy.vlan_control
-        - class: VlanControl
-      - control:
-        - type: site.lun
-        - module: fabric.actor.core.policy.lun_control
-        - class: LUNControl
-  - pools:
-      - pool:
-        - factory.module: fabric.actor.boot.inventory.resource_pool_factory
-        - factory.class: ResourcePoolFactory
+  - substrate.file: /etc/fabric/actor/config/neo4j/site-am-2broker-ad-enumerated.graphml
+  - resources:
+      - resource:
+        - resource_module: fim.slivers.network_node
+        - resource_class: Node
         - type: site.vm
         - label: VM AM
         - description: VM AM
-        - units: 100
         - handler:
           - module: fabric.actor.plugins.vm
           - class: Dummy
           - properties:
               - ec2.keys: config/ec2
               - ec2.site.properties: config/ec2.site.properties
+        - control:
+            - type: site.vm
+            - module: fabric.actor.core.policy.simple_vm_control
+            - class: SimpleVMControl
         - attributes:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
                 - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-        - properties:
-            - substrate.file: config/neo4j/rockyvmsite.xml
-            - ip.subnet: 255.255.255.0
-            - ip.list: 192.168.1.2/24
-      - pool:
-        - factory.module: fabric.actor.boot.inventory.resource_pool_factory
-        - factory.class: ResourcePoolFactory
-        - type: site.baremetalce
-        - label: xCAT node
-        - description: A bare metal machine
-        - units: 2
+      - resource:
+        - resource_module: fim.slivers.network_node
+        - resource_class: Node
+        - type: site.baremetal
+        - label: Baremetal AM
+        - description: Baremetal AM
         - handler:
           - module: fabric.actor.plugins.baremetal
           - class: Dummy
           - properties:
               - xcat.site.properties: config/xcat.site.properties
-        - properties:
-            - substrate.file: config/neo4j/rockyvmsite.xml
-            - ip.subnet: 255.255.255.0
-            - ip.list: 192.168.1.2/24
-      - pool:
-        - factory.module: fabric.actor.boot.inventory.ResourcePoolFactory
-        - factory.class: ResourcePoolFactory
+        - control:
+          - type: site.vm
+          - module: fabric.actor.core.policy.simple_vm_control
+          - class: SimpleVMControl
+      - resource:
+        - resource_module: fim.slivers.attached_pci_devices
+        - resource_class: AttachedPCIDevices
         - type: site.vlan
-        - label: Net AM
-        - description: Net AM
-        - units: 100
+        - label: Network Vlan
+        - description: Network Vlan
         - handler:
           - module: fabric.actor.plugins.vlan
           - class: Dummy
@@ -178,18 +160,16 @@ actor:
                 - key: resource.class.invfortype
                 - type: Class
                 - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-        - properties:
-            - substrate.file: config/neo4j/rockyvmsite.xml
-            - vlan.range.num: 100
-            - vlan.tag.start0: 1
-            - vlan.tag.end0: 100
-      - pool:
-        - factory.module: fabric.actor.boot.inventory.resource_pool_factory
-        - factory.class: ResourcePoolFactory
+        - control:
+          - type: site.vlan
+          - module: fabric.actor.core.policy.vlan_control
+          - class: VlanControl
+      - resource:
+        - resource_module: fim.slivers.network_attached_storage
+        - resource_class: NetworkAttachedStorage
         - type: site.lun
         - label: OS internal lun
         - description: OS internal lun
-        - units: 100
         - handler:
           - module: fabric.actor.plugins.storage
           - class: Dummy
@@ -200,11 +180,10 @@ actor:
                 - key: resource.class.invfortype
                 - type: Class
                 - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-        - properties:
-            - substrate.file: config/neo4j/rockyvmsite.xml
-            - lun.range.num: 100
-            - lun.tag.start0: 1
-            - lun.tag.end0: 100
+        - control:
+            - type: site.lun
+            - module: fabric.actor.core.policy.lun_control
+            - class: LUNControl
 peers:
   - peer:
     - name: fabric-orchestrator
@@ -216,16 +195,4 @@ peers:
     - type: broker
     - guid: fabric-broker-guid
     - kafka-topic: fabric-broker-topic
-    - rsets:
-       - rset:
-           - type: site.vm
-           - units: 15
-       - rset:
-           - type: site.baremetalce
-           - units: 1
-       - rset:
-           - type: site.vlan
-           - units: 15
-       - rset:
-           - type: site.lun
-           - units: 1
+    - delegation: del1

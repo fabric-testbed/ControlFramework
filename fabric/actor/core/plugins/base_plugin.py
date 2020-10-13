@@ -26,6 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.util.id import ID
 
 if TYPE_CHECKING:
@@ -121,7 +122,7 @@ class BasePlugin(IBasePlugin):
     def restart_configuration_actions(self, *, reservation: IReservation):
         return
 
-    def revisit(self, *, slice_obj: ISlice = None, reservation: IReservation = None):
+    def revisit(self, *, slice_obj: ISlice = None, reservation: IReservation = None, delegation: IDelegation = None):
         return
 
     def recovery_ended(self):
@@ -141,10 +142,10 @@ class BasePlugin(IBasePlugin):
         target = properties[Config.PropertyTargetName]
         unsupported = False
 
-        if target == Config.TargetJoin:
-            self.process_join_complete(token=token, properties=properties)
-        elif target == Config.TargetLeave:
-            self.process_leave_complete(token=token, properties=properties)
+        if target == Config.TargetCreate:
+            self.process_create_complete(token=token, properties=properties)
+        elif target == Config.TargetDelete:
+            self.process_delete_complete(token=token, properties=properties)
         elif target == Config.TargetModify:
             self.process_modify_complete(token=token, properties=properties)
         else:
@@ -184,10 +185,10 @@ class BasePlugin(IBasePlugin):
         ticket_factory.set_actor(actor=self.actor)
         return ticket_factory
 
-    def process_join_complete(self, *, token: ConfigToken, properties: dict):
+    def process_create_complete(self, *, token: ConfigToken, properties: dict):
         return
 
-    def process_leave_complete(self, *, token: ConfigToken, properties: dict):
+    def process_delete_complete(self, *, token: ConfigToken, properties: dict):
         return
 
     def process_modify_complete(self, *, token: ConfigToken, properties: dict):

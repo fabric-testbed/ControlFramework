@@ -28,6 +28,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.util.id import ID
 
 if TYPE_CHECKING:
@@ -109,13 +110,14 @@ class IBasePlugin(IPlugin):
         """
 
     @abstractmethod
-    def revisit(self, *, slice: ISlice = None, reservation: IReservation = None):
+    def revisit(self, *, slice: ISlice = None, reservation: IReservation = None, delegation: IDelegation = None):
         """
         Rebuilds plugin state associated with a restored slice/reservation. Called once for each restored slice/reservation.
 
         Args:
             slice: restored slice
             reservation: restored reservation
+            delegation: restored delegation
         Raises:
             Exception if rebuilding state fails
         """

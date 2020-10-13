@@ -24,25 +24,88 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from fabric.actor.boot.inventory.resource_pool_factory import ResourcePoolFactory
-from fim.graph.neo4j_property_graph import Neo4jGraphImporter
+from fim.graph.abc_property_graph import ABCPropertyGraph
+from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
+from fim.graph.resources.neo4j_arm import Neo4jARMGraph
+from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
 
 
 class Neo4jResourcePoolFactory(ResourcePoolFactory):
-    def load_file_direct(self, *, filename, neo4j_config):
+    @staticmethod
+    def get_neo4j_importer() -> Neo4jGraphImporter:
         """
-        Load specified file directly with no manipulations or validation
-        :param filename:
-        :param neo4j_config:
-        :return:
+        get neo4j graph importer
+        :return: Neo4jGraphImporter
         """
+        from fabric.actor.core.container.globals import GlobalsSingleton
+        neo4j_config = GlobalsSingleton.get().get_config().get_global_config().get_neo4j_config()
+        logger = GlobalsSingleton.get().get_logger()
+
         neo4j_graph_importer = Neo4jGraphImporter(url=neo4j_config["url"], user=neo4j_config["user"],
                                                   pswd=neo4j_config["pass"],
                                                   import_host_dir=neo4j_config["import_host_dir"],
-                                                  import_dir=neo4j_config["import_dir"])
-        neo4_graph = neo4j_graph_importer.import_graph_from_file_direct(graph_file=filename)
+                                                  import_dir=neo4j_config["import_dir"], logger=logger)
+        return neo4j_graph_importer
+
+    @staticmethod
+    def get_arm_graph_from_file(*, filename: str) -> ABCPropertyGraph:
+        """
+        Load specified file directly with no manipulations or validation
+        :param filename:
+        :return:
+        """
+        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        neo4_graph = neo4j_graph_importer.import_graph_from_file(graph_file=filename)
         neo4_graph.validate_graph()
 
-        return neo4_graph
+        arm_graph = Neo4jARMGraph(graph=neo4_graph)
 
-    def update_descriptor(self):
-        super().update_descriptor()
+        return arm_graph
+
+    @staticmethod
+    def get_arm_graph(*, graph_id: str) -> Neo4jARMGraph:
+        """
+        Load arm graph from neo4j
+        :param graph_id: graph_id
+        :return: Neo4jARMGraph
+        """
+        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        arm_graph = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer))
+
+        return arm_graph
+
+    @staticmethod
+    def get_neo4j_cbm_empty_graph() -> Neo4jCBMGraph:
+        """
+        Load cmb empty graph
+        :return: Neo4jCBMGraph
+        """
+        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        combined_broker_model = Neo4jCBMGraph(importer=neo4j_graph_importer, logger=neo4j_graph_importer.log)
+        return combined_broker_model
+
+    @staticmethod
+    def get_neo4j_cbm_graph_from_database(combined_broker_model_graph_id: str) -> Neo4jCBMGraph:
+        """
+        Load cbm graph from neo4j
+        :param combined_broker_model_graph_id: combined_broker_model_graph_id
+        :return: Neo4jCBMGraph
+        """
+        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        combined_broker_model = Neo4jCBMGraph(graph_id=combined_broker_model_graph_id,
+                                              importer=neo4j_graph_importer,
+                                              logger=neo4j_graph_importer.log)
+        combined_broker_model.validate_graph()
+        return combined_broker_model
+
+    @staticmethod
+    def get_graph_from_string(*, graph_str: str) -> Neo4jPropertyGraph:
+        """
+        Load arm graph from neo4j
+        :param graph_str: graph_str
+        :return: Neo4jPropertyGraph
+        """
+        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        graph = neo4j_graph_importer.import_graph_from_string_direct(graph_string=graph_str)
+
+        return graph

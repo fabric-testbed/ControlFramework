@@ -29,8 +29,8 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-server: localhost:19092
+  - kafka-schema-registry-url: http://localhost:8081
   - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
   - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
@@ -40,6 +40,7 @@ runtime:
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
   - orchestrator.rest.port: 8700
+  - prometheus.port: 11200
 
 logging:
   ## The directory in which actor should create log files.
@@ -61,13 +62,20 @@ logging:
 
   - logger: fabric-orchestrator
 oauth:
-  - token-public-key: /etc/fabric/ssl/token_public.pem
+  - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
 
 database:
   - db-user: fabric
   - db-password: fabric
-  - db-name: test
-  - db-host: localhost:8432
+  - db-name: orchestrator
+  - db-host: localhost:10432
+
+neo4j:
+  url: neo4j://0.0.0.0:9687
+  user: neo4j
+  pass: password
+  import_host_dir: ./neo4j/imports/
+  import_dir: /imports
 
 container:
   - container.guid: fabric-orchestrator-conainer

@@ -29,7 +29,10 @@ import pickle
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_concrete_set import IConcreteSet
+from fabric.actor.core.apis.i_delegation import IDelegation
+from fabric.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
+from fabric.actor.core.kernel.incoming_delegation_rpc import IncomingDelegationRPC
 from fabric.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
 from fabric.actor.core.kernel.incoming_query_rpc import IncomingQueryRPC
 from fabric.actor.core.kernel.incoming_rpc import IncomingRPC
@@ -39,8 +42,10 @@ from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.kafka.kafka_retun import KafkaReturn
 from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
 from fabric.message_bus.messages.reservation_avro import ReservationAvro
 from fabric.message_bus.messages.message import IMessageAvro
+from fabric.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
 
 if TYPE_CHECKING:
     from fabric.actor.security.auth_token import AuthToken
@@ -80,6 +85,15 @@ class ActorService:
         return ClientReservationFactory.create(rid=ID(id=reservation.reservation_id), resources=resource_set, term=term,
                                                slice_object=slice_obj, actor=self.actor)
 
+    def pass_client_delegation(self, *, delegation: DelegationAvro) -> IDelegation:
+        slice_obj = Translate.translate_slice(slice_id=delegation.slice.guid, slice_name=delegation.slice.slice_name)
+
+        dlg = BrokerDelegationFactory.create(did=delegation.get_delegation_id(), slice_id=slice_obj.get_slice_id(),
+                                             broker=None)
+        dlg.restore(actor=self.actor, slice_obj=slice_obj, logger=self.logger)
+        dlg.load_graph(graph_str=delegation.graph)
+        return dlg
+
     def do_dispatch(self, *, rpc: IncomingRPC):
         try:
             RPCManagerSingleton.get().dispatch_incoming(actor=self.actor, rpc=rpc)
@@ -107,9 +121,9 @@ class ActorService:
         try:
             query = request.properties
             rpc = IncomingQueryRPC(request_type=RPCRequestType.QueryResult, message_id=ID(id=request.get_message_id()),
-                                   query=query, caller=authToken,request_id=ID(id=request.request_id))
+                                   query=query, caller=authToken, request_id=ID(id=request.request_id))
         except Exception as e:
-            self.logger.error("Invalid queryResult request: {}".format(e))
+            self.logger.error("Invalid query_result request: {}".format(e))
             raise e
         self.do_dispatch(rpc=rpc)
 
@@ -122,7 +136,7 @@ class ActorService:
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.UpdateLease,
                                          reservation=rsvn, update_data=udd, caller=authToken)
         except Exception as e:
-            self.logger.error("Invalid updateLease request: {}".format(e))
+            self.logger.error("Invalid update_lease request: {}".format(e))
             raise e
         self.do_dispatch(rpc=rpc)
 
@@ -136,7 +150,21 @@ class ActorService:
                                          request_type=RPCRequestType.UpdateTicket, reservation=rsvn, update_data=udd,
                                          caller=authToken)
         except Exception as e:
-            self.logger.error("Invalid updateTicket request: {}".format(e))
+            self.logger.error("Invalid update_ticket request: {}".format(e))
+            raise e
+        self.do_dispatch(rpc=rpc)
+
+    def update_delegation(self, *, request: UpdateDelegationAvro):
+        rpc = None
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        try:
+            dlg = self.pass_client_delegation(delegation=request.delegation)
+            udd = Translate.translate_udd_from_avro(udd=request.update_data)
+            rpc = IncomingDelegationRPC(message_id=ID(id=request.message_id),
+                                         request_type=RPCRequestType.UpdateDelegation, delegation=dlg, update_data=udd,
+                                         caller=authToken)
+        except Exception as e:
+            self.logger.error("Invalid update_delegation request: {}".format(e))
             raise e
         self.do_dispatch(rpc=rpc)
 
@@ -167,6 +195,8 @@ class ActorService:
             self.update_lease(request=message)
         elif message.get_message_name() == IMessageAvro.UpdateTicket:
             self.update_ticket(request=message)
+        elif message.get_message_name() == IMessageAvro.UpdateDelegation:
+            self.update_delegation(request=message)
         else:
             self.logger.error("Unsupported message {}".format(message))
             raise Exception("Unsupported message {}".format(message.get_message_name()))

@@ -7,8 +7,11 @@ sqlalchemy
 psycopg2-binary
 pyyaml
 fabric-message-bus
-fabric_fim
+fabric_fim==0.13
 click
 pytest
 confluent-kafka[avro]
 waitress
+prometheus_client
+connexion
+swagger-ui

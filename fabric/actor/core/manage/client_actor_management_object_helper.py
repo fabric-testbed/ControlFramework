@@ -38,9 +38,11 @@ from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.management_utils import ManagementUtils
+from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
+from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
 from fabric.message_bus.messages.result_proxy_avro import ResultProxyAvro
 from fabric.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
@@ -153,19 +155,10 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             if b is not None:
                 request = BrokerPolicy.get_resource_pools_query()
                 response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request)
-                pools = BrokerPolicy.get_resource_pools(response)
-
-                for resource_type, rpd in pools.items():
-                    temp = {}
-                    temp = rpd.save(properties=temp, prefix=None)
-                    pi = PoolInfoAvro()
-                    pi.set_type(str(resource_type))
-                    pi.set_name(rpd.get_resource_type_label())
-                    pi.set_properties(temp)
-
-                    if result.pools is None:
-                        result.pools = []
-                    result.pools.append(pi)
+                pool = Translate.translate_to_pool_info(query_response=response)
+                if result.pools is None:
+                    result.pools = []
+                result.pools.append(pool)
             else:
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
@@ -646,5 +639,87 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             result.set_code(ErrorCodes.ErrorInternalError.value)
             result.set_message(ErrorCodes.ErrorInternalError.name)
             result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        result = ResultDelegationAvro()
+        result.status = ResultAvro()
+
+        if caller is None or did is None or broker is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+
+        try:
+            my_broker = self.client.get_broker(guid=broker)
+
+            if my_broker is None:
+                result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
+                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
+                return result
+
+            class Runner(IActorRunnable):
+                def __init__(self, *, actor: IActor):
+                    self.actor = actor
+
+                def run(self):
+                    return self.actor.claim_delegation_client(delegation_id=did, broker=my_broker)
+
+            rc = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
+
+            if rc is not None:
+                result.delegations = []
+                delegation = Translate.translate_delegation_to_avro(delegation=rc)
+                result.delegations.append(delegation)
+            else:
+                raise Exception("Internal Error")
+        except Exception as e:
+            traceback.print_exc()
+            self.logger.error("claim_delegations {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        result = ResultReservationAvro()
+        result.status = ResultAvro()
+
+        if caller is None or did is None or broker is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+
+        try:
+            my_broker = self.client.get_broker(guid=broker)
+
+            if my_broker is None:
+                result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
+                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
+                return result
+
+            class Runner(IActorRunnable):
+                def __init__(self, *, actor: IActor):
+                    self.actor = actor
+
+                def run(self):
+                    return self.actor.reclaim_delegation_client(delegation_id=did, broker=my_broker)
+
+            rc = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
+
+            if rc is not None:
+                result.delegations = []
+                delegation = Translate.translate_delegation_to_avro(delegation=rc)
+                result.delegations.append(delegation)
+            else:
+                raise Exception("Internal Error")
+        except Exception as e:
+            traceback.print_exc()
+            self.logger.error("reclaim_delegations {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result

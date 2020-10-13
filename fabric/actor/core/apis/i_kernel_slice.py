@@ -28,7 +28,9 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_slice import ISlice
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
     from fabric.actor.core.util.id import ID
@@ -109,7 +111,7 @@ class IKernelSlice(ISlice):
         """
 
     @abstractmethod
-    def soft_lookup(self, *, rid: ID):
+    def soft_lookup(self, *, rid: ID) -> IKernelReservation:
         """
         Looks up a reservation by ID but does not throw error if the
         reservation is not present in the slice.
@@ -133,4 +135,33 @@ class IKernelSlice(ISlice):
         Sets the slice owner.
        
         @param auth the slice owner
+        """
+
+    @abstractmethod
+    def register_delegation(self, *, delegation: IDelegation):
+        """
+        Registers a new delegation.
+
+        @param delegation delegation to register
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def soft_lookup_delegation(self, *, did: str) -> IDelegation:
+        """
+        Looks up a delegation by ID but does not throw error if the
+        delegation is not present in the slice.
+
+        @params did the delegation ID
+
+        @returns the delegation with that ID
+        """
+
+    @abstractmethod
+    def unregister_delegation(self, *, delegation: IDelegation):
+        """
+        Unregisters the delegation from the slice.
+
+        @param delegation delegation to unregister
         """

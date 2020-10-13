@@ -47,8 +47,8 @@ class Config:
 
     ResultCodeException = -1
     ResultCodeOK = 0
-    TargetJoin = "join"
-    TargetLeave = "leave"
+    TargetCreate = "create"
+    TargetDelete = "delete"
     TargetModify = "modify"
     PropertyResourceType = "unit.resourceType"
     PropertyUnitAll = "unit.all"
@@ -91,22 +91,22 @@ class Config:
         finally:
             self.lock.release()
 
-    def join(self, *, token: ConfigToken, properties: dict):
+    def create(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Join")
 
         # TODO
-        result = {self.PropertyTargetName: self.TargetJoin,
+        result = {self.PropertyTargetName: self.TargetCreate,
                   self.PropertyTargetResultCode: self.ResultCodeOK,
                   self.PropertyActionSequenceNumber: 0 }
 
         self.plugin.configuration_complete(token=token, properties=result)
         self.logger.info("Executing Join completed")
 
-    def leave(self, *, token: ConfigToken, properties: dict):
+    def delete(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Leave")
 
         # TODO
-        result = {self.PropertyTargetName: self.TargetLeave,
+        result = {self.PropertyTargetName: self.TargetDelete,
                   self.PropertyTargetResultCode: self.ResultCodeOK,
                   self.PropertyActionSequenceNumber: 0}
 

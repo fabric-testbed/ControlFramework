@@ -26,15 +26,23 @@
 import time
 import traceback
 
+import prometheus_client
+
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.container.globals import Globals, GlobalsSingleton
 from fabric.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
 
 
 def main():
     try:
-        Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/authority/config.site.am.yaml"
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(force_fresh=True)
+
+            runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
+            # prometheus server
+            prometheus_port = int(runtime_config.get(Constants.PropertyConfPrometheusRestPort, None))
+            prometheus_client.start_http_server(prometheus_port)
+
             while True:
                 time.sleep(0.0001)
                 if h.interrupted:

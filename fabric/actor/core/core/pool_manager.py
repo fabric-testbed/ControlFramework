@@ -63,7 +63,8 @@ class PoolManager:
         self.identity = identity
         self.logger = logger
 
-    def create_pool(self, *, slice_id: ID, name: str, rtype: ResourceType, resource_data: ResourceData) -> CreatePoolResult:
+    def create_pool(self, *, slice_id: ID, name: str, rtype: ResourceType,
+                    resource_data: ResourceData) -> CreatePoolResult:
         result = self.CreatePoolResult()
         if slice_id is None or name is None or rtype is None:
             result.code = PoolManagerError.ErrorInvalidArguments

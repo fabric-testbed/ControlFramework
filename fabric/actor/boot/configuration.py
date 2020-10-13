@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime
+from typing import List
 
 from fabric.actor.core.common.constants import Constants
 
@@ -61,6 +62,10 @@ class GlobalConfig:
                 for key, value in prop.items():
                     self.time[key] = value
 
+        self.neo4j = {}
+        if Constants.ConfigSectionNeo4j in config:
+            self.neo4j = config[Constants.ConfigSectionNeo4j]
+
     def get_runtime(self) -> dict:
         return self.runtime
 
@@ -78,6 +83,9 @@ class GlobalConfig:
 
     def get_time(self) -> dict:
         return self.time
+
+    def get_neo4j_config(self) -> dict:
+        return self.neo4j
 
 
 class HandlerConfig:
@@ -202,7 +210,7 @@ class PoolConfig:
     def get_factory_module(self) -> str:
         return self.factory_module
 
-    def get_attributes(self) -> list:
+    def get_attributes(self) -> List[Attribute]:
         return self.attributes
 
 
@@ -228,6 +236,68 @@ class ControlConfig:
 
     def get_class_name(self) -> str:
         return self.class_name
+
+
+class ResourceConfig:
+    def __init__(self, *, config: list):
+        self.description = None
+        self.attributes = []
+        self.type = None
+        self.label = None
+        self.properties = {}
+        self.resource_module = None
+        self.resource_class = None
+        self.handler = None
+        for prop in config:
+            for key, value in prop.items():
+                if key == 'type':
+                    self.type = value
+                elif key == 'label':
+                    self.label = value
+                elif key == 'description':
+                    self.description = value
+                elif key == 'properties':
+                    for p in value:
+                        for k, v in p.items():
+                            self.properties[k] = str(v)
+                elif key == 'resource_class':
+                    self.resource_class = value
+                elif key == 'resource_module':
+                    self.factory_module = value
+                elif key == 'handler':
+                    self.handler = HandlerConfig(config=value)
+                elif key == 'control':
+                    self.control = ControlConfig(config=value)
+                elif key == 'attributes':
+                    for a in value:
+                        self.attributes.append(Attribute(config=a['attribute']))
+
+    def get_type(self) -> str:
+        return self.type
+
+    def get_label(self) -> str:
+        return self.label
+
+    def get_description(self) -> str:
+        return self.description
+
+    def get_handler(self) -> HandlerConfig:
+        return self.handler
+
+    def get_control(self) -> ControlConfig:
+        return self.control
+
+    def get_properties(self) -> dict:
+        return self.properties
+
+    def get_resource_class(self) -> str:
+        return self.resource_class
+
+    def get_resource_module(self) -> str:
+        return self.resource_module
+
+    def get_attributes(self) -> List[Attribute]:
+        return self.attributes
 
 
 class PolicyConfig:
@@ -261,12 +331,14 @@ class ActorConfig:
         self.policy = None
         self.description = None
         self.pools = []
+        self.resources = []
         self.controls = []
         self.type = None
         self.name = None
         self.guid = None
         self.kafka_topic = None
         self.policy = None
+        self.substrate_file = None
         for prop in config:
             for key, value in prop.items():
                 if key == 'type':
@@ -279,6 +351,8 @@ class ActorConfig:
                     self.description = value
                 elif key == 'kafka-topic':
                     self.kafka_topic = value
+                elif key == 'substrate.file':
+                    self.substrate_file = value
                 elif key == 'pools':
                     for p in value:
                         self.pools.append(PoolConfig(config=p['pool']))
@@ -287,6 +361,9 @@ class ActorConfig:
                         self.controls.append(ControlConfig(config=c['control']))
                 elif key == 'policy':
                     self.policy = PolicyConfig(config=value)
+                elif key == 'resources':
+                    for p in value:
+                        self.resources.append(ResourceConfig(config=p['resource']))
 
     def get_type(self) -> str:
         return self.type
@@ -303,15 +380,20 @@ class ActorConfig:
     def get_kafka_topic(self) -> str:
         return self.kafka_topic
 
-    def get_pools(self) -> list:
+    def get_pools(self) -> List[PoolConfig]:
         return self.pools
 
-    def get_controls(self) -> list:
+    def get_controls(self) -> List[ControlConfig]:
         return self.controls
 
     def get_policy(self) -> PolicyConfig:
         return self.policy
 
+    def get_resources(self) -> List[ResourceConfig]:
+        return self.resources
+
+    def get_substrate_file(self) -> str:
+        return self.substrate_file
 
 class RsetConfig:
     def __init__(self, *, config: list):
@@ -350,6 +432,7 @@ class Peer:
         self.type = None
         self.guid = None
         self.kafka_topic = None
+        self.delegation = None
         self.rsets = []
         for prop in config:
             for key, value in prop.items():
@@ -361,6 +444,8 @@ class Peer:
                     self.guid = value
                 elif key == 'kafka-topic':
                     self.kafka_topic = value
+                elif key == 'delegation':
+                    self.delegation = value
                 elif key == 'rsets':
                     for r in value:
                         self.rsets.append(RsetConfig(config=r['rset']))
@@ -377,8 +462,11 @@ class Peer:
     def get_kafka_topic(self) -> str:
         return self.kafka_topic
 
-    def get_rsets(self) -> list:
+    def get_rsets(self) -> List[RsetConfig]:
         return self.rsets
+
+    def get_delegation(self) -> str:
+        return self.delegation
 
 
 class Configuration:
@@ -406,5 +494,5 @@ class Configuration:
     def get_actor(self) -> ActorConfig:
         return self.actor
 
-    def get_peers(self) -> list:
+    def get_peers(self) -> List[Peer]:
         return self.peers

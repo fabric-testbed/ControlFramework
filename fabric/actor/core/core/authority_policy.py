@@ -28,6 +28,7 @@ from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.core.policy import Policy
 from fabric.actor.core.core.ticket import Ticket
@@ -49,6 +50,7 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
 
         self.tickets = None
         self.initialized = False
+        self.delegations = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -57,6 +59,7 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
         del state['clock']
         del state['initialized']
         del state['tickets']
+        del state['delegations']
 
         return state
 
@@ -67,16 +70,25 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
         self.clock = None
         self.initialized = False
         self.tickets = None
+        self.delegations = None
 
     def initialize(self):
         if not self.initialized:
             super().initialize()
             self.tickets = {}
             self.initialized = True
+            self.delegations = {}
 
     def revisit(self, *, reservation: IReservation):
         if isinstance(reservation, IClientReservation):
             self.donate_reservation(reservation=reservation)
+
+    def revisit_delegation(self, *, delegation: IDelegation):
+        self.donate_delegation(delegation=delegation)
+
+    def donate_delegation(self, *, delegation: IDelegation):
+        self.delegations[delegation.get_delegation_id()] = delegation
+        # TODO need to determine how to populate controls and tickets
 
     def donate(self, *, resources: ResourceSet):
         return
@@ -117,6 +129,15 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
 
     def release(self, *, resources: ResourceSet):
         return
+
+    def bind_delegation(self, *, delegation: IDelegation) -> bool:
+        result = False
+
+        if delegation.get_delegation_id() not in self.delegations:
+            self.delegations[delegation.get_delegation_id()] = delegation
+            result = True
+
+        return result
 
     def bind(self, *, reservation: IBrokerReservation) -> bool:
         requested = reservation.get_requested_resources()

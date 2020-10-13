@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+import traceback
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
@@ -128,12 +130,13 @@ class SimpleVMControl(ResourceControl):
         self.use_ip_set = False
 
     def donate_reservation(self, *, reservation: IClientReservation):
+        traceback.print_stack()
         rset = reservation.get_resources()
         rtype = rset.get_type()
         resource = rset.get_resource_properties()
         local = rset.get_local_properties()
 
-        pool = self.inventory.get(rtype)
+        pool = self.inventory.get(rtype, None)
         if pool is None:
             pool = PoolData(rtype=rtype, properties=resource)
             pool.add_units(count=rset.get_units())
@@ -168,7 +171,7 @@ class SimpleVMControl(ResourceControl):
         gained = None
         lost = None
         if current is None:
-            pool = self.inventory.get(rtype)
+            pool = self.inventory.get(rtype, None)
             if pool is None:
                 raise Exception("no resources of the specified pool")
 
@@ -179,7 +182,9 @@ class SimpleVMControl(ResourceControl):
                 return None
         else:
             rtype = current.get_type()
-            pool = self.inventory.get(rtype)
+            pool = self.inventory.get(rtype, None)
+            if pool is None:
+                raise Exception("no resources of the specified pool")
             current_units = current.get_units()
             difference = ticket.get_units() - current_units
             if difference > 0:
@@ -233,7 +238,9 @@ class SimpleVMControl(ResourceControl):
                 try:
                     self.logger.debug("Freeing 1 unit")
                     rtype = u.get_resource_type()
-                    pool = self.inventory.get(rtype)
+                    pool = self.inventory.get(rtype, None)
+                    if pool is None:
+                        raise Exception("no resources of the specified pool")
                     pool.free(count=1)
                     if self.use_ip_set:
                         self.ipset.free(ip=u.get_property(name=Constants.UnitManagementIP))
@@ -251,7 +258,9 @@ class SimpleVMControl(ResourceControl):
                         u.get_state() == UnitState.ACTIVE or \
                         u.get_state() == UnitState.MODIFYING:
                     rtype = u.get_resource_type()
-                    pool = self.inventory.get(rtype)
+                    pool = self.inventory.get(rtype, None)
+                    if pool is None:
+                        raise Exception("no resources of the specified pool")
                     pool.reserve(1)
                     mgmt_ip = u.get_property(name=Constants.UnitManagementIP)
                     if mgmt_ip is not None:

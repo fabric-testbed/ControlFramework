@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_client_public import IClientPublic
+from fabric.actor.core.apis.i_delegation import IDelegation
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
@@ -72,6 +73,22 @@ class IClientActor(IActor, IClientPublic):
         @params slice_object slice
         @params broker broker proxy
         
+        @returns reservation
+        @raises Exception in case of failure
+        """
+
+    @abstractmethod
+    def reclaim_client(self, *, reservation_id: ID = None, resources: ResourceSet = None, slice_object: ISlice = None,
+                     broker: IBrokerProxy = None) -> IClientReservation:
+        """
+        Reclaims already exported resources from the given broker. The reservation
+        will be stored in the default slice.
+
+        @params reservation_id reservation identifier of the exported reservation
+        @params resources resource set describing the resources to claim
+        @params slice_object slice
+        @params broker broker proxy
+
         @returns reservation
         @raises Exception in case of failure
         """
@@ -174,4 +191,34 @@ class IClientActor(IActor, IClientPublic):
         @param reservation_id reservationID for the reservation to modify
         @param modify_properties property list for modify
         @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
+                                broker: IBrokerProxy = None) -> IDelegation:
+        """
+        Claims already exported resources from the given broker. The delegation
+        will be stored in the default slice.
+
+        @params delegation_id delegation identifier of the exported delegation
+        @params slice_object slice
+        @params broker broker proxy
+
+        @returns delegation
+        @raises Exception in case of failure
+        """
+
+    @abstractmethod
+    def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
+                                broker: IBrokerProxy = None) -> IDelegation:
+        """
+        Reclaims already exported resources from the given broker. The delegation
+        will be stored in the default slice.
+
+        @params delegation_id delegation identifier of the exported delegation
+        @params slice_object slice
+        @params broker broker proxy
+
+        @returns delegation
+        @raises Exception in case of failure
         """

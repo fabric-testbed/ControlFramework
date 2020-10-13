@@ -49,6 +49,7 @@ from fabric.actor.core.container.protocol_descriptor import ProtocolDescriptor
 from fabric.actor.core.extensions.plugin_manager import PluginManager
 from fabric.actor.core.kernel.kernel_tick import KernelTick
 from fabric.actor.core.manage.management_object_manager import ManagementObjectManager
+from fim.graph.neo4j_property_graph import Neo4jGraphImporter
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -99,6 +100,16 @@ class Container(IActorContainer):
 
     def get_actor(self) -> IActor:
         return self.actor
+
+    def cleanup_neo4j(self):
+        self.logger.debug("Cleanup Neo4j database started")
+        config = self.config.get_global_config().get_neo4j_config()
+        neo4j_graph_importer = Neo4jGraphImporter(url=config["url"], user=config["user"],
+                                                  pswd=config["pass"],
+                                                  import_host_dir=config["import_host_dir"],
+                                                  import_dir=config["import_dir"])
+        neo4j_graph_importer.delete_all_graphs()
+        self.logger.debug("Cleanup Neo4j database completed")
 
     def determine_boot_mode(self):
         filename = Constants.SuperblockLocation
@@ -165,6 +176,7 @@ class Container(IActorContainer):
 
             if self.is_fresh():
                 try:
+                    self.cleanup_neo4j()
                     from fabric.actor.boot.configuration_loader import ConfigurationLoader
                     loader = ConfigurationLoader()
                     loader.process(config=self.config)

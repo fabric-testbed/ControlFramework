@@ -41,6 +41,7 @@ from fabric.message_bus.messages.add_reservation_avro import AddReservationAvro
 from fabric.message_bus.messages.add_reservations_avro import AddReservationsAvro
 from fabric.message_bus.messages.auth_avro import AuthAvro
 from fabric.message_bus.messages.claim_resources_avro import ClaimResourcesAvro
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
 from fabric.message_bus.messages.demand_reservation_avro import DemandReservationAvro
 from fabric.message_bus.messages.extend_reservation_avro import ExtendReservationAvro
 from fabric.message_bus.messages.get_actors_avro import GetActorsAvro
@@ -560,3 +561,101 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
         self.last_status = status
 
         return status.code == 0
+
+    def claim_delegations(self, *, broker: ID, did: str) -> DelegationAvro:
+        self.clear_last()
+        status = ResultAvro()
+        rret_val = None
+
+        try:
+            request = ClaimResourcesAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.broker_id = str(broker)
+            request.delegation_id = did
+            request.message_id = str(ID())
+            request.callback_topic = self.callback_topic
+
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(message=request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
+                    status.code = ErrorCodes.ErrorTransportTimeout.value
+                    status.message = ErrorCodes.ErrorTransportTimeout.name
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    status = message_wrapper.response.status
+                    if status.code == 0 and message_wrapper.response.delegations is not None and len(
+                            message_wrapper.response.delegations) > 0:
+                        rret_val = next(iter(message_wrapper.response.delegations))
+            else:
+                self.logger.debug("Failed to send the message")
+                status.code = ErrorCodes.ErrorTransportFailure.value
+                status.message = ErrorCodes.ErrorTransportFailure.name
+        except Exception as e:
+            self.last_exception = e
+            status.code = ErrorCodes.ErrorInternalError.value
+            status.message = ErrorCodes.ErrorInternalError.name
+            status.details = traceback.format_exc()
+
+        self.last_status = status
+
+        return rret_val
+
+    def reclaim_delegations(self, *, broker: ID, did: str) -> DelegationAvro:
+        self.clear_last()
+        status = ResultAvro()
+        rret_val = None
+
+        try:
+            request = ReclaimResourcesAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.broker_id = str(broker)
+            request.delegation_id = did
+            request.message_id = str(ID())
+            request.callback_topic = self.callback_topic
+
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(message=request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
+                    status.code = ErrorCodes.ErrorTransportTimeout.value
+                    status.message = ErrorCodes.ErrorTransportTimeout.name
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    status = message_wrapper.response.status
+                    if status.code == 0 and message_wrapper.response.delegations is not None and len(
+                            message_wrapper.response.delegations) > 0:
+                        rret_val = next(iter(message_wrapper.response.delegations))
+            else:
+                self.logger.debug("Failed to send the message")
+                status.code = ErrorCodes.ErrorTransportFailure.value
+                status.message = ErrorCodes.ErrorTransportFailure.name
+        except Exception as e:
+            self.last_exception = e
+            status.code = ErrorCodes.ErrorInternalError.value
+            status.message = ErrorCodes.ErrorInternalError.name
+            status.details = traceback.format_exc()
+
+        self.last_status = status
+
+        return rret_val

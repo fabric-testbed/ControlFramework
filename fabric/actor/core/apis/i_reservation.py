@@ -59,23 +59,6 @@ class IReservation(IReservationResources, IReservationStatus):
     programmer to inspect the state of the reservation, access some of its core objects,
     and wait for the occurrence of a particular event.
     """
-    # Serialization property name: reservation identifier.
-    PropertyID = "rsv_resid"
-
-    # Serialization property name: reservation category.
-    PropertyCategory = "rsv_category"
-
-    # Serialization property name: reservation slice name.
-    PropertySlice = "rsv_slc_id"
-
-    # Serialization property name: reservation state.
-    PropertyState = "rsv_state"
-
-    # Serialization property name: reservation pending state.
-    PropertyPending = "rsv_pending"
-
-    PropertyStateJoined = "rsv_joining"
-
     @abstractmethod
     def clear_dirty(self):
         """

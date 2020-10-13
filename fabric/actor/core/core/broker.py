@@ -31,6 +31,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor import ActorType
+from fabric.actor.core.apis.i_delegation import IDelegation
+from fabric.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
+from fabric.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric.actor.core.kernel.slice_factory import SliceFactory
@@ -167,6 +170,9 @@ class Broker(Actor, IBroker):
         if reservation_id is None:
             raise Exception("Invalid arguments")
 
+        if broker is None:
+            broker = self.get_default_broker()
+
         if slice_object is None:
             slice_object = self.get_default_slice()
             if slice_object is None:
@@ -189,6 +195,9 @@ class Broker(Actor, IBroker):
                        caller: AuthToken = None) -> IClientReservation:
         if reservation_id is None:
             raise Exception("Invalid arguments")
+
+        if broker is None:
+            broker = self.get_default_broker()
 
         if slice_object is None:
             slice_object = self.get_default_slice()
@@ -225,6 +234,71 @@ class Broker(Actor, IBroker):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
         self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
+
+    def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
+                                broker: IBrokerProxy = None) -> IDelegation:
+        if delegation_id is None:
+            raise Exception("Invalid arguments")
+
+        if broker is None:
+            broker = self.get_default_broker()
+
+        if slice_object is None:
+            slice_object = self.get_default_slice()
+            if slice_object is None:
+                slice_object = SliceFactory.create(slice_id=ID(), name=self.identity.get_name())
+                slice_object.set_owner(owner=self.identity)
+                slice_object.set_inventory(value=True)
+
+        delegation = BrokerDelegationFactory.create(did=delegation_id, slice_id=slice_object.get_slice_id(),
+                                                    broker=broker)
+        delegation.set_exported(value=True)
+        delegation.set_slice_object(slice_object=slice_object)
+
+        self.wrapper.delegate(delegation=delegation, destination=self)
+        return delegation
+
+    def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
+                                  broker: IBrokerProxy = None) -> IDelegation:
+        if delegation_id is None:
+            raise Exception("Invalid arguments")
+
+        if broker is None:
+            broker = self.get_default_broker()
+
+        if slice_object is None:
+            slice_object = self.get_default_slice()
+            if slice_object is None:
+                slice_object = SliceFactory.create(slice_id=ID(), name=self.identity.get_name())
+                slice_object.set_owner(owner=self.identity)
+                slice_object.set_inventory(value=True)
+
+        delegation = BrokerDelegationFactory.create(did=delegation_id, slice_id=slice_object.get_slice_id(),
+                                                    broker=broker)
+        delegation.set_slice_object(slice_object=slice_object)
+        delegation.set_exported(exported=True)
+
+        callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.ProtocolKafka,
+                                                             actor_name=self.get_name())
+        if callback is None:
+            raise Exception("Unsupported")
+
+        delegation.prepare(callback=callback, logger=self.logger)
+        delegation.validate_outgoing()
+
+        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=broker, callback=callback)
+
+        return delegation
+
+    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+        if not self.is_recovered() or self.is_stopped():
+            raise Exception("This actor cannot receive calls")
+        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback)
+
+    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+        if not self.is_recovered() or self.is_stopped():
+            raise Exception("This actor cannot receive calls")
+        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback)
 
     def close_expiring(self, *, cycle: int):
         """
@@ -365,6 +439,11 @@ class Broker(Actor, IBroker):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
         self.wrapper.update_ticket(reservation=reservation, update_data=update_data, caller=caller)
+
+    def update_delegation(self, *, delegation: IDelegation, update_data, caller: AuthToken):
+        if not self.is_recovered() or self.is_stopped():
+            raise Exception("This actor cannot receive calls")
+        self.wrapper.update_delegation(delegation=delegation, update_data=update_data, caller=caller)
 
     def register_client(self, *, client: Client):
         database = self.plugin.get_database()

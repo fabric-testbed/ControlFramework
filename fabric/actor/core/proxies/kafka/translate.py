@@ -29,6 +29,8 @@ import pickle
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_delegation import IDelegation
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.time.actor_clock import ActorClock
@@ -41,6 +43,8 @@ from fabric.actor.core.util.resource_type import ResourceType
 from fabric.actor.core.util.update_data import UpdateData
 from fabric.actor.security.auth_token import AuthToken
 from fabric.message_bus.messages.auth_avro import AuthAvro
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
+from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
 from fabric.message_bus.messages.resource_data_avro import ResourceDataAvro
 from fabric.message_bus.messages.resource_set_avro import ResourceSetAvro
 from fabric.message_bus.messages.slice_avro import SliceAvro
@@ -59,25 +63,6 @@ class Translate:
     DirectionAgent = 1
     DirectionAuthority = 2
     DirectionReturn = 3
-    @staticmethod
-    def translate_reservation_to_avro(*, reservation: IReservation):
-        result = None
-        try:
-            result = pickle.dumps(reservation)
-        except Exception as e:
-            print("Exception occurred {}".format(e))
-
-        return result
-
-    @staticmethod
-    def translate_reservation_from_avro(*, reservation) -> IReservation:
-        result = None
-        try:
-            result = pickle.loads(reservation)
-        except Exception as e:
-            print("Exception occurred {}".format(e))
-
-        return result
 
     @staticmethod
     def translate_udd(*, udd: UpdateData) -> UpdateDataAvro:
@@ -111,6 +96,15 @@ class Translate:
         avro_slice.guid = str(slice_obj.get_slice_id())
         avro_slice.description = slice_obj.get_description()
         avro_slice.owner = Translate.translate_auth_to_avro(auth=slice_obj.get_owner())
+
+        if slice_obj.get_resource_type() is not None:
+            avro_slice.set_resource_type(str(slice_obj.get_resource_type()))
+
+        avro_slice.set_client_slice(slice_obj.is_client())
+
+        if slice_obj.get_graph_id() is not None:
+            avro_slice.graph_id = str(slice_obj.get_graph_id())
+
         return avro_slice
 
     @staticmethod
@@ -196,7 +190,6 @@ class Translate:
 
         return result
 
-
     @staticmethod
     def translate_term_from_avro(*, term: TermAvro) -> Term:
         start_time = None
@@ -217,21 +210,6 @@ class Translate:
     def translate_resource_set_from_avro(*, rset: ResourceSetAvro) -> ResourceSet:
         rdata = Translate.translate_resource_data_from_avro(rdata=rset.resource_data)
         result = ResourceSet(units=rset.units, rtype=ResourceType(resource_type=rset.type), rdata=rdata)
-        return result
-
-    @staticmethod
-    def fill_slice(*, slice_obj: ISlice) -> SliceAvro:
-        result = SliceAvro()
-        result.set_slice_name(slice_obj.get_name())
-        result.set_description(slice_obj.get_description())
-        result.set_slice_id(str(slice_obj.get_slice_id()))
-        result.set_owner(Translate.translate_auth_to_avro(auth=slice_obj.get_owner()))
-
-        if slice_obj.get_resource_type() is not None:
-            result.set_resource_type(str(slice_obj.get_resource_type()))
-
-        result.set_client_slice(slice_obj.is_client())
-
         return result
 
     @staticmethod
@@ -256,7 +234,7 @@ class Translate:
         for s in slice_list:
             slice_obj = SliceFactory.create_instance(properties=s)
             if slice_obj is not None:
-                ss = Translate.fill_slice(slice_obj=slice_obj)
+                ss = Translate.translate_slice_to_avro(slice_obj=slice_obj)
                 if full:
                     ss = Translate.attach_properties(slice_mng=ss, slice_obj=slice_obj)
                 result.append(ss)
@@ -277,3 +255,22 @@ class Translate:
             incoming=slice_mng.get_resource_properties(), outgoing=slice_obj.get_resource_properties()))
 
         return slice_obj
+
+    @staticmethod
+    def translate_delegation_to_avro(*, delegation: IDelegation) -> DelegationAvro:
+        avro_delegation = DelegationAvro()
+        avro_delegation.delegation_id = delegation.get_delegation_id()
+        avro_delegation.slice = Translate.translate_slice_to_avro(slice_obj=delegation.get_slice_object())
+        if delegation.get_graph() is not None:
+            avro_delegation.graph = delegation.get_graph().serialize_graph()
+        return avro_delegation
+
+    @staticmethod
+    def translate_to_pool_info(*, query_response: dict) -> PoolInfoAvro:
+        bqm = query_response.get(Constants.BrokerQueryModel, None)
+        pool_info = PoolInfoAvro()
+        pool_info.type = Constants.PoolType
+        pool_info.name = Constants.BrokerQueryModel
+        if bqm is not None:
+            pool_info.properties = {Constants.BrokerQueryModel: bqm}
+        return pool_info

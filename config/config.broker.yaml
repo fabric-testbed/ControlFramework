@@ -29,8 +29,8 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-server: localhost:19092
+  - kafka-schema-registry-url: http://localhost:8081
   - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
   - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
@@ -39,6 +39,7 @@ runtime:
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
+  - prometheus.port: 11100
 
 logging:
   ## The directory in which actor should create log files.
@@ -60,13 +61,13 @@ logging:
 
   - logger: fabric-broker
 oauth:
-  - token-public-key: /etc/fabric/ssl/token_public.pem
+  - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
 
 database:
   - db-user: fabric
   - db-password: fabric
   - db-name: broker
-  - db-host: actordb:5432
+  - db-host: localhost:9432
 
 container:
   - container.guid: fabric-broker-conainer
@@ -90,6 +91,13 @@ time:
   # This property controls if time advances automatically (false) or
   # manually (true)
   - time.manual: false
+
+neo4j:
+  url: neo4j://0.0.0.0:8687
+  user: neo4j
+  pass: password
+  import_host_dir: ./neo4j/imports/
+  import_dir: /imports
 
 actor:
   - type: broker

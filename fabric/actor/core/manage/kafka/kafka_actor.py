@@ -33,6 +33,9 @@ from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 from fabric.message_bus.messages.close_reservations_avro import CloseReservationsAvro
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
+from fabric.message_bus.messages.get_delegations_avro import GetDelegationsAvro
+from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.get_reservations_state_request_avro import GetReservationsStateRequestAvro
 from fabric.message_bus.messages.add_slice_avro import AddSliceAvro
@@ -373,6 +376,87 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         reservation_list = self.do_get_reservations(slice_id=None, state=None, reservation_id=rid)
         if reservation_list is not None and len(reservation_list) > 0:
             return reservation_list.__iter__().__next__()
+        return None
+
+    def do_get_delegations(self, *, slice_id: ID = None, state: int = None,
+                           delegation_id: ID = None) -> List[DelegationAvro]:
+        self.clear_last()
+        response = ResultDelegationAvro()
+        response.status = ResultAvro()
+        try:
+            request = GetDelegationsAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.callback_topic = self.callback_topic
+            request.message_id = str(ID())
+            request.delegation_state = state
+
+            if slice_id is not None:
+                request.slice_id = str(slice_id)
+
+            if delegation_id is not None:
+                request.delegation_id = str(delegation_id)
+
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
+
+            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            response.message_id = request.message_id
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(message=request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug("Timeout occurred!")
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
+                    response.status.code = ErrorCodes.ErrorTransportTimeout.value
+                    response.status.message = ErrorCodes.ErrorTransportTimeout.name
+                else:
+                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    response = message_wrapper.response
+            else:
+                self.logger.debug("Failed to send the message")
+                response.status.code = ErrorCodes.ErrorTransportFailure.value
+                response.status.message = ErrorCodes.ErrorTransportFailure.name
+
+        except Exception as e:
+            self.last_exception = e
+            response.status.code = ErrorCodes.ErrorInternalError.value
+            response.status.message = ErrorCodes.ErrorInternalError.name
+            response.status.details = traceback.format_exc()
+
+        self.last_status = response.status
+
+        return response.delegations
+
+    def get_delegations(self) -> List[DelegationAvro]:
+        return self.do_get_delegations(slice_id=None, state=Constants.AllReservationStates, delegation_id=None)
+
+    def get_delegations_by_state(self, *, state: int) -> List[DelegationAvro]:
+        return self.do_get_delegations(slice_id=None, state=state, delegation_id=None)
+
+    def get_delegations_by_slice_id(self, *, slice_id: ID) -> List[DelegationAvro]:
+        status = ResultAvro()
+
+        self.clear_last()
+        if slice_id is None:
+            self.last_exception = Exception("Invalid arguments")
+            status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            self.last_status = status
+            return None
+
+        return self.do_get_delegations(slice_id=slice_id, state=Constants.AllReservationStates, delegation_id=None)
+
+    def get_delegations_by_slice_id_and_state(self, *, slice_id: ID, state: int) -> List[DelegationAvro]:
+        return self.do_get_delegations(slice_id=slice_id, state=state, delegation_id=None)
+
+    def get_delegation(self, *, rid: ID) -> DelegationAvro:
+        reservation_list = self.do_get_delegations(slice_id=None, state=None, delegation_id=rid)
+        if reservation_list is not None and len(reservation_list) > 0:
+            return next(iter(reservation_list))
         return None
 
     def remove_reservation(self, *, rid: ID) -> bool:

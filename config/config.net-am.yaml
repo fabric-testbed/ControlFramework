@@ -29,8 +29,8 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-server: localhost:19092
+  - kafka-schema-registry-url: http://localhost:8081
   - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
   - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
@@ -39,6 +39,7 @@ runtime:
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
+  - prometheus.port: 11300
 
 logging:
   ## The directory in which actor should create log files.
@@ -58,17 +59,19 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   - log-size: 5000000
 
+  - logger: fabric-site-am
+
 oauth:
-  - token-public-key: /etc/fabric/ssl/token_public.pem
+  - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
 
 database:
-  - db-user: am
-  - db-password: am
+  - db-user: fabric
+  - db-password: fabric
   - db-name: am
-  - db-host: actordb:5432
+  - db-host: localhost:8432
 
 container:
-  - container.guid: fabric-broker-conainer
+  - container.guid: fabric-site-am-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -90,49 +93,50 @@ time:
   # manually (true)
   - time.manual: false
 
+neo4j:
+  url: neo4j://0.0.0.0:7687
+  user: neo4j
+  pass: password
+  import_host_dir: ./neo4j/imports/
+  import_dir: /imports
+
 actor:
   - type: authority
   - name: fabric-net-am
   - guid: fabric-net-am-guid
-  - description: Net-AM
+  - description: Site AM
   - kafka-topic: fabric-net-am-topic
-  - controls:
-      - control:
+  - substrate.file: /etc/fabric/actor/config/neo4j/net-am-2broker-ad-enumerated.graphml
+  - resources:
+       - resource:
+        - resource_module: fim.slivers.attached_pci_devices
+        - resource_class: AttachedPCIDevices
         - type: site.vlan
-        - module: fabric.actor.core.policy.vlan_control
-        - class: VlanControl
-  - pools:
-      - pool:
-        - factory.module: fabric.actor.boot.inventory.resource_pool_factory
-        - factory.class: ResourcePoolFactory
-        - type: site.vlan
-        - label: NET VLAN
-        - description: Net Vlan
-        - units: 25
+        - label: Network Vlan
+        - description: Network Vlan
         - handler:
           - module: fabric.actor.plugins.vlan
           - class: Dummy
           - properties:
-              - quantum.properties: config/quantum.properties
+              - quantum-vlan.properties: config/quantum-vlan.properties
         - attributes:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
                 - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-        - properties:
-            - substrate.file: config/neo4j/rockySite.xml
+        - control:
+          - type: site.vlan
+          - module: fabric.actor.core.policy.vlan_control
+          - class: VlanControl
 peers:
   - peer:
     - name: fabric-orchestrator
-    - guid: fabric-orchestrator-guid
     - type: orchestrator
+    - guid: fabric-orchestrator-guid
     - kafka-topic: fabric-orchestrator-topic
   - peer:
     - name: fabric-broker
-    - guid: fabric-broker-guid
     - type: broker
+    - guid: fabric-broker-guid
     - kafka-topic: fabric-broker-topic
-    - rsets:
-        - rset:
-            - type: site.vlan
-            - units: 15
+    - delegation: del1

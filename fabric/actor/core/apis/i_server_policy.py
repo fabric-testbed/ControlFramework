@@ -28,6 +28,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_policy import IPolicy
 
 if TYPE_CHECKING:
@@ -86,6 +87,18 @@ class IServerPolicy(IPolicy):
         """
 
     @abstractmethod
+    def bind_delegation(self, *, delegation: IDelegation) -> bool:
+        """
+        Handles an incoming request to allocate resources and issue a ticket for
+        the delegation. 
+        @params delegation: delegation to allocate resources for.
+
+        @returns true, if the request has been fulfilled, false, if the allocation
+                of resources will be delayed until a later time.
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
     def donate_reservation(self, *, reservation: IClientReservation):
         """
         Accepts ticketed resources to be used for allocation of client requests.
@@ -98,6 +111,18 @@ class IServerPolicy(IPolicy):
 
         @param reservation : reservation representing resources to be used for allocation
         
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
+    def donate_delegation(self, *, delegation: IDelegation):
+        """
+        Accepts ticketed resources to be used for allocation of client requests.
+        The policy should add the resources represented by this delegation to
+        its inventory.
+
+        @param delegation : delegation representing resources to be used for allocation
+
         @raises Exception in case of error
         """
 

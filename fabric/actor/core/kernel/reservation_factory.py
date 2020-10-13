@@ -70,17 +70,36 @@ class ReservationFactory:
         @throws Exception if the properties list does not contain a reservation
                 identifier
         """
-        return ID(id=properties[IReservation.PropertyID])
+        return ID(id=properties[Constants.PropertyReservationID])
 
     @staticmethod
-    def get_slice_name(*, properties: dict) -> str:
+    def get_slice_id(*, properties: dict) -> int:
         """
-        Extracts the slice name from the properties list.
+        Extracts the slice id from the properties list.
 
         @param properties properties list
 
-        @return slice name
+        @return slice id
 
         @throws Exception if the properties list does not contain a slice name
         """
-        return properties[IReservation.PropertySlice]
+        slice_id = properties.get(Constants.PropertyReservationSliceId, None)
+        if slice_id is not None:
+            return int(slice_id)
+        return None
+
+    @staticmethod
+    def get_delegation_slice_id(*, properties: dict) -> int:
+        """
+        Extracts the slice id from the properties list.
+
+        @param properties properties list
+
+        @return slice id
+
+        @throws Exception if the properties list does not contain a slice name
+        """
+        slice_id = properties.get(Constants.PropertyDelegationSliceId, None)
+        if slice_id is not None:
+            return int(slice_id)
+        return None

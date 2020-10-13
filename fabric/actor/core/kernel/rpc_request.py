@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_proxy import IProxy
 from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
 from fabric.actor.core.apis.i_rpc_response_handler import IRPCResponseHandler
@@ -33,11 +34,13 @@ from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 
 class RPCRequest:
     def __init__(self, *, request: IRPCRequestState, actor: IActor, proxy: IProxy,
-                 reservation: IReservation, sequence: int, handler: IRPCResponseHandler):
+                 sequence: int = None, handler: IRPCResponseHandler = None, reservation: IReservation = None,
+                 delegation: IDelegation = None):
         self.request = request
         self.actor = actor
         self.proxy = proxy
         self.reservation = reservation
+        self.delegation = delegation
         self.sequence = sequence
         self.handler = handler
         self.retry_count = 0
@@ -45,6 +48,9 @@ class RPCRequest:
 
     def get_actor(self) -> IActor:
         return self.actor
+
+    def get_delegation(self) -> IDelegation:
+        return self.delegation
 
     def get_reservation(self) -> IReservation:
         return self.reservation

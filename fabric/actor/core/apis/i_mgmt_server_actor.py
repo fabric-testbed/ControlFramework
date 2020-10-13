@@ -30,7 +30,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
-
+from fim.graph.abc_property_graph import ABCPropertyGraph
 
 if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
@@ -219,4 +219,13 @@ class IMgmtServerActor(IMgmtActor):
         @param source_ticket_id ticket id
         @param client client
         @return returns the reservation id
+        """
+
+    @abstractmethod
+    def advertise_resources(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+        """
+        Advertise resources to the broker
+        @param delegation: delegation
+        @param client: client
+        @return return the reservation id
         """

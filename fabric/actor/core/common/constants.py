@@ -93,20 +93,21 @@ class Constants:
     PropertyConfDbName = "db-name"
     PropertyConfDbHost = "db-host"
 
+    ConfigSectionNeo4j = "neo4j"
+
     # Type code for proxies using local communication.
     ProtocolLocal = "local"
     # Type code for proxies using Kafka communication.
     ProtocolKafka = "kafka"
 
     # TODO change after testing
-    #HomeDirectory = '/usr/src/app/'
-    HomeDirectory = '/Users/komalthareja/renci/code/fabric/ActorBase/'
+    HomeDirectory = '/usr/src/app/'
     SuperblockLocation = HomeDirectory + "state_recovery.lock"
     ControllerLockLocation = HomeDirectory + "controller_recovery.lock"
     ConfigurationFile = "/etc/fabric/actor/config/config.yaml"
     StateFileLocation = '/tmp/fabric_actor.tmp'
 
-    TestDirectory = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/actor/test/"
+    TestDirectory = "/Users/komalthareja/renci/code/fabric/ControlFramework/fabric/actor/test/"
     TestBrokerConfigurationFile = TestDirectory + "config/config.broker.yaml"
     TestNetAmConfigurationFile = TestDirectory + "config/config.net-am.yaml"
     TestVmAmConfigurationFile = TestDirectory + "config/config.site.am.yaml"
@@ -121,6 +122,8 @@ class Constants:
     QueryActionDiscoverPools = "discover.pools"
     QueryAction = "query.action"
     QueryResponse = "query.response"
+    BrokerQueryModel = "bqm"
+    PoolType = "neo4j"
 
     ConfigHandler = "config.handler"
     ConfigVictims = "config.victims"
@@ -147,6 +150,7 @@ class Constants:
     ResourceStartIface = "resource.siface"
     ResourceEndIface = "resource.eiface"
     ResourceDomain = "resource.domain"
+    ResourceNeo4jAbstractDomain = "resource.neo4j.adomain"
 
     UnitManagementIP = "unit.manage.ip"
     UnitManagementPort = "unit.manage.port"
@@ -200,9 +204,14 @@ class Constants:
     PropertyProxiesClass = ".class"
     PropertyProxiesModule = ".module"
 
+    PropertyConfPrometheusRestPort = "prometheus.port"
     PropertyConfControllerRestPort = "orchestrator.rest.port"
     PropertyConfControllerCreateWaitTimeMs = "orchestrator.create.wait.time.ms"
     PropertyConfControllerDelayResourceTypes = "orchestrator.delay.resource.types"
 
     PropertySubstrateFile = "substrate.file"
+    PropertyAggregateResourceModel = "AggregateResourceModel"
 
+    PropertyDelegationSliceId = 'dlg_slc_id'
+    PropertyReservationSliceId = 'rsv_slc_id'
+    PropertyReservationID = "rsv_resid"

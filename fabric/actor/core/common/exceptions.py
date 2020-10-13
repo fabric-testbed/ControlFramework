@@ -25,6 +25,19 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 
+class DelegationNotFoundException(Exception):
+    def __init__(self, *, text: str = None, did=None):
+        super(DelegationNotFoundException, self).__init__()
+        if text is not None:
+            self.text = str(text)
+        else:
+            self.text = "Delegation# {} not found".format(did)
+        self.did = did
+
+    def __str__(self):
+        return self.text
+
+
 class ReservationNotFoundException(Exception):
     def __init__(self, *, text: str = None, rid=None):
         super(ReservationNotFoundException, self).__init__()

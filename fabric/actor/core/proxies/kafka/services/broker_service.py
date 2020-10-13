@@ -26,13 +26,19 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_delegation import IDelegation
+from fabric.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
+from fabric.actor.core.kernel.incoming_delegation_rpc import IncomingDelegationRPC
 from fabric.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.actor.core.proxies.kafka.services.actor_service import ActorService
 from fabric.actor.core.util.id import ID
+from fabric.message_bus.messages.claim_delegation_avro import ClaimDelegationAvro
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
 from fabric.message_bus.messages.reclaim_avro import ReclaimAvro
+from fabric.message_bus.messages.reclaim_delegation_avro import ReclaimDelegationAvro
 from fabric.message_bus.messages.reservation_avro import ReservationAvro
 from fabric.message_bus.messages.message import IMessageAvro
 
@@ -58,6 +64,16 @@ class BrokerService(ActorService):
         result = BrokerReservationFactory.create(rid=rid, resources=resource_set, term=term, slice_obj=slice_obj)
         result.set_owner(owner=self.actor.get_identity())
         result.set_sequence_in(sequence=reservation.sequence)
+
+        return result
+
+    def pass_agent_delegation(self, *, delegation: DelegationAvro) -> IDelegation:
+        slice_obj = Translate.translate_slice(slice_id=delegation.slice.guid, slice_name=delegation.slice.slice_name)
+
+        result = DelegationFactory.create(did=delegation.get_delegation_id(), slice_id=slice_obj.get_slice_id())
+        result.set_slice_object(slice_object=slice_obj)
+        result.set_owner(owner=self.actor.get_identity())
+        result.set_sequence_in(value=delegation.sequence)
 
         return result
 
@@ -100,6 +116,34 @@ class BrokerService(ActorService):
             raise e
         self.do_dispatch(rpc=rpc)
 
+    def claim_delegation(self, *, request: ClaimDelegationAvro):
+        rpc = None
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        try:
+            dlg = self.pass_agent_delegation(delegation=request.delegation)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            rpc = IncomingDelegationRPC(message_id=ID(id=request.message_id),
+                                        request_type=RPCRequestType.ClaimDelegation,
+                                        delegation=dlg, callback=callback, caller=authToken)
+        except Exception as e:
+            self.logger.error("Invalid Claim request: {}".format(e))
+            raise e
+        self.do_dispatch(rpc=rpc)
+
+    def reclaim_delegation(self, *, request: ReclaimDelegationAvro):
+        rpc = None
+        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        try:
+            dlg = self.pass_agent_delegation(delegation=request.delegation)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            rpc = IncomingDelegationRPC(message_id=ID(id=request.message_id),
+                                        request_type=RPCRequestType.ReclaimDelegation,
+                                        delegation=dlg, callback=callback, caller=authToken)
+        except Exception as e:
+            self.logger.error("Invalid reclaim request: {}".format(e))
+            raise e
+        self.do_dispatch(rpc=rpc)
+
     def extend_ticket(self, *, request: ExtendTicketAvro):
         rpc = None
         authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
@@ -133,6 +177,10 @@ class BrokerService(ActorService):
             self.claim(request=message)
         elif message.get_message_name() == IMessageAvro.Reclaim:
             self.reclaim(request=message)
+        elif message.get_message_name() == IMessageAvro.ClaimDelegation:
+            self.claim_delegation(request=message)
+        elif message.get_message_name() == IMessageAvro.ReclaimDelegation:
+            self.reclaim_delegation(request=message)
         elif message.get_message_name() == IMessageAvro.ExtendTicket:
             self.extend_ticket(request=message)
         elif message.get_message_name() == IMessageAvro.Relinquish:

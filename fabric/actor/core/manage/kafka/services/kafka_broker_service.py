@@ -43,9 +43,9 @@ class KafkaBrokerService(KafkaClientActorService, KafkaServerActorService):
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
         if message.get_message_name() == IMessageAvro.ClaimResources:
-            result = self.claim_resources(request=message)
+            result = self.claim(request=message)
         elif message.get_message_name() == IMessageAvro.ReclaimResources:
-            result = self.reclaim_resources(request=message)
+            result = self.reclaim(request=message)
         elif message.get_message_name() == IMessageAvro.AddReservation:
             result = self.add_reservation(request=message)
         elif message.get_message_name() == IMessageAvro.AddReservations:
@@ -61,28 +61,32 @@ class KafkaBrokerService(KafkaClientActorService, KafkaServerActorService):
         elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Broker.name:
-            self.get_broker_reservations(request=message)
+            result = self.get_broker_reservations(request=message)
         elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.InventorySlice.name:
-            self.get_inventory_slices(request=message)
+            result = self.get_inventory_slices(request=message)
         elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Client.name:
-            self.get_inventory_reservations(request=message)
+            result = self.get_inventory_reservations(request=message)
         elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.ClientSlice.name:
-            self.get_client_slices(request=message)
+            result = self.get_client_slices(request=message)
         elif message.get_message_name() == IMessageAvro.AddSlice and message.slice_obj is not None and \
                 (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
-            self.add_client_slice(request=message)
+            result = self.add_client_slice(request=message)
         else:
             super().process(message=message)
             return
 
         if callback_topic is None:
             self.logger.debug("No callback specified, ignoring the message")
+
+        if result is None:
+            self.logger.error("No response generated {}".format(result))
+            return
 
         if self.producer.produce_sync(topic=callback_topic, record=result):
             self.logger.debug("Successfully send back response: {}".format(result.to_dict()))

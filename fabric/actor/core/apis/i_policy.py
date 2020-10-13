@@ -37,6 +37,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.reservation_set import ReservationSet
     from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.id import ID
+    from fabric.actor.core.apis.i_delegation import IDelegation
 
 
 class IPolicy:
@@ -131,6 +132,17 @@ class IPolicy:
         """
 
     @abstractmethod
+    def closed_delegation(self, *, delegation: IDelegation):
+        """
+        Notifies the policy that a delegation has been closed. This method will
+        be invoked for every delegation that closes successfully. The policy
+        must uncommit any resources associated with the delegation, e.g,
+        physical machines, currency, etc.
+
+        @params delegation: closed delegation
+        """
+
+    @abstractmethod
     def remove(self, *, reservation: IReservation):
         """
         Notifies the policy that a reservation is about to be removed. This
@@ -197,6 +209,17 @@ class IPolicy:
         reservation.
         
         @params reservation: reservation being recovered
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
+    def revisit_delegation(self, *, delegation: IDelegation):
+        """
+        Informs the policy about a delegation. Called during recovery/startup.
+        The policy must re-establish any state required for the management of the
+        delegation.
+
+        @params delegation: delegation being recovered
         @raises Exception in case of error
         """
 

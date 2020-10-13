@@ -7,11 +7,11 @@ VOLUME ["/usr/src/app"]
 
 RUN pip3 install --upgrade pip
 
-RUN pip3 install git+https://github.com/fabric-testbed/InformationModel.git
 RUN pip3 install git+https://github.com/fabric-testbed/MessageBus.git
+RUN pip3 install git+https://github.com/fabric-testbed/InformationModel.git
 RUN mkdir -p "/etc/fabric/message_bus/schema"
 RUN cp /usr/local/lib/python3.8/site-packages/fabric/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
-RUN pip3 install git+https://github.com/fabric-testbed/ActorBase.git
+RUN pip3 install git+https://github.com/fabric-testbed/ControlFramework.git
 
 ENTRYPOINT ["python3"]
 

@@ -75,48 +75,4 @@ services:
       SCHEMA_REGISTRY_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.schemaregistry.keystore.jks
       SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD: fabric 
       SCHEMA_REGISTRY_SSL_KEY_PASSWORD: fabric 
-
       SCHEMA_REGISTRY_DEBUG: 'true'
-  database:
-    image: fabrictestbed/postgres:12.3
-    container_name: actordb
-    restart: always
-    environment:
-        POSTGRES_PASSWORD: fabric
-        POSTGRES_USER: fabric
-        POSTGRES_MULTIPLE_DATABASES: am,broker,orchestrator, test
-    ports:
-        - 8432:5432
-  start-fabric-actors:
-    image: dadarek/wait-for-dependencies
-    depends_on:
-        - zookeeper 
-        - broker1 
-        - schemaregistry
-        - database
-    command: zookeeper:2181 broker1:19092 broker:9092 registry:8081 database:5432
-  fabric-site-am:
-    image: authority:latest 
-    container_name: fabric-site-am 
-    restart: always
-    depends_on:
-        - start-fabric-actors 
-    volumes:
-        - "./config/config.site.am.yaml:/etc/fabric/actor/config/config.yaml"
-        - "./logs/site-am:/var/log/actor"
-        - "./secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem"
-        - "./secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key"
-        - "./secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem"
-  fabric-broker:
-    image: broker:latest
-    container_name: fabric-broker
-    restart: always
-    depends_on:
-        - start-fabric-actors 
-        - fabric-site-am 
-    volumes:
-        - "./config/config.broker.yaml:/etc/fabric/actor/config/config.yaml"
-        - "./logs/broker:/var/log/actor"
-        - "./secrets/snakeoil-ca-1-copy.crt:/etc/fabric/message_bus/ssl/cacert.pem"
-        - "./secrets/kafkacat2.client.key:/etc/fabric/message_bus/ssl/client.key"
-        - "./secrets/kafkacat2-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem"

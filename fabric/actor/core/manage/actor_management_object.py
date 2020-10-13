@@ -28,7 +28,9 @@ from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric.actor.core.common.constants import Constants, ErrorCodes
-from fabric.actor.core.common.exceptions import ReservationNotFoundException, SliceNotFoundException
+from fabric.actor.core.common.exceptions import ReservationNotFoundException, SliceNotFoundException, \
+    DelegationNotFoundException
+from fabric.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.kernel.slice_factory import SliceFactory
@@ -40,6 +42,7 @@ from fabric.actor.core.apis.i_actor_management_object import IActorManagementObj
 from fabric.message_bus.messages.reservation_mng import ReservationMng
 from fabric.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric.actor.core.manage.messages.result_event_mng import ResultEventMng
+from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
 from fabric.message_bus.messages.result_string_avro import ResultStringAvro
@@ -305,7 +308,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_id = r.get('rsv_slc_id', None)
+                    slice_id = ReservationFactory.get_slice_id(properties=r)
                     if slice_id is None:
                         self.logger.error("Inconsistent state reservation does not belong to a slice: {}".format(r))
 
@@ -351,7 +354,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_id = r.get('rsv_slc_id', None)
+                    slice_id = ReservationFactory.get_slice_id(properties=r)
                     if slice_id is None:
                         self.logger.error("Inconsistent state reservation does not belong to a slice: {}".format(r))
 
@@ -397,7 +400,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_id = r.get('rsv_slc_id', None)
+                    slice_id = ReservationFactory.get_slice_id(properties=r)
                     if slice_id is None:
                         self.logger.error("Inconsistent state reservation does not belong to a slice: {}".format(r))
 
@@ -443,7 +446,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_id = r.get('rsv_slc_id', None)
+                    slice_id = ReservationFactory.get_slice_id(properties=r)
                     if slice_id is None:
                         self.logger.error("Inconsistent state reservation does not belong to a slice: {}".format(r))
 
@@ -494,7 +497,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_id = r.get('rsv_slc_id', None)
+                    slice_id = ReservationFactory.get_slice_id(properties=r)
                     if slice_id is None:
                         self.logger.error("Inconsistent state reservation does not belong to a slice: {}".format(r))
 
@@ -789,6 +792,242 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             result.status.set_message(e.text)
         except Exception as e:
             self.logger.error("get_reservation_state_for_reservations {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
+    def get_delegations(self, *, caller: AuthToken) -> ResultDelegationAvro:
+        result = ResultDelegationAvro()
+        result.status = ResultAvro()
+
+        if caller is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+
+        try:
+            res_list = None
+            try:
+                res_list = self.db.get_delegations()
+            except Exception as e:
+                self.logger.error("getDelegations:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+            if res_list is not None:
+                result.delegations = []
+                for r in res_list:
+                    slice_id = ReservationFactory.get_delegation_slice_id(properties=r)
+                    if slice_id is None:
+                        self.logger.error("Inconsistent state delegation does not belong to a slice: {}".format(r))
+
+                    slice_obj = None
+                    if slice_id is not None:
+                        slice_obj = self.get_slice_by_id(id=slice_id)
+                    dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
+                                                                logger=self.actor.get_logger())
+                    if dlg_obj is not None:
+                        rr = Translate.translate_delegation_to_avro(delegation=dlg_obj)
+                        result.delegations.append(rr)
+        except DelegationNotFoundException as e:
+            self.logger.error("getDelegations: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
+            result.status.set_message(e.text)
+        except Exception as e:
+            self.logger.error("getDelegations: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
+    def get_delegations_by_state(self, *, caller: AuthToken, state: int) -> ResultDelegationAvro:
+        result = ResultDelegationAvro()
+        result.status = ResultAvro()
+
+        if caller is None or state is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+
+        try:
+            res_list = None
+            try:
+                res_list = self.db.get_delegations_by_state(rsv_state=state)
+                self.logger.debug
+            except Exception as e:
+                self.logger.error("get_delegations_by_state:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+            if res_list is not None:
+                result.delegations = []
+                for r in res_list:
+                    slice_id = ReservationFactory.get_delegation_slice_id(properties=r)
+                    if slice_id is None:
+                        self.logger.error("Inconsistent state delegation does not belong to a slice: {}".format(r))
+
+                    slice_obj = None
+                    if slice_id is not None:
+                        slice_obj = self.get_slice_by_id(id=slice_id)
+                    dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
+                                                                 logger=self.actor.get_logger())
+                    if dlg_obj is not None:
+                        rr = Translate.translate_delegation_to_avro(delegation=dlg_obj)
+                        result.delegations.append(rr)
+        except DelegationNotFoundException as e:
+            self.logger.error("get_delegations_by_state: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
+            result.status.set_message(e.text)
+        except Exception as e:
+            self.logger.error("get_delegations_by_state: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
+    def get_delegations_by_slice_id(self, *, caller: AuthToken, slice_id: ID) -> ResultDelegationAvro:
+        result = ResultDelegationAvro()
+        result.status = ResultAvro()
+
+        if caller is None or slice_id is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+
+        try:
+            res_list = None
+            try:
+                res_list = self.db.get_delegations_by_slice_id(slc_guid=slice_id)
+            except Exception as e:
+                self.logger.error("get_delegations_by_slice_id:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+            if res_list is not None:
+                result.delegations = []
+                for r in res_list:
+                    slice_id = ReservationFactory.get_delegation_slice_id(properties=r)
+                    if slice_id is None:
+                        self.logger.error("Inconsistent state delegation does not belong to a slice: {}".format(r))
+
+                    slice_obj = None
+                    if slice_id is not None:
+                        slice_obj = self.get_slice_by_id(id=slice_id)
+                    dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor,
+                                                                 slice_obj=slice_obj, logger=self.actor.get_logger())
+                    if dlg_obj is not None:
+                        rr = Translate.translate_delegation_to_avro(delegation=dlg_obj)
+                        result.delegations.append(rr)
+        except DelegationNotFoundException as e:
+            self.logger.error("get_delegations_by_slice_id: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
+            result.status.set_message(e.text)
+        except Exception as e:
+            self.logger.error("get_delegations_by_slice_id: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
+    def get_delegations_by_slice_id_state(self, *, caller: AuthToken, slice_id: ID, state: int) -> ResultDelegationAvro:
+        result = ResultDelegationAvro()
+        result.status = ResultAvro()
+
+        if caller is None or slice_id is None or state is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+
+        try:
+            res_list = None
+            try:
+                res_list = self.db.get_delegations_by_slice_id_state(slc_guid=slice_id, rsv_state=state)
+            except Exception as e:
+                self.logger.error("get_delegations_by_slice_id_state:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+            if res_list is not None:
+                result.delegations = []
+                for r in res_list:
+                    slice_id = ReservationFactory.get_delegation_slice_id(properties=r)
+                    if slice_id is None:
+                        self.logger.error("Inconsistent state delegation does not belong to a slice: {}".format(r))
+
+                    slice_obj = None
+                    if slice_id is not None:
+                        slice_obj = self.get_slice_by_id(id=slice_id)
+                    dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
+                                                                 logger=self.actor.get_logger())
+                    if dlg_obj is not None:
+                        rr = Translate.translate_delegation_to_avro(delegation=dlg_obj)
+                        result.delegations.append(rr)
+        except DelegationNotFoundException as e:
+            self.logger.error("get_delegations_by_slice_id_state: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
+            result.status.set_message(e.text)
+        except Exception as e:
+            self.logger.error("get_delegations_by_slice_id_state: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
+    def get_delegation(self, *, caller: AuthToken, rid: ID) -> ResultDelegationAvro:
+        result = ResultDelegationAvro()
+        result.status = ResultAvro()
+
+        if caller is None or rid is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+
+        try:
+            res_list = None
+            try:
+                res = self.db.get_delegation(rid)
+                if res is not None:
+                    res_list = [res]
+                else:
+                    result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
+                    result.status.set_message(ErrorCodes.ErrorNoSuchDelegation.name)
+            except Exception as e:
+                self.logger.error("get_delegation:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+            if res_list is not None:
+                result.delegations = []
+                for r in res_list:
+                    slice_id = ReservationFactory.get_delegation_slice_id(properties=r)
+                    if slice_id is None:
+                        self.logger.error("Inconsistent state delegation does not belong to a slice: {}".format(r))
+
+                    slice_obj = None
+                    if slice_id is not None:
+                        slice_obj = self.get_slice_by_id(id=slice_id)
+                    dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
+                                                                 logger=self.actor.get_logger())
+                    if dlg_obj is not None:
+                        rr = Translate.translate_delegation_to_avro(delegation=dlg_obj)
+                        result.delegations.append(rr)
+        except DelegationNotFoundException as e:
+            self.logger.error("get_delegation: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
+            result.status.set_message(e.text)
+        except Exception as e:
+            self.logger.error("get_delegation: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)

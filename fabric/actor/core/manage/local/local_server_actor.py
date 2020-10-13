@@ -33,6 +33,7 @@ from fabric.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
 from fabric.actor.core.manage.local.local_actor import LocalActor
 from fabric.actor.core.util.id import ID
 from fabric.message_bus.messages.reservation_mng import ReservationMng
+from fim.graph.abc_property_graph import ABCPropertyGraph
 
 if TYPE_CHECKING:
     from fabric.actor.core.manage.management_object import ManagementObject
@@ -272,6 +273,15 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
             self.last_exception = e
 
         return None
+
+    def advertise_resources(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+        try:
+            result = self.manager.advertise_resources(delegation=delegation, client=client, caller=self.auth)
+            self.last_status = result.status
+            if self.last_status.get_code() == 0 and result.result is not None:
+                return ID(id=result.result)
+        except Exception as e:
+            self.last_exception = e
 
     def clone(self) -> IMgmtActor:
         return LocalServerActor(manager=self.manager, auth=self.auth)

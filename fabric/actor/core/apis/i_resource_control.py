@@ -240,4 +240,3 @@ class IResourceControl:
         Sets the actor the control is associated with.
         @params actor actor
         """
-        
