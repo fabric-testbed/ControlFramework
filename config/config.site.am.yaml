@@ -59,7 +59,7 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   - log-size: 5000000
 
-  - logger: fabric-site-am
+  - logger: site-am-1
 
 oauth:
   - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
@@ -71,7 +71,7 @@ database:
   - db-host: localhost:8432
 
 container:
-  - container.guid: fabric-site-am-conainer
+  - container.guid: site-am-1-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -102,10 +102,10 @@ neo4j:
 
 actor:
   - type: authority
-  - name: fabric-site-am
-  - guid: fabric-site-am-guid
+  - name: site-am-1
+  - guid: site-am-1-guid
   - description: Site AM
-  - kafka-topic: fabric-site-am-topic
+  - kafka-topic: site-am-1-topic
   - substrate.file: /etc/fabric/actor/config/neo4j/site-am-2broker-ad-enumerated.graphml
   - resources:
       - resource:

@@ -39,12 +39,12 @@ services:
         - 8432:5432
     networks:
       - authority
-  fabric-site-am:
+  am:
     build:
       context: ../../
       dockerfile: Dockerfile-auth
     image: authority:latest
-    container_name: fabric-site-am
+    container_name: site-am-1
     restart: always
     depends_on:
       - database

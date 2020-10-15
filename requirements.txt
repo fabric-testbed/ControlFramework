@@ -1,10 +1,11 @@
 yapsy == 1.12.2
 python_dateutil == 2.6.0
+setuptools >= 21.0.0
 requests
 PyJWT >=1.7.1
 cryptography
-sqlalchemy
 psycopg2-binary
+sqlalchemy
 pyyaml
 fabric-message-bus
 fabric_fim==0.13
