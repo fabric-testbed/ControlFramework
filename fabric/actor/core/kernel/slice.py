@@ -229,7 +229,7 @@ class Slice(IKernelSlice):
     def soft_lookup(self, *, rid: ID) -> IKernelReservation:
         return self.reservations.get(rid=rid)
 
-    def soft_lookup_delegation(self, *, did: str) -> IDelegation:
+    def soft_lookup_delegation(self, *, did: ID) -> IDelegation:
         return self.delegations.get(did, None)
 
     def __str__(self):

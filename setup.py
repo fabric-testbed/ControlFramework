@@ -24,7 +24,14 @@ REQUIRES = [
             'sqlalchemy',
             'pyyaml',
             'fabric-message-bus',
-            'click'
+            'fabric_fim==0.13'
+            'click',
+            'pytest',
+            'confluent-kafka[avro]',
+            'waitress',
+            'prometheus_client',
+            'connexion',
+            'swagger-ui'
             ]
 
 setup(

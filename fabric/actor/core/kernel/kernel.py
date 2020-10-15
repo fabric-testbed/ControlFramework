@@ -851,7 +851,7 @@ class Kernel:
             self.error(err="An error occurred during delegate for delegation #{}".format(
                 delegation.get_delegation_id()), e=e)
 
-    def soft_validate_delegation(self, *, delegation: IDelegation = None, did: str = None) -> IDelegation:
+    def soft_validate_delegation(self, *, delegation: IDelegation = None, did: ID = None) -> IDelegation:
         """
         Retrieves the locally registered delegation that corresponds to the
         passed delegation. Obtains the reservation from the containing slice
@@ -1109,7 +1109,7 @@ class Kernel:
     def handle_failed_rpc(self, *, reservation: IKernelReservation, rpc: FailedRPC):
         reservation.handle_failed_rpc(failed=rpc)
 
-    def validate_delegation(self, *, delegation: IDelegation = None, did: str = None):
+    def validate_delegation(self, *, delegation: IDelegation = None, did: ID = None):
         """
         Retrieves the locally registered delegation that corresponds to the
         passed delegation. Obtains the delegation from the containing slice
