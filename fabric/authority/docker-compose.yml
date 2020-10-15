@@ -3,7 +3,7 @@ services:
 
   neo4j:
     image: fabrictestbed/neo4j-apoc:4.0.3
-    container_name: site-am-neo4j
+    container_name: site1-am-neo4j
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     ports:
       - 7474:7474  # for HTTP
@@ -23,11 +23,9 @@ services:
       - NEO4J_dbms_connector_http_listen__address=${NEO4J_dbms_connector_http_advertised__address:-0.0.0.0:7474}
       - NEO4J_dbms_connector_https_advertised__address=${NEO4J_dbms_connector_https_advertised__address:-0.0.0.0:7473}
       - NEO4J_dbms_connector_https_listen__address=${NEO4J_dbms_connector_https_advertised__address:-0.0.0.0:7473}
-    networks:
-      - authority
   database:
     image: fabrictestbed/postgres:12.3
-    container_name: site-am-db 
+    container_name: site1-am-db
     restart: always
     environment:
        - POSTGRES_HOST=${POSTGRES_HOST:-database}
@@ -37,27 +35,21 @@ services:
        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-site-am}
     ports:
         - 8432:5432
-    networks:
-      - authority
   am:
     build:
       context: ../../
       dockerfile: Dockerfile-auth
     image: authority:latest
-    container_name: site-am-1
+    container_name: site1-am
     restart: always
     depends_on:
       - database
       - neo4j
     volumes:
-      - "../../config/config.site.am.yaml:/etc/fabric/actor/config/config.yaml"
+      - "./config.site.am.yaml:/etc/fabric/actor/config/config.yaml"
       - "./logs/:/var/log/actor"
       - "../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem"
       - "../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key"
       - "../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem"
       - "../../config/neo4j/site-am-2broker-ad-enumerated.graphml:/etc/fabric/actor/config/neo4j/site-am-2broker-ad-enumerated.graphml"
       - "./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem"
-    networks:
-      - authority
-networks:
-  authority:

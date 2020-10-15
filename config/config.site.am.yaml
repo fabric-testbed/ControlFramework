@@ -59,7 +59,7 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   - log-size: 5000000
 
-  - logger: site-am-1
+  - logger: site1-am
 
 oauth:
   - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
@@ -68,10 +68,10 @@ database:
   - db-user: fabric
   - db-password: fabric
   - db-name: am
-  - db-host: localhost:8432
+  - db-host: site1-am-db:5432
 
 container:
-  - container.guid: site-am-1-conainer
+  - container.guid: site1-am-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -94,7 +94,7 @@ time:
   - time.manual: false
 
 neo4j:
-  url: neo4j://0.0.0.0:7687
+  url: neo4j://site1-am-neo4j:7687
   user: neo4j
   pass: password
   import_host_dir: ./neo4j/imports/
@@ -102,10 +102,10 @@ neo4j:
 
 actor:
   - type: authority
-  - name: site-am-1
-  - guid: site-am-1-guid
+  - name: site1-am
+  - guid: site1-am-guid
   - description: Site AM
-  - kafka-topic: site-am-1-topic
+  - kafka-topic: site1-am-topic
   - substrate.file: /etc/fabric/actor/config/neo4j/site-am-2broker-ad-enumerated.graphml
   - resources:
       - resource:

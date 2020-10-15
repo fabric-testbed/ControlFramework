@@ -35,7 +35,6 @@ from enum import Enum
 
 from yapsy.PluginManager import PluginManagerSingleton
 
-from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric.actor.core.container.remote_actor_cache import RemoteActorCacheSingleton
 from fabric.actor.core.container.db.container_database import ContainerDatabase
 from fabric.actor.core.proxies.actor_location import ActorLocation
@@ -176,7 +175,7 @@ class Container(IActorContainer):
 
             if self.is_fresh():
                 try:
-                    self.cleanup_neo4j()
+                    #self.cleanup_neo4j()
                     from fabric.actor.boot.configuration_loader import ConfigurationLoader
                     loader = ConfigurationLoader()
                     loader.process(config=self.config)
