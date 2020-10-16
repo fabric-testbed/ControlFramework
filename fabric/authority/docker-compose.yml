@@ -46,10 +46,11 @@ services:
       - database
       - neo4j
     volumes:
-      - "./config.site.am.yaml:/etc/fabric/actor/config/config.yaml"
-      - "./logs/:/var/log/actor"
-      - "../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem"
-      - "../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key"
-      - "../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem"
-      - "../../config/neo4j/site-am-2broker-ad-enumerated.graphml:/etc/fabric/actor/config/neo4j/site-am-2broker-ad-enumerated.graphml"
-      - "./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem"
+      - ./neo4j:/usr/src/app/neo4j
+      - ./config.site.am.yaml:/etc/fabric/actor/config/config.yaml
+      - ./logs/:/var/log/actor
+      - ../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
+      - ../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
+      - ../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
+      - ../../config/neo4j/site-am-2broker-ad-enumerated.graphml:/etc/fabric/actor/config/neo4j/site-am-2broker-ad-enumerated.graphml
+      - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
