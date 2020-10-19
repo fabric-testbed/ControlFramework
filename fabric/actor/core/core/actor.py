@@ -749,10 +749,9 @@ class Actor(IActor):
         self.wrapper.unregister_slice(slice_id=slice_id)
 
     def queue_timer(self, *, timer: ITimerTask):
-        self.logger.debug("KOMAL TESTs")
         with self.actor_main_lock:
             self.timer_queue.put_nowait(timer)
-            self.logger.debug("Added timer to timer queue")
+            self.logger.debug("Added timer to timer queue {}".format(timer.__class__.__name__))
             self.actor_main_lock.notify_all()
 
     def queue_event(self, *, incoming: IActorEvent):
