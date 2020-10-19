@@ -39,7 +39,6 @@ class QueryTimeout(ITimerTask):
         self.req = req
 
     def execute(self):
-        print("Processing ")
         from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
         pending = RPCManagerSingleton.get().remove_pending_request(self.req.request.get_message_id())
         if pending is not None:

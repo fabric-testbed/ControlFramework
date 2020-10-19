@@ -60,8 +60,8 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class RPCManager:
-    CLAIM_TIMEOUT_MS = 120000
-    QUERY_TIMEOUT_MS = 120000
+    CLAIM_TIMEOUT_SECONDS = 120
+    QUERY_TIMEOUT_SECONDS = 120
 
     def __init__(self):
         # Table of pending RPC requests.
@@ -328,7 +328,7 @@ class RPCManager:
         rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
                          sequence=reservation.get_ticket_sequence_out())
         # Schedule a timeout
-        rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_MS)
+        rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
         self.enqueue(rpc=rpc)
 
     def do_reclaim(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
@@ -342,7 +342,7 @@ class RPCManager:
         rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
                          sequence=reservation.get_ticket_sequence_out())
         # Schedule a timeout
-        rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_MS)
+        rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
         self.enqueue(rpc=rpc)
 
     def do_claim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
@@ -356,7 +356,7 @@ class RPCManager:
         rpc = RPCRequest(request=state, actor=actor, proxy=proxy, delegation=delegation,
                          sequence=delegation.get_sequence_out())
         # Schedule a timeout
-        rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_MS)
+        rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
         self.enqueue(rpc=rpc)
 
     def do_reclaim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
@@ -370,7 +370,7 @@ class RPCManager:
         rpc = RPCRequest(request=state, actor=actor, proxy=proxy, delegation=delegation,
                          sequence=delegation.get_sequence_out())
         # Schedule a timeout
-        rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_MS)
+        rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
         self.enqueue(rpc=rpc)
 
     def do_ticket(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
@@ -495,7 +495,7 @@ class RPCManager:
         state.set_type(rtype=RPCRequestType.Query)
         rpc = RPCRequest(request=state, actor=actor, proxy=remote_actor, handler=handler)
         # Timer
-        rpc.timer = KernelTimer.schedule(queue=actor, task=QueryTimeout(req=rpc), delay=self.QUERY_TIMEOUT_MS)
+        rpc.timer = KernelTimer.schedule(queue=actor, task=QueryTimeout(req=rpc), delay=self.QUERY_TIMEOUT_SECONDS)
         remote_actor.get_logger().info("Timer started: {}".format(rpc.timer))
         self.enqueue(rpc=rpc)
 
