@@ -5,7 +5,6 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 VOLUME ["/usr/src/app"]
 
-COPY IF.in /usr/src/app
 COPY authority.sh /usr/src/app
 COPY test_neo4j.py /usr/src/app
 RUN pip3 install --upgrade pip

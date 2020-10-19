@@ -11,4 +11,4 @@ cp /usr/local/lib/python3.8/site-packages/fabric/message_bus/schema/*.avsc /etc/
 pip3 install git+https://github.com/fabric-testbed/ControlFramework.git@listresources
 
 
-python3 -m fabric.authority
+python3 -m fabric.broker

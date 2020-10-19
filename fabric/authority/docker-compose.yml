@@ -54,3 +54,7 @@ services:
       - ../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
       - ../../config/neo4j/site-am-2broker-ad-enumerated.graphml:/etc/fabric/actor/config/neo4j/site-am-2broker-ad-enumerated.graphml
       - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
+networks:
+  default:
+    external:
+      name: controlframework_default

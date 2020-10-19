@@ -14,35 +14,20 @@ class Success(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, code: int=None, message: str=None, value: object=None, version: str=None):  # noqa: E501
+    def __init__(self, value: object=None):  # noqa: E501
         """Success - a model defined in Swagger
 
-        :param code: The code of this Success.  # noqa: E501
-        :type code: int
-        :param message: The message of this Success.  # noqa: E501
-        :type message: str
         :param value: The value of this Success.  # noqa: E501
         :type value: object
-        :param version: The version of this Success.  # noqa: E501
-        :type version: str
         """
         self.swagger_types = {
-            'code': int,
-            'message': str,
-            'value': object,
-            'version': str
+            'value': object
         }
 
         self.attribute_map = {
-            'code': 'code',
-            'message': 'message',
-            'value': 'value',
-            'version': 'version'
+            'value': 'value'
         }
-        self._code = code
-        self._message = message
         self._value = value
-        self._version = version
 
     @classmethod
     def from_dict(cls, dikt) -> 'Success':
@@ -54,56 +39,6 @@ class Success(Model):
         :rtype: Success
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def code(self) -> int:
-        """Gets the code of this Success.
-
-        status code  # noqa: E501
-
-        :return: The code of this Success.
-        :rtype: int
-        """
-        return self._code
-
-    @code.setter
-    def code(self, code: int):
-        """Sets the code of this Success.
-
-        status code  # noqa: E501
-
-        :param code: The code of this Success.
-        :type code: int
-        """
-        if code is None:
-            raise ValueError("Invalid value for `code`, must not be `None`")  # noqa: E501
-
-        self._code = code
-
-    @property
-    def message(self) -> str:
-        """Gets the message of this Success.
-
-        status message  # noqa: E501
-
-        :return: The message of this Success.
-        :rtype: str
-        """
-        return self._message
-
-    @message.setter
-    def message(self, message: str):
-        """Sets the message of this Success.
-
-        status message  # noqa: E501
-
-        :param message: The message of this Success.
-        :type message: str
-        """
-        if message is None:
-            raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
-
-        self._message = message
 
     @property
     def value(self) -> object:
@@ -127,26 +62,3 @@ class Success(Model):
         """
 
         self._value = value
-
-    @property
-    def version(self) -> str:
-        """Gets the version of this Success.
-
-        Actor version  # noqa: E501
-
-        :return: The version of this Success.
-        :rtype: str
-        """
-        return self._version
-
-    @version.setter
-    def version(self, version: str):
-        """Sets the version of this Success.
-
-        Actor version  # noqa: E501
-
-        :param version: The version of this Success.
-        :type version: str
-        """
-
-        self._version = version

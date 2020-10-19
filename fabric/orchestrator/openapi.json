@@ -654,6 +654,9 @@
             }
           }
         ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/Request"
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -744,28 +747,11 @@
   "components": {
     "schemas": {
       "Success": {
-        "required": [
-          "code",
-          "message"
-        ],
         "type": "object",
         "properties": {
-          "code": {
-            "minimum": 0,
-            "type": "integer",
-            "description": "status code"
-          },
-          "message": {
-            "type": "string",
-            "description": "status message"
-          },
           "value": {
             "type": "object",
             "description": "JSON object"
-          },
-          "version": {
-            "type": "string",
-            "description": "Actor version"
           }
         }
       },
