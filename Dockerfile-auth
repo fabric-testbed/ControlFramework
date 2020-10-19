@@ -9,4 +9,6 @@ COPY authority.sh /usr/src/app
 COPY test_neo4j.py /usr/src/app
 RUN pip3 install --upgrade pip
 
+EXPOSE 11000
+
 ENTRYPOINT ["/usr/src/app/authority.sh"]

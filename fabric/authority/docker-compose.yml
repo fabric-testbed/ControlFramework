@@ -45,6 +45,8 @@ services:
     depends_on:
       - database
       - neo4j
+    ports:
+      - 11000:11000
     volumes:
       - ./neo4j:/usr/src/app/neo4j
       - ./config.site.am.yaml:/etc/fabric/actor/config/config.yaml

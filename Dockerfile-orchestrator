@@ -8,4 +8,7 @@ VOLUME ["/usr/src/app"]
 COPY orchestrator.sh /usr/src/app
 RUN pip3 install --upgrade pip
 
+EXPOSE 11000
+EXPOSE 8700
+
 ENTRYPOINT ["/usr/src/app/orchestrator.sh"]
