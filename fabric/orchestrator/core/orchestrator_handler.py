@@ -28,6 +28,8 @@ import threading
 import traceback
 
 import jwt
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 
 from fabric.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
@@ -53,7 +55,10 @@ class OrchestratorHandler:
     def validate_credentials(self, *, token) -> str:
         try:
             with open(self.token_public_key) as f:
-                key = f.read()
+                pem_data = f.read()
+                f.close()
+                key = serialization.load_pem_public_key(data=pem_data.encode("utf-8"),
+                                                        backend=default_backend())
 
             options = {'verify_aud': False}
             verify = True

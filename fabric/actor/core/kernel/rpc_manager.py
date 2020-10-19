@@ -496,6 +496,7 @@ class RPCManager:
         rpc = RPCRequest(request=state, actor=actor, proxy=remote_actor, handler=handler)
         # Timer
         rpc.timer = KernelTimer.schedule(queue=actor, task=QueryTimeout(req=rpc), delay=self.QUERY_TIMEOUT_MS)
+        remote_actor.get_logger().info("Timer started: {}".format(rpc.timer))
         self.enqueue(rpc=rpc)
 
     def do_query_result(self, *, actor: IActor, remote_actor: ICallbackProxy, request_id: str,
