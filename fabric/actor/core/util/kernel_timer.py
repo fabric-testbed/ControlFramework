@@ -32,8 +32,6 @@ from fabric.actor.core.apis.i_timer_task import ITimerTask
 class KernelTimer:
     @staticmethod
     def schedule(*, queue: ITimerQueue, task: ITimerTask, delay: int):
-        print("Starting timer")
-        timer = threading.Timer(interval=delay, function=queue.queue_timer, args=task)
+        timer = threading.Timer(interval=delay, function=queue.queue_timer, args=[task])
         timer.start()
-        print("Started timer: {}".format(timer))
         return timer
