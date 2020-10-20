@@ -15,4 +15,4 @@ confluent-kafka[avro]
 waitress
 prometheus_client
 connexion
-swagger-ui
+swagger-ui-bundle
