@@ -90,7 +90,7 @@ Validate that the database container is running.
 $ docker-compose ps
   Name                Command              State           Ports
 -------------------------------------------------------------------------
-database   docker-entrypoint.sh postgres   Up      0.0.0.0:8432->5432/tcp
+site1-am-db   docker-entrypoint.sh postgres   Up      0.0.0.0:8432->5432/tcp
 
 ```
 #### neo4j
@@ -130,7 +130,7 @@ docker-compose up -d am
 ```
 Validate that the database container is running.
 ```
-rciadmins-MacBook-Pro-3:authority komalthareja$ docker-compose ps
+docker-compose ps
      Name                   Command                 State                                      Ports
 -------------------------------------------------------------------------------------------------------------------------------------
 site1-am         /usr/src/app/authority.sh        Up           0.0.0.0:11000->11000/tcp
