@@ -29,8 +29,8 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: localhost:19092
-  - kafka-schema-registry-url: http://localhost:8081
+  - kafka-server: broker1:9092
+  - kafka-schema-registry-url: http://schemaregistry:8081
   - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
   - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
@@ -39,7 +39,7 @@ runtime:
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
-  - prometheus.port: 11100
+  - prometheus.port: 11000
 
 logging:
   ## The directory in which actor should create log files.
@@ -59,7 +59,7 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   - log-size: 5000000
 
-  - logger: fabric-broker
+  - logger: broker
 oauth:
   - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
 
@@ -67,10 +67,10 @@ database:
   - db-user: fabric
   - db-password: fabric
   - db-name: broker
-  - db-host: localhost:9432
+  - db-host: broker-db:5432
 
 container:
-  - container.guid: fabric-broker-conainer
+  - container.guid: broker-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -93,18 +93,18 @@ time:
   - time.manual: false
 
 neo4j:
-  url: neo4j://0.0.0.0:8687
+  url: bolt://broker-neo4j:8687
   user: neo4j
   pass: password
-  import_host_dir: ./neo4j/imports/
+  import_host_dir: /usr/src/app/neo4j/imports/
   import_dir: /imports
 
 actor:
   - type: broker
-  - name: fabric-broker
-  - guid: fabric-broker-guid
+  - name: broker
+  - guid: broker-guid
   - description: Broker
-  - kafka-topic: fabric-broker-topic
+  - kafka-topic: broker-topic
   - policy:
       - module: fabric.actor.core.policy.broker_simpler_units_policy
       - class: BrokerSimplerUnitsPolicy
@@ -113,17 +113,17 @@ actor:
 
 peers:
   - peer:
-    - name: fabric-orchestrator
+    - name: orchestrator
     - type: orchestrator
-    - guid: fabric-orchestrator-guid
-    - kafka-topic: fabric-orchestrator-topic
+    - guid: orchestrator-guid
+    - kafka-topic: orchestrator-topic
   - peer:
-    - name: fabric-net-am
-    - guid: fabric-net-am-guid
+    - name: net1-am 
+    - guid: net1-am-guid
     - type: authority
-    - kafka-topic: fabric-net-am-topic
+    - kafka-topic: net1-am-topic
   - peer:
-    - name: fabric-site-am
-    - guid: fabric-site-am-guid
+    - name: site1-am
+    - guid: site1-am-guid
     - type: authority
-    - kafka-topic: fabric-site-am-topic
+    - kafka-topic: site1-am-topic
