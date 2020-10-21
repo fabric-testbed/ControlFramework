@@ -55,7 +55,7 @@ class RPCExecutor:
                                                                  self.request.proxy.get_name()))
         try:
             self.request.proxy.execute(request=self.request.request)
-            self.request.cancel_timer()
+            #self.request.cancel_timer()
         except RPCException as e:
             self.post_exception(e=e)
         finally:

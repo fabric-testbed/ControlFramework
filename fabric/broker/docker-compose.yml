@@ -5,6 +5,7 @@ services:
     image: fabrictestbed/neo4j-apoc:4.0.3
     container_name: broker-neo4j
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
+    restart: always
     ports:
       - 8474:8474  # for HTTP
       - 8473:8473  # for HTTPS

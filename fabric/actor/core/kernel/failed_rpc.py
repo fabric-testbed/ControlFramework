@@ -40,14 +40,23 @@ class FailedRPC:
         if e is None:
             raise Exception("error cannot be None")
 
-        if rid is None:
-            raise Exception("rid cannot be None")
+        if rid is None and request is None:
+            raise Exception("Both request and rid cannot be None")
 
         self.error = e
         self.request_type = request_type
         self.rid = rid
         self.remote_auth = auth
         self.request = request
+
+        if request is not None:
+            if self.rid is None:
+                if request.get_reservation() is not None:
+                    self.rid = request.get_reservation().get_reservation_id()
+                elif request.get_delegation() is not None:
+                    self.rid = request.get_delegation().get_delegation_id()
+            if self.request_type is None:
+                self.request_type = request.get_request_type()
 
     def is_reservation_rpc(self) -> bool:
         return self.rid is not None

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 class ITimerQueue:
     @abstractmethod
-    def queue_timer(self, *, timer: ITimerTask):
+    def queue_timer(self, timer: ITimerTask):
         """
         Queue a timer
         @param timer timer

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+import traceback
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.kernel.rpc_request import RPCRequest
@@ -41,13 +43,14 @@ class QueryTimeout(ITimerTask):
     def execute(self):
         try:
             from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-            pending = RPCManagerSingleton.get().remove_pending_request(self.req.request.get_message_id())
+            pending = RPCManagerSingleton.get().remove_pending_request(guid=self.req.request.get_message_id())
             if pending is not None:
                 self.req.actor.get_logger().debug("Query timeout. Responding with FailedRPC RPC={}".format(self.req))
                 failed = FailedRPC(e=RPCException(message="Timeout while waiting for query response",
                                                   error=RPCError.Timeout), request=self.req)
-                self.req.actor.queue_event(FailedRPCEvent(actor=self.req.actor, failed=failed))
+                self.req.actor.queue_event(incoming=FailedRPCEvent(actor=self.req.actor, failed=failed))
             else:
                 self.req.actor.get_logger().debug("Query timeout. Query already completed RPC={}".format(self.req))
         except Exception as e:
+            traceback.print_exc()
             self.req.actor.get_logger().debug("Claim timeout. RPC={}".format(self.req.reservation))

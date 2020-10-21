@@ -17,6 +17,7 @@ services:
 
   broker1:
     image: confluentinc/cp-kafka:latest
+    restart: always
     hostname: broker1
     container_name: broker1
     depends_on:

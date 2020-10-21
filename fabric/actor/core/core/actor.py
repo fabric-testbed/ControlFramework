@@ -748,7 +748,7 @@ class Actor(IActor):
     def unregister_slice_by_slice_id(self, *, slice_id: ID):
         self.wrapper.unregister_slice(slice_id=slice_id)
 
-    def queue_timer(self, *, timer: ITimerTask):
+    def queue_timer(self, timer: ITimerTask):
         with self.actor_main_lock:
             self.timer_queue.put_nowait(timer)
             self.logger.debug("Added timer to timer queue {}".format(timer.__class__.__name__))

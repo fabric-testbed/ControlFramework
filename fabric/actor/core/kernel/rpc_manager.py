@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+import time
 
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_actor_proxy import IActorProxy
@@ -517,6 +518,7 @@ class RPCManager:
         if rpc.get_request_id() is not None:
             request = self.remove_pending_request(guid=rpc.get_request_id())
             if request is not None:
+                request.cancel_timer()
                 if request.handler is not None:
                     rpc.set_response_handler(response_handler=request.handler)
 

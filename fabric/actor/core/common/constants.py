@@ -100,7 +100,6 @@ class Constants:
     # Type code for proxies using Kafka communication.
     ProtocolKafka = "kafka"
 
-    # TODO change after testing
     HomeDirectory = '/usr/src/app/'
     SuperblockLocation = HomeDirectory + "state_recovery.lock"
     ControllerLockLocation = HomeDirectory + "controller_recovery.lock"

@@ -64,4 +64,5 @@ class RPCRequest:
     def cancel_timer(self):
         ### TODO
         if self.timer is not None:
-            self.timer.cancel()
+            from fabric.actor.core.container.globals import GlobalsSingleton
+            GlobalsSingleton.get().timer_scheduler.cancel(self.timer)

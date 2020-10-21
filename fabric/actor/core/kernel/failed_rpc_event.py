@@ -45,7 +45,7 @@ class FailedRPCEvent(IActorEvent):
         if self.failed.get_request_type() == RPCRequestType.Query:
             handler = self.failed.get_request().get_handler()
             if handler is not None:
-                handler.handle(self.failed.get_error(), None)
+                handler.handle(status=self.failed.get_error(), result=None)
             else:
                 self.actor.get_logger().warning("Query failed, but no handler is present")
         elif self.failed.get_request_type() == RPCRequestType.QueryResult:

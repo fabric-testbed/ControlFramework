@@ -4,6 +4,7 @@ services:
   neo4j:
     image: fabrictestbed/neo4j-apoc:4.0.3
     container_name: orchestrator-neo4j
+    restart: always
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     ports:
       - 9474:9474  # for HTTP
