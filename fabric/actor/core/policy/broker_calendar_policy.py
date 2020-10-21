@@ -299,6 +299,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
                                           cycle=self.clock.cycle(when=reservation.get_term().get_end_time()))
 
     def query(self, *, p):
+        self.logger.debug("Processing Query with properties: {}".format(p))
         result = {}
         if p is not None and self.PropertyDiscoverTypes in p:
             holdings = self.calendar.get_holdings()
@@ -318,6 +319,6 @@ class BrokerCalendarPolicy(BrokerPolicy):
                     self.logger.error("query", e)
 
                 result[self.PropertyTypeCount] = count
-
+        self.logger.debug("Returning Query Result: {}".format(result))
         return result
 

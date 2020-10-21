@@ -105,6 +105,7 @@ class Reservations(Base):
     """
     __tablename__ = 'Reservations'
     rsv_id = Column(Integer, Sequence('rsv_id', start=1, increment=1), autoincrement=True, primary_key=True)
+    rsv_graph_id = Column(String, nullable=True)
     rsv_slc_id = Column(Integer, ForeignKey('Slices.slc_id'))
     rsv_resid = Column(String, nullable=False)
     rsv_category = Column(Integer, nullable=False)
@@ -120,6 +121,7 @@ class Slices(Base):
     """
     __tablename__ = 'Slices'
     slc_id = Column(Integer, Sequence('slc_id', start=1, increment=1), autoincrement=True, primary_key=True)
+    slc_graph_id = Column(String, nullable=True)
     slc_guid = Column(String, nullable=False)
     slc_name = Column(String, nullable=False)
     slc_type = Column(Integer, nullable=False)
@@ -153,4 +155,17 @@ class Plugins(Base):
     plg_local_id = Column(String, nullable=False)
     plg_type = Column(Integer, nullable=False)
     plg_actor_type = Column(Integer)
+    properties = Column(LargeBinary)
+
+
+class Delegations(Base):
+    """
+    Represents Delegations Database Table
+    """
+    __tablename__ = 'Delegations'
+    dlg_id = Column(Integer, Sequence('dlg_id', start=1, increment=1), autoincrement=True, primary_key=True)
+    dlg_slc_id = Column(Integer, ForeignKey('Slices.slc_id'))
+    dlg_act_id = Column(Integer, ForeignKey('Actors.act_id'))
+    dlg_graph_id = Column(String, nullable=False)
+    dlg_state = Column(Integer, nullable=False)
     properties = Column(LargeBinary)

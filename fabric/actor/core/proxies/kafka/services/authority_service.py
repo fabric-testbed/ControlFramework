@@ -126,5 +126,7 @@ class AuthorityService(BrokerService):
             self.modify_lease(request=message)
         elif message.get_message_name() == IMessageAvro.ResultReservation:
             self.logger.debug("Claim Resources Response receieved: {}".format(message))
+        elif message.get_message_name() == IMessageAvro.ResultDelegation:
+            self.logger.debug("Claim Delegation Response receieved: {}".format(message))
         else:
             super().process(message=message)

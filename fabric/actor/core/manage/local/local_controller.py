@@ -33,6 +33,7 @@ from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric.actor.core.manage.local.local_actor import LocalActor
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
 from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
 from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric.actor.core.util.id import ID
@@ -121,6 +122,19 @@ class LocalController(LocalActor, IMgmtController):
         self.clear_last()
         try:
             result = self.manager.claim_resources(broker=broker, rid=rid, caller=self.auth)
+            self.last_status = result.status
+
+            if result.status.get_code() == 0:
+                return self.get_first(result_list=result.result)
+        except Exception as e:
+            self.last_exception = e
+
+        return None
+
+    def claim_delegations(self, *, broker: ID, did: str) -> DelegationAvro:
+        self.clear_last()
+        try:
+            result = self.manager.claim_delegations(broker=broker, did=did, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

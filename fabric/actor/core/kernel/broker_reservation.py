@@ -27,6 +27,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.util.id import ID
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
     from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
@@ -38,12 +40,11 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
     from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
-    from fabric.actor.core.util.id import ID
 
 from datetime import datetime
 from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
-from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
+from fabric.actor.core.apis.i_reservation import ReservationCategory
 from fabric.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType

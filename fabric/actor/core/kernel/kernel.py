@@ -27,10 +27,11 @@ import threading
 import traceback
 
 from fabric.actor.core.apis.i_base_plugin import IBasePlugin
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_policy import IPolicy
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.common.exceptions import ReservationNotFoundException
+from fabric.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException
 from fabric.actor.core.container.globals import GlobalsSingleton
 from fabric.actor.core.kernel.authority_reservation import AuthorityReservation
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
@@ -66,6 +67,7 @@ class Kernel:
         self.slices = SliceTable2()
         # All reservations managed by the kernel.
         self.reservations = ReservationSet()
+        self.delegations = {}
         self.lock = threading.Lock()
         self.nothing_pending = threading.Condition()
 
@@ -84,6 +86,21 @@ class Kernel:
         except Exception as e:
             self.error(err="An error occurred during amend reserve for reservation #{}".format(
                 reservation.get_reservation_id()), e=e)
+
+    def amend_delegate(self, *, delegation: IDelegation):
+        """
+        Amends a previous delegate operation for the delegation.
+        @param delegation delegation
+        @throws Exception
+        """
+        try:
+            delegation.delegate(policy=self.policy)
+            self.plugin.get_database().update_delegation(delegation=delegation)
+            if not delegation.is_closed():
+                delegation.service_delegate()
+        except Exception as e:
+            self.error(err="An error occurred during amend delegate for delegation #{}".format(
+                delegation.get_delegation_id()), e=e)
 
     def claim(self, *, reservation: IKernelBrokerReservation):
         """
@@ -112,6 +129,34 @@ class Kernel:
         except Exception as e:
             self.error(err="An error occurred during claim for reservation #{}".format(
                 reservation.get_reservation_id()), e=e)
+
+    def claim_delegation(self, *, delegation: IDelegation):
+        """
+        Processes a requests to claim new ticket for previously exported
+        resources (broker role). On the client side this request is issued by
+        @param delegation the delegation being claimed
+        @throws Exception
+        """
+        try:
+            delegation.claim()
+            self.plugin.get_database().update_delegation(delegation=delegation)
+        except Exception as e:
+            self.error(err="An error occurred during claim for delegation #{}".format(
+                delegation.get_delegation_id()), e=e)
+
+    def reclaim_delegation(self, *, delegation: IDelegation):
+        """
+        Processes a requests to claim new ticket for previously exported
+        resources (broker role). On the client side this request is issued by
+        @param delegation the delegation being claimed
+        @throws Exception
+        """
+        try:
+            delegation.reclaim()
+            self.plugin.get_database().update_delegation(delegation=delegation)
+        except Exception as e:
+            self.error(err="An error occurred during claim for delegation #{}".format(
+                delegation.get_delegation_id()), e=e)
 
     def fail(self, *, reservation: IKernelReservation, message: str):
         if not reservation.is_failed() and not reservation.is_closed():
@@ -433,6 +478,22 @@ class Kernel:
             self.error(err="An error occurred during probe pending for reservation #{}".format(
                 reservation.get_reservation_id()), e=e)
 
+    def probe_pending_delegation(self, *, delegation: IDelegation):
+        """
+        Probes to check for completion of pending operation.
+        @param delegation the delegation being probed
+        @throws Exception rare
+        """
+        try:
+            delegation.prepare_probe()
+            delegation.probe_pending()
+            self.plugin.get_database().update_delegation(delegation=delegation)
+            delegation.service_probe()
+        except Exception as e:
+            traceback.print_exc()
+            self.error(err="An error occurred during probe pending for delegation #{}".format(
+                delegation.get_delegation_id()), e=e)
+
     def purge(self):
         """
         Purges all closed reservations.
@@ -449,6 +510,21 @@ class Kernel:
                     GlobalsSingleton.get().event_manager.dispatch_event(event=ReservationPurgedEvent(
                         reservation=reservation))
                     self.reservations.remove(reservation=reservation)
+
+        delegations_to_be_removed = []
+        for delegation in self.delegations.values():
+            if delegation.is_closed():
+                try:
+                    delegation.get_slice_object().unregister_delegation(delegation=delegation)
+                except Exception as e:
+                    self.logger.error("An error occurred during purge for delegation #{}".format(
+                        delegation.get_delegation_id()), e)
+                finally:
+                    delegations_to_be_removed.append(delegation.get_delegation_id())
+
+        for d in delegations_to_be_removed:
+            if d in self.delegations:
+                self.delegations.pop(d)
 
     def query(self, *, properties: dict):
         """
@@ -509,6 +585,66 @@ class Kernel:
             self.logger.warning("Attempting to register a closed reservation #{}".format(reservation.get_reservation_id()))
 
         return add
+
+    def register_delegation_with_slice(self, *, delegation: IDelegation, slice_object: IKernelSlice) -> bool:
+        """
+        Registers a new delegation with its slice and the kernel delegation
+        table. Must be called with the kernel lock on.
+        @param delegation local delegation object
+        @param slice_object local slice object. The slice must have previously been
+                   registered with the kernel.
+        @return true if the delegation was registered, false otherwise
+        @throws Exception
+        """
+        add = False
+
+        if not delegation.is_closed():
+            # Note: as of now slice.register must be the first operation in
+            # this method. slice.register will throw an exception if the
+            # reservation is already present in the slice table.
+
+            # register with the local slice
+            slice_object.register_delegation(delegation=delegation)
+
+            # register with the reservations table
+            if delegation.get_delegation_id() in self.delegations:
+                slice_object.unregister_delegation(delegation=delegation)
+                raise Exception("There is already a reservation with the given identifier")
+
+            self.delegations[delegation.get_delegation_id()] = delegation
+
+            # attach actor to the reservation
+            delegation.set_actor(actor=self.plugin.get_actor())
+            # attach the local slice object
+            delegation.set_slice_object(slice_object=slice_object)
+            add = True
+        else:
+            self.logger.warning("Attempting to register a closed reservation #{}".format(delegation.get_delegation_id()))
+
+        return add
+
+    def register_delegation(self, *, delegation: IDelegation):
+        """
+        Re-registers the delegation.
+        @param delegation delegation
+        @throws Exception
+        """
+        if delegation is None or delegation.get_delegation_id() is None or \
+                delegation.get_slice_object() is None or delegation.get_slice_object().get_name() is None:
+            raise Exception("Invalid argument")
+
+        local_slice = None
+        add = False
+
+        local_slice = self.slices.get(slice_id=delegation.get_slice_id(), raise_exception=True)
+        add = self.register_delegation_with_slice(delegation=delegation, slice_object=local_slice)
+
+        if add :
+            try:
+                self.plugin.get_database().add_delegation(delegation=delegation)
+            except Exception as e:
+                self.unregister_no_check_d(delegation=delegation, slice_object=local_slice)
+                raise e
 
     def register_reservation(self, *, reservation: IKernelReservation):
         """
@@ -598,6 +734,35 @@ class Kernel:
                 # remove from the database
                 self.plugin.get_database().remove_slice(slice_id=slice_id)
 
+    def re_register_delegation(self, *, delegation: IDelegation):
+        """
+        Re-registers the delegation.
+        @param delegation delegation
+        @throws Exception
+        """
+        if delegation is None or delegation.get_delegation_id() is None or \
+                delegation.get_slice_object() is None or delegation.get_slice_object().get_slice_id() is None:
+            raise Exception("Invalid argument")
+
+        local_slice = None
+        local_slice = self.slices.get(slice_id=delegation.get_slice_object().get_slice_id(), raise_exception=True)
+
+        if local_slice is None:
+            raise Exception("slice not registered with the kernel")
+        else:
+            self.register_delegation(delegation=delegation)
+
+        # Check if the reservation has a database record.
+        temp = None
+        try:
+            temp = self.plugin.get_database().get_delegation(dlg_graph_id=delegation.get_delegation_id())
+        except Exception as e:
+            raise e
+
+        if temp is None or len(temp) == 0:
+            self.unregister_no_check_d(delegation=delegation, slice_object=local_slice)
+            raise Exception("The delegation has no database record")
+
     def re_register_reservation(self, *, reservation: IKernelReservation):
         """
         Re-registers the reservation.
@@ -668,6 +833,55 @@ class Kernel:
             self.error(err="An error occurred during reserve for reservation #{}".format(
                 reservation.get_reservation_id()), e=e)
 
+    def delegate(self, *, delegation: IDelegation):
+        """
+        Handles a delegate operation for the delegation.
+        Broker: process a request for a new delegate.
+        Authority: process a request for a new delegate.
+        @param delegation delegation
+        @throws Exception
+        """
+        try:
+            delegation.delegate(policy=self.policy)
+            self.plugin.get_database().update_delegation(delegation=delegation)
+            if not delegation.is_closed():
+                delegation.service_delegate()
+        except Exception as e:
+            traceback.print_exc()
+            self.error(err="An error occurred during delegate for delegation #{}".format(
+                delegation.get_delegation_id()), e=e)
+
+    def soft_validate_delegation(self, *, delegation: IDelegation = None, did: ID = None) -> IDelegation:
+        """
+        Retrieves the locally registered delegation that corresponds to the
+        passed delegation. Obtains the reservation from the containing slice
+        object.
+        @param delegation delegation being validated
+        @param did delegation identifier or reservation being validated
+        @return the locally registered did that corresponds to the passed
+                delegation or null if no local did exists
+        @throws Exception if the slice referenced by the incoming delegation is
+                    not locally registered
+        """
+        if delegation is None and did is None:
+            raise Exception("Invalid arguments")
+
+        result = None
+
+        if delegation is not None:
+            # Each local delegation is indexed in two places: (1) The delegation
+            # set in the kernel, and (2) inside the local slice object. Here we
+            # will check to see if the local slice exists and will retrieve the
+            # delegation from the local slice.
+            s = self.get_local_slice(slice_object=delegation.get_slice_object())
+
+            result = s.soft_lookup_delegation(did=delegation.get_delegation_id())
+
+        if did is not None:
+            result = self.delegations.get(did, None)
+
+        return result
+
     def soft_validate(self, *, reservation: IKernelReservation = None, rid: ID = None) -> IKernelReservation:
         """
         Retrieves the locally registered reservation that corresponds to the
@@ -706,6 +920,8 @@ class Kernel:
         @throws Exception
         """
         try:
+            for delegation in self.delegations.values():
+                self.probe_pending_delegation(delegation=delegation)
             for reservation in self.reservations.values():
                 self.probe_pending(reservation=reservation)
 
@@ -755,6 +971,18 @@ class Kernel:
         """
         slice_object.unregister(reservation=reservation)
         self.reservations.remove(reservation=reservation)
+
+    def unregister_no_check_d(self, *, delegation: IDelegation, slice_object: IKernelSlice):
+        """
+        Unregisters a delegation from the kernel data structures. Must be called
+        with the kernel lock on. Does not perform state checks.
+        @param delegation delegation to unregister
+        @param slice_object local slice object
+        @throws Exception
+        """
+        slice_object.unregister_delegation(delegation=delegation)
+        if delegation.get_delegation_id() in slice_object:
+            self.delegations.pop(delegation.get_delegation_id())
 
     def unregister_reservation(self, *, rid: ID):
         """
@@ -835,6 +1063,22 @@ class Kernel:
             self.error(err="An error occurred during update ticket for reservation # {}".format(
                 reservation.get_reservation_id()), e=e)
 
+    def update_delegation(self, *, delegation: IDelegation, update: IDelegation, update_data: UpdateData):
+        """
+        Handles an incoming update ticket operation (client side only).
+        @param delegation local delegation
+        @param update update sent from upstream broker
+        @param update_data status of the operation the broker is informing us about
+        @throws Exception
+        """
+        try:
+            delegation.update_delegation(incoming=update, update_data=update_data)
+            self.plugin.get_database().update_delegation(delegation=delegation)
+            delegation.service_update_delegation()
+        except Exception as e:
+            self.error(err="An error occurred during update delegation for delegation # {}".format(
+                delegation.get_delegation_id()), e=e)
+
     def validate(self, *, reservation: IKernelReservation = None, rid: ID = None):
         """
         Retrieves the locally registered reservation that corresponds to the
@@ -864,3 +1108,30 @@ class Kernel:
 
     def handle_failed_rpc(self, *, reservation: IKernelReservation, rpc: FailedRPC):
         reservation.handle_failed_rpc(failed=rpc)
+
+    def validate_delegation(self, *, delegation: IDelegation = None, did: ID = None):
+        """
+        Retrieves the locally registered delegation that corresponds to the
+        passed delegation. Obtains the delegation from the containing slice
+        object.
+        @param delegation delegation being validated
+        @param did delegation id
+        @return the locally registered delegation that corresponds to the passed
+                delegation
+        @throws Exception if there is no local delegation that corresponds to
+                    the passed delegation
+        """
+        if (delegation is not None and did is not None) or (delegation is None and did is None):
+            raise Exception("Invalid argument")
+
+        if delegation is not None:
+            local = self.soft_validate_delegation(delegation=delegation)
+            if local is None:
+                self.error(err="delegation not found", e=DelegationNotFoundException(did=did))
+            return local
+
+        if did is not None:
+            local = self.soft_validate_delegation(did=did)
+            if local is None:
+                self.error(err="delegation not found", e=DelegationNotFoundException(did=did))
+            return local

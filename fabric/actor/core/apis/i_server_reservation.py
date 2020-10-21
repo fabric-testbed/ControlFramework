@@ -106,4 +106,3 @@ class IServerReservation(IReservation):
         Returns data to be sent back to the client in an update message.
         @return data to be sent back to the client in an update message
         """
-        raise NotImplementedError("Should have implemented this")

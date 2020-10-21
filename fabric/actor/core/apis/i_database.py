@@ -28,6 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_delegation import IDelegation
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
     from fabric.actor.core.apis.i_reservation import IReservation
@@ -348,4 +350,37 @@ class IDatabase:
         @param rids rids
         @return list of properties
         @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def add_delegation(self, *, delegation: IDelegation):
+        """
+        Add delegation
+        @params delegation: delegation
+        """
+
+    @abstractmethod
+    def update_delegation(self, *, delegation: IDelegation):
+        """
+        Update delegation
+        @params delegation: delegation
+        """
+
+    @abstractmethod
+    def remove_delegation(self, *, dlg_graph_id: ID):
+        """
+        Remove delegation
+        @params dlg_graph_id: dlg_graph_id
+        """
+
+    @abstractmethod
+    def get_delegation(self, *, dlg_graph_id: ID) -> dict:
+        """
+        Get Delegation
+        @params dlg_graph_id: dlg_graph_id
+        """
+
+    def get_delegations(self) -> list:
+        """
+        Get delegations
         """

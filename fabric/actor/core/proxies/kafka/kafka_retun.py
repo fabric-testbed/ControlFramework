@@ -27,11 +27,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.kafka.kafka_proxy import KafkaProxy, KafkaProxyRequestState
 from fabric.actor.core.proxies.kafka.translate import Translate
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
 from fabric.message_bus.messages.reservation_avro import ReservationAvro
+from fabric.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
 from fabric.message_bus.messages.update_lease_avro import UpdateLeaseAvro
 from fabric.message_bus.messages.update_ticket_avro import UpdateTicketAvro
 
@@ -69,6 +72,14 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
             avro_message.update_data = request.udd
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
+        elif request.get_type() == RPCRequestType.UpdateDelegation:
+            avro_message = UpdateDelegationAvro()
+            avro_message.message_id = str(request.get_message_id())
+            avro_message.delegation = request.delegation
+            avro_message.callback_topic = request.callback_topic
+            avro_message.update_data = request.udd
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
+
         else:
             return super().execute(request=request)
 
@@ -85,6 +96,15 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
                               callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.reservation = self.pass_reservation(reservation=reservation, auth=caller)
+        request.udd = Translate.translate_udd(udd=update_data)
+        request.callback_topic = callback.get_kafka_topic()
+        request.caller = caller
+        return request
+
+    def prepare_update_delegation(self, *, delegation: IDelegation, update_data: UpdateData,
+                                  callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+        request = KafkaProxyRequestState()
+        request.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         request.udd = Translate.translate_udd(udd=update_data)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
@@ -136,3 +156,9 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
 
         avro_reservation.resource_set = rset
         return avro_reservation
+
+    @staticmethod
+    def pass_delegation(delegation: IDelegation, auth: AuthToken) -> DelegationAvro:
+        avro_delegation = Translate.translate_delegation_to_avro(delegation=delegation)
+        avro_delegation.sequence = delegation.get_sequence_out()
+        return avro_delegation

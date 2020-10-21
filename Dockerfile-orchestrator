@@ -5,14 +5,10 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 VOLUME ["/usr/src/app"]
 
+COPY orchestrator.sh /usr/src/app
 RUN pip3 install --upgrade pip
 
-RUN pip3 install git+https://github.com/fabric-testbed/MessageBus.git
-RUN mkdir -p "/etc/fabric/message_bus/schema"
-RUN cp /usr/local/lib/python3.8/site-packages/fabric/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
-RUN pip3 install git+https://github.com/fabric-testbed/ActorBase.git
+EXPOSE 11000
+EXPOSE 8700
 
-ENTRYPOINT ["python3"]
-
-CMD ["-m", "fabric.orchestrator"]
-#ENTRYPOINT ["tail","-f","/dev/null"]
+ENTRYPOINT ["/usr/src/app/orchestrator.sh"]

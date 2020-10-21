@@ -42,3 +42,6 @@ class RPCRequestType(Enum):
     Query = 13
     QueryResult = 14
     FailedRPC = 15
+    UpdateDelegation = 16
+    ClaimDelegation = 17
+    ReclaimDelegation = 18

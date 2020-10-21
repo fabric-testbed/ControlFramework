@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 
 from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
+from fabric.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.util.rpc_exception import RPCError
@@ -49,7 +50,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.resource_type import ResourceType
 
 from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
-from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric.actor.core.apis.i_kernel_client_reservation import IKernelClientReservation
 from fabric.actor.core.kernel.predecessor_state import PredecessorState
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
@@ -61,7 +61,7 @@ from fabric.actor.core.util.update_data import UpdateData
 from fabric.actor.security.guard import Guard
 
 
-class ReservationClient(Reservation, IKernelClientReservation, IControllerReservation):
+class ReservationClient(Reservation, IKernelControllerReservation):
     """
     Reservation state machine for a client-side reservation. Role: orchestrator,
     or an agent requesting tickets from an upstream agent. This class
@@ -1103,7 +1103,7 @@ class ReservationClient(Reservation, IKernelClientReservation, IControllerReserv
         elif self.state == ReservationStates.Failed:
             self.log_error(message="Lease update on failed reservation", exception=None)
 
-    def update_ticket(self, *, incoming: IReservation, update_data):
+    def update_ticket(self, *, incoming: IReservation, update_data: UpdateData):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Ticketed:
             if self.pending_state != ReservationPendingStates.Ticketing and \
                     self.pending_state != ReservationPendingStates.ExtendingTicket and \

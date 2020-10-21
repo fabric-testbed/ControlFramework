@@ -95,3 +95,37 @@ class ShowCommand(Command):
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
+
+    def get_delegations(self, *, actor_name: str, callback_topic: str, did: str):
+        try:
+            delegations, error = self.do_get_delegations(actor_name=actor_name, callback_topic=callback_topic,
+                                                          did=did)
+            if delegations is not None:
+                for d in delegations:
+                    d.print()
+            else:
+                print("Status: {}".format(error.get_status()))
+        except Exception as e:
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)
+            print("Exception occurred while processing get_delegations {}".format(e))
+
+    def do_get_delegations(self, *, actor_name: str, callback_topic: str, did: str):
+        actor = self.get_actor(actor_name=actor_name)
+
+        if actor is None:
+            raise Exception("Invalid arguments actor {} not found".format(actor_name))
+        try:
+            actor.prepare(callback_topic=callback_topic)
+            if did is None:
+                return actor.get_delegations(), actor.get_last_error()
+            else:
+                rid_list = []
+                r = actor.get_delegation(did=did)
+                if r is not None:
+                    rid_list.append(r)
+                return rid_list, actor.get_last_error()
+        except Exception as e:
+            traceback.print_exc()
+            ex_str = traceback.format_exc()
+            self.logger.error(ex_str)

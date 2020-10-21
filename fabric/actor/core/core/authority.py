@@ -33,9 +33,9 @@ from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
-from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.actor import Actor
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.resource_set import ResourceSet
@@ -43,6 +43,7 @@ from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.authority_management_object import AuthorityManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_authority_service import KafkaAuthorityService
 from fabric.actor.core.proxies.kafka.services.authority_service import AuthorityService
+from fabric.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.client import Client
@@ -50,6 +51,7 @@ from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.reservation_set import ReservationSet
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.security.auth_token import AuthToken
+from fim.graph.abc_property_graph import ABCPropertyGraph
 
 
 class Authority(Actor, IAuthority):
@@ -140,6 +142,20 @@ class Authority(Actor, IAuthority):
 
         self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
 
+    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+        slice_obj = delegation.get_slice_object()
+        if slice_obj is not None:
+            slice_obj.set_broker_client()
+
+        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback)
+
+    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+        slice_obj = delegation.get_slice_object()
+        if slice_obj is not None:
+            slice_obj.set_broker_client()
+
+        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback)
+
     def close_by_caller(self, *, reservation:IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
@@ -157,6 +173,9 @@ class Authority(Actor, IAuthority):
         if expired is not None:
             # self.logger.info("Authority expiring for cycle {} = {}".format(cycle, expired))
             self.close_reservations(reservations=expired)
+
+    def donate_delegation(self, *, delegation: IDelegation):
+        self.policy.donate_delegation(delegation=delegation)
 
     def donate(self, *, resources: ResourceSet):
         self.policy.donate(resources=resources)
@@ -179,6 +198,17 @@ class Authority(Actor, IAuthority):
 
         self.wrapper.export(reservation=reservation, client=client)
         return reservation.get_reservation_id()
+
+    def advertise(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+        slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
+        slice_obj.set_owner(owner=client)
+        slice_obj.set_broker_client()
+
+        dlg_obj = DelegationFactory.create(did=delegation.get_graph_id(), slice_id=slice_obj.get_slice_id())
+        dlg_obj.set_slice_object(slice_object=slice_obj)
+        dlg_obj.set_graph(graph=delegation)
+        self.wrapper.advertise(delegation=dlg_obj, client=client)
+        return dlg_obj.get_delegation_id()
 
     def extend_lease(self, *, reservation:IAuthorityReservation, caller: AuthToken):
         if caller is None:

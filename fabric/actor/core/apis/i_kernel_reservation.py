@@ -29,6 +29,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.kernel.request_types import RequestTypes
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -125,7 +126,7 @@ class IKernelReservation(IReservation):
         """
 
     @abstractmethod
-    def handle_duplicate_request(self, *, operation: int):
+    def handle_duplicate_request(self, *, operation: RequestTypes):
         """
         Handles a duplicate request.
        

@@ -27,14 +27,15 @@ import json
 import traceback
 
 import jwt
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 
+from fabric.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.util.id import ID
 from fabric.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
-from fabric.orchestrator.core.site_resource_type import SiteResourceType
-from fabric.orchestrator.core.site_resource_types import SiteResourceTypes
+from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
 
 
 class OrchestratorHandler:
@@ -44,12 +45,18 @@ class OrchestratorHandler:
         self.logger = GlobalsSingleton.get().get_logger()
         self.token_public_key = GlobalsSingleton.get().get_config().get_oauth_config().get(
             Constants.PropertyConfOAuthTokenPublicKey, None)
-        self.types_map = {}
+        self.query_model_map = {}
+
+    def get_logger(self):
+        return self.logger
 
     def validate_credentials(self, *, token) -> str:
         try:
             with open(self.token_public_key) as f:
-                key = f.read()
+                pem_data = f.read()
+                f.close()
+                key = serialization.load_pem_public_key(data=pem_data.encode("utf-8"),
+                                                        backend=default_backend())
 
             options = {'verify_aud': False}
             verify = True
@@ -74,7 +81,8 @@ class OrchestratorHandler:
     def discover_types(self, *, controller: IMgmtActor) -> dict:
         broker = self.get_broker(controller=controller)
         if broker is None:
-            raise Exception("Unable to determine broker proxy for this controller. Please check SM container configuration and logs.")
+            raise Exception("Unable to determine broker proxy for this controller. "
+                            "Please check Orchestrator container configuration and logs.")
 
         self.controller_state.set_broker(broker=str(broker))
 
@@ -82,51 +90,19 @@ class OrchestratorHandler:
         if my_pools is None:
             raise Exception("Could not discover types: {}".format(controller.get_last_error()))
 
-        pools = {}
+        response = None
         for p in my_pools:
             try:
-                rpd = Converter.fill_resource_pool_descriptor(pool=p)
-                rtype = rpd.get_resource_type()
-                # TODO
-                '''
-                attr = rpd.get_attribute(key=Constants.ResourceDomain)
-                if attr is None:
-                    raise Exception("Missing domain information for resource pool: {}".format(rtype))
-                pools[rtype] = rpd
-                domain = attr.get_value()
-                domain_resources = SiteResourceTypes(domain=domain)
-                if domain not in self.types_map:
-                    self.types_map[domain] = domain_resources
-                '''
-
-                drt = SiteResourceType(rtype=rtype)
-                attr = rpd.get_attribute(key=Constants.ResourceAvailableUnits)
-                total = 0
-                if attr is not None:
-                    total = attr.get_int_value()
-                    drt.set_available_units(available_units=total)
-
-                self.logger.debug("rt: {} available units: {}".format(drt.get_resource_type(),
-                                                                      drt.get_available_units()))
-
-                self.types_map[rtype] = drt
-                # TODO
-                #self.logger.debug("domain: {} rt: {} available units: {}".format(domain, drt.get_resource_type(),
-                #                                                                 drt.get_available_units()))
-                #domain_resources.add_resource(resource=drt)
+                bqm = p.properties.get(Constants.BrokerQueryModel, None)
+                if bqm is not None:
+                    graph = Neo4jResourcePoolFactory.get_graph_from_string(graph_str=bqm)
+                    self.update_resource_map(broker=str(broker), graph=graph)
+                    response = bqm
             except Exception as e:
                 self.logger.error(traceback.format_exc())
                 self.logger.debug("Could not process discover types response {}".format(e))
 
-        return self.resources_to_json()
-
-    def resources_to_json(self):
-        result = {}
-        if self.types_map is not None:
-            for drt in self.types_map.values():
-                result[str(drt.get_resource_type())] = str(drt.get_available_units())
-
-        return result
+        return response
 
     def list_resources(self):
         try:
@@ -149,3 +125,6 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred processing list resource e: {}".format(e))
             raise e
+
+    def update_resource_map(self, *, broker: str, graph: Neo4jPropertyGraph):
+        self.query_model_map[broker] = graph

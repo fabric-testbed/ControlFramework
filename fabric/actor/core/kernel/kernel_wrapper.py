@@ -34,9 +34,11 @@ from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_policy import IPolicy
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.common.exceptions import SliceNotFoundException
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.apis.i_kernel_client_reservation import IKernelClientReservation
@@ -104,6 +106,26 @@ class KernelWrapper:
         self.monitor.check_reserve(guard=exported.get_slice().get_guard(), requester=caller)
         exported.prepare(callback=callback, logger=self.logger)
         self.kernel.reclaim(reservation=exported)
+
+    def claim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy):
+        if delegation is None or caller is None or callback is None:
+            raise Exception("Invalid argument")
+
+        # Note: for claim we do not need the slice object, so we use
+        # validate(ReservationID) instead of validate(Reservation).
+        exported = self.kernel.validate_delegation(did=delegation.get_delegation_id())
+        exported.prepare(callback=callback, logger=self.logger)
+        self.kernel.claim_delegation(delegation=exported)
+
+    def reclaim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy):
+        if delegation is None or caller is None or callback is None:
+            raise Exception("Invalid argument")
+
+        # Note: for claim we do not need the slice object, so we use
+        # validate(ReservationID) instead of validate(Reservation).
+        exported = self.kernel.validate_delegation(did=delegation.get_delegation_id())
+        exported.prepare(callback=callback, logger=self.logger)
+        self.kernel.reclaim_delegation(delegation=exported)
 
     def fail(self, *, rid: ID, message: str):
         """
@@ -203,6 +225,21 @@ class KernelWrapper:
         reservation.client = client
         reservation.get_slice().set_broker_client()
         self.handle_reserve(reservation=reservation, identity=client, create_new_slice=False, verify_credentials=False)
+
+    def advertise(self, *, delegation: IDelegation, client: AuthToken):
+        """
+        Initiates a ticket export.
+        Role: Broker or Authority
+        Prepare/hold a ticket for "will call" claim by a client.
+        @param delegation reservation to be exported
+        @param client client identity
+        @throws Exception in case of error
+        """
+        if delegation is None or delegation.get_slice_object() is None:
+            raise Exception("Invalid argument")
+
+        delegation.prepare(callback=None, logger=self.logger)
+        self.handle_delegate(delegation=delegation, identity=client)
 
     def extend_lease(self, *, reservation: IControllerReservation):
         if reservation is None:
@@ -490,6 +527,42 @@ class KernelWrapper:
         """
         return self.kernel.get_slices()
 
+    def handle_delegate(self, *, delegation: IDelegation, identity: AuthToken):
+        """
+        Handles a delegation. Called from both AM and Broker.
+
+        @param delegation the delegation
+        @param identity caller identity
+
+        @throws Exception in case of error
+        """
+        if delegation.get_slice_object() is None or delegation.get_slice_object().get_name() is None or \
+                delegation.get_slice_object().get_slice_id() is None or delegation.get_delegation_id() is None:
+            raise Exception("Invalid argument")
+
+        # Obtain the previously created slice or create a new slice. When this
+        # function returns we will have a slice object that is registered with the kernel
+        s = self.kernel.get_slice(slice_id=delegation.get_slice_id())
+        if s is None:
+            self.kernel.register_slice(slice_object=delegation.get_slice_object())
+
+        # Determine if this is a new or an already existing reservation. We
+        # will register new reservations and call reserve for them. For
+        # existing reservations we will perform amendReserve. XXX: Note, if the
+        # caller makes two concurrent requests for a new reservation, it is
+        # possible that kernel.softValidate can return null for both, yet only
+        # one of them will succeed to register itself. For the second the
+        # kernel will throw an exception. This is a limitation that does not
+        # seem to be too much of a problem and can be resolved using the same
+        # technique we use for creating/registering slices.
+        temp = self.kernel.soft_validate_delegation(delegation=delegation)
+
+        if temp is None:
+            self.kernel.register_delegation(delegation=delegation)
+            self.kernel.delegate(delegation=delegation)
+        else:
+            self.kernel.amend_delegate(delegation=temp)
+
     def handle_reserve(self, *, reservation: IKernelReservation, identity: AuthToken, create_new_slice: bool,
                        verify_credentials: bool):
         """
@@ -733,6 +806,22 @@ class KernelWrapper:
 
         self.kernel.re_register_reservation(reservation=reservation)
 
+    def re_register_delegation(self, *, delegation: IDelegation):
+        """
+         Registers a previously unregistered delegation with the kernel.
+        @param delegation the delegation to reregister
+        @throws IllegalArgumentException when the passed in argument is illegal
+        @throws Exception if the delegation has already been registered with the
+                    kernel or the delegation does not have a database record. In
+                    the latter case the delegation will be unregistered from the
+                    kernel data structures.
+        @throws RuntimeException if a database error occurs
+        """
+        if delegation is None or not isinstance(delegation, IDelegation):
+            raise Exception("Invalid argument")
+
+        self.kernel.re_register_delegation(delegation=delegation)
+
     def re_register_slice(self, *, slice_object: ISlice):
         """
         Registers the slice with the kernel: adds the slice object to the kernel
@@ -757,6 +846,27 @@ class KernelWrapper:
             self.kernel.tick()
         except Exception as e:
             traceback.print_exc()
+
+    def delegate(self, *, delegation: IDelegation, destination: IActorIdentity):
+        """
+        Initiates a delegate request. If the exported flag is set, this is a claim
+        on a pre-reserved "will call" ticket.
+        Role: Broker or Controller.
+        @param delegation delegation parameters for ticket request
+        @param destination identity of the actor the request must be sent to
+        @throws Exception in case of error
+        """
+        if delegation is None or destination is None:
+            raise Exception("Invalid arguments")
+
+        callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.ProtocolKafka,
+                                                             actor_name=destination.get_name())
+        if callback is None:
+            raise Exception("Unsupported")
+
+        delegation.prepare(callback=callback, logger=self.logger)
+        delegation.validate_outgoing()
+        self.handle_delegate(delegation=delegation, identity=destination.get_identity())
 
     def ticket(self, *, reservation: IClientReservation, destination: IActorIdentity):
         """
@@ -911,6 +1021,22 @@ class KernelWrapper:
         self.monitor.check_update(guard=target.get_slice().get_guard(), requester=requester)
         reservation.validate_incoming_ticket()
         self.kernel.update_ticket(reservation=target, update=reservation, update_data=update_data)
+
+    def update_delegation(self, *, delegation: IDelegation, update_data: UpdateData, caller: AuthToken):
+        """
+        Handles a delegation update from upstream broker.
+        Role: Agent or Controller.
+        @param delegation delegation describing the update
+        @param update_data status of the update
+        @param caller identity of the caller
+        @throws Exception in case of error
+        """
+        if delegation is None or update_data is None or caller is None:
+            raise Exception("Invalid arguments")
+
+        target = self.kernel.validate_delegation(did=delegation.get_delegation_id())
+        delegation.validate_incoming()
+        self.kernel.update_delegation(delegation=target, update=delegation, update_data=update_data)
 
     def process_failed_rpc(self, *, rid: ID, rpc: FailedRPC):
         if rid is None:

@@ -46,6 +46,7 @@ from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.message_bus.messages.result_avro import ResultAvro
 from fabric.message_bus.messages.result_slice_avro import ResultSliceAvro
+from fim.graph.abc_property_graph import ABCPropertyGraph
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -649,6 +650,37 @@ class ServerActorManagementObject(ActorManagementObject):
 
             exported = self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
             result.result = str(exported)
+        except Exception as e:
+            self.logger.error("export_resources: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
+    def advertise_resources(self, *, delegation: ABCPropertyGraph, client: AuthToken, caller: AuthToken) -> ResultStringAvro:
+        result = ResultStringAvro()
+        result.status = ResultAvro()
+
+        if client is None or delegation is None or caller is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+
+        try:
+            class Runner(IActorRunnable):
+                def __init__(self, *, actor: IActor):
+                    self.actor = actor
+
+                def run(self):
+                    return self.actor.advertise(delegation=delegation, client=client)
+
+            self.logger.debug("Executing advertise on actor {} {} ({})".format(self.actor.get_name(),
+                                                                               self.actor.get_name(),
+                                                                               self.actor.__class__.__name__))
+
+            advertised = self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
+            result.result = str(advertised)
         except Exception as e:
             self.logger.error("export_resources: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

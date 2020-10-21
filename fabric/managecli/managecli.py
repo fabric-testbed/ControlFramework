@@ -43,7 +43,7 @@ from fabric.managecli.show_command import ShowCommand
 
 
 class MainShell:
-    PATH = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/managecli/config/manage-cli.yaml"
+    PATH = "/Users/komalthareja/renci/code/fabric/ControlFramework/fabric/managecli/config/manage-cli.yaml"
 
     def __init__(self):
         self.config_processor = ConfigProcessor(path=self.PATH)
@@ -240,6 +240,34 @@ def reclaim(ctx, broker: str, am: str, rid: str):
                                    rid=rid)
     MainShellSingleton.get().stop()
 
+@manage.command()
+@click.option('--broker', default=None, help='Broker Name', required=True)
+@click.option('--am', default=None, help='AM Name', required=True)
+@click.option('--did', default=None, help='Delegation Id', required=False)
+@click.pass_context
+def claimdelegation(ctx, broker: str, am: str, did: str):
+    """ Claim reservations for am to broker
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.claim_delegations(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                 did=did)
+    MainShellSingleton.get().stop()
+
+
+@manage.command()
+@click.option('--broker', default=None, help='Broker Name', required=True)
+@click.option('--am', default=None, help='AM Name', required=True)
+@click.option('--did', default=None, help='Delegation Id', required=False)
+@click.pass_context
+def reclaimdelegation(ctx, broker: str, am: str, did: str):
+    """ Claim reservations for am to broker
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ManageCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.reclaim_delegations(broker=broker, am=am, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                   did=did)
+    MainShellSingleton.get().stop()
 
 @manage.command()
 @click.option('--rid', default=None, help='Reservation Id', required=True)
@@ -330,6 +358,20 @@ def reservations(ctx, actor, rid):
     mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
     mgmt_command.get_reservations(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
                                   rid=rid)
+    MainShellSingleton.get().stop()
+
+
+@show.command()
+@click.option('--actor', default=None, help='Actor Name', required=True)
+@click.option('--did', default=None, help='Delegation Id', required=False)
+@click.pass_context
+def delegations(ctx, actor, did):
+    """ Get Slices from an actor
+    """
+    MainShellSingleton.get().start()
+    mgmt_command = ShowCommand(logger=MainShellSingleton.get().logger)
+    mgmt_command.get_delegations(actor_name=actor, callback_topic=MainShellSingleton.get().get_callback_topic(),
+                                 did=did)
     MainShellSingleton.get().stop()
 
 

@@ -87,6 +87,7 @@ class MessageService(AvroConsumerApi):
                     message.get_message_name() == IMessageAvro.GetSlicesRequest or \
                     message.get_message_name() == IMessageAvro.GetReservationsRequest or \
                     message.get_message_name() == IMessageAvro.GetReservationsStateRequest or \
+                    message.get_message_name() == IMessageAvro.GetDelegations or \
                     message.get_message_name() == IMessageAvro.GetReservationUnitsRequest or \
                     message.get_message_name() == IMessageAvro.GetUnitRequest or \
                     message.get_message_name() == IMessageAvro.GetPoolInfoRequest or \

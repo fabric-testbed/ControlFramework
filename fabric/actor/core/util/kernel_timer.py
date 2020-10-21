@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+import traceback
 
 from fabric.actor.core.apis.i_timer_queue import ITimerQueue
 from fabric.actor.core.apis.i_timer_task import ITimerTask
@@ -32,6 +33,15 @@ from fabric.actor.core.apis.i_timer_task import ITimerTask
 class KernelTimer:
     @staticmethod
     def schedule(*, queue: ITimerQueue, task: ITimerTask, delay: int):
-        timer = threading.Timer(interval=delay, function=queue.queue_timer, args=task)
-        timer.start()
-        return timer
+        try:
+            queue.logger.debug("Scheduling timer")
+            from fabric.actor.core.container.globals import GlobalsSingleton
+            scheduler = GlobalsSingleton.get().timer_scheduler
+            condition = GlobalsSingleton.get().timer_condition
+            with condition:
+                timer = scheduler.enter(delay=delay, priority=1, action=queue.queue_timer, argument=[task])
+                condition.notify_all()
+            queue.logger.debug("Timer scheduled")
+            return timer
+        except Exception as e:
+            traceback.print_exc()

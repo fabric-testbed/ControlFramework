@@ -28,6 +28,7 @@ import queue
 import threading
 import traceback
 
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_policy import IPolicy
 from fabric.actor.core.apis.i_timer_task import ITimerTask
 from fabric.actor.core.apis.i_actor import IActor, ActorType
@@ -41,6 +42,7 @@ from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.container.message_service import MessageService
 from fabric.actor.core.core.reservation_tracker import ReservationTracker
+from fabric.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
@@ -475,6 +477,9 @@ class Actor(IActor):
             self.logger.debug("Recovering reservations in slice: {}".format(slice_id))
             self.recover_reservations(slice_obj=slice_obj)
 
+            self.logger.debug("Recovering delegations in slice: {}".format(slice_id))
+            self.recover_delegations(slice_obj=slice_obj)
+
             self.logger.info("Recovery of slice {} complete".format(slice_id))
 
     def recover_reservations(self, *, slice_obj: ISlice):
@@ -534,6 +539,63 @@ class Actor(IActor):
             self.logger.error("Exception occurred in recovering reservation e={}".format(e))
             raise Exception("Could not recover Reservation #{}".format(properties))
 
+    def recover_delegations(self, *, slice_obj: ISlice):
+        self.logger.info(
+            "Starting to recover delegations in slice {}({})".format(slice_obj.get_name(), slice_obj.get_slice_id()))
+        delegations = None
+        try:
+            delegations = self.plugin.get_database().get_delegations_by_slice_id(slice_id=slice_obj.get_slice_id())
+        except Exception as e:
+            self.logger.error(e)
+            raise Exception(
+                "Could not fetch delegations records for slice {}({}) from database".format(slice_obj.get_name(),
+                                                                                            slice_obj.get_slice_id()))
+
+        self.logger.debug("There are {} delegations(s) in slice".format(len(delegations)))
+
+        for properties in delegations:
+            try:
+                self.logger.info("Delegation has properties: {}".format(properties))
+                self.recover_delegation(properties=properties, slice_obj=slice_obj)
+            except Exception as e:
+                self.logger.error("Unexpected error while recovering delegation {}".format(e))
+
+        self.logger.info("Recovery for delegations in slice {} completed".format(slice_obj))
+
+    def recover_delegation(self, *, properties: dict, slice_obj: ISlice):
+        try:
+            d = DelegationFactory.create_instance(properties=properties, actor=self, slice_obj=slice_obj,
+                                                  logger=self.logger)
+
+            self.logger.info(
+                "Found delegation # {} in state {}".format(d.get_delegation_id(), d.get_state_name()))
+            if d.is_closed():
+                self.logger.info("Delegation #{} is closed. Nothing to recover.".format(d.get_delegation_id()))
+                return
+
+            self.logger.info("Recovering delegation #{}".format(d.get_delegation_id()))
+            self.logger.debug("Recovering delegation object d={}".format(d))
+
+            self.logger.debug("Registering the delegation with the actor")
+            self.re_register_delegation(delegation=d)
+
+            self.logger.info(d)
+
+            self.logger.debug("Revisiting with the Plugin")
+
+            self.plugin.revisit(delegation=d)
+
+            self.logger.info(d)
+
+            self.logger.debug("Revisiting with the actor policy")
+            self.policy.revisit_delegation(delegation=d)
+
+            self.logger.info("Recovered delegation #{}".format(d.get_delegation_id()))
+        except Exception as e:
+            traceback.print_exc()
+            self.logger.error("Exception occurred in recovering delegation e={}".format(e))
+            raise Exception("Could not recover delegation #{}".format(properties))
+
     def register(self, *, reservation: IReservation):
         self.wrapper.register_reservation(reservation=reservation)
 
@@ -552,6 +614,9 @@ class Actor(IActor):
 
     def remove_slice_by_slice_id(self, *, slice_id: ID):
         self.wrapper.remove_slice(slice_id=slice_id)
+
+    def re_register_delegation(self, *, delegation: IDelegation):
+        self.wrapper.re_register_delegation(delegation=delegation)
 
     def re_register(self, *, reservation: IReservation):
         self.wrapper.re_register_reservation(reservation=reservation)
@@ -683,10 +748,10 @@ class Actor(IActor):
     def unregister_slice_by_slice_id(self, *, slice_id: ID):
         self.wrapper.unregister_slice(slice_id=slice_id)
 
-    def queue_timer(self, *, timer: ITimerTask):
+    def queue_timer(self, timer: ITimerTask):
         with self.actor_main_lock:
             self.timer_queue.put_nowait(timer)
-            self.logger.debug("Added timer to timer queue")
+            self.logger.debug("Added timer to timer queue {}".format(timer.__class__.__name__))
             self.actor_main_lock.notify_all()
 
     def queue_event(self, *, incoming: IActorEvent):

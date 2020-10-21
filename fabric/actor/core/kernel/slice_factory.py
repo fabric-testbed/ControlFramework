@@ -28,6 +28,7 @@ from __future__ import annotations
 import pickle
 from typing import TYPE_CHECKING
 
+from fabric.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
 from fabric.actor.core.common.constants import Constants
 
 if TYPE_CHECKING:
@@ -52,6 +53,10 @@ class SliceFactory(ISliceFactory):
         try:
             serialized_slice = properties[Constants.PropertyPickleProperties]
             deserialized_slice = pickle.loads(serialized_slice)
+            graph_id = str(deserialized_slice.get_graph_id())
+            if graph_id is not None:
+                arm_graph = Neo4jResourcePoolFactory.get_arm_graph(graph_id=graph_id)
+                deserialized_slice.set_graph(arm_graph)
         except Exception as e:
             raise e
         return deserialized_slice

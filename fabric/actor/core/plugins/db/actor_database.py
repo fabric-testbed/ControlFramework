@@ -30,6 +30,7 @@ from typing import List
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
 from fabric.actor.core.apis.i_database import IDatabase
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.kernel.slice import SliceTypes
@@ -140,7 +141,8 @@ class ActorDatabase(IDatabase):
                               slc_name=slice_object.get_name(),
                               slc_type=slice_object.get_slice_type().value,
                               slc_resource_type=str(slice_object.get_resource_type()),
-                              properties=properties)
+                              properties=properties,
+                              slc_graph_id=str(slice_object.get_graph_id()))
         finally:
             self.lock.release()
 
@@ -153,7 +155,8 @@ class ActorDatabase(IDatabase):
                                  slc_name=slice_object.get_name(),
                                  slc_type=slice_object.get_slice_type().value,
                                  slc_resource_type=str(slice_object.get_resource_type()),
-                                 properties=properties)
+                                 properties=properties,
+                                 slc_graph_id=str(slice_object.get_graph_id()))
         finally:
             self.lock.release()
 
@@ -234,6 +237,10 @@ class ActorDatabase(IDatabase):
             self.lock.release()
 
     def update_reservation(self, *, reservation: IReservation):
+        # Update the reservation only when there are changes to be reflected in database
+        if not reservation.is_dirty():
+            return
+        reservation.clear_dirty()
         try:
             self.lock.acquire()
             self.logger.debug("Updating reservation {} in slice {}".format(reservation.get_reservation_id(),
@@ -247,6 +254,7 @@ class ActorDatabase(IDatabase):
                                        rsv_pending=reservation.get_pending_state().value,
                                        rsv_joining=reservation.get_join_state().value,
                                        properties=properties)
+
         finally:
             self.lock.release()
 
@@ -417,6 +425,84 @@ class ActorDatabase(IDatabase):
         try:
             self.lock.acquire()
             return self.db.get_proxies(act_id=self.actor_id)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            self.lock.release()
+        return None
+
+    def add_delegation(self, *, delegation: IDelegation):
+        try:
+            self.lock.acquire()
+            self.logger.debug("Adding delegation {} to slice {}".format(delegation.get_delegation_id(),
+                                                                        delegation.get_slice_id()))
+
+            slice_object = self.get_slice(slice_id=delegation.get_slice_id())
+            if slice_object is None:
+                raise Exception("Slice with id: {} not found".format(delegation.get_slice_id()))
+
+            properties = pickle.dumps(delegation)
+            self.db.add_delegation(dlg_act_id=self.actor_id,
+                                   dlg_slc_id=slice_object['slc_id'],
+                                   dlg_graph_id=str(delegation.get_delegation_id()),
+                                   dlg_state=delegation.get_state().value,
+                                   properties=properties)
+            self.logger.debug(
+                "Delegation {} added to slice {}".format(delegation.get_delegation_id(),
+                                                         delegation.get_slice_id()))
+        finally:
+            self.lock.release()
+
+    def update_delegation(self, *, delegation: IDelegation):
+        # Update the delegation only when there are changes to be reflected in database
+        if not delegation.is_dirty():
+            return
+        delegation.clear_dirty()
+        try:
+            self.lock.acquire()
+            self.logger.debug("Updating delegation {} in slice {}".format(delegation.get_delegation_id(),
+                                                                          delegation.get_slice_id()))
+            properties = pickle.dumps(delegation)
+            self.db.update_delegation(dlg_act_id=self.actor_id,
+                                      dlg_graph_id=str(delegation.get_delegation_id()),
+                                      dlg_state=delegation.get_state().value,
+                                      properties=properties)
+        finally:
+            self.lock.release()
+
+    def remove_delegation(self, *, dlg_graph_id: ID):
+        try:
+            self.lock.acquire()
+            self.logger.debug("Removing delegation {}".format(dlg_graph_id))
+            self.db.remove_delegation(dlg_graph_id=str(dlg_graph_id))
+        finally:
+            self.lock.release()
+
+    def get_delegation(self, *, dlg_graph_id: ID) -> dict:
+        try:
+            self.lock.acquire()
+            return self.db.get_delegation(dlg_act_id=self.actor_id, dlg_graph_id=str(dlg_graph_id))
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            self.lock.release()
+        return None
+
+    def get_delegations(self) -> list:
+        try:
+            self.lock.acquire()
+            self.logger.debug("Actor ID: {}".format(self.actor_id))
+            return self.db.get_delegations(dlg_act_id=self.actor_id)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            self.lock.release()
+        return None
+
+    def get_delegations_by_slice_id(self, *, slice_id: ID) -> list:
+        try:
+            self.lock.acquire()
+            return self.db.get_delegations_by_slice_id(dlg_act_id=self.actor_id, slc_guid=str(slice_id))
         except Exception as e:
             self.logger.error(e)
         finally:

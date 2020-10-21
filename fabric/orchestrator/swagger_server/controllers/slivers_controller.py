@@ -38,17 +38,21 @@ def slivers_modify_sliver_idput(body, sliver_id, slice_id):  # noqa: E501
     return rc.slivers_modify_sliver_idput(body, sliver_id, slice_id)
 
 
-def slivers_poa_sliver_idpost(sliver_id):  # noqa: E501
+def slivers_poa_sliver_idpost(body, sliver_id):  # noqa: E501
     """Perform Operational Action
 
     Perform the named operational action on the named resources, possibly changing the operational status of the named resources. E.G. &#x27;reboot&#x27; a VM.   # noqa: E501
 
+    :param body: 
+    :type body: dict | bytes
     :param sliver_id: Sliver identifier as UUID
     :type sliver_id: str
 
     :rtype: Success
     """
-    return rc.slivers_poa_sliver_idpost(sliver_id)
+    if connexion.request.is_json:
+        body = str.from_dict(connexion.request.get_json())  # noqa: E501
+    return rc.slivers_poa_sliver_idpost(body, sliver_id)
 
 
 def slivers_sliver_idget(slice_id, sliver_id):  # noqa: E501

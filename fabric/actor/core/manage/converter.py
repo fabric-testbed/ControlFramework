@@ -30,7 +30,6 @@ from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
-
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric.actor.core.core.actor_identity import ActorIdentity

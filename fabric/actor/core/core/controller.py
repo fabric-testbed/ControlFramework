@@ -30,6 +30,7 @@ import threading
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor import ActorType
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
@@ -312,6 +313,9 @@ class Controller(Actor, IController):
             raise Exception("This actor cannot receive calls")
 
         self.wrapper.update_ticket(reservation=reservation, update_data=update_data, caller=caller)
+
+    def update_delegation(self, *, delegation: IDelegation, update_data, caller: AuthToken):
+        raise Exception("Not supported in controller")
 
     def modify(self, *, reservation_id: ID, modify_properties: dict):
         if reservation_id is None or modify_properties is None:

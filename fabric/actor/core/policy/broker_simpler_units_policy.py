@@ -59,6 +59,8 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
         del state['clock']
         del state['initialized']
 
+        del state['delegations']
+        del state['combined_broker_model']
         del state['for_approval']
         del state['lock']
 
@@ -78,6 +80,10 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
         self.actor = None
         self.clock = None
         self.initialized = False
+
+        self.delegations = {}
+        self.combined_broker_model = None
+        self.load_combined_broker_model()
 
         self.lock = threading.Lock()
         self.calendar = None
@@ -119,14 +125,19 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
         self.allocate_queue(start_cycle=start_cycle)
         self.allocate_ticketing(requests=requests, start_cycle=start_cycle)
 
+    '''
     def query(self, *, p: dict) -> dict:
+        self.logger.debug("Processing Query with properties: {}".format(p))
         action = self.get_query_action(properties=p)
         if action.lower() != Constants.QueryActionDiscoverPools:
             return super().query(p=p)
 
         response = self.inventory.get_resource_pools()
         response[Constants.QueryResponse] = Constants.QueryActionDiscoverPools
+
+        self.logger.debug("Returning Query Result: {}".format(response))
         return response
+    '''
 
     def get_default_pool_id(self) -> ResourceType:
         result = None
@@ -363,3 +374,5 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
             raise Exception("cannot free resources: no inventory")
 
         inv.allocate_revisit(count=rset.get_units(), resource=rset.get_resource_properties())
+
+

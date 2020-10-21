@@ -25,11 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import sched
 import threading
 from logging.handlers import RotatingFileHandler
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.apis.i_mgmt_container import IMgmtContainer
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.container.container import Container
 
@@ -62,6 +62,9 @@ class Globals:
         self.event_manager = EventManager()
         self.container = None
         self.properties = None
+        self.timer_scheduler = sched.scheduler()
+        self.timer_thread = None
+        self.timer_condition = threading.Condition()
         self.lock = threading.Lock()
 
     def make_logger(self):
@@ -129,7 +132,11 @@ class Globals:
             if not self.initialized:
                 self.load_config()
                 self.log = self.make_logger()
-                self.log.info("Main container initialization complete.")
+                self.log.info("Checking if connection to Kafka broker can be established")
+                admin_kafka_client = self.get_kafka_admin_client()
+                admin_kafka_client.list_topics()
+                self.log.info("Connection to Kafka broker established successfully")
+                self.log.info("Main initialization complete.")
                 self.initialized = True
         finally:
             self.lock.release()
@@ -151,6 +158,27 @@ class Globals:
         if not self.initialized:
             raise Exception("Invalid state")
         return self.config
+
+    def get_kafka_config_admin_client(self) -> dict:
+        if self.config is None or self.config.get_runtime_config() is None:
+            return None
+        bootstrap_server = self.config.get_runtime_config().get(Constants.PropertyConfKafkaServer, None)
+        security_protocol = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSecurityProtocol, None)
+        group_id = self.config.get_runtime_config().get(Constants.PropertyConfKafkaGroupId, None)
+        ssl_ca_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSSlCaLocation, None)
+        ssl_certificate_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslCertificateLocation, None)
+        ssl_key_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyLocation, None)
+        ssl_key_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyPassword, None)
+
+        conf = {'bootstrap.servers': bootstrap_server,
+                'security.protocol': security_protocol,
+                'group.id': group_id,
+                'ssl.ca.location': ssl_ca_location,
+                'ssl.certificate.location': ssl_certificate_location,
+                'ssl.key.location': ssl_key_location,
+                'ssl.key.password': ssl_key_password}
+
+        return conf
 
     def get_kafka_config_producer(self) -> dict:
         if self.config is None or self.config.get_runtime_config() is None:
@@ -207,6 +235,12 @@ class Globals:
         producer = AvroProducerApi(conf=conf, key_schema=key_schema, record_schema=val_schema, logger=self.get_logger())
         return producer
 
+    def get_kafka_admin_client(self):
+        from fabric.message_bus.admin import AdminApi
+        conf = self.get_kafka_config_admin_client()
+        admin = AdminApi(conf=conf)
+        return admin
+
     def get_logger(self):
         if not self.initialized:
             raise Exception("Invalid state")
@@ -229,6 +263,7 @@ class Globals:
                 self.lock.release()
 
             self.initialize()
+            self.start_timer_thread()
             try:
                 self.lock.acquire()
                 self.container = Container()
@@ -251,11 +286,55 @@ class Globals:
                 return
             self.log.info("Stopping Actor")
             self.started = False
+            self.stop_timer_thread()
             self.get_container().shutdown()
         except Exception as e:
             self.log.error("Error while shutting down: {}".format(e))
         finally:
             self.lock.release()
+
+    def start_timer_thread(self):
+        if self.timer_thread is not None:
+            raise Exception("This actor has already been started")
+
+        self.timer_thread = threading.Thread(target=self.timer_loop)
+        self.timer_thread.setName('GlobalTimer')
+        self.timer_thread.setDaemon(True)
+        self.timer_thread.start()
+
+    def stop_timer_thread(self):
+        temp = self.timer_thread
+        self.timer_thread = None
+        if temp is not None:
+            self.log.warning("It seems that the timer thread is running. Interrupting it")
+            try:
+                with self.timer_condition:
+                    self.timer_condition.notify_all()
+                temp.join()
+            except Exception as e:
+                self.log.error("Could not join timer thread {}".format(e))
+
+    def timer_loop(self):
+        self.log.debug("Timer thread started")
+        while True:
+            with self.timer_condition:
+                while self.timer_scheduler.empty() and self.started:
+                    try:
+                        self.log.debug("Waiting for condition")
+                        self.timer_condition.wait()
+                    except InterruptedError as e:
+                        self.log.info("Timer thread interrupted. Exiting")
+                        return
+
+                    if not self.started:
+                        self.log.info("Timer thread exiting")
+                        return
+
+                    self.timer_condition.notify_all()
+
+                if not self.timer_scheduler.empty():
+                    self.log.debug("Executing Scheduled items")
+                    self.timer_scheduler.run()
 
 
 class GlobalsSingleton:

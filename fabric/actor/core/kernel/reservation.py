@@ -612,7 +612,7 @@ class Reservation(IKernelReservation):
             GlobalsSingleton.get().event_manager.dispatch_event(event=ReservationStateTransitionEvent(
                 reservation=self, state=self.get_reservation_state()))
 
-        self.dirty = True
+        self.set_dirty()
         self.state_transition = True
 
     def update_lease(self, *, incoming: IReservation, update_data):

@@ -12,6 +12,83 @@ Orchestrator uses the [Connexion](https://github.com/zalando/connexion) library 
 ### API
 API Documentation can be found [here](https://app.swaggerhub.com/apis-docs/kthare10/orchestrator/1.0.0)
 
+#### Version
+
+The Orchestrator API is versioned based on the release found in GitHub.
+
+API `version`:
+
+Resource | Action | Input | Output
+:--------|:----:|:---:|:---:
+`/version` | GET: current API version | NA | Version format
+
+Example: Version format
+
+```json
+{
+  "gitsha1": "Release SHA as string",
+  "version": "Release version as string"
+}
+```
+#### Resources
+All the resources available on Fabric Testbed can be queried.
+
+API `/resources`:
+ 
+Resource | Action | Input | Output
+:--------|:----:|:---:|:---:
+`/` | GET: Retrieve a listing and description of available resources| | JSON Object which contains the Graph ML describing the resources
+
+Example: Resources format
+```json
+{
+  "value": {}
+}
+```
+
+### Slivers
+Sliver is an individually programmable or configurable resource provisioned on a single aggregate. Slivers are provisioned by aggregates at the request of Orchestrators. Each sliver belongs to one and only one slice. The following APIs allow operations on Slivers.
+
+API `/slivers`:
+ 
+Resource | Action | Input | Output
+:--------|:----:|:---:|:---:
+`/` | GET: Retrieve a listing of user slivers | `sliceID` Slice ID | Sliver Format
+`/{sliverID}` | GET: Retrieve Sliver properties | `sliceID` Slice ID, `sliverID` Sliver ID | Sliver Format
+`/status/{sliverID}` | GET: Retrieve the status of a sliver. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.| `sliceID` Slice ID, `sliverID` Sliver ID | Sliver Format
+`/poa/{sliverID}` | POST: Perform the named operational action on the named resources, possibly changing the operational status of the named resources. E.G. 'reboot' a VM. | `sliceID` Slice ID, `sliverID` Sliver ID, `Reboot Node or FPGA bitcode` body | Sliver Format
+`/modify/{sliverID}` | PUT: Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice. | `sliceID` Slice ID, `sliverID` Sliver ID, `Modify Request` body | Sliver Format
+
+Example: Sliver format
+```json
+{
+  "value": {}
+}
+```
+
+### Slices
+Slice is a collection of logically-related resources representing a single execution of an experiment (or a portion of an experiment, as multiple slices may be involved). Typically represents a connected topology of resources known as slivers. A slice is part of one and only one project. The following APIs allow operations on Slices.
+
+API `/slices`:
+ 
+Resource | Action | Input | Output
+:--------|:----:|:---:|:---:
+`/` | GET: Retrieve a listing of user slices |  | Slice Format
+`/{sliceID}` | GET: Retrieve Slice properties | `sliceID` Slice ID | Slice Format
+`/status/{sliceID}` | GET: Retrieve the status of a slice. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.| `sliceID` Slice ID | Slice Format
+`/create` | POST: Request to create slice as described in the request. Request would be a graph ML describing the requested resources. Resources may be requested to be created now or in future. On success, one or more slivers are allocated, containing resources satisfying the request, and assigned to the given slice. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke get slice API to get the latest state of the requested resources. | `sliceName` Slice Name, `GraphML Representing the Slice` body | Slice Format
+`/redeem/{sliceID}` | POST: Request that the reserved resources be made provisioned, instantiating or otherwise realizing the resources, such that they have a valid operational status and may possibly be made ready for experimenter use. This operation is synchronous, but may start a longer process, such as creating and imaging a virtual machine. | `sliceID` Slice ID | Slice Format
+`/renew/{sliceID}` | POST: Request to extend slice be renewed with their expiration extended. If possible, the orchestrator should extend the slivers to the requested expiration time, or to a sooner time if policy limits apply. | `sliceID` Slice ID, `newLeaseEndTime` New Lease End Time for the Slice | Slice Format
+`/modify/{sliceID}` | PUT: Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice. | `sliceID` Slice ID, `GraphML representing modify` body | Slice Format
+`/delete/{sliceID}` | DELETE: Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary, de-provisioned and un-allocated at the respective sites. | `sliceID` Slice ID | Slice Format
+
+Example: Slice format
+```json
+{
+  "value": {}
+}
+```
+
 ### Swagger Server
 The swagger server was generated by the [swagger-codegen](https://github.com/swagger-api/swagger-codegen) project. By using the
 [OpenAPI-Spec](https://github.com/swagger-api/swagger-core/wiki) from a remote server, you can easily generate a server stub.  
@@ -30,3 +107,134 @@ $ cp kthare10-orchestrator-1.0.0-resolved.json openapi.json
 $ ./update_swagger_stub.sh
 ```
 Remove existing swagger_server directory and move my_server/swagger_server to swagger_server after verifying all changes are as expected.
+
+## Configuration
+`config.site.orchestrator.yaml` depicts an example config file for an Orchestrator.
+
+## Deployment
+Orchestrator must deploy following containers:
+- Neo4j
+- Postgres Database
+- Policy Enforcement Function (TBD)
+- Broker
+
+`docker-compose.yml` file present in this directory brings up all the required containers
+
+### Environment and Configuration
+
+Your Project must be configured prior to running it for the first time. Example configuration files have been provided as templates to start from.
+
+Do not check any of your configuration files into a repository as they will contain your projects secrets (use .gitignore to exclude any files containing secrets).
+
+1. .env from [env.template](env.template) - Environment variables for `docker-compose.yml` to use
+
+#### .env
+A file named `env.template` has been provided as an example, and is used by the `docker-compose.yml` file.
+```
+cp env.template .env
+```
+Once copied, modify the default values for each to correspond to your desired deployment. The UID and GID based entries should correspond to the values of the user responsible for running the code as these will relate to shared volumes from the host to the running containers.
+```
+# docker-compose environment file
+#
+# When you set the same environment variable in multiple files,
+# here’s the priority used by Compose to choose which value to use:
+#
+#  1. Compose file
+#  2. Shell environment variables
+#  3. Environment file
+#  4. Dockerfile
+#  5. Variable is not defined
+
+# Neo4J configuration
+NEO4J_DATA_PATH_DOCKER=/data
+NEO4J_DATA_PATH_HOST=./neo4j/data
+NEO4J_GID=1000
+NEO4J_HOST=neo4j
+NEO4J_IMPORTS_PATH_DOCKER=/imports
+NEO4J_IMPORTS_PATH_HOST=./neo4j/imports
+NEO4J_LOGS_PATH_DOCKER=/logs
+NEO4J_LOGS_PATH_HOST=./neo4j/logs
+NEO4J_PASS=password
+NEO4J_UID=1000
+NEO4J_USER=neo4j
+NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:9687
+NEO4J_dbms_connector_bolt_listen__address=0.0.0.0:9687
+NEO4J_dbms_connector_http_advertised__address=0.0.0.0:9474
+NEO4J_dbms_connector_http_listen__address=0.0.0.0:9474
+NEO4J_dbms_connector_https_advertised__address=0.0.0.0:9473
+NEO4J_dbms_connector_https_listen__address=0.0.0.0:9473
+
+# postgres configuration
+POSTGRES_HOST=database
+POSTGRES_PORT=5432
+POSTGRES_USER=fabric
+POSTGRES_PASSWORD=fabric
+PGDATA=/var/lib/postgresql/data/pgdata
+POSTGRES_DB=orchestrator
+```
+### Build
+Once all configuration has been done, the user can build the necessary containers by issuing:
+```
+docker-compose build
+```
+### Run
+#### database
+Create the database directories if they do not exist
+```
+mkdir -p pg_data/data pg_data/logs
+
+```
+Start the pre-defined PostgreSQL database in Docker
+```
+docker-compose up -d database
+```
+Validate that the database container is running.
+```
+$ docker-compose ps
+  Name                Command              State           Ports
+-------------------------------------------------------------------------
+orchestrator-db   docker-entrypoint.sh postgres   Up      0.0.0.0:10432->5432/tcpdocker-compose ps
+```
+#### neo4j
+Create the neo4j directories if they do not exist
+```
+mkdir -p neo4j/data neo4j/imports neo4j/logs
+echo password > neo4j/password
+```
+Start the pre-defined Neo4j database in Docker
+```
+docker-compose up -d neo4j
+```
+Validate that the database container is running.
+```
+docker-compose ps
+    Name                  Command                 State                                                     Ports
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+orchestrator-neo4j   /sbin/tini -g -- /docker-e ...   Up           7473/tcp, 7474/tcp, 7687/tcp, 0.0.0.0:9473->9473/tcp, 0.0.0.0:9474->9474/tcp, 0.0.0.0:9687->9687/tcp
+```
+#### am
+Update `docker-compose.yml` to point to correct volumes for the Broker.
+
+```
+    volumes:
+      - ./neo4j:/usr/src/app/neo4j
+      - ./config.orchestrator.yaml:/etc/fabric/actor/config/config.yaml
+      - ./logs/:/var/log/actor
+      - ../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
+      - ../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
+      - ../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
+      - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
+```
+Start the pre-defined Broker container in Docker
+```
+docker-compose up -d orchestrator
+```
+Validate that the database container is running.
+```
+docker-compose ps
+    Name                  Command                 State                                                     Ports
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------
+orchestrator         /usr/src/app/orchestrator.sh           Up           0.0.0.0:11002->11000/tcp
+```
+

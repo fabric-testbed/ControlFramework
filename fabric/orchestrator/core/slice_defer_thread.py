@@ -131,12 +131,10 @@ class SliceDeferThread:
             self.demand_slice(controller_slice=controller_slice)
 
     def start(self):
-        self.logger.debug("KOMAL Start")
         self.thread = threading.Thread(target=self.run())
         self.thread.setDaemon(True)
         self.thread.setName('SliceDeferThread')
         self.thread.start()
-        self.logger.debug("KOMAL Start complete")
 
     def stop(self):
         self.stopped = True

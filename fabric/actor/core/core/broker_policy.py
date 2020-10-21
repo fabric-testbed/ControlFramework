@@ -28,9 +28,11 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING, Dict
 
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric.actor.core.core.ticket import Ticket
+from fabric.actor.core.kernel.reservation_states import ReservationStates
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.resource_type import ResourceType
@@ -115,10 +117,16 @@ class BrokerPolicy(Policy, IBrokerPolicy):
     def bind(self, *, reservation: IBrokerReservation) -> bool:
         return False
 
+    def bind_delegation(self, *, delegation: IDelegation) -> bool:
+        return False
+
     def demand(self, *, reservation: IClientReservation):
         return
 
     def donate_reservation(self, *, reservation: IClientReservation):
+        return
+
+    def donate_delegation(self, *, delegation: IDelegation):
         return
 
     def extend_broker(self, *, reservation:IBrokerReservation) -> bool:
@@ -147,7 +155,12 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
     def revisit(self, *, reservation: IReservation):
         if isinstance(reservation, IClientReservation):
-            self.donate_reservation(reservation=reservation)
+            if reservation.get_state() == ReservationStates.Ticketed:
+                self.donate_reservation(reservation=reservation)
+
+    def revisit_delegation(self, *, delegation: IDelegation):
+        if delegation.get_state() == ReservationStates.Ticketed:
+            self.donate_delegation(delegation=delegation)
 
     def ticket_satisfies(self, *, requested_resources: ResourceSet, actual_resources: ResourceSet,
                          requested_term: Term, actual_term: Term):
@@ -155,6 +168,9 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
     def update_ticket_complete(self, *, reservation: IClientReservation):
         self.donate_reservation(reservation=reservation)
+
+    def update_delegation_complete(self, *, delegation: IDelegation):
+        self.donate_delegation(delegation=delegation)
 
     def extract(self, *, source: ResourceSet, delegation: ResourceDelegation) -> ResourceSet:
         """

@@ -30,6 +30,8 @@ from typing import TYPE_CHECKING
 
 
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
+from fabric.actor.core.apis.i_delegation import IDelegation
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
     from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
@@ -44,6 +46,17 @@ class IClientCallbackProxy(ICallbackProxy):
         """
         Prepare an update ticket
         @params reservation: reservation
+        @params update_data: update data
+        @params callback: callback
+        @params caller: caller
+        """
+
+    @abstractmethod
+    def prepare_update_delegation(self, *, delegation: IDelegation, update_data: UpdateData,
+                                  callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+        """
+        Prepare an update delegation
+        @params delegation: delegation
         @params update_data: update data
         @params callback: callback
         @params caller: caller

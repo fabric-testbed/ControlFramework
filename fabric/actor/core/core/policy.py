@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_policy import IPolicy
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.plugins.config.config_token import ConfigToken
@@ -176,6 +177,9 @@ class Policy(IPolicy):
         return
 
     def revisit(self, *, reservation: IReservation):
+        return
+
+    def revisit_delegation(self, *, delegation: IDelegation):
         return
 
     def recovery_ended(self):

@@ -27,13 +27,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.kafka.kafka_proxy import KafkaProxy, KafkaProxyRequestState
 from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.message_bus.messages.claim_avro import ClaimAvro
+from fabric.message_bus.messages.claim_delegation_avro import ClaimDelegationAvro
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
 from fabric.message_bus.messages.extend_ticket_avro import ExtendTicketAvro
 from fabric.message_bus.messages.reclaim_avro import ReclaimAvro
+from fabric.message_bus.messages.reclaim_delegation_avro import ReclaimDelegationAvro
 from fabric.message_bus.messages.relinquish_avro import RelinquishAvro
 from fabric.message_bus.messages.reservation_avro import ReservationAvro
 from fabric.message_bus.messages.ticket_avro import TicketAvro
@@ -70,6 +74,20 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
             avro_message = ReclaimAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.reservation = request.reservation
+            avro_message.callback_topic = request.callback_topic
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
+
+        elif request.get_type() == RPCRequestType.ClaimDelegation:
+            avro_message = ClaimDelegationAvro()
+            avro_message.message_id = str(request.get_message_id())
+            avro_message.delegation = request.delegation
+            avro_message.callback_topic = request.callback_topic
+            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
+
+        elif request.get_type() == RPCRequestType.ReclaimDelegation:
+            avro_message = ReclaimDelegationAvro()
+            avro_message.message_id = str(request.get_message_id())
+            avro_message.delegation = request.delegation
             avro_message.callback_topic = request.callback_topic
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
@@ -122,6 +140,22 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         request.caller = caller
         return request
 
+    def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
+                      caller: AuthToken) -> IRPCRequestState:
+        request = KafkaProxyRequestState()
+        request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
+        request.callback_topic = callback.get_kafka_topic()
+        request.caller = caller
+        return request
+
+    def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
+                        caller: AuthToken) -> IRPCRequestState:
+        request = KafkaProxyRequestState()
+        request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
+        request.callback_topic = callback.get_kafka_topic()
+        request.caller = caller
+        return request
+
     def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                               caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
@@ -162,3 +196,7 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
 
         return avro_reservation
 
+    @staticmethod
+    def pass_broker_delegation(delegation: IDelegation, auth: AuthToken) -> DelegationAvro:
+        avro_delegation = Translate.translate_delegation_to_avro(delegation=delegation)
+        return avro_delegation

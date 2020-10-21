@@ -24,7 +24,9 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from enum import Enum
+from typing import Dict
 
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
 from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
@@ -34,6 +36,7 @@ from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.resource_type import ResourceType
 from fabric.actor.security.auth_token import AuthToken
 from fabric.actor.security.guard import Guard
+from fim.graph.abc_property_graph import ABCPropertyGraph
 
 
 class SliceTypes(Enum):
@@ -74,15 +77,36 @@ class Slice(IKernelSlice):
         self.resource_type = None
         # The reservations in this slice.
         self.reservations = ReservationSet()
+        self.delegations = {}
+        # Neo4jGraph Id
+        self.graph_id = None
+        self.graph = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['reservations']
+        del state['delegations']
+        del state['graph']
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.reservations = ReservationSet()
+        self.graph = None
+        self.delegations = {}
+
+    def set_graph_id(self, graph_id: ID):
+        self.graph_id = graph_id
+
+    def get_graph_id(self) -> ID:
+        return self.graph_id
+
+    def set_graph(self, graph: ABCPropertyGraph):
+        self.graph = graph
+        self.set_graph_id(graph_id=ID(id=self.graph.get_graph_id()))
+
+    def get_graph(self) -> ABCPropertyGraph:
+        return self.graph
 
     def clone_request(self) -> ISlice:
         result = Slice()
@@ -123,6 +147,9 @@ class Slice(IKernelSlice):
     def get_reservations(self) -> ReservationSet:
         return self.reservations
 
+    def get_delegations(self) -> Dict[str, IDelegation] :
+        return self.delegations
+
     def get_reservations_list(self) -> list:
         return self.reservations.values()
 
@@ -157,6 +184,12 @@ class Slice(IKernelSlice):
             raise Exception("Reservation #{} already exists in slice".format(reservation.get_reservation_id()))
 
         self.reservations.add(reservation=reservation)
+
+    def register_delegation(self, *, delegation: IDelegation):
+        if delegation.get_delegation_id() in self.delegations:
+            raise Exception("Delegation #{} already exists in slice".format(delegation.get_delegation_id()))
+
+        self.delegations[delegation.get_delegation_id()] = delegation
 
     def set_broker_client(self):
         self.type = SliceTypes.BrokerClientSlice
@@ -193,14 +226,24 @@ class Slice(IKernelSlice):
     def set_resource_type(self, *, resource_type: ResourceType):
         self.resource_type = resource_type
 
-    def soft_lookup(self, *, rid: ID):
+    def soft_lookup(self, *, rid: ID) -> IKernelReservation:
         return self.reservations.get(rid=rid)
 
+    def soft_lookup_delegation(self, *, did: ID) -> IDelegation:
+        return self.delegations.get(did, None)
+
     def __str__(self):
-        return "{}({})".format(self.name, str(self.guid))
+        msg = "{}({})".format(self.name, str(self.guid))
+        if self.graph_id is not None:
+            msg += " Graph Id:{}".format(self.graph_id)
+        return msg
 
     def unregister(self, *, reservation: IKernelReservation):
         self.reservations.remove(reservation=reservation)
+
+    def unregister_delegation(self, *, delegation: IDelegation):
+        if delegation.get_delegation_id() in self.delegations:
+            self.delegations.pop(delegation.get_delegation_id())
 
     def set_local_properties(self, *, value: dict):
         if self.rsrcdata is not None:

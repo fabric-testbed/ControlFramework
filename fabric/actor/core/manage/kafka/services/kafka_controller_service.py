@@ -42,10 +42,21 @@ class KafkaControllerService(KafkaClientActorService):
         super().__init__()
 
     def process(self, *, message: IMessageAvro):
+        callback_topic = message.get_callback_topic()
+        result = None
+
         if message.get_message_name() == IMessageAvro.GetReservationUnitsRequest:
-            self.get_reservation_units(request=message)
+            result = self.get_reservation_units(request=message)
         else:
             super().process(message=message)
+
+        if callback_topic is None:
+            self.logger.debug("No callback specified, ignoring the message")
+
+        if self.producer.produce_sync(topic=callback_topic, record=result):
+            self.logger.debug("Successfully send back response: {}".format(result.to_dict()))
+        else:
+            self.logger.debug("Failed to send back response: {}".format(result.to_dict()))
 
     def get_reservation_units(self, *, request:GetReservationUnitsAvro) -> ResultUnitAvro:
         result = ResultUnitAvro()

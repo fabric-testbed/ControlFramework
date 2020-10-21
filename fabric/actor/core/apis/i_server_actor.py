@@ -29,6 +29,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_server_public import IServerPublic
 
 if TYPE_CHECKING:
@@ -130,6 +131,26 @@ class IServerActor(IActor, IServerPublic):
         """
 
     @abstractmethod
+    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+        """
+        Processes an incoming claim request.
+        @params delegation: delegation
+        @params callback : callback
+        @params caller: caller
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
+    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+        """
+        Processes an incoming claim request.
+        @params delegation: delegation
+        @params callback : callback
+        @params caller: caller
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
     def ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         """
         Processes an incoming ticket request.
@@ -156,5 +177,3 @@ class IServerActor(IActor, IServerPublic):
         @params caller: caller
         @raises Exception in case of error
         """
-        
-

@@ -6,7 +6,6 @@ from fabric.orchestrator.swagger_server import util
 from fabric.orchestrator.swagger_server.response import resources_controller as rc
 
 
-
 def resources_get():  # noqa: E501
     """Retrieve a listing and description of available resources
 

@@ -46,9 +46,12 @@ class TestSliversController(BaseTestCase):
 
         Perform Operational Action
         """
+        body = 'body_example'
         response = self.client.open(
             '//slivers/poa/{sliverID}'.format(sliver_id='sliver_id_example'),
-            method='POST')
+            method='POST',
+            data=json.dumps(body),
+            content_type='text/plain')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 

@@ -75,6 +75,11 @@ class IncomingRPCEvent(IActorEvent):
             client.update_ticket(reservation=self.rpc.get_reservation(), update_data=self.rpc.get_update_data(),
                                  caller=self.rpc.get_caller())
             client.get_logger().info("update ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
+        elif self.rpc.get_request_type() == RPCRequestType.UpdateDelegation:
+            client.get_logger().info("processing update delegation from <{}>".format(self.rpc.get_caller().get_name()))
+            client.update_delegation(delegation=self.rpc.get_delegation(), update_data=self.rpc.get_update_data(),
+                                     caller=self.rpc.get_caller())
+            client.get_logger().info("update delegation processed from <{}>".format(self.rpc.get_caller().get_name()))
         else:
             processed = self.do_process_actor(actor=client)
         return processed
@@ -91,7 +96,19 @@ class IncomingRPCEvent(IActorEvent):
             server.get_logger().info("processing reclaim from <{}>".format(self.rpc.get_caller().get_name()))
             server.reclaim(reservation=self.rpc.get_reservation(), callback=self.rpc.get_callback(),
                            caller=self.rpc.get_caller())
+            server.get_logger().info("reclaim processed from <{}>".format(self.rpc.get_caller().get_name()))
+
+        elif self.rpc.get_request_type() == RPCRequestType.ClaimDelegation:
+            server.get_logger().info("processing claim delegation from <{}>".format(self.rpc.get_caller().get_name()))
+            server.claim_delegation(delegation=self.rpc.get_delegation(), callback=self.rpc.get_callback(),
+                                    caller=self.rpc.get_caller())
             server.get_logger().info("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
+
+        elif self.rpc.get_request_type() == RPCRequestType.ReclaimDelegation:
+            server.get_logger().info("processing reclaim delegation from <{}>".format(self.rpc.get_caller().get_name()))
+            server.reclaim_delegation(delegation=self.rpc.get_delegation(), callback=self.rpc.get_callback(),
+                                      caller=self.rpc.get_caller())
+            server.get_logger().info("reclaim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.Ticket:
             server.get_logger().info("processing ticket from <{}>".format(self.rpc.get_caller().get_name()))

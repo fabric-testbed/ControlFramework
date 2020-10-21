@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.security.guard import Guard
     from fabric.actor.core.util.id import ID
+    from fim.graph.abc_property_graph import ABCPropertyGraph
 
 
 class ISlice:
@@ -286,4 +287,35 @@ class ISlice:
     def get_slice_type(self) -> SliceTypes:
         """
         Return slice type
+        """
+
+    @abstractmethod
+    def set_graph(self, *, graph: ABCPropertyGraph):
+        """
+        Sets the resource model graph.
+
+        Args:
+            graph: graph
+        """
+
+    @abstractmethod
+    def get_graph(self) -> ABCPropertyGraph:
+        """
+        Gets the resource model graph.
+        """
+
+    @abstractmethod
+    def set_graph_id(self, graph_id: ID):
+        """
+        Set graph id
+        @params graph_id:  graph_id
+        """
+
+    @abstractmethod
+    def get_graph_id(self) -> ID:
+        """
+        Returns the graph id
+
+        Returns:
+            graph id
         """

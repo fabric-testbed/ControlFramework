@@ -35,6 +35,7 @@ from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
+from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
 
@@ -159,3 +160,9 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
     def get_substrate_database(self) -> ISubstrateDatabase:
         return self.actor.get_plugin().get_database()
+
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller)
+
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller)

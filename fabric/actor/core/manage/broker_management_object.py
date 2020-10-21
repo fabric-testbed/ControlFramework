@@ -34,6 +34,7 @@ from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDesc
 from fabric.actor.core.manage.server_actor_management_object import ServerActorManagementObject
 from fabric.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
 from fabric.message_bus.messages.proxy_avro import ProxyAvro
+from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
@@ -124,3 +125,9 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
                                                      new_units=new_units, new_resource_type=new_resource_type,
                                                      request_properties=request_properties,
                                                      config_properties=config_properties, caller=caller)
+
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller)
+
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller)

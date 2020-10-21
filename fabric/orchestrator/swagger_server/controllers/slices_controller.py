@@ -44,7 +44,7 @@ def slices_get():  # noqa: E501
 
     :rtype: Success
     """
-    return slices_get()
+    return rc.slices_get()
 
 
 def slices_modify_slice_idput(body, slice_id):  # noqa: E501
@@ -61,7 +61,7 @@ def slices_modify_slice_idput(body, slice_id):  # noqa: E501
     """
     if connexion.request.is_json:
         body = str.from_dict(connexion.request.get_json())  # noqa: E501
-    return slices_modify_slice_idput(body, slice_id)
+    return rc.slices_modify_slice_idput(body, slice_id)
 
 
 def slices_redeem_slice_idpost(slice_id):  # noqa: E501

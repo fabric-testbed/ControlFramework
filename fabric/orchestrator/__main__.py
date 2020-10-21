@@ -30,6 +30,7 @@ import time
 import traceback
 
 import connexion
+import prometheus_client
 import waitress
 from flask import jsonify
 
@@ -42,7 +43,6 @@ def main():
 
     try:
         from fabric.actor.core.container.globals import Globals, GlobalsSingleton
-        Globals.ConfigFile = "/Users/komalthareja/renci/code/fabric/ActorBase/fabric/orchestrator/config.orchestrator.yaml"
         with GracefulInterruptHandler() as h:
 
             GlobalsSingleton.get().start(force_fresh=True)
@@ -54,8 +54,13 @@ def main():
             OrchestratorStateSingleton.get()
             #OrchestratorStateSingleton.get().start_threads()
 
-            rest_port = GlobalsSingleton.get().get_config().get_runtime_config().get(
-                Constants.PropertyConfControllerRestPort, None)
+            runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
+
+            # prometheus server
+            prometheus_port = int(runtime_config.get(Constants.PropertyConfPrometheusRestPort, None))
+            prometheus_client.start_http_server(prometheus_port)
+
+            rest_port = int(runtime_config.get(Constants.PropertyConfControllerRestPort, None))
 
             if rest_port is None:
                 raise Exception("Invalid configuration rest port not specified")

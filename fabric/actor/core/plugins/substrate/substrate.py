@@ -157,11 +157,11 @@ class Substrate(BasePlugin, ISubstrate):
 
     def do_transfer_in(self, *, reservation: IReservation, unit: Unit):
         prop = self.get_config_properties_from_reservation(reservation=reservation, unit=unit)
-        self.config.join(token=unit, properties=prop)
+        self.config.create(token=unit, properties=prop)
 
     def do_transfer_out(self, *, reservation: IReservation, unit: Unit):
         prop = self.get_config_properties_from_reservation(reservation=reservation, unit=unit)
-        self.config.leave(token=unit, properties=prop)
+        self.config.delete(token=unit, properties=prop)
 
     def do_modify(self, *, reservation: IReservation, unit: Unit):
         prop = self.get_config_properties_from_reservation(reservation=reservation, unit=unit)
@@ -194,7 +194,7 @@ class Substrate(BasePlugin, ISubstrate):
         # TODO
         return
 
-    def process_join_complete(self, *, token: ConfigToken, properties: dict):
+    def process_create_complete(self, *, token: ConfigToken, properties: dict):
         self.logger.debug("Join")
         self.logger.debug(properties)
 
@@ -205,11 +205,11 @@ class Substrate(BasePlugin, ISubstrate):
         notice = None
         # TODO synchronized on token
         if sequence != token.get_sequence():
-            self.logger.warning("(join complete) sequences mismatch: incoming ({}) local: ({}). Ignoring event.".
+            self.logger.warning("(create complete) sequences mismatch: incoming ({}) local: ({}). Ignoring event.".
                                 format(sequence, token.get_sequence()))
             return
         else:
-            self.logger.debug("(join complete) incoming ({}) local: ({})".format(sequence, token.get_sequence()))
+            self.logger.debug("(create complete) incoming ({}) local: ({})".format(sequence, token.get_sequence()))
 
         result = Config.get_result_code(properties=properties)
         msg = Config.get_exception_message(properties=properties)
@@ -217,18 +217,18 @@ class Substrate(BasePlugin, ISubstrate):
             msg = Config.get_result_code_message(properties=properties)
 
         if result == 0:
-            self.logger.debug("join code 0 (success)")
+            self.logger.debug("create code 0 (success)")
             self.merge_unit_properties(unit=token, properties=properties)
             token.activate()
 
         elif result == -1:
-            self.logger.debug("join code -1 with message: {}".format(msg))
-            notice = "Exception during join for unit: {} {}".format(token.get_id(), msg)
+            self.logger.debug("create code -1 with message: {}".format(msg))
+            notice = "Exception during create for unit: {} {}".format(token.get_id(), msg)
             self.fail_no_update(unit=token, message=notice)
 
         else:
-            self.logger.debug("join code {} with message: {}".format(result, msg))
-            notice = "Error code= {} during join for unit: {} with message: {}".format(result, token.get_id(), msg)
+            self.logger.debug("create code {} with message: {}".format(result, msg))
+            notice = "Error code= {} during create for unit: {} with message: {}".format(result, token.get_id(), msg)
             self.fail_no_update(unit=token, message=notice)
 
         try:
@@ -236,9 +236,9 @@ class Substrate(BasePlugin, ISubstrate):
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.logger.debug("process join complete")
+            self.logger.debug("process create complete")
 
-    def process_leave_complete(self, *, token: ConfigToken, properties: dict):
+    def process_delete_complete(self, *, token: ConfigToken, properties: dict):
         self.logger.debug("Leave")
         self.logger.debug(properties)
 
@@ -249,11 +249,11 @@ class Substrate(BasePlugin, ISubstrate):
         notice = None
         # TODO synchronized on token
         if sequence != token.get_sequence():
-            self.logger.warning("(leave complete) sequences mismatch: incoming ({}) local: ({}). Ignoring event.".format(
+            self.logger.warning("(delete complete) sequences mismatch: incoming ({}) local: ({}). Ignoring event.".format(
                 sequence, token.get_sequence()))
             return
         else:
-            self.logger.debug("(leave complete) incoming ({}) local: ({})".format(sequence, token.get_sequence()))
+            self.logger.debug("(delete complete) incoming ({}) local: ({})".format(sequence, token.get_sequence()))
 
         result = Config.get_result_code(properties=properties)
         msg = Config.get_exception_message(properties=properties)
@@ -261,18 +261,18 @@ class Substrate(BasePlugin, ISubstrate):
             msg = Config.get_result_code_message(properties=properties)
 
         if result == 0:
-            self.logger.debug("leave code 0 (success)")
+            self.logger.debug("delete code 0 (success)")
             self.merge_unit_properties(unit=token, properties=properties)
             token.close()
 
         elif result == -1:
-            self.logger.debug("leave code -1 with message: {}".format(msg))
-            notice = "Exception during join for unit: {} {}".format(token.get_id(), msg)
+            self.logger.debug("delete code -1 with message: {}".format(msg))
+            notice = "Exception during create for unit: {} {}".format(token.get_id(), msg)
             self.fail_no_update(unit=token, message=notice)
 
         else:
-            self.logger.debug("leave code {} with message: {}".format(result, msg))
-            notice = "Error code= {} during join for unit: {} with message: {}".format(result, token.get_id(), msg)
+            self.logger.debug("delete code {} with message: {}".format(result, msg))
+            notice = "Error code= {} during create for unit: {} with message: {}".format(result, token.get_id(), msg)
             self.fail_no_update(unit=token, message=notice)
 
         try:
@@ -280,7 +280,7 @@ class Substrate(BasePlugin, ISubstrate):
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.logger.debug("process leave complete")
+            self.logger.debug("process delete complete")
 
     def process_modify_complete(self, *, token: ConfigToken, properties: dict):
         self.logger.debug("Modify")
@@ -312,12 +312,12 @@ class Substrate(BasePlugin, ISubstrate):
 
         elif result == -1:
             self.logger.debug("modify code -1 with message: {}".format(msg))
-            notice = "Exception during join for unit: {} {}".format(token.get_id(), msg)
+            notice = "Exception during modify for unit: {} {}".format(token.get_id(), msg)
             self.fail_modify_no_update(unit=token, message=notice)
 
         else:
             self.logger.debug("modify code {} with message: {}".format(result, msg))
-            notice = "Error code= {} during join for unit: {} with message: {}".format(result, token.get_id(), msg)
+            notice = "Error code= {} during modify for unit: {} with message: {}".format(result, token.get_id(), msg)
             self.fail_modify_no_update(unit=token, message=notice)
 
         try:

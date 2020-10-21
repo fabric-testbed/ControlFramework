@@ -66,6 +66,16 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 
 
+class ExportAdvertisement:
+    def __init__(self, *, exporter: IMgmtActor, client: ClientMng, delegation: str, topic: str):
+        self.exporter = exporter
+        self.client = client
+        self.delegation = delegation
+        self.client_topic = topic
+
+        self.exported = None
+
+
 class ExportInfo:
     def __init__(self, *, exporter: IMgmtActor, client: ClientMng, units: int, rtype: ResourceType, topic: str):
         self.exporter = exporter
@@ -86,7 +96,10 @@ class ConfigurationProcessor:
         self.config = config
         self.actor = None
         self.to_export = []
+        self.to_advertise = []
         self.pools = {}
+        self.resources = None
+        self.aggregate_delegation_models = None
 
     def process(self):
         try:
@@ -95,12 +108,14 @@ class ConfigurationProcessor:
             self.logger.info("There are {} actors".format(Actor.actor_count))
             self.register_actor()
             self.create_default_slice()
+            self.populate_inventory_neo4j()
             self.populate_inventory()
             self.recover_actor()
             self.enable_ticking()
             self.process_topology()
             self.logger.info("Processing exports with actor count {}".format(Actor.actor_count))
             self.process_exports()
+            self.process_advertise()
             self.logger.info("Processing exports completed")
             self.logger.info("Processing claims with actor count {}".format(Actor.actor_count))
             self.process_claims()
@@ -109,6 +124,7 @@ class ConfigurationProcessor:
             self.logger.error(traceback.format_exc())
             raise Exception("Unexpected error while processing configuration {}".format(e))
         self.logger.info("Finished instantiating actors.")
+        print("End process")
 
     def create_actor(self):
         try:
@@ -203,8 +219,9 @@ class ConfigurationProcessor:
         return policy
 
     def make_site_policy(self, *, config: ActorConfig):
-        if config.get_controls() is None or len(config.get_controls()) == 0:
-            raise Exception("Missing authority policy but no control has been specified")
+        # TODO KOMAL
+        #if config.get_controls() is None or len(config.get_controls()) == 0:
+        #    raise Exception("Missing authority policy but no control has been specified")
 
         policy = AuthorityCalendarPolicy()
         for c in config.get_controls():
@@ -233,8 +250,8 @@ class ConfigurationProcessor:
 
     def do_specific(self, *, actor: IActor, config: ActorConfig):
         if isinstance(actor, IAuthority):
-            rd = self.read_resource_pools(config=config)
-            self.pools[actor.get_guid()] = rd
+            self.pools = self.read_resource_pools(config=config)
+            self.resources = self.read_resource_pools2(config=config)
 
     def read_resource_pools(self, *, config: ActorConfig) -> dict:
         result = {}
@@ -260,6 +277,48 @@ class ConfigurationProcessor:
             descriptor.pool_properties = p.get_properties()
 
             for attr in p.get_attributes():
+                attribute = ResourcePoolAttributeDescriptor()
+                attribute.set_key(value=attr.get_key())
+                attribute.set_value(value=attr.get_value())
+                if attr.get_type().lower() == "integer":
+                    attribute.set_type(rtype=ResourcePoolAttributeType.INTEGER)
+                elif attr.get_type().lower() == "string":
+                    attribute.set_type(rtype=ResourcePoolAttributeType.STRING)
+                elif attr.get_type().lower() == "neo4j":
+                    attribute.set_type(rtype=ResourcePoolAttributeType.NEO4J)
+                elif attr.get_type().lower() == "class":
+                    attribute.set_type(rtype=ResourcePoolAttributeType.CLASS)
+                else:
+                    raise Exception("Unsupported attribute type: {}".format(attr.get_type()))
+                descriptor.add_attribute(attribute=attribute)
+
+            result[descriptor.get_resource_type()] = descriptor
+        return result
+
+    def read_resource_pools2(self, *, config: ActorConfig) -> dict:
+        result = {}
+        resources = config.get_resources()
+        if resources is None or len(resources) == 0:
+            return result
+
+        for r in resources:
+            descriptor = ResourcePoolDescriptor()
+            descriptor.set_resource_type(rtype=ResourceType(resource_type=r.get_type()))
+            descriptor.set_resource_type_label(rtype_label=r.get_label())
+
+            # TODO for now it holds the control name
+            descriptor.set_pool_factory_class(factory_class=r.get_control().get_class_name())
+            descriptor.set_pool_factory_module(factory_module=r.get_control().get_module_name())
+
+            handler = r.get_handler()
+            if handler is not None:
+                descriptor.set_handler_class(handler_class=handler.get_class_name())
+                descriptor.set_handler_module(module=handler.get_module_name())
+                descriptor.set_handler_properties(properties=handler.get_properties())
+
+            descriptor.pool_properties = r.get_properties()
+
+            for attr in r.get_attributes():
                 attribute = ResourcePoolAttributeDescriptor()
                 attribute.set_key(value=attr.get_key())
                 attribute.set_value(value=attr.get_value())
@@ -304,9 +363,18 @@ class ConfigurationProcessor:
     def populate_inventory(self):
         if isinstance(self.actor, IAuthority):
             if isinstance(self.actor.get_plugin(), AuthoritySubstrate):
-                descriptor = self.pools[self.actor.get_guid()]
-                creator = PoolCreator(substrate=self.actor.get_plugin(), pools=descriptor)
+                creator = PoolCreator(substrate=self.actor.get_plugin(), pools=self.pools,
+                                      neo4j_config=self.config.get_global_config().get_neo4j_config())
                 creator.process()
+
+    def populate_inventory_neo4j(self):
+        if isinstance(self.actor, IAuthority):
+            if isinstance(self.actor.get_plugin(), AuthoritySubstrate):
+                creator = PoolCreator(substrate=self.actor.get_plugin(), pools=self.resources,
+                                      neo4j_config=self.config.get_global_config().get_neo4j_config())
+                self.aggregate_delegation_models = creator.process_neo4j(actor_name=self.actor.get_name(),
+                                                                         substrate_file=self.config.get_actor().
+                                                                         get_substrate_file())
 
     def recover_actor(self):
         try:
@@ -327,6 +395,17 @@ class ConfigurationProcessor:
     def process_exports(self):
         for ei in self.to_export:
             self.export(info=ei)
+
+    def process_advertise(self):
+        if self.aggregate_delegation_models is None and len(self.to_advertise) > 0:
+            raise Exception("No delegations found in Aggregate Resource Model")
+
+        # TODO re-enable check after testing
+        #if len(self.aggregate_delegation_models) != len(self.to_advertise):
+        #    raise Exception("Number of delegations in Aggregate Resource Model does not match Peers with delegations")
+
+        for ei in self.to_advertise:
+            self.advertise(info=ei)
 
     def process_claims(self):
         self.logger.debug("process_claims {}".format(len(self.to_export)))
@@ -398,11 +477,13 @@ class ConfigurationProcessor:
         to_mgmt_actor = container.get_actor(guid=to_guid)
         if to_mgmt_actor is None:
             self.logger.debug("to_mgmt_actor={} to_guid={}".format(type(to_mgmt_actor), to_guid))
-            self.logger.error(container.get_last_error())
+            if container.get_last_error() is not None:
+                self.logger.error(container.get_last_error())
         from_mgmt_actor = container.get_actor(guid=from_guid)
         if from_mgmt_actor is None:
             self.logger.debug("from_mgmt_actor={} from_guid={}".format(type(from_mgmt_actor), from_guid))
-            self.logger.error(container.get_last_error())
+            if container.get_last_error() is not None:
+                self.logger.error(container.get_last_error())
 
         self.vertex_to_registry_cache(peer=peer)
 
@@ -426,6 +507,12 @@ class ConfigurationProcessor:
 
             self.to_export.append(info)
 
+        if peer.get_delegation() is not None:
+            info = ExportAdvertisement(exporter=mgmt_actor, client=client,
+                                       delegation=peer.get_delegation(),
+                                       topic=peer.get_kafka_topic())
+            self.to_advertise.append(info)
+
     def export(self, *, info: ExportInfo):
         from fabric.actor.core.container.globals import GlobalsSingleton
         now = GlobalsSingleton.get().get_container().get_current_cycle()
@@ -444,6 +531,22 @@ class ConfigurationProcessor:
                                                        end=end, units=info.units, ticket_properties=None,
                                                        resource_properties=None, source_ticket_id=None,
                                                        client=AuthToken(name=info.client.get_name(),
+                                                                        guid=ID(id=info.client.get_guid())))
+
+        if info.exported is None:
+            raise Exception("Could not export resources from actor: {} to actor: {} Error = {}".
+                            format(info.exporter.get_name(), info.client.get_name(), info.exporter.get_last_error()))
+
+    def advertise(self, *, info: ExportAdvertisement):
+        self.logger.debug("Using Server Actor {} to export resources".format(info.exporter.__class__.__name__))
+
+        delegation = self.aggregate_delegation_models.get(info.delegation, None)
+
+        if delegation is None:
+            raise Exception("Aggregate Delegation Model not found for delegation: {}".format(info.delegation))
+
+        info.exported = info.exporter.advertise_resources(delegation=delegation,
+                                                          client=AuthToken(name=info.client.get_name(),
                                                                         guid=ID(id=info.client.get_guid())))
 
         if info.exported is None:

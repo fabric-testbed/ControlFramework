@@ -28,7 +28,6 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-
 from fabric.actor.core.apis.i_policy import IPolicy
 
 
@@ -37,6 +36,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.bids import Bids
     from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
+    from fabric.actor.core.apis.i_delegation import IDelegation
 
 
 class IClientPolicy(IPolicy):
@@ -113,5 +113,15 @@ class IClientPolicy(IPolicy):
         policy may use this upcall to update its internal state.
         
         @params reservation: reservation for which an update ticket operation has completed
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
+    def update_delegation_complete(self, *, delegation: IDelegation):
+        """
+        Notifies the policy that a delegation update operation has completed. The
+        policy may use this upcall to update its internal state.
+
+        @params delegation: delegation for which an update delegation operation has completed
         @raises Exception in case of error
         """

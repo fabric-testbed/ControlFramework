@@ -1,0 +1,739 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d15" for="edge" attr.name="id" attr.type="string" />
+  <key id="d14" for="edge" attr.name="label" attr.type="string" />
+  <key id="d13" for="edge" attr.name="Class" attr.type="string">
+    <default>None</default>
+  </key>
+  <key id="d12" for="node" attr.name="LabelDelegations" attr.type="string">
+    <default>None</default>
+  </key>
+  <key id="d11" for="node" attr.name="Layer" attr.type="string">
+    <default>None</default>
+  </key>
+  <key id="d10" for="node" attr.name="NodeID" attr.type="string" />
+  <key id="d9" for="node" attr.name="label" attr.type="string" />
+  <key id="d8" for="node" attr.name="y" attr.type="string" />
+  <key id="d7" for="node" attr.name="x" attr.type="string" />
+  <key id="d6" for="node" attr.name="CapacityDelegations" attr.type="string">
+    <default>None</default>
+  </key>
+  <key id="d5" for="node" attr.name="Name" attr.type="string">
+    <default>None</default>
+  </key>
+  <key id="d4" for="node" attr.name="Model" attr.type="string">
+    <default>None</default>
+  </key>
+  <key id="d3" for="node" attr.name="Type" attr.type="string">
+    <default>None</default>
+  </key>
+  <key id="d2" for="node" attr.name="Capacities" attr.type="string">
+    <default>None</default>
+  </key>
+  <key id="d1" for="node" attr.name="Labels" attr.type="string">
+    <default>None</default>
+  </key>
+  <key id="d0" for="node" attr.name="Class" attr.type="string">
+    <default>None</default>
+  </key>
+  <graph edgedefault="directed">
+    <node id="n0">
+      <data key="d0">Component</data>
+      <data key="d1">{ "bdf": "00:00.2" }</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">GPU</data>
+      <data key="d4">RTX3600</data>
+      <data key="d5">GPU2</data>
+      <data key="d6">{ "unit": 1, "delegation": "del2" }</data>
+      <data key="d7">345.0</data>
+      <data key="d8">55.62500000000003</data>
+      <data key="d9">GPU</data>
+      <data key="d10">a2a9bc51-7042-4241-8eb0-8dec8e266272</data>
+    </node>
+    <node id="n1">
+      <data key="d0">Component</data>
+      <data key="d1">{ "bdf": "00:00.1" }</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">GPU</data>
+      <data key="d4">RTX3600</data>
+      <data key="d5">GPU1</data>
+      <data key="d6">{ "unit": 1, "delegation": "del1" }</data>
+      <data key="d7">296.0</data>
+      <data key="d8">55.62500000000003</data>
+      <data key="d9">GPU</data>
+      <data key="d10">8dcf8360-10ce-413d-8e9d-e9a2d71c897e</data>
+    </node>
+    <node id="n2">
+      <data key="d0">Component</data>
+      <data key="d1">{ "bdf": "00:00.3" }</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">SmartNIC</data>
+      <data key="d4">ConnectX-6</data>
+      <data key="d5">NIC1</data>
+      <data key="d6">{ "unit": 1, "delegation": "del1" }</data>
+      <data key="d7">345.0</data>
+      <data key="d8">225.62500000000003</data>
+      <data key="d9">NIC</data>
+      <data key="d10">4797ab66-7dc7-4fe1-8335-549f66f16abc</data>
+    </node>
+    <node id="n3">
+      <data key="d0">NetworkNode</data>
+      <data key="d2">{ "unit": 1, "core": 32, "ram": 384, "disk": 3000 }</data>
+      <data key="d3">Server</data>
+      <data key="d4">Dell R7525</data>
+      <data key="d5">Worker1</data>
+      <data key="d6">[ { "unit": 4, "core": 12, "ram": 128, "disk": 1000, "delegation": "del1" }, { "unit": 6, "core": 20, "ram": 256, "disk": 2000, "delegation": "del2" } ]</data>
+      <data key="d7">305.0</data>
+      <data key="d8">122.12500000000003</data>
+      <data key="d9">NetworkNode</data>
+      <data key="d10">2046922a-a8ed-4b60-8190-b6ce614c514d</data>
+    </node>
+    <node id="n4">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100}</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p1e1</data>
+      <data key="d7">266.0</data>
+      <data key="d8">392.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">df6f1ba9-752e-4ab6-b3ba-161d0b2474f4</data>
+    </node>
+    <node id="n5">
+      <data key="d0">Link</data>
+      <data key="d3">DAC</data>
+      <data key="d4">DAC123</data>
+      <data key="d7">416.0</data>
+      <data key="d8">471.25</data>
+      <data key="d9">Link</data>
+      <data key="d10">db1b88d8-7c59-4115-a8d5-d818cad5cda9</data>
+    </node>
+    <node id="n6">
+      <data key="d0">SwitchFabric</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">SwitchFabric</data>
+      <data key="d5">SwitchFabric1 </data>
+      <data key="d11">L2</data>
+      <data key="d7">231.0</data>
+      <data key="d8">661.0</data>
+      <data key="d9">SwitchFabric</data>
+      <data key="d10">fadc6379-ad6b-4fc2-a6ad-6df1072d24ac</data>
+    </node>
+    <node id="n7">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100}</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p1e2</data>
+      <data key="d7">345.0</data>
+      <data key="d8">392.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">4c678de5-7d29-48e8-81fb-bc603c7b253b</data>
+    </node>
+    <node id="n8">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100}</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">eth0</data>
+      <data key="d7">423.0</data>
+      <data key="d8">389.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">6765b878-8568-455c-b21a-714ca6d3153c</data>
+    </node>
+    <node id="n9">
+      <data key="d0">Link</data>
+      <data key="d3">DAC</data>
+      <data key="d4">DAC123</data>
+      <data key="d7">338.0</data>
+      <data key="d8">471.25</data>
+      <data key="d9">Link</data>
+      <data key="d10">98350264-5b29-4f93-b563-60150f74164e</data>
+    </node>
+    <node id="n10">
+      <data key="d0">Link</data>
+      <data key="d3">DAC</data>
+      <data key="d4">DAC123</data>
+      <data key="d7">259.0</data>
+      <data key="d8">471.25</data>
+      <data key="d9">Link</data>
+      <data key="d10">c1546b9f-70c1-4488-a016-85ae4ba0b44a</data>
+    </node>
+    <node id="n11">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100 }</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p003</data>
+      <data key="d12">[ { "ipv4": [ "192.168.1.1", "192.168.1.2" ], "vlan": [ "100", "101", "102"], "label_pool": "pool1", "delegation": "del1" }, { "ipv4": [ "192.168.2.1", "192.168.2.2", "192.168.2.3"],  "vlan-range": "200-250", "label_pool": "pool2", "delegation": "del2" }, { "pool": [ "pool1", "pool2"] } ]</data>
+      <data key="d7">423.0</data>
+      <data key="d8">542.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">125b000e-eef3-4b17-95d1-6fbe64885383</data>
+    </node>
+    <node id="n12">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100 }</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p002</data>
+      <data key="d12">[ { "pool": "pool3" } ]</data>
+      <data key="d7">345.0</data>
+      <data key="d8">543.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">e1789709-47d1-4854-9d55-176fbe6fd53e</data>
+    </node>
+    <node id="n13">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100 }</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p001</data>
+      <data key="d12">[ { "ipv4": [ "192.168.100.1", "192.168.100.2", "192.168.100.3", "192.168.100.4" ], "delegation": "del1", "label_pool": "pool3" }, {"pool": "pool3" } ]</data>
+      <data key="d7">266.0</data>
+      <data key="d8">541.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">ff09ef43-bd62-4560-8faf-ad3d9aa72c94</data>
+    </node>
+    <node id="n14">
+      <data key="d0">NetworkNode</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">Switch</data>
+      <data key="d4">Cisco NCS55</data>
+      <data key="d5">DataplaneSwitch1</data>
+      <data key="d7">89.5</data>
+      <data key="d8">640.5</data>
+      <data key="d9">Switch</data>
+      <data key="d10">a072e271-beb4-42ab-b95c-fa491d3725a2</data>
+    </node>
+    <node id="n15">
+      <data key="d0">NetworkNode</data>
+      <data key="d2">{ "unit": 1, "core": 32, "ram": 384, "disk": 3000 }</data>
+      <data key="d3">Server</data>
+      <data key="d4">Dell R7525</data>
+      <data key="d5">Worker2</data>
+      <data key="d6">[ { "unit": 4, "core": 12, "ram": 128, "disk": 1000, "delegation": "del1" }, { "unit": 6, "core": 20, "ram": 256, "disk": 2000, "delegation": "del2" } ]</data>
+      <data key="d7">545.0</data>
+      <data key="d8">123.12500000000003</data>
+      <data key="d9">NetworkNode</data>
+      <data key="d10">9c2cf571-f96c-4fb5-a0f6-64ce09a211f0</data>
+    </node>
+    <node id="n16">
+      <data key="d0">Component</data>
+      <data key="d1">{ "bdf": "00:00.1" }</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">GPU</data>
+      <data key="d4">RTX3600</data>
+      <data key="d5">GPU3</data>
+      <data key="d6">{ "unit": 1, "delegation": "del2" }</data>
+      <data key="d7">585.0</data>
+      <data key="d8">55.62500000000003</data>
+      <data key="d9">GPU</data>
+      <data key="d10">5efea350-e994-4c6c-9f63-313da16ea807</data>
+    </node>
+    <node id="n17">
+      <data key="d0">Component</data>
+      <data key="d1">{ "bdf": "00:00.2" }</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">SmartNIC</data>
+      <data key="d4">ConnectX-6</data>
+      <data key="d5">NIC1</data>
+      <data key="d6">{ "unit": 1, "delegation": "del1" }</data>
+      <data key="d7">555.0</data>
+      <data key="d8">205.62500000000003</data>
+      <data key="d9">NIC</data>
+      <data key="d10">a108e602-c204-494e-8f62-e71b35f4fb98</data>
+    </node>
+    <node id="n18">
+      <data key="d0">Component</data>
+      <data key="d1">{ "bdf": "00:00.3" }</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">SmartNIC</data>
+      <data key="d4">ConnectX-6</data>
+      <data key="d5">NIC2</data>
+      <data key="d6">{ "unit": 1, "delegation": "del2" }</data>
+      <data key="d7">645.0</data>
+      <data key="d8">205.62500000000003</data>
+      <data key="d9">NIC</data>
+      <data key="d10">35109f4e-8825-4e1a-9409-21772b53d47b</data>
+    </node>
+    <node id="n19">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100}</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p1e1</data>
+      <data key="d7">525.0</data>
+      <data key="d8">390.97222222222223</data>
+      <data key="d9">CP</data>
+      <data key="d10">9e6b4d16-acad-43df-a211-394c9f273b32</data>
+    </node>
+    <node id="n20">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100}</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p1e2</data>
+      <data key="d7">585.0</data>
+      <data key="d8">390.27777777777777</data>
+      <data key="d9">CP</data>
+      <data key="d10">73cfcc85-cd7a-4ba6-b2e1-e90e6b240ba6</data>
+    </node>
+    <node id="n21">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100}</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p2e1</data>
+      <data key="d7">645.0</data>
+      <data key="d8">388.88888888888886</data>
+      <data key="d9">CP</data>
+      <data key="d10">dd99ccfb-f002-47f2-a417-bf918189905d</data>
+    </node>
+    <node id="n22">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100}</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p2e2</data>
+      <data key="d7">705.0</data>
+      <data key="d8">390.2777777777778</data>
+      <data key="d9">CP</data>
+      <data key="d10">2a33225c-30a2-4a3e-9e9c-57e1e93bb3b7</data>
+    </node>
+    <node id="n23">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100}</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">eth0</data>
+      <data key="d7">784.3055555555555</data>
+      <data key="d8">392.3611111111111</data>
+      <data key="d9">CP</data>
+      <data key="d10">11a5cfbc-5b73-428e-aef3-5f7174a2492a</data>
+    </node>
+    <node id="n24">
+      <data key="d0">Link</data>
+      <data key="d3">DAC</data>
+      <data key="d4">DAC123</data>
+      <data key="d7">518.0</data>
+      <data key="d8">471.25</data>
+      <data key="d9">Link</data>
+      <data key="d10">d4bde49e-2899-4b8e-9f44-0977bb219fdf</data>
+    </node>
+    <node id="n25">
+      <data key="d0">Link</data>
+      <data key="d3">DAC</data>
+      <data key="d4">DAC123</data>
+      <data key="d7">578.0</data>
+      <data key="d8">471.25</data>
+      <data key="d9">Link</data>
+      <data key="d10">9438099f-4996-4654-93e1-998401a1e134</data>
+    </node>
+    <node id="n26">
+      <data key="d0">Link</data>
+      <data key="d3">DAC</data>
+      <data key="d4">DAC123</data>
+      <data key="d7">638.0</data>
+      <data key="d8">471.25</data>
+      <data key="d9">Link</data>
+      <data key="d10">98866a91-f2f6-4f1e-82e8-1aeffd5774ee</data>
+    </node>
+    <node id="n27">
+      <data key="d0">Link</data>
+      <data key="d3">DAC</data>
+      <data key="d4">DAC123</data>
+      <data key="d7">698.0</data>
+      <data key="d8">471.25</data>
+      <data key="d9">Link</data>
+      <data key="d10">4a7728a3-dba6-4d18-8173-b82a9e75bee3</data>
+    </node>
+    <node id="n28">
+      <data key="d0">Link</data>
+      <data key="d3">DAC</data>
+      <data key="d4">DAC123</data>
+      <data key="d7">777.0</data>
+      <data key="d8">471.25</data>
+      <data key="d9">Link</data>
+      <data key="d10">cb8f21ce-69a1-483c-adaa-66a0e8a27a64</data>
+    </node>
+    <node id="n29">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100 }</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p004</data>
+      <data key="d12">[ { "pool": "pool3" } ]</data>
+      <data key="d7">525.0</data>
+      <data key="d8">539.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">37835101-73e8-4246-92c5-8716e366bc5a</data>
+    </node>
+    <node id="n30">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100 }</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p005</data>
+      <data key="d12">[ { "pool": "pool3" } ]</data>
+      <data key="d7">585.0</data>
+      <data key="d8">538.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">9e1cf321-ecf7-4437-afa8-73688ac3c3ff</data>
+    </node>
+    <node id="n31">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100 }</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p006</data>
+      <data key="d12">[ { "ipv4": [ "192.168.200.1", "192.168.200.2" ], "delegation": "del2", "label_pool": "pool4" }, { "pool": "pool4" } ]</data>
+      <data key="d7">645.0</data>
+      <data key="d8">537.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">6f67ad22-e3b3-4965-92b0-f31abdfd7558</data>
+    </node>
+    <node id="n32">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100 }</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d12">[ { "pool": "pool4" } ]</data>
+      <data key="d7">705.0</data>
+      <data key="d8">539.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">1f88efb4-7a8e-4808-b4d6-eae01eaa8c07</data>
+    </node>
+    <node id="n33">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">{ "bw": 100 }</data>
+      <data key="d3">Port</data>
+      <data key="d4">100G SR</data>
+      <data key="d5">p008</data>
+      <data key="d12">[ { "pool": [ "pool1", "pool2"] } ]</data>
+      <data key="d7">784.0</data>
+      <data key="d8">535.0</data>
+      <data key="d9">CP</data>
+      <data key="d10">54983b08-c400-405e-a40b-e596a2ea8b6c</data>
+    </node>
+    <node id="n34">
+      <data key="d0">SwitchFabric</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">SwitchFabric</data>
+      <data key="d5">NICSwitchFabric1</data>
+      <data key="d11">L2</data>
+      <data key="d7">320.09722222222223</data>
+      <data key="d8">276.80555555555554</data>
+      <data key="d9">SwitchFabric</data>
+      <data key="d10">12cf268b-a3ec-48ce-9abd-8f7ce4e397a5</data>
+    </node>
+    <node id="n35">
+      <data key="d0">SwitchFabric</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">SwitchFabric</data>
+      <data key="d5">NodeSwitchFabric1</data>
+      <data key="d11">L2</data>
+      <data key="d7">410.09722222222223</data>
+      <data key="d8">195.0</data>
+      <data key="d9">SwitchFabric</data>
+      <data key="d10">fd3bb283-3d0d-4d58-b0a1-a48e00d1040d</data>
+    </node>
+    <node id="n36">
+      <data key="d0">SwitchFabric</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">SwitchFabric</data>
+      <data key="d5">NICSwitchFabric2</data>
+      <data key="d11">L2</data>
+      <data key="d7">530.0972222222222</data>
+      <data key="d8">268.98148148148147</data>
+      <data key="d9">SwitchFabric</data>
+      <data key="d10">037bf341-1112-4cd3-a07c-2c6cb362307c</data>
+    </node>
+    <node id="n37">
+      <data key="d0">SwitchFabric</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">SwitchFabric</data>
+      <data key="d5">NICSwitchFabric3</data>
+      <data key="d11">L2</data>
+      <data key="d7">650.0972222222222</data>
+      <data key="d8">266.5740740740741</data>
+      <data key="d9">SwitchFabric</data>
+      <data key="d10">e88305d6-80d2-44b6-b505-9fb82db54b41</data>
+    </node>
+    <node id="n38">
+      <data key="d0">SwitchFabric</data>
+      <data key="d2">{ "unit": 1 }</data>
+      <data key="d3">SwitchFabric</data>
+      <data key="d5">NodeSwitchFabric2</data>
+      <data key="d11">L2</data>
+      <data key="d7">728.3981481481483</data>
+      <data key="d8">195.0</data>
+      <data key="d9">SwitchFabric</data>
+      <data key="d10">3b093b50-a85f-488a-953c-8ad287c33eef</data>
+    </node>
+    <edge source="n2" target="n34">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e33</data>
+    </edge>
+    <edge source="n3" target="n2">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e0</data>
+    </edge>
+    <edge source="n3" target="n0">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e1</data>
+    </edge>
+    <edge source="n3" target="n1">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e2</data>
+    </edge>
+    <edge source="n3" target="n35">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e32</data>
+    </edge>
+    <edge source="n4" target="n10">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e3</data>
+    </edge>
+    <edge source="n6" target="n12">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e9</data>
+    </edge>
+    <edge source="n6" target="n11">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e10</data>
+    </edge>
+    <edge source="n6" target="n13">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e11</data>
+    </edge>
+    <edge source="n6" target="n29">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e26</data>
+    </edge>
+    <edge source="n6" target="n30">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e27</data>
+    </edge>
+    <edge source="n6" target="n31">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e28</data>
+    </edge>
+    <edge source="n6" target="n32">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e29</data>
+    </edge>
+    <edge source="n6" target="n33">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e30</data>
+    </edge>
+    <edge source="n7" target="n9">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e4</data>
+    </edge>
+    <edge source="n8" target="n5">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e5</data>
+    </edge>
+    <edge source="n11" target="n5">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e8</data>
+    </edge>
+    <edge source="n12" target="n9">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e7</data>
+    </edge>
+    <edge source="n13" target="n10">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e6</data>
+    </edge>
+    <edge source="n14" target="n6">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e12</data>
+    </edge>
+    <edge source="n15" target="n16">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e13</data>
+    </edge>
+    <edge source="n15" target="n17">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e14</data>
+    </edge>
+    <edge source="n15" target="n18">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e15</data>
+    </edge>
+    <edge source="n15" target="n38">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e31</data>
+    </edge>
+    <edge source="n17" target="n36">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e34</data>
+    </edge>
+    <edge source="n18" target="n37">
+      <data key="d13">has</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e35</data>
+    </edge>
+    <edge source="n19" target="n24">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e16</data>
+    </edge>
+    <edge source="n20" target="n25">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e17</data>
+    </edge>
+    <edge source="n21" target="n26">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e18</data>
+    </edge>
+    <edge source="n22" target="n27">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e19</data>
+    </edge>
+    <edge source="n23" target="n28">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e20</data>
+    </edge>
+    <edge source="n29" target="n24">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e25</data>
+    </edge>
+    <edge source="n30" target="n25">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e24</data>
+    </edge>
+    <edge source="n31" target="n26">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e23</data>
+    </edge>
+    <edge source="n32" target="n27">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e22</data>
+    </edge>
+    <edge source="n33" target="n28">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e21</data>
+    </edge>
+    <edge source="n34" target="n7">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e36</data>
+    </edge>
+    <edge source="n34" target="n4">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e43</data>
+    </edge>
+    <edge source="n35" target="n8">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e37</data>
+    </edge>
+    <edge source="n36" target="n19">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e38</data>
+    </edge>
+    <edge source="n36" target="n20">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e39</data>
+    </edge>
+    <edge source="n37" target="n21">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e40</data>
+    </edge>
+    <edge source="n37" target="n22">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e41</data>
+    </edge>
+    <edge source="n38" target="n23">
+      <data key="d13">connects</data>
+      <data key="d14">
+            </data>
+      <data key="d15">e42</data>
+    </edge>
+  </graph>
+</graphml>

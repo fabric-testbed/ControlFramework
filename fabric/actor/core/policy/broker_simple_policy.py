@@ -26,9 +26,11 @@
 from __future__ import annotations
 
 import threading
-from datetime import datetime
 from typing import TYPE_CHECKING
 
+from fabric.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
+from fabric.actor.core.apis.i_delegation import IDelegation
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
 from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.util.bids import Bids
@@ -71,6 +73,10 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         self.allocation_horizon = 0
         self.ready = False
 
+        self.delegations = {}
+        self.combined_broker_model = None
+        self.combined_broker_model_graph_id = None
+
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['logger']
@@ -78,6 +84,8 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         del state['clock']
         del state['initialized']
 
+        del state['delegations']
+        del state['combined_broker_model']
         del state['for_approval']
         del state['lock']
 
@@ -96,6 +104,9 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         self.clock = None
         self.initialized = False
 
+        self.delegations = {}
+        self.combined_broker_model = None
+        self.load_combined_broker_model()
         self.lock = threading.Lock()
         self.calendar = None
 
@@ -107,6 +118,19 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         self.ready = False
 
         # TODO Fetch Actor object and setup logger, actor and clock member variables
+
+    def load_combined_broker_model(self):
+        if self.combined_broker_model_graph_id is None:
+            self.combined_broker_model = Neo4jResourcePoolFactory.get_neo4j_cbm_empty_graph()
+            self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
+        else:
+            self.combined_broker_model = Neo4jResourcePoolFactory.get_neo4j_cbm_graph_from_database()
+
+    def initialize(self):
+        if not self.initialized:
+            super().initialize()
+            self.load_combined_broker_model()
+            self.initialized = True
 
     def configure(self, *, properties: dict):
         if self.PropertyAllocationHorizon in properties:
@@ -250,6 +274,15 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         bid_cycle = self.get_allocation(reservation=reservation)
 
         self.calendar.add_request(reservation=reservation, cycle=bid_cycle)
+
+        return False
+
+    def bind_delegation(self, *, delegation: IDelegation) -> bool:
+        try:
+            self.lock.acquire()
+            self.delegations[delegation.get_delegation_id()] = delegation
+        finally:
+            self.lock.release()
 
         return False
 
@@ -413,14 +446,22 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
 
     def query(self, *, p: dict) -> dict:
         """
-        Returns the ADVANCE_TIME of an agent's allocation
-        in the properties. This is used so that orchestrator and downstream
-        brokers know how early to bid. If the requested properties is null, the
-        agent returns all of the properties that it has defined.
+        Returns the Broker Query Model
+        @params p : dictionary containing filters (not used currently)
         """
-        result =  super().query(p=p)
+        result = {}
+        self.logger.debug("Processing Query with properties: {}".format(p))
 
-        result["advanceTime"] = self.ADVANCE_TIME
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model is not None:
+                graph = self.combined_broker_model.get_bqm(some=5)
+                result[Constants.BrokerQueryModel] = graph.serialize_graph()
+                graph.delete_graph()
+        finally:
+            self.lock.release()
+
+        self.logger.debug("Returning Query Result: {}".format(result))
         return result
 
     def satisfy_allocation(self, *, reservation: IBrokerReservation, source: IClientReservation, resource_share: int,
@@ -522,3 +563,17 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
             return True
         else:
             return False
+
+    def donate_delegation(self, *, delegation: IDelegation):
+        self.logger.debug("Donate Delegation")
+        self.bind_delegation(delegation=delegation)
+        try:
+            self.lock.acquire()
+            if delegation.get_delegation_id() in self.delegations:
+                self.combined_broker_model.merge_adm(adm=delegation.get_graph())
+                self.combined_broker_model.validate_graph()
+                self.logger.debug("Donated Delegation: self.combined_broker_model: {}".format(self.combined_broker_model.serialize_graph()))
+            else:
+                self.logger.debug("Delegation ignored")
+        finally:
+            self.lock.release()

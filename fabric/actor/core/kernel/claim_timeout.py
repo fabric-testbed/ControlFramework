@@ -38,9 +38,10 @@ class ClaimTimeout(ITimerTask):
     def execute(self):
         self.req.actor.get_logger().debug("Claim timeout. Reservation= {}".format(self.req.reservation))
         if self.req.reservation.is_ticketing():
-            self.req.actor.get_logger().error("Failing reservation {} due to expired claim timeout".format(self.req.reservation))
-            self.req.actor.fail(self.req.get_reservation().get_reservation_id(),
-                                "Timeout during claim. Please remove the reservation and retry later")
+            self.req.actor.get_logger().error("Failing reservation {} due to expired claim timeout".format(
+                self.req.reservation))
+            self.req.actor.fail(rid=self.req.get_reservation().get_reservation_id(),
+                                message="Timeout during claim. Please remove the reservation and retry later")
         else:
             self.req.actor.get_logger().debug("Claim has already completed")
 
@@ -53,8 +54,9 @@ class ReclaimTimeout(ITimerTask):
         self.req.actor.get_logger().debug("Reclaim timeout. Reservation= {}".format(self.req.reservation))
         # TODO
         if self.req.reservation.is_ticketed():
-            self.req.actor.get_logger().error("Failing reservation {} due to expired reclaim timeout".format(self.req.reservation))
-            self.req.actor.fail(self.req.get_reservation().get_reservation_id(),
-                                "Timeout during claim. Please remove the reservation and retry later")
+            self.req.actor.get_logger().error("Failing reservation {} due to expired reclaim timeout".format(
+                self.req.reservation))
+            self.req.actor.fail(rid=self.req.get_reservation().get_reservation_id(),
+                                message="Timeout during claim. Please remove the reservation and retry later")
         else:
             self.req.actor.get_logger().debug("Reclaim has already completed")

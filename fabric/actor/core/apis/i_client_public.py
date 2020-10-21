@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.security.auth_token import AuthToken
+    from fabric.actor.core.apis.i_delegation import IDelegation
 
 
 class IClientPublic:
@@ -51,4 +52,17 @@ class IClientPublic:
        
         @throws Exception in case of error
         """
-        
+
+    @abstractmethod
+    def update_delegation(self, *, delegation: IDelegation, update_data, caller: AuthToken):
+        """
+        Handles an incoming delegation update.
+
+        @param delegation delegation represented by this update. The
+               delegation object will contain the delegation (if any) as well
+               information about the actually allocated resources.
+        @param update_data status of the remote operation.
+        @param caller identity of the caller
+
+        @throws Exception in case of error
+        """
