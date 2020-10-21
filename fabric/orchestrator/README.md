@@ -12,6 +12,83 @@ Orchestrator uses the [Connexion](https://github.com/zalando/connexion) library 
 ### API
 API Documentation can be found [here](https://app.swaggerhub.com/apis-docs/kthare10/orchestrator/1.0.0)
 
+#### Version
+
+The Orchestrator API is versioned based on the release found in GitHub.
+
+API `version`:
+
+Resource | Action | Input | Output
+:--------|:----:|:---:|:---:
+`/version` | GET: current API version | NA | Version format
+
+Example: Version format
+
+```json
+{
+  "gitsha1": "Release SHA as string",
+  "version": "Release version as string"
+}
+```
+#### Resources
+All the resources available on Fabric Testbed can be queried.
+
+API `/resources`:
+ 
+Resource | Action | Input | Output
+:--------|:----:|:---:|:---:
+`/` | GET: Retrieve a listing and description of available resources| | JSON Object which contains the Graph ML describing the resources
+
+Example: Resources format
+```json
+{
+  "value": {}
+}
+```
+
+### Slivers
+Sliver is an individually programmable or configurable resource provisioned on a single aggregate. Slivers are provisioned by aggregates at the request of Orchestrators. Each sliver belongs to one and only one slice. The following APIs allow operations on Slivers.
+
+API `/slivers`:
+ 
+Resource | Action | Input | Output
+:--------|:----:|:---:|:---:
+`/` | GET: Retrieve a listing of user slivers | `sliceID` Slice ID | Sliver Format
+`/{sliverID}` | GET: Retrieve Sliver properties | `sliceID` Slice ID, `sliverID` Sliver ID | Sliver Format
+`/status/{sliverID}` | GET: Retrieve the status of a sliver. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.| `sliceID` Slice ID, `sliverID` Sliver ID | Sliver Format
+`/poa/{sliverID}` | POST: Perform the named operational action on the named resources, possibly changing the operational status of the named resources. E.G. 'reboot' a VM. | `sliceID` Slice ID, `sliverID` Sliver ID, `Reboot Node or FPGA bitcode` body | Sliver Format
+`/modify/{sliverID}` | PUT: Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice. | `sliceID` Slice ID, `sliverID` Sliver ID, `Modify Request` body | Sliver Format
+
+Example: Sliver format
+```json
+{
+  "value": {}
+}
+```
+
+### Slices
+Slice is a collection of logically-related resources representing a single execution of an experiment (or a portion of an experiment, as multiple slices may be involved). Typically represents a connected topology of resources known as slivers. A slice is part of one and only one project. The following APIs allow operations on Slices.
+
+API `/slices`:
+ 
+Resource | Action | Input | Output
+:--------|:----:|:---:|:---:
+`/` | GET: Retrieve a listing of user slices |  | Slice Format
+`/{sliceID}` | GET: Retrieve Slice properties | `sliceID` Slice ID | Slice Format
+`/status/{sliceID}` | GET: Retrieve the status of a slice. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.| `sliceID` Slice ID | Slice Format
+`/create` | POST: Request to create slice as described in the request. Request would be a graph ML describing the requested resources. Resources may be requested to be created now or in future. On success, one or more slivers are allocated, containing resources satisfying the request, and assigned to the given slice. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke get slice API to get the latest state of the requested resources. | `sliceName` Slice Name, `GraphML Representing the Slice` body | Slice Format
+`/redeem/{sliceID}` | POST: Request that the reserved resources be made provisioned, instantiating or otherwise realizing the resources, such that they have a valid operational status and may possibly be made ready for experimenter use. This operation is synchronous, but may start a longer process, such as creating and imaging a virtual machine. | `sliceID` Slice ID | Slice Format
+`/renew/{sliceID}` | POST: Request to extend slice be renewed with their expiration extended. If possible, the orchestrator should extend the slivers to the requested expiration time, or to a sooner time if policy limits apply. | `sliceID` Slice ID, `newLeaseEndTime` New Lease End Time for the Slice | Slice Format
+`/modify/{sliceID}` | PUT: Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice. | `sliceID` Slice ID, `GraphML representing modify` body | Slice Format
+`/delete/{sliceID}` | DELETE: Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary, de-provisioned and un-allocated at the respective sites. | `sliceID` Slice ID | Slice Format
+
+Example: Slice format
+```json
+{
+  "value": {}
+}
+```
+
 ### Swagger Server
 The swagger server was generated by the [swagger-codegen](https://github.com/swagger-api/swagger-codegen) project. By using the
 [OpenAPI-Spec](https://github.com/swagger-api/swagger-core/wiki) from a remote server, you can easily generate a server stub.  
