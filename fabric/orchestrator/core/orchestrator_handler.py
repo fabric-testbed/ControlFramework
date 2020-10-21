@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import json
-import threading
 import traceback
 
 import jwt
@@ -46,7 +45,6 @@ class OrchestratorHandler:
         self.logger = GlobalsSingleton.get().get_logger()
         self.token_public_key = GlobalsSingleton.get().get_config().get_oauth_config().get(
             Constants.PropertyConfOAuthTokenPublicKey, None)
-        self.lock = threading.Lock()
         self.query_model_map = {}
 
     def get_logger(self):
@@ -129,26 +127,4 @@ class OrchestratorHandler:
             raise e
 
     def update_resource_map(self, *, broker: str, graph: Neo4jPropertyGraph):
-        try:
-            self.lock.acquire()
-            self.query_model_map[broker] = graph
-        finally:
-            self.lock.release()
-
-
-class OrchestratorHandlerSingleton:
-    __instance = None
-
-    def __init__(self):
-        if self.__instance is not None:
-            raise Exception("Singleton can't be created twice !")
-
-    def get(self):
-        """
-        Actually create an instance
-        """
-        if self.__instance is None:
-            self.__instance = OrchestratorHandler()
-        return self.__instance
-
-    get = classmethod(get)
+        self.query_model_map[broker] = graph

@@ -2,7 +2,6 @@ import connexion
 import requests
 import six
 
-from fabric.orchestrator.core.orchestrator_handler import OrchestratorHandlerSingleton
 from fabric.orchestrator.swagger_server.models.version import Version  # noqa: E501
 from fabric.orchestrator.swagger_server import util, received_counter, success_counter, failure_counter
 
@@ -16,7 +15,8 @@ def version_get():  # noqa: E501
     :rtype: Version
     """
     received_counter.labels('get', '/version').inc()
-    logger = OrchestratorHandlerSingleton.get().get_logger()
+    from fabric.actor.core.container.globals import GlobalsSingleton
+    logger = GlobalsSingleton.get().get_logger()
     try:
         version = '1.0.0'
         tag = '1.0.0'
