@@ -63,6 +63,10 @@ class Constants:
     PropertyConfKafkaSslKeyPassword = "kafka-ssl-key-password"
     PropertyConfKafkaSecurityProtocol = "kafka-security-protocol"
     PropertyConfKafkaGroupId = "kafka-group-id"
+    PropertyConfKafkaSaslProducerUsername = "kafka-sasl-producer-username"
+    PropertyConfKafkaSaslProducerPassword = "kafka-sasl-producer-password"
+    PropertyConfKafkaSaslConsumerUsername = "kafka-sasl-consumer-username"
+    PropertyConfKafkaSaslConsumerPassword = "kafka-sasl-consumer-password"
 
     PropertyConfPluginDir = "plugin-dir"
 

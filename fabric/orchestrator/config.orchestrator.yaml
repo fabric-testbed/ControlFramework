@@ -39,6 +39,10 @@ runtime:
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
+  - kafka-sasl-producer-username:
+  - kafka-sasl-producer-password:
+  - kafka-sasl-consumer-username:
+  - kafka-sasl-consumer-password:
   - orchestrator.rest.port: 8700
   - prometheus.port: 11000
 
