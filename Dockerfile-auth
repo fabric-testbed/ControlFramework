@@ -5,10 +5,19 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 VOLUME ["/usr/src/app"]
 
-COPY authority.sh /usr/src/app
-COPY test_neo4j.py /usr/src/app
 RUN pip3 install --upgrade pip
 
 EXPOSE 11000
 
-ENTRYPOINT ["/usr/src/app/authority.sh"]
+#COPY authority.sh /usr/src/app
+#ENTRYPOINT ["/usr/src/app/authority.sh"]
+
+COPY requirements.txt /usr/src/app/
+RUN pip3 install --no-cache-dir -r requirements.txt
+RUN mkdir -p "/etc/fabric/message_bus/schema"
+RUN cp /usr/local/lib/python3.8/site-packages/fabric/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
+
+RUN pip3 install git+https://github.com/fabric-testbed/ControlFramework.git
+
+ENTRYPOINT ["python3"]
+CMD ["-m", "fabric.authority"]
