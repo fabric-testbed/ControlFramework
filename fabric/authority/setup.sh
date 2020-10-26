@@ -55,8 +55,8 @@ else
   cp docker-compose-dev.yml $name/docker-compose.yml
 fi
 
-sed -i '' "s/site1-am/$name/g" $name/docker-compose.yml
-sed -i '' "s/site1-am/$name/g" $name/config.yaml
+sed -i "s/site1-am/$name/g" $name/docker-compose.yml
+sed -i "s/site1-am/$name/g" $name/config.yaml
 echo ""
 echo ""
 echo "Update $name/.env file and volumes SSL certs details for $name container in docker-compose.yml as needed"
