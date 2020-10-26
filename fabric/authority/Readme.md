@@ -16,20 +16,34 @@ Aggregate Manager must deploy following containers:
 
 `docker-compose.yml` file present in this directory brings up all the required containers
 
+### Setup Aggregate Manager
+Run the `setup.sh` script to set up an Aggregate Manager. User is expected to specify following parameters:
+- Directory name for AM
+- Neo4j Password to be used
+- Path to the config file for AM
+- Path to Aggregate Resource Model i.e. graphml
+
+#### Production
+```
+./setup.sh site1-am password ./config.site.am.yaml ../../config/neo4j/site-am-2broker-ad-enumerated.graphml
+```
+#### Development
+```
+./setup.sh site1-am password ./config.site.am.yaml ../../config/neo4j/site-am-2broker-ad-enumerated.graphml dev
+```
+
 ### Environment and Configuration
+The script `setup.sh` generates directory for the AM, which has `.env` file which contains Environment variables for `docker-compose.yml` to use
+User is expected to update `.env` file as needed and update volumes section for am in `docker-compose.yml`.
 
-Your Project must be configured prior to running it for the first time. Example configuration files have been provided as templates to start from.
-
-Do not check any of your configuration files into a repository as they will contain your projects secrets (use .gitignore to exclude any files containing secrets).
-
-1. .env from [env.template](env.template) - Environment variables for `docker-compose.yml` to use
+Following files must be checked to update any of the parameters
+1. `.env` from [env.template](env.template) - Environment variables for `docker-compose.yml` to use
+2. `config.yaml` updated to reflect the correct information
 
 #### .env
-A file named `env.template` has been provided as an example, and is used by the `docker-compose.yml` file.
-```
-cp env.template .env
-```
-Once copied, modify the default values for each to correspond to your desired deployment. The UID and GID based entries should correspond to the values of the user responsible for running the code as these will relate to shared volumes from the host to the running containers.
+Modify the default values for each to correspond to your desired deployment. The UID and GID based entries should correspond to the values of the user responsible for running the code as these will relate to shared volumes from the host to the running containers.
+NOTE: bolt, http and https ports for Neo4J should be changed when launching multiple CF Actors on same host
+
 ```
 # docker-compose environment file
 #
@@ -69,46 +83,129 @@ POSTGRES_PASSWORD=fabric
 PGDATA=/var/lib/postgresql/data/pgdata
 POSTGRES_DB=am
 ```
-### Build
-Once all configuration has been done, the user can build the necessary containers by issuing:
+#### config.yaml
+The parameters depicted below must be checked/updated before bring any of the containers up.
 ```
-docker-compose build
-```
-### Run
-#### database
-Create the database directories if they do not exist
-```
-mkdir -p pg_data/data pg_data/logs
+runtime:
+  - plugin-dir: ./plugins
+  - kafka-server: broker1:9092
+  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
+  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
+  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
+  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  - kafka-ssl-key-password:  fabric
+  - kafka-security-protocol: SSL
+  - kafka-group-id: fabric-cf
+  - kafka-sasl-producer-username:
+  - kafka-sasl-producer-password:
+  - kafka-sasl-consumer-username:
+  - kafka-sasl-consumer-password:
+  - prometheus.port: 11000
+neo4j:
+  url: bolt://site1-am-neo4j:7687
+  user: neo4j
+  pass: password
+  import_host_dir: /usr/src/app/neo4j/imports/
+  import_dir: /imports
+actor:
+  - type: authority
+  - name: site1-am
+  - guid: site1-am-guid
+  - description: Site AM
+  - kafka-topic: site1-am-topic
+  - substrate.file: /etc/fabric/actor/config/neo4j/arm.graphml
+  - resources:
+      - resource:
+        - resource_module: fim.slivers.network_node
+        - resource_class: Node
+        - type: site.vm
+        - label: VM AM
+        - description: VM AM
+        - handler:
+          - module: fabric.actor.plugins.vm
+          - class: Dummy
+          - properties:
+              - ec2.keys: config/ec2
+              - ec2.site.properties: config/ec2.site.properties
+        - control:
+            - type: site.vm
+            - module: fabric.actor.core.policy.simple_vm_control
+            - class: SimpleVMControl
+        - attributes:
+            - attribute:
+                - key: resource.class.invfortype
+                - type: Class
+                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
+      - resource:
+        - resource_module: fim.slivers.network_node
+        - resource_class: Node
+        - type: site.baremetal
+        - label: Baremetal AM
+        - description: Baremetal AM
+        - handler:
+          - module: fabric.actor.plugins.baremetal
+          - class: Dummy
+          - properties:
+              - xcat.site.properties: config/xcat.site.properties
+        - control:
+          - type: site.vm
+          - module: fabric.actor.core.policy.simple_vm_control
+          - class: SimpleVMControl
+      - resource:
+        - resource_module: fim.slivers.attached_pci_devices
+        - resource_class: AttachedPCIDevices
+        - type: site.vlan
+        - label: Network Vlan
+        - description: Network Vlan
+        - handler:
+          - module: fabric.actor.plugins.vlan
+          - class: Dummy
+          - properties:
+              - quantum-vlan.properties: config/quantum-vlan.properties
+        - attributes:
+            - attribute:
+                - key: resource.class.invfortype
+                - type: Class
+                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
+        - control:
+          - type: site.vlan
+          - module: fabric.actor.core.policy.vlan_control
+          - class: VlanControl
+      - resource:
+        - resource_module: fim.slivers.network_attached_storage
+        - resource_class: NetworkAttachedStorage
+        - type: site.lun
+        - label: OS internal lun
+        - description: OS internal lun
+        - handler:
+          - module: fabric.actor.plugins.storage
+          - class: Dummy
+          - properties:
+              - storage_service.site.properties: config/storage_service.site.properties
+        - attributes:
+            - attribute:
+                - key: resource.class.invfortype
+                - type: Class
+                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
+        - control:
+            - type: site.lun
+            - module: fabric.actor.core.policy.lun_control
+            - class: LUNControl
+peers:
+  - peer:
+    - name: orchestrator
+    - type: orchestrator
+    - guid: orchestrator-guid
+    - kafka-topic: orchestrator-topic
+  - peer:
+    - name: broker
+    - type: broker
+    - guid: broker-guid
+    - kafka-topic: broker-topic
+    - delegation: del1
 
-```
-Start the pre-defined PostgreSQL database in Docker
-```
-docker-compose up -d database
-```
-Validate that the database container is running.
-```
-$ docker-compose ps
-  Name                Command              State           Ports
--------------------------------------------------------------------------
-site1-am-db   docker-entrypoint.sh postgres   Up      0.0.0.0:8432->5432/tcp
-
-```
-#### neo4j
-Create the neo4j directories if they do not exist
-```
-mkdir -p neo4j/data neo4j/imports neo4j/logs
-echo password > neo4j/password
-```
-Start the pre-defined Neo4j database in Docker
-```
-docker-compose up -d neo4j
-```
-Validate that the database container is running.
-```
-docker-compose ps
-     Name                   Command               State                                   Ports
---------------------------------------------------------------------------------------------------------------------------------
-site1-am-neo4j   /sbin/tini -g -- /docker-e ...   Up      0.0.0.0:7473->7473/tcp, 0.0.0.0:7474->7474/tcp, 0.0.0.0:7687->7687/tcp
 ```
 #### am
 Update `docker-compose.yml` to point to correct volumes for the AM.
@@ -124,14 +221,9 @@ Update `docker-compose.yml` to point to correct volumes for the AM.
       - ../../config/neo4j/site-am-2broker-ad-enumerated.graphml:/etc/fabric/actor/config/neo4j/site-am-2broker-ad-enumerated.graphml
       - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
 ```
-Start the pre-defined AM container in Docker
+### Run
+Bring up all the required containers
 ```
-docker-compose up -d am
-```
-Validate that the database container is running.
-```
-docker-compose ps
-     Name                   Command                 State                                      Ports
--------------------------------------------------------------------------------------------------------------------------------------
-site1-am         /usr/src/app/authority.sh        Up           0.0.0.0:11000->11000/tcp
+cd site1-am
+docker-compose up -d
 ```

@@ -116,24 +116,39 @@ Orchestrator must deploy following containers:
 - Neo4j
 - Postgres Database
 - Policy Enforcement Function (TBD)
-- Broker
+- Orchestrator
 
 `docker-compose.yml` file present in this directory brings up all the required containers
 
+### Setup Orchestrator
+Run the `setup.sh` script to set up a Orchestrator. User is expected to specify following parameters:
+- Directory name for Orchestrator
+- Neo4j Password to be used
+- Path to the config file for Orchestrator
+
+
+#### Production
+```
+./setup.sh orchestrator password ./config.orchestrator.yaml
+```
+#### Development
+```
+./setup.sh orchestrator password ./config.orchestrator.yaml dev
+```
+
 ### Environment and Configuration
 
-Your Project must be configured prior to running it for the first time. Example configuration files have been provided as templates to start from.
+The script `setup.sh` generates directory for the Orchestrator, which has `.env` file which contains Environment variables for `docker-compose.yml` to use
+User is expected to update `.env` file as needed and update volumes section for am in `docker-compose.yml`.
 
-Do not check any of your configuration files into a repository as they will contain your projects secrets (use .gitignore to exclude any files containing secrets).
-
-1. .env from [env.template](env.template) - Environment variables for `docker-compose.yml` to use
+Following files must be checked to update any of the parameters
+1. `.env` from [env.template](env.template) - Environment variables for `docker-compose.yml` to use
+2. `config.yaml` updated to reflect the correct information
 
 #### .env
-A file named `env.template` has been provided as an example, and is used by the `docker-compose.yml` file.
-```
-cp env.template .env
-```
-Once copied, modify the default values for each to correspond to your desired deployment. The UID and GID based entries should correspond to the values of the user responsible for running the code as these will relate to shared volumes from the host to the running containers.
+Modify the default values for each to correspond to your desired deployment. The UID and GID based entries should correspond to the values of the user responsible for running the code as these will relate to shared volumes from the host to the running containers.
+NOTE: bolt, http and https ports for Neo4J should be changed when launching multiple CF Actors on same host
+
 ```
 # docker-compose environment file
 #
@@ -173,68 +188,76 @@ POSTGRES_PASSWORD=fabric
 PGDATA=/var/lib/postgresql/data/pgdata
 POSTGRES_DB=orchestrator
 ```
-### Build
-Once all configuration has been done, the user can build the necessary containers by issuing:
+#### config.yaml
+The parameters depicted below must be checked/updated before bring any of the containers up.
 ```
-docker-compose build
+runtime:
+  - plugin-dir: ./plugins
+  - kafka-server: broker1:9092
+  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
+  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
+  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
+  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  - kafka-ssl-key-password:  fabric
+  - kafka-security-protocol: SSL
+  - kafka-group-id: fabric-cf
+  - kafka-sasl-producer-username:
+  - kafka-sasl-producer-password:
+  - kafka-sasl-consumer-username:
+  - kafka-sasl-consumer-password:
+  - orchestrator.rest.port: 8700
+  - prometheus.port: 11000
+neo4j:
+  url: bolt://orchestrator-neo4j:9687
+  user: neo4j
+  pass: password
+  import_host_dir: /usr/src/app/neo4j/imports/
+  import_dir: /imports
+actor:
+  - type: orchestrator
+  - name: orchestrator
+  - guid: orchestrator-guid
+  - description: orchestrator
+  - kafka-topic: orchestrator-topic
+  - policy:
+      - module: fabric.actor.core.policy.controller_ticket_review_policy
+      - class: ControllerTicketReviewPolicy
+peers:
+  - peer:
+    - name: broker
+    - type: broker
+    - guid: broker-guid
+    - kafka-topic: broker-topic
+  - peer:
+    - name: net1-am
+    - guid: net1-am-guid
+    - type: authority
+    - kafka-topic: net1-am-topic
+  - peer:
+    - name: site1-am
+    - guid: site1-am-guid
+    - type: authority
+    - kafka-topic: site1-am-topic
 ```
-### Run
-#### database
-Create the database directories if they do not exist
-```
-mkdir -p pg_data/data pg_data/logs
 
-```
-Start the pre-defined PostgreSQL database in Docker
-```
-docker-compose up -d database
-```
-Validate that the database container is running.
-```
-$ docker-compose ps
-  Name                Command              State           Ports
--------------------------------------------------------------------------
-orchestrator-db   docker-entrypoint.sh postgres   Up      0.0.0.0:10432->5432/tcpdocker-compose ps
-```
-#### neo4j
-Create the neo4j directories if they do not exist
-```
-mkdir -p neo4j/data neo4j/imports neo4j/logs
-echo password > neo4j/password
-```
-Start the pre-defined Neo4j database in Docker
-```
-docker-compose up -d neo4j
-```
-Validate that the database container is running.
-```
-docker-compose ps
-    Name                  Command                 State                                                     Ports
------------------------------------------------------------------------------------------------------------------------------------------------------------------
-orchestrator-neo4j   /sbin/tini -g -- /docker-e ...   Up           7473/tcp, 7474/tcp, 7687/tcp, 0.0.0.0:9473->9473/tcp, 0.0.0.0:9474->9474/tcp, 0.0.0.0:9687->9687/tcp
-```
-#### am
-Update `docker-compose.yml` to point to correct volumes for the Broker.
+#### orchestrator
+Update `docker-compose.yml` to point to correct volumes for the Orchestrator.
 
 ```
     volumes:
       - ./neo4j:/usr/src/app/neo4j
-      - ./config.orchestrator.yaml:/etc/fabric/actor/config/config.yaml
+      - ./config.yaml:/etc/fabric/actor/config/config.yaml
       - ./logs/:/var/log/actor
-      - ../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
-      - ../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
-      - ../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
+      - ../../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
+      - ../../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
+      - ../../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
       - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
 ```
-Start the pre-defined Broker container in Docker
+### Run
+Bring up all the required containers
 ```
-docker-compose up -d orchestrator
+cd orchestrator
+docker-compose up -d
 ```
-Validate that the database container is running.
-```
-docker-compose ps
-    Name                  Command                 State                                                     Ports
------------------------------------------------------------------------------------------------------------------------------------------------------------------
-orchestrator         /usr/src/app/orchestrator.sh           Up           0.0.0.0:11002->11000/tcp
-```
-
