@@ -39,6 +39,7 @@ runtime:
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
+  - kafka-sasl-mechanism:
   - kafka-sasl-producer-username:
   - kafka-sasl-producer-password:
   - kafka-sasl-consumer-username:

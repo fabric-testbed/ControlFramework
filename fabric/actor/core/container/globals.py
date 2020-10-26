@@ -171,6 +171,7 @@ class Globals:
         ssl_key_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyPassword, None)
         sasl_username = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslProducerUsername, None)
         sasl_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslProducerPassword, None)
+        sasl_mechanism = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslMechanism, None)
 
         conf = {'bootstrap.servers': bootstrap_server,
                 'security.protocol': security_protocol,
@@ -183,6 +184,7 @@ class Globals:
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf['sasl.username'] = sasl_username
             conf['sasl.password'] = sasl_password
+            conf['sasl.mechanism'] = sasl_mechanism
 
         return conf
 
@@ -200,6 +202,7 @@ class Globals:
 
         sasl_username = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslProducerUsername, None)
         sasl_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslProducerPassword, None)
+        sasl_mechanism = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslMechanism, None)
 
         conf = {'bootstrap.servers': bootstrap_server,
                 'security.protocol': security_protocol,
@@ -213,6 +216,7 @@ class Globals:
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf['sasl.username'] = sasl_username
             conf['sasl.password'] = sasl_password
+            conf['sasl.mechanism'] = sasl_mechanism
 
         return conf
 
