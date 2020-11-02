@@ -89,10 +89,12 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return None
 
-    def get_pool_info(self, *, broker: ID) -> List[PoolInfoAvro]:
+    def get_pool_info(self, *, broker: ID, id_token: str) -> List[PoolInfoAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_pool_info(broker=broker, caller=self.auth)
+            caller = self.auth.clone()
+            caller.set_id_token(id_token=id_token)
+            result = self.manager.get_pool_info(broker=broker, caller=caller)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

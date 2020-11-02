@@ -6,6 +6,9 @@ services:
     container_name: broker-neo4j
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     restart: always
+    networks:
+      - frontend
+      - backend
     ports:
       - 8474:8474  # for HTTP
       - 8473:8473  # for HTTPS
@@ -28,6 +31,8 @@ services:
     image: fabrictestbed/postgres:12.3
     container_name: broker-db
     restart: always
+    networks:
+      - backend
     volumes:
       - ./pg_data/data:${PGDATA:-/var/lib/postgresql/data}
       - ./pg_data/logs:${POSTGRES_INITDB_WALDIR:-/var/log/postgresql}
@@ -40,6 +45,17 @@ services:
        - PGDATA=${PGDATA:-/var/lib/postgresql/data}
     ports:
         - 9432:5432
+  pdp:
+    image: fabrictestbed/authzforce-pdp:3.0.0
+    container_name: broker-pdp
+    networks:
+      - backend
+    ports:
+      - 8080:8080
+      - 8443:8443
+    volumes:
+      - ${PDP_NEW_CONF_PATH_HOST:-$(pwd)/newconf}:/conf
+      - ${PDP_NEW_POLICIES_PATH_HOST:-$(pwd)/newpolicies}:/policies
   broker:
     build:
       context: ../../../
@@ -47,6 +63,9 @@ services:
     image: broker:latest
     container_name: broker
     restart: always
+    networks:
+      - frontend
+      - backend
     depends_on:
       - database
       - neo4j
@@ -60,3 +79,7 @@ services:
       - ../../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
       - ../../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
       - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
+networks:
+  frontend:
+  backend:
+    internal: true

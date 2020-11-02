@@ -90,13 +90,15 @@ time:
 
   # Internal tick length (in milliseconds)
   - time.cycleMillis: 1000
-
   # The number of the first tick
   - time.firstTick: 0
 
   # This property controls if time advances automatically (false) or
   # manually (true)
   - time.manual: false
+
+pdp:
+  url: http://site1-am-pdp:8080
 
 neo4j:
   url: bolt://site1-am-neo4j:7687

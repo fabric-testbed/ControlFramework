@@ -446,15 +446,18 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def get_pool_info(self, *, broker: ID) -> List[PoolInfoAvro]:
+    def get_pool_info(self, *, broker: ID, id_token: str) -> List[PoolInfoAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
 
         try:
+            caller = self.auth.clone()
+            caller.set_id_token(id_token=id_token)
+
             request = GetPoolInfoAvro()
             request.guid = str(self.management_id)
-            request.auth = self.auth
+            request.auth = caller
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
             request.broker_id = str(broker)

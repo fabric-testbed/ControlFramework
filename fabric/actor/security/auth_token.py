@@ -25,13 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 from fabric.actor.core.util.id import ID
-from fabric.actor.security.credentials import Credentials
 
 
 class AuthToken:
     PropertyName = 'name'
     PropertyGuid = 'guid'
-    PropertyCred = 'cred'
     """
     Represents the Authentication Token for a user
     """
@@ -39,25 +37,20 @@ class AuthToken:
         self.name = name
         self.guid = guid
         self.id_token = None
-        self.cred = None
 
         if properties is not None:
             if self.PropertyName in properties:
                 self.name = properties[self.PropertyName]
             if self.PropertyGuid in properties:
                 self.guid = ID(id=properties[self.PropertyGuid])
-            if self.PropertyCred in properties:
-                self.cred = Credentials(properties=properties[self.PropertyCred])
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        del state['cred']
         del state['id_token']
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self.cred = None
         self.id_token = None
 
     def get_name(self) -> str:
@@ -66,9 +59,11 @@ class AuthToken:
     def get_guid(self) -> ID:
         return self.guid
 
-    def set_credentials(self, *, id_token: str):
-        self.cred = Credentials(id_token=id_token)
+    def set_id_token(self, id_token: str):
+        self.id_token = id_token
 
-    def get_credentials(self) -> Credentials:
-        return self.cred
+    def get_id_token(self) -> str:
+        return self.id_token
 
+    def clone(self):
+        return AuthToken(name=self.name, guid=self.guid)

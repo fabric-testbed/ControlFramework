@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<PolicySet xmlns="urn:oasis:names:tc:xacml:3.0:core:schema:wd-17"
+  PolicySetId="urn:fabric:authz:xacml:BrokerPolicy"
+  PolicyCombiningAlgId="urn:oasis:names:tc:xacml:3.0:policy-combining-algorithm:deny-unless-permit"
+  Version="1.0">
+  <Description>
+    PDP Policy for the Broker.
+  </Description>
+  <Target/>
+  <!-- QUERY -->
+  <PolicySet
+    PolicySetId="urn:fabric:authz:xacml:BrokerPolicy:query"
+    PolicyCombiningAlgId="urn:oasis:names:tc:xacml:3.0:policy-combining-algorithm:deny-unless-permit"
+    Version="1.0">
+    <Description>
+      Action 'query'
+    </Description>
+    <Target>
+      <AnyOf>
+        <AllOf>
+          <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+            <AttributeValue
+              DataType="http://www.w3.org/2001/XMLSchema#string">query</AttributeValue>
+            <AttributeDesignator
+                AttributeId="urn:oasis:names:tc:xacml:1.0:action:action-id"
+                Category="urn:oasis:names:tc:xacml:3.0:attribute-category:action"
+                DataType="http://www.w3.org/2001/XMLSchema#string"
+                MustBePresent="true"/>
+          </Match>
+        </AllOf>
+      </AnyOf>
+    </Target>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:query:resources"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'resources'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">resources</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:query:resources:rule">
+        <Description>
+          Query resources
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-query-resources-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+  </PolicySet>
+  <!-- DEMAND -->
+  <PolicySet
+    PolicySetId="urn:fabric:authz:xacml:BrokerPolicy:demand"
+    PolicyCombiningAlgId="urn:oasis:names:tc:xacml:3.0:policy-combining-algorithm:deny-unless-permit"
+    Version="1.0">
+    <Description>
+      Action 'demand'
+    </Description>
+    <Target>
+      <AnyOf>
+        <AllOf>
+          <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+            <AttributeValue
+              DataType="http://www.w3.org/2001/XMLSchema#string">demand</AttributeValue>
+            <AttributeDesignator
+                AttributeId="urn:oasis:names:tc:xacml:1.0:action:action-id"
+                Category="urn:oasis:names:tc:xacml:3.0:attribute-category:action"
+                DataType="http://www.w3.org/2001/XMLSchema#string"
+                MustBePresent="true"/>
+          </Match>
+        </AllOf>
+      </AnyOf>
+    </Target>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:demand:sliver"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'sliver'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">sliver</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:demand:sliver:rule">
+        <Description>
+          Demand sliver
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-demand-sliver-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+  </PolicySet>
+  <!-- UPDATE -->
+  <PolicySet
+    PolicySetId="urn:fabric:authz:xacml:BrokerPolicy:update"
+    PolicyCombiningAlgId="urn:oasis:names:tc:xacml:3.0:policy-combining-algorithm:deny-unless-permit"
+    Version="1.0">
+    <Description>
+      Action 'update'
+    </Description>
+    <Target>
+      <AnyOf>
+        <AllOf>
+          <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+            <AttributeValue
+              DataType="http://www.w3.org/2001/XMLSchema#string">update</AttributeValue>
+            <AttributeDesignator
+                AttributeId="urn:oasis:names:tc:xacml:1.0:action:action-id"
+                Category="urn:oasis:names:tc:xacml:3.0:attribute-category:action"
+                DataType="http://www.w3.org/2001/XMLSchema#string"
+                MustBePresent="true"/>
+          </Match>
+        </AllOf>
+      </AnyOf>
+    </Target>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:update:sliver"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'sliver'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">sliver</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:update:sliver:rule">
+        <Description>
+          Update sliver
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-update-sliver-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+  </PolicySet>
+  <!-- CLOSE -->
+  <PolicySet
+    PolicySetId="urn:fabric:authz:xacml:BrokerPolicy:close"
+    PolicyCombiningAlgId="urn:oasis:names:tc:xacml:3.0:policy-combining-algorithm:deny-unless-permit"
+    Version="1.0">
+    <Description>
+      Action 'close'
+    </Description>
+    <Target>
+      <AnyOf>
+        <AllOf>
+          <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+            <AttributeValue
+              DataType="http://www.w3.org/2001/XMLSchema#string">close</AttributeValue>
+            <AttributeDesignator
+                AttributeId="urn:oasis:names:tc:xacml:1.0:action:action-id"
+                Category="urn:oasis:names:tc:xacml:3.0:attribute-category:action"
+                DataType="http://www.w3.org/2001/XMLSchema#string"
+                MustBePresent="true"/>
+          </Match>
+        </AllOf>
+      </AnyOf>
+    </Target>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:close:slice"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'slice'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">slice</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:close:slice:rule">
+        <Description>
+          Close slice
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-close-slice-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:close:sliver"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'sliver'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">sliver</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:close:sliver:rule">
+        <Description>
+          Close sliver
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-close-sliver-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:close:delegation"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'delegation'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">delegation</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:close:delegation:rule">
+        <Description>
+          Close delegation
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-close-delegation-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+  </PolicySet>
+  <!-- CLAIM -->
+  <PolicySet xmlns="urn:oasis:names:tc:xacml:3.0:core:schema:wd-17"
+        PolicySetId="urn:fabric:authz:xacml:BrokerPolicy:claim"
+        PolicyCombiningAlgId="urn:oasis:names:tc:xacml:1.0:policy-combining-algorithm:first-applicable"
+        Version="1.0">
+    <Description>
+          Action 'claim'
+    </Description>
+    <Target>
+      <AnyOf>
+        <AllOf>
+          <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+            <AttributeValue
+              DataType="http://www.w3.org/2001/XMLSchema#string">claim</AttributeValue>
+            <AttributeDesignator
+                AttributeId="urn:oasis:names:tc:xacml:1.0:action:action-id"
+                Category="urn:oasis:names:tc:xacml:3.0:attribute-category:action"
+                DataType="http://www.w3.org/2001/XMLSchema#string"
+                MustBePresent="true"/>
+          </Match>
+        </AllOf>
+      </AnyOf>
+    </Target>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:claim:delegation"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'delegation'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">delegation</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:claim:delegation:rule">
+        <Description>
+          Claim a delegation
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-claim-delegation-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+  </PolicySet>
+  <!-- RECLAIM -->
+  <PolicySet xmlns="urn:oasis:names:tc:xacml:3.0:core:schema:wd-17"
+        PolicySetId="urn:fabric:authz:xacml:BrokerPolicy:reclaim"
+        PolicyCombiningAlgId="urn:oasis:names:tc:xacml:1.0:policy-combining-algorithm:first-applicable"
+        Version="1.0">
+    <Description>
+          Action 'reclaim'
+    </Description>
+    <Target>
+      <AnyOf>
+        <AllOf>
+          <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+            <AttributeValue
+              DataType="http://www.w3.org/2001/XMLSchema#string">reclaim</AttributeValue>
+            <AttributeDesignator
+                AttributeId="urn:oasis:names:tc:xacml:1.0:action:action-id"
+                Category="urn:oasis:names:tc:xacml:3.0:attribute-category:action"
+                DataType="http://www.w3.org/2001/XMLSchema#string"
+                MustBePresent="true"/>
+          </Match>
+        </AllOf>
+      </AnyOf>
+    </Target>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:reclaim:delegation"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'delegation'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">delegation</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:reclaim:delegation:rule">
+        <Description>
+          Reclaim delegation
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-reclaim-delegation-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+  </PolicySet>
+  <!-- TICKET -->
+  <PolicySet xmlns="urn:oasis:names:tc:xacml:3.0:core:schema:wd-17"
+        PolicySetId="urn:fabric:authz:xacml:BrokerPolicy:ticket"
+        PolicyCombiningAlgId="urn:oasis:names:tc:xacml:1.0:policy-combining-algorithm:first-applicable"
+        Version="1.0">
+    <Description>
+          Action 'ticket'
+    </Description>
+    <Target>
+      <AnyOf>
+        <AllOf>
+          <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+            <AttributeValue
+              DataType="http://www.w3.org/2001/XMLSchema#string">ticket</AttributeValue>
+            <AttributeDesignator
+                AttributeId="urn:oasis:names:tc:xacml:1.0:action:action-id"
+                Category="urn:oasis:names:tc:xacml:3.0:attribute-category:action"
+                DataType="http://www.w3.org/2001/XMLSchema#string"
+                MustBePresent="true"/>
+          </Match>
+        </AllOf>
+      </AnyOf>
+    </Target>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:ticket:sliver"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'sliver'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">sliver</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:ticket:sliver:rule">
+        <Description>
+          ticket sliver
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-ticket-sliver-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+  </PolicySet>
+</PolicySet>
