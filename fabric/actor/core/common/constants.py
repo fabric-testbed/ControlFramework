@@ -73,6 +73,8 @@ class Constants:
 
     ConfigLoggingSection = 'logging'
 
+    ConfigSectionPdp = 'pdp'
+
     PropertyConfLogFile = 'log-file'
     PropertyConfLogLevel = 'log-level'
     PropertyConfLogRetain = 'log-retain'

@@ -31,9 +31,12 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 from fabric.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
+from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.util.id import ID
+from fabric.actor.security.fabric_token import FabricToken
+from fabric.actor.security.pdp_auth import PdpAuth, ActionId, ResourceType
 from fabric.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
 from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
 
@@ -45,27 +48,30 @@ class OrchestratorHandler:
         self.logger = GlobalsSingleton.get().get_logger()
         self.token_public_key = GlobalsSingleton.get().get_config().get_oauth_config().get(
             Constants.PropertyConfOAuthTokenPublicKey, None)
+        self.pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
         self.query_model_map = {}
+        self.fabric_token = None
 
     def get_logger(self):
         return self.logger
 
-    def validate_credentials(self, *, token) -> str:
+    def validate_credentials(self, *, token) -> dict:
         try:
-            with open(self.token_public_key) as f:
-                pem_data = f.read()
-                f.close()
-                key = serialization.load_pem_public_key(data=pem_data.encode("utf-8"),
-                                                        backend=default_backend())
+            self.fabric_token = FabricToken(token_public_key=self.token_public_key, logger=self.logger,
+                                            token=token)
 
-            options = {'verify_aud': False}
-            verify = True
-            payload = jwt.decode(token, key=key, algorithms='RS256', options=options, verify=verify)
-            self.logger.debug(json.dumps(payload))
-            return payload
+            return self.fabric_token.validate()
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred while validating the token e: {}".format(e))
+
+    def check_access(self, *, action_id: ActionId, resource_type: ResourceType,
+                     resource_id: str = None) -> bool:
+        pdp_auth = PdpAuth(config=self.pdp_config, logger=self.logger)
+        return pdp_auth.check_access(fabric_token=self.fabric_token.get_decoded_token(),
+                                     actor_type=ActorType.Orchestrator,
+                                     action_id=action_id, resource_type=resource_type,
+                                     resource_id=resource_id)
 
     def get_broker(self, *, controller: IMgmtActor) -> ID:
         try:
@@ -106,6 +112,7 @@ class OrchestratorHandler:
 
     def list_resources(self):
         try:
+            self.check_access(action_id=ActionId.query, resource_type=ResourceType.resources)
             self.controller_state.close_dead_slices()
             controller = self.controller_state.get_management_actor()
             self.logger.debug("list resources invoked controller:{}".format(controller))

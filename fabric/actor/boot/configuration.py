@@ -66,6 +66,10 @@ class GlobalConfig:
         if Constants.ConfigSectionNeo4j in config:
             self.neo4j = config[Constants.ConfigSectionNeo4j]
 
+        self.pdp = {}
+        if Constants.ConfigSectionPdp in config:
+            self.pdp = config[Constants.ConfigSectionPdp]
+
     def get_runtime(self) -> dict:
         return self.runtime
 
@@ -86,6 +90,9 @@ class GlobalConfig:
 
     def get_neo4j_config(self) -> dict:
         return self.neo4j
+
+    def get_pdp_config(self) -> dict:
+        return self.pdp
 
 
 class HandlerConfig:

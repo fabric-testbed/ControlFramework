@@ -121,10 +121,22 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
 
     def load_combined_broker_model(self):
         if self.combined_broker_model_graph_id is None:
+            self.logger.debug("Creating an empty Combined Broker Model Graph")
+
             self.combined_broker_model = Neo4jResourcePoolFactory.get_neo4j_cbm_empty_graph()
             self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
+
+            self.logger.debug("Empty Combined Broker Model Graph created: {}".format(
+                self.combined_broker_model_graph_id))
         else:
-            self.combined_broker_model = Neo4jResourcePoolFactory.get_neo4j_cbm_graph_from_database()
+            self.logger.debug("Loading an existing Combined Broker Model Graph: {}".format(
+                self.combined_broker_model_graph_id))
+
+            self.combined_broker_model = Neo4jResourcePoolFactory.get_neo4j_cbm_graph_from_database(
+                combined_broker_model_graph_id=self.combined_broker_model_graph_id)
+            self.logger.debug(
+                "Successfully loaded an existing Combined Broker Model Graph: {}".format(
+                    self.combined_broker_model_graph_id))
 
     def initialize(self):
         if not self.initialized:

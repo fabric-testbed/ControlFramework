@@ -97,6 +97,9 @@ time:
   # manually (true)
   - time.manual: false
 
+pdp:
+  url: http://orchestrator-pdp:8090
+
 neo4j:
   url: bolt://broker-neo4j:8687
   user: neo4j
