@@ -48,6 +48,7 @@ services:
   pdp:
     image: fabrictestbed/authzforce-pdp:3.0.0
     container_name: site1-am-pdp
+    user: ${PDP_UID:-1000}:${PDP_GID:-1000}
     networks:
       - backend
     ports:

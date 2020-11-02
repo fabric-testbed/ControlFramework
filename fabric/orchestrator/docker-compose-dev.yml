@@ -43,6 +43,7 @@ services:
   pdp:
     image: fabrictestbed/authzforce-pdp:3.0.0
     container_name: orchestrator-pdp
+    user: ${PDP_UID:-1000}:${PDP_GID:-1000}
     ports:
       - 8080:8080
       - 8443:8443
