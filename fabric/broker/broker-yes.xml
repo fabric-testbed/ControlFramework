@@ -31,6 +31,166 @@
       </AnyOf>
     </Target>
     <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:query:delegation"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'delegation'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">delegation</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:query:delegation:rule">
+        <Description>
+          Any valid user allowed to query delegation.
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-query-delegation-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:query:user"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'user'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">user</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:query:user:rule">
+        <Description>
+          Any valid user allowed to query users.
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-query-user-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:query:slice"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'slice'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">slice</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:query:slice:rule">
+        <Description>
+          Any valid user allowed to query slices.
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-query-slice-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+    <Policy
+      PolicyId="urn:fabric:authz:xacml:BrokerPolicy:query:sliver"
+      RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
+      Version="1.0">
+      <Description>
+        Resource 'sliver'
+      </Description>
+      <Target>
+        <AnyOf>
+          <AllOf>
+            <Match MatchId="urn:oasis:names:tc:xacml:1.0:function:string-equal">
+              <AttributeValue
+                DataType="http://www.w3.org/2001/XMLSchema#string">sliver</AttributeValue>
+              <AttributeDesignator
+                  AttributeId="urn:fabric:xacml:attributes:resource-type"
+                  Category="urn:oasis:names:tc:xacml:3.0:attribute-category:resource"
+                  DataType="http://www.w3.org/2001/XMLSchema#string"
+                  MustBePresent="true"/>
+            </Match>
+          </AllOf>
+        </AnyOf>
+      </Target>
+      <Rule Effect="Permit"
+        RuleId="urn:fabric:authz:xacml:BrokerPolicy:query:sliver:rule">
+        <Description>
+          Any valid user allowed to query slivers.
+        </Description>
+        <Target/>
+        <!--
+        <Condition/>
+      -->
+        <AdviceExpressions>
+          <AdviceExpression AdviceId="urn:fabric:authz:advice:deny-query-sliver-error" AppliesTo="Deny">
+            <AttributeAssignmentExpression AttributeId="urn:fabric:authz:attribute:pep-message">
+              <AttributeValue DataType="http://www.w3.org/2001/XMLSchema#string">SAY SOMETHING MEANINGFUL.</AttributeValue>
+            </AttributeAssignmentExpression>
+          </AdviceExpression>
+        </AdviceExpressions>
+      </Rule>
+    </Policy>
+    <Policy
       PolicyId="urn:fabric:authz:xacml:BrokerPolicy:query:resources"
       RuleCombiningAlgId="urn:oasis:names:tc:xacml:3.0:rule-combining-algorithm:deny-unless-permit"
       Version="1.0">
