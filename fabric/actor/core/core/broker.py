@@ -236,7 +236,7 @@ class Broker(Actor, IBroker):
         self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
 
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                broker: IBrokerProxy = None) -> IDelegation:
+                                broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
         if delegation_id is None:
             raise Exception("Invalid arguments")
 
@@ -255,11 +255,11 @@ class Broker(Actor, IBroker):
         delegation.set_exported(value=True)
         delegation.set_slice_object(slice_object=slice_object)
 
-        self.wrapper.delegate(delegation=delegation, destination=self)
+        self.wrapper.delegate(delegation=delegation, destination=self, id_token=id_token)
         return delegation
 
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                  broker: IBrokerProxy = None) -> IDelegation:
+                                  broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
         if delegation_id is None:
             raise Exception("Invalid arguments")
 
@@ -286,7 +286,8 @@ class Broker(Actor, IBroker):
         delegation.prepare(callback=callback, logger=self.logger)
         delegation.validate_outgoing()
 
-        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=broker, callback=callback)
+        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=broker, callback=callback,
+                                                id_token=id_token)
 
         return delegation
 

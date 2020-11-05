@@ -95,7 +95,7 @@ class KafkaServerActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_broker_reservations(auth)
+            result = mo.get_broker_reservations(caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -117,7 +117,7 @@ class KafkaServerActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_inventory_slices(auth)
+            result = mo.get_inventory_slices(caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -140,9 +140,10 @@ class KafkaServerActorService(KafkaActorService):
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
             if request.slice_id is not None:
-                result = mo.get_inventory_reservations_by_slice_id(caller=auth, slice_id=ID(id=request.slice_id))
+                result = mo.get_inventory_reservations_by_slice_id(caller=auth, slice_id=ID(id=request.slice_id),
+                                                                   id_token=request.get_id_token())
             else:
-                result = mo.get_inventory_reservations(caller=auth)
+                result = mo.get_inventory_reservations(caller=auth, id_token=request.get_id_token())
 
             result.message_id = request.message_id
 
@@ -165,7 +166,7 @@ class KafkaServerActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_client_slices(caller=auth)
+            result = mo.get_client_slices(caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:

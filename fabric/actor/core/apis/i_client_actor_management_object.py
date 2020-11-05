@@ -29,6 +29,7 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
+from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
 
@@ -97,19 +98,21 @@ class IClientActorManagementObject:
         """
 
     @abstractmethod
-    def get_brokers(self, *, caller: AuthToken) -> ResultProxyAvro:
+    def get_brokers(self, *, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
         """
         Get all brokers
         @params caller: caller
+        @param id_token: id token
         @returns list of all the brokers
         """
 
     @abstractmethod
-    def get_broker(self, *, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
+    def get_broker(self, *, broker_id: ID, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
         """
         Get a broker
         @params broker_id : broker_id
         @params caller: caller
+        @param id_token: id token
         @returns broker information
         """
 
@@ -144,10 +147,33 @@ class IClientActorManagementObject:
         """
 
     @abstractmethod
-    def get_pool_info(self, *, broker: ID, caller: AuthToken) -> ResultPoolInfoAvro:
+    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str) -> ResultPoolInfoAvro:
         """
         Get Pool Info
         @params broker : broker ID
         @params caller: caller
+        @params id_token: str
         @returns pool information
+        """
+
+    @abstractmethod
+    def claim_delegations(self, *, broker: ID, did: ID, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+        """
+        Claim delegations
+        @params broker : broker ID
+        @params did : delegations ID
+        @params caller: caller
+        @param id_token: id token
+        @returns ResultDelegationAvro
+        """
+
+    @abstractmethod
+    def reclaim_delegations(self, *, broker: ID, did: ID, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+        """
+        ReClaim delegations
+        @params broker : broker ID
+        @params did : delegations ID
+        @params caller: caller
+        @param id_token: id token
+        @returns ResultDelegationAvro
         """

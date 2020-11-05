@@ -66,7 +66,7 @@ class LocalController(LocalActor, IMgmtController):
 
         return False
 
-    def get_brokers(self) -> List[ProxyAvro]:
+    def get_brokers(self, *, id_token: str = None) -> List[ProxyAvro]:
         self.clear_last()
         try:
             result = self.manager.get_brokers(caller=self.auth)
@@ -79,7 +79,7 @@ class LocalController(LocalActor, IMgmtController):
 
         return None
 
-    def get_broker(self, *, broker: ID) -> ProxyAvro:
+    def get_broker(self, *, broker: ID, id_token: str = None) -> ProxyAvro:
         self.clear_last()
         try:
             result = self.manager.get_broker(broker=broker, caller=self.auth)
@@ -95,9 +95,7 @@ class LocalController(LocalActor, IMgmtController):
     def get_pool_info(self, *, broker: ID, id_token: str) -> List[PoolInfoAvro]:
         self.clear_last()
         try:
-            caller = self.auth.clone()
-            caller.set_id_token(id_token=id_token)
-            result = self.manager.get_pool_info(broker=broker, caller=caller)
+            result = self.manager.get_pool_info(broker=broker, caller=self.auth, id_token=id_token)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -146,7 +144,7 @@ class LocalController(LocalActor, IMgmtController):
 
         return None
 
-    def get_reservation_units(self, *, rid: ID) -> List[UnitAvro]:
+    def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         self.clear_last()
         try:
             result = self.manager.get_reservation_units(caller=self.auth, rid=rid)

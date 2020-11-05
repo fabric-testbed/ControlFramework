@@ -151,17 +151,17 @@ class RPCManager:
                         reservation=reservation, callback=reservation.get_client_callback_proxy(),
                         caller=reservation.get_slice().get_owner())
 
-    def claim_delegation(self, *, delegation: IDelegation):
+    def claim_delegation(self, *, delegation: IDelegation, id_token:str = None):
         self.validate_delegation(delegation=delegation)
         self.do_claim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
                       delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                      caller=delegation.get_slice_object().get_owner())
+                      caller=delegation.get_slice_object().get_owner(), id_token=id_token)
 
-    def reclaim_delegation(self, *, delegation: IDelegation):
+    def reclaim_delegation(self, *, delegation: IDelegation, id_token: str = None):
         self.validate_delegation(delegation=delegation)
         self.do_reclaim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
                         delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                        caller=delegation.get_slice_object().get_owner())
+                        caller=delegation.get_slice_object().get_owner(), id_token=id_token)
 
     def ticket(self, *, reservation: IClientReservation):
         self.validate(reservation=reservation, check_requested=True)
@@ -239,7 +239,7 @@ class RPCManager:
                              callback=callback, caller=reservation.get_actor().get_identity())
 
     def query(self, *, actor: IActor, remote_actor: IActorProxy, callback: ICallbackProxy,
-              query: dict, handler: IQueryResponseHandler):
+              query: dict, handler: IQueryResponseHandler, id_token: str):
         if actor is None:
             raise Exception("Missing actor")
         if remote_actor is None:
@@ -251,7 +251,7 @@ class RPCManager:
         if handler is None:
             raise Exception("Missing handler")
         self.do_query(actor=actor, remote_actor=remote_actor, local_actor=callback, query=query,
-                      handler=handler, caller=callback.get_identity())
+                      handler=handler, caller=callback.get_identity(), id_token=id_token)
 
     def query_result(self, *, actor: IActor, remote_actor: ICallbackProxy, request_id: str, response: dict,
                      caller: AuthToken):
@@ -347,10 +347,10 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_claim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
-                 callback: IClientCallbackProxy, caller: AuthToken):
+                 callback: IClientCallbackProxy, caller: AuthToken, id_token:str = None):
         proxy.get_logger().info("Outbound claim delegation request from <{}>: {}".format(caller.get_name(), delegation))
 
-        state = proxy.prepare_claim_delegation(delegation=delegation, callback=callback, caller=caller)
+        state = proxy.prepare_claim_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ClaimDelegation)
 
@@ -361,10 +361,10 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_reclaim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
-                              callback: IClientCallbackProxy, caller: AuthToken):
+                              callback: IClientCallbackProxy, caller: AuthToken, id_token:str = None):
         proxy.get_logger().info("Outbound reclaim delegation request from <{}>: {}".format(caller.get_name(), delegation))
 
-        state = proxy.prepare_reclaim_delegation(delegation=delegation, callback=callback, caller=caller)
+        state = proxy.prepare_reclaim_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ReclaimDelegation)
 
@@ -488,10 +488,10 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_query(self, *, actor: IActor, remote_actor: IActorProxy, local_actor: ICallbackProxy,
-                 query: dict, handler: IQueryResponseHandler, caller: AuthToken):
+                 query: dict, handler: IQueryResponseHandler, caller: AuthToken, id_token: str):
         remote_actor.get_logger().info("Outbound query request from <{}>".format(caller.get_name()))
 
-        state = remote_actor.prepare_query(callback=local_actor, query=query, caller=caller)
+        state = remote_actor.prepare_query(callback=local_actor, query=query, caller=caller, id_token=id_token)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.Query)
         rpc = RPCRequest(request=state, actor=actor, proxy=remote_actor, handler=handler)

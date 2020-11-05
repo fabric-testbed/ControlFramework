@@ -278,7 +278,8 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
 
     @abstractmethod
     def query(self, *, query: dict = None, caller: AuthToken = None,
-              actor_proxy: IActorProxy = None, handler: IQueryResponseHandler = None):
+              actor_proxy: IActorProxy = None, handler: IQueryResponseHandler = None,
+              id_token: str = None):
         """
         Processes a query request from the specified caller.
 
@@ -287,6 +288,7 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
             caller: caller
             actor_proxy: actor proxy
             handler: handler
+            id_token: id_token
 
         Returns:
             query response

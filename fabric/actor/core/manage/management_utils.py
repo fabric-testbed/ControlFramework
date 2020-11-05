@@ -75,10 +75,10 @@ class ManagementUtils:
         return Converter.absorb_res_properties(rsv_mng=rsv_mng, res_obj=res_obj)
 
     @staticmethod
-    def query(*, actor: IActor, actor_proxy: IActorProxy, query: dict):
+    def query(*, actor: IActor, actor_proxy: IActorProxy, query: dict, id_token: str):
         handler = MyQueryResponseHandler()
 
-        actor.query(query=query, actor_proxy=actor_proxy, handler=handler)
+        actor.query(query=query, actor_proxy=actor_proxy, handler=handler, id_token=id_token)
 
         with handler.condition:
             try:

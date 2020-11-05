@@ -46,7 +46,7 @@ class LocalActor(LocalProxy, IMgmtActor):
         if not isinstance(manager, ActorManagementObject):
             raise Exception("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
-    def get_slices(self) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
         try:
             result = self.manager.get_slices(caller=self.auth)
@@ -59,7 +59,7 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return None
 
-    def get_slice(self, *, slice_id: ID) -> SliceAvro:
+    def get_slice(self, *, slice_id: ID, id_token: str = None) -> SliceAvro:
         self.clear_last()
         try:
             result = self.manager.get_slice(slice_id=slice_id, caller=self.auth)
@@ -84,7 +84,7 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def get_reservations(self) -> List[ReservationMng]:
+    def get_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_reservations(caller=self.auth)
@@ -98,7 +98,7 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return None
 
-    def get_reservations_by_state(self, *, state: int) -> List[ReservationMng]:
+    def get_reservations_by_state(self, *, state: int, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_reservations(caller=self.auth, state=state)
@@ -217,7 +217,7 @@ class LocalActor(LocalProxy, IMgmtActor):
     def clone(self):
         return LocalActor(manager=self.manager, auth=self.auth)
 
-    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int) -> list:
+    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> list:
         self.clear_last()
         try:
             result = self.manager.get_reservations_by_slice_id_state(caller=self.auth, slice_id=slice_id, state=state)
@@ -259,7 +259,7 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def get_reservation_state(self, *, rid: ID) -> ReservationStateAvro:
+    def get_reservation_state(self, *, rid: ID, id_token: str = None) -> ReservationStateAvro:
         self.clear_last()
         try:
             result = self.manager.get_reservation_state(caller=self.auth, rid=rid)
@@ -273,7 +273,7 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return None
 
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID]) -> List[ReservationStateAvro]:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID], id_token: str = None) -> List[ReservationStateAvro]:
         self.clear_last()
         try:
             result = self.manager.get_reservation_state_for_reservations(caller=self.auth, rids=reservation_list)

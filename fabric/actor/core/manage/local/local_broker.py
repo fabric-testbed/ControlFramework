@@ -63,7 +63,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return False
 
-    def get_brokers(self) -> List[ProxyAvro]:
+    def get_brokers(self, *, id_token: str = None) -> List[ProxyAvro]:
         self.clear_last()
         try:
             result = self.manager.get_brokers(caller=self.auth)
@@ -76,7 +76,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return None
 
-    def get_broker(self, *, broker: ID) -> ProxyAvro:
+    def get_broker(self, *, broker: ID, id_token: str = None) -> ProxyAvro:
         self.clear_last()
         try:
             result = self.manager.get_broker(broker_id=broker, caller=self.auth)
@@ -92,9 +92,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
     def get_pool_info(self, *, broker: ID, id_token: str) -> List[PoolInfoAvro]:
         self.clear_last()
         try:
-            caller = self.auth.clone()
-            caller.set_id_token(id_token=id_token)
-            result = self.manager.get_pool_info(broker=broker, caller=caller)
+            result = self.manager.get_pool_info(broker=broker, caller=self.auth, id_token=id_token)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -130,10 +128,23 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
         return None
 
-    def claim_delegations(self, *, broker: ID, did: str) -> DelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: str, id_token: str = None) -> DelegationAvro:
         self.clear_last()
         try:
-            result = self.manager.claim_delegations(broker=broker, did=did, caller=self.auth)
+            result = self.manager.claim_delegations(broker=broker, did=did, caller=self.auth, id_token=id_token)
+            self.last_status = result.status
+
+            if result.status.get_code() == 0:
+                return self.get_first(result_list=result.result)
+        except Exception as e:
+            self.last_exception = e
+
+        return None
+
+    def reclaim_delegations(self, *, broker: ID, did: str, id_token: str = None) -> DelegationAvro:
+        self.clear_last()
+        try:
+            result = self.manager.reclaim_delegations(broker=broker, did=did, caller=self.auth, id_token=id_token)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

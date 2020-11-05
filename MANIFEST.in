@@ -2,3 +2,6 @@ include README.md
 include LICENSE
 include fabric/orchestrator/swagger_server/swagger/swagger.yaml
 include fabric/actor/security/data/*.json
+include fabric/authority/config.site.am.yaml
+include fabric/broker/config.broker.yaml
+include fabric/orchestrator/config.orchestrator.yaml

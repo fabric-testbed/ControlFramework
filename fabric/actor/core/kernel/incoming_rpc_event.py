@@ -50,7 +50,8 @@ class IncomingRPCEvent(IActorEvent):
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.Query:
             actor.get_logger().info("processing query from <{}>".format(self.rpc.get_caller().get_name()))
-            result = actor.query(query=self.rpc.get(), caller=self.rpc.get_caller())
+            result = actor.query(query=self.rpc.get(), caller=self.rpc.get_caller(), id_token=self.rpc.get_id_token())
+
             from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
             RPCManagerSingleton.get().query_result(actor=actor, remote_actor=self.rpc.get_callback(),
                                                    request_id=self.rpc.get_message_id(),
@@ -101,13 +102,13 @@ class IncomingRPCEvent(IActorEvent):
         elif self.rpc.get_request_type() == RPCRequestType.ClaimDelegation:
             server.get_logger().info("processing claim delegation from <{}>".format(self.rpc.get_caller().get_name()))
             server.claim_delegation(delegation=self.rpc.get_delegation(), callback=self.rpc.get_callback(),
-                                    caller=self.rpc.get_caller())
+                                    caller=self.rpc.get_caller(), id_token=self.rpc.get_id_token())
             server.get_logger().info("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.ReclaimDelegation:
             server.get_logger().info("processing reclaim delegation from <{}>".format(self.rpc.get_caller().get_name()))
             server.reclaim_delegation(delegation=self.rpc.get_delegation(), callback=self.rpc.get_callback(),
-                                      caller=self.rpc.get_caller())
+                                      caller=self.rpc.get_caller(), id_token=self.rpc.get_id_token())
             server.get_logger().info("reclaim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.Ticket:

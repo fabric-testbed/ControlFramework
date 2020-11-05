@@ -38,14 +38,14 @@ if TYPE_CHECKING:
 
 class IMgmtAuthority(IMgmtServerActor):
     @abstractmethod
-    def get_authority_reservations(self) -> List[ReservationMng]:
+    def get_authority_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         """
         Retrieves all leases the site has issued to service managers.
         @return returns list of reservations
         """
 
     @abstractmethod
-    def get_reservation_units(self, *, rid: ID) -> List[UnitAvro]:
+    def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         """
         Retrieves all units in the specified reservation
         @param rid reservation id
@@ -53,7 +53,7 @@ class IMgmtAuthority(IMgmtServerActor):
         """
 
     @abstractmethod
-    def get_reservation_unit(self, *, uid: ID) -> UnitAvro:
+    def get_reservation_unit(self, *, uid: ID, id_token: str = None) -> UnitAvro:
         """
         Returns the specified inventory item
         @param uid unit id

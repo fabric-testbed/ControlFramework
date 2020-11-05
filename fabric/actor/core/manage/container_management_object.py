@@ -83,7 +83,7 @@ class ContainerManagementObject(ManagementObject):
                     result.append(a)
         return result
 
-    def get_actors(self, *, caller: AuthToken) -> ResultActorAvro:
+    def get_actors(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -103,7 +103,7 @@ class ContainerManagementObject(ManagementObject):
 
         return result
 
-    def get_actors_from_database(self, *, caller: AuthToken) -> ResultActorAvro:
+    def get_actors_from_database(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -135,7 +135,7 @@ class ContainerManagementObject(ManagementObject):
         return result
 
     def get_actors_from_database_name_type_status(self, *, name: str, actor_type: int, status: int,
-                                                  caller: AuthToken) -> ResultActorAvro:
+                                                  caller: AuthToken, id_token: str = None) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -166,7 +166,7 @@ class ContainerManagementObject(ManagementObject):
 
         return result
 
-    def get_controllers(self, *, caller: AuthToken) -> ResultActorAvro:
+    def get_controllers(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -184,7 +184,7 @@ class ContainerManagementObject(ManagementObject):
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_brokers(self, *, caller: AuthToken) -> ResultActorAvro:
+    def get_brokers(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -202,7 +202,7 @@ class ContainerManagementObject(ManagementObject):
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_authorities(self, *, caller: AuthToken) -> ResultActorAvro:
+    def get_authorities(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -224,7 +224,7 @@ class ContainerManagementObject(ManagementObject):
         from fabric.actor.core.container.globals import GlobalsSingleton
         return GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(key=key)
 
-    def get_broker_proxies(self, *, protocol: str, caller: AuthToken) -> ResultProxyAvro:
+    def get_broker_proxies(self, *, protocol: str, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -242,7 +242,7 @@ class ContainerManagementObject(ManagementObject):
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_site_proxies(self, *, protocol: str, caller: AuthToken) -> ResultProxyAvro:
+    def get_site_proxies(self, *, protocol: str, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -260,7 +260,7 @@ class ContainerManagementObject(ManagementObject):
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_proxies_by_protocol(self, *, protocol: str, caller: AuthToken) -> ResultProxyAvro:
+    def get_proxies_by_protocol(self, *, protocol: str, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 

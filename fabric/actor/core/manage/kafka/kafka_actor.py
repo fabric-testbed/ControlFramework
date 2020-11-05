@@ -35,6 +35,7 @@ from fabric.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 from fabric.message_bus.messages.close_reservations_avro import CloseReservationsAvro
 from fabric.message_bus.messages.delegation_avro import DelegationAvro
 from fabric.message_bus.messages.get_delegations_avro import GetDelegationsAvro
+from fabric.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.get_reservations_state_request_avro import GetReservationsStateRequestAvro
@@ -67,7 +68,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
     def prepare(self, *, callback_topic:str):
         self.callback_topic = callback_topic
 
-    def get_slices(self) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
 
         status = ResultAvro()
@@ -79,6 +80,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.auth = self.auth
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -116,7 +118,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         return rret_val
 
-    def get_slice(self, *, slice_id: ID) -> SliceAvro:
+    def get_slice(self, *, slice_id: ID, id_token: str = None) -> SliceAvro:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -128,6 +130,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.slice_id = str(slice_id)
+            request.id_token = id_token
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
             self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
@@ -298,7 +301,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         return status.code == 0
 
     def do_get_reservations(self, *, slice_id: ID = None, state: int = None,
-                            reservation_id: ID = None) -> List[ReservationMng]:
+                            reservation_id: ID = None, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         response = ResultReservationAvro()
         response.status = ResultAvro()
@@ -309,6 +312,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.reservation_state = state
+            request.id_token = id_token
 
             if slice_id is not None:
                 request.slice_id = str(slice_id)
@@ -350,13 +354,14 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         return response.reservations
 
-    def get_reservations(self) -> List[ReservationMng]:
-        return self.do_get_reservations(slice_id=None, state=Constants.AllReservationStates, reservation_id=None)
+    def get_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
+        return self.do_get_reservations(slice_id=None, state=Constants.AllReservationStates, reservation_id=None,
+                                        id_token=id_token)
 
-    def get_reservations_by_state(self, *, state: int) -> List[ReservationMng]:
-        return self.do_get_reservations(slice_id=None, state=state, reservation_id=None)
+    def get_reservations_by_state(self, *, state: int, id_token: str = None) -> List[ReservationMng]:
+        return self.do_get_reservations(slice_id=None, state=state, reservation_id=None, id_token=id_token)
 
-    def get_reservations_by_slice_id(self, *, slice_id: ID) -> List[ReservationMng]:
+    def get_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
         status = ResultAvro()
 
         self.clear_last()
@@ -367,19 +372,20 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_status = status
             return None
 
-        return self.do_get_reservations(slice_id=slice_id, state=Constants.AllReservationStates, reservation_id=None)
+        return self.do_get_reservations(slice_id=slice_id, state=Constants.AllReservationStates, reservation_id=None,
+                                        id_token=id_token)
 
-    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int) -> List[ReservationMng]:
-        return self.do_get_reservations(slice_id=slice_id, state=state, reservation_id=None)
+    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[ReservationMng]:
+        return self.do_get_reservations(slice_id=slice_id, state=state, reservation_id=None, id_token=id_token)
 
-    def get_reservation(self, *, rid: ID) -> ReservationMng:
+    def get_reservation(self, *, rid: ID, id_token: str = None) -> ReservationMng:
         reservation_list = self.do_get_reservations(slice_id=None, state=None, reservation_id=rid)
         if reservation_list is not None and len(reservation_list) > 0:
             return reservation_list.__iter__().__next__()
         return None
 
     def do_get_delegations(self, *, slice_id: ID = None, state: int = None,
-                           delegation_id: ID = None) -> List[DelegationAvro]:
+                           delegation_id: ID = None, id_token: str = None) -> List[DelegationAvro]:
         self.clear_last()
         response = ResultDelegationAvro()
         response.status = ResultAvro()
@@ -390,6 +396,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.delegation_state = state
+            request.id_token = id_token
 
             if slice_id is not None:
                 request.slice_id = str(slice_id)
@@ -431,13 +438,14 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         return response.delegations
 
-    def get_delegations(self) -> List[DelegationAvro]:
-        return self.do_get_delegations(slice_id=None, state=Constants.AllReservationStates, delegation_id=None)
+    def get_delegations(self, *, id_token: str = None) -> List[DelegationAvro]:
+        return self.do_get_delegations(slice_id=None, state=Constants.AllReservationStates, delegation_id=None,
+                                       id_token=id_token)
 
-    def get_delegations_by_state(self, *, state: int) -> List[DelegationAvro]:
-        return self.do_get_delegations(slice_id=None, state=state, delegation_id=None)
+    def get_delegations_by_state(self, *, state: int, id_token: str = None) -> List[DelegationAvro]:
+        return self.do_get_delegations(slice_id=None, state=state, delegation_id=None, id_token=id_token)
 
-    def get_delegations_by_slice_id(self, *, slice_id: ID) -> List[DelegationAvro]:
+    def get_delegations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[DelegationAvro]:
         status = ResultAvro()
 
         self.clear_last()
@@ -448,15 +456,16 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_status = status
             return None
 
-        return self.do_get_delegations(slice_id=slice_id, state=Constants.AllReservationStates, delegation_id=None)
+        return self.do_get_delegations(slice_id=slice_id, state=Constants.AllReservationStates, delegation_id=None,
+                                       id_token=id_token)
 
-    def get_delegations_by_slice_id_and_state(self, *, slice_id: ID, state: int) -> List[DelegationAvro]:
+    def get_delegations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[DelegationAvro]:
         return self.do_get_delegations(slice_id=slice_id, state=state, delegation_id=None)
 
-    def get_delegation(self, *, rid: ID) -> DelegationAvro:
-        reservation_list = self.do_get_delegations(slice_id=None, state=None, delegation_id=rid)
-        if reservation_list is not None and len(reservation_list) > 0:
-            return next(iter(reservation_list))
+    def get_delegation(self, *, did: ID, id_token: str = None) -> DelegationAvro:
+        delegation_list = self.do_get_delegations(slice_id=None, state=None, delegation_id=did, id_token=id_token)
+        if delegation_list is not None and len(delegation_list) > 0:
+            return next(iter(delegation_list))
         return None
 
     def remove_reservation(self, *, rid: ID) -> bool:
@@ -663,7 +672,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         return status.get_code() == 0
 
-    def get_reservation_state_for_reservations(self, *, reservation_list: list) -> List[ReservationMng]:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID], id_token: str = None) -> List[ReservationStateAvro]:
         status = ResultAvro()
         self.clear_last()
         if reservation_list is None:
@@ -680,6 +689,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.reservation_ids = []
+            request.id_token = id_token
             for r in reservation_list:
                 request.reservation_ids.append(str(r))
 

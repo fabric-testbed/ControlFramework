@@ -109,7 +109,7 @@ class ActorService:
             query = request.properties
             callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
             rpc = IncomingQueryRPC(request_type=RPCRequestType.Query, message_id=ID(id=request.get_message_id()),
-                                   query=query, caller=authToken, callback=callback)
+                                   query=query, caller=authToken, callback=callback, id_token=request.get_id_token())
         except Exception as e:
             self.logger.error("Invalid query request: {}".format(e))
             raise e

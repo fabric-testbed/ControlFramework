@@ -38,10 +38,11 @@ if TYPE_CHECKING:
 
 class IMgmtController(IMgmtActor, IMgmtClientActor):
     @abstractmethod
-    def get_reservation_units(self, *, rid: ID) -> List[UnitAvro]:
+    def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         """
         Return reservation units
         @params rid: reservation is
+        @param id_token: id token
         @returns list of units
         """
 

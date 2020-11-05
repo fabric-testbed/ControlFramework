@@ -195,14 +195,15 @@ class IClientActor(IActor, IClientPublic):
 
     @abstractmethod
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                broker: IBrokerProxy = None) -> IDelegation:
+                                broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
         """
         Claims already exported resources from the given broker. The delegation
         will be stored in the default slice.
 
-        @params delegation_id delegation identifier of the exported delegation
-        @params slice_object slice
-        @params broker broker proxy
+        @param delegation_id delegation identifier of the exported delegation
+        @param slice_object slice
+        @param broker broker proxy
+        @param id_token id token
 
         @returns delegation
         @raises Exception in case of failure
@@ -210,14 +211,15 @@ class IClientActor(IActor, IClientPublic):
 
     @abstractmethod
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                broker: IBrokerProxy = None) -> IDelegation:
+                                  broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
         """
         Reclaims already exported resources from the given broker. The delegation
         will be stored in the default slice.
 
-        @params delegation_id delegation identifier of the exported delegation
-        @params slice_object slice
-        @params broker broker proxy
+        @param delegation_id delegation identifier of the exported delegation
+        @param slice_object slice
+        @param broker broker proxy
+        @param id_token id token
 
         @returns delegation
         @raises Exception in case of failure

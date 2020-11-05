@@ -407,13 +407,13 @@ class Actor(IActor):
         return self.stopped
 
     def query(self, *, query: dict = None, caller: AuthToken= None, actor_proxy: IActorProxy = None,
-              handler: IQueryResponseHandler = None) -> dict:
+              handler: IQueryResponseHandler = None, id_token: str = None) -> dict:
         if actor_proxy is None and handler is None:
-            return self.wrapper.query(properties=query, caller=caller)
+            return self.wrapper.query(properties=query, caller=caller, id_token=id_token)
         else:
             callback = Proxy.get_callback(actor=self, protocol=actor_proxy.get_type())
             RPCManagerSingleton.get().query(actor=self, remote_actor=actor_proxy, callback=callback, query=query,
-                                            handler=handler)
+                                            handler=handler, id_token=id_token)
             return None
 
     def recover(self):

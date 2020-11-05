@@ -70,7 +70,8 @@ class KafkaControllerService(KafkaClientActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_reservation_units(caller=auth, rid=ID(id=request.reservation_id))
+            result = mo.get_reservation_units(caller=auth, rid=ID(id=request.reservation_id),
+                                              id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:

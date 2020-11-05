@@ -122,7 +122,7 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
-            result = mo.get_slices(caller=auth)
+            result = mo.get_slices(caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -146,7 +146,7 @@ class KafkaActorService(KafkaService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_slice(slice_id=ID(id=request.slice_id), caller=auth)
+            result = mo.get_slice(slice_id=ID(id=request.slice_id), caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -237,7 +237,8 @@ class KafkaActorService(KafkaService):
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
             if request.get_reservation_id() is not None:
-                result = mo.get_reservation(caller=auth, rid=ID(id=request.get_reservation_id()))
+                result = mo.get_reservation(caller=auth, rid=ID(id=request.get_reservation_id()),
+                                            id_token=request.get_id_token())
 
             elif request.get_slice_id() is not None:
 
@@ -245,19 +246,22 @@ class KafkaActorService(KafkaService):
                         request.get_reservation_state() != Constants.AllReservationStates:
 
                     result = mo.get_reservations_by_slice_id_state(caller=auth, slice_id=ID(id=request.get_slice_id()),
-                                                                   state=request.get_reservation_state())
+                                                                   state=request.get_reservation_state(),
+                                                                   id_token=request.get_id_token())
 
                 else:
-                    result = mo.get_reservations_by_slice_id(caller=auth, slice_id=ID(id=request.get_slice_id()))
+                    result = mo.get_reservations_by_slice_id(caller=auth, slice_id=ID(id=request.get_slice_id()),
+                                                             id_token=request.get_id_token())
 
             else:
                 if request.get_reservation_state() is not None and \
                         request.get_reservation_state() != Constants.AllReservationStates:
 
-                    result = mo.get_reservations_by_state(caller=auth, state=request.get_reservation_state())
+                    result = mo.get_reservations_by_state(caller=auth, state=request.get_reservation_state(),
+                                                          id_token=request.get_id_token())
 
                 else:
-                    result = mo.get_reservations(caller=auth)
+                    result = mo.get_reservations(caller=auth, id_token=request.get_id_token())
 
             result.message_id = request.message_id
 
@@ -349,7 +353,8 @@ class KafkaActorService(KafkaService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_reservation_state_for_reservations(caller=auth, rids=request.get_reservation_ids())
+            result = mo.get_reservation_state_for_reservations(caller=auth, rids=request.get_reservation_ids(),
+                                                               id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -372,7 +377,8 @@ class KafkaActorService(KafkaService):
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
             if request.get_delegation_id() is not None:
-                result = mo.get_delegation(caller=auth, did=ID(id=request.get_delegation_id()))
+                result = mo.get_delegation(caller=auth, did=ID(id=request.get_delegation_id()),
+                                           id_token=request.get_id_token())
 
             elif request.get_slice_id() is not None:
 
@@ -380,19 +386,22 @@ class KafkaActorService(KafkaService):
                         request.get_delegation_state() != Constants.AllReservationStates:
 
                     result = mo.get_delegations_by_slice_id_state(caller=auth, slice_id=ID(id=request.get_slice_id()),
-                                                                  state=request.get_delegation_state())
+                                                                  state=request.get_delegation_state(),
+                                                                  id_token=request.get_id_token())
 
                 else:
-                    result = mo.get_delegations_by_slice_id(caller=auth, slice_id=ID(id=request.get_slice_id()))
+                    result = mo.get_delegations_by_slice_id(caller=auth, slice_id=ID(id=request.get_slice_id()),
+                                                            id_token=request.get_id_token())
 
             else:
                 if request.get_delegation_state() is not None and \
                         request.get_delegation_state() != Constants.AllReservationStates:
 
-                    result = mo.get_delegations_by_state(caller=auth, state=request.get_delegation_state())
+                    result = mo.get_delegations_by_state(caller=auth, state=request.get_delegation_state(),
+                                                         id_token=request.get_id_token())
 
                 else:
-                    result = mo.get_delegations(caller=auth)
+                    result = mo.get_delegations(caller=auth, id_token=request.get_id_token())
 
             result.message_id = request.message_id
 

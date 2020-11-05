@@ -41,7 +41,8 @@ class ResourceType(Enum):
     user = 1,
     slice = 2,
     sliver = 3,
-    resources = 4
+    resources = 4,
+    delegation = 5
 
 
 class ActionId(Enum):
@@ -192,8 +193,8 @@ class PdpAuth:
         return action
 
     def build_pdp_request(self, *, fabric_token: dict, actor_type: ActorType,
-                     action_id: ActionId, resource_type: ResourceType,
-                     resource_id: str = None) -> dict:
+                          action_id: ActionId, resource_type: ResourceType,
+                          resource_id: str = None) -> dict:
         request_file = None
         if actor_type == ActorType.Orchestrator:
             request_file = os.path.dirname(__file__) + '/data/orchestrator-request.json'
@@ -241,6 +242,8 @@ class PdpAuth:
         pdp_request = self.build_pdp_request(fabric_token=fabric_token, actor_type=actor_type,
                                              action_id=action_id, resource_type=resource_type, resource_id=resource_id)
 
+        self.logger.debug("PDP Auth Request: {}".format(pdp_request))
+
         response = requests.post(url=self.config['url'], headers=self._headers(), json=pdp_request)
 
         if response.status_code != 200:
@@ -253,7 +256,7 @@ class PdpAuth:
         else:
             if self.logger is not None:
                 self.logger.debug("PDP response: {}".format(response.json()))
-            raise PdpAuthException('Authorization check failure: {}'.format(response.raw))
+            raise PdpAuthException('Authorization check failure: {}'.format(response.json()))
 
 
 if __name__ == '__main__':

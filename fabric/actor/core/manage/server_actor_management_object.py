@@ -68,7 +68,7 @@ class ServerActorManagementObject(ActorManagementObject):
         properties[Constants.PropertyModuleName] = ServerActorManagementObject.__module__
         return properties
 
-    def get_broker_reservations(self, *, caller: AuthToken) -> ResultReservationAvro:
+    def get_broker_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -105,7 +105,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_inventory_reservations(self, *, caller: AuthToken) -> ResultReservationAvro:
+    def get_inventory_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -142,7 +142,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_inventory_reservations_by_slice_id(self, *, caller: AuthToken, slice_id: ID) -> ResultReservationAvro:
+    def get_inventory_reservations_by_slice_id(self, *, caller: AuthToken, slice_id: ID, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -178,7 +178,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_inventory_slices(self, *, caller: AuthToken) -> ResultSliceAvro:
+    def get_inventory_slices(self, *, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -210,7 +210,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_client_slices(self, *, caller: AuthToken) -> ResultSliceAvro:
+    def get_client_slices(self, *, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -330,7 +330,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_clients(self, *, caller: AuthToken) -> ResultClientMng:
+    def get_clients(self, *, caller: AuthToken, id_token: str = None) -> ResultClientMng:
         result = ResultClientMng()
         result.status = ResultAvro()
 
@@ -348,7 +348,7 @@ class ServerActorManagementObject(ActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-    def get_client(self, *, caller: AuthToken, guid: ID) -> ResultClientMng:
+    def get_client(self, *, caller: AuthToken, guid: ID, id_token: str = None) -> ResultClientMng:
         result = ResultClientMng()
         result.status = ResultAvro()
 
@@ -399,7 +399,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_client_reservations(self, *, caller: AuthToken) -> ResultReservationAvro:
+    def get_client_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -436,7 +436,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_client_reservations_by_slice_id(self, *, caller: AuthToken, slice_id: ID):
+    def get_client_reservations_by_slice_id(self, *, caller: AuthToken, slice_id: ID, id_token: str = None):
         result = ResultReservationAvro()
         result.status = ResultAvro()
 

@@ -144,15 +144,16 @@ class Kernel:
             self.error(err="An error occurred during claim for delegation #{}".format(
                 delegation.get_delegation_id()), e=e)
 
-    def reclaim_delegation(self, *, delegation: IDelegation):
+    def reclaim_delegation(self, *, delegation: IDelegation, id_token: str):
         """
         Processes a requests to claim new ticket for previously exported
         resources (broker role). On the client side this request is issued by
         @param delegation the delegation being claimed
+        @param id_token id token
         @throws Exception
         """
         try:
-            delegation.reclaim()
+            delegation.reclaim(id_token=id_token)
             self.plugin.get_database().update_delegation(delegation=delegation)
         except Exception as e:
             self.error(err="An error occurred during claim for delegation #{}".format(
@@ -833,16 +834,17 @@ class Kernel:
             self.error(err="An error occurred during reserve for reservation #{}".format(
                 reservation.get_reservation_id()), e=e)
 
-    def delegate(self, *, delegation: IDelegation):
+    def delegate(self, *, delegation: IDelegation, id_token:str = None):
         """
         Handles a delegate operation for the delegation.
         Broker: process a request for a new delegate.
         Authority: process a request for a new delegate.
         @param delegation delegation
+        @param id_token id token
         @throws Exception
         """
         try:
-            delegation.delegate(policy=self.policy)
+            delegation.delegate(policy=self.policy, id_token=id_token)
             self.plugin.get_database().update_delegation(delegation=delegation)
             if not delegation.is_closed():
                 delegation.service_delegate()

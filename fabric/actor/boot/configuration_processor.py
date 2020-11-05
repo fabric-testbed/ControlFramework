@@ -579,26 +579,3 @@ class ConfigurationProcessor:
         else:
             self.logger.error("Could not initiate claim for resources from {} to {}".format(info.exporter.get_name(),
                                                                                             info.client.get_name()))
-
-    def trigger_remote_claim(self, *, info: ExportInfo):
-        try:
-            claim_req = ClaimResourcesAvro()
-            claim_req.guid = info.client.guid
-            claim_req.auth = Translate.translate_auth_to_avro(auth=self.actor.get_identity())
-            claim_req.broker_id = str(info.exporter.get_guid())
-            claim_req.reservation_id = str(info.exported)
-            claim_req.message_id = "test_claim_1"
-            claim_req.callback_topic = self.config.actor.get_kafka_topic()
-            claim_req.slice_id = "null"
-
-            # create a producer
-            from fabric.actor.core.container.globals import GlobalsSingleton
-            producer = GlobalsSingleton.get().get_kafka_producer()
-            if producer.produce_sync(topic=info.client_topic, record=claim_req):
-                self.logger.debug("Message {} written to {}".format(claim_req.name, info.client_topic))
-            else:
-                self.logger.error("Failed to send message {} to {}".format(claim_req.name, info.client_topic))
-        except Exception as e:
-            traceback.print_exc()
-            self.logger.error(e)
-            print(e)

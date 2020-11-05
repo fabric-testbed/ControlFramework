@@ -23,38 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import traceback
-
 import connexion
-import six
-
-from fabric.orchestrator.core.orchestrator_handler import OrchestratorHandler
-from fabric.orchestrator.swagger_server.models.success import Success  # noqa: E501
-from fabric.orchestrator.swagger_server import util, received_counter, success_counter, failure_counter
-from fabric.orchestrator.swagger_server.response.constants import GetMethod, ResourcesPath
-from fabric.orchestrator.swagger_server.response.utils import get_token
 
 
-def resources_get():  # noqa: E501
-    """Retrieve a listing and description of available resources
-
-    Retrieve a listing and description of available resources # noqa: E501
-
-
-    :rtype: Success
-    """
-    handler = OrchestratorHandler()
-    logger = handler.get_logger()
-    received_counter.labels(GetMethod, ResourcesPath).inc()
-    try:
-        token = get_token()
-        value = handler.list_resources(token=token)
-        response = Success()
-        response.value = value
-        success_counter.labels(GetMethod, ResourcesPath).inc()
-        return response
-    except Exception as e:
-        logger.exception(e)
-        failure_counter.labels(GetMethod, ResourcesPath).inc()
-        return str(e), 500
-
+def get_token() -> str:
+    token = connexion.request.headers.get('Authorization', None)
+    if token is not None:
+        token = token.replace('Bearer ', '')
+    return token

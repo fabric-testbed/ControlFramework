@@ -198,6 +198,7 @@ class Constants:
     Name = "name"
     Type = "type"
     Guid = "guid"
+    CredmgrHost = "credmgr-host"
 
     PropertyClassName = "ObjectClassName"
     PropertyModuleName = "ModuleName"

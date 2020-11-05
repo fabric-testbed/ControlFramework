@@ -54,8 +54,10 @@ from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.update_data import UpdateData
 from fabric.actor.security.access_monitor import AccessMonitor
+from fabric.actor.security.acess_checker import AccessChecker
 from fabric.actor.security.auth_token import AuthToken
 from fabric.actor.security.guard import Guard
+from fabric.actor.security.pdp_auth import ActionId, ResourceType
 
 
 class KernelWrapper:
@@ -107,9 +109,14 @@ class KernelWrapper:
         exported.prepare(callback=callback, logger=self.logger)
         self.kernel.reclaim(reservation=exported)
 
-    def claim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy):
+    def claim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy,
+                                 id_token: str = None):
         if delegation is None or caller is None or callback is None:
             raise Exception("Invalid argument")
+
+        if id_token is not None:
+            AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
 
         # Note: for claim we do not need the slice object, so we use
         # validate(ReservationID) instead of validate(Reservation).
@@ -117,15 +124,20 @@ class KernelWrapper:
         exported.prepare(callback=callback, logger=self.logger)
         self.kernel.claim_delegation(delegation=exported)
 
-    def reclaim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy):
+    def reclaim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy,
+                                   id_token: str = None):
         if delegation is None or caller is None or callback is None:
             raise Exception("Invalid argument")
+
+        if id_token is not None:
+            AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
 
         # Note: for claim we do not need the slice object, so we use
         # validate(ReservationID) instead of validate(Reservation).
         exported = self.kernel.validate_delegation(did=delegation.get_delegation_id())
         exported.prepare(callback=callback, logger=self.logger)
-        self.kernel.reclaim_delegation(delegation=exported)
+        self.kernel.reclaim_delegation(delegation=exported, id_token=id_token)
 
     def fail(self, *, rid: ID, message: str):
         """
@@ -527,12 +539,13 @@ class KernelWrapper:
         """
         return self.kernel.get_slices()
 
-    def handle_delegate(self, *, delegation: IDelegation, identity: AuthToken):
+    def handle_delegate(self, *, delegation: IDelegation, identity: AuthToken, id_token: str = None):
         """
         Handles a delegation. Called from both AM and Broker.
 
         @param delegation the delegation
         @param identity caller identity
+        @param id_token id token
 
         @throws Exception in case of error
         """
@@ -559,7 +572,7 @@ class KernelWrapper:
 
         if temp is None:
             self.kernel.register_delegation(delegation=delegation)
-            self.kernel.delegate(delegation=delegation)
+            self.kernel.delegate(delegation=delegation, id_token=id_token)
         else:
             self.kernel.amend_delegate(delegation=temp)
 
@@ -639,13 +652,17 @@ class KernelWrapper:
 
         self.kernel.amend_reserve(reservation=reservation)
 
-    def query(self, *, properties: dict, caller: AuthToken):
+    def query(self, *, properties: dict, caller: AuthToken, id_token: str):
         """
         Processes an incoming query request.
         @param properties query
         @param caller caller identity
+        @param id_token id_token
         @return query response
         """
+        AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.resources,
+                                   token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+
         return self.kernel.query(properties=properties)
 
     def redeem(self, *, reservation: IControllerReservation):
@@ -847,13 +864,14 @@ class KernelWrapper:
         except Exception as e:
             traceback.print_exc()
 
-    def delegate(self, *, delegation: IDelegation, destination: IActorIdentity):
+    def delegate(self, *, delegation: IDelegation, destination: IActorIdentity, id_token:str = None):
         """
         Initiates a delegate request. If the exported flag is set, this is a claim
         on a pre-reserved "will call" ticket.
         Role: Broker or Controller.
         @param delegation delegation parameters for ticket request
         @param destination identity of the actor the request must be sent to
+        @param id_token id token
         @throws Exception in case of error
         """
         if delegation is None or destination is None:
@@ -866,7 +884,7 @@ class KernelWrapper:
 
         delegation.prepare(callback=callback, logger=self.logger)
         delegation.validate_outgoing()
-        self.handle_delegate(delegation=delegation, identity=destination.get_identity())
+        self.handle_delegate(delegation=delegation, identity=destination.get_identity(), id_token=id_token)
 
     def ticket(self, *, reservation: IClientReservation, destination: IActorIdentity):
         """

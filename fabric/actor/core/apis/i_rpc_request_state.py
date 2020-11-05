@@ -69,3 +69,10 @@ class IRPCRequestState:
         Return Message Id
         @return message id
         """
+
+    @abstractmethod
+    def get_id_token(self) -> str:
+        """
+        Return Id Token
+        @return Id token
+        """

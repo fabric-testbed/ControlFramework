@@ -39,6 +39,8 @@ from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.management_utils import ManagementUtils
 from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric.actor.core.apis.i_actor_management_object import IActorManagementObject
+from fabric.actor.security.acess_checker import AccessChecker
+from fabric.actor.security.pdp_auth import ActionId, ResourceType
 from fabric.message_bus.messages.reservation_mng import ReservationMng
 from fabric.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric.actor.core.manage.messages.result_event_mng import ResultEventMng
@@ -109,7 +111,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             self.logger = actor.get_logger()
             self.id = actor.get_guid()
 
-    def get_slices(self, *, caller: AuthToken) -> ResultSliceAvro:
+    def get_slices(self, *, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -119,6 +121,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         else:
             slice_list = None
             try:
+                if id_token is not None:
+                    AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.slice,
+                                               token=id_token, logger=self.logger, actor_type=self.actor.get_type())
                 try:
                     slice_list = self.db.get_slices()
                 except Exception as e:
@@ -138,7 +143,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
         return result
 
-    def get_slice(self, *, slice_id: ID, caller: AuthToken) -> ResultSliceAvro:
+    def get_slice(self, *, slice_id: ID, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -148,8 +153,12 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         else:
             slice_obj = None
             try:
+                if id_token is not None:
+                    AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.slice,
+                                               token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
+                                               resource_id=str(slice_id))
                 try:
-                    slice_obj = self.db.get_slice(slice_guid=slice_id)
+                    slice_obj = self.db.get_slice(slice_id=slice_id)
                 except Exception as e:
                     self.logger.error("getSlice:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -276,17 +285,17 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_slice_by_id(self, *, id: int) -> ISlice:
+    def _get_slice_by_id(self, *, id: int) -> ISlice:
         ss = self.db.get_slice_by_id(id=id)
         slice_obj = SliceFactory.create_instance(properties=ss)
         return slice_obj
 
-    def get_slice_by_guid(self, *, guid: str) -> ISlice:
+    def get_slice_by_guid(self, *, guid: str, id_token: str = None) -> ISlice:
         ss = self.db.get_slice(slice_guid=guid)
         slice_obj = SliceFactory.create_instance(properties=ss)
         return slice_obj
 
-    def get_reservations(self, *, caller: AuthToken) -> ResultReservationAvro:
+    def get_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -296,6 +305,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_reservations()
@@ -314,7 +325,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
                     if rsv_obj is not None:
@@ -332,7 +343,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_reservations_by_state(self, *, caller: AuthToken, state: int) -> ResultReservationAvro:
+    def get_reservations_by_state(self, *, caller: AuthToken, state: int, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -342,6 +353,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_reservations_by_state(rsv_state=state)
@@ -360,7 +373,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
                     if rsv_obj is not None:
@@ -378,7 +391,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_reservations_by_slice_id(self, *, caller: AuthToken, slice_id: ID) -> ResultReservationAvro:
+    def get_reservations_by_slice_id(self, *, caller: AuthToken, slice_id: ID, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -388,6 +401,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_reservations_by_slice_id(slc_guid=slice_id)
@@ -406,7 +421,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
                                                                  slice_obj=slice_obj, logger=self.actor.get_logger())
                     if rsv_obj is not None:
@@ -424,7 +439,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_reservations_by_slice_id_state(self, *, caller: AuthToken, slice_id: ID, state: int) -> ResultReservationAvro:
+    def get_reservations_by_slice_id_state(self, *, caller: AuthToken, slice_id: ID, state: int,
+                                           id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -434,6 +450,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_reservations_by_slice_id_state(slc_guid=slice_id, rsv_state=state)
@@ -452,7 +470,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
                     if rsv_obj is not None:
@@ -470,7 +488,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_reservation(self, *, caller: AuthToken, rid: ID) -> ResultReservationAvro:
+    def get_reservation(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -480,6 +498,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
+                                       resource_id=str(rid))
             res_list = None
             try:
                 res = self.db.get_reservation(rid)
@@ -503,7 +524,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
                     if rsv_obj is not None:
@@ -709,7 +730,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_reservation_state(self, *, caller: AuthToken, rid: ID) -> ResultReservationStateAvro:
+    def get_reservation_state(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultReservationStateAvro:
         result = ResultReservationStateAvro()
         result.status = ResultAvro()
 
@@ -719,6 +740,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
+                                       resource_id=rid)
             res_dict = None
             try:
                 res_dict = self.db.get_reservation(rid=rid)
@@ -741,7 +765,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
         return result
 
-    def get_reservation_state_for_reservations(self, *, caller: AuthToken, rids: List[str]) -> ResultReservationStateAvro:
+    def get_reservation_state_for_reservations(self, *, caller: AuthToken, rids: List[str],
+                                               id_token: str = None) -> ResultReservationStateAvro:
         result = ResultReservationStateAvro()
         result.status = ResultAvro()
 
@@ -757,6 +782,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_reservations_by_rids(rid=rids)
@@ -798,7 +825,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_delegations(self, *, caller: AuthToken) -> ResultDelegationAvro:
+    def get_delegations(self, *, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -808,6 +835,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.delegation,
+                                           token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_delegations()
@@ -826,7 +856,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                 logger=self.actor.get_logger())
                     if dlg_obj is not None:
@@ -844,7 +874,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_delegations_by_state(self, *, caller: AuthToken, state: int) -> ResultDelegationAvro:
+    def get_delegations_by_state(self, *, caller: AuthToken, state: int, id_token: str = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -854,6 +884,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.delegation,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_delegations_by_state(rsv_state=state)
@@ -873,7 +905,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
                     if dlg_obj is not None:
@@ -891,7 +923,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_delegations_by_slice_id(self, *, caller: AuthToken, slice_id: ID) -> ResultDelegationAvro:
+    def get_delegations_by_slice_id(self, *, caller: AuthToken, slice_id: ID, id_token: str = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -901,6 +933,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.delegation,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_delegations_by_slice_id(slc_guid=slice_id)
@@ -919,7 +953,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor,
                                                                  slice_obj=slice_obj, logger=self.actor.get_logger())
                     if dlg_obj is not None:
@@ -937,7 +971,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_delegations_by_slice_id_state(self, *, caller: AuthToken, slice_id: ID, state: int) -> ResultDelegationAvro:
+    def get_delegations_by_slice_id_state(self, *, caller: AuthToken, slice_id: ID, state: int, id_token: str = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -947,6 +981,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.delegation,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_delegations_by_slice_id_state(slc_guid=slice_id, rsv_state=state)
@@ -965,7 +1001,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
                     if dlg_obj is not None:
@@ -983,7 +1019,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_delegation(self, *, caller: AuthToken, rid: ID) -> ResultDelegationAvro:
+    def get_delegation(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -993,6 +1029,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.delegation,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res = self.db.get_delegation(rid)
@@ -1016,7 +1054,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self.get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(id=slice_id)
                     dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
                     if dlg_obj is not None:

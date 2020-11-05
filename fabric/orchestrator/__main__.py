@@ -43,6 +43,9 @@ def main():
 
     try:
         from fabric.actor.core.container.globals import Globals, GlobalsSingleton
+        # Uncomment when testing as app running
+        #Globals.ConfigFile = './test.yaml'
+        #Constants.SuperblockLocation = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
 
             GlobalsSingleton.get().start(force_fresh=True)
@@ -66,7 +69,6 @@ def main():
                 raise Exception("Invalid configuration rest port not specified")
 
             print("Starting REST")
-
             # start swagger
             app = connexion.App(__name__, specification_dir='swagger_server/swagger/')
             app.app.json_encoder = encoder.JSONEncoder
@@ -74,7 +76,6 @@ def main():
 
             # Start up the server to expose the metrics.
             waitress.serve(app, port=rest_port)
-
             while True:
                 time.sleep(0.0001)
                 if h.interrupted:

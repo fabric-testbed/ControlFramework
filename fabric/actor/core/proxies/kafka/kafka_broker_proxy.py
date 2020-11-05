@@ -141,19 +141,21 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         return request
 
     def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                      caller: AuthToken) -> IRPCRequestState:
+                      caller: AuthToken, id_token:str = None) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
+        request.id_token = id_token
         return request
 
     def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                        caller: AuthToken) -> IRPCRequestState:
+                        caller: AuthToken, id_token:str = None) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
+        request.id_token = id_token
         return request
 
     def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,

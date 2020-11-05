@@ -77,14 +77,14 @@ class BrokerDelegation(Delegation):
     def claim(self):
         raise Exception("Not supported on Broker Delegation")
 
-    def delegate(self, policy: IPolicy):
+    def delegate(self, policy: IPolicy, id_token:str = None):
         self.policy = policy
 
         if self.state == DelegationState.Nascent:
 
             if self.exported:
                 self.sequence_out += 1
-                RPCManagerSingleton.get().claim_delegation(delegation=self)
+                RPCManagerSingleton.get().claim_delegation(delegation=self, id_token=id_token)
                 self.transition(prefix="delegate", state=DelegationState.Delegated)
             else:
                 self.error(err="Invalid state for claim. Did you already claim this Delegation?")
@@ -95,17 +95,17 @@ class BrokerDelegation(Delegation):
         elif self.state == DelegationState.Closed:
             self.error(err="initiating reserve on defunct Delegation")
 
-    def reclaim(self):
+    def reclaim(self, id_token: str = None):
         if self.state == DelegationState.Delegated:
             # We are an agent asked to return a pre-reserved "will call" ticket
             # to a client. Set mustSendUpdate so that the update will be sent
             # on the next probe.
             self.transition(prefix="reclaimed", state=DelegationState.Delegated)
-            self.service_reclaim()
+            self.service_reclaim(id_token=id_token)
         else:
             self.error(err="Wrong delegation state for delegation reclaim")
 
-    def service_reclaim(self):
+    def service_reclaim(self, id_token: str = None):
         self.logger.debug("Servicing reclaim")
         if self.callback is None:
             self.logger.warning("Cannot generate reclaim: no callback.")
@@ -115,7 +115,7 @@ class BrokerDelegation(Delegation):
         try:
             if self.exported:
                 self.sequence_out += 1
-                RPCManagerSingleton.get().reclaim_delegation(delegation=self)
+                RPCManagerSingleton.get().reclaim_delegation(delegation=self, id_token=id_token)
         except Exception as e:
             # Note that this may result in a "stuck" delegation... not much we
             # can do if the receiver has failed or rejects our update. We will

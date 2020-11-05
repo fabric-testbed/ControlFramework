@@ -53,7 +53,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
         super().__init__(guid=guid, kafka_topic=kafka_topic, auth=auth, logger=logger,
                          message_processor=message_processor, producer=producer)
 
-    def get_broker_reservations(self) -> List[ReservationMng]:
+    def get_broker_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -65,6 +65,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
             request.type = ReservationCategory.Broker.name
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -101,7 +102,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
 
         return rret_val
 
-    def get_inventory_slices(self) -> List[SliceAvro]:
+    def get_inventory_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
 
         status = ResultAvro()
@@ -114,6 +115,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.type = SliceTypes.InventorySlice.name
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -151,7 +153,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
 
         return rret_val
 
-    def get_inventory_reservations(self) -> List[ReservationMng]:
+    def get_inventory_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -163,6 +165,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
             request.type = ReservationCategory.Client.name
+            request.id_token = None
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -199,7 +202,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
 
         return rret_val
 
-    def get_inventory_reservations_by_slice_id(self, *, slice_id: ID) -> List[ReservationMng]:
+    def get_inventory_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -212,6 +215,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
             request.callback_topic = self.callback_topic
             request.type = ReservationCategory.Client.name
             request.slice_id = str(slice_id)
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -248,7 +252,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
 
         return rret_val
 
-    def get_client_slices(self) -> List[SliceAvro]:
+    def get_client_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
 
         status = ResultAvro()
@@ -261,6 +265,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.type = SliceTypes.ClientSlice.name
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
