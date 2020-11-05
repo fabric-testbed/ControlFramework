@@ -35,6 +35,8 @@ from fabric.actor.core.manage.converter import Converter
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric.actor.core.manage.server_actor_management_object import ServerActorManagementObject
+from fabric.actor.security.acess_checker import AccessChecker
+from fabric.actor.security.pdp_auth import ActionId, ResourceType
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
@@ -70,7 +72,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         return properties
 
-    def get_authority_reservations(self, *, caller: AuthToken) -> ResultReservationAvro:
+    def get_authority_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -79,6 +81,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             res_list = None
             try:
                 res_list = self.db.get_authority_reservations()
@@ -114,7 +118,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
     def get_substrate_database(self) -> ISubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
-    def get_reservation_units(self, *, caller: AuthToken, rid: ID) -> ResultUnitAvro:
+    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitAvro:
         result = ResultUnitAvro()
         result.status = ResultAvro()
 
@@ -123,6 +127,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             units_list = None
             try:
                 units_list = self.db.get_units(rid=rid)
@@ -143,7 +149,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         return result
 
-    def get_reservation_unit(self, *, caller: AuthToken, uid: ID) -> ResultUnitAvro:
+    def get_reservation_unit(self, *, caller: AuthToken, uid: ID, id_token: str = None) -> ResultUnitAvro:
         result = ResultUnitAvro()
         result.status = ResultAvro()
 
@@ -152,6 +158,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             return result
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
             units_list = None
             try:
                 unit = self.db.get_unit(uid=uid)

@@ -88,17 +88,17 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
             super().set_actor(actor=actor)
             self.client_helper = ClientActorManagementObjectHelper(client=actor)
 
-    def get_brokers(self, *, caller: AuthToken) -> ResultProxyAvro:
-        return self.client_helper.get_brokers(caller=caller)
+    def get_brokers(self, *, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
+        return self.client_helper.get_brokers(caller=caller, id_token=id_token)
 
-    def get_broker(self, *, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
-        return self.client_helper.get_broker(broker_id=broker_id, caller=caller)
+    def get_broker(self, *, broker_id: ID, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
+        return self.client_helper.get_broker(broker_id=broker_id, caller=caller, id_token=id_token)
 
     def add_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
         return self.client_helper.add_broker(broker=broker, caller=caller)
 
-    def get_pool_info(self, *, broker: ID, caller: AuthToken) -> ResultPoolInfoAvro:
-        return self.client_helper.get_pool_info(broker=broker, caller=caller)
+    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str) -> ResultPoolInfoAvro:
+        return self.client_helper.get_pool_info(broker=broker, caller=caller, id_token=id_token)
 
     def add_reservation(self, *, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
         return self.client_helper.add_reservation(reservation=reservation, caller=caller)
@@ -129,7 +129,7 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
     def modify_reservation(self, *, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
         return self.client_helper.modify_reservation(rid=rid, modify_properties=modify_properties, caller=caller)
 
-    def get_reservation_units(self, *, caller: AuthToken, rid: ID) -> ResultUnitAvro:
+    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitAvro:
         result = ResultUnitAvro()
         result.status = ResultAvro()
 
@@ -161,8 +161,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
     def get_substrate_database(self) -> ISubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
-    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
-        return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller)
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+        return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)
 
-    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
-        return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller)
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+        return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)

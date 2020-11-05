@@ -204,7 +204,7 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
     @staticmethod
     def get_resource_pools_query() -> dict:
-        properties = {Constants.QueryAction : Constants.QueryActionDiscoverPools}
+        properties = {Constants.QueryAction: Constants.QueryActionDiscoverPools}
         return properties
 
     @staticmethod

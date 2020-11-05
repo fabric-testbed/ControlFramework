@@ -398,7 +398,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return status.code == 0
 
-    def get_brokers(self) -> List[ProxyAvro]:
+    def get_brokers(self, *, id_token: str = None) -> List[ProxyAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -410,6 +410,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
             request.type = ActorType.Broker.name
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -452,12 +453,10 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
         rret_val = None
 
         try:
-            caller = self.auth.clone()
-            caller.set_id_token(id_token=id_token)
-
             request = GetPoolInfoAvro()
+            request.id_token = id_token
             request.guid = str(self.management_id)
-            request.auth = caller
+            request.auth = self.auth
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
             request.broker_id = str(broker)
@@ -565,7 +564,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return status.code == 0
 
-    def claim_delegations(self, *, broker: ID, did: str) -> DelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -578,6 +577,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.delegation_id = did
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -614,7 +614,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def reclaim_delegations(self, *, broker: ID, did: str) -> DelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -627,6 +627,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.delegation_id = did
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 

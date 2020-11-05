@@ -69,5 +69,5 @@ class DummyAuthorityProxy(DummyProxy, IAuthorityProxy):
     def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
         return None
 
-    def prepare_query(self, *, callback: ICallbackProxy, query:dict, caller: AuthToken):
+    def prepare_query(self, *, callback: ICallbackProxy, query:dict, caller: AuthToken, id_token: str):
         return None

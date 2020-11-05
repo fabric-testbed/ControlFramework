@@ -80,7 +80,7 @@ class KafkaAuthorityService(KafkaServerActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_authority_reservations(auth)
+            result = mo.get_authority_reservations(caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -102,7 +102,8 @@ class KafkaAuthorityService(KafkaServerActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_reservation_units(caller=auth, rid=ID(id=request.reservation_id))
+            result = mo.get_reservation_units(caller=auth, rid=ID(id=request.reservation_id),
+                                              id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -124,7 +125,7 @@ class KafkaAuthorityService(KafkaServerActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_reservation_unit(caller=auth, uid=ID(id=request.unit_id))
+            result = mo.get_reservation_unit(caller=auth, uid=ID(id=request.unit_id), id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:

@@ -6,8 +6,15 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 
 
+class TokenException(Exception):
+    pass
+
+
 class FabricToken:
     def __init__(self, *, token_public_key: str, token: str, logger):
+        if token_public_key is None or token is None:
+            raise TokenException('Either token_public_key: {} or token: {} is None'.format(token_public_key, token))
+
         self.token_public_key = token_public_key
         self.logger = logger
         self.encoded_token = token
@@ -37,3 +44,4 @@ class FabricToken:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred while validating the token e: {}".format(e))
+            raise e

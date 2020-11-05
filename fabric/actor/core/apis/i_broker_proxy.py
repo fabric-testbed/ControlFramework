@@ -27,6 +27,9 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+
+from fabric.actor.core.apis.i_delegation import IDelegation
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
     from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
@@ -87,6 +90,26 @@ class IBrokerProxy(IServerProxy):
         """
         Prepare a relinquish
         @params reservation: reservation
+        @params callback: callback
+        @params caller: caller
+        """
+
+    @abstractmethod
+    def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
+                                 caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+        """
+        Prepare a claim delegation
+        @params delegation: delegation
+        @params callback: callback
+        @params caller: caller
+        """
+
+    @abstractmethod
+    def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
+                                   caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+        """
+        Prepare a reclaim delegation
+        @params delegation: delegation
         @params callback: callback
         @params caller: caller
         """

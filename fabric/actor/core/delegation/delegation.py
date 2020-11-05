@@ -182,7 +182,7 @@ class Delegation(IDelegation):
             print("error for delegation: {} : {}".format(self, err))
         raise Exception("error: {}".format(err))
 
-    def delegate(self, policy: IPolicy):
+    def delegate(self, policy: IPolicy, id_token:str = None):
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
         # protocol: so we may receive a reserve or extend when there is already
@@ -204,7 +204,7 @@ class Delegation(IDelegation):
         else:
             self.error(err="Wrong delegation state for claim")
 
-    def reclaim(self):
+    def reclaim(self, id_token: str = None):
         if self.state == DelegationState.Delegated:
             self.policy.reclaim(delegation=self)
             self.must_send_update = True

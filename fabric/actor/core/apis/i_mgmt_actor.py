@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_component import IComponent
 from fabric.actor.core.manage.messages.event_mng import EventMng
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
 
 if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
@@ -40,17 +41,19 @@ if TYPE_CHECKING:
 
 class IMgmtActor(IComponent):
     @abstractmethod
-    def get_slices(self) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         """
         Obtains all slices.
+        @param id_token id token
         @return returns list of all the slices
         """
 
     @abstractmethod
-    def get_slice(self, *, slice_id: ID) -> SliceAvro:
+    def get_slice(self, *, slice_id: ID, id_token: str = None) -> SliceAvro:
         """
         Obtains the specified slice
         @param slice_id slice id
+        @param id_token id token
         @return returns the specified slice
         """
 
@@ -82,42 +85,47 @@ class IMgmtActor(IComponent):
         """
 
     @abstractmethod
-    def get_reservations(self) -> List[ReservationMng]:
+    def get_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         """
+        @param id_token id token
         Obtains all reservations
         @return returns list of the reservations
         """
 
     @abstractmethod
-    def get_reservations_by_state(self, *, state: int) -> List[ReservationMng]:
+    def get_reservations_by_state(self, *, state: int, id_token: str = None) -> List[ReservationMng]:
         """
         Obtains all reservations in the specified state.
         @param state state
+        @param id_token id token
         @return list of the reservations in the specified state
         """
 
     @abstractmethod
-    def get_reservations_by_slice_id(self, *, slice_id: ID) -> List[ReservationMng]:
+    def get_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
         """
         Obtains all reservations in the specified slice.
         @param slice_id slice ID
+        @param id_token id token
         @return list of the reservations for the specific slice
         """
 
     @abstractmethod
-    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int) -> List[ReservationMng]:
+    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[ReservationMng]:
         """
         Obtains all reservations in the given slice in the specified state.
         @param slice_id slice id
         @param state state
+        @param id_token id token
         @return list of the reservations for specific slice in specific state
         """
 
     @abstractmethod
-    def get_reservation(self, *, rid: ID) -> ReservationMng:
+    def get_reservation(self, *, rid: ID, id_token: str = None) -> ReservationMng:
         """
         Obtains the specified reservation
         @param rid reservation id
+        @param id_token id token
         @return returns the reservation identified by id
         """
 
@@ -159,19 +167,21 @@ class IMgmtActor(IComponent):
         """
 
     @abstractmethod
-    def get_reservation_state(self, *, rid: ID) -> ReservationStateAvro:
+    def get_reservation_state(self, *, rid: ID, id_token: str = None) -> ReservationStateAvro:
         """
         Returns the state of the specified reservation.
         @param rid reservation id
+        @param id_token id token
         @return returns the state of the specific reservation
         """
 
     @abstractmethod
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID]) -> List[ReservationStateAvro]:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID], id_token: str = None) -> List[ReservationStateAvro]:
         """
         Returns the state of each of the specified reservations.
         The order in the return list matches the order in the @reservations li
         @param reservation_list list of reservations
+        @param id_token id token
         @return list of state of the specified reservations
         """
 
@@ -218,4 +228,49 @@ class IMgmtActor(IComponent):
         """
         Creates clone of this proxy to make it possible to be used by a separate thread.
         @return returns the cloned actor
+        """
+
+    @abstractmethod
+    def get_delegations(self, *, id_token: str = None) -> List[DelegationAvro]:
+        """
+        @param id_token id token
+        Obtains all delegations
+        @return returns list of the delegations
+        """
+
+    @abstractmethod
+    def get_delegations_by_state(self, *, state: int, id_token: str = None) -> List[DelegationAvro]:
+        """
+        Obtains all delegations in the specified state.
+        @param state state
+        @param id_token id token
+        @return list of the delegations in the specified state
+        """
+
+    @abstractmethod
+    def get_delegations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[DelegationAvro]:
+        """
+        Obtains all delegations in the specified slice.
+        @param slice_id slice ID
+        @param id_token id token
+        @return list of the delegations for the specific slice
+        """
+
+    @abstractmethod
+    def get_delegations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[DelegationAvro]:
+        """
+        Obtains all delegations in the given slice in the specified state.
+        @param slice_id slice id
+        @param state state
+        @param id_token id token
+        @return list of the delegations for specific slice in specific state
+        """
+
+    @abstractmethod
+    def get_delegation(self, *, did: ID, id_token: str = None) -> DelegationAvro:
+        """
+        Obtains the specified delegation
+        @param did delegation id
+        @param id_token id token
+        @return returns the delegation identified by id
         """

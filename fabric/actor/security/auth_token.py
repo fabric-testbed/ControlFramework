@@ -44,26 +44,11 @@ class AuthToken:
             if self.PropertyGuid in properties:
                 self.guid = ID(id=properties[self.PropertyGuid])
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['id_token']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.id_token = None
-
     def get_name(self) -> str:
         return self.name
 
     def get_guid(self) -> ID:
         return self.guid
-
-    def set_id_token(self, id_token: str):
-        self.id_token = id_token
-
-    def get_id_token(self) -> str:
-        return self.id_token
 
     def clone(self):
         return AuthToken(name=self.name, guid=self.guid)

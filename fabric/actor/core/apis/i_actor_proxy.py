@@ -40,7 +40,7 @@ class IActorProxy(IProxy):
     IActorProxy represents the proxy interface to a generic actor
     """
     @abstractmethod
-    def prepare_query(self, *, callback: ICallbackProxy, query:dict, caller: AuthToken):
+    def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken, id_token: str):
         """
         Prepares the query
 
@@ -48,4 +48,5 @@ class IActorProxy(IProxy):
             callback: proxy call back which handles the query
             query: query
             caller: caller of the query
+            id_token: id token
         """

@@ -46,7 +46,7 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
         if not isinstance(manager, AuthorityManagementObject):
             raise Exception("Invalid manager object. Required: {}".format(type(AuthorityManagementObject)))
 
-    def get_authority_reservations(self) -> List[ReservationMng]:
+    def get_authority_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_authority_reservations(caller=self.auth)
@@ -58,7 +58,7 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
 
         return None
 
-    def get_reservation_units(self, *, rid: ID) -> List[UnitAvro]:
+    def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         self.clear_last()
         try:
             result = self.manager.get_reservation_units(caller=self.auth, rid=rid)
@@ -70,7 +70,7 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
 
         return None
 
-    def get_reservation_unit(self, *, uid: ID) -> UnitAvro:
+    def get_reservation_unit(self, *, uid: ID, id_token: str = None) -> UnitAvro:
         self.clear_last()
         try:
             result = self.manager.get_reservation_unit(caller=self.auth, uid=uid)

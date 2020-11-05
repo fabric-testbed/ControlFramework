@@ -248,7 +248,7 @@ class KafkaClientActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_brokers(caller=auth)
+            result = mo.get_brokers(caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -270,7 +270,7 @@ class KafkaClientActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
 
-            result = mo.get_pool_info(broker=ID(id=request.broker_id), caller=auth)
+            result = mo.get_pool_info(broker=ID(id=request.broker_id), caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -328,7 +328,8 @@ class KafkaClientActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
                 return result
 
-            result = mo.claim_delegations(broker=ID(id=request.broker_id), did=request.delegation_id, caller=auth)
+            result = mo.claim_delegations(broker=ID(id=request.broker_id), did=request.delegation_id, caller=auth,
+                                          id_token=request.id_token)
 
             result.message_id = request.message_id
 
@@ -358,7 +359,8 @@ class KafkaClientActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
                 return result
 
-            result = mo.reclaim_delegations(broker=ID(id=request.broker_id), did=request.delegation_id, caller=auth)
+            result = mo.reclaim_delegations(broker=ID(id=request.broker_id), did=request.delegation_id, caller=auth,
+                                            id_token=request.id_token)
 
             result.message_id = request.message_id
 

@@ -46,7 +46,7 @@ class KafkaController(KafkaActor, IMgmtController):
         super().__init__(guid=guid, kafka_topic=kafka_topic, auth=auth, logger=logger,
                          message_processor=message_processor, producer=producer)
 
-    def get_reservation_units(self, *, rid: ID) -> List[UnitAvro]:
+    def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -58,6 +58,7 @@ class KafkaController(KafkaActor, IMgmtController):
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
             request.reservation_id = str(rid)
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 

@@ -50,25 +50,27 @@ class OrchestratorHandler:
             Constants.PropertyConfOAuthTokenPublicKey, None)
         self.pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
         self.query_model_map = {}
-        self.fabric_token = None
 
     def get_logger(self):
         return self.logger
 
     def validate_credentials(self, *, token) -> dict:
         try:
-            self.fabric_token = FabricToken(token_public_key=self.token_public_key, logger=self.logger,
+            fabric_token = FabricToken(token_public_key=self.token_public_key, logger=self.logger,
                                             token=token)
 
-            return self.fabric_token.validate()
+            return fabric_token.validate()
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred while validating the token e: {}".format(e))
 
-    def check_access(self, *, action_id: ActionId, resource_type: ResourceType,
+    def check_access(self, *, action_id: ActionId, resource_type: ResourceType, token: str,
                      resource_id: str = None) -> bool:
+        fabric_token = FabricToken(token_public_key=self.token_public_key, logger=self.logger,
+                                   token=token)
+        fabric_token.validate()
         pdp_auth = PdpAuth(config=self.pdp_config, logger=self.logger)
-        return pdp_auth.check_access(fabric_token=self.fabric_token.get_decoded_token(),
+        return pdp_auth.check_access(fabric_token=fabric_token.get_decoded_token(),
                                      actor_type=ActorType.Orchestrator,
                                      action_id=action_id, resource_type=resource_type,
                                      resource_id=resource_id)
@@ -84,7 +86,7 @@ class OrchestratorHandler:
 
         return None
 
-    def discover_types(self, *, controller: IMgmtActor) -> dict:
+    def discover_types(self, *, controller: IMgmtActor, token: str) -> dict:
         broker = self.get_broker(controller=controller)
         if broker is None:
             raise Exception("Unable to determine broker proxy for this controller. "
@@ -92,7 +94,7 @@ class OrchestratorHandler:
 
         self.controller_state.set_broker(broker=str(broker))
 
-        my_pools = controller.get_pool_info(broker=broker)
+        my_pools = controller.get_pool_info(broker=broker, id_token=token)
         if my_pools is None:
             raise Exception("Could not discover types: {}".format(controller.get_last_error()))
 
@@ -110,15 +112,15 @@ class OrchestratorHandler:
 
         return response
 
-    def list_resources(self):
+    def list_resources(self, *, token: str):
         try:
-            self.check_access(action_id=ActionId.query, resource_type=ResourceType.resources)
+            self.check_access(action_id=ActionId.query, resource_type=ResourceType.resources, token=token)
             self.controller_state.close_dead_slices()
             controller = self.controller_state.get_management_actor()
             self.logger.debug("list resources invoked controller:{}".format(controller))
 
             try:
-                abstract_models = self.discover_types(controller=controller)
+                abstract_models = self.discover_types(controller=controller, token=token)
             except Exception as e:
                 self.logger.error("Failed to populate abstract models e: {}".format(e))
                 raise e

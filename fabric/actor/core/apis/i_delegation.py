@@ -196,6 +196,8 @@ class IDelegation(ABC):
     def prepare(self, *, callback: ICallbackProxy, logger):
         """
         Prepare the delegation
+        @param callback callback
+        @param logger logger
         """
 
     @abstractmethod
@@ -205,9 +207,11 @@ class IDelegation(ABC):
         """
 
     @abstractmethod
-    def delegate(self, policy: IPolicy):
+    def delegate(self, policy: IPolicy, id_token:str = None):
         """
         Check if delegation can be delegated and state transition
+        @param policy policy
+        @param id_token id token
         """
 
     @abstractmethod
@@ -217,9 +221,10 @@ class IDelegation(ABC):
         """
 
     @abstractmethod
-    def reclaim(self):
+    def reclaim(self, id_token: str = None):
         """
         Reclaim the delegation
+        @param id_token id token
         """
 
     @abstractmethod

@@ -62,7 +62,8 @@ class LocalProxy(Proxy, ICallbackProxy):
             incoming = None
             if request.get_type() == RPCRequestType.Query:
                 incoming = IncomingQueryRPC(request_type=RPCRequestType.Query, message_id=request.get_message_id(),
-                                            query=request.query, caller=request.get_caller(), callback=request.callback)
+                                            query=request.query, caller=request.get_caller(),
+                                            id_token=request.get_id_token(), callback=request.callback)
 
             elif request.get_type() == RPCRequestType.QueryResult:
                 incoming = IncomingQueryRPC(request_type=RPCRequestType.QueryResult,
@@ -131,8 +132,9 @@ class LocalProxy(Proxy, ICallbackProxy):
         except Exception as e:
             raise Exception("Error while processing RPC request{} {}".format(RPCError.InvalidRequest, e))
 
-    def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken):
+    def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken, id_token: str):
         state = self.LocalProxyRequestState()
+        state.id_token = id_token
         state.query = query
         state.callback = callback
         return state

@@ -51,7 +51,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
         if not isinstance(manager, ServerActorManagementObject):
             raise Exception("Invalid manager object. Required: {}".format(type(ServerActorManagementObject)))
 
-    def get_client_slices(self) -> List[SliceAvro]:
+    def get_client_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
         try:
             result = self.manager.get_client_slices(caller=self.auth)
@@ -63,7 +63,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_clients(self) -> List[SliceAvro]:
+    def get_clients(self, *, id_token: str = None) -> List[ClientMng]:
         self.clear_last()
         try:
             result = self.manager.get_clients(caller=self.auth)
@@ -75,7 +75,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_client(self, *, guid: ID) -> ClientMng:
+    def get_client(self, *, guid: ID, id_token: str = None) -> ClientMng:
         self.clear_last()
         try:
             result = self.manager.get_client(caller=self.auth, guid=guid)
@@ -120,7 +120,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return False
 
-    def get_client_reservations(self) -> List[ReservationMng]:
+    def get_client_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_client_reservations(caller=self.auth)
@@ -132,7 +132,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_broker_reservations(self) -> List[ReservationMng]:
+    def get_broker_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_broker_reservations(caller=self.auth)
@@ -144,7 +144,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_inventory_slices(self) -> List[SliceAvro]:
+    def get_inventory_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
         try:
             result = self.manager.get_inventory_slices(caller=self.auth)
@@ -156,7 +156,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_inventory_reservations(self) -> List[ReservationMng]:
+    def get_inventory_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_inventory_reservations(caller=self.auth)
@@ -168,7 +168,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_inventory_reservations_by_slice_id(self, *, slice_id: ID) -> List[ReservationMng]:
+    def get_inventory_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_inventory_reservations_by_slice_id(caller=self.auth, slice_id=slice_id)
@@ -192,7 +192,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> List[ReservationMng]:
+    def get_client_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_client_reservations_by_slice_id(caller=self.auth, slice_id=slice_id)

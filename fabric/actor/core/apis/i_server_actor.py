@@ -131,22 +131,26 @@ class IServerActor(IActor, IServerPublic):
         """
 
     @abstractmethod
-    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
+                         id_token: str = None):
         """
         Processes an incoming claim request.
         @params delegation: delegation
         @params callback : callback
         @params caller: caller
+        @param id_token id token
         @raises Exception in case of error
         """
 
     @abstractmethod
-    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
+                           id_token: str = None):
         """
         Processes an incoming claim request.
         @params delegation: delegation
         @params callback : callback
         @params caller: caller
+        @param id_token id token
         @raises Exception in case of error
         """
 

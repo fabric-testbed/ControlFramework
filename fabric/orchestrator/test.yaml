@@ -29,28 +29,23 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
-  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
-  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
-  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
-  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  - kafka-server: localhost:19092
+  - kafka-schema-registry-url: http://localhost:8081
+  - kafka-key-schema: ../message_bus/schema/key.avsc
+  - kafka-value-schema: ../message_bus/schema/message.avsc
+  - kafka-ssl-ca-location:  ../../secrets/snakeoil-ca-1.crt
+  - kafka-ssl-certificate-location:  ../../secrets/kafkacat1-ca1-signed.pem
+  - kafka-ssl-key-location:  ../../secrets/kafkacat1.client.key
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
-  - kafka-sasl-mechanism:
-  - kafka-sasl-producer-username:
-  - kafka-sasl-producer-password:
-  - kafka-sasl-consumer-username:
-  - kafka-sasl-consumer-password:
   - orchestrator.rest.port: 8700
-  - prometheus.port: 11000
+  - prometheus.port: 11002
 
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: /var/log/actor
+  - log-directory: .
 
   ## The filename to be used for actor's log file.
   - log-file: actor.log
@@ -67,22 +62,22 @@ logging:
 
   - logger: orchestrator
 oauth:
-  - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
+  - token-public-key: ./credmgr.pem
 
 database:
   - db-user: fabric
   - db-password: fabric
   - db-name: orchestrator
-  - db-host: orchestrator-db:5432
+  - db-host: localhost:10432
 
 pdp:
-  url: http://orchestrator:8082/services/pdp
+  url: http://localhost:8082/services/pdp
 
 neo4j:
-  url: bolt://orchestrator-neo4j:9687
+  url: bolt://localhost:9687
   user: neo4j
   pass: password
-  import_host_dir: /usr/src/app/neo4j/imports/
+  import_host_dir: ./orchestrator/neo4j/imports/
   import_dir: /imports
 
 container:

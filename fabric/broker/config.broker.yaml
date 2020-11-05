@@ -98,7 +98,7 @@ time:
   - time.manual: false
 
 pdp:
-  url: http://orchestrator-pdp:8090
+  url: http://broker-pdp:8081/services/pdp
 
 neo4j:
   url: bolt://broker-neo4j:8687

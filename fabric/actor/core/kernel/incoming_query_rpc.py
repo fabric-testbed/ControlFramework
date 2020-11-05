@@ -31,9 +31,10 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class IncomingQueryRPC(IncomingRPC):
-    def __init__(self, *, request_type: RPCRequestType, message_id: ID, query: dict, caller: AuthToken, request_id: ID = None,
-                 callback: ICallbackProxy = None):
-        super().__init__(message_id=message_id, request_type=request_type, callback=callback, caller=caller)
+    def __init__(self, *, request_type: RPCRequestType, message_id: ID, query: dict, caller: AuthToken,
+                 id_token: str, request_id: ID = None, callback: ICallbackProxy = None):
+        super().__init__(message_id=message_id, request_type=request_type, callback=callback, caller=caller,
+                         id_token=id_token)
         self.query = query
         self.request_id = request_id
 

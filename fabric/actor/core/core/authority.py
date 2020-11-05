@@ -142,19 +142,24 @@ class Authority(Actor, IAuthority):
 
         self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
 
-    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
+                         id_token:str = None):
         slice_obj = delegation.get_slice_object()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback)
+        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback,
+                                              id_token=id_token)
 
-    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
+                           id_token: str = None):
+
         slice_obj = delegation.get_slice_object()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback)
+        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback,
+                                                id_token=id_token)
 
     def close_by_caller(self, *, reservation:IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():

@@ -40,8 +40,9 @@ from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.management_utils import ManagementUtils
 from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.actor.core.time.actor_clock import ActorClock
+from fabric.actor.security.acess_checker import AccessChecker
+from fabric.actor.security.pdp_auth import ActionId
 from fabric.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
-from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
 from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
 from fabric.message_bus.messages.result_proxy_avro import ResultProxyAvro
@@ -56,6 +57,7 @@ from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.resource_type import ResourceType
 from fabric.message_bus.messages.result_avro import ResultAvro
 from fabric.actor.core.core.broker_policy import BrokerPolicy
+from fabric.actor.security.pdp_auth import ResourceType as AuthResourceType
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_actor import IClientActor
@@ -72,7 +74,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def get_brokers(self, *, caller: AuthToken) -> ResultProxyAvro:
+    def get_brokers(self, *, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -92,7 +94,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def get_broker(self, *, broker_id: ID, caller: AuthToken) -> ResultProxyAvro:
+    def get_broker(self, *, broker_id: ID, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -141,7 +143,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def get_pool_info(self, *, broker: ID, caller: AuthToken) -> ResultPoolInfoAvro:
+    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str) -> ResultPoolInfoAvro:
         result = ResultPoolInfoAvro()
         result.status = ResultAvro()
 
@@ -151,10 +153,13 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.resources,
+                                       token=id_token, logger=self.logger, actor_type=self.client.get_type())
+
             b = self.client.get_broker(guid=broker)
             if b is not None:
                 request = BrokerPolicy.get_resource_pools_query()
-                response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request)
+                response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request, id_token=id_token)
                 pool = Translate.translate_to_pool_info(query_response=response)
                 if result.pools is None:
                     result.pools = []
@@ -642,7 +647,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -652,6 +657,11 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.delegation,
+                                           token=id_token, logger=self.logger, actor_type=self.client.get_type(),
+                                           resource_id=did)
+
             my_broker = self.client.get_broker(guid=broker)
 
             if my_broker is None:
@@ -683,7 +693,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -693,6 +703,11 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.resources,
+                                           token=id_token, logger=self.logger, actor_type=self.client.get_type(),
+                                           resource_id=did)
+
             my_broker = self.client.get_broker(guid=broker)
 
             if my_broker is None:

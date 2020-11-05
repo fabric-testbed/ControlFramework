@@ -40,43 +40,49 @@ if TYPE_CHECKING:
     from fabric.message_bus.messages.reservation_mng import ReservationMng
     from fabric.message_bus.messages.slice_avro import SliceAvro
 
+
 class IMgmtServerActor(IMgmtActor):
     @abstractmethod
-    def get_broker_reservations(self) -> List[ReservationMng]:
+    def get_broker_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         """
         Returns all reservations for which this actor acts as a broker.
+        @param id_token id token
         @return list of the reservations
         """
 
     @abstractmethod
-    def get_inventory_slices(self) -> List[SliceAvro]:
+    def get_inventory_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         """
         Obtains all slices holding inventory, i.e., resources that can be
         delegated to other actors.
+        @param id_token id token
         @return list of slices
         """
 
     @abstractmethod
-    def get_inventory_reservations(self) -> List[ReservationMng]:
+    def get_inventory_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         """
         Returns all resources held by this actor that can be used for delegations
         to client actors.
+        @param id_token id token
         @return list of reservations
         """
 
     @abstractmethod
-    def get_inventory_reservations_by_slice_id(self, *, slice_id: ID) -> List[ReservationMng]:
+    def get_inventory_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
         """
         Returns all resources in the specified slice held by this actor that can
         be used for delegations to client actors.
         @param sliceID slice id
+        @param id_token id token
         @return list of reservations for specific slice
         """
 
     @abstractmethod
-    def get_client_slices(self) -> List[SliceAvro]:
+    def get_client_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         """
         Obtains all slices that hold delegated resources to other actors.
+        @param id_token id token
         @return list of client slices
         """
 
@@ -89,17 +95,19 @@ class IMgmtServerActor(IMgmtActor):
         """
 
     @abstractmethod
-    def get_clients(self) -> List[ClientMng]:
+    def get_clients(self, *, id_token: str = None) -> List[ClientMng]:
         """
         Returns all registered clients of this server actor.
+        @param id_token id token
         @return list of clients
         """
 
     @abstractmethod
-    def get_client(self, *, guid: ID) -> ClientMng:
+    def get_client(self, *, guid: ID, id_token: str = None) -> ClientMng:
         """
         Returns the specified client record.
         @param guid client guid
+        @param id_token id token
         @return specified client record
         """
 
@@ -121,17 +129,19 @@ class IMgmtServerActor(IMgmtActor):
         """
 
     @abstractmethod
-    def get_client_reservations(self) -> List[ReservationMng]:
+    def get_client_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         """
         Obtains all client reservations.
+        @param id_token id token
         @return list of client reservations
         """
 
     @abstractmethod
-    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> List[ReservationMng]:
+    def get_client_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
         """
         Obtains all client reservations in the specified slice
         @param slice_id slice id
+        @param id_token id token
         @return list of reservations
         """
 

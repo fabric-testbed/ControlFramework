@@ -100,6 +100,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
             avro_message.properties = request.query
             avro_message.callback_topic = request.callback_topic
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
+            avro_message.id_token = request.get_id_token()
 
         elif request.get_type() == RPCRequestType.QueryResult:
             avro_message = QueryResultAvro()
@@ -133,11 +134,12 @@ class KafkaProxy(Proxy, ICallbackProxy):
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken):
+    def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken, id_token: str):
         request = KafkaProxyRequestState()
         request.query = query
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
+        request.id_token = id_token
         return request
 
     def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
