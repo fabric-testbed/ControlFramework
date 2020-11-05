@@ -76,7 +76,7 @@ database:
   - db-host: orchestrator-db:5432
 
 pdp:
-  url: http://orchestrator:8082/services/pdp
+  url: http://orchestrator-pdp:8080/services/pdp
 
 neo4j:
   url: bolt://orchestrator-neo4j:9687

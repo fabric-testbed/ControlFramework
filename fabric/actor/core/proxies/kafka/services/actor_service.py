@@ -121,7 +121,7 @@ class ActorService:
         try:
             query = request.properties
             rpc = IncomingQueryRPC(request_type=RPCRequestType.QueryResult, message_id=ID(id=request.get_message_id()),
-                                   query=query, caller=authToken, request_id=ID(id=request.request_id))
+                                   query=query, caller=authToken, request_id=ID(id=request.request_id), id_token=None)
         except Exception as e:
             self.logger.error("Invalid query_result request: {}".format(e))
             raise e
