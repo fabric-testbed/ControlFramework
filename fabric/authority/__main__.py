@@ -35,8 +35,9 @@ from fabric.actor.core.util.graceful_interrupt_handler import GracefulInterruptH
 
 def main():
     try:
-        Globals.ConfigFile = './test.yaml'
-        Constants.SuperblockLocation = './state_recovery.lock'
+        # Uncomment when testing as app running
+        #Globals.ConfigFile = './test.yaml'
+        #Constants.SuperblockLocation = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(force_fresh=True)
 
