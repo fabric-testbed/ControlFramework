@@ -358,7 +358,7 @@ class Globals:
 
                 if not self.timer_scheduler.empty():
                     self.log.debug("Executing Scheduled items")
-                    self.timer_scheduler.run()
+                    self.timer_scheduler.run(blocking=False)
 
 
 class GlobalsSingleton:

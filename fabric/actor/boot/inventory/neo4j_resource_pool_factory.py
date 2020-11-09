@@ -109,3 +109,12 @@ class Neo4jResourcePoolFactory(ResourcePoolFactory):
         graph = neo4j_graph_importer.import_graph_from_string_direct(graph_string=graph_str)
 
         return graph
+
+    @staticmethod
+    def delete_graph(*, graph_id: str):
+        """
+        Delete a graph
+        @param graph_id graph id
+        """
+        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        neo4j_graph_importer.delete_graph(graph_id=graph_id)

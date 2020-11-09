@@ -518,6 +518,8 @@ class RPCManager:
         if rpc.get_request_id() is not None:
             request = self.remove_pending_request(guid=rpc.get_request_id())
             if request is not None:
+                if request.timer:
+                    actor.get_logger().debug("Canceling the timer: {}".format(request.timer))
                 request.cancel_timer()
                 if request.handler is not None:
                     rpc.set_response_handler(response_handler=request.handler)
