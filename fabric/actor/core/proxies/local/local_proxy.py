@@ -51,6 +51,7 @@ class LocalProxy(Proxy, ICallbackProxy):
             self.failed_reservation_id = None
             self.failed_request_type = None
             self.error_detail = None
+            self.delegation = None
 
     def __init__(self, *, actor: IActor):
         super().__init__(auth=actor.get_identity())
@@ -69,16 +70,6 @@ class LocalProxy(Proxy, ICallbackProxy):
                 incoming = IncomingQueryRPC(request_type=RPCRequestType.QueryResult,
                                             message_id=request.get_message_id(), query=request.query,
                                             caller=request.get_caller(), request_id=request.request_id)
-
-            elif request.get_type() == RPCRequestType.Claim:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  callback=request.callback, caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.Reclaim:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  callback=request.callback, caller=request.get_caller())
 
             elif request.get_type() == RPCRequestType.Ticket:
                 incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),

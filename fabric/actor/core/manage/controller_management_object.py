@@ -51,7 +51,6 @@ if TYPE_CHECKING:
     from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric.message_bus.messages.result_strings_avro import ResultStringsAvro
     from fabric.message_bus.messages.reservation_mng import ReservationMng
-    from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
     from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
 
@@ -111,12 +110,6 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
     def demand_reservation(self, *, reservation: ReservationMng, caller: AuthToken) -> ResultAvro:
         return self.client_helper.demand_reservation(reservation=reservation, caller=caller)
-
-    def claim_resources(self, *, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
-        return self.client_helper.claim_resources(broker=broker, rid=rid, caller=caller)
-
-    def claim_resources_slice(self, *, broker: ID, slice_id: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
-        return self.client_helper.claim_resources_slice(broker=broker, slice_id=slice_id, rid=rid, caller=caller)
 
     def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType, request_properties: dict,

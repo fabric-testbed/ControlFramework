@@ -92,72 +92,6 @@ class KafkaClientActorService(KafkaActorService):
         else:
             self.logger.debug("Failed to send back response: {}".format(result.to_dict()))
 
-    def _claim_resources(self, *, request: ClaimResourcesAvro) -> ResultReservationAvro:
-        result = ResultReservationAvro()
-        result.status = ResultAvro()
-        try:
-            if request.guid is None or request.broker_id is None or request.reservation_id is None:
-                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-                return result
-
-            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
-
-            if mo is None:
-                self.logger.debug("Management object could not be found: guid: {} auth: {}".format(request.guid, auth))
-                result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
-                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
-                return result
-
-            if request.slice_id is not None:
-                result = mo.claim_resources_slice(broker=ID(id=request.broker_id), slice_id=ID(id=request.slice_id),
-                                                  rid=ID(id=request.reservation_id), caller=auth)
-            else:
-                result = mo.claim_resources(broker=ID(id=request.broker_id), rid=ID(id=request.reservation_id),
-                                            caller=auth)
-
-            result.message_id = request.message_id
-
-        except Exception as e:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            result.status.set_message(str(e))
-            result.status.set_details(traceback.format_exc())
-
-        return result
-
-    def _reclaim_resources(self, *, request: ReclaimResourcesAvro) -> ResultReservationAvro:
-        result = ResultReservationAvro()
-        result.status = ResultAvro()
-        try:
-            if request.guid is None or request.broker_id is None or request.reservation_id is None:
-                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-                return result
-
-            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
-
-            if mo is None:
-                self.logger.debug("Management object could not be found: guid: {} auth: {}".format(request.guid, auth))
-                result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
-                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
-                return result
-
-            result = mo.reclaim_resources(broker=ID(id=request.broker_id), rid=ID(id=request.reservation_id),
-                                          caller=auth)
-
-            result.message_id = request.message_id
-
-        except Exception as e:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            result.status.set_message(str(e))
-            result.status.set_details(traceback.format_exc())
-
-        return result
-
     def add_reservation(self, *, request: AddReservationAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
@@ -373,17 +307,13 @@ class KafkaClientActorService(KafkaActorService):
         return result
 
     def claim(self, *, request: ClaimResourcesAvro):
-        if request.reservation_id is not None:
-            return self._claim_resources(request=request)
-        elif request.delegation_id is not None:
+        if request.delegation_id is not None:
             return self._claim_delegations(request=request)
         else:
             raise Exception("Invalid request, reservation id and delegation id; both cannot be empty")
 
     def reclaim(self, *, request: ReclaimResourcesAvro):
-        if request.reservation_id is not None:
-            return self._reclaim_resources(request=request)
-        elif request.delegation_id is not None:
+        if request.delegation_id is not None:
             return self._reclaim_delegations(request=request)
         else:
             raise Exception("Invalid request, reservation id and delegation id; both cannot be empty")

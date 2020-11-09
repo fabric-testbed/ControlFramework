@@ -102,34 +102,6 @@ class Kernel:
             self.error(err="An error occurred during amend delegate for delegation #{}".format(
                 delegation.get_delegation_id()), e=e)
 
-    def claim(self, *, reservation: IKernelBrokerReservation):
-        """
-        Processes a requests to claim new ticket for previously exported
-        resources (broker role). On the client side this request is issued by
-        @param reservation the reservation being claimed
-        @throws Exception
-        """
-        try:
-            reservation.claim()
-            self.plugin.get_database().update_reservation(reservation=reservation)
-        except Exception as e:
-            self.error(err="An error occurred during claim for reservation #{}".format(
-                reservation.get_reservation_id()), e=e)
-
-    def reclaim(self, *, reservation: IKernelBrokerReservation):
-        """
-        Processes a requests to claim new ticket for previously exported
-        resources (broker role). On the client side this request is issued by
-        @param reservation the reservation being claimed
-        @throws Exception
-        """
-        try:
-            reservation.reclaim()
-            self.plugin.get_database().update_reservation(reservation=reservation)
-        except Exception as e:
-            self.error(err="An error occurred during claim for reservation #{}".format(
-                reservation.get_reservation_id()), e=e)
-
     def claim_delegation(self, *, delegation: IDelegation):
         """
         Processes a requests to claim new ticket for previously exported

@@ -32,7 +32,6 @@ class ReservationStates(Enum):
     """
     Nascent = 1
     Ticketed = 2
-    Reclaimed = 3
     Active = 4
     ActiveTicketed = 5
     Closed = 6
@@ -47,7 +46,6 @@ class ReservationPendingStates(Enum):
     """
     None_ = 11
     Ticketing = 12
-    Reclaiming = 13
     Redeeming = 14
     ExtendingTicket = 15
     ExtendingLease = 16

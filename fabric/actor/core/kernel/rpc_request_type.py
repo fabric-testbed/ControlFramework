@@ -28,8 +28,6 @@ from enum import Enum
 
 class RPCRequestType(Enum):
     Unknown = 1
-    Claim = 2
-    Reclaim = 3
     Ticket = 4
     ExtendTicket = 5
     Relinquish = 6

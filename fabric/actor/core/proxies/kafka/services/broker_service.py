@@ -37,7 +37,6 @@ from fabric.actor.core.proxies.kafka.services.actor_service import ActorService
 from fabric.actor.core.util.id import ID
 from fabric.message_bus.messages.claim_delegation_avro import ClaimDelegationAvro
 from fabric.message_bus.messages.delegation_avro import DelegationAvro
-from fabric.message_bus.messages.reclaim_avro import ReclaimAvro
 from fabric.message_bus.messages.reclaim_delegation_avro import ReclaimDelegationAvro
 from fabric.message_bus.messages.reservation_avro import ReservationAvro
 from fabric.message_bus.messages.message import IMessageAvro
@@ -47,7 +46,6 @@ if TYPE_CHECKING:
     from fabric.message_bus.messages.extend_ticket_avro import ExtendTicketAvro
     from fabric.message_bus.messages.relinquish_avro import RelinquishAvro
     from fabric.message_bus.messages.ticket_avro import TicketAvro
-    from fabric.message_bus.messages.claim_avro import ClaimAvro
     from fabric.actor.core.apis.i_actor import IActor
 
 
@@ -87,32 +85,6 @@ class BrokerService(ActorService):
                                          reservation=rsvn, callback=callback, caller=authToken)
         except Exception as e:
             self.logger.error("Invalid Ticket request: {}".format(e))
-            raise e
-        self.do_dispatch(rpc=rpc)
-
-    def claim(self, *, request: ClaimAvro):
-        rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
-        try:
-            rsvn = self.pass_agent(reservation=request.reservation)
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
-            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Claim,
-                                         reservation=rsvn, callback=callback, caller=authToken)
-        except Exception as e:
-            self.logger.error("Invalid Claim request: {}".format(e))
-            raise e
-        self.do_dispatch(rpc=rpc)
-
-    def reclaim(self, *, request: ReclaimAvro):
-        rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
-        try:
-            rsvn = self.pass_agent(reservation=request.reservation)
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
-            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Reclaim,
-                                         reservation=rsvn, callback=callback, caller=authToken)
-        except Exception as e:
-            self.logger.error("Invalid reclaim request: {}".format(e))
             raise e
         self.do_dispatch(rpc=rpc)
 
@@ -173,10 +145,6 @@ class BrokerService(ActorService):
     def process(self, *, message: IMessageAvro):
         if message.get_message_name() == IMessageAvro.Ticket:
             self.ticket(request=message)
-        elif message.get_message_name() == IMessageAvro.Claim:
-            self.claim(request=message)
-        elif message.get_message_name() == IMessageAvro.Reclaim:
-            self.reclaim(request=message)
         elif message.get_message_name() == IMessageAvro.ClaimDelegation:
             self.claim_delegation(request=message)
         elif message.get_message_name() == IMessageAvro.ReclaimDelegation:

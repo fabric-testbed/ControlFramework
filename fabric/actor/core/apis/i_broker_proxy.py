@@ -45,26 +45,6 @@ class IBrokerProxy(IServerProxy):
     """
 
     @abstractmethod
-    def prepare_claim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                      caller: AuthToken) -> IRPCRequestState:
-        """
-        Prepare a claim
-        @params reservation: reservation
-        @params callback: callback
-        @params caller: caller
-        """
-
-    @abstractmethod
-    def prepare_reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                        caller: AuthToken) -> IRPCRequestState:
-        """
-        Prepare a reclaim
-        @params reservation: reservation
-        @params callback: callback
-        @params caller: caller
-        """
-
-    @abstractmethod
     def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                        caller: AuthToken) -> IRPCRequestState:
         """

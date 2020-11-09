@@ -30,6 +30,8 @@ import threading
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from fim.graph.abc_property_graph import ABCPropertyGraph
+
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
@@ -165,76 +167,6 @@ class Broker(Actor, IBroker):
                 except Exception as e:
                     self.logger.error("unexpected extend failure for #{}".format(reservation.get_reservation_id()))
 
-    def claim_client(self, *, reservation_id: ID = None, resources: ResourceSet = None,
-                     slice_object: ISlice = None, broker: IBrokerProxy = None) -> IClientReservation:
-        if reservation_id is None:
-            raise Exception("Invalid arguments")
-
-        if broker is None:
-            broker = self.get_default_broker()
-
-        if slice_object is None:
-            slice_object = self.get_default_slice()
-            if slice_object is None:
-                slice_object = SliceFactory.create(slice_id=ID(), name=self.identity.get_name())
-                slice_object.set_owner(owner=self.identity)
-                slice_object.set_inventory(value=True)
-
-        end = datetime.utcnow()
-        end.replace(year=end.year + 30)
-        term = Term(start=self.clock.cycle_start_date(cycle=0), end=end)
-
-        reservation = ClientReservationFactory.create(rid=reservation_id, resources=resources, term=term,
-                                                      slice_object=slice_object, broker=broker, actor=self)
-        reservation.set_exported(exported=True)
-        self.wrapper.ticket(reservation=reservation, destination=self)
-        return reservation
-
-    def reclaim_client(self, *, reservation_id: ID = None, resources: ResourceSet = None,
-                       slice_object: ISlice = None, broker: IBrokerProxy = None,
-                       caller: AuthToken = None) -> IClientReservation:
-        if reservation_id is None:
-            raise Exception("Invalid arguments")
-
-        if broker is None:
-            broker = self.get_default_broker()
-
-        if slice_object is None:
-            slice_object = self.get_default_slice()
-            if slice_object is None:
-                slice_object = SliceFactory.create(slice_id=ID(), name=self.identity.get_name())
-                slice_object.set_owner(owner=self.identity)
-                slice_object.set_inventory(value=True)
-
-        end = datetime.utcnow()
-        end.replace(year=end.year + 30)
-        term = Term(start=self.clock.cycle_start_date(0), end=end)
-
-        reservation = ClientReservationFactory.create(rid=reservation_id, resources=resources, term=term,
-                                                      slice_object=slice_object, broker=broker, actor=self)
-        reservation.set_exported(exported=True)
-
-        protocol = reservation.get_broker().get_type()
-        callback = ActorRegistrySingleton.get().get_callback(protocol=protocol, actor_name=self.get_name())
-        if callback is None:
-            raise Exception("Unsupported")
-
-        reservation.prepare(callback=callback, logger=self.logger)
-        reservation.validate_outgoing()
-        self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
-
-        return reservation
-
-    def claim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
-        if not self.is_recovered() or self.is_stopped():
-            raise Exception("This actor cannot receive calls")
-        self.wrapper.claim_request(reservation=reservation, caller=caller, callback=callback)
-
-    def reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
-        if not self.is_recovered() or self.is_stopped():
-            raise Exception("This actor cannot receive calls")
-        self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
-
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
                                 broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
         if delegation_id is None:
@@ -324,15 +256,16 @@ class Broker(Actor, IBroker):
     def donate_reservation(self, *, reservation: IClientReservation):
         self.policy.donate_reservation(reservation=reservation)
 
-    def export(self, *, reservation: IBrokerReservation, resources: ResourceSet, term: Term, client: AuthToken) -> ID:
-        if reservation is None:
-            slice_object = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
-            slice_object.set_client()
-            reservation = BrokerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_obj=slice_object)
-            reservation.set_owner(owner=self.identity)
+    def advertise(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+        slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
+        slice_obj.set_owner(owner=client)
+        slice_obj.set_broker_client()
 
-        self.wrapper.export(reservation=reservation, client=client)
-        return reservation.get_reservation_id()
+        dlg_obj = DelegationFactory.create(did=delegation.get_graph_id(), slice_id=slice_obj.get_slice_id())
+        dlg_obj.set_slice_object(slice_object=slice_obj)
+        dlg_obj.set_graph(graph=delegation)
+        self.wrapper.advertise(delegation=dlg_obj, client=client)
+        return dlg_obj.get_delegation_id()
 
     def extend_ticket_client(self, *, reservation: IClientReservation):
         if not self.recovered:

@@ -87,19 +87,7 @@ class IncomingRPCEvent(IActorEvent):
 
     def do_process_server(self, *, server: IServerActor):
         processed = True
-        if self.rpc.get_request_type() == RPCRequestType.Claim:
-            server.get_logger().info("processing claim from <{}>".format(self.rpc.get_caller().get_name()))
-            server.claim(reservation=self.rpc.get_reservation(), callback=self.rpc.get_callback(),
-                         caller=self.rpc.get_caller())
-            server.get_logger().info("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
-
-        elif self.rpc.get_request_type() == RPCRequestType.Reclaim:
-            server.get_logger().info("processing reclaim from <{}>".format(self.rpc.get_caller().get_name()))
-            server.reclaim(reservation=self.rpc.get_reservation(), callback=self.rpc.get_callback(),
-                           caller=self.rpc.get_caller())
-            server.get_logger().info("reclaim processed from <{}>".format(self.rpc.get_caller().get_name()))
-
-        elif self.rpc.get_request_type() == RPCRequestType.ClaimDelegation:
+        if self.rpc.get_request_type() == RPCRequestType.ClaimDelegation:
             server.get_logger().info("processing claim delegation from <{}>".format(self.rpc.get_caller().get_name()))
             server.claim_delegation(delegation=self.rpc.get_delegation(), callback=self.rpc.get_callback(),
                                     caller=self.rpc.get_caller(), id_token=self.rpc.get_id_token())

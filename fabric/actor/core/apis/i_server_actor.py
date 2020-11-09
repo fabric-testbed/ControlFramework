@@ -63,21 +63,6 @@ class IServerActor(IActor, IServerPublic):
         """
 
     @abstractmethod
-    def export(self, *, reservation: IBrokerReservation, resources: ResourceSet, term: Term, client: AuthToken) -> ID:
-        """
-        Exports the specified resources for the given period of time to
-        the client.
-        @params reservation: reservation describing resources to export
-        @params resources: resources to export
-        @params term: period the export will be valid
-        @params client: identity of the client resources will be exported to
-
-        @return reservation id
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
     def register_client_slice(self, *, slice:ISlice):
         """
         Registers a new client slice.
@@ -107,26 +92,6 @@ class IServerActor(IActor, IServerPublic):
         Get a client specified by GUID
         @params guid: guid
         @returns client: specified by GUID
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
-    def claim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
-        """
-        Processes an incoming claim request.
-        @params reservation: reservation
-        @params callback : callback
-        @params caller: caller
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
-    def reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
-        """
-        Processes an incoming claim request.
-        @params reservation: reservation
-        @params callback : callback
-        @params caller: caller
         @raises Exception in case of error
         """
 

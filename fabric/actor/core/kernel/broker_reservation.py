@@ -63,16 +63,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     proceeds as a normal reserve request, but it leaves the callback and
     remoteRid null, does not register the reservation with its slice (since there
     is no remoteRid), and does not issue an updateTicket (since there is no
-    callback). The client claims the ticket with a claim request, passing the
-    exportedRid, and a remoteRid and callback in the usual fashion. At this time,
-    prepareClaim() below sets the callback and remoteRid, then claim() registers
-    the reservation with its slice and issues the ticket. It would be irregular
-    for an export request to not be satisfied immediately, or for an extend
-    request to arrive on an exported ticket that has not yet been claimed. Even
-    so, all code in AgentReservation checks against a null callback before
-    attempting to issue an updateTicket. Implementation note: once any request
-    fails, this version marks the reservation as Failed and disallows any
-    subsequent operations.
+    callback).
     """
     PropertySource = "AgentReservationSource"
     PropertyExporting = "AgentReservationExporting"
@@ -257,31 +248,6 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.transition(prefix="update absorbed", state=ReservationStates.Ticketed,
                                 pending=ReservationPendingStates.None_)
                 self.generate_update()
-
-    def claim(self):
-        self.approved = False
-        if self.state == ReservationStates.Ticketed:
-            # We are an agent asked to return a pre-reserved "will call" ticket
-            # to a client. Set mustSendUpdate so that the update will be sent
-            # on the next probe.
-            self.must_send_update = True
-        elif self.state == ReservationStates.Reclaimed:
-            self.transition(prefix="claim", state=ReservationStates.Ticketed, pending=ReservationPendingStates.None_)
-            self.must_send_update = True
-        else:
-            self.error(err="Wrong reservation state for ticket claim")
-
-    def reclaim(self):
-        self.approved = False
-        if self.state == ReservationStates.Ticketed:
-            # We are an agent asked to return a pre-reserved "will call" ticket
-            # to a client. Set mustSendUpdate so that the update will be sent
-            # on the next probe.
-            self.transition(prefix="reclaimed", state=ReservationStates.Reclaimed,
-                            pending=ReservationPendingStates.None_)
-            self.must_send_update = True
-        else:
-            self.error(err="Wrong reservation state for ticket reclaim")
 
     def extend_ticket(self, *, actor: IActor):
         self.incoming_request()

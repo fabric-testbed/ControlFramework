@@ -233,12 +233,6 @@ class Reservation(IKernelReservation):
     def log_remote_error(self, *, message: str, exception: Exception):
         self.log_error(message="remote error: {}".format(message), exception=exception)
 
-    def claim(self):
-        self.internal_error(err="abstract claim trap")
-
-    def reclaim(self):
-        self.internal_error(err="abstract reclaim trap")
-
     def clear_dirty(self):
         self.dirty = False
         self.state_transition = False
