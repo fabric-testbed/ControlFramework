@@ -49,7 +49,6 @@ class OrchestratorHandler:
         self.token_public_key = GlobalsSingleton.get().get_config().get_oauth_config().get(
             Constants.PropertyConfOAuthTokenPublicKey, None)
         self.pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
-        self.query_model_map = {}
 
     def get_logger(self):
         return self.logger
@@ -104,7 +103,8 @@ class OrchestratorHandler:
                 bqm = p.properties.get(Constants.BrokerQueryModel, None)
                 if bqm is not None:
                     graph = Neo4jResourcePoolFactory.get_graph_from_string(graph_str=bqm)
-                    self.update_resource_map(broker=str(broker), graph=graph)
+                    graph.validate_graph()
+                    Neo4jResourcePoolFactory.delete_graph(graph_id=graph.get_graph_id())
                     response = bqm
             except Exception as e:
                 self.logger.error(traceback.format_exc())
@@ -134,6 +134,3 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred processing list resource e: {}".format(e))
             raise e
-
-    def update_resource_map(self, *, broker: str, graph: Neo4jPropertyGraph):
-        self.query_model_map[broker] = graph
