@@ -118,25 +118,6 @@ class IMgmtClientActor(IComponent):
         """
 
     @abstractmethod
-    def claim_resources_slice(self, *, broker: ID, slice_id: ID, rid: ID) -> ReservationMng:
-        """
-        Claims resources exported by the specified broker
-        @param broker broker guid
-        @param slice_id slice id
-        @param rid reservation id
-        @return reservation
-        """
-
-    @abstractmethod
-    def claim_resources(self, *, broker: ID, rid: ID) -> ReservationMng:
-        """
-        Claims resources exported by the specified broker
-        @param broker broker guid
-        @param rid reservation id
-        @return reservation
-        """
-
-    @abstractmethod
     def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType, request_properties: dict,
                            config_properties: dict) -> bool:

@@ -54,8 +54,8 @@ class FailedRPCEvent(IActorEvent):
                 RPCManagerSingleton.get().retry(request=self.failed.get_request())
             else:
                 self.actor.get_logger().warning("Cannot send query response. Giving up after 10 retries {}".format(self.failed.get_error()))
-        elif self.failed.get_request_type() == RPCRequestType.Claim or \
-            self.failed.get_request_type() == RPCRequestType.Reclaim or \
+        elif self.failed.get_request_type() == RPCRequestType.ClaimDelegation or \
+            self.failed.get_request_type() == RPCRequestType.ReclaimDelegation or \
             self.failed.get_request_type() == RPCRequestType.Ticket or \
             self.failed.get_request_type() == RPCRequestType.ExtendTicket or \
             self.failed.get_request_type() == RPCRequestType.Relinquish or \

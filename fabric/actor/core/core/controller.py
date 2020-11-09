@@ -168,8 +168,12 @@ class Controller(Actor, IController):
                         self.logger.error("unexpected extend failure for #{} {}".format(extend.get_reservation_id(), e))
                         extend.fail(message="unexpected extend failure {}".format(e))
 
-    def claim_client(self, *, reservation_id: ID = None, resources: ResourceSet = None,
-                     slice_object: ISlice = None, broker: IBrokerProxy = None) -> IClientReservation:
+    def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
+                                broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
+        raise Exception("Not implemented")
+
+    def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
+                                  broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
         raise Exception("Not implemented")
 
     def close_expiring(self):

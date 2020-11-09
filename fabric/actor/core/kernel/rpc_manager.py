@@ -139,18 +139,6 @@ class RPCManager:
 
         self.do_failed_rpc(actor=actor, proxy=rpc.get_callback(), rpc=rpc, e=e, caller=actor.get_identity())
 
-    def claim(self, *, reservation: IClientReservation):
-        self.validate(reservation=reservation)
-        self.do_claim(actor=reservation.get_actor(), proxy=reservation.get_broker(),
-                      reservation=reservation, callback=reservation.get_client_callback_proxy(),
-                      caller=reservation.get_slice().get_owner())
-
-    def reclaim(self, *, reservation: IClientReservation):
-        self.validate(reservation=reservation)
-        self.do_reclaim(actor=reservation.get_actor(), proxy=reservation.get_broker(),
-                        reservation=reservation, callback=reservation.get_client_callback_proxy(),
-                        caller=reservation.get_slice().get_owner())
-
     def claim_delegation(self, *, delegation: IDelegation, id_token:str = None):
         self.validate_delegation(delegation=delegation)
         self.do_claim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
@@ -317,34 +305,6 @@ class RPCManager:
         state.set_type(rtype=RPCRequestType.FailedRPC)
         outgoing = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=None, sequence=0)
         self.enqueue(rpc=outgoing)
-
-    def do_claim(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
-                 callback: IClientCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound claim request from <{}>: {}".format(caller.get_name(), reservation))
-
-        state = proxy.prepare_claim(reservation=reservation, callback=callback, caller=caller)
-        state.set_caller(caller=caller)
-        state.set_type(rtype=RPCRequestType.Claim)
-
-        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
-                         sequence=reservation.get_ticket_sequence_out())
-        # Schedule a timeout
-        rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
-        self.enqueue(rpc=rpc)
-
-    def do_reclaim(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
-                 callback: IClientCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound reclaim request from <{}>: {}".format(caller.get_name(), reservation))
-
-        state = proxy.prepare_reclaim(reservation=reservation, callback=callback, caller=caller)
-        state.set_caller(caller=caller)
-        state.set_type(rtype=RPCRequestType.Reclaim)
-
-        rpc = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=reservation,
-                         sequence=reservation.get_ticket_sequence_out())
-        # Schedule a timeout
-        rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
-        self.enqueue(rpc=rpc)
 
     def do_claim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
                  callback: IClientCallbackProxy, caller: AuthToken, id_token:str = None):

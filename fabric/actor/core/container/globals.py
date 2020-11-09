@@ -344,7 +344,7 @@ class Globals:
             with self.timer_condition:
                 while self.timer_scheduler.empty() and self.started:
                     try:
-                        self.log.debug("Waiting for condition")
+                        #self.log.debug("Waiting for condition")
                         self.timer_condition.wait()
                     except InterruptedError as e:
                         self.log.info("Timer thread interrupted. Exiting")
@@ -357,7 +357,7 @@ class Globals:
                     self.timer_condition.notify_all()
 
                 if not self.timer_scheduler.empty():
-                    self.log.debug("Executing Scheduled items")
+                    #self.log.debug("Executing Scheduled items")
                     self.timer_scheduler.run(blocking=False)
 
 

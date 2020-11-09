@@ -126,27 +126,6 @@ class IClientActorManagementObject:
         """
 
     @abstractmethod
-    def claim_resources_slice(self, *, broker: ID, slice_id: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
-        """
-        Claim resources for a slice
-        @params broker : broker ID
-        @params slice_id : slice ID
-        @params rid : reservation ID
-        @params caller: caller
-        @returns ResultReservationAvro
-        """
-
-    @abstractmethod
-    def claim_resources(self, *, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
-        """
-        Claim resources
-        @params broker : broker ID
-        @params rid : reservation ID
-        @params caller: caller
-        @returns ResultReservationAvro
-        """
-
-    @abstractmethod
     def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str) -> ResultPoolInfoAvro:
         """
         Get Pool Info

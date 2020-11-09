@@ -85,30 +85,6 @@ class KernelWrapper:
         """
         self.kernel.await_nothing_pending()
 
-    def claim_request(self, *, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy):
-        if reservation is None or caller is None or callback is None:
-            raise Exception("Invalid argument")
-
-        # Note: for claim we do not need the slice object, so we use
-        # validate(ReservationID) instead of validate(Reservation).
-        exported = self.kernel.validate(rid=reservation.get_reservation_id())
-        # check access
-        self.monitor.check_reserve(guard=exported.get_slice().get_guard(), requester=caller)
-        exported.prepare(callback=callback, logger=self.logger)
-        self.kernel.claim(reservation=exported)
-
-    def reclaim_request(self, *, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy):
-        if reservation is None or caller is None or callback is None:
-            raise Exception("Invalid argument")
-
-        # Note: for claim we do not need the slice object, so we use
-        # validate(ReservationID) instead of validate(Reservation).
-        exported = self.kernel.validate(rid=reservation.get_reservation_id())
-        # check access
-        self.monitor.check_reserve(guard=exported.get_slice().get_guard(), requester=caller)
-        exported.prepare(callback=callback, logger=self.logger)
-        self.kernel.reclaim(reservation=exported)
-
     def claim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy,
                                  id_token: str = None):
         if delegation is None or caller is None or callback is None:
@@ -220,23 +196,6 @@ class KernelWrapper:
             requester = self.monitor.check_proxy(proxy=caller, requester=None)
             self.monitor.check_reserve(guard=target.get_slice().get_guard(), requester=requester)
             self.kernel.close(reservation=target)
-
-    def export(self, *, reservation: IBrokerReservation, client: AuthToken):
-        """
-        Initiates a ticket export.
-        Role: Broker or Authority
-        Prepare/hold a ticket for "will call" claim by a client.
-        @param reservation reservation to be exported
-        @param client client identity
-        @throws Exception in case of error
-        """
-        if reservation is None or reservation.get_slice() is None:
-            raise Exception("Invalid argument")
-
-        reservation.prepare(callback=None, logger=self.logger)
-        reservation.client = client
-        reservation.get_slice().set_broker_client()
-        self.handle_reserve(reservation=reservation, identity=client, create_new_slice=False, verify_credentials=False)
 
     def advertise(self, *, delegation: IDelegation, client: AuthToken):
         """

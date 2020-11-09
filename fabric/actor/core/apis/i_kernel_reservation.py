@@ -70,22 +70,6 @@ class IKernelReservation(IReservation):
         """
 
     @abstractmethod
-    def claim(self):
-        """
-        Claims an exported "will call" reservation.
-       
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def reclaim(self):
-        """
-        Reclaims an exported "will call" reservation.
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
     def close(self):
         """
         Closes the reservation. Locked with the kernel lock.

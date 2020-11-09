@@ -51,13 +51,11 @@ from fabric.actor.core.plugins.substrate.db.substrate_actor_database import Subs
 from fabric.actor.core.policy.authority_calendar_policy import AuthorityCalendarPolicy
 from fabric.actor.core.policy.broker_simpler_units_policy import BrokerSimplerUnitsPolicy
 from fabric.actor.core.policy.controller_simple_policy import ControllerSimplePolicy
-from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.reflection_utils import ReflectionUtils
 from fabric.actor.core.util.resource_type import ResourceType
 from fabric.actor.core.core.actor import Actor
 from fabric.actor.security.auth_token import AuthToken
-from fabric.message_bus.messages.claim_resources_avro import ClaimResourcesAvro
 from fabric.actor.core.apis.i_actor import ActorType
 
 if TYPE_CHECKING:
@@ -114,12 +112,8 @@ class ConfigurationProcessor:
             self.enable_ticking()
             self.process_topology()
             self.logger.info("Processing exports with actor count {}".format(Actor.actor_count))
-            self.process_exports()
             self.process_advertise()
             self.logger.info("Processing exports completed")
-            self.logger.info("Processing claims with actor count {}".format(Actor.actor_count))
-            self.process_claims()
-            self.logger.info("Processing claims completed")
         except Exception as e:
             self.logger.error(traceback.format_exc())
             raise Exception("Unexpected error while processing configuration {}".format(e))
@@ -392,25 +386,12 @@ class ConfigurationProcessor:
         else:
             self.create_proxies(peers=self.config.get_peers())
 
-    def process_exports(self):
-        for ei in self.to_export:
-            self.export(info=ei)
-
     def process_advertise(self):
         if self.aggregate_delegation_models is None and len(self.to_advertise) > 0:
             raise Exception("No delegations found in Aggregate Resource Model")
 
-        # TODO re-enable check after testing
-        #if len(self.aggregate_delegation_models) != len(self.to_advertise):
-        #    raise Exception("Number of delegations in Aggregate Resource Model does not match Peers with delegations")
-
         for ei in self.to_advertise:
             self.advertise(info=ei)
-
-    def process_claims(self):
-        self.logger.debug("process_claims {}".format(len(self.to_export)))
-        for ei in self.to_export:
-            self.claim(info=ei)
 
     def create_proxies(self, *, peers: list):
         for e in peers:
@@ -513,30 +494,6 @@ class ConfigurationProcessor:
                                        topic=peer.get_kafka_topic())
             self.to_advertise.append(info)
 
-    def export(self, *, info: ExportInfo):
-        from fabric.actor.core.container.globals import GlobalsSingleton
-        now = GlobalsSingleton.get().get_container().get_current_cycle()
-        start = info.start
-        if start is None:
-            start = GlobalsSingleton.get().get_container().cycle_start_date(cycle=now)
-        end = info.end
-        if end is None:
-            # export for one year
-            length = 1000 * 60 * 60 * 24 * 365
-            end = GlobalsSingleton.get().get_container().cycle_end_date(cycle=now + length)
-
-        self.logger.debug("Using Server Actor {} to export resources".format(info.exporter.__class__.__name__))
-
-        info.exported = info.exporter.export_resources(rtype=info.rtype, start=start,
-                                                       end=end, units=info.units, ticket_properties=None,
-                                                       resource_properties=None, source_ticket_id=None,
-                                                       client=AuthToken(name=info.client.get_name(),
-                                                                        guid=ID(id=info.client.get_guid())))
-
-        if info.exported is None:
-            raise Exception("Could not export resources from actor: {} to actor: {} Error = {}".
-                            format(info.exporter.get_name(), info.client.get_name(), info.exporter.get_last_error()))
-
     def advertise(self, *, info: ExportAdvertisement):
         self.logger.debug("Using Server Actor {} to export resources".format(info.exporter.__class__.__name__))
 
@@ -552,30 +509,3 @@ class ConfigurationProcessor:
         if info.exported is None:
             raise Exception("Could not export resources from actor: {} to actor: {} Error = {}".
                             format(info.exporter.get_name(), info.client.get_name(), info.exporter.get_last_error()))
-
-    # TODO needs to be fixed
-    def claim(self, *, info: ExportInfo):
-        if info.exported is None:
-            self.logger.error("No reservation to export from {} to {}".format(info.exporter.get_name(), info.client.get_name()))
-            return
-
-        self.logger.debug("Claiming resources from {} to {}".format(info.exporter.get_name(), info.client.get_name()))
-
-        container = ManagementUtils.connect(caller=self.actor.get_identity())
-        client_mgmt_actor = container.get_actor(guid=ID(id=info.client.get_guid()))
-
-        if client_mgmt_actor is None:
-            self.logger.info("{} is a remote client. Not performing claim".format(info.client.get_name()))
-            #self.trigger_remote_claim(info)
-            return
-
-        self.logger.info("Claiming resources from {} to {}".format(info.exporter.get_name(), info.client.get_name()))
-
-        reservation = client_mgmt_actor.claim_resources(broker=info.exporter.get_guid(), rid=info.exported)
-
-        if reservation is not None:
-            self.logger.info("Successfully initiated claim for resources from {} to {}".format(info.exporter.get_name(),
-                                                                                               info.client.get_name()))
-        else:
-            self.logger.error("Could not initiate claim for resources from {} to {}".format(info.exporter.get_name(),
-                                                                                            info.client.get_name()))

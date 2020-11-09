@@ -62,38 +62,6 @@ class IClientActor(IActor, IClientPublic):
         """
 
     @abstractmethod
-    def claim_client(self, *, reservation_id: ID = None, resources: ResourceSet = None, slice_object: ISlice = None,
-                     broker: IBrokerProxy = None) -> IClientReservation:
-        """
-        Claims already exported resources from the given broker. The reservation
-        will be stored in the default slice.
-        
-        @params reservation_id reservation identifier of the exported reservation
-        @params resources resource set describing the resources to claim
-        @params slice_object slice
-        @params broker broker proxy
-        
-        @returns reservation
-        @raises Exception in case of failure
-        """
-
-    @abstractmethod
-    def reclaim_client(self, *, reservation_id: ID = None, resources: ResourceSet = None, slice_object: ISlice = None,
-                     broker: IBrokerProxy = None) -> IClientReservation:
-        """
-        Reclaims already exported resources from the given broker. The reservation
-        will be stored in the default slice.
-
-        @params reservation_id reservation identifier of the exported reservation
-        @params resources resource set describing the resources to claim
-        @params slice_object slice
-        @params broker broker proxy
-
-        @returns reservation
-        @raises Exception in case of failure
-        """
-
-    @abstractmethod
     def demand(self, *, rid: ID):
         """
         Demand a reservation

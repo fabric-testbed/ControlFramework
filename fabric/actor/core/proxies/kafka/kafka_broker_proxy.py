@@ -32,11 +32,9 @@ from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.kafka.kafka_proxy import KafkaProxy, KafkaProxyRequestState
 from fabric.actor.core.proxies.kafka.translate import Translate
-from fabric.message_bus.messages.claim_avro import ClaimAvro
 from fabric.message_bus.messages.claim_delegation_avro import ClaimDelegationAvro
 from fabric.message_bus.messages.delegation_avro import DelegationAvro
 from fabric.message_bus.messages.extend_ticket_avro import ExtendTicketAvro
-from fabric.message_bus.messages.reclaim_avro import ReclaimAvro
 from fabric.message_bus.messages.reclaim_delegation_avro import ReclaimDelegationAvro
 from fabric.message_bus.messages.relinquish_avro import RelinquishAvro
 from fabric.message_bus.messages.reservation_avro import ReservationAvro
@@ -58,20 +56,6 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         avro_message = None
         if request.get_type() == RPCRequestType.Ticket:
             avro_message = TicketAvro()
-            avro_message.message_id = str(request.get_message_id())
-            avro_message.reservation = request.reservation
-            avro_message.callback_topic = request.callback_topic
-            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
-
-        elif request.get_type() == RPCRequestType.Claim:
-            avro_message = ClaimAvro()
-            avro_message.message_id = str(request.get_message_id())
-            avro_message.reservation = request.reservation
-            avro_message.callback_topic = request.callback_topic
-            avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
-
-        elif request.get_type() == RPCRequestType.Reclaim:
-            avro_message = ReclaimAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.reservation = request.reservation
             avro_message.callback_topic = request.callback_topic
@@ -118,22 +102,6 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
 
     def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                        caller: AuthToken) -> IRPCRequestState:
-        request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
-        request.callback_topic = callback.get_kafka_topic()
-        request.caller = caller
-        return request
-
-    def prepare_claim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                      caller: AuthToken) -> IRPCRequestState:
-        request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
-        request.callback_topic = callback.get_kafka_topic()
-        request.caller = caller
-        return request
-
-    def prepare_reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                        caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()

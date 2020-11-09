@@ -859,28 +859,13 @@ class ReservationClient(Reservation, IKernelControllerReservation):
             self.transition(prefix="ticket", state=ReservationStates.Nascent,
                             pending=ReservationPendingStates.Ticketing)
 
-            if self.exported:
-                # We are a broker or service manager initiating a ticket claim
-                # to an upstream broker for a pre-reserved ticket
-                # ("will call"). Note: no policy prepareReserve, because the
-                # ticket has already been exported (e.g., any payment has
-                # already been tendered).
-                self.sequence_ticket_out += 1
-                RPCManagerSingleton.get().claim(reservation=self)
-            else:
+            if not self.exported:
                 # This is a regular request for new resources to an upstream
                 # broker.
                 self.sequence_ticket_out += 1
                 RPCManagerSingleton.get().ticket(reservation=self)
 
         elif self.state == ReservationStates.Ticketed:
-            if self.exported:
-                # For now we do not support exports of leases from an
-                # authority. So ending here, means that we are trying to
-                # re-claim an already claimed reservation. Throw an error for
-                # now.
-                raise Exception("Invalid state for claim. Did you already claim this reservation?")
-
             self.transition_with_join(prefix="redeem blocked", state=ReservationStates.Ticketed,
                                       pending=self.pending_state, join_state=JoinState.BlockedRedeem)
 
@@ -901,11 +886,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 self.state == ReservationStates.Failed:
             self.error(err="initiating reserve on defunct reservation")
 
-        elif self.state == ReservationStates.Reclaimed:
-            self.transition(prefix="claiming ticket post reclaim", state=ReservationStates.Reclaimed,
-                            pending=ReservationPendingStates.Ticketing)
-            self.sequence_ticket_out += 1
-            RPCManagerSingleton.get().claim(reservation=self)
 
     def setup(self):
         super().setup()
@@ -1106,17 +1086,8 @@ class ReservationClient(Reservation, IKernelControllerReservation):
     def update_ticket(self, *, incoming: IReservation, update_data: UpdateData):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Ticketed:
             if self.pending_state != ReservationPendingStates.Ticketing and \
-                    self.pending_state != ReservationPendingStates.ExtendingTicket and \
-                    self.pending_state != ReservationPendingStates.Reclaiming:
+                    self.pending_state != ReservationPendingStates.ExtendingTicket:
                 self.logger.warning("unsolicited ticket update. Ignoring it. Details: {}".format(incoming))
-                return
-
-            if self.pending_state == ReservationPendingStates.Reclaiming:
-                self.transition(prefix="ticket update", state=ReservationStates.Reclaimed,
-                                pending=ReservationPendingStates.None_)
-                self.suggested = False
-                self.approved = False
-                self.pending_recover = False
                 return
 
             if self.accept_ticket_update(incoming=incoming, update_data=update_data):
@@ -1144,19 +1115,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
         elif self.state == ReservationStates.Failed:
             self.log_error(message="Ticket update on failed reservation", exception=None)
-
-        elif self.state == ReservationStates.Reclaimed:
-            if self.pending_state != ReservationPendingStates.Ticketing :
-                self.logger.warning("unsolicited ticket update. Ignoring it. Details: {}".format(incoming))
-                return
-
-            # TODO KOMAL
-            #if self.accept_ticket_update(incoming, update_data):
-            self.transition(prefix="ticket update", state=ReservationStates.Ticketed,
-                            pending=ReservationPendingStates.None_)
-            self.suggested = False
-            self.approved = False
-            self.pending_recover = False
 
     def validate_incoming(self):
         if self.slice is None:
@@ -1242,9 +1200,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
     def handle_failed_rpc(self, *, failed: FailedRPC):
         remote_auth = failed.get_remote_auth()
-        if failed.get_request_type() == RPCRequestType.Claim or \
-                failed.get_request_type() == RPCRequestType.Reclaim or \
-                failed.get_request_type() == RPCRequestType.Ticket or \
+        if failed.get_request_type() == RPCRequestType.Ticket or \
                 failed.get_request_type() == RPCRequestType.ExtendTicket or \
                 failed.get_request_type() == RPCRequestType.Relinquish:
 
@@ -1463,33 +1419,3 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 self.logger.warning("Reservation #{} has failed".format(self.get_reservation_id()))
         except Exception as e:
             raise e
-
-    def reclaim(self):
-        self.approved = False
-        if self.state == ReservationStates.Ticketed:
-            # We are an agent asked to return a pre-reserved "will call" ticket
-            # to a client. Set mustSendUpdate so that the update will be sent
-            # on the next probe.
-            self.transition(prefix="reclaimed", state=ReservationStates.Ticketed,
-                            pending=ReservationPendingStates.Reclaiming)
-            if self.state != ReservationStates.Failed:
-                self.service_reclaim()
-        else:
-            self.error(err="Wrong reservation state for ticket reclaim")
-
-    def service_reclaim(self):
-        self.log_debug(message="Generating reclaim")
-        if self.callback is None:
-            self.logger.warning("Cannot generate reclaim: no callback.")
-            return
-
-        self.logger.debug("Generating reclaim")
-        try:
-            if self.exported:
-                self.sequence_ticket_out += 1
-                RPCManagerSingleton.get().reclaim(reservation=self)
-        except Exception as e:
-            # Note that this may result in a "stuck" reservation... not much we
-            # can do if the receiver has failed or rejects our update. We will
-            # regenerate on any user-initiated probe.
-            self.log_remote_error(message="callback failed", exception=e)

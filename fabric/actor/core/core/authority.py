@@ -128,20 +128,6 @@ class Authority(Actor, IAuthority):
     def available(self, *, resources: ResourceSet):
         self.policy.available(resources=resources)
 
-    def claim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
-        slice_obj = reservation.get_slice()
-        if slice_obj is not None:
-            slice_obj.set_broker_client()
-
-        self.wrapper.claim_request(reservation=reservation, caller=caller, callback=callback)
-
-    def reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
-        slice_obj = reservation.get_slice()
-        if slice_obj is not None:
-            slice_obj.set_broker_client()
-
-        self.wrapper.reclaim_request(reservation=reservation, caller=caller, callback=callback)
-
     def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
                          id_token:str = None):
         slice_obj = delegation.get_slice_object()
@@ -190,19 +176,6 @@ class Authority(Actor, IAuthority):
 
     def eject(self, *, resources: ResourceSet):
         self.policy.eject(resources=resources)
-
-    def export(self, *, reservation: IBrokerReservation = None, resources: ResourceSet = None,
-               term: Term = None, client: AuthToken = None) -> ID:
-        if reservation is None:
-            slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
-            slice_obj.set_owner(owner=client)
-            slice_obj.set_broker_client()
-
-            reservation = BrokerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_obj=slice_obj)
-            reservation.set_owner(owner=self.identity)
-
-        self.wrapper.export(reservation=reservation, client=client)
-        return reservation.get_reservation_id()
 
     def advertise(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
         slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())

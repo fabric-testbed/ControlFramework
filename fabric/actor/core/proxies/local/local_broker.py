@@ -28,8 +28,10 @@ from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
 from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.proxies.local.local_proxy import LocalProxy
 from fabric.actor.core.util.resource_data import ResourceData
@@ -50,17 +52,17 @@ class LocalBroker(LocalProxy, IBrokerProxy):
         state.callback = callback
         return state
 
-    def prepare_claim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                      caller: AuthToken) -> IRPCRequestState:
+    def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
+                                 caller: AuthToken, id_token:str = None) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
+        state.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                      caller: AuthToken) -> IRPCRequestState:
+    def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
+                                   caller: AuthToken, id_token:str = None) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
+        state.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         state.callback = callback
         return state
 
@@ -94,3 +96,14 @@ class LocalBroker(LocalProxy, IBrokerProxy):
         broker_reservation.set_owner(owner=self.get_identity())
 
         return broker_reservation
+
+    def pass_delegation(self, *, delegation: IDelegation, auth: AuthToken) -> IDelegation:
+        slice_obj = delegation.get_slice_object().clone_request()
+
+        broker_delegation = BrokerDelegationFactory.create(did=str(delegation.get_delegation_id()),
+                                                           slice_id=slice_obj.get_slice_id(),
+                                                           broker=self)
+        broker_delegation.set_sequence_in(sequence=delegation.get_sequence_out())
+        broker_delegation.set_owner(owner=self.get_identity())
+
+        return broker_delegation

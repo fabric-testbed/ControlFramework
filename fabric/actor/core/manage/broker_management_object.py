@@ -109,15 +109,6 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
     def demand_reservation(self, *, reservation: ReservationMng, caller: AuthToken) -> ResultAvro:
         return self.client_helper.demand_reservation(reservation=reservation, caller=caller)
 
-    def claim_resources(self, *, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
-        return self.client_helper.claim_resources(broker=broker, rid=rid, caller=caller)
-
-    def reclaim_resources(self, *, broker: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
-        return self.client_helper.reclaim_resources(broker=broker, rid=rid, caller=caller)
-
-    def claim_resources_slice(self, *, broker: ID, slice_id: ID, rid: ID, caller: AuthToken) -> ResultReservationAvro:
-        return self.client_helper.claim_resources_slice(broker=broker, slice_id=slice_id, rid=rid, caller=caller)
-
     def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType, request_properties: dict,
                            config_properties: dict, caller: AuthToken) -> ResultAvro:
