@@ -1,0 +1,472 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key attr.name="id" attr.type="string" for="edge" id="d13" />
+  <key attr.name="label" attr.type="string" for="edge" id="d12" />
+  <key attr.name="Class" attr.type="string" for="edge" id="d11">
+    <default>None</default>
+  </key>
+  <key attr.name="LabelDelegations" attr.type="string" for="node" id="d10">
+    <default>None</default>
+  </key>
+  <key attr.name="Model" attr.type="string" for="node" id="d9">
+    <default>None</default>
+  </key>
+  <key attr.name="label" attr.type="string" for="node" id="d8" />
+  <key attr.name="y" attr.type="string" for="node" id="d7" />
+  <key attr.name="x" attr.type="string" for="node" id="d6" />
+  <key attr.name="NodeID" attr.type="string" for="node" id="d5">
+    <default>None</default>
+  </key>
+  <key attr.name="Layer" attr.type="string" for="node" id="d4">
+    <default>None</default>
+  </key>
+  <key attr.name="Name" attr.type="string" for="node" id="d3">
+    <default>None</default>
+  </key>
+  <key attr.name="Type" attr.type="string" for="node" id="d2">
+    <default>None</default>
+  </key>
+  <key attr.name="Capacities" attr.type="string" for="node" id="d1">
+    <default>None</default>
+  </key>
+  <key attr.name="Class" attr.type="string" for="node" id="d0">
+    <default>None</default>
+  </key>
+  <graph edgedefault="directed">
+    <node id="n0">
+      <data key="d0">SwitchFabric</data>
+      <data key="d1">{ "unit": 1 }</data>
+      <data key="d2">SwitchFabric</data>
+      <data key="d3">SwitchFabric1 </data>
+      <data key="d4">L2</data>
+      <data key="d5">03950129-23BE-4BE7-9CCB-E4FE1B544AE8</data>
+      <data key="d6">51.0</data>
+      <data key="d7">-101.0</data>
+      <data key="d8">SwitchFabric</data>
+    </node>
+    <node id="n1">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p003</data>
+      <data key="d10">[ { "ipv4": [ "192.168.1.1", "192.168.1.2" ], "vlan": [ "1000", "1001", "1002"], "label_pool": "pool1", "delegation": "del1" }, { "ipv4": [ "192.168.2.1", "192.168.2.2", "192.168.2.3"],  "vlan-range": "2000-2500", "label_pool": "pool2", "delegation": "del2" }, { "pool": [ "pool1", "pool2"] } ]</data>
+      <data key="d5">E161980C-4C60-4056-8383-7264C1349FD5</data>
+      <data key="d6">243.0</data>
+      <data key="d7">-220.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n2">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p002</data>
+      <data key="d10">[ { "pool": "pool3" } ]</data>
+      <data key="d5">C0C788B8-FED8-422E-A4BC-31560B51D9AF</data>
+      <data key="d6">165.0</data>
+      <data key="d7">-219.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n3">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p001</data>
+      <data key="d10">[ { "ipv4": [ "192.168.50.1", "192.168.50.2", "192.168.50.3", "192.168.50.4" ], "vlan-range": "10-40", "delegation": "del1", "label_pool": "pool3" }, {"pool": "pool3" } ]</data>
+      <data key="d5">EE849BE9-2169-4F5A-9869-8B3E7C1BE54D</data>
+      <data key="d6">86.0</data>
+      <data key="d7">-221.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n4">
+      <data key="d0">NetworkNode</data>
+      <data key="d1">{ "unit": 1 }</data>
+      <data key="d2">Switch</data>
+      <data key="d9">Cisco NCS55</data>
+      <data key="d3">DataplaneSwitch1</data>
+      <data key="d5">C4833741-40AB-4BF8-8318-75357554962C</data>
+      <data key="d6">-90.5</data>
+      <data key="d7">-121.5</data>
+      <data key="d8">Switch</data>
+    </node>
+    <node id="n5">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p004</data>
+      <data key="d10">[ { "pool": "pool3" } ]</data>
+      <data key="d5">183B2E37-732F-449C-9E65-21A9A1FC4E07</data>
+      <data key="d6">345.0</data>
+      <data key="d7">-223.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n6">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p005</data>
+      <data key="d10">[ { "pool": "pool3" } ]</data>
+      <data key="d5">24020F82-8032-4D80-B3B8-84652CD9FC4E</data>
+      <data key="d6">405.0</data>
+      <data key="d7">-224.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n7">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p006</data>
+      <data key="d10">[ { "ipv4": [ "192.168.250.1", "192.168.250.2" ], "vlan-range": "3000-3010", "delegation": "del2", "label_pool": "pool4" }, { "pool": "pool4" } ]</data>
+      <data key="d5">3A255D19-A908-4F6F-BE97-0F3A4B9841F0</data>
+      <data key="d6">465.0</data>
+      <data key="d7">-225.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n8">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d10">[ { "pool": "pool4" } ]</data>
+      <data key="d5">34677D56-D852-4395-849F-3976666DC09C</data>
+      <data key="d6">525.0</data>
+      <data key="d7">-223.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n9">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p008</data>
+      <data key="d10">[ { "pool": [ "pool1", "pool2"] } ]</data>
+      <data key="d5">1A48FC97-A4AC-47F0-8909-C3A1C4F59EB3</data>
+      <data key="d6">604.0</data>
+      <data key="d7">-227.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n10">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">Port</data>
+      <data key="d10">[ { "vlan-range": "300-400", "label_pool": "pool6", "delegation": "del1"}, { "pool": "pool6"}]</data>
+      <data key="d6">196.0</data>
+      <data key="d7">4.0</data>
+      <data key="d8">CP</data>
+      <data key="d5">6ae721b7-96e8-41fc-b3cd-098526f4b28d</data>
+    </node>
+    <node id="n11">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">Port</data>
+      <data key="d10">[ { "vlan-range": "400-500", "label_pool": "pool7", "delegation": "del1"}, { "pool": "pool7"}]</data>
+      <data key="d6">466.0</data>
+      <data key="d7">4.0</data>
+      <data key="d8">CP</data>
+      <data key="d5">e123ae63-f33e-4756-a608-5885e59cf564</data>
+    </node>
+    <node id="n12">
+      <data key="d0">Link</data>
+      <data key="d2">Wave</data>
+      <data key="d6">189.0</data>
+      <data key="d7">94.0</data>
+      <data key="d8">Link</data>
+      <data key="d5">07a10395-6d51-44cb-83cd-fb5330ced026</data>
+    </node>
+    <node id="n13">
+      <data key="d0">Link</data>
+      <data key="d2">Wave</data>
+      <data key="d6">459.0</data>
+      <data key="d7">94.0</data>
+      <data key="d8">Link</data>
+      <data key="d5">a59a0000-dbba-40ad-8667-6025501adf95</data>
+    </node>
+    <node id="n14">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">Port</data>
+      <data key="d10">[ { "pool": "pool6"} ]</data>
+      <data key="d6">196.0</data>
+      <data key="d7">184.0</data>
+      <data key="d8">CP</data>
+      <data key="d5">9f026ed1-ba1f-4e50-8f58-b33dda7d7aad</data>
+    </node>
+    <node id="n15">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d2">Port</data>
+      <data key="d10">[ { "pool": "pool7" }]</data>
+      <data key="d6">466.0</data>
+      <data key="d7">184.0</data>
+      <data key="d8">CP</data>
+      <data key="d5">f4e08cc5-b163-4ec8-82ac-2a176b99e48b</data>
+    </node>
+    <node id="n16">
+      <data key="d0">SwitchFabric</data>
+      <data key="d1">{ "unit": 1 }</data>
+      <data key="d2">SwitchFabric</data>
+      <data key="d3">SwitchFabric1 </data>
+      <data key="d4">L2</data>
+      <data key="d5">43BB2199-8248-48DE-86C5-E94112BFE401</data>
+      <data key="d6">-191.5</data>
+      <data key="d7">315.0</data>
+      <data key="d8">SwitchFabric</data>
+    </node>
+    <node id="n17">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p003</data>
+      <data key="d10">[ { "ipv4": [ "192.168.3.1", "192.168.3.2" ], "vlan": [ "100", "101", "102"], "delegation": "del1" } ]</data>
+      <data key="d5">F9DC6EEC-DE18-464D-92C2-7D87385B0B42</data>
+      <data key="d6">0.5</data>
+      <data key="d7">196.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n18">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p001</data>
+      <data key="d10">[ { "ipv4": [ "192.168.120.1", "192.168.120.2", "192.168.120.3", "192.168.120.4" ], "delegation": "del1", "label_pool": "pool1" }, {"pool": "pool1" } ]</data>
+      <data key="d5">A80AF865-F6E0-4C90-A3E8-40630609932D</data>
+      <data key="d6">-156.5</data>
+      <data key="d7">195.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n19">
+      <data key="d0">NetworkNode</data>
+      <data key="d1">{ "unit": 1 }</data>
+      <data key="d2">Switch</data>
+      <data key="d9">Cisco NCS55</data>
+      <data key="d3">DataplaneSwitch1</data>
+      <data key="d5">B15A4232-6800-46D9-BAF5-C415DD183BF8</data>
+      <data key="d6">-333.0</data>
+      <data key="d7">294.5</data>
+      <data key="d8">Switch</data>
+    </node>
+    <node id="n20">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p001</data>
+      <data key="d10">[ {"pool": "pool1" } ]</data>
+      <data key="d5">1D53B2AF-DC8F-4B23-9C6F-7384B52FF22C</data>
+      <data key="d6">-77.5</data>
+      <data key="d7">188.75</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n21">
+      <data key="d0">SwitchFabric</data>
+      <data key="d1">{ "unit": 1 }</data>
+      <data key="d2">SwitchFabric</data>
+      <data key="d3">SwitchFabric1 </data>
+      <data key="d4">L2</data>
+      <data key="d5">F69E2F1E-06FD-4571-AEE1-4507B183AC75</data>
+      <data key="d6">183.0</data>
+      <data key="d7">554.0</data>
+      <data key="d8">SwitchFabric</data>
+    </node>
+    <node id="n22">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p003</data>
+      <data key="d10">[ { "ipv4": [ "192.168.2.1", "192.168.2.2" ], "vlan": [ "100", "101", "102"], "delegation": "del1" } ]</data>
+      <data key="d5">23B81EA1-C220-48EC-B8F9-38CDBE953D29</data>
+      <data key="d6">375.0</data>
+      <data key="d7">435.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n23">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p001</data>
+      <data key="d10">[ { "ipv4": [ "192.168.110.1", "192.168.110.2", "192.168.110.3", "192.168.110.4" ], "delegation": "del1", "label_pool": "pool1" }, {"pool": "pool1" } ]</data>
+      <data key="d5">6C9FE65D-303B-42DC-8E20-76E456EDD811</data>
+      <data key="d6">218.0</data>
+      <data key="d7">434.0</data>
+      <data key="d8">CP</data>
+    </node>
+    <node id="n24">
+      <data key="d0">NetworkNode</data>
+      <data key="d1">{ "unit": 1 }</data>
+      <data key="d2">Switch</data>
+      <data key="d9">Cisco NCS55</data>
+      <data key="d3">DataplaneSwitch1</data>
+      <data key="d5">40CC6B54-5CDC-4424-BED5-97E60ADFC96B</data>
+      <data key="d6">41.5</data>
+      <data key="d7">533.5</data>
+      <data key="d8">Switch</data>
+    </node>
+    <node id="n25">
+      <data key="d0">ConnectionPoint</data>
+      <data key="d1">{ "bw": 100 }</data>
+      <data key="d2">Port</data>
+      <data key="d9">100G SR</data>
+      <data key="d3">p001</data>
+      <data key="d10">[ {"pool": "pool1" } ]</data>
+      <data key="d5">03A62CF6-6F1C-482E-846E-092DF7F940D9</data>
+      <data key="d6">297.0</data>
+      <data key="d7">427.75</data>
+      <data key="d8">CP</data>
+    </node>
+    <edge source="n0" target="n2">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e0</data>
+    </edge>
+    <edge source="n0" target="n1">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e1</data>
+    </edge>
+    <edge source="n0" target="n3">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e2</data>
+    </edge>
+    <edge source="n0" target="n5">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e4</data>
+    </edge>
+    <edge source="n0" target="n6">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e5</data>
+    </edge>
+    <edge source="n0" target="n7">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e6</data>
+    </edge>
+    <edge source="n0" target="n8">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e7</data>
+    </edge>
+    <edge source="n0" target="n9">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e8</data>
+    </edge>
+    <edge source="n0" target="n11">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e13</data>
+    </edge>
+    <edge source="n0" target="n10">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e14</data>
+    </edge>
+    <edge source="n4" target="n0">
+      <data key="d11">has</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e3</data>
+    </edge>
+    <edge source="n10" target="n12">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e9</data>
+    </edge>
+    <edge source="n11" target="n13">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e10</data>
+    </edge>
+    <edge source="n14" target="n12">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e11</data>
+    </edge>
+    <edge source="n15" target="n13">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e12</data>
+    </edge>
+    <edge source="n16" target="n17">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e15</data>
+    </edge>
+    <edge source="n16" target="n18">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e16</data>
+    </edge>
+    <edge source="n16" target="n20">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e18</data>
+    </edge>
+    <edge source="n16" target="n14">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e19</data>
+    </edge>
+    <edge source="n19" target="n16">
+      <data key="d11">has</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e17</data>
+    </edge>
+    <edge source="n21" target="n22">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e20</data>
+    </edge>
+    <edge source="n21" target="n23">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e21</data>
+    </edge>
+    <edge source="n21" target="n25">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e23</data>
+    </edge>
+    <edge source="n21" target="n15">
+      <data key="d11">connects</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e24</data>
+    </edge>
+    <edge source="n24" target="n21">
+      <data key="d11">has</data>
+      <data key="d12">
+            </data>
+      <data key="d13">e22</data>
+    </edge>
+  </graph>
+</graphml>
