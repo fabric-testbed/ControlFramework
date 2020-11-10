@@ -493,14 +493,6 @@ class RPCManager:
             if request is None:
                 actor.get_logger().warning("No queryRequest to match to inbound queryResponse. Ignoring response")
 
-        elif rpc.get_request_type() == RPCRequestType.Claim:
-            actor.get_logger().info("Inbound claim request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                rpc.get_reservation()))
-
-        elif rpc.get_request_type() == RPCRequestType.Reclaim:
-            actor.get_logger().info("Inbound reclaim request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                rpc.get_reservation()))
-
         elif rpc.get_request_type() == RPCRequestType.ClaimDelegation:
             actor.get_logger().info("Inbound claim delegation request from <{}>:{}".format(rpc.get_caller().get_name(),
                                                                                 rpc.get_delegation()))

@@ -45,6 +45,7 @@ class DelegationState(Enum):
     Delegated = 2
     Closed = 3
     Reclaimed = 4
+    Failed = 5
 
 
 class IDelegation(ABC):

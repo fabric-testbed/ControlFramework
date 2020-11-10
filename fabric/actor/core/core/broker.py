@@ -27,7 +27,6 @@ from __future__ import annotations
 
 import queue
 import threading
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
@@ -36,25 +35,21 @@ from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
 from fabric.actor.core.delegation.delegation_factory import DelegationFactory
-from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
-from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.broker_management_object import BrokerManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_broker_service import KafkaBrokerService
 from fabric.actor.core.proxies.kafka.services.broker_service import BrokerService
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
-from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.resource_data import ResourceData
+from fabric.actor.core.util.id import ID
+from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
     from fabric.actor.core.apis.i_slice import ISlice
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
-    from fabric.actor.core.kernel.resource_set import ResourceSet
-    from fabric.actor.core.util.id import ID
     from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
     from fabric.actor.core.apis.i_reservation import IReservation
-    from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
     from fabric.actor.core.util.client import Client
 
 from fabric.actor.core.apis.i_broker import IBroker
@@ -208,7 +203,7 @@ class Broker(Actor, IBroker):
         delegation = BrokerDelegationFactory.create(did=delegation_id, slice_id=slice_object.get_slice_id(),
                                                     broker=broker)
         delegation.set_slice_object(slice_object=slice_object)
-        delegation.set_exported(exported=True)
+        delegation.set_exported(value=True)
 
         callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.ProtocolKafka,
                                                              actor_name=self.get_name())

@@ -40,6 +40,7 @@ class ErrorCodes(Enum):
     ErrorNoSuchActor = 11
     ErrorTransportFailure = 12
     ErrorTransportTimeout = 13
+    ErrorNoSuchDelegation = 14
 
 
 class Constants:

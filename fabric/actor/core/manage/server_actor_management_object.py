@@ -90,7 +90,7 @@ class ServerActorManagementObject(ActorManagementObject):
             if res_list is not None:
                 result.result = []
                 for r in res_list:
-                    slice_obj = self.get_slice_by_id(id=r['slc_id'])
+                    slice_obj = self._get_slice_by_id(id=r['slc_id'])
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
                                                                  slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
@@ -127,7 +127,7 @@ class ServerActorManagementObject(ActorManagementObject):
             if res_list is not None:
                 result.result = []
                 for r in res_list:
-                    slice_obj = self.get_slice_by_id(id=r['slc_id'])
+                    slice_obj = self._get_slice_by_id(id=r['slc_id'])
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
                                                                  slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
@@ -421,7 +421,7 @@ class ServerActorManagementObject(ActorManagementObject):
             if res_list is not None:
                 result.result = []
                 for r in res_list:
-                    slice_obj = self.get_slice_by_id(id=r['slc_id'])
+                    slice_obj = self._get_slice_by_id(id=r['slc_id'])
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
                                                                  slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())

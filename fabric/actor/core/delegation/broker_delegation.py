@@ -220,7 +220,7 @@ class BrokerDelegation(Delegation):
             self.logger.warning("Delegation update after close")
 
         elif self.state == DelegationState.Failed:
-            self.logger.error(message="Delegation update on failed delegation: {}".format(e))
+            self.logger.error(message="Delegation update on failed delegation: {}".format(update_data))
 
         elif self.state == DelegationState.Reclaimed:
             self.transition(prefix="ticket update", state=DelegationState.Delegated)

@@ -417,9 +417,6 @@ class Reservation(IKernelReservation):
     def is_dirty(self) -> bool:
         return self.dirty
 
-    def is_reclaimed(self) -> bool:
-        return self.state == ReservationStates.Reclaimed
-
     def is_expired(self, *, t: datetime = None) -> bool:
         if t is None:
             return self.expired

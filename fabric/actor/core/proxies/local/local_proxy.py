@@ -69,6 +69,7 @@ class LocalProxy(Proxy, ICallbackProxy):
             elif request.get_type() == RPCRequestType.QueryResult:
                 incoming = IncomingQueryRPC(request_type=RPCRequestType.QueryResult,
                                             message_id=request.get_message_id(), query=request.query,
+                                            id_token=request.get_id_token(),
                                             caller=request.get_caller(), request_id=request.request_id)
 
             elif request.get_type() == RPCRequestType.Ticket:
