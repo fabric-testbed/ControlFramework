@@ -23,6 +23,6 @@
 #
 # Author Komal Thareja (kthare10@renci.org)
 
-ConfDir = '/etc/fabric/actor/config'
-ConfFile = 'config.yaml'
-LogDir = '/var/log/actor'
+CONF_DIR = '/etc/fabric/actor/config'
+CONF_FILE = 'config.yaml'
+LOG_DIR = '/var/log/actor'

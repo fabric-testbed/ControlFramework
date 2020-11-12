@@ -23,6 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+"""
+Main Entry Module for Authority
+"""
 import time
 import traceback
 
@@ -34,6 +37,9 @@ from fabric.actor.core.util.graceful_interrupt_handler import GracefulInterruptH
 
 
 def main():
+    """
+    Authority entry function
+    """
     try:
         # Uncomment when testing as app running
         #Globals.ConfigFile = './test.yaml'

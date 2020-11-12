@@ -36,8 +36,8 @@ from fabric.actor.core.manage.kafka.kafka_server_actor import KafkaServerActor
 from fabric.actor.core.util.id import ID
 from fabric.message_bus.messages.auth_avro import AuthAvro
 from fabric.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
-from fabric.message_bus.messages.get_reservation_units_avro import GetReservationUnitsAvro
-from fabric.message_bus.messages.get_unit_avro import GetUnitAvro
+from fabric.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
+from fabric.message_bus.messages.get_unit_request_avro import GetUnitRequestAvro
 from fabric.message_bus.messages.reservation_mng import ReservationMng
 from fabric.message_bus.messages.result_avro import ResultAvro
 from fabric.message_bus.messages.unit_avro import UnitAvro
@@ -105,7 +105,7 @@ class KafkaAuthority (KafkaServerActor, IMgmtAuthority):
         rret_val = None
 
         try:
-            request = GetReservationUnitsAvro()
+            request = GetReservationUnitsRequestAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.message_id = str(ID())
@@ -154,7 +154,7 @@ class KafkaAuthority (KafkaServerActor, IMgmtAuthority):
         rret_val = None
 
         try:
-            request = GetUnitAvro()
+            request = GetUnitRequestAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.message_id = str(ID())

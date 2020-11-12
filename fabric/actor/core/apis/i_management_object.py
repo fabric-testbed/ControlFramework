@@ -33,6 +33,9 @@ if TYPE_CHECKING:
 
 
 class IManagementObject:
+    """
+    Management Interface Object
+    """
     @abstractmethod
     def initialize(self):
         """

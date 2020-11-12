@@ -25,16 +25,15 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from fabric.actor.core.apis.i_reservation import ReservationCategory
 from fabric.actor.core.common.constants import ErrorCodes
 from fabric.actor.core.manage.kafka.services.kafka_client_actor_service import KafkaClientActorService
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.actor.core.util.id import ID
-from fabric.message_bus.messages.get_reservation_units_avro import GetReservationUnitsAvro
+from fabric.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
 from fabric.message_bus.messages.message import IMessageAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
-from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
+from fabric.message_bus.messages.result_units_avro import ResultUnitsAvro
 
 
 class KafkaControllerService(KafkaClientActorService):
@@ -58,8 +57,8 @@ class KafkaControllerService(KafkaClientActorService):
         else:
             self.logger.debug("Failed to send back response: {}".format(result.to_dict()))
 
-    def get_reservation_units(self, *, request:GetReservationUnitsAvro) -> ResultUnitAvro:
-        result = ResultUnitAvro()
+    def get_reservation_units(self, *, request:GetReservationUnitsRequestAvro) -> ResultUnitsAvro:
+        result = ResultUnitsAvro()
         result.status = ResultAvro()
         try:
             if request.guid is None or request.reservation_id is None:

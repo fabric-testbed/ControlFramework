@@ -29,7 +29,7 @@ import traceback
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.proxies.kafka.translate import Translate
-from fabric.message_bus.messages.failed_rpc_avro import FailedRPCAvro
+from fabric.message_bus.messages.failed_rpc_avro import FailedRpcAvro
 from fabric.message_bus.messages.query_avro import QueryAvro
 from fabric.message_bus.messages.query_result_avro import QueryResultAvro
 from fabric.message_bus.producer import AvroProducerApi
@@ -110,7 +110,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.FailedRPC:
-            avro_message = FailedRPCAvro()
+            avro_message = FailedRpcAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.request_id = str(request.request_id)
             avro_message.request_type = request.failed_request_type.value

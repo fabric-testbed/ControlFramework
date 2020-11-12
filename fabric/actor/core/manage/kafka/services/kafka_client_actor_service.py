@@ -35,8 +35,8 @@ from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.util.resource_type import ResourceType
 from fabric.message_bus.messages.extend_reservation_avro import ExtendReservationAvro
-from fabric.message_bus.messages.get_actors_avro import GetActorsAvro
-from fabric.message_bus.messages.get_pool_info_avro import GetPoolInfoAvro
+from fabric.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
+from fabric.message_bus.messages.get_pool_info_request_avro import GetPoolInfoRequestAvro
 from fabric.message_bus.messages.message import IMessageAvro
 from fabric.message_bus.messages.reclaim_resources_avro import ReclaimResourcesAvro
 from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
@@ -170,7 +170,7 @@ class KafkaClientActorService(KafkaActorService):
 
         return result
 
-    def get_brokers(self, *, request: GetActorsAvro) -> ResultProxyAvro:
+    def get_brokers(self, *, request: GetActorsRequestAvro) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
         try:
@@ -192,7 +192,7 @@ class KafkaClientActorService(KafkaActorService):
 
         return result
 
-    def get_pool_info(self, *, request: GetPoolInfoAvro) -> ResultPoolInfoAvro:
+    def get_pool_info(self, *, request: GetPoolInfoRequestAvro) -> ResultPoolInfoAvro:
         result = ResultPoolInfoAvro()
         result.status = ResultAvro()
         try:

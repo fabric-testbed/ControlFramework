@@ -23,6 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+"""
+Main Entry Module for Broker
+"""
 import time
 import traceback
 
@@ -34,6 +37,9 @@ from fabric.actor.core.container.globals import Globals, GlobalsSingleton
 
 
 def main():
+    """
+    Broker entry function
+    """
     try:
         # Uncomment when testing as app running
         #Globals.ConfigFile = './test.yaml'

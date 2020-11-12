@@ -26,14 +26,15 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+
+from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
     from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
     from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
     from fabric.actor.security.auth_token import AuthToken
-
-from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
 
 
 class IAuthorityProxy(IBrokerProxy):
@@ -72,8 +73,8 @@ class IAuthorityProxy(IBrokerProxy):
         """
 
     @abstractmethod
-    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy, caller:
-    AuthToken) -> IRPCRequestState:
+    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+                       caller: AuthToken) -> IRPCRequestState:
         """
         Prepare a redeem
         @params reservation: reservation

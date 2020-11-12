@@ -44,8 +44,8 @@ from fabric.message_bus.messages.claim_resources_avro import ClaimResourcesAvro
 from fabric.message_bus.messages.delegation_avro import DelegationAvro
 from fabric.message_bus.messages.demand_reservation_avro import DemandReservationAvro
 from fabric.message_bus.messages.extend_reservation_avro import ExtendReservationAvro
-from fabric.message_bus.messages.get_actors_avro import GetActorsAvro
-from fabric.message_bus.messages.get_pool_info_avro import GetPoolInfoAvro
+from fabric.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
+from fabric.message_bus.messages.get_pool_info_request_avro import GetPoolInfoRequestAvro
 from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
 from fabric.message_bus.messages.proxy_avro import ProxyAvro
 from fabric.message_bus.messages.reclaim_resources_avro import ReclaimResourcesAvro
@@ -255,7 +255,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
         rret_val = None
 
         try:
-            request = GetActorsAvro()
+            request = GetActorsRequestAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.message_id = str(ID())
@@ -304,7 +304,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
         rret_val = None
 
         try:
-            request = GetPoolInfoAvro()
+            request = GetPoolInfoRequestAvro()
             request.id_token = id_token
             request.guid = str(self.management_id)
             request.auth = self.auth

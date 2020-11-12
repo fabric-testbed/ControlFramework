@@ -38,8 +38,8 @@ from fabric.actor.core.manage.server_actor_management_object import ServerActorM
 from fabric.actor.security.acess_checker import AccessChecker
 from fabric.actor.security.pdp_auth import ActionId, ResourceType
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
-from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
+from fabric.message_bus.messages.result_units_avro import ResultUnitsAvro
 
 if TYPE_CHECKING:
     from fabric.actor.security.auth_token import AuthToken
@@ -118,8 +118,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
     def get_substrate_database(self) -> ISubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
-    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitAvro:
-        result = ResultUnitAvro()
+    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitsAvro:
+        result = ResultUnitsAvro()
         result.status = ResultAvro()
 
         if caller is None:
@@ -149,8 +149,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         return result
 
-    def get_reservation_unit(self, *, caller: AuthToken, uid: ID, id_token: str = None) -> ResultUnitAvro:
-        result = ResultUnitAvro()
+    def get_reservation_unit(self, *, caller: AuthToken, uid: ID, id_token: str = None) -> ResultUnitsAvro:
+        result = ResultUnitsAvro()
         result.status = ResultAvro()
 
         if caller is None:

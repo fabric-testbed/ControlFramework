@@ -39,7 +39,7 @@ class IAuthorityPublic:
     IAuthorityPublic represents the public cross-actor interface for a site authority.
     """
     @abstractmethod
-    def close_by_caller(self, *, reservation:IReservation, caller: AuthToken):
+    def close_by_caller(self, *, reservation: IReservation, caller: AuthToken):
         """
         Closes the reservation.
 
@@ -50,7 +50,7 @@ class IAuthorityPublic:
         """
 
     @abstractmethod
-    def extend_lease(self, *, reservation:IReservation, caller: AuthToken):
+    def extend_lease(self, *, reservation: IReservation, caller: AuthToken):
         """
         Extends a lease.
 
@@ -61,7 +61,7 @@ class IAuthorityPublic:
         """
 
     @abstractmethod
-    def modify_lease(self, *, reservation:IReservation, caller: AuthToken):
+    def modify_lease(self, *, reservation: IReservation, caller: AuthToken):
         """
         Modifies a lease.
 
@@ -72,7 +72,7 @@ class IAuthorityPublic:
         """
 
     @abstractmethod
-    def redeem(self, *, reservation:IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
+    def redeem(self, *, reservation: IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
         """
         Redeems a lease.
 

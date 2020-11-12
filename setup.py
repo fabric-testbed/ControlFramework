@@ -31,7 +31,7 @@ setup(
     setup_requires=requirements,
     packages=find_packages(),
     include_package_data=True,
-    data_files=[(actor.ConfDir, [actor.ConfFile]), (actor.LogDir, [])],
+    data_files=[(actor.CONF_DIR, [actor.CONF_FILE]), (actor.LOG_DIR, [])],
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[

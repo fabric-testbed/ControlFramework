@@ -26,4 +26,7 @@
 
 
 class IRPCResponseHandler:
+    """
+    Base class for RPC Response Handler
+    """
     pass

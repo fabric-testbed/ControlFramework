@@ -36,7 +36,7 @@ from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
 from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
-from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
+from fabric.message_bus.messages.result_units_avro import ResultUnitsAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
 
 if TYPE_CHECKING:
@@ -122,8 +122,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
     def modify_reservation(self, *, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
         return self.client_helper.modify_reservation(rid=rid, modify_properties=modify_properties, caller=caller)
 
-    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitAvro:
-        result = ResultUnitAvro()
+    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitsAvro:
+        result = ResultUnitsAvro()
         result.status = ResultAvro()
 
         if caller is None:

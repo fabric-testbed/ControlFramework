@@ -40,9 +40,9 @@ if TYPE_CHECKING:
 
 class MessageService(AvroConsumerApi):
     def __init__(self, *, kafka_service: ActorService, kafka_mgmt_service: KafkaActorService, conf: dict, key_schema,
-                 record_schema, topics, batchSize=5, logger=None):
+                 record_schema, topics, batch_size=5, logger=None):
         super().__init__(conf=conf, key_schema=key_schema, record_schema=record_schema, topics=topics,
-                         batchSize=batchSize, logger=logger)
+                         batch_size=batch_size, logger=logger)
         self.thread_lock = threading.Lock()
         self.thread = None
         self.kafka_service = kafka_service
