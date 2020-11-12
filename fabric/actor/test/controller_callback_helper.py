@@ -113,4 +113,4 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
 
     def prepare_failed_request(self, *, request_id: str, failed_request_type,
                                failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
-        raise ("Not implemented")
+        raise Exception("Not implemented")

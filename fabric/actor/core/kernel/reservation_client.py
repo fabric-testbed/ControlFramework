@@ -574,7 +574,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         assert self.broker is not None
 
         self.approved_term.enforce_extends_term(old_term=self.term)
-        self.requested_term = self.requested_term
+        self.requested_term = self.approved_term
         self.requested_resources = self.approved_resources
 
         if self.state == ReservationStates.Ticketed:

@@ -255,10 +255,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
     def get_redeeming(self, *, cycle: int) -> ReservationSet:
         redeeming = self.calendar.get_redeeming(cycle=cycle)
         for reservation in redeeming.values():
-            if reservation.is_active_ticketed():
-                self.calendar.add_pending(reservation=reservation)
-            else:
-                self.calendar.add_pending(reservation=reservation)
+            self.calendar.add_pending(reservation=reservation)
         return redeeming
 
     @abstractmethod

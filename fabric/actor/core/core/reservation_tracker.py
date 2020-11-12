@@ -57,7 +57,7 @@ class ReservationTracker(IReservationTracker, IEventHandler):
                 return self.state.get_state() == ReservationStates.Active and \
                        self.state.get_pending() == ReservationPendingStates.None_
             else:
-                return (self.state.get_state() == ReservationStates.ActiveTicketed or
+                return (self.state.get_state() == ReservationStates.Active or
                         self.state.get_state() == ReservationStates.ActiveTicketed) and \
                        self.state.get_joining() == JoinState.NoJoin
 

@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.kernel.resource_set import ResourceSet
 
 from fabric.actor.core.policy.broker_priority_policy import BrokerPriorityPolicy
-from fabric.actor.core.policy.Inventory import Inventory
+from fabric.actor.core.policy.inventory import Inventory
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 
 

@@ -89,22 +89,6 @@ class AuthoritySubstrate(Substrate):
 
     def recover_inventory_slice(self, *, slice_obj: ISlice):
         return
-        '''
-        try:
-            rtype = slice_obj.get_resource_type()
-            uset = self.get_units(slice_obj=slice_obj)
-            rd = ResourceData()
-
-            props = ResourceData.merge_properties(from_props=slice_obj.get_resource_properties(),
-                                                  to_props=rd.get_resource_properties())
-            rd.resource_properties = props
-
-            rset = ResourceSet(concrete=uset, rtype=rtype, rdata=rd)
-
-            self.actor.donate(resources=rset)
-        except Exception as e:
-            raise e
-        '''
 
     def get_units(self, *, slice_obj: ISlice) -> UnitSet:
         # TODO recovery from database

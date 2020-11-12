@@ -185,9 +185,11 @@ class ConfigurationProcessor:
             db_host = self.config.get_global_config().get_database()[Constants.PropertyConfDbHost]
             db_name = self.config.get_global_config().get_database()[Constants.PropertyConfDbName]
             if isinstance(plugin, Substrate):
-                db = SubstrateActorDatabase(user=user, password=password, database=db_name, db_host=db_host, logger=self.logger)
+                db = SubstrateActorDatabase(user=user, password=password, database=db_name, db_host=db_host,
+                                            logger=self.logger)
             else:
-                db = ServerActorDatabase(user=user, password=password, database=db_name, db_host=db_host, logger=self.logger)
+                db = ServerActorDatabase(user=user, password=password, database=db_name, db_host=db_host,
+                                         logger=self.logger)
 
             plugin.set_database(db=db)
 
@@ -352,7 +354,8 @@ class ConfigurationProcessor:
             try:
                 self.actor.register_slice(slice_object=slice_obj)
             except Exception as e:
-                Exception("Could not create default slice for actor: {} {}".format(self.actor.get_name(), e))
+                traceback.print_exc()
+                raise Exception("Could not create default slice for actor: {} {}".format(self.actor.get_name(), e))
 
     def populate_inventory(self):
         if isinstance(self.actor, IAuthority):
@@ -469,13 +472,15 @@ class ConfigurationProcessor:
         self.vertex_to_registry_cache(peer=peer)
 
         try:
-            client = RemoteActorCacheSingleton.get().establish_peer(from_guid=from_guid, from_mgmt_actor=from_mgmt_actor,
+            client = RemoteActorCacheSingleton.get().establish_peer(from_guid=from_guid,
+                                                                    from_mgmt_actor=from_mgmt_actor,
                                                                     to_guid=to_guid, to_mgmt_actor=to_mgmt_actor)
             self.logger.debug("Client returned {}".format(client))
             if client is not None:
                 self.parse_exports(peer=peer, client=client, mgmt_actor=to_mgmt_actor)
         except Exception as e:
-            Exception("Could not process exports from: {} to {}. e= {}" .format(peer.get_guid(), self.actor.get_guid(), e))
+            raise Exception("Could not process exports from: {} to {}. e= {}" .format(
+                peer.get_guid(), self.actor.get_guid(), e))
 
     def parse_exports(self, *, peer: Peer, client: ClientMng, mgmt_actor: IMgmtActor):
         for rset in peer.get_rsets():

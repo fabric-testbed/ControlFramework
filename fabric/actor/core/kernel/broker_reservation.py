@@ -159,7 +159,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             if self.state == ReservationStates.Nascent:
                 if self.pending_state == ReservationPendingStates.None_:
                     self.actor.ticket(self)
-                    self.logger.info("Added reservation #{} to the ticketing list. State={}".format(self.get_reservation_id(), self.print_state()))
+                    self.logger.info("Added reservation #{} to the ticketing list. State={}".format(
+                        self.get_reservation_id(), self.print_state()))
 
                 elif self.pending_state == ReservationPendingStates.Ticketing:
                     self.set_pending_recover(pending_recover=True)
@@ -173,7 +174,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                     raise Exception("Unexpected pending state")
 
             elif self.state == ReservationStates.Ticketed:
-                if self.pending_state == ReservationPendingStates.None_ or self.pending_state == ReservationPendingStates.Priming:
+                if self.pending_state == ReservationPendingStates.None_ or \
+                        self.pending_state == ReservationPendingStates.Priming:
                     self.set_service_pending(code=ReservationPendingStates.None_)
                     self.logger.debug("No recovery necessary for reservation #{}".format(self.get_reservation_id()))
 
@@ -201,9 +203,11 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         remote_auth = failed.get_remote_auth()
         if failed.get_request_type() == RPCRequestType.UpdateTicket:
             if self.callback is None or self.callback.get_identity() != remote_auth:
-                raise Exception("Unauthorized Failed reservation RPC: expected={}, but was: {}".format(self.callback.get_identity(), remote_auth))
+                raise Exception("Unauthorized Failed reservation RPC: expected={}, but was: {}".format(
+                    self.callback.get_identity(), remote_auth))
         else:
-            Exception("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(failed.get_request_type()))
+            raise Exception("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(
+                failed.get_request_type()))
 
         super().handle_failed_rpc(failed=failed)
 
@@ -358,7 +362,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         # ticket/extendTicket after recovery. If there is nothing pending for
         # this reservation, we resend the last update.
         if operation == RequestTypes.RequestTicket:
-            if self.pending_state == ReservationPendingStates.None_ and self.state != ReservationStates.Nascent and not self.pending_recover:
+            if self.pending_state == ReservationPendingStates.None_ and self.state != ReservationStates.Nascent and \
+                    not self.pending_recover:
                 self.generate_update()
 
         elif operation == RequestTypes.RequestExtendTicket:

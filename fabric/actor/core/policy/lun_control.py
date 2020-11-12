@@ -70,7 +70,7 @@ class LUNControl(ResourceControl):
 
     def donate_reservation(self, *, reservation: IClientReservation):
         if self.tags.size() != 0:
-            Exception("only a single source reservation is supported")
+            raise Exception("only a single source reservation is supported")
 
         rset = reservation.get_resources()
         rtype = reservation.get_type()

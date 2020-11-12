@@ -48,14 +48,12 @@ class PoolManagerError(Enum):
     ErrorDatabaseError = -40
     ErrorInternalError = -50
 
+class CreatePoolResult:
+    def __init__(self):
+        self.code = PoolManagerError.ErrorNone
+        self.slice = None
 
 class PoolManager:
-
-    class CreatePoolResult:
-        def __init__(self):
-            self.code = PoolManagerError.ErrorNone
-            self.slice = None
-
     def __init__(self, *, db: IDatabase, identity: IActorIdentity, logger):
         if db is None or identity is None or logger is None:
             raise Exception("Invalid arguments {} {} {}".format(db, identity, logger))
@@ -65,7 +63,7 @@ class PoolManager:
 
     def create_pool(self, *, slice_id: ID, name: str, rtype: ResourceType,
                     resource_data: ResourceData) -> CreatePoolResult:
-        result = self.CreatePoolResult()
+        result = CreatePoolResult()
         if slice_id is None or name is None or rtype is None:
             result.code = PoolManagerError.ErrorInvalidArguments
             return result

@@ -313,7 +313,7 @@ class Actor(IActor):
         return self.current_cycle
 
     def get_description(self) -> str:
-        return self.get_description()
+        return self.description
 
     def get_guid(self) -> ID:
         if self.identity is not None:

@@ -217,7 +217,7 @@ class KafkaClientActorService(KafkaActorService):
     def extend_reservation(self, *, request: ExtendReservationAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         try:
-            if request.guid is None or (request.reservation_id is None and request.reservation_id is None):
+            if request.guid is None or request.reservation_id is None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
 
