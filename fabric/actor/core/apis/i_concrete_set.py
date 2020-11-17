@@ -25,6 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from datetime import datetime
+
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -35,8 +37,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 
-from datetime import datetime
-
 
 class IConcreteSet:
     """
@@ -45,10 +45,10 @@ class IConcreteSet:
     compute servers, storage servers, network paths, etc.
     Note: each concrete set type should implement a default constructor.
 
-    Concrete sets are single threaded: their methods are invoked by the actor 
-    main thread and there is no need for internal synchronization. When a concrete set 
+    Concrete sets are single threaded: their methods are invoked by the actor
+    main thread and there is no need for internal synchronization. When a concrete set
     method needs to trigger a configuration action, the configuration action should
-    be executed on a separate thread. Once the configuration action completes, an event 
+    be executed on a separate thread. Once the configuration action completes, an event
     should be queued to the actor to be processed on the actor main thread.
     """
     PropertyResourceType = "cs.resourceType"
@@ -59,8 +59,8 @@ class IConcreteSet:
         """
         Adds the passed set to the current set. Optionally triggers configuration
         actions on all added units.
-        @params concrete_set : set to add
-        @params configure :if true, configuration actions will be triggered for all
+        @param concrete_set : set to add
+        @param configure :if true, configuration actions will be triggered for all
                    added units
         @raises Exception in case of error
         """
@@ -72,10 +72,8 @@ class IConcreteSet:
         set represents the state that the current set has to be updated to. The
         implementation must determine what units have been added/removed/modified
         and perform the appropriate actions.
-        @params concrete_set : concrete resources representing the new state of the current
-                   set
-        @params configure : if true, configuration actions will be triggered for all
-                   added, removed, or modified units
+        @param concrete_set : concrete resources representing the new state of the current set
+        @param configure : if true, configuration actions will be triggered for all added, removed, or modified units
         @raises Exception thrown if something is wrong
         """
 
@@ -100,8 +98,8 @@ class IConcreteSet:
         """
         Initializes the concrete set with information derived from the
         passed in properties list.
-        @params encoded encoded concrete set
-        @params plugin of containing actor
+        @param encoded encoded concrete set
+        @param plugin of containing actor
         @raises Exception in case of error
         """
 
@@ -134,7 +132,7 @@ class IConcreteSet:
     def holding(self, *, when: datetime) -> int:
         """
         Returns how many units are in the set at the given time instance.
-        @params when: time instance
+        @param when: time instance
         @returns how many units will be in the set for at the given time instance.
         """
 
@@ -153,8 +151,8 @@ class IConcreteSet:
         passed set. Note that the passed set may contain only a subset of the
         units contained in the current set. Optionally triggers configuration
         actions for all removed/modified units.
-        @params concrete_set:  set containing the update data
-        @params configure :  if true, configuration actions will be triggered for all
+        @param concrete_set:  set containing the update data
+        @param configure :  if true, configuration actions will be triggered for all
                    modified units
         @raises Exception in case of error
         """
@@ -173,8 +171,8 @@ class IConcreteSet:
         configuration actions for all removed units. If the lease term for the
         concrete set has changed, this call must be followed by a call to
         extend(Term).
-        @params concrete_set : set to remove
-        @params configure : if true, configuration actions will be triggered for all
+        @param concrete_set : set to remove
+        @param configure : if true, configuration actions will be triggered for all
                       removed units
         @raises Exception in case of error
         """
@@ -185,7 +183,7 @@ class IConcreteSet:
         Initializes the concrete set with information about the containing
         reservation. This method is called with the manager lock on and hence
         should not block for long periods of time.
-        @params reservation : reservation this concrete set belongs to
+        @param reservation : reservation this concrete set belongs to
         """
 
     @abstractmethod
@@ -193,9 +191,9 @@ class IConcreteSet:
         """
         Validate that the concrete set matches the abstract resource set
         parameters.
-        @params type : abstract resources resource type
-        @params units : abstract resources units
-        @params term : abstract resources term
+        @param type : abstract resources resource type
+        @param units : abstract resources units
+        @param term : abstract resources term
         @raises Exception in case of error
         """
 
@@ -262,4 +260,8 @@ class IConcreteSet:
 
     @abstractmethod
     def get_units(self) -> int:
+        """
+        Return the number of units
+        @return number of units
+        """
         return 0

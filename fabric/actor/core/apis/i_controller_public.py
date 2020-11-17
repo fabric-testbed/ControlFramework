@@ -42,12 +42,12 @@ class IControllerPublic:
     def update_lease(self, *, reservation: IReservation, update_data, caller: AuthToken):
         """
         Handles an incoming lease update.
-       
+
         @param reservation reservation represented by this update. The
                reservation object will contain the lease (if any) as well
                information about the actually leased resources.
         @param update_data status of the remote operation.
         @param caller identity of the caller
-       
+
         @throws Exception in case of error
         """

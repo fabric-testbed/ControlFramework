@@ -343,11 +343,12 @@ class UnitSet(IConcreteSet):
             self.logger.error("Exception occurred while encoding {}".format(e))
         return None
 
-    def decode(self, *, encoded_ticket, plugin: IBasePlugin):
+    def decode(self, *, encoded, plugin: IBasePlugin):
         try:
-            unit_set = pickle.loads(encoded_ticket)
+            unit_set = pickle.loads(encoded)
             unit_set.plugin = plugin
             unit_set.logger = plugin.get_logger()
+            return unit_set
         except Exception as e:
             self.logger.error("Exception occurred while decoding {}".format(e))
         return None

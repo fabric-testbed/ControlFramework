@@ -31,4 +31,3 @@ class IBrokerPolicy(IClientPolicy, IServerPolicy):
     """
     IBrokerPolicy defines the policy interface for an actor acting in the broker role.
     """
-    pass

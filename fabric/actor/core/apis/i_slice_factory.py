@@ -41,7 +41,7 @@ class ISliceFactory:
         """
         Creates a new slice with the specified id, name, and resource
         properties.
-      
+
         @param slice_id slice id
         @param name slice name
         @param data slice properties
@@ -52,4 +52,8 @@ class ISliceFactory:
 
     @staticmethod
     def create_instance(*, properties: dict) -> ISlice:
+        """
+        Creates a new slice object by restoring it from the pickled instance read from the database
+        @param properties dictionary containing the pickled instance read from the database
+        """
         raise NotImplementedError("Should have implemented this")

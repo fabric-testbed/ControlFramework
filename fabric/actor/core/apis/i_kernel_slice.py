@@ -36,22 +36,12 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.util.reservation_set import ReservationSet
     from fabric.actor.security.auth_token import AuthToken
-    from fabric.actor.security.guard import Guard
 
 
 class IKernelSlice(ISlice):
     """
     Kernel-level interface for slice objects.
     """
-
-    @abstractmethod
-    def get_guard(self) -> Guard:
-        """
-        Returns the slice guard.
-       
-        @return the guard
-        """
-
     @abstractmethod
     def set_broker_client(self):
         """
@@ -69,7 +59,7 @@ class IKernelSlice(ISlice):
     def get_reservations(self) -> ReservationSet:
         """
         Returns the reservation set.
-       
+
         @return reservation set
         """
 
@@ -79,7 +69,7 @@ class IKernelSlice(ISlice):
         Returns the reservation set represented as a list. Must be
         called with the kernel lock on to prevent exceptions due to concurrent
         iteration.
-       
+
         @return a list of reservation
         """
 
@@ -87,7 +77,7 @@ class IKernelSlice(ISlice):
     def is_empty(self) -> bool:
         """
         Checks if the slice is empty.
-       
+
         @return true if there are no reservations in the slice
         """
 
@@ -96,7 +86,7 @@ class IKernelSlice(ISlice):
         """
         Prepares to register a new slice.  Clears previous state, such
         as list of reservations in the slice.
-       
+
         @raises Exception if validity checks fail
         """
 
@@ -104,9 +94,9 @@ class IKernelSlice(ISlice):
     def register(self, *, reservation: IKernelReservation):
         """
         Registers a new reservation.
-       
+
         @param reservation reservation to register
-       
+
         @throws Exception in case of error
         """
 
@@ -115,9 +105,9 @@ class IKernelSlice(ISlice):
         """
         Looks up a reservation by ID but does not throw error if the
         reservation is not present in the slice.
-       
+
         @params rid the reservation ID
-       
+
         @returns the reservation with that ID
         """
 
@@ -125,7 +115,7 @@ class IKernelSlice(ISlice):
     def unregister(self, *, reservation: IKernelReservation):
         """
         Unregisters the reservation from the slice.
-       
+
         @param reservation reservation to unregister
         """
 
@@ -133,7 +123,7 @@ class IKernelSlice(ISlice):
     def set_owner(self, *, owner: AuthToken):
         """
         Sets the slice owner.
-       
+
         @param auth the slice owner
         """
 

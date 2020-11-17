@@ -69,7 +69,7 @@ class ISliceOperations:
         """
 
     @abstractmethod
-    def register_slice(self, *, slice_object:ISlice):
+    def register_slice(self, *, slice_object: ISlice):
         """
         Registers the slice with the actor. The slice must be a newly created one without a database record.
         If the slice is a recovered/previously unregistered one use re_register_slice(Slice) instead.

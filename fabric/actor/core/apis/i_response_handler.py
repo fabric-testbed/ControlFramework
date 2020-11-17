@@ -23,11 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import ABC
 
 
-
-class IResponseHandler:
+class IResponseHandler(ABC):
     """
     IResponseHandler defines the base interface each response handler must implement.
     """
-    pass

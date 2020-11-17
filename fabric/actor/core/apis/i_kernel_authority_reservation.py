@@ -39,7 +39,7 @@ class IKernelAuthorityReservation(IKernelServerReservation, IAuthorityReservatio
         """
         Prepare for an incoming extend request on this existing
         reservation. Note: unlocked
-       
+
         @throws Exception thrown if request is rejected (e.g., ticket not valid)
         """
 

@@ -31,4 +31,3 @@ class IKernelClientReservation(IKernelReservation, IClientReservation):
     """
     Kernel-level interface for client reservations.
     """
-    pass

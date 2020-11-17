@@ -42,6 +42,9 @@ if TYPE_CHECKING:
 
 
 class IMgmtContainer(IComponent):
+    """
+    Interface for Management Container
+    """
     @abstractmethod
     def get_actor(self, *, guid: ID) -> IMgmtActor:
         """

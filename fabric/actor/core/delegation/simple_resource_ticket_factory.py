@@ -80,11 +80,11 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
 
     def clone(self, *, original: ResourceTicket) -> ResourceTicket:
         self.ensure_initialized()
-        ticket_json = self.toJson(ticket=original)
-        result = self.fromJson(incoming=ticket_json)
+        ticket_json = self.to_json(ticket=original)
+        result = self.from_json(incoming=ticket_json)
         return result
 
-    def toJson(self, *, ticket: ResourceTicket) -> dict:
+    def to_json(self, *, ticket: ResourceTicket) -> dict:
         outgoing_ticket = {}
         delegation_list = []
         for delegation in ticket.delegations:
@@ -124,7 +124,7 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
         outgoing_ticket['delegations'] = delegation_list
         return {'ticket': outgoing_ticket}
 
-    def fromJson(self, *, incoming: dict) -> ResourceTicket:
+    def from_json(self, *, incoming: dict) -> ResourceTicket:
         ticket = None
 
         incoming_ticket = incoming.get('ticket', None)

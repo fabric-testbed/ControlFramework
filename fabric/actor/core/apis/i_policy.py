@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING
 
 
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_delegation import IDelegation
 
 
-class IPolicy:
+class IPolicy(ABC):
     """
     IPolicy encapsulates all policy decisions an actor must make to
     perform its functions. Each actor has one policy instance that controls its
@@ -97,7 +97,7 @@ class IPolicy:
         method will be invoked only for reservations, whose extensions have not
         been triggered by the policy, e.g, from the management interface. The
         policy should update its state to reflect the extend request.
-        
+
         @params reservation: reservation to be extended
         @params resources: resource set used for the extension
         @params term: term used for the extension
@@ -111,7 +111,7 @@ class IPolicy:
         the close was triggered by the policy itself. The policy should update
         its internal state/cancel pending operations associated with the
         reservation.
-        
+
         @params reservation: reservation about to be closed
         """
 
@@ -168,9 +168,9 @@ class IPolicy:
         not block for prolonged periods of time. If necessary, future versions
         will update this interface to allow query responses to be delivered using
         callbacks.
-        
+
         @params p : a properties list of query parameters. Can be null or empty.
-        
+
         @returns a properties list of outgoing values. If the incoming properties
                 collection is null or empty, should return all possible
                 properties that can be relevant to the caller.
@@ -181,7 +181,7 @@ class IPolicy:
         """
         Notifies the policy that a configuration action for the object
         represented by the token parameter has completed.
-        
+
         @params action : configuration action. See Config.Target*
         @params token : object or a token for the object whose configuration action has completed
         @params out_properties : output properties produced by the configuration action
@@ -207,7 +207,7 @@ class IPolicy:
         Informs the policy about a reservation. Called during recovery/startup.
         The policy must re-establish any state required for the management of the
         reservation.
-        
+
         @params reservation: reservation being recovered
         @raises Exception in case of error
         """
@@ -233,7 +233,7 @@ class IPolicy:
     def set_actor(self, *, actor: IActor):
         """
         Sets the actor the policy belongs to.
-        
+
         @params actor : the actor the policy belongs to
         """
 
@@ -241,9 +241,9 @@ class IPolicy:
     def get_closing(self, *, cycle: int) -> ReservationSet:
         """
         Returns a set of reservations that must be closed.
-        
+
         @params cycle: the current cycle
-        
+
         @returns reservations to be closed
         """
 
@@ -251,6 +251,6 @@ class IPolicy:
     def get_guid(self) -> ID:
         """
         Returns the globally unique identifier of this policy object instance.
-        
+
         @returns guid
         """

@@ -30,6 +30,8 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
+from fabric.actor.core.apis.i_reservation_resources import IReservationResources
+from fabric.actor.core.apis.i_reservation_status import IReservationStatus
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -38,11 +40,11 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.reservation_state import ReservationState
     from fabric.actor.core.util.resource_type import ResourceType
 
-from fabric.actor.core.apis.i_reservation_resources import IReservationResources
-from fabric.actor.core.apis.i_reservation_status import IReservationStatus
-
 
 class ReservationCategory(Enum):
+    """
+    Enumeration for Reservation Category
+    """
     # Unspecified reservation category.
     All = 0
     # Client-side reservations.
@@ -51,7 +53,7 @@ class ReservationCategory(Enum):
     Broker = 2
     # Site authority-side reservations.
     Authority = 3
-    
+
 
 class IReservation(IReservationResources, IReservationStatus):
     """
@@ -208,7 +210,7 @@ class IReservation(IReservationResources, IReservationStatus):
         """
 
     @abstractmethod
-    def set_pending_recover(self, *, pending_recover:bool):
+    def set_pending_recover(self, *, pending_recover: bool):
         """
         Indicates if a recovery operation for the reservation is going to be in progress.
 
@@ -235,7 +237,6 @@ class IReservation(IReservationResources, IReservationStatus):
             state: the new state
             pending: if reservation is pending
         """
-        raise NotImplementedError("Should have implemented this" )
 
     @abstractmethod
     def get_notices(self) -> str:

@@ -41,6 +41,9 @@ if TYPE_CHECKING:
 
 
 class DelegationState(Enum):
+    """
+    Enumeration for Delegation State
+    """
     Nascent = 1
     Delegated = 2
     Closed = 3
@@ -208,7 +211,7 @@ class IDelegation(ABC):
         """
 
     @abstractmethod
-    def delegate(self, policy: IPolicy, id_token:str = None):
+    def delegate(self, policy: IPolicy, id_token: str = None):
         """
         Check if delegation can be delegated and state transition
         @param policy policy

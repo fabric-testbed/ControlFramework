@@ -122,7 +122,7 @@ class Authority(Actor, IAuthority):
         self.extending_lease = ReservationSet()
         self.modifying_lease = ReservationSet()
 
-    def register_client_slice(self, *, slice_obj:ISlice):
+    def register_client_slice(self, *, slice_obj: ISlice):
         self.wrapper.register_slice(slice_object=slice_obj)
 
     def available(self, *, resources: ResourceSet):

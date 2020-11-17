@@ -23,5 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-class IReservationTracker:
-    pass
+from abc import ABC
+
+
+class IReservationTracker(ABC):
+    """
+    Interface for Reservation Tracker
+    """

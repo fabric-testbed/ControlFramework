@@ -31,6 +31,12 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
 
+from fabric.actor.core.apis.i_timer_queue import ITimerQueue
+from fabric.actor.core.apis.i_actor_identity import IActorIdentity
+from fabric.actor.core.apis.i_slice_operations import ISliceOperations
+from fabric.actor.core.apis.i_reservation_operations import IReservationOperations
+from fabric.actor.core.apis.i_tick import ITick
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor_event import IActorEvent
     from fabric.actor.core.apis.i_actor_proxy import IActorProxy
@@ -42,14 +48,11 @@ if TYPE_CHECKING:
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.apis.i_policy import IPolicy
 
-from fabric.actor.core.apis.i_timer_queue import ITimerQueue
-from fabric.actor.core.apis.i_actor_identity import IActorIdentity
-from fabric.actor.core.apis.i_slice_operations import ISliceOperations
-from fabric.actor.core.apis.i_reservation_operations import IReservationOperations
-from fabric.actor.core.apis.i_tick import ITick
-
 
 class ActorType(Enum):
+    """
+    Enum for Actor Type
+    """
     All = 0
     Orchestrator = 1
     Broker = 2
@@ -57,6 +60,10 @@ class ActorType(Enum):
 
     @staticmethod
     def get_actor_type_from_string(*, actor_type: str) -> ActorType:
+        """
+        Convert String to Actor Type
+        @param actor_type actor type
+        """
         if actor_type.lower() == ActorType.Orchestrator.name.lower():
             return ActorType.Orchestrator
         if actor_type.lower() == ActorType.Broker.name.lower():
@@ -64,6 +71,7 @@ class ActorType(Enum):
         if actor_type.lower() == ActorType.Authority.name.lower():
             return ActorType.Authority
         return ActorType.All
+
 
 class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, ITimerQueue):
     """
@@ -326,7 +334,6 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         """
         Get Management Object class Name
         """
-        
 
     @staticmethod
     def get_management_object_module() -> str:

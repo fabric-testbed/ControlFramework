@@ -49,7 +49,7 @@ class IKernelReservation(IReservation):
     def set_slice(self, *, slice_object: ISlice):
         """
         Sets the slice the reservation belongs to.
-       
+
         @param slice_object slice the reservation belongs to
         """
 
@@ -57,7 +57,7 @@ class IKernelReservation(IReservation):
     def can_redeem(self) -> bool:
         """
         Checks if the reservation can be redeemed at the current time.
-       
+
         @return true if the reservation's current state allows it to be redeemed
         """
 
@@ -79,7 +79,7 @@ class IKernelReservation(IReservation):
     def extend_lease(self):
         """
         Extends the reservation.
-       
+
         @throws Exception in case of error
         """
 
@@ -87,7 +87,7 @@ class IKernelReservation(IReservation):
     def modify_lease(self):
         """
         Modifies the reservation.
-       
+
         @throws Exception in case of error
         """
 
@@ -95,9 +95,9 @@ class IKernelReservation(IReservation):
     def extend_ticket(self, *, actor: IActor):
         """
         Extends the ticket.
-       
+
         @param actor actor
-       
+
         @throws Exception in case of error
         """
 
@@ -105,7 +105,7 @@ class IKernelReservation(IReservation):
     def get_kernel_slice(self):
         """
         Returns the kernel slice.
-       
+
         @return kernel slice
         """
 
@@ -113,7 +113,7 @@ class IKernelReservation(IReservation):
     def handle_duplicate_request(self, *, operation: RequestTypes):
         """
         Handles a duplicate request.
-       
+
         @param operation operation type code
         @throws Exception in case of error
         """
@@ -122,7 +122,7 @@ class IKernelReservation(IReservation):
     def prepare(self, *, callback: ICallbackProxy, logger):
         """
         Prepares for a ticket request on a new reservation object.
-       
+
         @param callback callback object
         @param logger for diagnostic logging
         @throws Exception in case of error
@@ -132,7 +132,7 @@ class IKernelReservation(IReservation):
     def prepare_probe(self):
         """
         Prepares a reservation probe.
-       
+
         @throws Exception in case of error
         """
 
@@ -142,7 +142,7 @@ class IKernelReservation(IReservation):
         Probe a reservation with a pending request. On server, if the
         operation completed, handle it and generate an update. If no pending
         request completed then do nothing.
-       
+
         @throws Exception in case of error
         """
 
@@ -151,9 +151,9 @@ class IKernelReservation(IReservation):
         """
         Reserve resources: ticket() initiate or request, or redeem()
         request. New reservation.
-       
+
         @param policy the mapper for the reservation
-       
+
         @throws Exception in case of error
         """
 
@@ -231,7 +231,7 @@ class IKernelReservation(IReservation):
     def set_actor(self, *, actor: IActor):
         """
         Sets the actor in control of the reservation.
-       
+
         @param actor actor in control of the reservation
         """
 
@@ -239,7 +239,7 @@ class IKernelReservation(IReservation):
     def set_logger(self, *, logger):
         """
         Attaches the logger to use for the reservation.
-       
+
         @param logger logger object
         """
 
@@ -247,7 +247,7 @@ class IKernelReservation(IReservation):
     def set_service_pending(self, *, code: int):
         """
         Indicates there is a pending operation on the reservation.
-       
+
         @param code operation code
         """
 
@@ -255,23 +255,23 @@ class IKernelReservation(IReservation):
     def update_lease(self, *, incoming: IReservation, update_data: UpdateData):
         """
         Handles an incoming lease update.
-       
+
         @param incoming incoming lease update
         @param update_data update data
-       
+
         @throws Exception thrown if lease update is for an un-ticketed
                 reservation
         @throws Exception thrown if lease update is for closed reservation
         """
 
     @abstractmethod
-    def update_ticket(self, *,incoming: IReservation, update_data: UpdateData):
+    def update_ticket(self, *, incoming: IReservation, update_data: UpdateData):
         """
         Handles an incoming ticket update.
-       
+
         @param incoming incoming ticket update
         @param update_data update data
-       
+
         @throws Exception in case of error
         """
 
@@ -286,12 +286,12 @@ class IKernelReservation(IReservation):
     def validate_outgoing(self):
         """
         Validates a reservation as it is about to leave an actor.
-       
+
         @throws Exception in case of error
         """
 
     @abstractmethod
-    def handle_failed_rpc(self, *,failed: FailedRPC):
+    def handle_failed_rpc(self, *, failed: FailedRPC):
         """
         Processes a failed RPC request.
         @param failed failed

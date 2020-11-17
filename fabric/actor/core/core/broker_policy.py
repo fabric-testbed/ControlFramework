@@ -36,6 +36,9 @@ from fabric.actor.core.kernel.reservation_states import ReservationStates
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.resource_type import ResourceType
+from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
+from fabric.actor.core.core.policy import Policy
+from fabric.actor.core.kernel.resource_set import ResourceSet
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
@@ -46,10 +49,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.delegation.resource_delegation import ResourceDelegation
     from fabric.actor.core.apis.i_server_reservation import IServerReservation
     from fabric.actor.core.util.id import ID
-
-from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
-from fabric.actor.core.core.policy import Policy
-from fabric.actor.core.kernel.resource_set import ResourceSet
 
 
 class BrokerPolicy(Policy, IBrokerPolicy):
@@ -87,8 +86,6 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         self.initialized = False
 
         self.lock = threading.Lock()
-
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
 
     def add_for_approval(self, *, reservation: IBrokerReservation):
         """
@@ -129,7 +126,7 @@ class BrokerPolicy(Policy, IBrokerPolicy):
     def donate_delegation(self, *, delegation: IDelegation):
         return
 
-    def extend_broker(self, *, reservation:IBrokerReservation) -> bool:
+    def extend_broker(self, *, reservation: IBrokerReservation) -> bool:
         return False
 
     def initialize(self):
@@ -141,7 +138,7 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         """
         Releases the resources for a reservation that was rejected by the
         administrator.
-        
+
         @param reservation reservation
         """
         return
@@ -175,10 +172,10 @@ class BrokerPolicy(Policy, IBrokerPolicy):
     def extract(self, *, source: ResourceSet, delegation: ResourceDelegation) -> ResourceSet:
         """
         Creates a new resource set using the source and the specified delegation.
-        
+
         @param source source
-        @param delegation delegation 
-        @return returns ResourceSet 
+        @param delegation delegation
+        @return returns ResourceSet
         @throws Exception in case of error
         """
         rd = ResourceData()

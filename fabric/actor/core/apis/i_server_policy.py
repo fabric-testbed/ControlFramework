@@ -50,9 +50,9 @@ class IServerPolicy(IPolicy):
         is called by the policy once per cycle. The method should determine
         whether to perform resource allocation on the given cycle and what
         requests to consider in that process.
-        
-        @params cycle : the cycle for this allocation
-        
+
+        @param cycle : the cycle for this allocation
+
         @raises Exception in case of error
         """
 
@@ -79,9 +79,9 @@ class IServerPolicy(IPolicy):
         this method at later times until the policy completes processing this
         request.
 
-        @params reservation: reservation to allocate resources for.
-        
-        @returns true, if the request has been fulfilled, false, if the allocation
+        @param reservation: reservation to allocate resources for.
+
+        @return true, if the request has been fulfilled, false, if the allocation
                 of resources will be delayed until a later time.
         @raises Exception in case of error
         """
@@ -89,11 +89,10 @@ class IServerPolicy(IPolicy):
     @abstractmethod
     def bind_delegation(self, *, delegation: IDelegation) -> bool:
         """
-        Handles an incoming request to allocate resources and issue a ticket for
-        the delegation. 
-        @params delegation: delegation to allocate resources for.
+        Handles an incoming request to allocate resources and issue a ticket for the delegation.
+        @param delegation: delegation to allocate resources for.
 
-        @returns true, if the request has been fulfilled, false, if the allocation
+        @return true, if the request has been fulfilled, false, if the allocation
                 of resources will be delayed until a later time.
         @raises Exception in case of error
         """
@@ -110,7 +109,7 @@ class IServerPolicy(IPolicy):
         resources to its inventory when resources it requests become available.
 
         @param reservation : reservation representing resources to be used for allocation
-        
+
         @raises Exception in case of error
         """
 
@@ -127,7 +126,7 @@ class IServerPolicy(IPolicy):
         """
 
     @abstractmethod
-    def extend_broker(self, *, reservation:IBrokerReservation) -> bool:
+    def extend_broker(self, *, reservation: IBrokerReservation) -> bool:
         """
         Handles an incoming request to extend previously allocated resources and
         issue a ticket for the reservation. The requested resources can be
@@ -157,8 +156,8 @@ class IServerPolicy(IPolicy):
         actually granted.
 
         @param reservation : reservation to allocate resources for.
-        
-        @returns true, if the request has been fulfilled, false, if the allocation
+
+        @return true, if the request has been fulfilled, false, if the allocation
                 of resources will be delayed until a later time.
         @raises Exception in case of error
         """

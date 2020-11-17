@@ -25,17 +25,19 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from abc import abstractmethod
+import datetime
+
+from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.resource_count import ResourceCount
 
-import datetime
 
-class IReservationResources:
+class IReservationResources(ABC):
     """
     IReservationResources defines the API for resources associated with a reservation.
     Each reservation has a number of resource sets associated with it:
@@ -58,7 +60,7 @@ class IReservationResources:
             rc: holder for counts
             time: time instance
         """
-        
+
     @abstractmethod
     def get_approved_resources(self) -> ResourceSet:
         """
@@ -68,7 +70,7 @@ class IReservationResources:
         Returns:
             resources last approved for the reservation. None if no resources have ever been approved.
         """
-        
+
     @abstractmethod
     def get_approved_term(self) -> Term:
         """

@@ -36,6 +36,9 @@ if TYPE_CHECKING:
 
 
 class IProxyFactory:
+    """
+    Interface for Factory class for creating Proxies
+    """
     @abstractmethod
     def new_callback(self, *, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:
         """

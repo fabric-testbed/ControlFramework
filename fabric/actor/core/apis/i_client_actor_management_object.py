@@ -51,18 +51,18 @@ class IClientActorManagementObject:
     def add_reservation(self, *, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
         """
         Add a reservation
-        @params reservation : reservation to be added
-        @params caller: caller
-        @returns reservation id on success and error code on failure (ResultStringAvro)
+        @param reservation : reservation to be added
+        @param caller: caller
+        @return reservation id on success and error code on failure (ResultStringAvro)
         """
 
     @abstractmethod
     def add_reservations(self, *, reservations: List[TicketReservationAvro], caller: AuthToken) -> ResultStringsAvro:
         """
         Add reservations
-        @params reservations : reservations to be added
-        @params caller: caller
-        @returns reservation ids on success and error code on failure (ResultStringsAvro)
+        @param reservations : reservations to be added
+        @param caller: caller
+        @return reservation ids on success and error code on failure (ResultStringsAvro)
         """
 
     @abstractmethod
@@ -71,88 +71,90 @@ class IClientActorManagementObject:
                            config_properties: dict, caller: AuthToken) -> ResultAvro:
         """
         Extend a reservation
-        @params reservation : reservation to be extended
-        @params new_end_time: new end time
-        @params new_resource_type: new resource type
-        @params config_properties: config_properties
-        @params caller: caller
-        @returns success or failure status
+        @param reservation : reservation to be extended
+        @param new_end_time: new end time
+        @param new_resource_type: new resource type
+        @param config_properties: config_properties
+        @param caller: caller
+        @return success or failure status
         """
 
     @abstractmethod
     def demand_reservation(self, *, reservation: ReservationMng, caller: AuthToken) -> ResultStringAvro:
         """
         Demand a reservation
-        @params reservation : reservation to be demanded
-        @params caller: caller
-        @returns reservation id on success and error code on failure (ResultStringAvro)
+        @param reservation : reservation to be demanded
+        @param caller: caller
+        @return reservation id on success and error code on failure (ResultStringAvro)
         """
 
     @abstractmethod
     def demand_reservation_rid(self, *, rid: ID, caller: AuthToken) -> ResultAvro:
         """
         Demand a reservation by reservation id
-        @params rid : reservation id of reservation to be demanded
-        @params caller: caller
-        @returns success or failure status
+        @param rid : reservation id of reservation to be demanded
+        @param caller: caller
+        @return success or failure status
         """
 
     @abstractmethod
     def get_brokers(self, *, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
         """
         Get all brokers
-        @params caller: caller
+        @param caller: caller
         @param id_token: id token
-        @returns list of all the brokers
+        @return list of all the brokers
         """
 
     @abstractmethod
     def get_broker(self, *, broker_id: ID, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
         """
         Get a broker
-        @params broker_id : broker_id
-        @params caller: caller
+        @param broker_id : broker_id
+        @param caller: caller
         @param id_token: id token
-        @returns broker information
+        @return broker information
         """
 
     @abstractmethod
     def add_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
         """
         Add a broker
-        @params broker: broker_proxy to be added
-        @params caller: caller
-        @returns success or failure status
+        @param broker: broker_proxy to be added
+        @param caller: caller
+        @return success or failure status
         """
 
     @abstractmethod
     def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str) -> ResultPoolInfoAvro:
         """
         Get Pool Info
-        @params broker : broker ID
-        @params caller: caller
-        @params id_token: str
-        @returns pool information
+        @param broker : broker ID
+        @param caller: caller
+        @param id_token: str
+        @return pool information
         """
 
     @abstractmethod
-    def claim_delegations(self, *, broker: ID, did: ID, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: ID, caller: AuthToken,
+                          id_token: str = None) -> ResultDelegationAvro:
         """
         Claim delegations
-        @params broker : broker ID
-        @params did : delegations ID
-        @params caller: caller
+        @param broker : broker ID
+        @param did : delegations ID
+        @param caller: caller
         @param id_token: id token
-        @returns ResultDelegationAvro
+        @return ResultDelegationAvro
         """
 
     @abstractmethod
-    def reclaim_delegations(self, *, broker: ID, did: ID, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: ID, caller: AuthToken,
+                            id_token: str = None) -> ResultDelegationAvro:
         """
         ReClaim delegations
-        @params broker : broker ID
-        @params did : delegations ID
-        @params caller: caller
+        @param broker : broker ID
+        @param did : delegations ID
+        @param caller: caller
         @param id_token: id token
-        @returns ResultDelegationAvro
+        @return ResultDelegationAvro
         """

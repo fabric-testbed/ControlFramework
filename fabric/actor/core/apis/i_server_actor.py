@@ -33,13 +33,10 @@ from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_server_public import IServerPublic
 
 if TYPE_CHECKING:
-    from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
     from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.core.apis.i_slice import ISlice
-    from fabric.actor.core.time.term import Term
-    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.client import Client
     from fabric.actor.core.util.id import ID
     from fabric.actor.security.auth_token import AuthToken
@@ -63,10 +60,10 @@ class IServerActor(IActor, IServerPublic):
         """
 
     @abstractmethod
-    def register_client_slice(self, *, slice:ISlice):
+    def register_client_slice(self, *, slice_obj: ISlice):
         """
         Registers a new client slice.
-        @params slice: client slice
+        @params slice_obj: client slice
         @raises Exception in case of error
         """
 
@@ -79,7 +76,7 @@ class IServerActor(IActor, IServerPublic):
         """
 
     @abstractmethod
-    def unregister_client(self, *, guid:ID):
+    def unregister_client(self, *, guid: ID):
         """
         Unregisters the specified client.
         @params guid : client guid

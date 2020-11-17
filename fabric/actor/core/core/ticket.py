@@ -70,8 +70,6 @@ class Ticket(IConcreteSet):
         self.logger = None
         self.reservation = None
 
-        # TODO Fetch reservation object and setup logger, reservation and plugin variables
-
     def __str__(self):
         result = "Ticket [units = {} oldUnits = {} ".format(self.get_units(), self.old_units)
         if self.reservation is not None:
@@ -84,7 +82,12 @@ class Ticket(IConcreteSet):
         result += "]"
         return result
 
-    def restore(self, *,  plugin: IBasePlugin, reservation: IReservation):
+    def restore(self, *, plugin: IBasePlugin, reservation: IReservation):
+        """
+        Restore members after instantiating the object post database read
+        @param plugin plugin
+        @param reservation reservation
+        """
         self.plugin = plugin
         self.logger = self.plugin.get_logger()
         self.reservation = reservation
@@ -97,21 +100,30 @@ class Ticket(IConcreteSet):
             self.logger.error("Exception occurred while encoding {}".format(e))
         return None
 
-    def decode(self, *, encoded_ticket, plugin: IBasePlugin):
+    def decode(self, *, encoded, plugin: IBasePlugin):
         try:
-            ticket = pickle.loads(encoded_ticket)
+            ticket = pickle.loads(encoded)
             ticket.plugin = plugin
             ticket.logger = plugin.get_logger()
+            return ticket
         except Exception as e:
             self.logger.error("Exception occurred while decoding {}".format(e))
         return None
 
     def get_type(self) -> ResourceType:
+        """
+        Return resource type
+        @return resource type
+        """
         if self.resource_ticket is None:
             return None
         return self.resource_ticket.get_type()
 
     def get_ticket(self) -> ResourceTicket:
+        """
+        Return resource ticket
+        @return resource ticket
+        """
         return self.resource_ticket
 
     def add(self, *, concrete_set, configure: bool):
@@ -125,7 +137,6 @@ class Ticket(IConcreteSet):
 
         assert concrete_set.resource_ticket is not None
 
-        # TODO
         self.resource_ticket = self.plugin.get_ticket_factory().clone(original=concrete_set.resource_ticket)
 
     def clone(self):
@@ -157,6 +168,10 @@ class Ticket(IConcreteSet):
         return self.resource_ticket.get_properties()
 
     def get_authority(self) -> IAuthorityProxy:
+        """
+        Return corresponding Authority
+        @return authority
+        """
         return self.authority
 
     def get_plugin(self) -> IBasePlugin:
@@ -167,6 +182,10 @@ class Ticket(IConcreteSet):
         return self.plugin
 
     def get_site_proxy(self) -> IAuthorityProxy:
+        """
+        Return corresponding Authority
+        @return authority
+        """
         return self.authority
 
     def get_term(self) -> Term:

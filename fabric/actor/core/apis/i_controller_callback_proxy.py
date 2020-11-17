@@ -45,7 +45,7 @@ class IControllerCallbackProxy(IClientCallbackProxy):
     """
 
     @abstractmethod
-    def prepare_update_lease(self, *, reservation: IAuthorityReservation,  update_data: UpdateData,
+    def prepare_update_lease(self, *, reservation: IAuthorityReservation, update_data: UpdateData,
                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
         """
         Prepare Update Lease

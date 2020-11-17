@@ -32,6 +32,11 @@ class PropertiesManager:
 
     @staticmethod
     def get_request_properties(*, rset: ResourceSet, create: bool) -> dict:
+        """
+        Get Request properties
+        @param rset resource set
+        @param create if true, request properties are created if not present
+        """
         properties = rset.get_request_properties()
         if properties is None and create:
             properties = {}
@@ -40,12 +45,23 @@ class PropertiesManager:
 
     @staticmethod
     def set_elastic_size(*, rset: ResourceSet, value: bool):
+        """
+        Marks this resource set to indicate that the request that it represents
+        is elastic in size (can use less units than requested)
+        @param rset resource set
+        @param value value
+        """
         properties = PropertiesManager.get_request_properties(rset=rset, create=True)
         properties[PropertiesManager.ElasticSize] = value
         return properties
 
     @staticmethod
     def is_elastic_size(*, rset: ResourceSet):
+        """
+        Checks if the request represented by this resource set is elastic in size
+        @param rset resource set
+        @return true or false
+        """
         result = False
         properties = rset.get_request_properties()
         if properties is not None and PropertiesManager.ElasticSize in properties:
@@ -54,6 +70,12 @@ class PropertiesManager:
 
     @staticmethod
     def set_elastic_time(*, rset: ResourceSet, value: bool):
+        """
+        Marks this resource set to indicate that the request that it represents
+        is elastic in size (can use less units than requested)
+        @param rset resource set
+        @param value value
+        """
         properties = PropertiesManager.get_request_properties(rset=rset, create=True)
         properties[PropertiesManager.ElasticTime] = value
         rset.set_request_properties(p=properties)
@@ -61,6 +83,11 @@ class PropertiesManager:
 
     @staticmethod
     def is_elastic_time(*, rset: ResourceSet):
+        """
+        Checks if the request represented by this resource set is elastic in size
+        @param rset resource set
+        @return true or false
+        """
         result = False
         properties = rset.get_request_properties()
         if properties is not None and PropertiesManager.ElasticTime in properties:

@@ -187,11 +187,11 @@ class IResourceControl:
         """
 
     @abstractmethod
-    def configuration_complete(self, *, action:str, token: ConfigToken, out_properties: dict):
+    def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         """
         Notifies the control that a configuration action for the object
         represented by the token parameter has completed.
-        
+
         @params action configuration action. See Config.Target*
         @params token object or a token for the object whose configuration action has completed
         @params out_properties output properties produced by the configuration action

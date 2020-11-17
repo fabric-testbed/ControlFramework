@@ -26,10 +26,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
     from fabric.actor.core.apis.i_controller_reservation import IControllerReservation

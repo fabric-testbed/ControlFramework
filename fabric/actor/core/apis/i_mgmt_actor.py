@@ -111,7 +111,8 @@ class IMgmtActor(IComponent):
         """
 
     @abstractmethod
-    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[ReservationMng]:
+    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int,
+                                               id_token: str = None) -> List[ReservationMng]:
         """
         Obtains all reservations in the given slice in the specified state.
         @param slice_id slice id
@@ -176,7 +177,8 @@ class IMgmtActor(IComponent):
         """
 
     @abstractmethod
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID], id_token: str = None) -> List[ReservationStateAvro]:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID],
+                                               id_token: str = None) -> List[ReservationStateAvro]:
         """
         Returns the state of each of the specified reservations.
         The order in the return list matches the order in the @reservations li
@@ -257,7 +259,8 @@ class IMgmtActor(IComponent):
         """
 
     @abstractmethod
-    def get_delegations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[DelegationAvro]:
+    def get_delegations_by_slice_id_and_state(self, *, slice_id: ID, state: int,
+                                              id_token: str = None) -> List[DelegationAvro]:
         """
         Obtains all delegations in the given slice in the specified state.
         @param slice_id slice id

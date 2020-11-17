@@ -36,6 +36,9 @@ if TYPE_CHECKING:
 
 
 class IControllerReservation(IClientReservation):
+    """
+    Interface for Controller/Orchestrator Reservations
+    """
     @abstractmethod
     def get_join_state(self) -> JoinState:
         """

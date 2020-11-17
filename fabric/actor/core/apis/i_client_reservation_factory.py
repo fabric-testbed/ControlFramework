@@ -43,13 +43,13 @@ class IClientReservationFactory:
                broker: IBrokerProxy = None):
         """
         Creates an instance of IClientReservation
-       
+
         @param rid reservation id
         @param resources resource set
         @param term term
         @param slice_object slice
         @param broker broker
-       
+
         @return an instance of IClientReservation
         """
         raise NotImplementedError("Should have implemented this")

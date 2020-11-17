@@ -136,8 +136,8 @@ class Broker(Actor, IBroker):
     def add_broker(self, *, broker: IBrokerProxy):
         self.registry.add_broker(broker=broker)
 
-    def register_client_slice(self, *, slice:ISlice):
-        self.wrapper.register_slice(slice_object=slice)
+    def register_client_slice(self, *, slice_obj: ISlice):
+        self.wrapper.register_slice(slice_object=slice_obj)
 
     def bid(self, *, cycle: int):
         """

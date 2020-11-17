@@ -27,6 +27,9 @@ from abc import abstractmethod
 
 
 class ITimerTask:
+    """
+    Interface for Timer Task
+    """
     @abstractmethod
     def execute(self):
         """

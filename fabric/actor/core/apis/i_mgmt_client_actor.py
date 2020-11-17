@@ -42,6 +42,9 @@ if TYPE_CHECKING:
 
 
 class IMgmtClientActor(IComponent):
+    """
+    Implements base class for Management Interface for a Client Actor
+    """
     @abstractmethod
     def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
         """

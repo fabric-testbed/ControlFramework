@@ -41,12 +41,12 @@ class IBrokerReservationFactory:
     def create(*, rid: ID, resources: ResourceSet, term: Term, slice_obj: ISlice):
         """
         Creates a new instance of IBrokerReservation
-       
+
         @param rid reservation identifier
         @param resources resource set
         @param term term
         @param slice_obj slice
-       
+
         @return an instance of IBrokerReservation
         """
         raise NotImplementedError("Should have implemented this")

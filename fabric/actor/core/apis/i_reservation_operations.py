@@ -26,10 +26,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from typing import TYPE_CHECKING
 
 from fabric.actor.core.util.id import ID
 
-from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.reservation_set import ReservationSet
@@ -65,7 +65,7 @@ class IReservationOperations:
         Raises:
             Exception in case of error
         """
-        
+
     @abstractmethod
     def close(self, *, reservation: IReservation):
         """

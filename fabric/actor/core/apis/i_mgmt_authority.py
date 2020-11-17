@@ -37,6 +37,9 @@ if TYPE_CHECKING:
 
 
 class IMgmtAuthority(IMgmtServerActor):
+    """
+    Interface for Management Authority
+    """
     @abstractmethod
     def get_authority_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         """
@@ -59,5 +62,3 @@ class IMgmtAuthority(IMgmtServerActor):
         @param uid unit id
         @return return the specified inventory item
         """
-        
-

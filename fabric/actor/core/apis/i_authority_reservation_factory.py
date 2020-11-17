@@ -26,12 +26,12 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric.actor.core.util import id
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_slice import ISlice
     from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
+    from fabric.actor.core.util.id import ID
 
 
 class IAuthorityReservationFactory:
@@ -39,7 +39,7 @@ class IAuthorityReservationFactory:
     Factory for authority reservations.
     """
     @staticmethod
-    def create(*, resources: ResourceSet, term: Term, slice_obj: ISlice, rid: id):
+    def create(*, resources: ResourceSet, term: Term, slice_obj: ISlice, rid: ID):
         """
         Creates a new instance of IAuthorityReservation
         @param resources resource set

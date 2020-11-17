@@ -31,4 +31,3 @@ class IServerProxy(IActorProxy, IServerPublic):
     """
     IServerProxy represents the proxy interface to an actor acting as a server for other actors.
     """
-    pass

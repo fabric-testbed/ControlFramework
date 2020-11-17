@@ -49,7 +49,7 @@ class IDatabase:
         """
         Performs initialization actions as a result of the actor being
         added to the container.
-       
+
         @throws Exception in case of error
         """
 
@@ -57,9 +57,9 @@ class IDatabase:
     def add_broker(self, *, broker: IBrokerProxy):
         """
         Adds a new broker proxy record.
-       
+
         @param broker broker proxy
-       
+
         @throws Exception in case of error
         """
 
@@ -68,9 +68,9 @@ class IDatabase:
         """
         Adds a new record to the database representing this reservation
         object.
-       
+
         @param reservation reservation
-       
+
         @throws Exception in case of error
         """
 
@@ -79,9 +79,9 @@ class IDatabase:
         """
         Adds a new record to the database representing this slice
         object.
-       
+
         @param slice_object Slice object
-       
+
         @throws Exception in case of error
         """
 
@@ -89,9 +89,9 @@ class IDatabase:
     def remove_broker(self, *, broker: IBrokerProxy):
         """
         Removes the specified broker proxy record.
-       
+
         @param broker broker proxy
-       
+
         @throws Exception in case of error
         """
 
@@ -99,9 +99,9 @@ class IDatabase:
     def remove_reservation(self, *, rid: ID):
         """
         Removes the corresponding reservation object.
-       
+
         @param rid reservation id
-       
+
         @throws Exception in case of error
         """
 
@@ -109,9 +109,9 @@ class IDatabase:
     def remove_slice(self, *, slice_id: ID):
         """
         Removes the corresponding database slice record.
-       
+
         @param slice_id slice name
-       
+
         @throws Exception in case of error
         """
 
@@ -119,7 +119,7 @@ class IDatabase:
     def set_actor_name(self, *, name: str):
         """
         Sets the name of the actor this database belongs to.
-       
+
         @param name actor name
         """
 
@@ -127,9 +127,9 @@ class IDatabase:
     def update_broker(self, *, broker: IBrokerProxy):
         """
         Updates the specified broker proxy record.
-       
+
         @param broker broker proxy
-       
+
         @throws Exception in case of error
         """
 
@@ -137,9 +137,9 @@ class IDatabase:
     def update_reservation(self, *, reservation: IReservation):
         """
         Updates the corresponding reservation object.
-       
+
         @param reservation reservation
-       
+
         @throws Exception in case of error
         """
 
@@ -147,9 +147,9 @@ class IDatabase:
     def update_slice(self, *, slice_object: ISlice):
         """
         Updates the corresponding database slice record.
-       
+
         @param slice_object slice object
-       
+
         @throws Exception in case of error
         """
 
@@ -167,11 +167,11 @@ class IDatabase:
     def get_reservation(self, *, rid: ID) -> dict:
         """
         Retrieves the specified reservation record.
-       
+
         @param rid Reservation identifier
-       
+
         @return dict of properties
-       
+
         @throws Exception in case of error
         """
 
@@ -249,10 +249,10 @@ class IDatabase:
     def get_slices(self) -> list:
         """
         Retrieves all slice records.
-       
+
         @return a list containing one or more properties dicts representing
                 serialized slices
-       
+
         @throws Exception in case of error
         """
 
@@ -282,7 +282,7 @@ class IDatabase:
     def initialize(self):
         """
         Initializes the object.
-      
+
         @throws Exception if initialization fails
         """
 
@@ -291,9 +291,9 @@ class IDatabase:
         """
         Retrieves all reservations representing resources held by this
         actor Broker/Controller.
-       
+
         @return list of properties
-       
+
         @throws Exception in case of error
         """
 
@@ -303,9 +303,9 @@ class IDatabase:
         Retrieves all reservations representing resources held by this
         actor Broker/Controller.
         @param slice_id sliceId
-       
+
         @return vector of properties
-       
+
         @throws Exception in case of error
         """
 
@@ -314,9 +314,9 @@ class IDatabase:
         """
         Retrieves all reservations for which this actor acts as a
         broker.
-       
+
         @return list of properties
-       
+
         @throws Exception in case of error
         """
 
@@ -324,9 +324,9 @@ class IDatabase:
     def get_authority_reservations(self) -> list:
         """
         Retrieves all reservations for which this actor acts as a site.
-       
+
         @return list of properties
-       
+
         @throws Exception in case of error
         """
 

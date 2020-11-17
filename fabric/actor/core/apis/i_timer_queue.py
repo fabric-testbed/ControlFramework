@@ -33,6 +33,9 @@ if TYPE_CHECKING:
 
 
 class ITimerQueue:
+    """
+    Interface for Timer Queue
+    """
     @abstractmethod
     def queue_timer(self, timer: ITimerTask):
         """

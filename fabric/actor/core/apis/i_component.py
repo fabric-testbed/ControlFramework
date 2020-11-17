@@ -23,13 +23,13 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import List
 
 from fabric.actor.core.manage.messages.protocol_proxy_mng import ProtocolProxyMng
 
 
-class IComponent:
+class IComponent(ABC):
     @abstractmethod
     def get_protocols(self) -> List[ProtocolProxyMng]:
         """

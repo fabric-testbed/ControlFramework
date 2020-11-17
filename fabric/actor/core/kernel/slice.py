@@ -35,7 +35,6 @@ from fabric.actor.core.util.reservation_set import ReservationSet
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.resource_type import ResourceType
 from fabric.actor.security.auth_token import AuthToken
-from fabric.actor.security.guard import Guard
 from fim.graph.abc_property_graph import ABCPropertyGraph
 
 
@@ -70,8 +69,6 @@ class Slice(IKernelSlice):
         self.type = SliceTypes.ClientSlice
         # The owner of the slice.
         self.owner = None
-        # Access control monitor.
-        self.guard = Guard()
         # Resource type associated with this slice. Used when the slice is used to
         # represent an inventory pool.
         self.resource_type = None
@@ -121,9 +118,6 @@ class Slice(IKernelSlice):
 
     def get_description(self):
         return self.description
-
-    def get_guard(self) -> Guard:
-        return self.guard
 
     def get_local_properties(self):
         if self.rsrcdata is not None:
@@ -200,9 +194,6 @@ class Slice(IKernelSlice):
     def set_description(self, *, description: str):
         self.description = description
 
-    def set_guard(self, *, g: Guard):
-        self.guard = g
-
     def set_inventory(self, *, value: bool):
         if value:
             self.type = SliceTypes.InventorySlice
@@ -217,8 +208,6 @@ class Slice(IKernelSlice):
 
     def set_owner(self, *, owner: AuthToken):
         self.owner = owner
-        self.guard.set_owner(owner=owner)
-        self.guard.set_object_id(object_id=self.guid)
 
     def set_properties(self, *, rsrcdata: ResourceData):
         self.rsrcdata = rsrcdata

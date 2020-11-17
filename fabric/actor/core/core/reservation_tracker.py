@@ -42,18 +42,30 @@ class ReservationTracker(IReservationTracker, IEventHandler):
             self.purged = False
 
         def is_ticketing(self):
+            """
+            Return true if in ticketing state; false otherwise
+            """
             return self.state.get_pending() == ReservationPendingStates.Ticketing or \
                    self.state.get_pending_state() == ReservationPendingStates.ExtendingTicket
 
         def is_ticketed(self):
+            """
+            Return true if in Ticketed state; false otherwise
+            """
             return self.state.get_state() == ReservationStates.Ticketed or \
                    self.state.get_state() == ReservationStates.ActiveTicketed
 
         def is_extending_ticketing(self):
+            """
+            Return true if in Extending Ticketing state; false otherwise
+            """
             return self.state.get_pending() == ReservationPendingStates.ExtendingTicket
 
         def is_active(self):
-            if self.state.joining == -1 :
+            """
+            Return true if in Active state; false otherwise
+            """
+            if self.state.get_joining() == JoinState.None_:
                 return self.state.get_state() == ReservationStates.Active and \
                        self.state.get_pending() == ReservationPendingStates.None_
             else:
@@ -62,12 +74,21 @@ class ReservationTracker(IReservationTracker, IEventHandler):
                        self.state.get_joining() == JoinState.NoJoin
 
         def is_closed(self):
+            """
+            Return true if in Closed state; false otherwise
+            """
             return self.state.get_state() == ReservationStates.Closed
 
         def is_failed(self):
+            """
+            Return true if in Failed state; false otherwise
+            """
             return self.state.get_state() == ReservationStates.Failed
 
         def is_terminal(self):
+            """
+            Return true if in Closed, failed or purged state; false otherwise
+            """
             return self.is_closed() or self.is_failed() or self.purged
 
     def __init__(self):
@@ -84,6 +105,11 @@ class ReservationTracker(IReservationTracker, IEventHandler):
         self.lock = threading.Lock()
 
     def handle_state_transition(self, *, e: ReservationStateTransitionEvent):
+        """
+        Handle State transition event
+        @param e state transition event
+        """
+
         ts = None
         try:
             self.lock.acquire()
@@ -97,6 +123,10 @@ class ReservationTracker(IReservationTracker, IEventHandler):
             self.lock.release()
 
     def handle_reservation_purged(self, *, e: ReservationPurgedEvent):
+        """
+        Handle Purge event
+        @param e purge event
+        """
         ts = None
         try:
             self.lock.acquire()
@@ -107,12 +137,20 @@ class ReservationTracker(IReservationTracker, IEventHandler):
             self.lock.release()
 
     def handle(self, *, event: IEvent):
+        """
+        Handle an incoming event
+        @param event incoming event
+        """
         if isinstance(event, ReservationStateTransitionEvent):
             self.handle_state_transition(e=event)
         elif isinstance(event, ReservationPurgedEvent):
             self.handle_reservation_purged(e=event)
 
     def get_state(self, *, rid: ID) -> ReservationState:
+        """
+        Return state for a reservation
+        @param rid reservation id
+        """
         ret_val = None
         try:
             self.lock.acquire()

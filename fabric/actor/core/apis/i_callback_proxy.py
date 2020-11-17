@@ -64,4 +64,3 @@ class ICallbackProxy(IProxy):
             error: error string
             caller: caller
         """
-

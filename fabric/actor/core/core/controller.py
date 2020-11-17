@@ -36,6 +36,10 @@ from fabric.actor.core.manage.controller_management_object import ControllerMana
 from fabric.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric.actor.core.proxies.kafka.services.controller_service import ControllerService
 from fabric.actor.core.util.prop_list import PropList
+from fabric.actor.core.apis.i_controller import IController
+from fabric.actor.core.core.actor import Actor
+from fabric.actor.core.registry.peer_registry import PeerRegistry
+from fabric.actor.core.util.reservation_set import ReservationSet
 
 if TYPE_CHECKING:
     from fabric.actor.core.time.actor_clock import ActorClock
@@ -43,17 +47,14 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
     from fabric.actor.core.apis.i_slice import ISlice
-    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 
-from fabric.actor.core.apis.i_controller import IController
-from fabric.actor.core.core.actor import Actor
-from fabric.actor.core.registry.peer_registry import PeerRegistry
-from fabric.actor.core.util.reservation_set import ReservationSet
-
 
 class Controller(Actor, IController):
+    """
+    Implements Controller
+    """
     saved_extended_renewable = ReservationSet()
 
     def __init__(self, *, identity: AuthToken = None, clock: ActorClock = None):
@@ -142,7 +143,7 @@ class Controller(Actor, IController):
         """
         Bids for resources as dictated by the plugin bidding policy for the
         current cycle.
-        
+
         @throws Exception in case of error
         """
         # Invoke policy module to select candidates for ticket and extend. Note
@@ -169,11 +170,11 @@ class Controller(Actor, IController):
                         extend.fail(message="unexpected extend failure {}".format(e))
 
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
+                                broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         raise Exception("Not implemented")
 
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                  broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
+                                  broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         raise Exception("Not implemented")
 
     def close_expiring(self):
@@ -200,6 +201,10 @@ class Controller(Actor, IController):
         reservation.set_policy(policy=self.policy)
 
     def extend_lease_reservation(self, *, reservation: IControllerReservation):
+        """
+        Extend Lease for a reservation
+        @param reservation reservation
+        """
         if not self.recovered:
             self.extending_lease.add(reservation=reservation)
         else:
@@ -215,14 +220,16 @@ class Controller(Actor, IController):
             self.extend_lease_reservation(reservation=reservation)
 
         if rset is not None:
-            for reservation in rset.values():
+            for r in rset.values():
                 try:
-                    if isinstance(reservation, IControllerReservation):
-                        self.extend_lease_reservation(reservation=reservation)
+                    if isinstance(r, IControllerReservation):
+                        self.extend_lease_reservation(reservation=r)
                     else:
-                        self.logger.warning("Reservation #{} cannot extendLease".format(reservation.get_reservation_id()))
+                        self.logger.warning("Reservation #{} cannot extendLease".format(
+                            r.get_reservation_id()))
                 except Exception as e:
-                    self.logger.error("Could not extend_lease for #{} e={}".format(reservation.get_reservation_id(), e))
+                    self.logger.error("Could not extend_lease for #{} e={}".format(
+                        r.get_reservation_id(), e))
 
     def extend_ticket_client(self, *, reservation: IClientReservation):
         if not self.recovered:
@@ -238,7 +245,7 @@ class Controller(Actor, IController):
                 else:
                     self.logger.warning("Reservation # {} cannot be ticketed".format(reservation.get_reservation_id()))
             except Exception as e:
-                self.logger.error("Could not ticket for #{}".format(reservation.get_reservation_id()))
+                self.logger.error("Could not ticket for #{} e: {}".format(reservation.get_reservation_id(), e))
 
     def get_broker(self, *, guid: ID) -> IBrokerProxy:
         return self.registry.get_broker(guid=guid)
@@ -299,7 +306,7 @@ class Controller(Actor, IController):
                 else:
                     self.logger.warning("Reservation #{} cannot be ticketed".format(reservation.get_reservation_id()))
             except Exception as e:
-                self.logger.error("Could not ticket for #{}".format(reservation.get_reservation_id()))
+                self.logger.error("Could not ticket for #{} e: {}".format(reservation.get_reservation_id(), e))
 
     def tick_handler(self):
         self.close_expiring()
@@ -329,7 +336,7 @@ class Controller(Actor, IController):
         try:
             rc = self.get_reservation(rid=reservation_id)
         except Exception as e:
-            self.logger.error("Could not find reservation #{}".format(reservation_id))
+            self.logger.error("Could not find reservation #{} e: {}".format(reservation_id, e))
 
         if rc is None:
             raise Exception("Unknown reservation: {}".format(reservation_id))
@@ -344,9 +351,11 @@ class Controller(Actor, IController):
                 curr_config_props = PropList.merge_properties(incoming=modify_properties, outgoing=curr_config_props)
                 rc.get_leased_resources().set_config_properties(p=curr_config_props)
             else:
-                self.logger.warning("There were no leased resources for {}, no modify properties will be added".format(reservation_id))
+                self.logger.warning("There were no leased resources for {}, no modify properties will be added".format(
+                    reservation_id))
         else:
-            self.logger.warning("There are no approved resources for {}, no modify properties will be added".format(reservation_id))
+            self.logger.warning("There are no approved resources for {}, no modify properties will be added".format(
+                reservation_id))
 
         if not self.recovered:
             self.modifying_lease.add(reservation=rc)
@@ -367,7 +376,8 @@ class Controller(Actor, IController):
                 else:
                     self.logger.warning("Reservation #{} cannot be remarked".format(reservation.get_reservation_id()))
             except Exception as e:
-                self.logger.error("Could not mark ticket renewable for #{}".format(reservation.get_reservation_id()))
+                self.logger.error("Could not mark ticket renewable for #{} e: {}".format(
+                    reservation.get_reservation_id(), e))
 
     def restore_extending_renewable(self):
         """
@@ -377,7 +387,8 @@ class Controller(Actor, IController):
             try:
                 reservation.set_renewable(renewable=False)
             except Exception as e:
-                self.logger.error("Could not remark ticket non renewable for #{}".format(reservation.get_reservation_id()))
+                self.logger.error("Could not remark ticket non renewable for #{} e: {}".format(
+                    reservation.get_reservation_id(), e))
 
     def issue_delayed(self):
         super().issue_delayed()

@@ -55,7 +55,7 @@ class IControllerPolicy(IClientPolicy):
         Checks if the resources and term received in a lease are in compliance
         with what was initially requested. The policy can prevent the application
         of the incoming update if it disagrees with it.
-        
+
         @param request_resources
                    resources requested from site authority
         @param actual_resources

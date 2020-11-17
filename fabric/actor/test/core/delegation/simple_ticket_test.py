@@ -66,7 +66,7 @@ class SimpleTicketTest(BaseTestCase, unittest.TestCase):
         d0 = self.factory.make_delegation(units=self.units, term=self.term, rtype=self.type)
         ticket0 = self.factory.make_ticket(delegation=d0)
 
-        print(self.factory.toJson(ticket=ticket0))
+        print(self.factory.to_json(ticket=ticket0))
 
     def test_simple_ticket_with_bins(self):
         bin0 = ResourceBin(physical_units=self.units, term=self.term)
@@ -76,5 +76,5 @@ class SimpleTicketTest(BaseTestCase, unittest.TestCase):
                                           bins=bin_list, holder=ID(id=self.factory.get_actor().get_name()))
         ticket0 = self.factory.make_ticket(delegation=d0)
 
-        print(self.factory.toJson(ticket=ticket0))
+        print(self.factory.to_json(ticket=ticket0))
 

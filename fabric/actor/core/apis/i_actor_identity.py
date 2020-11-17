@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING
 
 
@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from fabric.actor.security.auth_token import AuthToken
 
 
-class IActorIdentity:
+class IActorIdentity(ABC):
     """
     IActorIdentity defines the interface required to represent the identity of an actor.
     Each actor is represented by a globally unique identifier and an AuthToken
