@@ -106,7 +106,7 @@ class Delegation(IDelegation):
     def get_state_name(self) -> str:
         return self.state.name
 
-    def set_logger(self, logger):
+    def set_logger(self, *, logger):
         self.logger = logger
 
     def set_slice_object(self, *, slice_object: ISlice):
@@ -123,6 +123,9 @@ class Delegation(IDelegation):
         self.state_transition = True
 
     def clear_notice(self):
+        """
+        Clear the notices
+        """
         self.update_data.clear()
 
     def get_notices(self) -> str:
@@ -158,6 +161,9 @@ class Delegation(IDelegation):
         self.actor = actor
 
     def prepare(self, *, callback: ICallbackProxy, logger):
+        """
+        Prepare a delegation
+        """
         self.set_logger(logger=logger)
         self.callback = callback
 
@@ -175,6 +181,10 @@ class Delegation(IDelegation):
         return self.state == DelegationState.Closed
 
     def error(self, *, err: str):
+        """
+        Log an error and raise exception
+        @param err error
+        """
         self.error_message = err
         if self.logger is not None:
             self.logger.error("error for delegation: {} : {}".format(self, err))
@@ -182,7 +192,7 @@ class Delegation(IDelegation):
             print("error for delegation: {} : {}".format(self, err))
         raise Exception("error: {}".format(err))
 
-    def delegate(self, policy: IPolicy, id_token:str = None):
+    def delegate(self, policy: IPolicy, id_token: str = None):
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
         # protocol: so we may receive a reserve or extend when there is already
@@ -241,6 +251,9 @@ class Delegation(IDelegation):
             self.error(err="server cannot satisfy request closing")
 
     def generate_update(self):
+        """
+        Generate an update
+        """
         self.logger.debug("Generating update")
         if self.callback is None:
             self.logger.warning("Cannot generate update: no callback.")
@@ -305,6 +318,10 @@ class Delegation(IDelegation):
         return success
 
     def fail_notify(self, *, message: str):
+        """
+        Notify a failed delegation by generating an update
+        @param message message
+        """
         self.error_message = message
         self.generate_update()
         self.logger.error(message)
@@ -349,6 +366,10 @@ class Delegation(IDelegation):
         return self.update_data
 
     def set_sequence_in(self, value: int):
+        """
+        Set incoming sequence number
+        @param value value
+        """
         self.sequence_in = value
 
     def get_sequence_in(self) -> int:
@@ -384,6 +405,10 @@ class Delegation(IDelegation):
             self.error(err="No Graph specified")
 
     def set_owner(self, *, owner: AuthToken):
+        """
+        Set owner
+        @param owner owner
+        """
         self.owner = owner
 
     def load_graph(self, *, graph_str: str):

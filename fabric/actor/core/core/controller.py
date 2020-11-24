@@ -81,7 +81,6 @@ class Controller(Actor, IController):
         del state['wrapper']
         del state['logger']
         del state['clock']
-        del state['monitor']
         del state['current_cycle']
         del state['first_tick']
         del state['stopped']
@@ -110,7 +109,6 @@ class Controller(Actor, IController):
         self.wrapper = None
         self.logger = None
         self.clock = None
-        self.monitor = None
         self.current_cycle = -1
         self.first_tick = True
         self.stopped = False

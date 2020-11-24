@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import pickle
 import queue
 import threading
 from typing import TYPE_CHECKING
@@ -43,6 +44,13 @@ from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
+from fabric.actor.core.apis.i_broker import IBroker
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.core.actor import Actor
+from fabric.actor.core.registry.peer_registry import PeerRegistry
+from fabric.actor.core.time.actor_clock import ActorClock
+from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.security.auth_token import AuthToken
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
@@ -51,14 +59,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.core.util.client import Client
-
-from fabric.actor.core.apis.i_broker import IBroker
-from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.core.actor import Actor
-from fabric.actor.core.registry.peer_registry import PeerRegistry
-from fabric.actor.core.time.actor_clock import ActorClock
-from fabric.actor.core.util.reservation_set import ReservationSet
-from fabric.actor.security.auth_token import AuthToken
 
 
 class Broker(Actor, IBroker):
@@ -83,7 +83,6 @@ class Broker(Actor, IBroker):
         del state['wrapper']
         del state['logger']
         del state['clock']
-        del state['monitor']
         del state['current_cycle']
         del state['first_tick']
         del state['stopped']
@@ -110,7 +109,6 @@ class Broker(Actor, IBroker):
         self.wrapper = None
         self.logger = None
         self.clock = None
-        self.monitor = None
         self.current_cycle = -1
         self.first_tick = True
         self.stopped = False
@@ -154,7 +152,8 @@ class Broker(Actor, IBroker):
                 try:
                     self.wrapper.ticket(reservation=reservation, destination=self)
                 except Exception as e:
-                    self.logger.error("unexpected ticket failure for #{}".format(reservation.get_reservation_id()))
+                    self.logger.error("unexpected ticket failure for #{} e: {}".format(
+                        reservation.get_reservation_id(), e))
 
             for reservation in candidates.get_extending().values():
                 try:
@@ -163,7 +162,7 @@ class Broker(Actor, IBroker):
                     self.logger.error("unexpected extend failure for #{}".format(reservation.get_reservation_id()))
 
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
+                                broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         if delegation_id is None:
             raise Exception("Invalid arguments")
 
@@ -186,7 +185,7 @@ class Broker(Actor, IBroker):
         return delegation
 
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                  broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
+                                  broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         if delegation_id is None:
             raise Exception("Invalid arguments")
 
@@ -218,15 +217,19 @@ class Broker(Actor, IBroker):
 
         return delegation
 
-    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
+                         id_token: str = None):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
-        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback)
+        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback,
+                                              id_token=id_token)
 
-    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken):
+    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
+                           id_token: str = None):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
-        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback)
+        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback,
+                                                id_token=id_token)
 
     def close_expiring(self, *, cycle: int):
         """
@@ -302,6 +305,10 @@ class Broker(Actor, IBroker):
         return self.registry.get_default_broker()
 
     def get_default_slice(self) -> ISlice:
+        """
+        Get default inventory slice for the broker
+        @return inventory slice for broker
+        """
         slice_list = self.get_inventory_slices()
         if slice_list is not None and len(slice_list) > 0:
             return slice_list[0]
@@ -387,7 +394,7 @@ class Broker(Actor, IBroker):
         except Exception as e:
             raise Exception("Failed to add client to the database{}".format(e))
 
-    def unregister_client(self, *, guid:ID):
+    def unregister_client(self, *, guid: ID):
         database = self.plugin.get_database()
 
         try:
@@ -402,16 +409,14 @@ class Broker(Actor, IBroker):
 
     def get_client(self, *, guid: ID) -> Client:
         database = self.plugin.get_database()
-
+        ret_val = None
         try:
             client_obj = database.get_client(guid=guid)
-            return client_obj
+            ret_val = pickle.loads(client_obj.get(Constants.PropertyPickleProperties))
         except Exception as e:
             raise Exception("Failed to check if client is present in the database {}".format(e))
 
-        # TODO Restore
-
-        return None
+        return ret_val
 
     def modify(self, *, reservation_id: ID, modify_properties: dict):
         return

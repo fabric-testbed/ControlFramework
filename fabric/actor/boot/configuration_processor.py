@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric.actor.boot.inventory.pool_creator import PoolCreator
 from fabric.actor.core.apis.i_authority import IAuthority
@@ -65,29 +65,21 @@ if TYPE_CHECKING:
 
 
 class ExportAdvertisement:
+    """
+    Encapsulates information needed for the delegations to be exported which are later claimed by broker
+    """
     def __init__(self, *, exporter: IMgmtActor, client: ClientMng, delegation: str, topic: str):
         self.exporter = exporter
         self.client = client
         self.delegation = delegation
         self.client_topic = topic
-
         self.exported = None
-
-
-class ExportInfo:
-    def __init__(self, *, exporter: IMgmtActor, client: ClientMng, units: int, rtype: ResourceType, topic: str):
-        self.exporter = exporter
-        self.client = client
-        self.units = units
-        self.rtype = rtype
-        self.client_topic = topic
-
-        self.exported = None
-        self.start = None
-        self.end = None
 
 
 class ConfigurationProcessor:
+    """
+    Processing the Configuration loaded and brings up the required actors, peers and various threads
+    """
     def __init__(self, *, config: Configuration):
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
@@ -100,6 +92,10 @@ class ConfigurationProcessor:
         self.aggregate_delegation_models = None
 
     def process(self):
+        """
+        Instantiates the configuration
+        @raises ConfigurationException in case of error
+        """
         try:
             self.create_actor()
             self.initialize_actor()
@@ -116,26 +112,41 @@ class ConfigurationProcessor:
             self.logger.info("Processing exports completed")
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            raise Exception("Unexpected error while processing configuration {}".format(e))
+            raise ConfigurationException("Unexpected error while processing configuration {}".format(e))
         self.logger.info("Finished instantiating actors.")
         print("End process")
 
     def create_actor(self):
+        """
+        Instantiates all actors
+        @raises ConfigurationException in case of error
+        """
         try:
             if self.config.get_actor() is not None:
                 self.logger.debug("Creating Actor: name={}".format(self.config.get_actor().get_name()))
                 self.actor = self.do_common(actor_config=self.config.get_actor())
                 self.do_specific(actor=self.actor, config=self.config.get_actor())
         except Exception as e:
-            raise Exception("Unexpected error while creating actor {}".format(e))
+            raise ConfigurationException("Unexpected error while creating actor {}".format(e))
 
     def do_common(self, *, actor_config: ActorConfig):
+        """
+        Perform the common operations for actor creation
+        @param actor_config actor config
+        @raises ConfigurationException in case of error
+        """
         actor = self.make_actor_instance(actor_config=actor_config)
         actor.set_plugin(plugin=self.make_plugin_instance(actor=actor, actor_config=actor_config))
         actor.set_policy(policy=self.make_actor_policy(actor=actor, config=actor_config))
         return actor
 
-    def make_actor_instance(self, *, actor_config: ActorConfig) -> IActor:
+    @staticmethod
+    def make_actor_instance(*, actor_config: ActorConfig) -> IActor:
+        """
+        Creates Actor instance
+        @param actor_config actor config
+        @raises ConfigurationException in case of error
+        """
         actor_type = ActorType.get_actor_type_from_string(actor_type=actor_config.get_type())
         actor = None
         if actor_type == ActorType.Orchestrator:
@@ -145,7 +156,7 @@ class ConfigurationProcessor:
         elif actor_type == ActorType.Authority:
             actor = Authority()
         else:
-            raise Exception("Unsupported actor type: {}".format(actor_type))
+            raise ConfigurationException("Unsupported actor type: {}".format(actor_type))
 
         if actor is not None:
             actor_guid = ID()
@@ -162,6 +173,12 @@ class ConfigurationProcessor:
         return actor
 
     def make_plugin_instance(self, *, actor: IActor, actor_config: ActorConfig):
+        """
+        Creates Plugin instance for the Actor
+        @param actor actor
+        @param actor_config actor config
+        @raises ConfigurationException in case of error
+        """
         plugin = None
         if actor.get_plugin() is None:
             if actor.get_type() == ActorType.Authority:
@@ -176,7 +193,8 @@ class ConfigurationProcessor:
                 plugin = BasePlugin(actor=actor, db=None, config=Config())
 
         if plugin is None:
-            raise Exception("Cannot instantiate shirako plugin for actor: {}".format(actor_config.get_name()))
+            raise ConfigurationException("Cannot instantiate plugin for actor: {}".format(
+                actor_config.get_name()))
 
         if plugin.get_database() is None:
             db = None
@@ -199,6 +217,12 @@ class ConfigurationProcessor:
         return plugin
 
     def make_actor_policy(self, *, actor: IActor, config: ActorConfig):
+        """
+        Creates Actor Policy instance
+        @param actor actor
+        @param actor_config actor config
+        @raises ConfigurationException in case of error
+        """
         policy = None
         if config.get_policy() is None:
             if actor.get_type() == ActorType.Authority:
@@ -211,45 +235,67 @@ class ConfigurationProcessor:
             policy = self.make_policy(policy=config.get_policy())
 
         if policy is None:
-            raise Exception("Could not instantiate policy for actor: {}".format(config.get_name()))
+            raise ConfigurationException("Could not instantiate policy for actor: {}".format(config.get_name()))
         return policy
 
     def make_site_policy(self, *, config: ActorConfig):
+        """
+        Creates AM Policy instance and set up controls
+        @param config actor config
+        @raises ConfigurationException in case of error
+        """
         # TODO KOMAL
         #if config.get_controls() is None or len(config.get_controls()) == 0:
-        #    raise Exception("Missing authority policy but no control has been specified")
+        #    raise ConfigurationException("Missing authority policy but no control has been specified")
 
         policy = AuthorityCalendarPolicy()
         for c in config.get_controls():
             try:
                 if c.get_module_name() is None or c.get_class_name() is None:
-                    raise Exception("Missing control class name")
+                    raise ConfigurationException("Missing control class name")
 
                 control = ReflectionUtils.create_instance(module_name=c.get_module_name(),
                                                           class_name=c.get_class_name())
 
                 if c.get_type() is None:
-                    raise Exception("No type specified for control")
+                    raise ConfigurationException("No type specified for control")
 
                 control.add_type(rtype=ResourceType(resource_type=c.get_type()))
                 policy.register_control(control=control)
             except Exception as e:
                 traceback.print_exc()
-                raise Exception("Could not create control {}".format(e))
+                raise ConfigurationException("Could not create control {}".format(e))
         return policy
 
-    def make_policy(self, *, policy: PolicyConfig):
+    @staticmethod
+    def make_policy(*, policy: PolicyConfig):
+        """
+        Creates Policy Instance
+        @param policy policy config
+        @raises ConfigurationException in case of error
+        """
         if policy.get_class_name() is None or policy.get_module_name() is None:
-            raise Exception("Policy is missing class name")
+            raise ConfigurationException("Policy is missing class name")
 
         return ReflectionUtils.create_instance(module_name=policy.get_module_name(), class_name=policy.get_class_name())
 
     def do_specific(self, *, actor: IActor, config: ActorConfig):
+        """
+        Do Actor specify intialization
+        @param actor actor
+        @param config actor config
+        @raises ConfigurationException in case of error
+        """
         if isinstance(actor, IAuthority):
             self.pools = self.read_resource_pools(config=config)
             self.resources = self.read_resource_pools2(config=config)
 
     def read_resource_pools(self, *, config: ActorConfig) -> dict:
+        """
+        Read Resource pools and create pools
+        @param config actor config
+        @raises ConfigurationException in case of error
+        """
         result = {}
         pools = config.get_pools()
         if pools is None or len(pools) == 0:
@@ -285,13 +331,18 @@ class ConfigurationProcessor:
                 elif attr.get_type().lower() == "class":
                     attribute.set_type(rtype=ResourcePoolAttributeType.CLASS)
                 else:
-                    raise Exception("Unsupported attribute type: {}".format(attr.get_type()))
+                    raise ConfigurationException("Unsupported attribute type: {}".format(attr.get_type()))
                 descriptor.add_attribute(attribute=attribute)
 
             result[descriptor.get_resource_type()] = descriptor
         return result
 
     def read_resource_pools2(self, *, config: ActorConfig) -> dict:
+        """
+        Read resource pool config and create pools
+        @param config actor config
+        @raises ConfigurationException in case of error
+        """
         result = {}
         resources = config.get_resources()
         if resources is None or len(resources) == 0:
@@ -327,27 +378,39 @@ class ConfigurationProcessor:
                 elif attr.get_type().lower() == "class":
                     attribute.set_type(rtype=ResourcePoolAttributeType.CLASS)
                 else:
-                    raise Exception("Unsupported attribute type: {}".format(attr.get_type()))
+                    raise ConfigurationException("Unsupported attribute type: {}".format(attr.get_type()))
                 descriptor.add_attribute(attribute=attribute)
 
             result[descriptor.get_resource_type()] = descriptor
         return result
 
     def initialize_actor(self):
+        """
+        Initialize actor
+        @raises ConfigurationException in case of error
+        """
         try:
             Actor.actor_count += 1
             self.actor.initialize()
         except Exception as e:
-            raise Exception("Actor failed to initialize: {} {}".format(self.actor.get_name(), e))
+            raise ConfigurationException("Actor failed to initialize: {} {}".format(self.actor.get_name(), e))
 
     def register_actor(self):
+        """
+        Register actor
+        @raises ConfigurationException in case of error
+        """
         try:
             from fabric.actor.core.container.globals import GlobalsSingleton
             GlobalsSingleton.get().get_container().register_actor(actor=self.actor)
         except Exception as e:
-            raise Exception("Could not register actor: {} {}".format(self.actor.get_name(), e))
+            raise ConfigurationException("Could not register actor: {} {}".format(self.actor.get_name(), e))
 
     def create_default_slice(self):
+        """
+        Create default slice
+        @raises ConfigurationException in case of error
+        """
         if self.actor.get_type() != ActorType.Authority:
             slice_obj = SliceFactory.create(slice_id=ID(), name=self.actor.get_name())
             slice_obj.set_inventory(value=True)
@@ -355,9 +418,14 @@ class ConfigurationProcessor:
                 self.actor.register_slice(slice_object=slice_obj)
             except Exception as e:
                 traceback.print_exc()
-                raise Exception("Could not create default slice for actor: {} {}".format(self.actor.get_name(), e))
+                raise ConfigurationException("Could not create default slice for actor: {} {}".format(
+                    self.actor.get_name(), e))
 
     def populate_inventory(self):
+        """
+        Populate inventory
+        @raises ConfigurationException in case of error
+        """
         if isinstance(self.actor, IAuthority):
             if isinstance(self.actor.get_plugin(), AuthoritySubstrate):
                 creator = PoolCreator(substrate=self.actor.get_plugin(), pools=self.pools,
@@ -365,6 +433,10 @@ class ConfigurationProcessor:
                 creator.process()
 
     def populate_inventory_neo4j(self):
+        """
+        Load Aggregate Resource model
+        @raises ConfigurationException in case of error
+        """
         if isinstance(self.actor, IAuthority):
             if isinstance(self.actor.get_plugin(), AuthoritySubstrate):
                 creator = PoolCreator(substrate=self.actor.get_plugin(), pools=self.resources,
@@ -374,40 +446,65 @@ class ConfigurationProcessor:
                                                                          get_substrate_file())
 
     def recover_actor(self):
+        """
+        Recover an actor on stateful restart
+        @raises ConfigurationException in case of error
+        """
         try:
             self.actor.recover()
         except Exception as e:
-            raise Exception("Recovery failed for actor: {}".format(self.actor.get_name()))
+            raise ConfigurationException("Recovery failed for actor: {}".format(self.actor.get_name()))
 
     def enable_ticking(self):
+        """
+        Enable the Actor tick
+        """
         from fabric.actor.core.container.globals import GlobalsSingleton
         GlobalsSingleton.get().get_container().register(tickable=self.actor)
 
     def process_topology(self):
+        """
+        Set up Peer registry with identity and kafka topic information
+        @raises ConfigurationException in case of error
+        """
         if self.config.get_peers() is None or len(self.config.get_peers()) == 0:
             self.logger.debug("No peers specified")
         else:
             self.create_proxies(peers=self.config.get_peers())
 
     def process_advertise(self):
+        """
+        Set up Aggregate Delegation models for the peers
+        @raises ConfigurationException in case of error
+        """
         if self.aggregate_delegation_models is None and len(self.to_advertise) > 0:
-            raise Exception("No delegations found in Aggregate Resource Model")
+            raise ConfigurationException("No delegations found in Aggregate Resource Model")
 
         for ei in self.to_advertise:
             self.advertise(info=ei)
 
-    def create_proxies(self, *, peers: list):
+    def create_proxies(self, *, peers: List[Peer]):
+        """
+        Set up proxies
+        @param peers List of the Peer config
+        @raises ConfigurationException in case of error
+        """
         for e in peers:
             self.process_peer(peer=e)
 
     def vertex_to_registry_cache(self, *, peer: Peer):
+        """
+        Add peer to Registry Cache
+        @param peer peer config
+        @raises ConfigurationException in case of error
+        """
         self.logger.debug("Adding vertex for {}".format(peer.get_name()))
 
         if peer.get_name() is None:
-            raise Exception("Actor must specify a name")
+            raise ConfigurationException("Actor must specify a name")
 
         if peer.get_guid() is None:
-            raise Exception("Actor must specify a guid")
+            raise ConfigurationException("Actor must specify a guid")
 
         protocol = Constants.ProtocolLocal
         kafka_topic = None
@@ -429,6 +526,11 @@ class ConfigurationProcessor:
         RemoteActorCacheSingleton.get().add_partial_cache_entry(guid=ID(id=peer.get_guid()), entry=entry)
 
     def process_peer(self, *, peer: Peer):
+        """
+        Process a peer
+        @param peer peer
+        @raises ConfigurationException in case of error
+        """
         from_guid = ID(id=peer.get_guid())
         from_type = ActorType.get_actor_type_from_string(actor_type=peer.get_type())
         to_guid = self.actor.get_guid()
@@ -438,24 +540,17 @@ class ConfigurationProcessor:
         # Reverse the peer if it connects site->broker or broker->service
 
         if from_type == ActorType.Authority and to_type == ActorType.Broker:
-            temp = from_guid
-            from_guid = to_guid
-            to_guid = temp
-            temp = from_type
-            from_type = to_type
-            to_type = temp
+            from_guid, to_guid = to_guid, from_guid
+            from_type, to_type = to_type, from_type
 
         if from_type == ActorType.Broker and to_type == ActorType.Orchestrator:
-            temp = from_guid
-            from_guid = to_guid
-            to_guid = temp
-            temp = from_type
-            from_type = to_type
-            to_type = temp
+            from_guid, to_guid = to_guid, from_guid
+            from_type, to_type = to_type, from_type
 
         # peers between actors of same type aren't allowed unless the actors are both brokers
         if from_type == to_type and from_type != ActorType.Broker:
-            raise Exception("Invalid peer type: broker can only talk to broker, orchestrator or site authority")
+            raise ConfigurationException(
+                "Invalid peer type: broker can only talk to broker, orchestrator or site authority")
 
         container = ManagementUtils.connect(caller=self.actor.get_identity())
         to_mgmt_actor = container.get_actor(guid=to_guid)
@@ -479,20 +574,16 @@ class ConfigurationProcessor:
             if client is not None:
                 self.parse_exports(peer=peer, client=client, mgmt_actor=to_mgmt_actor)
         except Exception as e:
-            raise Exception("Could not process exports from: {} to {}. e= {}" .format(
+            raise ConfigurationException("Could not process exports from: {} to {}. e= {}" .format(
                 peer.get_guid(), self.actor.get_guid(), e))
 
     def parse_exports(self, *, peer: Peer, client: ClientMng, mgmt_actor: IMgmtActor):
-        for rset in peer.get_rsets():
-            info = ExportInfo(exporter=mgmt_actor, client=client, units=rset.get_units(),
-                              rtype=ResourceType(resource_type=rset.get_type()), topic=peer.get_kafka_topic())
-            if rset.get_start() is not None:
-                info.start = rset.get_start()
-            if rset.get_end() is not None:
-                info.end = rset.get_end()
-
-            self.to_export.append(info)
-
+        """
+        Identify all the delegations to be advertised
+        @param peer peer config
+        @param client client
+        @param mgmt_actor management actor
+        """
         if peer.get_delegation() is not None:
             info = ExportAdvertisement(exporter=mgmt_actor, client=client,
                                        delegation=peer.get_delegation(),
@@ -500,17 +591,29 @@ class ConfigurationProcessor:
             self.to_advertise.append(info)
 
     def advertise(self, *, info: ExportAdvertisement):
+        """
+        Advertise a delegation
+        @param info advertisement information
+        @raises ConfigurationException in case of error
+        """
         self.logger.debug("Using Server Actor {} to export resources".format(info.exporter.__class__.__name__))
 
         delegation = self.aggregate_delegation_models.get(info.delegation, None)
 
         if delegation is None:
-            raise Exception("Aggregate Delegation Model not found for delegation: {}".format(info.delegation))
+            raise ConfigurationException("Aggregate Delegation Model not found for delegation: {}".format(
+                info.delegation))
 
         info.exported = info.exporter.advertise_resources(delegation=delegation,
                                                           client=AuthToken(name=info.client.get_name(),
-                                                                        guid=ID(id=info.client.get_guid())))
+                                                                           guid=ID(id=info.client.get_guid())))
 
         if info.exported is None:
-            raise Exception("Could not export resources from actor: {} to actor: {} Error = {}".
-                            format(info.exporter.get_name(), info.client.get_name(), info.exporter.get_last_error()))
+            raise ConfigurationException("Could not export resources from actor: {} to actor: {} Error = {}".format(
+                info.exporter.get_name(), info.client.get_name(), info.exporter.get_last_error()))
+
+
+class ConfigurationException(Exception):
+    """
+    Configuration Exception
+    """

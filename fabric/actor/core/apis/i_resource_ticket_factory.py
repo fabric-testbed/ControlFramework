@@ -108,9 +108,9 @@ class IResourceTicketFactory:
         """
 
     @abstractmethod
-    def from_json(self, *, json_string: str) -> ResourceTicket:
+    def from_json(self, *, incoming: dict) -> ResourceTicket:
         """
         Obtains a resource ticket from JSON.
-        @param json_string JSON string representation
+        @param incoming JSON string representation
         @return resource ticket
         """

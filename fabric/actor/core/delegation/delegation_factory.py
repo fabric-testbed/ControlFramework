@@ -34,8 +34,17 @@ from ..common.constants import Constants
 
 
 class DelegationFactory:
+    """
+    Factory class to create delegation instances
+    """
     @staticmethod
-    def create(did: str, slice_id: ID) -> IDelegation:
+    def create(did: ID, slice_id: ID) -> IDelegation:
+        """
+        Create a delegation
+        @param did delegation id
+        @param slice_id slice id
+        @return delegation
+        """
         delegation = Delegation(dlg_graph_id=did, slice_id=slice_id)
         return delegation
 
@@ -52,9 +61,8 @@ class DelegationFactory:
 
         @return delegation instance
 
-        @throws Exception in case of error
+        @raises Exception in case of error
         """
-        ## TODO
         if Constants.PropertyPickleProperties not in properties:
             raise Exception("Invalid arguments")
 

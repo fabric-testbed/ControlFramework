@@ -28,6 +28,7 @@ from abc import abstractmethod
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_controller_policy import IControllerPolicy
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.core.policy import Policy
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
@@ -379,3 +380,17 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
 
             elif reservation.get_pending_state() == ReservationPendingStates.ExtendingLease:
                 raise Exception("This state should not be reached during recovery")
+
+    def ticket_satisfies(self, *, requested_resources: ResourceSet, actual_resources: ResourceSet,
+                         requested_term: Term, actual_term: Term):
+        return
+
+    def update_ticket_complete(self, *, reservation: IClientReservation):
+        return
+
+    def update_delegation_complete(self, *, delegation: IDelegation):
+        return
+
+    def lease_satisfies(self, *, request_resources: ResourceSet, actual_resources: ResourceSet, requested_term: Term,
+                        actual_term: Term):
+        return

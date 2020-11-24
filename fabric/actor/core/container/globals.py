@@ -26,20 +26,22 @@
 from __future__ import annotations
 
 import sched
+import sys
 import threading
+import traceback
 from logging.handlers import RotatingFileHandler
 from typing import TYPE_CHECKING
 
+import logging
+import os
+
+from fabric.actor.core.container.event_manager import EventManager
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.container.container import Container
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor_container import IActorContainer
     from fabric.actor.boot.configuration import Configuration
-
-import logging
-import os
-from fabric.actor.core.container.event_manager import EventManager
 
 
 class Globals:
@@ -74,9 +76,9 @@ class Globals:
         config, a custom path and/or level for the log file can be passed as
         optional arguments.
 
-        :param log_path: Path to custom log file
-        :param log_level: Custom log level
-        :return: logging.Logger object
+       :param log_path: Path to custom log file
+       :param log_level: Custom log level
+       :return: logging.Logger object
         """
 
         # Get the log path
@@ -95,8 +97,8 @@ class Globals:
 
         # Get the log level
         log_level = None
-        if Constants.PropertyConfLogLevel in log_config :
-           log_level = log_config.get(Constants.PropertyConfLogLevel, None)
+        if Constants.PropertyConfLogLevel in log_config:
+            log_level = log_config.get(Constants.PropertyConfLogLevel, None)
 
         if log_level is None:
             log_level = logging.INFO
@@ -118,15 +120,26 @@ class Globals:
 
         return log
 
-    def delete_super_block(self):
+    @staticmethod
+    def delete_super_block():
+        """
+        Delete Super block file
+        """
         if os.path.isfile(Constants.SuperblockLocation):
             os.remove(Constants.SuperblockLocation)
 
     def fail(self, *, e: Exception):
+        """
+        Fail the Actor
+        @param e exception
+        """
         self.log.error("Critical error: Actor failed to initialize {}".format(e))
-        exit(-1)
+        sys.exit(-1)
 
     def initialize(self):
+        """
+        Initialize the container and actor
+        """
         try:
             self.lock.acquire()
             if not self.initialized:
@@ -142,6 +155,9 @@ class Globals:
             self.lock.release()
 
     def load_config(self):
+        """
+        Load the configuration
+        """
         try:
             from fabric.actor.boot.configuration_loader import ConfigurationLoader
             loader = ConfigurationLoader(path=self.ConfigFile)
@@ -150,23 +166,36 @@ class Globals:
             raise RuntimeError("Unable to parse configuration file {}".format(e))
 
     def get_container(self) -> IActorContainer:
+        """
+        Get the container
+        @return container
+        """
         if not self.initialized:
             raise Exception("Invalid state")
         return self.container
 
     def get_config(self) -> Configuration:
+        """
+        Get the configuration
+        @return config
+        """
         if not self.initialized:
             raise Exception("Invalid state")
         return self.config
 
     def get_kafka_config_admin_client(self) -> dict:
+        """
+        Get Kafka Config Admin Client
+        @retun admin client config
+        """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
         bootstrap_server = self.config.get_runtime_config().get(Constants.PropertyConfKafkaServer, None)
         security_protocol = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSecurityProtocol, None)
         group_id = self.config.get_runtime_config().get(Constants.PropertyConfKafkaGroupId, None)
         ssl_ca_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSSlCaLocation, None)
-        ssl_certificate_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslCertificateLocation, None)
+        ssl_certificate_location = self.config.get_runtime_config().get(
+            Constants.PropertyConfKafkaSslCertificateLocation, None)
         ssl_key_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyLocation, None)
         ssl_key_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyPassword, None)
         sasl_username = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslProducerUsername, None)
@@ -189,6 +218,10 @@ class Globals:
         return conf
 
     def get_kafka_config_producer(self) -> dict:
+        """
+        Get Producer Config
+        @return producer config
+        """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
         bootstrap_server = self.config.get_runtime_config().get(Constants.PropertyConfKafkaServer, None)
@@ -196,7 +229,8 @@ class Globals:
         security_protocol = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSecurityProtocol, None)
         group_id = self.config.get_runtime_config().get(Constants.PropertyConfKafkaGroupId, None)
         ssl_ca_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSSlCaLocation, None)
-        ssl_certificate_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslCertificateLocation, None)
+        ssl_certificate_location = self.config.get_runtime_config().get(
+            Constants.PropertyConfKafkaSslCertificateLocation, None)
         ssl_key_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyLocation, None)
         ssl_key_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyPassword, None)
 
@@ -221,6 +255,10 @@ class Globals:
         return conf
 
     def get_kafka_config_consumer(self) -> dict:
+        """
+        Get Consumer config
+        @return consumer config
+        """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
         conf = self.get_kafka_config_producer()
@@ -236,6 +274,10 @@ class Globals:
         return conf
 
     def get_kafka_schemas(self):
+        """
+        Get Avro schema
+        @return key and value schema
+        """
         key_schema_file = self.config.get_runtime_config().get(Constants.PropertyConfKafkaKeySchema, None)
         value_schema_file = self.config.get_runtime_config().get(Constants.PropertyConfKafkaValueSchema, None)
 
@@ -252,6 +294,10 @@ class Globals:
         return key_schema, val_schema
 
     def get_kafka_producer(self):
+        """
+        Create and return a kafka producer
+        @return producer
+        """
         conf = self.get_kafka_config_producer()
         key_schema, val_schema = self.get_kafka_schemas()
 
@@ -260,12 +306,20 @@ class Globals:
         return producer
 
     def get_kafka_admin_client(self):
+        """
+        Create and return a kafka admin client
+        @return admin client
+        """
         from fabric.message_bus.admin import AdminApi
         conf = self.get_kafka_config_admin_client()
         admin = AdminApi(conf=conf)
         return admin
 
     def get_logger(self):
+        """
+        Get logger
+        @return logger
+        """
         if not self.initialized:
             raise Exception("Invalid state")
 
@@ -274,6 +328,10 @@ class Globals:
         return self.log
 
     def start(self, *, force_fresh: bool):
+        """
+        Start CF Actor
+        @param force_fresh true if clean restart, false if stateful restart
+        """
         try:
             try:
                 self.lock.acquire()
@@ -299,11 +357,12 @@ class Globals:
             finally:
                 self.lock.release()
         except Exception as e:
-            # TODO
-            raise e
             self.fail(e=e)
 
     def stop(self):
+        """
+        Stop the Actor
+        """
         try:
             self.lock.acquire()
             if not self.started:
@@ -318,6 +377,9 @@ class Globals:
             self.lock.release()
 
     def start_timer_thread(self):
+        """
+        Start the timer thread
+        """
         if self.timer_thread is not None:
             raise Exception("This actor has already been started")
 
@@ -327,6 +389,9 @@ class Globals:
         self.timer_thread.start()
 
     def stop_timer_thread(self):
+        """
+        Stop timer thread
+        """
         temp = self.timer_thread
         self.timer_thread = None
         if temp is not None:
@@ -339,6 +404,9 @@ class Globals:
                 self.log.error("Could not join timer thread {}".format(e))
 
     def timer_loop(self):
+        """
+        Timer thread run function
+        """
         self.log.debug("Timer thread started")
         while True:
             with self.timer_condition:
@@ -347,7 +415,8 @@ class Globals:
                         #self.log.debug("Waiting for condition")
                         self.timer_condition.wait()
                     except InterruptedError as e:
-                        self.log.info("Timer thread interrupted. Exiting")
+                        self.log.error(traceback.format_exc())
+                        self.log.error("Timer thread interrupted. Exiting {}".format(e))
                         return
 
                     if not self.started:
@@ -362,6 +431,9 @@ class Globals:
 
 
 class GlobalsSingleton:
+    """
+    Global Singleton class
+    """
     __instance = None
 
     def __init__(self):

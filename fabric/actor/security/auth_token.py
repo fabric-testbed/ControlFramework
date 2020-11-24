@@ -28,11 +28,12 @@ from fabric.actor.core.util.id import ID
 
 
 class AuthToken:
+    """
+    Represents the Authentication Token for an actor
+    """
     PropertyName = 'name'
     PropertyGuid = 'guid'
-    """
-    Represents the Authentication Token for a user
-    """
+
     def __init__(self, *, name: str = None, guid: ID = None, properties: dict = None):
         self.name = name
         self.guid = guid
@@ -45,10 +46,22 @@ class AuthToken:
                 self.guid = ID(id=properties[self.PropertyGuid])
 
     def get_name(self) -> str:
+        """
+        Return Name
+        @return name
+        """
         return self.name
 
     def get_guid(self) -> ID:
+        """
+        Return Guid
+        @return Guid
+        """
         return self.guid
 
     def clone(self):
+        """
+        Clone
+        @return AuthToken
+        """
         return AuthToken(name=self.name, guid=self.guid)

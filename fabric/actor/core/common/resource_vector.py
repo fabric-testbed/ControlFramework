@@ -27,12 +27,19 @@ import array as arr
 
 
 class ResourceVector:
+    """
+    Resource Vector
+    """
     def __init__(self, *, dimensions: int):
         self.vector = arr.array('L')
         for i in range(dimensions):
             self.vector.append(0)
 
     def _enforce_compatibility(self, *, other):
+        """
+        Enforce compatibility
+        @param other other
+        """
         if other is None:
             raise Exception("other cannot be null")
 

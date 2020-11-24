@@ -76,6 +76,10 @@ class ResourceTicket:
         return result
 
     def is_valid(self) -> bool:
+        """
+        Is ticket valid
+        @return true if valid, false otherwise
+        """
         if self.delegations is None or len(self.delegations) == 0:
             return False
 
@@ -86,34 +90,78 @@ class ResourceTicket:
         return True
 
     def get_delegation(self) -> ResourceDelegation:
+        """
+        Get Resource Delegation
+        @return delegation
+        """
         return self.delegations[0]
 
     def get_resource_type(self) -> ResourceType:
+        """
+        Get Resource Type
+        @return delegation resource type
+        """
         return self.get_delegation().get_resource_type()
 
     def get_properties(self) -> dict:
+        """
+        Get Delegation Properties
+        @return delegation properties
+        """
         return self.get_delegation().get_properties()
 
     def get_issuer(self) -> ID:
+        """
+        Get Issuer Guid
+        @return issuer guid
+        """
         return self.get_delegation().get_issuer()
 
     def get_holder(self) -> ID:
+        """
+        Get Delegation Holder
+        @return delegation holder
+        """
         return self.get_delegation().get_holder()
 
     def get_guid(self) -> ID:
+        """
+        Get Delegation Id
+        @return delegation id
+        """
         return self.get_delegation().get_guid()
 
     def get_term(self) -> Term:
+        """
+        Get Delegation Term
+        @return delegation term
+        """
         return self.get_delegation().get_term()
 
     def get_units(self) -> int:
+        """
+        Get number of units
+        @return number of units
+        """
         return self.get_delegation().get_units()
 
     def get_resource_vector(self) -> ResourceVector:
+        """
+        Get Resource vector
+        @return resource vector
+        """
         return self.get_delegation().get_resource_vector()
 
     def get_factory(self) -> IResourceTicketFactory:
+        """
+        Get Ticket factory
+        @return ticket factory
+        """
         return self.factory
 
     def set_factory(self, *, factory: IResourceTicketFactory):
+        """
+        Set ticket factory
+        @param factory ticket factory
+        """
         self.factory = factory

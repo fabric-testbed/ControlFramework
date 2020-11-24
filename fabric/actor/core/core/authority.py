@@ -29,7 +29,6 @@ import threading
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
-from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
@@ -37,7 +36,6 @@ from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.core.actor import Actor
-from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.authority_management_object import AuthorityManagementObject
@@ -45,7 +43,6 @@ from fabric.actor.core.manage.kafka.services.kafka_authority_service import Kafk
 from fabric.actor.core.proxies.kafka.services.authority_service import AuthorityService
 from fabric.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric.actor.core.time.actor_clock import ActorClock
-from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.client import Client
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.reservation_set import ReservationSet
@@ -76,7 +73,6 @@ class Authority(Actor, IAuthority):
         del state['wrapper']
         del state['logger']
         del state['clock']
-        del state['monitor']
         del state['current_cycle']
         del state['first_tick']
         del state['stopped']
@@ -103,7 +99,6 @@ class Authority(Actor, IAuthority):
         self.wrapper = None
         self.logger = None
         self.clock = None
-        self.monitor = None
         self.current_cycle = -1
         self.first_tick = True
         self.stopped = False
@@ -129,7 +124,7 @@ class Authority(Actor, IAuthority):
         self.policy.available(resources=resources)
 
     def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
-                         id_token:str = None):
+                         id_token: str = None):
         slice_obj = delegation.get_slice_object()
         if slice_obj is not None:
             slice_obj.set_broker_client()
@@ -147,7 +142,7 @@ class Authority(Actor, IAuthority):
         self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback,
                                                 id_token=id_token)
 
-    def close_by_caller(self, *, reservation:IReservation, caller: AuthToken):
+    def close_by_caller(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise Exception("This actor cannot receive calls")
 
@@ -188,7 +183,7 @@ class Authority(Actor, IAuthority):
         self.wrapper.advertise(delegation=dlg_obj, client=client)
         return dlg_obj.get_delegation_id()
 
-    def extend_lease(self, *, reservation:IAuthorityReservation, caller: AuthToken):
+    def extend_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken):
         if caller is None:
             if not self.recovered:
                 self.extending_lease.add(reservation=reservation)
@@ -200,7 +195,7 @@ class Authority(Actor, IAuthority):
                 raise Exception("This actor cannot receive calls")
             self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
-    def modify_lease(self, *, reservation:IAuthorityReservation, caller: AuthToken):
+    def modify_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken):
         if caller is None:
             if not self.recovered:
                 self.modifying_lease.add(reservation=reservation)
@@ -274,7 +269,7 @@ class Authority(Actor, IAuthority):
         except Exception as e:
             raise e
 
-    def unregister_client(self, *, guid:ID):
+    def unregister_client(self, *, guid: ID):
         db = self.plugin.get_database()
         db.remove_client(guid=guid)
 

@@ -71,9 +71,7 @@ class Policy(IPolicy):
         self.clock = None
         self.initialized = False
 
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
-    def close(self, *, reservation:IReservation):
+    def close(self, *, reservation: IReservation):
         """
         Close a reservation
         @params reservation: reservation about to be closed
@@ -120,6 +118,9 @@ class Policy(IPolicy):
         return self.guid
 
     def initialize(self):
+        """
+        Initialize the policy object
+        """
         if not self.initialized:
             if self.actor is None:
                 raise Exception("Missing actor")
@@ -187,3 +188,6 @@ class Policy(IPolicy):
 
     def set_actor(self, *, actor: IActor):
         self.actor = actor
+
+    def closed_delegation(self, *, delegation: IDelegation):
+        return

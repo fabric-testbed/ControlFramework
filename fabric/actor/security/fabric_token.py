@@ -7,10 +7,15 @@ from cryptography.hazmat.primitives import serialization
 
 
 class TokenException(Exception):
-    pass
+    """
+    Token exception
+    """
 
 
 class FabricToken:
+    """
+    Represents the Fabric Token issues by Credential Manager
+    """
     def __init__(self, *, token_public_key: str, token: str, logger):
         if token_public_key is None or token is None:
             raise TokenException('Either token_public_key: {} or token: {} is None'.format(token_public_key, token))
@@ -21,12 +26,24 @@ class FabricToken:
         self.decoded_token = None
 
     def get_encoded_token(self) -> str:
+        """
+        Get Encoded token string
+        @return encoded token
+        """
         return self.encoded_token
 
     def get_decoded_token(self) -> dict:
+        """
+        Get Decoded token
+        @return Decoded token
+        """
         return self.decoded_token
 
     def validate(self) -> dict:
+        """
+        Validate the token
+        @raise Exception in case of error
+        """
         try:
             with open(self.token_public_key) as f:
                 pem_data = f.read()

@@ -33,8 +33,6 @@ from fabric.actor.core.kernel.controller_reservation_factory import ControllerRe
 from fabric.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.util.id import ID
-from fabric.actor.security.access_monitor import AccessMonitor
-from fabric.actor.security.guard import Guard
 from fabric.actor.test.base_test_case import BaseTestCase
 
 
@@ -69,8 +67,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
         self.assertIsNone(slice_obj)
 
     def get_kernel_wrapper(self, *, actor: IActor) -> KernelWrapper:
-        wrapper = KernelWrapper(actor=actor, plugin=actor.get_plugin(), policy=actor.get_policy(), 
-                                monitor=AccessMonitor(), guard=Guard())
+        wrapper = KernelWrapper(actor=actor, plugin=actor.get_plugin(), policy=actor.get_policy())
         return wrapper
 
     def prepare_actor(self):

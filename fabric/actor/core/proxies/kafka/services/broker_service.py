@@ -143,15 +143,15 @@ class BrokerService(ActorService):
         self.do_dispatch(rpc=rpc)
 
     def process(self, *, message: IMessageAvro):
-        if message.get_message_name() == IMessageAvro.Ticket:
+        if message.get_message_name() == IMessageAvro.ticket:
             self.ticket(request=message)
-        elif message.get_message_name() == IMessageAvro.ClaimDelegation:
+        elif message.get_message_name() == IMessageAvro.claim_delegation:
             self.claim_delegation(request=message)
-        elif message.get_message_name() == IMessageAvro.ReclaimDelegation:
+        elif message.get_message_name() == IMessageAvro.reclaim_delegation:
             self.reclaim_delegation(request=message)
-        elif message.get_message_name() == IMessageAvro.ExtendTicket:
+        elif message.get_message_name() == IMessageAvro.extend_ticket:
             self.extend_ticket(request=message)
-        elif message.get_message_name() == IMessageAvro.Relinquish:
+        elif message.get_message_name() == IMessageAvro.relinquish:
             self.relinquish(request=message)
         else:
             super().process(message=message)

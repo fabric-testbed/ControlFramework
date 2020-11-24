@@ -26,8 +26,9 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.util.id import ID
 
 if TYPE_CHECKING:
@@ -122,7 +123,7 @@ class IReservationOperations:
         """
 
     @abstractmethod
-    def get_reservations(self, *, slice_id: ID) -> list:
+    def get_reservations(self, *, slice_id: ID) -> List[IReservation]:
         """
         Returns all reservations in the given slice.
 
@@ -165,6 +166,17 @@ class IReservationOperations:
 
         Args:
             reservation: reservation
+        Raises:
+            Exception in case of error
+        """
+
+    @abstractmethod
+    def re_register_delegation(self, *, delegation: IDelegation):
+        """
+        Registers a previously registered delegation with the actor. The delegation must have a database record.
+
+        Args:
+            delegation: delegation
         Raises:
             Exception in case of error
         """

@@ -30,11 +30,18 @@ from fabric.actor.boot.configuration_processor import ConfigurationProcessor
 
 
 class ConfigurationLoader:
+    """
+    Loads config read from a file
+    """
     def __init__(self, *, path: str = None):
         self.path = path
         self.config = None
 
     def process(self, *, config: Configuration = None):
+        """
+        Read config and parse it
+        @param config config
+        """
         if config is None:
             self.read_configuration()
         else:
@@ -43,6 +50,9 @@ class ConfigurationLoader:
         init.process()
 
     def read_configuration(self) -> Configuration:
+        """
+        Read config file
+        """
         if self.path is None:
             raise Exception("No data source has been specified")
         print("Reading config file: {}".format(self.path))

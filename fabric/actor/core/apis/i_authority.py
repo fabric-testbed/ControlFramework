@@ -29,6 +29,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_authority_public import IAuthorityPublic
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_server_actor import IServerActor
 
 if TYPE_CHECKING:
@@ -62,6 +63,16 @@ class IAuthority(IServerActor, IAuthorityPublic):
 
         @param resources resource set representing resources to be used for
                allocation
+
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
+    def donate_delegation(self, *, delegation: IDelegation):
+        """
+        Accepts delegations to be merged to Model.
+
+        @param delegation delegation
 
         @raises Exception in case of error
         """

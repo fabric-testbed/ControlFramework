@@ -28,8 +28,15 @@ from typing import List
 
 from fabric.actor.core.common.constants import Constants
 
+"""
+Implements various classes for reading and loading the information from config file
+"""
+
 
 class GlobalConfig:
+    """
+    Represent Global configuration
+    """
     def __init__(self, *, config: dict):
         self.runtime = {}
         if Constants.ConfigSectionRuntime in config:
@@ -71,31 +78,58 @@ class GlobalConfig:
             self.pdp = config[Constants.ConfigSectionPdp]
 
     def get_runtime(self) -> dict:
+        """
+        Return runtime config
+        """
         return self.runtime
 
     def get_logging(self) -> dict:
+        """
+        Return logging config
+        """
         return self.logging
 
     def get_oauth(self) -> dict:
+        """
+        Return oauth config
+        """
         return self.oauth
 
     def get_database(self) -> dict:
+        """
+        Return database config
+        """
         return self.database
 
     def get_container(self) -> dict:
+        """
+        Return container config
+        """
         return self.container
 
     def get_time(self) -> dict:
+        """
+        Return time config
+        """
         return self.time
 
     def get_neo4j_config(self) -> dict:
+        """
+        Return neo4j config
+        """
         return self.neo4j
 
     def get_pdp_config(self) -> dict:
+        """
+        Return PDP config
+        """
         return self.pdp
 
 
 class HandlerConfig:
+    """
+    Represents Handler Config
+    """
     def __init__(self, *, config: list):
         self.module_name = None
         self.class_name = None
@@ -112,16 +146,28 @@ class HandlerConfig:
                             self.properties[k] = str(v)
 
     def get_module_name(self) -> str:
+        """
+        Return Module Name for Handler
+        """
         return self.module_name
 
     def get_class_name(self) -> str:
+        """
+        Return Class Name for Handler
+        """
         return self.class_name
 
     def get_properties(self) -> dict:
+        """
+        Return Handler Properties
+        """
         return self.properties
 
 
 class Attribute:
+    """
+    Represents Attributes
+    """
     def __init__(self, *, config: list):
         self.key = None
         self.type = None
@@ -136,16 +182,28 @@ class Attribute:
                     self.value = value
 
     def get_type(self) -> str:
+        """
+        Return Attribute Type
+        """
         return self.type
 
     def get_key(self) -> str:
+        """
+        Return Attribute Key
+        """
         return self.key
 
     def get_value(self) -> str:
+        """
+        Return Attribute Value
+        """
         return self.value
 
 
 class PoolConfig:
+    """
+    Represents Pool Config
+    """
     def __init__(self, *, config: list):
         self.description = None
         self.attributes = []
@@ -188,40 +246,76 @@ class PoolConfig:
                         self.attributes.append(Attribute(config=a['attribute']))
 
     def get_type(self) -> str:
+        """
+        Return Pool Type
+        """
         return self.type
 
     def get_label(self) -> str:
+        """
+        Return Pool Label
+        """
         return self.label
 
     def get_description(self) -> str:
+        """
+        Return Pool Description
+        """
         return self.description
 
     def get_units(self) -> int:
+        """
+        Return Pool Units
+        """
         return self.units
 
     def get_start(self) -> datetime:
+        """
+        Return Start lease time
+        """
         return self.start
 
     def get_end(self) -> datetime:
+        """
+        Return End lease time
+        """
         return self.end
 
     def get_handler(self) -> HandlerConfig:
+        """
+        Return Handler Config
+        """
         return self.handler
 
     def get_properties(self) -> dict:
+        """
+        Return Properties
+        """
         return self.properties
 
     def get_factory_class(self) -> str:
+        """
+        Return Factory class
+        """
         return self.factory_class
 
     def get_factory_module(self) -> str:
+        """
+        Return Factory Module
+        """
         return self.factory_module
 
     def get_attributes(self) -> List[Attribute]:
+        """
+        Return Attributes
+        """
         return self.attributes
 
 
 class ControlConfig:
+    """
+    Represents Control config
+    """
     def __init__(self, *, config: list):
         self.type = None
         self.module_name = None
@@ -236,16 +330,28 @@ class ControlConfig:
                     self.class_name = value
 
     def get_type(self) -> str:
+        """
+        Return type
+        """
         return self.type
 
     def get_module_name(self) -> str:
+        """
+        Return Module name
+        """
         return self.module_name
 
     def get_class_name(self) -> str:
+        """
+        Return Class Name
+        """
         return self.class_name
 
 
 class ResourceConfig:
+    """
+    Represents resource config
+    """
     def __init__(self, *, config: list):
         self.description = None
         self.attributes = []
@@ -280,34 +386,64 @@ class ResourceConfig:
                         self.attributes.append(Attribute(config=a['attribute']))
 
     def get_type(self) -> str:
+        """
+        Return type
+        """
         return self.type
 
     def get_label(self) -> str:
+        """
+        Return label
+        """
         return self.label
 
     def get_description(self) -> str:
+        """
+        Return description
+        """
         return self.description
 
     def get_handler(self) -> HandlerConfig:
+        """
+        Return handler config
+        """
         return self.handler
 
     def get_control(self) -> ControlConfig:
+        """
+        Return control config
+        """
         return self.control
 
     def get_properties(self) -> dict:
+        """
+        Return properties
+        """
         return self.properties
 
     def get_resource_class(self) -> str:
+        """
+        Return resource class
+        """
         return self.resource_class
 
     def get_resource_module(self) -> str:
+        """
+        Return resource module
+        """
         return self.resource_module
 
     def get_attributes(self) -> List[Attribute]:
+        """
+        Return resource attributes
+        """
         return self.attributes
 
 
 class PolicyConfig:
+    """
+    Represents Policy config
+    """
     def __init__(self, *, config: list):
         self.module_name = None
         self.class_name = None
@@ -324,16 +460,28 @@ class PolicyConfig:
                             self.properties[k] = str(v)
 
     def get_module_name(self) -> str:
+        """
+        Return module name
+        """
         return self.module_name
 
     def get_class_name(self) -> str:
+        """
+        Return class name
+        """
         return self.class_name
 
     def get_properties(self) -> dict:
+        """
+        Return properties
+        """
         return self.properties
 
 
 class ActorConfig:
+    """
+    Represents Actor Config
+    """
     def __init__(self, *, config: list):
         self.policy = None
         self.description = None
@@ -373,74 +521,76 @@ class ActorConfig:
                         self.resources.append(ResourceConfig(config=p['resource']))
 
     def get_type(self) -> str:
+        """
+        Return Actor Type
+        """
         return self.type
 
     def get_name(self) -> str:
+        """
+        Return Actor Name
+        """
         return self.name
 
     def get_guid(self) -> str:
+        """
+        Return Actor Guid
+        """
         return self.guid
 
     def get_description(self) -> str:
+        """
+        Return Actor Description
+        """
         return self.description
 
     def get_kafka_topic(self) -> str:
+        """
+        Return Kafka topic
+        """
         return self.kafka_topic
 
     def get_pools(self) -> List[PoolConfig]:
+        """
+        Return Pools
+        """
         return self.pools
 
     def get_controls(self) -> List[ControlConfig]:
+        """
+        Return Controls
+        """
         return self.controls
 
     def get_policy(self) -> PolicyConfig:
+        """
+        Return Policy
+        """
         return self.policy
 
     def get_resources(self) -> List[ResourceConfig]:
+        """
+        Return resources
+        """
         return self.resources
 
     def get_substrate_file(self) -> str:
+        """
+        Return Substrate file
+        """
         return self.substrate_file
-
-class RsetConfig:
-    def __init__(self, *, config: list):
-        self.type = None
-        self.units = None
-        now = datetime.utcnow()
-        self.start = now
-        self.end = now.replace(year=now.year + 20)
-        for prop in config:
-            for key, value in prop.items():
-                if key == 'type':
-                    self.type = value
-                elif key == 'units':
-                    self.units = int(value)
-                elif key == 'start':
-                    self.start = value
-                elif key == 'end':
-                    self.end = value
-
-    def get_type(self) -> str:
-        return self.type
-
-    def get_units(self) -> int:
-        return self.units
-
-    def get_start(self) -> datetime:
-        return self.start
-
-    def get_end(self) -> datetime:
-        return self.end
 
 
 class Peer:
+    """
+    Represent Peer Config
+    """
     def __init__(self, *, config: list):
         self.name = None
         self.type = None
         self.guid = None
         self.kafka_topic = None
         self.delegation = None
-        self.rsets = []
         for prop in config:
             for key, value in prop.items():
                 if key == 'name':
@@ -453,30 +603,42 @@ class Peer:
                     self.kafka_topic = value
                 elif key == 'delegation':
                     self.delegation = value
-                elif key == 'rsets':
-                    for r in value:
-                        self.rsets.append(RsetConfig(config=r['rset']))
 
     def get_name(self) -> str:
+        """
+        Return Name
+        """
         return self.name
 
     def get_type(self) -> str:
+        """
+        Return Type
+        """
         return self.type
 
     def get_guid(self) -> str:
+        """
+        Return Guid
+        """
         return self.guid
 
     def get_kafka_topic(self) -> str:
+        """
+        Return Kafka Topic
+        """
         return self.kafka_topic
 
-    def get_rsets(self) -> List[RsetConfig]:
-        return self.rsets
-
     def get_delegation(self) -> str:
+        """
+        Return delegation
+        """
         return self.delegation
 
 
 class Configuration:
+    """
+    Represent Configuration read from file
+    """
     def __init__(self, *, config: dict):
         self.global_config = GlobalConfig(config=config)
         self.actor = ActorConfig(config=config['actor'])
@@ -486,20 +648,35 @@ class Configuration:
                 self.peers.append(Peer(config=e['peer']))
 
     def get_global_config(self) -> GlobalConfig:
+        """
+        Return Global Config
+        """
         return self.global_config
 
     def get_runtime_config(self) -> dict:
+        """
+        Return Runtime Config
+        """
         if self.global_config is not None:
             return self.global_config.get_runtime()
         return None
 
     def get_oauth_config(self) -> dict:
+        """
+        Return OAuth Config
+        """
         if self.global_config is not None:
             return self.global_config.get_oauth()
         return None
 
     def get_actor(self) -> ActorConfig:
+        """
+        Return Actor Config
+        """
         return self.actor
 
     def get_peers(self) -> List[Peer]:
+        """
+        Return Peer Config
+        """
         return self.peers

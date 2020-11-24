@@ -207,6 +207,12 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
         self.finish_correct_deficit(rset=None, reservation=reservation)
 
     def finish_correct_deficit(self, *, rset: ResourceSet, reservation: IAuthorityReservation):
+        """
+        Finishes correcting a deficit.
+        @param rset correction
+        @param reservation reservation
+        @raises Exception in case of error
+        """
         # We could have a partial set if there's a shortage. Go ahead and
         # install it: we'll come back later for the rest if we return a null
         # term. Alternatively, we could release them and throw an error.
@@ -230,6 +236,13 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
         return False
 
     def extract(self, *, source: ResourceSet, delegation: ResourceDelegation):
+        """
+        Creates a new resource set using the source and the specified delegation.
+        @param source source
+        @param delegation delegation
+        @return created resource set
+        @raises Exception in case of error
+        """
         if source is None or delegation is None:
             self.error(message="Invalid Argument")
 

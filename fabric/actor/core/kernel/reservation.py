@@ -46,7 +46,6 @@ from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
 from fabric.actor.core.kernel.reservation_state_transition_event import ReservationStateTransitionEvent
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
 from fabric.actor.core.util.reservation_state import ReservationState
-from fabric.actor.security.guard import Guard
 
 
 class Reservation(IKernelReservation):
@@ -91,8 +90,6 @@ class Reservation(IKernelReservation):
         self.state = ReservationStates.Nascent
         # Reservation pending state.
         self.pending_state = ReservationPendingStates.None_
-        # Access control monitor
-        self.guard = Guard()
         # Has this reservation ever been extended?
         self.extended = False
         # The current resources associated with this reservation.
@@ -288,9 +285,6 @@ class Reservation(IKernelReservation):
 
     def get_category(self) -> ReservationCategory:
         return self.category
-
-    def get_guard(self) -> Guard:
-        return self.guard
 
     def get_kernel_slice(self) -> IKernelSlice:
         return self.slice

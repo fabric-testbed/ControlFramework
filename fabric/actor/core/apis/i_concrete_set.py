@@ -191,7 +191,7 @@ class IConcreteSet:
         """
         Validate that the concrete set matches the abstract resource set
         parameters.
-        @param type : abstract resources resource type
+        @param rtype : abstract resources resource type
         @param units : abstract resources units
         @param term : abstract resources term
         @raises Exception in case of error

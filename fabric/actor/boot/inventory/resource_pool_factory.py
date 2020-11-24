@@ -33,6 +33,8 @@ from fabric.actor.core.kernel.client_reservation_factory import ClientReservatio
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.util.id import ID
+from fabric.actor.core.time.term import Term
+from fabric.actor.core.util.resource_data import ResourceData
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
@@ -40,9 +42,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.delegation.resource_ticket import ResourceTicket
     from fabric.actor.core.apis.i_substrate import ISubstrate
     from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
-
-from fabric.actor.core.time.term import Term
-from fabric.actor.core.util.resource_data import ResourceData
 
 
 class ResourcePoolFactory(IResourcePoolFactory):

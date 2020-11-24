@@ -34,14 +34,16 @@ from fabric.actor.core.core.actor_identity import ActorIdentity
 from fabric.actor.core.manage.messages.client_mng import ClientMng
 from fabric.message_bus.messages.proxy_avro import ProxyAvro
 from fabric.actor.core.util.id import ID
-from fabric.message_bus.admin import AdminApi
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
-    from fabric.actor.core.apis.i_actor import IActor, ActorType
+    from fabric.actor.core.apis.i_actor import IActor
 
 
 class RemoteActorCache:
+    """
+    Maintains Remote Actors to which Actor is connected
+    """
     ActorName = "NAME"
     ActorGuid = "GUID"
     ActorLocation = "LOCATION"
@@ -56,6 +58,9 @@ class RemoteActorCache:
         self.local_actor_guids = set()
 
     def known_guids(self) -> set:
+        """
+        Returns list of know GUIDs
+        """
         result = None
         try:
             self.lock.acquire()
@@ -67,6 +72,10 @@ class RemoteActorCache:
         return result
 
     def check_to_remove_entry(self, *, guid: ID):
+        """
+        Check if actor entry can be removed
+        @param guid actor guid
+        """
         if guid is None:
             return
 
@@ -80,6 +89,11 @@ class RemoteActorCache:
             self.lock.release()
 
     def add_cache_entry(self, *, guid: ID, entry: dict):
+        """
+        Add actor entry to Cache
+        @param guid actor guid
+        @param entry actor entry
+        """
         if guid is None or entry is None:
             return
 
@@ -91,6 +105,11 @@ class RemoteActorCache:
             self.lock.release()
 
     def add_partial_cache_entry(self, *, guid: ID, entry: dict):
+        """
+        Add partial actor entry to Cache
+        @param guid actor guid
+        @param entry actor entry
+        """
         if guid is None or entry is None:
             return
         try:
@@ -100,6 +119,11 @@ class RemoteActorCache:
             self.lock.release()
 
     def non_mt_cache_merge(self, *, guid: ID, entry: dict):
+        """
+        Merge to an existing entry if present; remove otherwise
+        @param guid actor guid
+        @param entry actor entry
+        """
         if guid not in self.cache:
             self.logger.debug("Inserting new entry for {}".format(guid))
             self.cache[guid] = entry
@@ -111,6 +135,10 @@ class RemoteActorCache:
         self.cache[guid] = current
 
     def get_cache_entry_copy(self, *, guid: ID) -> dict:
+        """
+        Get a copy of cacher entry
+        @param guid actor guid
+        """
         try:
             self.lock.acquire()
             if guid in self.cache:
@@ -121,6 +149,13 @@ class RemoteActorCache:
         return None
 
     def check_peer(self, *, from_mgmt_actor: IMgmtActor, from_guid: ID, to_mgmt_actor: IMgmtActor, to_guid: ID):
+        """
+        Check if a peer is already connected
+        @param from_mgmt_actor from actor
+        @param from_guid guid of from actor
+        @param to_mgmt_actor to actor
+        @param to_guid guid of to actor
+        """
         self.logger.debug("from_mgmt_actor={} from_guid={} to_mgmt_actor={} to_guid={}".format(type(from_mgmt_actor),
                                                                                                from_guid,
                                                                                                type(to_mgmt_actor),
@@ -144,6 +179,13 @@ class RemoteActorCache:
 
     def establish_peer_private(self, *, from_mgmt_actor: IMgmtActor, from_guid: ID, to_mgmt_actor:IMgmtActor,
                                to_guid: ID) -> ClientMng:
+        """
+        Establish connection i.e. create either proxies or clients between peer
+        @param from_mgmt_actor from actor
+        @param from_guid guid of from actor
+        @param to_mgmt_actor to actor
+        @param to_guid guid of to actor
+        """
         self.logger.debug("establish_peer_private IN")
         client = None
         from_map = self.get_cache_entry_copy(guid=from_guid)
@@ -163,7 +205,8 @@ class RemoteActorCache:
 
             if self.ActorLocation in to_map:
                 if self.ActorProtocol not in to_map:
-                    raise Exception("Actor {} does not specify communications protocol (local/kafka)".format(to_map[self.ActorName]))
+                    raise Exception("Actor {} does not specify communications protocol (local/kafka)".format(
+                        to_map[self.ActorName]))
 
                 protocol = to_map.get(self.ActorProtocol, None)
                 kafka_topic = to_map[self.ActorLocation]
@@ -186,7 +229,8 @@ class RemoteActorCache:
                 except Exception as e:
                     traceback.print_exc()
             else:
-                self.logger.debug("Not adding broker to actor at this time because the remote actor actor kafka topic is not available")
+                self.logger.debug("Not adding broker to actor at this time because the remote actor actor "
+                                  "kafka topic is not available")
 
             if to_mgmt_actor is not None:
                 self.logger.debug("Creating a client for local to actor")
@@ -196,13 +240,15 @@ class RemoteActorCache:
                 try:
                     to_mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
                 except Exception as e:
-                    raise Exception("Could not register actor: {} as a client of actor: {} e= {}".format(client.get_name(), to_mgmt_actor.get_name(), e))
+                    raise Exception("Could not register actor: {} as a client of actor: {} e= {}".format(
+                        client.get_name(), to_mgmt_actor.get_name(), e))
         else:
             # fromActor is remote: toActor must be local
             # no-need to create any proxies
             # we only need to register clients
             if to_mgmt_actor is None:
-                raise Exception("Both peer endpoints are non local actors: {} {}".format(from_map[self.ActorName], to_map[self.ActorName]))
+                raise Exception("Both peer endpoints are non local actors: {} {}".format(
+                    from_map[self.ActorName], to_map[self.ActorName]))
 
             if self.ActorGuid not in from_map:
                 raise Exception("Missing guid for remote actor: {}".format(from_map[self.ActorName]))
@@ -228,6 +274,13 @@ class RemoteActorCache:
 
     def establish_peer(self, *, from_guid: ID, from_mgmt_actor: IMgmtActor, to_guid: ID,
                        to_mgmt_actor: IMgmtActor) -> ClientMng:
+        """
+        Check if peer exists in cache and if not Establish connection i.e. create either proxies or clients between peer
+        @param from_mgmt_actor from actor
+        @param from_guid guid of from actor
+        @param to_mgmt_actor to actor
+        @param to_guid guid of to actor
+        """
         self.logger.debug("establish_peer IN")
         client = None
         if from_guid is None or to_guid is None:
@@ -251,15 +304,11 @@ class RemoteActorCache:
         self.logger.debug("establish_peer OUT {}".format(client))
         return client
 
-    def check_topic_exists(self, *, topic: str) -> bool:
-        api = AdminApi("localhost:9092")
-        topic_list = api.list_topics()
-        # check topic exists
-        if topic_list is not None and topic in topic_list:
-            return True
-        return False
-
     def register_with_registry(self, *, actor: IActor):
+        """
+        Register an actor with Registry
+        @param actor actor
+        """
         try:
             act_name = actor.get_name()
             act_type = actor.get_type()
@@ -281,6 +330,9 @@ class RemoteActorCache:
 
 
 class RemoteActorCacheSingleton:
+    """
+    Remote Actor Cache Singleton
+    """
     __instance = None
 
     def __init__(self):

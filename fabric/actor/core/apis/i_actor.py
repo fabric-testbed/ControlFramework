@@ -30,7 +30,6 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
-
 from fabric.actor.core.apis.i_timer_queue import ITimerQueue
 from fabric.actor.core.apis.i_actor_identity import IActorIdentity
 from fabric.actor.core.apis.i_slice_operations import ISliceOperations

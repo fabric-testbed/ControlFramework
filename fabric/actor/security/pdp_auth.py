@@ -28,43 +28,55 @@ import os
 from enum import Enum
 from typing import List
 
-from fabric.actor.core.apis.i_actor import ActorType
 import re
 import requests
 
+from fabric.actor.core.apis.i_actor import ActorType
+
 
 class PdpAuthException(Exception):
-    pass
+    """
+    PDP Auth Exception
+    """
 
 
 class ResourceType(Enum):
-    user = 1,
-    slice = 2,
-    sliver = 3,
-    resources = 4,
+    """
+    Resource Type Enumeration
+    """
+    user = 1
+    slice = 2
+    sliver = 3
+    resources = 4
     delegation = 5
 
 
 class ActionId(Enum):
-    query = 1,
-    status = 2,
-    create = 3,
-    redeem = 4,
-    delete = 5,
-    modify = 6,
-    POA = 7,
-    renew = 8,
-    demand = 9,
-    update = 10,
-    close = 11,
-    claim = 12,
-    reclaim = 13,
-    ticket = 14,
-    extend = 15,
+    """
+    Action Id Enumeration
+    """
+    query = 1
+    status = 2
+    create = 3
+    redeem = 4
+    delete = 5
+    modify = 6
+    POA = 7
+    renew = 8
+    demand = 9
+    update = 10
+    close = 11
+    claim = 12
+    reclaim = 13
+    ticket = 14
+    extend = 15
     relinquish = 16
 
 
 class PdpAuth:
+    """
+    Responsible for Authorization against PDP
+    """
     CoManageProjectLeadsProject = 'project-leads'
     ProjectLeadRole = 'projectLead'
 
@@ -85,32 +97,41 @@ class PdpAuth:
     CategoryEnvironmentUrn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:environment'
 
     subject_fabric_role_attribute_json = {
-          "IncludeInResult":False,
-          "AttributeId":"urn:fabric:xacml:attributes:fabric-role",
-          "DataType":"http://www.w3.org/2001/XMLSchema#string",
-          "Value":["projectMember:project-X"]
-        }
+        "IncludeInResult": False,
+        "AttributeId": "urn:fabric:xacml:attributes:fabric-role",
+        "DataType": "http://www.w3.org/2001/XMLSchema#string",
+        "Value": ["projectMember:project-X"]
+    }
 
     resource_id_attribute_json = {
-          "IncludeInResult":False,
-          "AttributeId":"urn:oasis:names:tc:xacml:1.0:resource:resource-id",
-          "DataType":"http://www.w3.org/2001/XMLSchema#string",
-          "Value":["some-delegation"]
-        }
+        "IncludeInResult": False,
+        "AttributeId": "urn:oasis:names:tc:xacml:1.0:resource:resource-id",
+        "DataType": "http://www.w3.org/2001/XMLSchema#string",
+        "Value": ["some-delegation"]
+    }
 
-    def __init__(self, *, config: dict, logger = None):
+    def __init__(self, *, config: dict, logger=None):
         self.roles_re = 'CO:COU:(.*):members:active'
         self.project_member = "projectMember:{}"
         self.config = config
         self.logger = logger
 
-    def _headers(self) -> dict:
+    @staticmethod
+    def _headers() -> dict:
+        """
+        Returns Headers for REST APIs
+        """
         headers = {
             'Content-Type': "application/json"
         }
         return headers
 
     def get_roles(self, *, token: dict) -> List[str]:
+        """
+        Get Roles from a fabric token
+        @param token fabric token
+        @return list of the roles
+        """
         ret_val = []
         roles = token.get('roles', None)
         if roles is None:
@@ -128,6 +149,12 @@ class PdpAuth:
         return ret_val
 
     def update_subject_category(self, *, subject: dict, token: dict) -> dict:
+        """
+        Update the Subject Category in PDP request
+        @param subject subject
+        @param token fabric token
+        @return updated subject category
+        """
         attributes = subject.get(PdpAuth.Attribute, None)
         if attributes is None:
             raise PdpAuthException("Missing Attributes")
@@ -158,6 +185,13 @@ class PdpAuth:
         return subject
 
     def update_resource_category(self, *, resource: dict, resource_type: ResourceType, resource_id: str = None) -> dict:
+        """
+        Update the Resource Category in PDP request
+        @param resource resource
+        @param resource_type resource type
+        @param resource_id resource id
+        @return updated Resource category
+        """
         attributes = resource.get(PdpAuth.Attribute, None)
         if attributes is None:
             raise PdpAuthException("Missing Attributes")
@@ -178,6 +212,12 @@ class PdpAuth:
         return resource
 
     def update_action_category(self, *, action: dict, action_id: ActionId) -> dict:
+        """
+        Update the Action Category in PDP request
+        @param action action
+        @param action_id action id
+        @return updated Action category
+        """
         attributes = action.get(PdpAuth.Attribute, None)
         if attributes is None:
             raise PdpAuthException("Missing Attributes")
@@ -195,6 +235,15 @@ class PdpAuth:
     def build_pdp_request(self, *, fabric_token: dict, actor_type: ActorType,
                           action_id: ActionId, resource_type: ResourceType,
                           resource_id: str = None) -> dict:
+        """
+        Build PDP Request
+        @param fabric_token fabric token
+        @param actor_type action type
+        @param action_id Action id
+        @param resource_type resource_type
+        @param resource_id resource_id
+        @return PDP request
+        """
         request_file = None
         if actor_type == ActorType.Orchestrator:
             request_file = os.path.dirname(__file__) + '/data/orchestrator-request.json'
@@ -237,7 +286,17 @@ class PdpAuth:
 
     def check_access(self, *, fabric_token: dict, actor_type: ActorType,
                      action_id: ActionId, resource_type: ResourceType,
-                     resource_id: str = None):
+                     resource_id: str = None) -> bool:
+        """
+        Check Access
+        @param fabric_token fabric token
+        @param actor_type actor type
+        @param action_id action id
+        @param resource_type resource type
+        @param resource_id resource id
+        @return true for success and failure otherwise
+        @raises PdpAuthException in case of denied access or failure
+        """
 
         pdp_request = self.build_pdp_request(fabric_token=fabric_token, actor_type=actor_type,
                                              action_id=action_id, resource_type=resource_type, resource_id=resource_id)
@@ -257,6 +316,7 @@ class PdpAuth:
             if self.logger is not None:
                 self.logger.debug("PDP response: {}".format(response.json()))
             raise PdpAuthException('Authorization check failure: {}'.format(response.json()))
+        return False
 
 
 if __name__ == '__main__':
@@ -272,6 +332,6 @@ if __name__ == '__main__':
 
     config = {'url': 'http://localhost:8080/services/pdp'}
     pdp = PdpAuth(config=config)
-    result = pdp.check_access(fabric_token=token, actor_type=ActorType.Orchestrator,
-                           action_id=ActionId.query, resource_type=ResourceType.resources)
-    print(result)
+    RESULT = pdp.check_access(fabric_token=token, actor_type=ActorType.Orchestrator,
+                              action_id=ActionId.query, resource_type=ResourceType.resources)
+    print(RESULT)

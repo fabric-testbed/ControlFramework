@@ -29,6 +29,7 @@ import threading
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.time.calendar.broker_calendar import BrokerCalendar
 from fabric.actor.core.util.resource_count import ResourceCount

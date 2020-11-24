@@ -106,7 +106,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
     def remove_unit(self, *, uid: ID):
         try:
             self.lock.acquire()
-            self.db.remove_unit(act_id=self.actor_id, unt_uid=str(uid))
+            self.db.remove_unit(unt_uid=str(uid))
         finally:
             self.lock.release()
 

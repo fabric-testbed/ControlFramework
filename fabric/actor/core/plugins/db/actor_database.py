@@ -163,8 +163,7 @@ class ActorDatabase(IDatabase):
     def remove_slice(self, *, slice_id: ID):
         try:
             self.lock.acquire()
-            self.db.remove_slice(act_id=self.actor_id,
-                                 slc_guid=str(slice_id))
+            self.db.remove_slice(slc_guid=str(slice_id))
         finally:
             self.lock.release()
 
@@ -262,7 +261,7 @@ class ActorDatabase(IDatabase):
         try:
             self.lock.acquire()
             self.logger.debug("Removing reservation {}".format(rid))
-            self.db.remove_reservation(act_id=self.actor_id, rsv_resid=str(rid))
+            self.db.remove_reservation(rsv_resid=str(rid))
         finally:
             self.lock.release()
 

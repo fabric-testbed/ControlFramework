@@ -26,6 +26,9 @@
 
 
 class DelegationNotFoundException(Exception):
+    """
+    Delegation Not Found Exception
+    """
     def __init__(self, *, text: str = None, did=None):
         super(DelegationNotFoundException, self).__init__()
         if text is not None:
@@ -39,6 +42,9 @@ class DelegationNotFoundException(Exception):
 
 
 class ReservationNotFoundException(Exception):
+    """
+    Reservation not found exception
+    """
     def __init__(self, *, text: str = None, rid=None):
         super(ReservationNotFoundException, self).__init__()
         if text is not None:
@@ -52,6 +58,9 @@ class ReservationNotFoundException(Exception):
 
 
 class SliceNotFoundException(Exception):
+    """
+    Slice not found exception
+    """
     def __init__(self, *, text: str = None, slice_id=None):
         super(SliceNotFoundException, self).__init__()
         if text is not None:

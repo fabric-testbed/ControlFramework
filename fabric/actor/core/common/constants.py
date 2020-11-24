@@ -27,6 +27,9 @@ from enum import Enum
 
 
 class ErrorCodes(Enum):
+    """
+    Error code enumeration
+    """
     ErrorInvalidArguments = 1
     ErrorInvalidActor = 2
     ErrorInvalidReservation = 3
@@ -44,6 +47,9 @@ class ErrorCodes(Enum):
 
 
 class Constants:
+    """
+    Constants
+    """
     ReservationHasPendingOperation = -200001
     ExtendSameUnits = -1
     AllReservationStates = -1

@@ -116,17 +116,17 @@ class AuthorityService(BrokerService):
         self.do_dispatch(rpc=rpc)
 
     def process(self, *, message: IMessageAvro):
-        if message.get_message_name() == IMessageAvro.Close:
+        if message.get_message_name() == IMessageAvro.close:
             self.close(request=message)
-        elif message.get_message_name() == IMessageAvro.Redeem:
+        elif message.get_message_name() == IMessageAvro.redeem:
             self.redeem(request=message)
-        elif message.get_message_name() == IMessageAvro.ExtendLease:
+        elif message.get_message_name() == IMessageAvro.extend_lease:
             self.extend_lease(request=message)
-        elif message.get_message_name() == IMessageAvro.ModifyLease:
+        elif message.get_message_name() == IMessageAvro.modify_lease:
             self.modify_lease(request=message)
-        elif message.get_message_name() == IMessageAvro.ResultReservation:
+        elif message.get_message_name() == IMessageAvro.result_reservation:
             self.logger.debug("Claim Resources Response receieved: {}".format(message))
-        elif message.get_message_name() == IMessageAvro.ResultDelegation:
+        elif message.get_message_name() == IMessageAvro.result_delegation:
             self.logger.debug("Claim Delegation Response receieved: {}".format(message))
         else:
             super().process(message=message)

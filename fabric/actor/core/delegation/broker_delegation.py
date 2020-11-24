@@ -66,18 +66,30 @@ class BrokerDelegation(Delegation):
         self.callback = None
 
     def get_broker(self) -> IBrokerProxy:
+        """
+        Get the broker
+        @return broker
+        """
         return self.broker
 
     def set_exported(self, value: bool):
+        """
+        Set exported
+        @param value value
+        """
         self.exported = value
 
     def is_exported(self) -> bool:
+        """
+        Return is exported
+        @return true if exported; false otherwise
+        """
         return self.exported
 
     def claim(self):
         raise Exception("Not supported on Broker Delegation")
 
-    def delegate(self, policy: IPolicy, id_token:str = None):
+    def delegate(self, policy: IPolicy, id_token: str = None):
         self.policy = policy
 
         if self.state == DelegationState.Nascent:
@@ -106,6 +118,10 @@ class BrokerDelegation(Delegation):
             self.error(err="Wrong delegation state for delegation reclaim")
 
     def service_reclaim(self, id_token: str = None):
+        """
+        Service reclaim
+        @param id_token identity token
+        """
         self.logger.debug("Servicing reclaim")
         if self.callback is None:
             self.logger.warning("Cannot generate reclaim: no callback.")
@@ -123,6 +139,9 @@ class BrokerDelegation(Delegation):
             self.logger.error("callback failed: {}".format(e))
 
     def validate_outgoing(self):
+        """
+        Validate outgoing delegation
+        """
         if self.slice_object is None:
             self.error(err="No slice specified")
 
@@ -130,6 +149,9 @@ class BrokerDelegation(Delegation):
             self.error(err="No Graph specified")
 
     def do_relinquish(self):
+        """
+        Perform required actions for a relinquish
+        """
         if not self.relinquished:
             self.relinquished = True
             try:
@@ -148,15 +170,28 @@ class BrokerDelegation(Delegation):
                 self.logger.error("broker reports relinquish error: {}".format(e))
 
     def close(self):
+        """
+        Close a delegation, remove the corresponding graph from CBM
+        """
         if self.state == DelegationState.Nascent:
             self.transition(prefix="close", state=DelegationState.Closed)
             self.do_relinquish()
             # TODO
+            # remove from the CBM
 
     def get_client_callback_proxy(self) -> IClientCallbackProxy:
+        """
+        Get Client callback proxy
+        @return client callback proxy
+        """
         return self.callback
 
     def delegation_update_satisfies(self, *, incoming: IDelegation, update_data: UpdateData):
+        """
+        Check if the incoming delegation satisfies the update
+        @param incoming incoming delegation
+        @param update_data update data
+        """
         incoming.get_graph().validate_graph()
         return True
 
@@ -211,6 +246,11 @@ class BrokerDelegation(Delegation):
         return success
 
     def update_delegation(self, *, incoming: IDelegation, update_data: UpdateData):
+        """
+        Update delegation
+        @param incoming incoming delegation
+        @param update_data update data
+        """
         if self.state == DelegationState.Nascent or self.state == DelegationState.Delegated:
             if self.accept_delegation_update(incoming=incoming, update_data=update_data):
                 self.transition(prefix="Delegation update", state=DelegationState.Delegated)
@@ -226,9 +266,13 @@ class BrokerDelegation(Delegation):
             self.transition(prefix="ticket update", state=DelegationState.Delegated)
 
     def service_update_delegation(self):
+        """
+        Service an update delegation
+        """
         # TODO
         # update the graph
-        return
 
     def service_delegate(self):
-        return
+        """
+        Service delegate
+        """

@@ -28,6 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fim.graph.abc_property_graph import ABCPropertyGraph
+
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_server_public import IServerPublic
@@ -141,5 +143,14 @@ class IServerActor(IActor, IServerPublic):
         Processes an incoming relinquish request.
         @params reservation: reservation
         @params caller: caller
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
+    def advertise(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+        """
+        Exports the resources described by the delegation to the client.
+        @param delegation delegation describing resources to export
+        @param client identity of the client resources will be exported to
         @raises Exception in case of error
         """

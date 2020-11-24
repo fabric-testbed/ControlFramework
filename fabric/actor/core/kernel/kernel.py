@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 import traceback
+from typing import List
 
 from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.apis.i_delegation import IDelegation
@@ -316,14 +317,14 @@ class Kernel:
             self.error(err="An error occurred during extend ticket for reservation #{}".format(
                 reservation.get_reservation_id()), e=e)
 
-    def get_client_slices(self) -> list:
+    def get_client_slices(self) -> List[IKernelSlice]:
         """
         Returns all client slices.
         @return an array of client slices
         """
         return self.slices.get_client_slices()
 
-    def get_inventory_slices(self) -> list:
+    def get_inventory_slices(self) -> List[IKernelSlice]:
         """
         Returns all inventory slices.
         @return an array of inventory slices
@@ -385,7 +386,7 @@ class Kernel:
             return self.reservations.get(rid=rid)
         return None
 
-    def get_reservations(self, *, slice_id: ID) -> list:
+    def get_reservations(self, *, slice_id: ID) -> List[IKernelReservation]:
         """
         Returns all reservations in the specified slice.
         @param slice_id slice id
@@ -1039,7 +1040,7 @@ class Kernel:
 
     def update_delegation(self, *, delegation: IDelegation, update: IDelegation, update_data: UpdateData):
         """
-        Handles an incoming update ticket operation (client side only).
+        Handles an incoming update delegation operation (client side only).
         @param delegation local delegation
         @param update update sent from upstream broker
         @param update_data status of the operation the broker is informing us about

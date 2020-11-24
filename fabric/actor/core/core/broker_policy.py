@@ -52,6 +52,9 @@ if TYPE_CHECKING:
 
 
 class BrokerPolicy(Policy, IBrokerPolicy):
+    """
+    Base implementation for Broker policy
+    """
     def __init__(self, *, actor: IBroker):
         super().__init__(actor=actor)
         # If true, every allocated ticket will require administrative approval
@@ -144,6 +147,9 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         return
 
     def remove_for_approval(self, *, reservation: IBrokerReservation):
+        """
+        Remove reservation from approval list
+        """
         try:
             self.lock.acquire()
             self.for_approval.remove(reservation=reservation)
@@ -197,15 +203,25 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         return extracted
 
     def get_client_id(self, *, reservation: IServerReservation) -> ID:
+        """
+        Get Client Id
+        """
         return reservation.get_client_auth_token().get_guid()
 
     @staticmethod
     def get_resource_pools_query() -> dict:
+        """
+        Return dictionary representing query
+        """
         properties = {Constants.QueryAction: Constants.QueryActionDiscoverPools}
         return properties
 
     @staticmethod
     def get_resource_pools(response: dict) -> Dict[ResourceType, ResourcePoolDescriptor]:
+        """
+        Get Resource Pools from Query response
+        @param response query response
+        """
         result = {}
 
         try:

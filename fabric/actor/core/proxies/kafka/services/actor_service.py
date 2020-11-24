@@ -187,15 +187,15 @@ class ActorService:
         self.do_dispatch(rpc=rpc)
 
     def process(self, *, message: IMessageAvro):
-        if message.get_message_name() == IMessageAvro.Query:
+        if message.get_message_name() == IMessageAvro.query:
             self.query(request=message)
-        elif message.get_message_name() == IMessageAvro.QueryResult:
+        elif message.get_message_name() == IMessageAvro.query_result:
             self.query_result(request=message)
-        elif message.get_message_name() == IMessageAvro.UpdateLease:
+        elif message.get_message_name() == IMessageAvro.update_lease:
             self.update_lease(request=message)
-        elif message.get_message_name() == IMessageAvro.UpdateTicket:
+        elif message.get_message_name() == IMessageAvro.update_ticket:
             self.update_ticket(request=message)
-        elif message.get_message_name() == IMessageAvro.UpdateDelegation:
+        elif message.get_message_name() == IMessageAvro.update_delegation:
             self.update_delegation(request=message)
         else:
             self.logger.error("Unsupported message {}".format(message))

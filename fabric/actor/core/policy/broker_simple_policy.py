@@ -589,3 +589,7 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
                 self.logger.debug("Delegation ignored")
         finally:
             self.lock.release()
+
+    def closed_delegation(self, *, delegation: IDelegation):
+        self.logger.debug("Close Delegation")
+        # TODO remove the delegation from the combined broker model

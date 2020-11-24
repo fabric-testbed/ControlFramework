@@ -23,20 +23,25 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import pickle
 
 from fabric.actor.core.util.id import ID
 from .broker_delegation import BrokerDelegation
-from .delegation import Delegation
-from ..apis.i_actor import IActor
 from ..apis.i_broker_proxy import IBrokerProxy
 from ..apis.i_delegation import IDelegation
-from ..apis.i_slice import ISlice
-from ..common.constants import Constants
 
 
 class BrokerDelegationFactory:
+    """
+    Factory class to create broker delegation instances
+    """
     @staticmethod
-    def create(did: str, slice_id: ID, broker: IBrokerProxy) -> IDelegation:
+    def create(did: ID, slice_id: ID, broker: IBrokerProxy) -> IDelegation:
+        """
+        Create a broker delegation
+        @param did delegation id
+        @param slice_id slice id
+        @param broker broker
+        @return delegation
+        """
         delegation = BrokerDelegation(dlg_graph_id=did, slice_id=slice_id, broker=broker)
         return delegation

@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import datetime
 
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.common.resource_vector import ResourceVector
@@ -38,27 +37,39 @@ from fabric.actor.core.util.resource_type import ResourceType
 
 
 class SimpleResourceTicketFactory(IResourceTicketFactory):
+    """
+    Factory class to create Resource Tickets
+    """
     def __init__(self):
         self.actor = None
         self.initialized = False
 
     def initialize(self):
+        """
+        Initialize
+        """
         if not self.initialized:
             if self.actor is None:
                 raise Exception("Factory does not have an actor")
             self.initialized = True
 
     def ensure_initialized(self):
+        """
+        Ensure if the factory is initialized
+        """
+
         if not self.initialized:
             raise Exception("ticket factory has not been initialized")
 
     def get_issuer_id(self):
+        """
+        Get Actor Guid
+        """
         return self.actor.get_identity().get_guid()
 
     def make_delegation(self, *, units: int = None, vector: ResourceVector = None, term: Term = None,
                         rtype: ResourceType = None, sources: list = None, bins: list = None,
                         properties: dict = None, holder: ID = None) -> ResourceDelegation:
-
         self.ensure_initialized()
         if (sources is None and bins is not None) or (sources is not None and bins is None):
             raise Exception("sources and bins must both be null or non-null")
@@ -177,5 +188,3 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                         ticket.delegations.append(dd)
 
         return ticket
-
-

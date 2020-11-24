@@ -58,7 +58,6 @@ from fabric.actor.core.kernel.reservation_states import ReservationPendingStates
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.reservation_state import ReservationState
 from fabric.actor.core.util.update_data import UpdateData
-from fabric.actor.security.guard import Guard
 
 
 class ReservationClient(Reservation, IKernelControllerReservation):
@@ -723,9 +722,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
     def prepare(self, *, callback: ICallbackProxy, logger):
         self.set_logger(logger=logger)
         self.callback = callback
-
-        if self.guard is None:
-            self.guard = Guard()
 
     def prepare_join(self):
         config = self.resources.get_local_properties()
