@@ -72,7 +72,7 @@ class BrokerCalendar(ClientCalendar):
         super().remove_scheduled_or_in_progress(reservation=reservation)
         self.remove_closing(reservation=reservation)
 
-        if isinstance(reservation, IBrokerReservation) :
+        if isinstance(reservation, IBrokerReservation):
             self.remove_request(reservation=reservation)
 
             source = reservation.get_source()

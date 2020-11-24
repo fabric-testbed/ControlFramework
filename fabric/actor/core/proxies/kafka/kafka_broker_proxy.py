@@ -89,7 +89,8 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
             avro_message.callback_topic = request.callback_topic
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
         else:
-            return super().execute(request=request)
+            super().execute(request=request)
+            return
 
         if self.producer is None:
             self.producer = self.create_kafka_producer()
@@ -109,7 +110,7 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         return request
 
     def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                      caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+                                 caller: AuthToken, id_token: str = None) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
@@ -118,7 +119,7 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         return request
 
     def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                        caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+                                   caller: AuthToken, id_token: str = None) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()

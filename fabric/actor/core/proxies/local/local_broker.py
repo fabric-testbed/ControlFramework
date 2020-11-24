@@ -53,14 +53,14 @@ class LocalBroker(LocalProxy, IBrokerProxy):
         return state
 
     def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                 caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+                                 caller: AuthToken, id_token: str = None) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
         state.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         state.callback = callback
         return state
 
     def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                   caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+                                   caller: AuthToken, id_token: str = None) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
         state.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         state.callback = callback

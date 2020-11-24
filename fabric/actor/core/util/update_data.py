@@ -63,7 +63,7 @@ class UpdateData:
     def error(self, *, message: str):
         """
         Indicates that an error has occurred.
-       
+
         @param message error message
         """
         self.message = message
@@ -72,7 +72,7 @@ class UpdateData:
     def is_failed(self) -> bool:
         """
         Checks if the operation represented by the object has failed.
-       
+
         @return true if the operation has failed
         """
         return self.failed
@@ -80,7 +80,7 @@ class UpdateData:
     def get_events(self) -> str:
         """
         Returns all events stored in the object.
-       
+
         @return list of events. Event items are separated by "\n".
         """
         return self.events
@@ -88,7 +88,7 @@ class UpdateData:
     def get_message(self) -> str:
         """
         Returns the message attached to the object.
-       
+
         @return message
         """
         return self.message
@@ -99,7 +99,7 @@ class UpdateData:
         may wish to know about. If the object already contains messages, the
         new message is prepended to the existing messages. Messages are
         separated using "\n".
-       
+
         @param event message describing event
         """
         if self.events is None:
@@ -112,7 +112,7 @@ class UpdateData:
         Posts a human-readable string describing an event that the user
         may wish to know about, and also marks the UpdateData in a failed
         state.
-       
+
         @param event message describing event
         """
         self.post(event=event)
@@ -121,7 +121,7 @@ class UpdateData:
     def successful(self):
         """
         Checks if the operation represented by the object has succeeded.
-       
+
         @return true if the operation has succeeded 
         """
         return not self.failed

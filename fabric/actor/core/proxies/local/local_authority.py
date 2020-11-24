@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
 from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
@@ -38,9 +37,6 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class LocalAuthority(LocalBroker, IAuthorityProxy):
-    def __init__(self, *, actor: IActor):
-        super().__init__(actor=actor)
-
     def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                        caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()

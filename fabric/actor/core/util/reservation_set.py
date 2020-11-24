@@ -102,11 +102,11 @@ class ReservationSet:
         """
         Returns the specified reservation. If the reservation is not
         present in the set, throws an exception.
-       
+
         @param rid the reservation identifier
-       
+
         @return Reservation identified by rid
-       
+
         @throws Exception if the requested reservation is not present in the set
         """
         if rid in self.reservations:

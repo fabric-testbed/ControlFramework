@@ -33,17 +33,16 @@ from fabric.message_bus.messages.failed_rpc_avro import FailedRpcAvro
 from fabric.message_bus.messages.query_avro import QueryAvro
 from fabric.message_bus.messages.query_result_avro import QueryResultAvro
 from fabric.message_bus.producer import AvroProducerApi
-
-if TYPE_CHECKING:
-    from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
-    from fabric.actor.security.auth_token import AuthToken
-    from fabric.actor.core.util.id import ID
-
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.rpc_request_state import RPCRequestState
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.proxy import Proxy
+
+if TYPE_CHECKING:
+    from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
+    from fabric.actor.security.auth_token import AuthToken
+    from fabric.actor.core.util.id import ID
 
 
 class KafkaProxyRequestState(RPCRequestState):

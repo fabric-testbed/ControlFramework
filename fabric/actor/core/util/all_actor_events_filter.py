@@ -29,12 +29,12 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_event_filter import IEventFilter
 
 if TYPE_CHECKING:
-    from fabric.actor.core.util import id
+    from fabric.actor.core.util.id import ID
     from fabric.actor.core.apis.i_event import IEvent
 
 
 class AllActorEventsFilter(IEventFilter):
-    def __init__(self, *, actor_guid: id):
+    def __init__(self, *, actor_guid: ID):
         self.id = actor_guid
 
     def matches(self, *, event: IEvent) -> bool:

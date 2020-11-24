@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import threading
 import traceback
 
 from fabric.actor.core.apis.i_timer_queue import ITimerQueue

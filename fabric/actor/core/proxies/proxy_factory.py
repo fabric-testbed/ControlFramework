@@ -27,13 +27,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.proxies.kafka.kafka_proxy_factory import KafkaProxyFactory
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.proxies.local.local_proxy_factory import LocalProxyFactory
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor_identity import IActorIdentity
     from fabric.actor.core.proxies.actor_location import ActorLocation
-
-from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.proxies.local.local_proxy_factory import LocalProxyFactory
 
 
 class ProxyFactory:
@@ -51,10 +50,10 @@ class ProxyFactory:
             return factory.new_callback(identity=identity, location=location)
         return None
 
-    def new_proxy(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation, type: str = None):
+    def new_proxy(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None):
         if protocol in self.factories:
             factory = self.factories[protocol]
-            return factory.new_proxy(identity=identity, location=location, type=type)
+            return factory.new_proxy(identity=identity, location=location, proxy_type=proxy_type)
         return None
 
 

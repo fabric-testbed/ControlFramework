@@ -81,7 +81,8 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         else:
-            return super().execute(request=request)
+            super().execute(request=request)
+            return
 
         if self.producer is None:
             self.producer = self.create_kafka_producer()
@@ -110,7 +111,7 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
         request.caller = caller
         return request
 
-    def prepare_update_lease(self, *, reservation: IAuthorityReservation,  update_data: UpdateData,
+    def prepare_update_lease(self, *, reservation: IAuthorityReservation, update_data: UpdateData,
                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.reservation = self.pass_reservation(reservation=reservation, auth=caller)

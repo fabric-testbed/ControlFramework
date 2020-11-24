@@ -196,6 +196,8 @@ class Term:
                 raise Exception("Invalid arguments")
             return (not self.start_time > term.start_time) and (not self.end_time < term.end_time)
 
+        return False
+
     def ends_after(self, *, date: datetime) -> bool:
         """
         Checks if the term ends after the given date.
@@ -390,10 +392,11 @@ class Term:
         return Term(start=date, length=self.get_length())
 
     def __str__(self):
-        if Term.set_cycles :
+        if Term.set_cycles:
             return "term=[{}:{}:{}]".format(self.cycle_start, self.cycle_new_start, self.cycle_end)
         else:
-            return "Start: {} End: {}".format(Term.get_readable_date(self.start_time), Term.get_readable_date(self.end_time))
+            return "Start: {} End: {}".format(Term.get_readable_date(self.start_time),
+                                              Term.get_readable_date(self.end_time))
 
     def validate(self):
         """

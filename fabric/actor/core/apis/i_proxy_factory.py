@@ -49,11 +49,11 @@ class IProxyFactory:
         """
 
     @abstractmethod
-    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, type: str = None) -> IProxy:
+    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None) -> IProxy:
         """
         Create a new proxy
         @param identity: identity
         @param location: location
-        @param type: type
+        @param proxy_type: proxy_type
         @return IProxy
         """

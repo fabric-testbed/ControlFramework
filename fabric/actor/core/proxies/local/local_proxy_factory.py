@@ -32,14 +32,13 @@ from fabric.actor.core.proxies.local.local_authority import LocalAuthority
 from fabric.actor.core.proxies.local.local_broker import LocalBroker
 from fabric.actor.core.proxies.local.local_return import LocalReturn
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
+from fabric.actor.core.apis.i_proxy_factory import IProxyFactory
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor_identity import IActorIdentity
     from fabric.actor.core.proxies.actor_location import ActorLocation
     from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
     from fabric.actor.core.apis.i_proxy import IProxy
-
-from fabric.actor.core.apis.i_proxy_factory import IProxyFactory
 
 
 class LocalProxyFactory(IProxyFactory):
@@ -49,7 +48,7 @@ class LocalProxyFactory(IProxyFactory):
             return LocalReturn(actor=actor)
         return None
 
-    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, type: str = None) -> IProxy:
+    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None) -> IProxy:
         actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
         if actor is not None:
             if isinstance(actor, IAuthority):

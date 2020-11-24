@@ -24,14 +24,11 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 from fabric.actor.core.proxies.kafka.services.actor_service import ActorService
 
-if TYPE_CHECKING:
-    from fabric.actor.core.apis.i_actor import IActor
-
 
 class ControllerService(ActorService):
-    def __init__(self, *, actor:IActor):
-        super().__init__(actor=actor)
+    """
+    Controller Service
+    """

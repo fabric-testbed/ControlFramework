@@ -121,7 +121,7 @@ class ReservationList:
 
         self.reservation_id_to_cycle[reservation.get_reservation_id()] = cycle
 
-    def add_to_list(self, *, reservation_set:ReservationSet, cycle: int):
+    def add_to_list(self, *, reservation_set: ReservationSet, cycle: int):
         """
         Adds an entry to the sorted list
         @params reservation_set: reservation set

@@ -61,7 +61,7 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
         return state
 
     def prepare_update_delegation(self, *, delegation: IDelegation, update_data: UpdateData,
-                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+                                  callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
 
         state = LocalProxy.LocalProxyRequestState()
         state.delegation = LocalReturn.pass_delegation(delegation=delegation)
@@ -70,7 +70,7 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
         state.callback = callback
         return state
 
-    def prepare_update_lease(self, *, reservation: IAuthorityReservation,  update_data, callback: ICallbackProxy,
+    def prepare_update_lease(self, *, reservation: IAuthorityReservation, update_data, callback: ICallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
         state.reservation = LocalReturn.pass_reservation(reservation=reservation, plugin=self.get_actor().get_plugin())
@@ -127,7 +127,8 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
     def pass_delegation(*, delegation: IDelegation) -> IDelegation:
         slice_obj = delegation.get_slice_object().clone_request()
 
-        delegation_new = DelegationFactory.create(did=delegation.get_delegation_id(), slice_id= delegation.get_slice_id())
+        delegation_new = DelegationFactory.create(did=delegation.get_delegation_id(),
+                                                  slice_id=delegation.get_slice_id())
         delegation_new.set_slice_object(slice_object=slice_obj)
         # TODO
         delegation_new.set_graph(delegation.get_graph())

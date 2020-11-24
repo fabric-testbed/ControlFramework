@@ -82,7 +82,8 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         else:
-            return super().execute(request=request)
+            super().execute(request=request)
+            return
 
         if self.producer is None:
             self.producer = self.create_kafka_producer()
@@ -93,8 +94,8 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy, caller:
-    AuthToken) -> IRPCRequestState:
+    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+                       caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.callback_topic = callback.get_kafka_topic()
         request.reservation = self.pass_authority_reservation(reservation=reservation, caller=caller)

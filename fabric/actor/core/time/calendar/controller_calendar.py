@@ -32,7 +32,8 @@ from fabric.actor.core.util.reservation_set import ReservationSet
 
 class ControllerCalendar(ClientCalendar):
     """
-    Controller calendar. In addition to the lists maintained by ClientCalendar, this class maintains the following lists:
+    Controller calendar. In addition to the lists maintained by ClientCalendar,
+    this class maintains the following lists:
      - closing: a list of reservations organized by the cycle they must be closed
      - redeeming: a list of reservations organized by the cycle they must be redeemed
     """

@@ -23,8 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import  bisect
-from functools import total_ordering
+import bisect
 
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.util.reservation_set import ReservationSet
@@ -100,10 +99,10 @@ class ReservationHoldings:
         # previous entry if this is the case.
         my_start = start
         entry = None
-        if reservation.get_reservation_id() in self.map :
+        if reservation.get_reservation_id() in self.map:
             entry = self.map[reservation.get_reservation_id()]
             if entry is not None:
-                assert ((start - entry.end) <= 1)
+                assert (start - entry.end) <= 1
                 my_start = entry.start
                 self.remove_reservation(reservation=reservation)
 
@@ -207,7 +206,7 @@ class ReservationHoldings:
         @params time : time
         """
         while True:
-            if len(self.list) > 0 :
+            if len(self.list) > 0:
                 entry = self.list[0]
                 if entry.end <= time:
                     self.list.remove(entry)

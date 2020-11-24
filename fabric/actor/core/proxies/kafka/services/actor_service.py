@@ -50,7 +50,7 @@ from fabric.message_bus.messages.update_delegation_avro import UpdateDelegationA
 if TYPE_CHECKING:
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
-    from fabric.message_bus.messages.failed_rpc_avro import FailedRPCAvro
+    from fabric.message_bus.messages.failed_rpc_avro import FailedRpcAvro
     from fabric.message_bus.messages.query_avro import QueryAvro
     from fabric.message_bus.messages.query_result_avro import QueryResultAvro
     from fabric.message_bus.messages.update_lease_avro import UpdateLeaseAvro
@@ -66,7 +66,7 @@ class ActorService:
     def get_callback(self, *, kafka_topic: str, auth: AuthToken):
         return KafkaReturn(kafka_topic=kafka_topic, identity=auth, logger=self.actor.get_logger())
 
-    def get_concrete(self, *, reservation:ReservationAvro) -> IConcreteSet:
+    def get_concrete(self, *, reservation: ReservationAvro) -> IConcreteSet:
         encoded = reservation.resource_set.concrete
         try:
             decoded = pickle.loads(encoded)
@@ -75,7 +75,7 @@ class ActorService:
             self.logger.error("Exception occurred while decoding {}".format(e))
         return None
 
-    def pass_client(self, *, reservation:ReservationAvro) -> IClientReservation:
+    def pass_client(self, *, reservation: ReservationAvro) -> IClientReservation:
         slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
         term = Translate.translate_term_from_avro(term=reservation.term)
 
@@ -104,12 +104,12 @@ class ActorService:
 
     def query(self, *, request: QueryAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             query = request.properties
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingQueryRPC(request_type=RPCRequestType.Query, message_id=ID(id=request.get_message_id()),
-                                   query=query, caller=authToken, callback=callback, id_token=request.get_id_token())
+                                   query=query, caller=auth_token, callback=callback, id_token=request.get_id_token())
         except Exception as e:
             self.logger.error("Invalid query request: {}".format(e))
             raise e
@@ -117,11 +117,11 @@ class ActorService:
 
     def query_result(self, *, request: QueryResultAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             query = request.properties
             rpc = IncomingQueryRPC(request_type=RPCRequestType.QueryResult, message_id=ID(id=request.get_message_id()),
-                                   query=query, caller=authToken, request_id=ID(id=request.request_id), id_token=None)
+                                   query=query, caller=auth_token, request_id=ID(id=request.request_id), id_token=None)
         except Exception as e:
             self.logger.error("Invalid query_result request: {}".format(e))
             raise e
@@ -129,12 +129,12 @@ class ActorService:
 
     def update_lease(self, *, request: UpdateLeaseAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_client(reservation=request.reservation)
             udd = Translate.translate_udd_from_avro(udd=request.update_data)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.UpdateLease,
-                                         reservation=rsvn, update_data=udd, caller=authToken)
+                                         reservation=rsvn, update_data=udd, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid update_lease request: {}".format(e))
             raise e
@@ -142,13 +142,13 @@ class ActorService:
 
     def update_ticket(self, *, request: UpdateTicketAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_client(reservation=request.reservation)
             udd = Translate.translate_udd_from_avro(udd=request.update_data)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id),
                                          request_type=RPCRequestType.UpdateTicket, reservation=rsvn, update_data=udd,
-                                         caller=authToken)
+                                         caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid update_ticket request: {}".format(e))
             raise e
@@ -156,31 +156,32 @@ class ActorService:
 
     def update_delegation(self, *, request: UpdateDelegationAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             dlg = self.pass_client_delegation(delegation=request.delegation)
             udd = Translate.translate_udd_from_avro(udd=request.update_data)
             rpc = IncomingDelegationRPC(message_id=ID(id=request.message_id),
-                                         request_type=RPCRequestType.UpdateDelegation, delegation=dlg, update_data=udd,
-                                         caller=authToken)
+                                        request_type=RPCRequestType.UpdateDelegation, delegation=dlg, update_data=udd,
+                                        caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid update_delegation request: {}".format(e))
             raise e
         self.do_dispatch(rpc=rpc)
 
-    def failed_rpc(self, *, request: FailedRPCAvro):
+    def failed_rpc(self, *, request: FailedRpcAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             failed_request_type = RPCRequestType(request.request_type)
             if request.reservation_id is not None and request.reservation_id != "":
                 rpc = IncomingFailedRPC(message_id=ID(id=request.message_id), failed_request_type=failed_request_type,
-                                        request_id=request.request_id, failed_reservation_id=ID(id=request.reservation_id),
-                                        error_details=request.error_details, caller=authToken)
+                                        request_id=request.request_id,
+                                        failed_reservation_id=ID(id=request.reservation_id),
+                                        error_details=request.error_details, caller=auth_token)
             else:
                 rpc = IncomingFailedRPC(message_id=ID(id=request.message_id), failed_request_type=failed_request_type,
                                         request_id=request.request_id, failed_reservation_id=None,
-                                        error_details=request.error_details, caller=authToken)
+                                        error_details=request.error_details, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid failedRequest request: {}".format(e))
             raise e

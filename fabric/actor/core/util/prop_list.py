@@ -49,6 +49,8 @@ class PropList:
         if incoming is not None and outgoing is not None:
             return {**incoming, **outgoing}
 
+        return None
+
     @staticmethod
     def is_elastic_time(*, rset: ResourceSet):
         properties = rset.get_request_properties()

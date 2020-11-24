@@ -662,12 +662,12 @@ class Container(IActorContainer):
         return self.protocols.get(protocol, None)
 
     @staticmethod
-    def get_proxy(protocol: str, identity: IActorIdentity, location: ActorLocation, type: str = None):
+    def get_proxy(protocol: str, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None):
         try:
             proxy = ActorRegistrySingleton.get().get_proxy(protocol=protocol, actor_name=identity.get_name())
             if proxy is None:
                 proxy = ProxyFactorySingleton.get().new_proxy(protocol=protocol, identity=identity, location=location,
-                                                              type=type)
+                                                              proxy_type=proxy_type)
                 ActorRegistrySingleton.get().register_proxy(proxy=proxy)
             return proxy
         except Exception as e:

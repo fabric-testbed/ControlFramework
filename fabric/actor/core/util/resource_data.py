@@ -48,26 +48,49 @@ class ResourceData:
                                                                          self.configuration_properties)
 
     def clone(self):
-        object = ResourceData()
-        object.local_properties = self.local_properties
-        object.request_properties = self.request_properties
-        object.resource_properties = self.resource_properties
-        object.configuration_properties = self.configuration_properties
-        return object
+        """
+        Clone an object
+        """
+        obj = ResourceData()
+        obj.local_properties = self.local_properties.copy()
+        obj.request_properties = self.request_properties.copy()
+        obj.resource_properties = self.resource_properties.copy()
+        obj.configuration_properties = self.configuration_properties.copy()
+        return obj
 
     def get_local_properties(self) -> dict:
+        """
+        Get local properties
+        @return local properties
+        """
         return self.local_properties
 
     def get_request_properties(self) -> dict:
+        """
+        Get Request properties
+        @return request properties
+        """
         return self.request_properties
 
     def get_resource_properties(self) -> dict:
+        """
+        Get resource properties
+        @return resource properties
+        """
         return self.resource_properties
 
     def get_configuration_properties(self) -> dict:
+        """
+        Get config properties
+        @return config properties
+        """
         return self.configuration_properties
 
     def merge(self, *, other):
+        """
+        Merge with other instance of ResourceData
+        @param other other
+        """
         if other is None or not isinstance(other, ResourceData):
             raise Exception("Invalid object type")
 

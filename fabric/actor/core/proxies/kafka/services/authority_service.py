@@ -41,12 +41,9 @@ from fabric.message_bus.messages.message import IMessageAvro
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
-    from fabric.actor.core.apis.i_actor import IActor
 
 
 class AuthorityService(BrokerService):
-    def __init__(self, *, actor:IActor):
-        super().__init__(actor=actor)
 
     def pass_authority(self, *, reservation: ReservationAvro) -> IAuthorityReservation:
         slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
@@ -68,11 +65,11 @@ class AuthorityService(BrokerService):
 
     def close(self, *, request: CloseAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Close,
-                                         reservation=rsvn, caller=authToken)
+                                         reservation=rsvn, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid close request: {}".format(e))
             raise e
@@ -80,12 +77,12 @@ class AuthorityService(BrokerService):
 
     def redeem(self, *, request: RedeemAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Redeem,
-                                         reservation=rsvn, callback=callback, caller=authToken)
+                                         reservation=rsvn, callback=callback, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid redeem request: {}".format(e))
             raise e
@@ -93,11 +90,11 @@ class AuthorityService(BrokerService):
 
     def extend_lease(self, *, request: ExtendLeaseAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id),
-                                         request_type=RPCRequestType.ExtendLease, reservation=rsvn, caller=authToken)
+                                         request_type=RPCRequestType.ExtendLease, reservation=rsvn, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid extend_lease request: {}".format(e))
             raise e
@@ -105,11 +102,11 @@ class AuthorityService(BrokerService):
 
     def modify_lease(self, *, request: ModifyLeaseAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id),
-                                         request_type=RPCRequestType.ModifyLease, reservation=rsvn, caller=authToken)
+                                         request_type=RPCRequestType.ModifyLease, reservation=rsvn, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid modify_lease request: {}".format(e))
             raise e

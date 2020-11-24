@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import uuid
-from functools import total_ordering
 
 
 class ID:

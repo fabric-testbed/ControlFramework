@@ -25,8 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import pickle
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_delegation import IDelegation
@@ -51,7 +49,6 @@ from fabric.message_bus.messages.slice_avro import SliceAvro
 from fabric.message_bus.messages.term_avro import TermAvro
 from fabric.message_bus.messages.update_data_avro import UpdateDataAvro
 
-from fabric.actor.core.apis.i_reservation import IReservation
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_slice import ISlice

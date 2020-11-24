@@ -43,7 +43,7 @@ if TYPE_CHECKING:
 
 
 class KafkaProxyFactory(IProxyFactory):
-    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, type: str = None) -> IProxy:
+    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None) -> IProxy:
         result = None
         actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
 
@@ -60,17 +60,17 @@ class KafkaProxyFactory(IProxyFactory):
         else:
             kafka_topic = location.get_location()
 
-            if type is not None:
+            if proxy_type is not None:
                 from fabric.actor.core.container.globals import GlobalsSingleton
-                if type.lower() == ActorType.Authority.name.lower():
+                if proxy_type.lower() == ActorType.Authority.name.lower():
                     result = KafkaAuthorityProxy(kafka_topic=kafka_topic, identity=identity.get_identity(),
                                                  logger=GlobalsSingleton.get().get_logger())
 
-                elif type.lower() == ActorType.Broker.name.lower():
+                elif proxy_type.lower() == ActorType.Broker.name.lower():
                     result = KafkaBrokerProxy(kafka_topic=kafka_topic, identity=identity.get_identity(),
                                               logger=GlobalsSingleton.get().get_logger())
                 else:
-                    raise Exception("Unsupported proxy type: {}".format(type))
+                    raise Exception("Unsupported proxy type: {}".format(proxy_type))
             else:
                 raise Exception("Missing proxy type")
         return result

@@ -46,13 +46,9 @@ if TYPE_CHECKING:
     from fabric.message_bus.messages.extend_ticket_avro import ExtendTicketAvro
     from fabric.message_bus.messages.relinquish_avro import RelinquishAvro
     from fabric.message_bus.messages.ticket_avro import TicketAvro
-    from fabric.actor.core.apis.i_actor import IActor
 
 
 class BrokerService(ActorService):
-    def __init__(self, *, actor:IActor):
-        super().__init__(actor=actor)
-
     def pass_agent(self, *, reservation: ReservationAvro) -> IBrokerReservation:
         slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
         term = Translate.translate_term_from_avro(term=reservation.term)
@@ -77,12 +73,12 @@ class BrokerService(ActorService):
 
     def ticket(self, *, request: TicketAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_agent(reservation=request.reservation)
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Ticket,
-                                         reservation=rsvn, callback=callback, caller=authToken)
+                                         reservation=rsvn, callback=callback, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid Ticket request: {}".format(e))
             raise e
@@ -90,13 +86,13 @@ class BrokerService(ActorService):
 
     def claim_delegation(self, *, request: ClaimDelegationAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             dlg = self.pass_agent_delegation(delegation=request.delegation)
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingDelegationRPC(message_id=ID(id=request.message_id),
                                         request_type=RPCRequestType.ClaimDelegation,
-                                        delegation=dlg, callback=callback, caller=authToken)
+                                        delegation=dlg, callback=callback, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid Claim request: {}".format(e))
             raise e
@@ -104,13 +100,13 @@ class BrokerService(ActorService):
 
     def reclaim_delegation(self, *, request: ReclaimDelegationAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             dlg = self.pass_agent_delegation(delegation=request.delegation)
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingDelegationRPC(message_id=ID(id=request.message_id),
                                         request_type=RPCRequestType.ReclaimDelegation,
-                                        delegation=dlg, callback=callback, caller=authToken)
+                                        delegation=dlg, callback=callback, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid reclaim request: {}".format(e))
             raise e
@@ -118,12 +114,12 @@ class BrokerService(ActorService):
 
     def extend_ticket(self, *, request: ExtendTicketAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_agent(reservation=request.reservation)
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.ExtendTicket,
-                                         reservation=rsvn, caller=authToken)
+                                         reservation=rsvn, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid extend_ticket request: {}".format(e))
             raise e
@@ -131,12 +127,12 @@ class BrokerService(ActorService):
 
     def relinquish(self, *, request: RelinquishAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_agent(reservation=request.reservation)
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Relinquish,
-                                         reservation=rsvn, caller=authToken)
+                                         reservation=rsvn, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid extend_ticket request: {}".format(e))
             raise e

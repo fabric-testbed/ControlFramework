@@ -25,7 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 import ipaddress
-from typing import TYPE_CHECKING
 
 
 class IPv4Set:
