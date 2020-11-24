@@ -35,6 +35,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.core.util.id import ID
     from fim.graph.abc_property_graph import ABCPropertyGraph
+    from fabric.actor.core.util.resource_data import ResourceData
 
 
 class ISlice:
@@ -299,4 +300,11 @@ class ISlice:
         Returns the graph id
 
         @return graph id
+        """
+
+    @abstractmethod
+    def set_properties(self, *, rsrcdata: ResourceData):
+        """
+        Sets the slice properties.
+        @param properties slice properties
         """

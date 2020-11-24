@@ -29,18 +29,33 @@ from fabric.actor.core.util.id import ID
 
 
 class ReservationPurgedEvent(IEvent):
+    """
+    Represents Reservation purged RPC event
+    """
     def __init__(self, *, reservation: IReservation):
         self.actor_id = reservation.get_actor().get_guid()
         self.rid = reservation.get_reservation_id()
         self.slice_id = reservation.get_slice_id()
 
     def get_actor_id(self) -> ID:
+        """
+        Get Actor id
+        @return actor id
+        """
         return self.actor_id
 
     def get_reservation_id(self) -> ID:
+        """
+        Get reservation id
+        @return reservation id
+        """
         return self.rid
 
     def get_slice_id(self) -> ID:
+        """
+        Get Slice id
+        @return slice id
+        """
         return self.slice_id
 
     def get_properties(self) -> dict:

@@ -25,6 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
@@ -32,6 +34,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.id import ID
+    from fabric.actor.core.apis.i_actor import IActor
 
 
 class IClientReservationFactory:
@@ -40,7 +43,7 @@ class IClientReservationFactory:
     """
     @staticmethod
     def create(*, rid: ID, resources: ResourceSet = None, term: Term = None, slice_object: ISlice = None,
-               broker: IBrokerProxy = None):
+               broker: IBrokerProxy = None, actor: IActor = None):
         """
         Creates an instance of IClientReservation
 
@@ -49,6 +52,7 @@ class IClientReservationFactory:
         @param term term
         @param slice_object slice
         @param broker broker
+        @param actor actor
 
         @return an instance of IClientReservation
         """

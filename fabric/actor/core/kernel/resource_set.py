@@ -25,6 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from datetime import datetime
+from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
+from fabric.actor.core.util.resource_data import ResourceData
+
 if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.id import ID
@@ -32,10 +36,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_concrete_set import IConcreteSet
     from fabric.actor.core.util import resource_type
     from fabric.actor.core.core.ticket import Ticket
-
-from datetime import datetime
-from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
-from fabric.actor.core.util.resource_data import ResourceData
 
 
 class ResourceSet:
@@ -155,6 +155,10 @@ class ResourceSet:
         self.is_closing = False
 
     def restore(self, *, rid: ID):
+        """
+        Restore post stateful restart
+        @param rid reservation id
+        """
         self.rid = rid
 
     def abstract_clone(self):
@@ -181,12 +185,14 @@ class ResourceSet:
             rset = ResourceSet(concrete=self.released, rtype=self.type, rdata=ResourceData())
         return rset
 
-    def internal_error(self, *, message: str):
-        raise Exception("internal error: " + message)
-
     def merge_properties(self, *, reservation: IReservation, resource_set):
+        """
+        Merge properties
+        @param reservation reservation
+        @param resource_set resource set
+        """
         if reservation is None or resource_set is None:
-            self.error(message="Invalid argument")
+            raise Exception("Invalid argument")
 
         if self.properties is None:
             self.properties = ResourceData()
@@ -232,7 +238,7 @@ class ResourceSet:
 
     def delta_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            self.error(message="Invalid argument")
+            raise Exception("Invalid argument")
 
         if self.resources is None:
             # in case of close for a canceled reservation.
@@ -254,7 +260,7 @@ class ResourceSet:
             self.type = resource_set.type
             difference = 0
             if resource_set.gained is None or resource_set.lost is not None or resource_set.modified is not None:
-                self.internal_error(message="service overrun in hardChange")
+                raise Exception("Internal Error: service overrun in hardChange")
 
             if resource_set.gained is not None:
                 self.gained = resource_set.gained
@@ -271,9 +277,6 @@ class ResourceSet:
             self.previous_properties = self.properties
             self.merge_properties(reservation=reservation, resource_set=resource_set)
 
-    def error(self, *, message: str):
-        raise Exception(message)
-
     def fix_abstract_units(self):
         """
         Sets the number of abstract units to equal the number of concrete units.
@@ -283,9 +286,9 @@ class ResourceSet:
         else:
             self.units = 0
 
-    def full_update(self, *, reservation:IReservation, resource_set):
+    def full_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            self.error(message="Invalid argument")
+            raise Exception("Invalid argument")
 
         # take the units and the type
         self.units = resource_set.units
@@ -419,7 +422,7 @@ class ResourceSet:
         @returns number of abstract units
         """
         return self.units
-    
+
     def is_active(self) -> bool:
         """
         Checks if the resource set is active: allocated units are active.
@@ -470,7 +473,7 @@ class ResourceSet:
 
     def service_check(self):
         if self.resources is None:
-            self.internal_error(message="WARNING: service post-op call on non-concrete reservation")
+            raise Exception("Internal Error: WARNING: service post-op call on non-concrete reservation")
 
     def close(self):
         """
@@ -585,7 +588,7 @@ class ResourceSet:
             self.properties = ResourceData()
         self.properties.merge_properties(from_props=p, to_props=self.properties.get_resource_properties())
 
-    def set_resources(self, *, cset:IConcreteSet):
+    def set_resources(self, *, cset: IConcreteSet):
         """
         Set the concrete resources. Used by proxies.
         @params cset :concrete resource set
@@ -618,14 +621,13 @@ class ResourceSet:
         result = "rset: units=[{}] ".format(self.units)
         if self.resources is not None:
             result += " concrete:[{}]".format(self.resources)
-        # TODO
         if self.properties is not None:
             result += " properties: [{}]".format(self.properties)
         return result
 
     def update(self, *, reservation: IReservation, resource_set: ResourceSet):
         if reservation is None or resource_set is None:
-            self.error(message="Invalid argument")
+            raise Exception("Invalid argument")
 
         if resource_set.resources is not None:
             self.full_update(reservation=reservation, resource_set=resource_set)
@@ -634,7 +636,7 @@ class ResourceSet:
 
     def update_properties(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            self.error(message="Invalid argument")
+            raise Exception("Invalid argument")
 
         self.merge_properties(reservation=reservation, resource_set=resource_set)
 
@@ -644,7 +646,7 @@ class ResourceSet:
         @raises Exception in case of error thrown if the set is determined to be invalid
         """
         if self.units < 0:
-            self.error(message="invalid unit count:{}".format(self.units))
+            raise Exception("invalid unit count:{}".format(self.units))
 
     def validate_incoming(self):
         """
@@ -656,7 +658,7 @@ class ResourceSet:
         """
         self.validate()
         if self.resources is not None:
-            return self.resources.validate_incoming()
+            self.resources.validate_incoming()
 
     def validate_incoming_ticket(self, *, term: Term):
         """
@@ -667,10 +669,11 @@ class ResourceSet:
         """
         if self.resources is None:
             if self.units != 0:
-                self.error(message="no resources to back incoming ticket")
+                raise Exception("no resources to back incoming ticket")
             return
         if self.resources.get_units() != self.units:
-            self.error(message="size mismatch on incoming ticket {} != {}".format(self.resources.get_units(), self.units))
+            raise Exception("size mismatch on incoming ticket {} != {}".format(self.resources.get_units(),
+                                                                               self.units))
         self.resources.validate_concrete(rtype=self.type, units=self.units, term=term)
 
     def validate_outgoing(self):

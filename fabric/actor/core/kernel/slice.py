@@ -54,9 +54,9 @@ class Slice(IKernelSlice):
     reservations at many sites; and on the site Authority, where each slice may
     hold multiple reservations for resources at that site.
     """
-    def __init__(self, *, id: ID = None, name: str = "unspecified", data: ResourceData = None):
+    def __init__(self, *, slice_id: ID = None, name: str = "unspecified", data: ResourceData = None):
         # Globally unique identifier.
-        self.guid = id
+        self.guid = slice_id
         # Slice name. Not required to be globally or locally unique.
         self.name = name
         # Description string. Has only local meaning.
@@ -98,7 +98,7 @@ class Slice(IKernelSlice):
     def get_graph_id(self) -> ID:
         return self.graph_id
 
-    def set_graph(self, graph: ABCPropertyGraph):
+    def set_graph(self, *, graph: ABCPropertyGraph):
         self.graph = graph
         self.set_graph_id(graph_id=ID(id=self.graph.get_graph_id()))
 
@@ -107,7 +107,7 @@ class Slice(IKernelSlice):
 
     def clone_request(self) -> ISlice:
         result = Slice()
-        result.slice_name = self.name
+        result.name = self.name
         result.guid = self.guid
         return result
 
@@ -141,7 +141,7 @@ class Slice(IKernelSlice):
     def get_reservations(self) -> ReservationSet:
         return self.reservations
 
-    def get_delegations(self) -> Dict[str, IDelegation] :
+    def get_delegations(self) -> Dict[str, IDelegation]:
         return self.delegations
 
     def get_reservations_list(self) -> list:

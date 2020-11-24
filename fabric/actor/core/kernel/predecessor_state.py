@@ -47,6 +47,5 @@ class PredecessorState:
         return state
 
     def __setstate__(self, state):
-        reservation_id = state['reservation_id']
-        # TODO setup reservation pointer
         self.__dict__.update(state)
+        self.reservation = None

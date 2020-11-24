@@ -50,7 +50,7 @@ class IReservationResources(ABC):
     """
 
     @abstractmethod
-    def count(self, *, rc: ResourceCount, time: datetime):
+    def count(self, *, rc: ResourceCount, when: datetime):
         """
         Counts the number of resources in the reservation relative to the specified time.
         The ResourceCount object is updated with the count of active, pending, expired, failed, etc. units.
@@ -58,7 +58,7 @@ class IReservationResources(ABC):
 
         Args:
             rc: holder for counts
-            time: time instance
+            time: when instance
         """
 
     @abstractmethod

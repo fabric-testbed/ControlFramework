@@ -27,20 +27,26 @@ from __future__ import annotations
 
 import traceback
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from fabric.actor.core.kernel.rpc_request import RPCRequest
-
 from fabric.actor.core.apis.i_timer_task import ITimerTask
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.kernel.failed_rpc_event import FailedRPCEvent
 from fabric.actor.core.util.rpc_exception import RPCException, RPCError
 
+if TYPE_CHECKING:
+    from fabric.actor.core.kernel.rpc_request import RPCRequest
+
 
 class QueryTimeout(ITimerTask):
+    """
+    Query timeout
+    """
     def __init__(self, *, req: RPCRequest):
         self.req = req
 
     def execute(self):
+        """
+        Process a query timeout
+        """
         try:
             from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
             pending = RPCManagerSingleton.get().remove_pending_request(guid=self.req.request.get_message_id())

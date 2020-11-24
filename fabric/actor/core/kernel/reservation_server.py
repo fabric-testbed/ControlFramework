@@ -208,9 +208,9 @@ class ReservationServer(Reservation, IKernelServerReservation):
 
         return c
 
-    def count(self, *, rc: ResourceCount, time: datetime):
-        if self.state == ReservationStates.Nascent or self.state ==  ReservationStates.Ticketed:
-            c = self.count_when(when=time)
+    def count(self, *, rc: ResourceCount, when: datetime):
+        if self.state == ReservationStates.Nascent or self.state == ReservationStates.Ticketed:
+            c = self.count_when(when=when)
             if c.type is not None:
                 rc.tally_active(resource_type=c.type, count=c.active)
                 rc.tally_pending(resource_type=c.type, count=c.pending)
@@ -226,6 +226,10 @@ class ReservationServer(Reservation, IKernelServerReservation):
         super().fail(message=message, exception=exception)
 
     def fail_notify(self, *, message: str):
+        """
+        Fail and notify
+        @param message message
+        """
         self.generate_update()
         self.fail(message=message, exception=None)
 
@@ -247,9 +251,6 @@ class ReservationServer(Reservation, IKernelServerReservation):
 
     def get_sequence_out(self) -> int:
         return self.sequence_out
-
-    def get_server_auth_token(self) -> AuthToken:
-        return self.owner
 
     def get_type(self) -> ResourceType:
         if self.resources is not None:

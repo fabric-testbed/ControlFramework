@@ -33,6 +33,9 @@ from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 
 
 class RPCRequest:
+    """
+    Represents a RPC request being sent across Kafka
+    """
     def __init__(self, *, request: IRPCRequestState, actor: IActor, proxy: IProxy,
                  sequence: int = None, handler: IRPCResponseHandler = None, reservation: IReservation = None,
                  delegation: IDelegation = None):
@@ -47,22 +50,44 @@ class RPCRequest:
         self.timer = None
 
     def get_actor(self) -> IActor:
+        """
+        Get actor
+        @return actor
+        """
         return self.actor
 
     def get_delegation(self) -> IDelegation:
+        """
+        Get delegation
+        @return delegation
+        """
         return self.delegation
 
     def get_reservation(self) -> IReservation:
+        """
+        Get Reservation
+        @return reservation
+        """
         return self.reservation
 
     def get_handler(self) -> IRPCResponseHandler:
+        """
+        Get Response Handler
+        @return response handler
+        """
         return self.handler
 
     def get_request_type(self) -> RPCRequestType:
+        """
+        Get Request Type
+        @return request type
+        """
         return self.request.get_type()
 
     def cancel_timer(self):
-        ### TODO
+        """
+        Cancel a timer if started
+        """
         if self.timer is not None:
             from fabric.actor.core.container.globals import GlobalsSingleton
             GlobalsSingleton.get().timer_scheduler.cancel(self.timer)

@@ -28,7 +28,7 @@ from enum import Enum
 
 class ReservationStates(Enum):
     """
-    Reservation states (enum ReservationState) Should be protected: public just for logging
+    Reservation states
     """
     Nascent = 1
     Ticketed = 2
@@ -42,7 +42,7 @@ class ReservationStates(Enum):
 
 class ReservationPendingStates(Enum):
     """
-    Pending operation states (enum ReservationPending) Should be protected: public just for logging
+    Pending operation states
     """
     None_ = 11
     Ticketing = 12
@@ -61,6 +61,9 @@ class ReservationPendingStates(Enum):
 
 
 class JoinState(Enum):
+    """
+    Join states
+    """
     None_ = 31
     NoJoin = 32
     BlockedJoin = 33

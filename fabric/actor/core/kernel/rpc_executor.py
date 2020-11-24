@@ -25,22 +25,27 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from fabric.actor.core.kernel.rpc_request import RPCRequest
-
 from fabric.actor.core.util.rpc_exception import RPCException
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.kernel.failed_rpc_event import FailedRPCEvent
 
+if TYPE_CHECKING:
+    from fabric.actor.core.kernel.rpc_request import RPCRequest
+
 
 class RPCExecutor:
+    """
+    Execute an RPC
+    """
     def __init__(self, *, request: RPCRequest):
         self.request = request
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
     def post_exception(self, *, e: RPCException):
+        """
+        Handle any exception raised during processing
+        """
         try:
             self.logger.error("An error occurred while performing RPC. Error type={} {}".format(e.get_error_type(), e))
             from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
@@ -51,11 +56,13 @@ class RPCExecutor:
             self.logger.error("postException failed = {}".format(e))
 
     def run(self):
+        """
+        Execute RPC
+        """
         self.logger.debug("Performing RPC: type={} to:{}".format(self.request.request.get_type(),
                                                                  self.request.proxy.get_name()))
         try:
             self.request.proxy.execute(request=self.request.request)
-            #self.request.cancel_timer()
         except RPCException as e:
             self.post_exception(e=e)
         finally:

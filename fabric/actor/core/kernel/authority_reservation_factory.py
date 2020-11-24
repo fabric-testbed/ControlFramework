@@ -36,8 +36,19 @@ if TYPE_CHECKING:
 
 
 class AuthorityReservationFactory(IAuthorityReservationFactory):
+    """
+    Factory class for creating authority reservations
+    """
     @staticmethod
     def create(*, resources: ResourceSet, term: Term, slice_obj: ISlice, rid: ID):
+        """
+        Create authority reservation
+        @param resources resources
+        @param term term
+        @param slice_obj slice object
+        @param rid reservation id
+        @return Authority Reservation
+        """
         from fabric.actor.core.kernel.authority_reservation import AuthorityReservation
         res = AuthorityReservation(rid=rid, resources=resources, term=term, slice_object=slice_obj)
         return res

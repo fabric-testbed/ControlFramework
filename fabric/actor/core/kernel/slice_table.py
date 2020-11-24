@@ -47,9 +47,9 @@ class SliceTable:
     def add(self, *, slice_object: IKernelSlice):
         """
         Adds the given slice to the slice table.
-       
+
         @param slice_object slice to add
-       
+
         @throws Exception if the slice is invalid
         @throws Exception if the slice is already present in the table
         """
@@ -87,9 +87,9 @@ class SliceTable:
     def contains(self, *, slice_id: ID) -> bool:
         """
         Checks if the specified slice is contained in the table.
-       
+
         @param slice_id identifier of slice to check
-       
+
         @return true if the slice is contained in the table, false otherwise
         """
         ret_val = False
@@ -103,10 +103,10 @@ class SliceTable:
     def get(self, *, slice_id: ID, raise_exception: bool = False) -> IKernelSlice:
         """
         Returns the specified slice.
-       
+
         @param slice_id identifier of slice to return
         @param raise_exception: raise_exception
-       
+
         @return slice or null if the slice is not present in the table
         """
         if slice_id is None:
@@ -127,9 +127,9 @@ class SliceTable:
     def get_slice_name(self, *, slice_name: str) -> list:
         """
         Returns all slices with the given name.
-       
+
         @param slice_name slice name
-       
+
         @return an list of slices with the given name
         """
         ret_val = None
@@ -147,7 +147,7 @@ class SliceTable:
     def get_broker_client_slices(self) -> list:
         """
         Returns all broker client slices in the table.
-       
+
         @return a list of broker client slices
         """
         ret_val = None
@@ -164,7 +164,7 @@ class SliceTable:
     def get_client_slices(self) -> list:
         """
         Returns all client slices in the table.
-       
+
         @return an array of client slices
         """
         ret_val = None
@@ -182,7 +182,7 @@ class SliceTable:
     def get_inventory_slices(self) -> list:
         """
         Returns all inventory slices in the table.
-       
+
         @return a list of inventory slices
         """
         ret_val = None
@@ -198,7 +198,7 @@ class SliceTable:
     def get_slices(self) -> list:
         """
         Returns all slices in the table.
-       
+
         @return a list of slices
         """
         ret_val = None
@@ -214,9 +214,9 @@ class SliceTable:
     def remove(self, *, slice_id: ID):
         """
         Removes the specified slice.
-       
+
         @param slice_id identifier of slice to remove
-       
+
         @throws Exception if the specified slice is not in the table
         """
         if slice_id is None:

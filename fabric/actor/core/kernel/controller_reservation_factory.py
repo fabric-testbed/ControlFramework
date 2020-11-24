@@ -34,7 +34,19 @@ from fabric.actor.core.util.id import ID
 
 
 class ControllerReservationFactory(IControllerReservationFactory):
+    """
+    Factory class for creating controller reservations
+    """
     @staticmethod
     def create(*, rid: ID, resources: ResourceSet = None, term: Term = None, slice_object: ISlice = None,
                broker: IBrokerProxy = None) -> IControllerReservation:
+        """
+        Create authority reservation
+        @param rid reservation id
+        @param resources resources
+        @param term term
+        @param slice_object slice object
+        @param broker broker
+        @return Controller Reservation
+        """
         return ReservationClient(rid=rid, resources=resources, term=term, slice_object=slice_object, broker=broker)

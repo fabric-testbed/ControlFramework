@@ -27,6 +27,9 @@ from fabric.actor.core.kernel.rpc_manager import RPCManager
 
 
 class RPCManagerSingleton:
+    """
+    Singleton Class for RPC Manager
+    """
     __instance = None
 
     def __init__(self):

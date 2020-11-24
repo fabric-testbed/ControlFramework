@@ -25,9 +25,20 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 from __future__ import annotations
+
+from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.util.id import ID
+from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
+from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
+from fabric.actor.core.apis.i_reservation import ReservationCategory
+from fabric.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
+from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
+from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
+from fabric.actor.core.kernel.request_types import RequestTypes
+from fabric.actor.core.kernel.reservation_server import ReservationServer
+from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -40,17 +51,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
     from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
-
-from datetime import datetime
-from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
-from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
-from fabric.actor.core.apis.i_reservation import ReservationCategory
-from fabric.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
-from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
-from fabric.actor.core.kernel.request_types import RequestTypes
-from fabric.actor.core.kernel.reservation_server import ReservationServer
-from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 
 
 class BrokerReservation(ReservationServer, IKernelBrokerReservation):
@@ -147,7 +147,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         return "[{},{}] ({})({})".format(self.get_state_name(), self.get_pending_state_name(), self.get_sequence_in(),
                                          self.get_sequence_out())
 
-    def recover(self, *, parent, saved_state):
+    def recover(self):
+        """
+        Recover the reservation post stateful restart
+        """
         if isinstance(self.policy, IAuthorityPolicy):
             self.logger.debug("No recovery necessary for reservation #{}".format(self.get_reservation_id()))
             return
@@ -211,7 +214,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
 
         super().handle_failed_rpc(failed=failed)
 
-    def prepare(self, *, callback: ICallbackProxy, logger, reclaim: bool=False):
+    def prepare(self, *, callback: ICallbackProxy, logger):
         self.set_logger(logger=logger)
         self.callback = callback
 
@@ -351,7 +354,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.generate_update()
 
         except Exception as e:
-            self.log_error(message="failed while servicing probe", exception=e)
+            self.logger.error("failed while servicing probe e:{}".format(e))
             self.fail_notify(message=str(e))
 
         self.service_pending = ReservationPendingStates.None_
@@ -371,13 +374,13 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.generate_update()
 
         elif operation == RequestTypes.RequestRelinquish:
-            self.log_debug(message="no op")
+            self.logger.debug("no op")
 
         else:
             raise Exception("unsupported operation {}".format(RequestTypes(operation).name))
 
     def generate_update(self):
-        self.log_debug(message="Generating update")
+        self.logger.debug("Generating update")
         if self.callback is None:
             self.logger.warning("Cannot generate update: no callback.")
             return
@@ -391,7 +394,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             # Note that this may result in a "stuck" reservation... not much we
             # can do if the receiver has failed or rejects our update. We will
             # regenerate on any user-initiated probe.
-            self.log_remote_error(message="callback failed", exception=e)
+            self.logger.error("callback failed e:{}".format(e))
 
     def map_and_update(self, *, ticketed: bool):
         """
@@ -415,7 +418,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             if ticketed:
                 self.fail_notify(message="reservation is not yet ticketed")
             else:
-                self.log_debug(message="Using policy {} to bind reservation".format(self.policy.__class__.__name__))
+                self.logger.debug("Using policy {} to bind reservation".format(self.policy.__class__.__name__))
                 try:
                     granted = False
                     # If the policy has processed this reservation, granted should
@@ -435,7 +438,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                     self.transition(prefix="ticket request", state=ReservationStates.Nascent,
                                     pending=ReservationPendingStates.Ticketing)
                 except Exception as e:
-                    self.log_error(message="mapAndUpdate bindTicket failed for ticketRequest:", exception=e)
+                    self.logger.error("mapAndUpdate bindTicket failed for ticketRequest:", exception=e)
                     self.fail_notify(message=str(e))
                     return success
 
@@ -449,7 +452,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                         self.transition(prefix="ticketed", state=ReservationStates.Ticketed,
                                         pending=ReservationPendingStates.Priming)
                     except Exception as e:
-                        self.log_error(message="mapAndUpdate ticket failed for ticketRequest", exception=e)
+                        self.logger.error("mapAndUpdate ticket failed for ticketRequest", exception=e)
                         self.fail_notify(message=str(e))
         elif self.state == ReservationStates.Ticketed:
             if not ticketed:
@@ -474,7 +477,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                     else:
                         granted = True
                 except Exception as e:
-                    self.log_error(message="mapAndUpdate extendTicket failed for ticketRequest:", exception=e)
+                    self.logger.error("mapAndUpdate extendTicket failed for ticketRequest:", exception=e)
                     self.fail_notify(message=str(e))
                     return success
 
@@ -489,10 +492,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                         self.term = self.approved_term
                         self.resources.update(reservation=self, resource_set=self.approved_resources)
                     except Exception as e:
-                        self.log_error(message="mapAndUpdate ticket failed for ticketRequest", exception=e)
+                        self.logger.error("mapAndUpdate ticket failed for ticketRequest", exception=e)
                         self.fail_notify(message=str(e))
         else:
-            self.log_error(message="broker mapAndUpdate: unexpected state", exception=None)
+            self.logger.error("broker mapAndUpdate: unexpected state")
             self.fail_notify(message="invalid operation for the current reservation state")
 
         return success
@@ -520,6 +523,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         self.exporting = True
 
     def set_source(self, *, source: IClientReservation):
+        """
+        Set source
+        @param source source
+        """
         self.source = source
 
     def set_authority(self, *, authority: IAuthorityProxy):

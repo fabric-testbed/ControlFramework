@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict
 
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_slice import ISlice
@@ -61,6 +61,14 @@ class IKernelSlice(ISlice):
         Returns the reservation set.
 
         @return reservation set
+        """
+
+    @abstractmethod
+    def get_delegations(self) -> Dict[str, IDelegation]:
+        """
+        Returns the delegations dict.
+
+        @return delegations dict
         """
 
     @abstractmethod

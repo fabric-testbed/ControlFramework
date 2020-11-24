@@ -27,6 +27,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
+from fabric.actor.core.apis.i_actor_event import IActorEvent
+from fabric.actor.core.apis.i_authority import IAuthority
+from fabric.actor.core.apis.i_broker import IBroker
+from fabric.actor.core.apis.i_controller import IController
 
 if TYPE_CHECKING:
 
@@ -35,18 +39,19 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_actor import IClientActor
     from fabric.actor.core.apis.i_server_actor import IServerActor
 
-from fabric.actor.core.apis.i_actor_event import IActorEvent
-from fabric.actor.core.apis.i_authority import IAuthority
-from fabric.actor.core.apis.i_broker import IBroker
-from fabric.actor.core.apis.i_controller import IController
-
 
 class IncomingRPCEvent(IActorEvent):
+    """
+    Represents incoming RPC event
+    """
     def __init__(self, *, actor: IActor, rpc: IncomingRPC):
         self.actor = actor
         self.rpc = rpc
 
     def do_process_actor(self, *, actor: IActor):
+        """
+        Process Incoming RPC events common for all actors
+        """
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.Query:
             actor.get_logger().info("processing query from <{}>".format(self.rpc.get_caller().get_name()))
@@ -70,6 +75,9 @@ class IncomingRPCEvent(IActorEvent):
         return processed
 
     def do_process_client(self, *, client: IClientActor):
+        """
+        Process Incoming RPC events common for client actors
+        """
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.UpdateTicket:
             client.get_logger().info("processing update ticket from <{}>".format(self.rpc.get_caller().get_name()))
@@ -86,6 +94,9 @@ class IncomingRPCEvent(IActorEvent):
         return processed
 
     def do_process_server(self, *, server: IServerActor):
+        """
+        Process Incoming RPC events common for server actors
+        """
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.ClaimDelegation:
             server.get_logger().info("processing claim delegation from <{}>".format(self.rpc.get_caller().get_name()))
@@ -120,12 +131,18 @@ class IncomingRPCEvent(IActorEvent):
         return processed
 
     def do_process_broker(self, *, broker: IBroker):
+        """
+        Process Incoming RPC events common for brokers
+        """
         processed = self.do_process_server(server=broker)
         if not processed:
             processed = self.do_process_client(client=broker)
         return processed
 
     def do_process_authority(self, *, authority: IAuthority):
+        """
+        Process Incoming RPC events common for AMs
+        """
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.Redeem:
             authority.get_logger().info("processing redeem from <{}>".format(self.rpc.get_caller().get_name()))
@@ -149,11 +166,15 @@ class IncomingRPCEvent(IActorEvent):
         return processed
 
     def do_process_controller(self, *, controller: IController):
+        """
+        Process Incoming RPC events common for all controller/orchestrator
+        """
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.UpdateLease:
             controller.get_logger().info("processing redeem from <{}>".format(self.rpc.get_caller().get_name()))
             if self.rpc.get_reservation().get_resources().get_resources() is not None:
-                controller.get_logger().info("inbound lease is {}".format(self.rpc.get_reservation().get_resources().get_resources()))
+                controller.get_logger().info("inbound lease is {}".format(
+                    self.rpc.get_reservation().get_resources().get_resources()))
 
             controller.update_lease(reservation=self.rpc.get_reservation(), update_data=self.rpc.get_update_data(),
                                     caller=self.rpc.get_caller())
@@ -162,6 +183,9 @@ class IncomingRPCEvent(IActorEvent):
         return processed
 
     def process(self):
+        """
+        Process Incoming RPC events
+        """
         done = False
         if isinstance(self.actor, IAuthority):
             done = self.do_process_authority(authority=self.actor)

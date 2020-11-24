@@ -36,7 +36,6 @@ from fabric.actor.core.common.exceptions import ReservationNotFoundException, De
 from fabric.actor.core.container.globals import GlobalsSingleton
 from fabric.actor.core.kernel.authority_reservation import AuthorityReservation
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
-from fabric.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
 from fabric.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
 from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
 from fabric.actor.core.apis.i_kernel_server_reservation import IKernelServerReservation
@@ -133,6 +132,11 @@ class Kernel:
                 delegation.get_delegation_id()), e=e)
 
     def fail(self, *, reservation: IKernelReservation, message: str):
+        """
+        Handle a failed reservation
+        @param reservation reservation
+        @param message message
+        """
         if not reservation.is_failed() and not reservation.is_closed():
             reservation.fail(message=message, exception=None)
         self.plugin.get_database().update_reservation(reservation=reservation)
@@ -182,7 +186,9 @@ class Kernel:
                 code = SequenceComparisonCodes.SequenceSmaller
         return code
 
-    def compare_and_update_ignore_pending(self, *, incoming: IKernelServerReservation, current: IKernelServerReservation):
+    @staticmethod
+    def compare_and_update_ignore_pending(*, incoming: IKernelServerReservation,
+                                          current: IKernelServerReservation):
         """
         Compares the incoming request to the corresponding reservation stored at
         this actor. First compares sequence numbers. If the incoming request has
@@ -417,6 +423,11 @@ class Kernel:
         return self.slices.get(slice_id=slice_id)
 
     def is_known_slice(self, *, slice_id: ID) -> bool:
+        """
+        Is slice known
+        @param slice_id slice id
+        @return true if slice exists; false otherwise
+        """
         if slice_id is None:
             raise Exception("Invalid argument")
         return self.slices.contains(slice_id=slice_id)
@@ -509,6 +520,10 @@ class Kernel:
         return self.policy.query(p=properties)
 
     def redeem(self, *, reservation: IKernelControllerReservation):
+        """
+        Redeem a reservation
+        @param reservation reservation
+        """
         try:
             if reservation.can_redeem():
                 reservation.reserve(policy=self.policy)
@@ -556,7 +571,8 @@ class Kernel:
             reservation.set_slice(slice_object=slice_object)
             add = True
         else:
-            self.logger.warning("Attempting to register a closed reservation #{}".format(reservation.get_reservation_id()))
+            self.logger.warning("Attempting to register a closed reservation #{}".format(
+                reservation.get_reservation_id()))
 
         return add
 
@@ -593,7 +609,8 @@ class Kernel:
             delegation.set_slice_object(slice_object=slice_object)
             add = True
         else:
-            self.logger.warning("Attempting to register a closed reservation #{}".format(delegation.get_delegation_id()))
+            self.logger.warning("Attempting to register a closed reservation #{}".format(
+                delegation.get_delegation_id()))
 
         return add
 
@@ -613,7 +630,7 @@ class Kernel:
         local_slice = self.slices.get(slice_id=delegation.get_slice_id(), raise_exception=True)
         add = self.register_delegation_with_slice(delegation=delegation, slice_object=local_slice)
 
-        if add :
+        if add:
             try:
                 self.plugin.get_database().add_delegation(delegation=delegation)
             except Exception as e:
@@ -636,7 +653,7 @@ class Kernel:
         local_slice = self.slices.get(slice_id=reservation.get_slice().get_slice_id(), raise_exception=True)
         add = self.register(reservation=reservation, slice_object=local_slice)
 
-        if add :
+        if add:
             try:
                 self.plugin.get_database().add_reservation(reservation=reservation)
             except Exception as e:
@@ -807,7 +824,7 @@ class Kernel:
             self.error(err="An error occurred during reserve for reservation #{}".format(
                 reservation.get_reservation_id()), e=e)
 
-    def delegate(self, *, delegation: IDelegation, id_token:str = None):
+    def delegate(self, *, delegation: IDelegation, id_token: str = None):
         """
         Handles a delegate operation for the delegation.
         Broker: process a request for a new delegate.
@@ -907,6 +924,10 @@ class Kernel:
             self.error(err="exception in Kernel.tick", e=e)
 
     def has_something_pending(self) -> bool:
+        """
+        Check is kernel has any pending reservations
+        @return true if no terminal/nascent/pending reservations exist; false otherwise
+        """
         for reservation in self.reservations.values():
             if not reservation.is_terminal() and (reservation.is_nascent() or not reservation.is_no_pending()):
                 return True
@@ -914,11 +935,17 @@ class Kernel:
         return False
 
     def check_nothing_pending(self):
+        """
+        Check for pending reservations
+        """
         if not self.has_something_pending():
             with self.nothing_pending:
                 self.nothing_pending.notify_all()
 
     def await_nothing_pending(self):
+        """
+        Await until nothing is pending
+        """
         with self.nothing_pending:
             self.nothing_pending.wait()
 
@@ -1081,7 +1108,14 @@ class Kernel:
                 self.error(err="reservation not found", e=ReservationNotFoundException(rid=rid))
             return local
 
+        return None
+
     def handle_failed_rpc(self, *, reservation: IKernelReservation, rpc: FailedRPC):
+        """
+        Handle failed rpc
+        @param reservation reservation
+        @param rpc rpc
+        """
         reservation.handle_failed_rpc(failed=rpc)
 
     def validate_delegation(self, *, delegation: IDelegation = None, did: ID = None):
@@ -1110,3 +1144,5 @@ class Kernel:
             if local is None:
                 self.error(err="delegation not found", e=DelegationNotFoundException(did=did))
             return local
+
+        return None

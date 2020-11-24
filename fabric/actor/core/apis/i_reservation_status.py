@@ -57,15 +57,6 @@ class IReservationStatus(ABC):
         """
 
     @abstractmethod
-    def is_action(self) -> bool:
-        """
-        Checks if the reservation is active.
-
-        Returns:
-            true if the reservation is active
-        """
-
-    @abstractmethod
     def is_active(self) -> bool:
         """
         Checks if the reservation is active.

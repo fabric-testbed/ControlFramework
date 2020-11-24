@@ -25,22 +25,37 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from fabric.actor.core.apis.i_event import IEvent
+
 if TYPE_CHECKING:
     from fabric.actor.core.kernel.rpc_request import RPCRequest
     from fabric.actor.core.util.id import ID
 
-from fabric.actor.core.apis.i_event import IEvent
-
 
 class OutboundRPCEvent(IEvent):
+    """
+    Represents outbound RPC event
+    """
     def __init__(self, *, request: RPCRequest):
         self.request = request
 
     def get_actor_id(self) -> ID:
+        """
+        Get Actor id
+        @return actor id
+        """
         return self.request.get_actor().get_guid()
 
     def get_properties(self) -> dict:
+        """
+        Get Properties
+        @return properties
+        """
         return None
 
     def get_request(self) -> RPCRequest:
+        """
+        Get request
+        @return request
+        """
         return self.request

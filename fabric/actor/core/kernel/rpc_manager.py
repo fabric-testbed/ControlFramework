@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
-import time
 
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_actor_proxy import IActorProxy
@@ -61,6 +60,9 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class RPCManager:
+    """
+    Class responsible for message exchange across Kafka
+    """
     CLAIM_TIMEOUT_SECONDS = 120
     QUERY_TIMEOUT_SECONDS = 120
 
@@ -68,7 +70,7 @@ class RPCManager:
         # Table of pending RPC requests.
         self.pending = {}
         self.started = False
-        self.numQueued = 0
+        self.num_queued = 0
         self.pending_lock = threading.Lock()
         self.stats_lock = threading.Condition()
 
@@ -92,7 +94,7 @@ class RPCManager:
         if reservation.get_slice() is None:
             raise Exception("Missing slice")
 
-        if check_requested :
+        if check_requested:
             if reservation.get_requested_resources() is None:
                 raise Exception("Missing requested resources")
 
@@ -139,17 +141,17 @@ class RPCManager:
 
         self.do_failed_rpc(actor=actor, proxy=rpc.get_callback(), rpc=rpc, e=e, caller=actor.get_identity())
 
-    def claim_delegation(self, *, delegation: IDelegation, id_token:str = None):
+    def claim_delegation(self, *, delegation: IDelegation, id_token: str = None):
         self.validate_delegation(delegation=delegation)
         self.do_claim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
-                      delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                      caller=delegation.get_slice_object().get_owner(), id_token=id_token)
+                                 delegation=delegation, callback=delegation.get_client_callback_proxy(),
+                                 caller=delegation.get_slice_object().get_owner(), id_token=id_token)
 
     def reclaim_delegation(self, *, delegation: IDelegation, id_token: str = None):
         self.validate_delegation(delegation=delegation)
         self.do_reclaim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
-                        delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                        caller=delegation.get_slice_object().get_owner(), id_token=id_token)
+                                   delegation=delegation, callback=delegation.get_client_callback_proxy(),
+                                   caller=delegation.get_slice_object().get_owner(), id_token=id_token)
 
     def ticket(self, *, reservation: IClientReservation):
         self.validate(reservation=reservation, check_requested=True)
@@ -212,8 +214,8 @@ class RPCManager:
         if callback is None:
             raise Exception("Missing callback")
         self.do_update_delegation(actor=delegation.get_actor(), proxy=delegation.get_callback(),
-                              delegation=delegation, update_data=delegation.get_update_data(),
-                              callback=callback, caller=delegation.get_actor().get_identity())
+                                  delegation=delegation, update_data=delegation.get_update_data(),
+                                  callback=callback, caller=delegation.get_actor().get_identity())
 
     def update_lease(self, *, reservation: IAuthorityReservation):
         self.validate(reservation=reservation)
@@ -268,7 +270,7 @@ class RPCManager:
 
     def do_await_nothing_pending(self):
         with self.stats_lock:
-            while self.numQueued > 0:
+            while self.num_queued > 0:
                 self.stats_lock.wait()
 
     def do_start(self):
@@ -307,10 +309,11 @@ class RPCManager:
         self.enqueue(rpc=outgoing)
 
     def do_claim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
-                 callback: IClientCallbackProxy, caller: AuthToken, id_token:str = None):
+                            callback: IClientCallbackProxy, caller: AuthToken, id_token: str = None):
         proxy.get_logger().info("Outbound claim delegation request from <{}>: {}".format(caller.get_name(), delegation))
 
-        state = proxy.prepare_claim_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+        state = proxy.prepare_claim_delegation(delegation=delegation, callback=callback,
+                                               caller=caller, id_token=id_token)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ClaimDelegation)
 
@@ -321,10 +324,12 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_reclaim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
-                              callback: IClientCallbackProxy, caller: AuthToken, id_token:str = None):
-        proxy.get_logger().info("Outbound reclaim delegation request from <{}>: {}".format(caller.get_name(), delegation))
+                              callback: IClientCallbackProxy, caller: AuthToken, id_token: str = None):
+        proxy.get_logger().info("Outbound reclaim delegation request from <{}>: {}".format(
+            caller.get_name(), delegation))
 
-        state = proxy.prepare_reclaim_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+        state = proxy.prepare_reclaim_delegation(delegation=delegation, callback=callback,
+                                                 caller=caller, id_token=id_token)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ReclaimDelegation)
 
@@ -335,7 +340,7 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_ticket(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
-                 callback: IClientCallbackProxy, caller: AuthToken):
+                  callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound ticket request from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_ticket(reservation=reservation, callback=callback, caller=caller)
@@ -357,7 +362,7 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_relinquish(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
-                         callback: IClientCallbackProxy, caller: AuthToken):
+                      callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound relinquish request from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_relinquish(reservation=reservation, callback=callback, caller=caller)
@@ -368,7 +373,7 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_redeem(self, *, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
-                         callback: IControllerCallbackProxy, caller: AuthToken):
+                  callback: IControllerCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound relinquish redeem from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_redeem(reservation=reservation, callback=callback, caller=caller)
@@ -390,7 +395,7 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_modify_lease(self, *, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
-                         callback: IControllerCallbackProxy, caller: AuthToken):
+                        callback: IControllerCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound modify lease request from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_modify_lease(reservation=reservation, callback=callback, caller=caller)
@@ -424,8 +429,9 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_update_delegation(self, *, actor: IActor, proxy: IClientCallbackProxy, delegation: IDelegation,
-                         update_data: UpdateData, callback: ICallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound update delegation request from <{}>: {}".format(caller.get_name(), delegation))
+                             update_data: UpdateData, callback: ICallbackProxy, caller: AuthToken):
+        proxy.get_logger().info("Outbound update delegation request from <{}>: {}".format(
+            caller.get_name(), delegation))
 
         state = proxy.prepare_update_delegation(delegation=delegation, update_data=update_data, callback=callback,
                                                 caller=caller)
@@ -494,12 +500,12 @@ class RPCManager:
                 actor.get_logger().warning("No queryRequest to match to inbound queryResponse. Ignoring response")
 
         elif rpc.get_request_type() == RPCRequestType.ClaimDelegation:
-            actor.get_logger().info("Inbound claim delegation request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                rpc.get_delegation()))
+            actor.get_logger().info("Inbound claim delegation request from <{}>:{}".format(
+                rpc.get_caller().get_name(), rpc.get_delegation()))
 
         elif rpc.get_request_type() == RPCRequestType.ReclaimDelegation:
-            actor.get_logger().info("Inbound reclaim delegation request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                rpc.get_delegation()))
+            actor.get_logger().info("Inbound reclaim delegation request from <{}>:{}".format(
+                rpc.get_caller().get_name(), rpc.get_delegation()))
 
         elif rpc.get_request_type() == RPCRequestType.Ticket:
             actor.get_logger().info("Inbound ticket request from <{}>:{}".format(rpc.get_caller().get_name(),
@@ -519,7 +525,7 @@ class RPCManager:
 
         elif rpc.get_request_type() == RPCRequestType.UpdateDelegation:
             actor.get_logger().info("Inbound update delegation request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                        rpc.get_delegation()))
+                                                                                            rpc.get_delegation()))
 
         elif rpc.get_request_type() == RPCRequestType.Redeem:
             actor.get_logger().info("Inbound redeem request from <{}>:{}".format(rpc.get_caller().get_name(),
@@ -572,7 +578,7 @@ class RPCManager:
         from fabric.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
         logger.debug("Retrying RPC({}) count={} actor={}".format(rpc.get_request_type(), rpc.retry_count,
-                                                          rpc.get_actor().get_name()))
+                                                                 rpc.get_actor().get_name()))
         self.enqueue(rpc=rpc)
 
     def add_pending_request(self, *, guid: str, request: RPCRequest):
@@ -602,17 +608,17 @@ class RPCManager:
 
     def queued(self):
         with self.stats_lock:
-            self.numQueued += 1
-            print("Queued: {}".format(self.numQueued))
+            self.num_queued += 1
+            print("Queued: {}".format(self.num_queued))
 
     def de_queued(self):
         with self.stats_lock:
-            if self.numQueued == 0:
+            if self.num_queued == 0:
                 raise Exception("De-queued invoked, but nothing is queued!!!")
 
-            self.numQueued -= 1
-            print("DeQueued: {}".format(self.numQueued))
-            if self.numQueued == 0:
+            self.num_queued -= 1
+            print("DeQueued: {}".format(self.num_queued))
+            if self.num_queued == 0:
                 self.stats_lock.notify_all()
 
     def enqueue(self, *, rpc: RPCRequest):

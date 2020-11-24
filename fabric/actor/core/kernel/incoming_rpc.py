@@ -36,6 +36,9 @@ if TYPE_CHECKING:
 
 
 class IncomingRPC:
+    """
+    Represents an incoming RPC message
+    """
     def __init__(self, *, message_id: ID, request_type: RPCRequestType, callback: ICallbackProxy, caller: AuthToken,
                  id_token: str = None):
         self.request_type = request_type
@@ -48,36 +51,80 @@ class IncomingRPC:
         self.id_token = id_token
 
     def get_request_type(self) -> RPCRequestType:
+        """
+        Get request type
+        @return request type
+        """
         return self.request_type
 
     def get_callback(self) -> ICallbackProxy:
+        """
+        Get callback
+        @return callback
+        """
         return self.callback
 
     def get_caller(self) -> AuthToken:
+        """
+        Get caller
+        @return caller
+        """
         return self.caller
 
     def get_message_id(self) -> ID:
+        """
+        Get message_id
+        @return message_id
+        """
         return self.message_id
 
     def set_response_handler(self, *, response_handler: IRPCResponseHandler):
+        """
+        Set response_handler
+        @param response_handler response_handler
+        """
         self.response_handler = response_handler
 
     def get_response_handler(self) -> IRPCResponseHandler:
+        """
+        Get response_handler
+        @return response_handler
+        """
         return self.response_handler
 
     def set_error(self, *, error: Exception):
+        """
+        Set error
+        @param error error
+        """
         self.error = error
 
     def get_error(self) -> Exception:
+        """
+        Get error
+        @return error
+        """
         return self.error
 
     def set_request_id(self, *, request_id: ID):
+        """
+        Set request id
+        @param request_id request id
+        """
         self.request_id = request_id
 
     def get_request_id(self) -> str:
+        """
+        Get request_id
+        @return request_id
+        """
         return self.request_id
 
     def get_id_token(self) -> str:
+        """
+        Get id_token
+        @return id_token
+        """
         return self.id_token
 
     def __str__(self):

@@ -25,28 +25,46 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from fabric.actor.core.apis.i_event import IEvent
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
     from fabric.actor.core.kernel.incoming_rpc import IncomingRPC
     from fabric.actor.core.util.id import ID
 
-from fabric.actor.core.apis.i_event import IEvent
-
 
 class InboundRPCEvent(IEvent):
+    """
+    Represents inbound RPC event
+    """
     def __init__(self, *, request: IncomingRPC, actor: IActor):
         self.request = request
         self.actor = actor
 
     def get_actor_id(self) -> ID:
+        """
+        Get Actor id
+        @return actor id
+        """
         return self.actor.get_guid()
 
     def get_properties(self):
+        """
+        Get Properties
+        @return properties
+        """
         return None
 
     def get_request(self) -> IncomingRPC:
+        """
+        Get request
+        @return request
+        """
         return self.request
 
     def get_actor(self) -> IActor:
+        """
+        Get actor
+        @return actor
+        """
         return self.actor

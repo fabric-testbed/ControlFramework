@@ -106,3 +106,10 @@ class IServerReservation(IReservation):
         Returns data to be sent back to the client in an update message.
         @return data to be sent back to the client in an update message
         """
+
+    @abstractmethod
+    def set_owner(self, *, owner: AuthToken):
+        """
+        Sets the identity of the server actor that controls the reservation.
+        @param owner identity of server actor
+        """

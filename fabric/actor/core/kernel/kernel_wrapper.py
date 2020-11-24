@@ -82,6 +82,17 @@ class KernelWrapper:
 
     def claim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy,
                                  id_token: str = None):
+        """
+        Processes a request to claim a pre-advertised delegation
+
+        Role: Broker
+
+        @param delegation delegation describing the claim request
+        @param caller caller identity
+        @param callback callback proxy
+        @param id_token identity token
+        @raises Exception in case of error
+        """
         if delegation is None or caller is None or callback is None:
             raise Exception("Invalid argument")
 
@@ -97,6 +108,17 @@ class KernelWrapper:
 
     def reclaim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy,
                                    id_token: str = None):
+        """
+        Processes a request to re-claim a pre-claimed delegation
+
+        Role: Broker
+
+        @param delegation delegation describing the reclaim request
+        @param caller caller identity
+        @param callback callback proxy
+        @param id_token identity token
+        @raises Exception in case of error
+        """
         if delegation is None or caller is None or callback is None:
             raise Exception("Invalid argument")
 
@@ -140,6 +162,10 @@ class KernelWrapper:
         self.kernel.close(reservation=target)
 
     def close_slice_reservations(self, *, slice_id: ID):
+        """
+        Close Slice reservations
+        @param slice_id slice id
+        """
         if slice_id is None:
             raise Exception("Invalid argument")
 
@@ -198,6 +224,12 @@ class KernelWrapper:
         self.handle_delegate(delegation=delegation, identity=client)
 
     def extend_lease(self, *, reservation: IControllerReservation):
+        """
+        Initiates a request to extend a lease.
+        Role: Controller/Orchestrator
+        @param reservation reservation describing the extend request
+        @raises Exception in case of error
+        """
         if reservation is None:
             raise Exception("Invalid argument")
 
@@ -210,7 +242,8 @@ class KernelWrapper:
         target.validate_redeem()
         self.kernel.extend_lease(reservation=reservation)
 
-    def extend_lease_request(self, *, reservation: IAuthorityReservation, caller: AuthToken, compare_sequence_numbers: bool):
+    def extend_lease_request(self, *, reservation: IAuthorityReservation, caller: AuthToken,
+                             compare_sequence_numbers: bool):
         """
         Processes an incoming request for a lease extension.
         Role: Authority
@@ -243,7 +276,8 @@ class KernelWrapper:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
             self.kernel.extend_lease(reservation=target)
 
-    def modify_lease_request(self, *, reservation: IAuthorityReservation, caller: AuthToken, compare_sequence_numbers: bool):
+    def modify_lease_request(self, *, reservation: IAuthorityReservation, caller: AuthToken,
+                             compare_sequence_numbers: bool):
         """
         Processes an incoming request for a lease modification.
         Role: Authority
@@ -309,7 +343,8 @@ class KernelWrapper:
         target.validate_outgoing()
         self.kernel.extend_ticket(reservation=target)
 
-    def extend_ticket_request(self, *, reservation: IBrokerReservation, caller: AuthToken, compare_sequence_numbers: bool):
+    def extend_ticket_request(self, *, reservation: IBrokerReservation, caller: AuthToken,
+                              compare_sequence_numbers: bool):
         """
         Processes an incoming request for a ticket extension.
         Role: Broker
@@ -559,7 +594,8 @@ class KernelWrapper:
         slice_object = reservation.get_slice()
 
         for r in slice_object.get_reservations().values():
-            self.logger.trace("redeem() Reservation {} is in state: {}".format(r.get_reservation_id(), ReservationStates(r.get_state()).name))
+            self.logger.trace("redeem() Reservation {} is in state: {}".format(r.get_reservation_id(),
+                                                                               ReservationStates(r.get_state()).name))
 
         target = self.kernel.validate(rid=reservation.get_reservation_id())
 
@@ -726,7 +762,7 @@ class KernelWrapper:
                     unregistered.
         """
         if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, IKernelSlice):
-            return Exception("Invalid argument")
+            raise Exception("Invalid argument")
 
         self.kernel.re_register_slice(slice_object=slice_object)
 
@@ -741,7 +777,7 @@ class KernelWrapper:
         except Exception as e:
             traceback.print_exc()
 
-    def delegate(self, *, delegation: IDelegation, destination: IActorIdentity, id_token:str = None):
+    def delegate(self, *, delegation: IDelegation, destination: IActorIdentity, id_token: str = None):
         """
         Initiates a delegate request. If the exported flag is set, this is a claim
         on a pre-reserved "will call" ticket.
@@ -843,7 +879,8 @@ class KernelWrapper:
                     self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True,
                                         verify_credentials=True)
             else:
-                # This is most likely a reservation being recovered. Do not compare sequence numbers, just trigger reserve.
+                # This is most likely a reservation being recovered. Do not compare sequence numbers,
+                # just trigger reserve.
                 reservation.set_logger(logger=self.logger)
                 self.handle_reserve(reservation=reservation, identity=reservation.get_client_auth_token(),
                                     create_new_slice=True, verify_credentials=True)
