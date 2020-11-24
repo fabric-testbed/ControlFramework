@@ -82,7 +82,7 @@ class Plugin:
         @param factory true|false
         """
         self.factory = factory
-        
+
     def get_id(self) -> str:
         """
         Returns the plugin identifier.
@@ -90,9 +90,9 @@ class Plugin:
         """
         return self.id
 
-    def set_id(self, *, id: str):
+    def set_id(self, *, pid: str):
         """
-        @param id the id to set
+        @param pid the id to set
         """
         self.id = id
 
@@ -104,7 +104,7 @@ class Plugin:
 
     def set_plugin_type(self, *, plugin_type: int):
         """
-        @param pluginType the pluginType to set
+        @param plugin_type the pluginType to set
         """
         self.plugin_type = plugin_type
 
@@ -121,25 +121,57 @@ class Plugin:
         self.class_name = class_name
 
     def get_config_properties(self) -> dict:
+        """
+        Get config properties
+        @return config properties
+        """
         return self.config_properties
 
     def set_config_properties(self, *, config_properties: dict):
+        """
+        Set config properties
+        @param config_properties config properties
+        """
         self.config_properties = config_properties
 
     def get_config_template(self) -> str:
+        """
+        Get Config template
+        @param config template
+        """
         return self.config_template
 
     def set_config_template(self, *, config_template: str):
+        """
+        Set config template
+        @param config_template config template
+        """
         self.config_template = config_template
 
     def get_name(self) -> str:
+        """
+        Get Name
+        @return name
+        """
         return self.name
 
     def set_name(self, *, name: str):
+        """
+        Set name
+        @param name name
+        """
         self.name = name
 
     def get_actor_type(self) -> int:
+        """
+        Get Actor Type
+        @return actor type
+        """
         return self.actor_type
 
     def set_actor_type(self, *, actor_type: int):
+        """
+        Set actor type
+        @param actor_type actor type
+        """
         self.actor_type = actor_type

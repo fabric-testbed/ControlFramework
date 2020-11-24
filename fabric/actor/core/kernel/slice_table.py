@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
 
 
-class SliceTable2:
+class SliceTable:
     def __init__(self):
         self.lock = threading.Lock()
         self.slices = {}

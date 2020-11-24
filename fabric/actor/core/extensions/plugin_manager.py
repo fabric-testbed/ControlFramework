@@ -26,10 +26,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.extensions.plugin import Plugin
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_container_database import IContainerDatabase
-
-from fabric.actor.core.extensions.plugin import Plugin
 
 
 class PluginManager:
@@ -80,7 +80,6 @@ class PluginManager:
         if self.is_registered(plugin_id=plugin.get_id()):
             raise Exception("A plugin with this id/package id already exists")
         else:
-            # TODO add properties later
             self.db.add_plugin(plugin=plugin)
 
     def unregister(self, *, plugin_id: str):

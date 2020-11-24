@@ -316,7 +316,6 @@ class PdpAuth:
             if self.logger is not None:
                 self.logger.debug("PDP response: {}".format(response.json()))
             raise PdpAuthException('Authorization check failure: {}'.format(response.json()))
-        return False
 
 
 if __name__ == '__main__':

@@ -47,7 +47,7 @@ from fabric.actor.core.kernel.reservation_purged_event import ReservationPurgedE
 from fabric.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
-from fabric.actor.core.kernel.slice_table2 import SliceTable2
+from fabric.actor.core.kernel.slice_table import SliceTable
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.reservation_set import ReservationSet
@@ -65,7 +65,7 @@ class Kernel:
         # Logger
         self.logger = logger
         # All slices managed by the kernel
-        self.slices = SliceTable2()
+        self.slices = SliceTable()
         # All reservations managed by the kernel.
         self.reservations = ReservationSet()
         self.delegations = {}
