@@ -94,10 +94,9 @@ class Config:
     def create(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Join")
 
-        # TODO
         result = {self.PropertyTargetName: self.TargetCreate,
                   self.PropertyTargetResultCode: self.ResultCodeOK,
-                  self.PropertyActionSequenceNumber: 0 }
+                  self.PropertyActionSequenceNumber: 0}
 
         self.plugin.configuration_complete(token=token, properties=result)
         self.logger.info("Executing Join completed")
@@ -105,7 +104,6 @@ class Config:
     def delete(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Leave")
 
-        # TODO
         result = {self.PropertyTargetName: self.TargetDelete,
                   self.PropertyTargetResultCode: self.ResultCodeOK,
                   self.PropertyActionSequenceNumber: 0}
@@ -116,7 +114,6 @@ class Config:
     def modify(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Modify")
 
-        # TODO
         result = {self.PropertyTargetName: self.TargetModify,
                   self.PropertyTargetResultCode: self.ResultCodeOK,
                   self.PropertyActionSequenceNumber: 0}

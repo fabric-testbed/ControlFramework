@@ -46,27 +46,14 @@ class LocalActor(LocalProxy, IMgmtActor):
         if not isinstance(manager, ActorManagementObject):
             raise Exception("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
-    def get_slices(self, *, id_token: str = None) -> List[SliceAvro]:
+    def get_slices(self, *, slice_id: ID = None, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_slices(caller=self.auth)
+            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
                 return result.result
-        except Exception as e:
-            self.last_exception = e
-
-        return None
-
-    def get_slice(self, *, slice_id: ID, id_token: str = None) -> SliceAvro:
-        self.clear_last()
-        try:
-            result = self.manager.get_slice(slice_id=slice_id, caller=self.auth)
-            self.last_status = result.status
-
-            if result.status.get_code() == 0:
-                return self.get_first(result_list=result.result)
         except Exception as e:
             self.last_exception = e
 

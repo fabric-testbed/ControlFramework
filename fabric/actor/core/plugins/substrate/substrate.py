@@ -26,41 +26,20 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from fabric.actor.core.core.actor import Actor
-    from fabric.actor.core.apis.i_database import IDatabase
-    from fabric.actor.core.apis.i_reservation import IReservation
-    from fabric.actor.core.core.unit import Unit
-    from fabric.actor.core.plugins.config.config_token import ConfigToken
-
 from fabric.actor.core.plugins.config.config import Config
 from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
 from fabric.actor.core.plugins.base_plugin import BasePlugin
 from fabric.actor.core.apis.i_substrate import ISubstrate
 from fabric.actor.core.util.prop_list import PropList
 
+if TYPE_CHECKING:
+    from fabric.actor.core.apis.i_database import IDatabase
+    from fabric.actor.core.apis.i_reservation import IReservation
+    from fabric.actor.core.core.unit import Unit
+    from fabric.actor.core.plugins.config.config_token import ConfigToken
+
 
 class Substrate(BasePlugin, ISubstrate):
-    def __init__(self, *, actor: Actor, db: ISubstrateDatabase, config: Config):
-        super().__init__(actor=actor, db=db, config=config)
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        state['actor_id'] = self.actor.get_guid()
-        del state['logger']
-        del state['ticket_factory']
-        del state['actor']
-        del state['initialized']
-
-        return state
-
-    def __setstate__(self, state):
-        actor_id = state['actor_id']
-        # TODO fetch actor via actor_id
-        del state['actor_id']
-        self.__dict__.update(state)
-
     def initialize(self):
         super().initialize()
         if not isinstance(self.db, ISubstrateDatabase):
@@ -142,8 +121,10 @@ class Substrate(BasePlugin, ISubstrate):
         temp = PropList.merge_properties(incoming=reservation.get_slice().get_local_properties(), outgoing=temp)
 
         if self.is_site_authority():
-            temp = PropList.merge_properties(incoming=reservation.get_resources().get_config_properties(), outgoing=temp)
-            temp = PropList.merge_properties(incoming=reservation.get_slice().get_config_properties(), outgoing=temp)
+            temp = PropList.merge_properties(incoming=reservation.get_resources().get_config_properties(),
+                                             outgoing=temp)
+            temp = PropList.merge_properties(incoming=reservation.get_slice().get_config_properties(),
+                                             outgoing=temp)
 
             if reservation.get_requested_resources() is not None:
                 ticket = reservation.get_requested_resources().get_resources()
@@ -249,8 +230,8 @@ class Substrate(BasePlugin, ISubstrate):
         notice = None
         # TODO synchronized on token
         if sequence != token.get_sequence():
-            self.logger.warning("(delete complete) sequences mismatch: incoming ({}) local: ({}). Ignoring event.".format(
-                sequence, token.get_sequence()))
+            self.logger.warning("(delete complete) sequences mismatch: incoming ({}) local: ({}). "
+                                "Ignoring event.".format(sequence, token.get_sequence()))
             return
         else:
             self.logger.debug("(delete complete) incoming ({}) local: ({})".format(sequence, token.get_sequence()))
@@ -293,7 +274,8 @@ class Substrate(BasePlugin, ISubstrate):
         notice = None
         # TODO synchronized on token
         if sequence != token.get_sequence():
-            self.logger.warning("(modify complete) sequences mismatch: incoming ({}) local: ({}). Ignoring event.".format(sequence, token.get_sequence()))
+            self.logger.warning("(modify complete) sequences mismatch: incoming ({}) local: ({}). "
+                                "Ignoring event.".format(sequence, token.get_sequence()))
             return
         else:
             self.logger.debug("(modify complete) incoming ({}) local: ({})".format(sequence, token.get_sequence()))

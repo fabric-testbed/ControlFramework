@@ -67,7 +67,6 @@ class ActorDatabase(IDatabase):
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        from fabric.actor.db.psql_database import PsqlDatabase
         self.db = PsqlDatabase(user=self.user, password=self.password, database=self.database, db_host=self.db_host,
                                logger=None)
         self.actor_id = None

@@ -25,12 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 from typing import TYPE_CHECKING
+from fabric.actor.core.policy.free_allocated_set import FreeAllocatedSet
+from fabric.actor.core.policy.inventory_for_type import InventoryForType
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
-
-from fabric.actor.core.policy.free_allocated_set import FreeAllocatedSet
-from fabric.actor.core.policy.inventory_for_type import InventoryForType
 
 
 class SimplerUnitsInventory(InventoryForType):
@@ -47,7 +46,7 @@ class SimplerUnitsInventory(InventoryForType):
         for i in range(ticket.get_units()):
             self.set.add_inventory(item=i)
 
-    def allocate(self, *, count:int, request: dict, resource: dict = None) -> dict:
+    def allocate(self, *, count: int, request: dict, resource: dict = None) -> dict:
         self.set.allocate(count=count)
         result = {}
         return result

@@ -27,7 +27,6 @@ from abc import abstractmethod
 
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_controller_policy import IControllerPolicy
-from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.core.policy import Policy
@@ -79,8 +78,6 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
         self.pending_notify = ReservationSet()
         self.lazy_close = False
 
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
     def check_pending(self):
         """
         Checks pending operations, and installs successfully completed
@@ -113,7 +110,8 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                     self.calendar.remove_closing(reservation=reservation)
                     # schedule a new close
                     self.calendar.add_closing(reservation=reservation,
-                                              cycle=self.get_close(reservation=reservation, term=reservation.get_term()))
+                                              cycle=self.get_close(reservation=reservation,
+                                                                   term=reservation.get_term()))
                     # Add from start to end instead of close. It is possible
                     # that holdings may not accurately reflect the actual
                     # number of resources towards the end of a lease. This is
@@ -138,7 +136,8 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                     self.calendar.add_redeeming(reservation=reservation,
                                                 cycle=self.get_redeem(reservation=reservation))
                     self.calendar.add_closing(reservation=reservation,
-                                              cycle=self.get_close(reservation=reservation, term=reservation.get_term()))
+                                              cycle=self.get_close(reservation=reservation,
+                                                                   term=reservation.get_term()))
                     if reservation.is_renewable():
                         cycle = self.get_renew(reservation=reservation)
                         reservation.set_renew_time(time=cycle)
@@ -179,14 +178,15 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                         reservation.get_state() == ReservationStates.Failed:
                     self.pending_notify.remove(reservation=reservation)
                 else:
-                    self.logger.warning("Invalid state on reservation. We may be still recovering: {}".format(reservation))
+                    self.logger.warning("Invalid state on reservation. We may be still recovering: {}".format(
+                        reservation))
                     continue
 
                 if self.pending_notify.contains(reservation=reservation):
                     self.logger.debug("Removing from pending: {}".format(reservation))
                     self.calendar.remove_pending(reservation=reservation)
 
-    def close(self, *, reservation:IReservation):
+    def close(self, *, reservation: IReservation):
         # ignore any scheduled/in progress operations
         self.calendar.remove_scheduled_or_in_progress(reservation=reservation)
 
@@ -221,12 +221,12 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
     def get_close(self, *, reservation: IClientReservation, term: Term) -> int:
         """
         Returns the time that a reservation should be closed.
-       
+
         @params reservation reservation
         @params term term
-       
+
         @returns the close time of the reservation (cycle)
-       
+
         @raises Exception in case of error
         """
 
@@ -245,11 +245,11 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
     def get_redeem(self, *, reservation: IClientReservation) -> int:
         """
         Returns the time when the reservation should be redeemed.
-       
+
         @params reservation the reservation
-       
+
         @returns the redeem time of the reservation (cycle)
-       
+
         @raises Exception in case of error
         """
 
@@ -263,11 +263,11 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
     def get_renew(self, *, reservation: IClientReservation) -> int:
         """
         Returns the time when the reservation should be renewed.
-       
+
         @params reservation the reservation
-       
+
         @returns the renew time of the reservation (cycle)
-       
+
         @raises Exception in case of error
         """
 
@@ -277,12 +277,12 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
             self.calendar = ControllerCalendar(clock=self.clock)
             self.initialized = True
 
-    def is_expired(self, *, reservation:IReservation):
+    def is_expired(self, *, reservation: IReservation):
         """
         Checks if the reservation has expired.
-       
+
         @params reservation reservation to check
-       
+
         @returns true or false
         """
         term = reservation.get_term()

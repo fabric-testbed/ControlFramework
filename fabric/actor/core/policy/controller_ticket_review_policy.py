@@ -73,8 +73,6 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
         self.lazy_close = False
         self.pending_redeem = ReservationSet()
 
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
     def check_pending(self):
         """
         Check to make sure all reservations are Ticketed (not Failed or Nascent)

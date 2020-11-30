@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 
 
-class BrokerPriorityPolicy (BrokerSimplePolicy):
+class BrokerPriorityPolicy(BrokerSimplePolicy):
     """
     BrokerPriorityPolicy allocates requests based on requestType
     priorities set in the configuration at the broker. There may be multiple
@@ -102,8 +102,6 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
 
         self.queue = None
 
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
     def configure(self, *, properties: dict):
         """
         Processes a list of configuration properties
@@ -124,9 +122,9 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
     def align_end(self, *, when: datetime) -> datetime:
         """
         Aligns the specified date with the end of the closest cycle.
-       
+
         @param when when to align
-       
+
         @return date aligned with the end of the closes cycle
         """
         cycle = self.clock.cycle(when=when)

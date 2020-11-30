@@ -86,11 +86,11 @@ class VlanControl(ResourceControl):
         if Constants.PropertyVlanRangeNum in local:
             num_range = int(local[Constants.PropertyVlanRangeNum])
             for i in range(num_range):
-                startP = Constants.PropertyStartVlan + str(i)
-                endP = Constants.PropertyEndVlan + str(i)
-                if startP in local and endP in local:
-                    start = int(local[startP])
-                    end = int(local[endP])
+                start_p = Constants.PropertyStartVlan + str(i)
+                end_p = Constants.PropertyEndVlan + str(i)
+                if start_p in local and end_p in local:
+                    start = int(local[start_p])
+                    end = int(local[end_p])
 
                     if start == 0 and end == 0:
                         break

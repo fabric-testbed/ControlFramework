@@ -27,12 +27,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_delegation import IDelegation
-from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.core.pool_manager import PoolManager
-from fabric.actor.core.kernel.resource_set import ResourceSet
-from fabric.actor.core.util.resource_data import ResourceData
-from fabric.actor.core.util.resource_type import ResourceType
+from fabric.actor.core.plugins.substrate.substrate import Substrate
 
 if TYPE_CHECKING:
     from fabric.actor.core.core.actor import Actor
@@ -40,8 +37,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.core.apis.i_slice import ISlice
-
-from fabric.actor.core.plugins.substrate.substrate import Substrate
 
 
 class AuthoritySubstrate(Substrate):
@@ -63,7 +58,6 @@ class AuthoritySubstrate(Substrate):
         return state
 
     def __setstate__(self, state):
-        # TODO fetch actor via actor_id
         self.__dict__.update(state)
         self.logger = None
         self.ticket_factory = None

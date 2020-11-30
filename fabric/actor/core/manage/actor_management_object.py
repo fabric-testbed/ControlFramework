@@ -111,7 +111,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             self.logger = actor.get_logger()
             self.id = actor.get_guid()
 
-    def get_slices(self, *, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
+    def get_slices(self, *, slice_id: ID, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -123,9 +123,10 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             try:
                 if id_token is not None:
                     AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.slice,
-                                               token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+                                               token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
+                                               resource_id=str(slice_id))
                 try:
-                    slice_list = self.db.get_slices()
+                    slice_list = self.db.get_slices(slice_id=slice_id)
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -138,41 +139,6 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     result.status.set_message(ErrorCodes.ErrorNoSuchSlice.name)
             except Exception as e:
                 self.logger.error("getSlices {}".format(e))
-                result.status.set_code(ErrorCodes.ErrorInternalError.value)
-                result.status.set_message(ErrorCodes.ErrorInternalError.name)
-                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-        return result
-
-    def get_slice(self, *, slice_id: ID, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
-        result = ResultSliceAvro()
-        result.status = ResultAvro()
-
-        if slice_id is None or caller is None:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-        else:
-            slice_obj = None
-            try:
-                if id_token is not None:
-                    AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.slice,
-                                               token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
-                                               resource_id=str(slice_id))
-                try:
-                    slice_obj = self.db.get_slice(slice_id=slice_id)
-                except Exception as e:
-                    self.logger.error("getSlice:db access {}".format(e))
-                    result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                    result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                    result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-                if slice_obj is not None:
-                    slice_list = [slice_obj]
-                    result.slices = Translate.fill_slices(slice_list=slice_list, full=True)
-                else:
-                    result.status.set_code(ErrorCodes.ErrorNoSuchSlice.value)
-                    result.status.set_message(ErrorCodes.ErrorNoSuchSlice.name)
-            except Exception as e:
-                self.logger.error("getSlice {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorInternalError.value)
                 result.status.set_message(ErrorCodes.ErrorInternalError.name)
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)

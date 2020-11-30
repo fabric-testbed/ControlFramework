@@ -66,7 +66,7 @@ class InventoryForType:
         return self.properties
 
     @abstractmethod
-    def allocate(self, *, count:int, request: dict, resource: dict = None) -> dict:
+    def allocate(self, *, count: int, request: dict, resource: dict = None) -> dict:
         """
         Allocates the specified number of units given the client request
         properties. This method is called for new ticketing/extending reservations.

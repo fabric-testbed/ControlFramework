@@ -35,16 +35,15 @@ from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.core.policy.broker_priority_policy import BrokerPriorityPolicy
+from fabric.actor.core.policy.inventory import Inventory
+from fabric.actor.core.apis.i_client_reservation import IClientReservation
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
     from fabric.actor.core.policy.inventory_for_type import InventoryForType
     from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.core.kernel.resource_set import ResourceSet
-
-from fabric.actor.core.policy.broker_priority_policy import BrokerPriorityPolicy
-from fabric.actor.core.policy.inventory import Inventory
-from fabric.actor.core.apis.i_client_reservation import IClientReservation
 
 
 class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
@@ -98,8 +97,6 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
         self.queue = None
         self.inventory = Inventory()
 
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
     def donate_reservation(self, *, reservation: IClientReservation):
         super().donate_reservation(reservation=reservation)
         self.inventory.get_new(reservation=reservation)
@@ -125,20 +122,6 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
         self.allocate_queue(start_cycle=start_cycle)
         self.allocate_ticketing(requests=requests, start_cycle=start_cycle)
 
-    '''
-    def query(self, *, p: dict) -> dict:
-        self.logger.debug("Processing Query with properties: {}".format(p))
-        action = self.get_query_action(properties=p)
-        if action.lower() != Constants.QueryActionDiscoverPools:
-            return super().query(p=p)
-
-        response = self.inventory.get_resource_pools()
-        response[Constants.QueryResponse] = Constants.QueryActionDiscoverPools
-
-        self.logger.debug("Returning Query Result: {}".format(response))
-        return response
-    '''
-
     def get_default_pool_id(self) -> ResourceType:
         result = None
 
@@ -160,7 +143,7 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
 
                     if inv is not None:
                         ext_term = Term(start=reservation.get_term().get_start_time(), end=end, new_start=start)
-                        self.extend(reservation=reservation, inv=inv, term=ext_term)
+                        self.extend_private(reservation=reservation, inv=inv, term=ext_term)
                     else:
                         reservation.fail(message="there is no pool to satisfy this request")
 
@@ -183,20 +166,22 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
                         self.logger.debug("Adding reservation + {} to the queue".format(reservation.get_reservation_id()))
                         self.queue.add(reservation=reservation)
                     else:
-                        reservation.fail("Insufficient resources for specified start time, Failing reservation: {}".format(reservation.get_reservation_id()))
+                        reservation.fail("Insufficient resources for specified start time, Failing reservation: {}".
+                                         format(reservation.get_reservation_id()))
 
     def allocate_queue(self, *, start_cycle: int):
         if self.queue is None:
             return
 
         for reservation in self.queue.values():
-            if not self.ticket(reservation=reservation,start_cycle= start_cycle):
+            if not self.ticket(reservation=reservation, start_cycle=start_cycle):
                 request_properties = reservation.get_requested_resources().get_request_properties()
                 threshold = request_properties[BrokerPriorityPolicy.QueueThreshold]
                 start = self.clock.cycle(when=reservation.get_requested_term().get_new_start_time())
 
                 if threshold != 0 and ((start_cycle - start) > threshold):
-                    reservation.fail_warn(message="Request has exceeded its threshold on the queue {}".format(reservation))
+                    reservation.fail_warn(message="Request has exceeded its threshold on the queue {}".format(
+                        reservation))
                     self.queue.remove(reservation=reservation)
             else:
                 self.queue.remove(reservation=reservation)
@@ -263,7 +248,7 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
             reservation.fail(message=str(e))
             return False
 
-    def extend(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term):
+    def extend_private(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term):
         try:
             rset = reservation.get_requested_resources()
             needed = rset.get_units()
@@ -283,7 +268,8 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
                                               resource=rset.get_resource_properties())
 
                 if to_allocate < difference:
-                    self.logger.error("partially satisfied request: allocated= {} needed={}".format(to_allocate, difference))
+                    self.logger.error("partially satisfied request: allocated= {} needed={}".format(
+                        to_allocate, difference))
 
                 units += to_allocate
             elif difference < 0:
@@ -302,9 +288,9 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
     def issue_ticket(self, *, reservation: IBrokerReservation, units: int, rtype: ResourceType,
                      term: Term, properties: dict, source: IClientReservation):
 
-        delegation = self.actor.get_plugin().get_ticket_factory().make_delegation(units=units, term=term, rtype=rtype,
-                                                                                  properties=properties,
-                                                                                  holder=self.get_client_id(reservation=reservation))
+        delegation = self.actor.get_plugin().get_ticket_factory().make_delegation(
+            units=units, term=term, rtype=rtype, properties=properties,
+            holder=self.get_client_id(reservation=reservation))
 
         mine = self.extract(source=source.get_resources(), delegation=delegation)
 
@@ -342,7 +328,8 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
             self.logger.debug("Client reservation")
             super().release(reservation=reservation)
             status = self.inventory.remove(source=reservation)
-            self.logger.debug("Removing reservation: {} from inventory status: {}".format(reservation.get_reservation_id(), status))
+            self.logger.debug("Removing reservation: {} from inventory status: {}".format(
+                reservation.get_reservation_id(), status))
 
     def release_not_approved(self, *, reservation: IBrokerReservation):
         super().release_not_approved(reservation=reservation)

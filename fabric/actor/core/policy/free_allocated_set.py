@@ -72,7 +72,7 @@ class FreeAllocatedSet:
                     if item not in self.free_set:
                         raise Exception("item is already in allocated: {}".format(item))
                 else:
-                     item = self.free_set.pop()
+                    item = self.free_set.pop()
                 self.allocated.add(item)
         return item
 

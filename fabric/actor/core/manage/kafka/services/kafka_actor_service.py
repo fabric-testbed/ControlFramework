@@ -61,10 +61,7 @@ class KafkaActorService(KafkaService):
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
         if message.get_message_name() == IMessageAvro.GetSlicesRequest:
-            if message.get_slice_id() is not None:
-                result = self.get_slice(request=message)
-            else:
-                result = self.get_slices(request=message)
+            result = self.get_slices(request=message)
 
         elif message.get_message_name() == IMessageAvro.RemoveSlice:
             result = self.remove_slice(request=message)
@@ -122,34 +119,11 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(id=request.guid))
-            result = mo.get_slices(caller=auth, id_token=request.get_id_token())
+            result = mo.get_slices(slice_id=ID(id=request.slice_id), caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
             traceback.print_exc()
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-        return result
-
-    def get_slice(self, *, request: GetSlicesRequestAvro) -> ResultSliceAvro:
-        result = ResultSliceAvro()
-        result.status = ResultAvro()
-
-        try:
-            if request.guid is None and request.slice_id is None:
-                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-                return result
-
-            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
-
-            result = mo.get_slice(slice_id=ID(id=request.slice_id), caller=auth, id_token=request.get_id_token())
-            result.message_id = request.message_id
-
-        except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)

@@ -85,11 +85,11 @@ class LUNControl(ResourceControl):
         if Constants.PropertyLunRangeNum in local:
             num_range = int(local[Constants.PropertyLunRangeNum])
             for i in range(num_range):
-                startP = Constants.PropertyStartLUN + str(i)
-                endP = Constants.PropertyEndLUN + str(i)
-                if startP in local and endP in local:
-                    start = int(local[startP])
-                    end = int(local[endP])
+                start_p = Constants.PropertyStartLUN + str(i)
+                end_p = Constants.PropertyEndLUN + str(i)
+                if start_p in local and end_p in local:
+                    start = int(local[start_p])
+                    end = int(local[end_p])
                     if start == 0 and end == 0:
                         break
                     for j in range(start, end):

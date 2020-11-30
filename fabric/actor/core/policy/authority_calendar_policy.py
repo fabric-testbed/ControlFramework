@@ -260,9 +260,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             self.calendar.remove_outlay(reservation=reservation)
 
     def remove(self, *, reservation: IReservation):
-        # TODO KOMAL
-        #raise Exception("Not implemented")
-        self.calendar.remove(reservation=reservation)
+        raise Exception("Not implemented")
 
     def finish(self, *, cycle: int):
         super().finish(cycle=cycle)
@@ -361,7 +359,8 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             reservation.set_bid_pending(value=False)
         else:
             if not reservation.is_terminal():
-                self.logger.debug("Deferring reservation {} for the next cycle: {}".format(reservation, self.actor.get_current_cycle() + 1))
+                self.logger.debug("Deferring reservation {} for the next cycle: {}".format(
+                    reservation, self.actor.get_current_cycle() + 1))
                 self.reschedule(reservation=reservation)
 
     def assign_reservation(self, *, reservation: IAuthorityReservation):

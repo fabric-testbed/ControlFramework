@@ -126,7 +126,7 @@ class ResourceControl(IResourceControl):
     def correct_deficit(self, *, reservation: IAuthorityReservation) -> ResourceSet:
         return self.assign(reservation=reservation)
 
-    def configuration_complete(self, *, action:str, token: ConfigToken, out_properties: dict):
+    def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         self.logger.debug("configuration complete")
         return
 
