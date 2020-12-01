@@ -71,3 +71,27 @@ class SliceNotFoundException(Exception):
 
     def __str__(self):
         return self.text
+
+
+class AuthorityException(Exception):
+    """
+    Authority Exception
+    """
+
+
+class KernelException(Exception):
+    """
+    Kernel Exception
+    """
+
+
+class ResourcesException(Exception):
+    """
+    Resources Exception
+    """
+
+
+class BrokerException(Exception):
+    """
+    Authority Exception
+    """

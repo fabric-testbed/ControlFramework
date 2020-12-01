@@ -119,7 +119,7 @@ class BrokerService(ActorService):
             rsvn = self.pass_agent(reservation=request.reservation)
             callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.ExtendTicket,
-                                         reservation=rsvn, caller=auth_token)
+                                         reservation=rsvn, caller=auth_token, callback=callback)
         except Exception as e:
             self.logger.error("Invalid extend_ticket request: {}".format(e))
             raise e
@@ -132,7 +132,7 @@ class BrokerService(ActorService):
             rsvn = self.pass_agent(reservation=request.reservation)
             callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Relinquish,
-                                         reservation=rsvn, caller=auth_token)
+                                         reservation=rsvn, caller=auth_token, callback=callback)
         except Exception as e:
             self.logger.error("Invalid extend_ticket request: {}".format(e))
             raise e

@@ -229,3 +229,5 @@ class Constants:
     PropertyDelegationSliceId = 'dlg_slc_id'
     PropertyReservationSliceId = 'rsv_slc_id'
     PropertyReservationID = "rsv_resid"
+
+    INVALID_ARGUMENT = "Invalid argument"

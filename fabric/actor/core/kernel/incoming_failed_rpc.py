@@ -38,7 +38,7 @@ class IncomingFailedRPC(IncomingRPC):
     """
     Represents an incoming failed rpc message
     """
-    def __init__(self, *, message_id: ID, failed_request_type: RPCRequestType, request_id: str,
+    def __init__(self, message_id: ID, failed_request_type: RPCRequestType, request_id: str,
                  failed_reservation_id: ID, error_details: str, caller: AuthToken):
         super().__init__(message_id=message_id, request_type=RPCRequestType.FailedRPC, caller=caller,
                          callback=None)

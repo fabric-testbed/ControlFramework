@@ -61,6 +61,12 @@ if TYPE_CHECKING:
     from fabric.actor.boot.configuration import Configuration
 
 
+class ContainerException(Exception):
+    """
+    Exception raised by container
+    """
+    
+
 class ContainerState(Enum):
     """
     Container State enumeration
@@ -186,11 +192,11 @@ class Container(IActorContainer):
         Initialize container and actor
         """
         if config is None:
-            raise Exception("config cannot be null")
+            raise ContainerException("config cannot be null")
 
         with self.container_lock:
             if self.state != ContainerState.Unknown:
-                raise Exception("Cannot initialize container in state: {}".format(self.state))
+                raise ContainerException("Cannot initialize container in state: {}".format(self.state))
 
             self.state = ContainerState.Starting
 
@@ -329,7 +335,6 @@ class Container(IActorContainer):
         """
         Complete recovery boot
         """
-        return
 
     def create_container_manager_object(self):
         """
@@ -360,11 +365,11 @@ class Container(IActorContainer):
         Recover Basic entities such as Container GUID and time
         """
         if self.is_fresh():
-            raise Exception("A fresh container cannot be recovered")
+            raise ContainerException("A fresh container cannot be recovered")
         try:
             self.container_lock.acquire()
             if self.state != ContainerState.Starting:
-                raise Exception("Invalid state for recovery: {}".format(self.state))
+                raise ContainerException("Invalid state for recovery: {}".format(self.state))
             self.state = ContainerState.Recovering
         finally:
             self.container_lock.release()
@@ -380,7 +385,7 @@ class Container(IActorContainer):
         properties = self.db.get_container_properties()
         stored_guid = properties.get(Constants.PropertyConfContainerGuid, None)
         if stored_guid is None:
-            raise Exception("Could not obtain saved container GUID from database")
+            raise ContainerException("Could not obtain saved container GUID from database")
         self.guid = ID(id=stored_guid)
         self.logger.info("Recovered container guid: {}".format(self.guid))
 
@@ -391,7 +396,7 @@ class Container(IActorContainer):
         self.logger.debug("Recovering container time settings")
         time_obj = self.db.get_time()
         if time_obj is None:
-            raise Exception("Could not obtain container saved state from database")
+            raise ContainerException("Could not obtain container saved state from database")
         properties = time_obj.get('properties', None)
         beginning_of_time = properties.get(self.PropertyBeginningOfTime, None)
         cycle_millis = properties.get(self.PropertyCycleMillis, None)
@@ -418,12 +423,12 @@ class Container(IActorContainer):
         """
         actor_name = properties.get('act_name', None)
         if actor_name is None:
-            raise Exception("Cannot recover actor: no name")
+            raise ContainerException("Cannot recover actor: no name")
         self.logger.info("Recover actor: {}".format(actor_name))
         self.logger.debug("Restoring actor from saved state")
         pickled_actor = properties.get(Constants.PropertyPickleProperties, None)
         if pickled_actor is None:
-            raise Exception("Pickled Actor read from Data is None")
+            raise ContainerException("Pickled Actor read from Data is None")
         actor = pickle.loads(pickled_actor)
         self.logger.debug("Initializing the actor object")
         actor.initialize()
@@ -573,13 +578,13 @@ class Container(IActorContainer):
         if self.ticker is not None:
             self.ticker.stop()
         else:
-            raise Exception("The container does not have a clock")
+            raise ContainerException("The container does not have a clock")
 
     def tick(self):
         if self.ticker is not None:
             self.ticker.tick()
         else:
-            raise Exception("The container does not have a clock")
+            raise ContainerException("The container does not have a clock")
 
     def shutdown(self):
         try:
@@ -617,7 +622,7 @@ class Container(IActorContainer):
 
     def get_actor_clock(self) -> ActorClock:
         if self.ticker is None:
-            raise Exception("No tick")
+            raise ContainerException("No tick")
         return ActorClock(beginning_of_time=self.ticker.get_beginning_of_time(),
                           cycle_millis=self.ticker.get_cycle_millis())
 
@@ -652,7 +657,7 @@ class Container(IActorContainer):
 
     def get_management_object(self, *, key: ID):
         if key is None:
-            raise Exception("key cannot be null")
+            raise ContainerException("key cannot be null")
         return self.management_object_manager.get_management_object(key=key)
 
     def get_plugin_manager(self) -> PluginManager:

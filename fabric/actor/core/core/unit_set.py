@@ -322,7 +322,7 @@ class UnitSet(IConcreteSet):
         """
         for u in self.units.values():
             if u.get_state() == UnitState.ACTIVE:
-                pass
+                self.logger.debug("Do nothing")
             elif u.get_state() == UnitState.CLOSING:
                 u.decrement_sequence()
                 self.transfer_out(u=u)
@@ -333,7 +333,7 @@ class UnitSet(IConcreteSet):
                 u.decrement_sequence()
                 self.modify_unit(u=u)
             elif u.get_state() == UnitState.FAILED or u.get_state() == UnitState.CLOSED:
-                pass
+                self.logger.debug("Do nothing")
 
     def transfer_in(self, *, unit: Unit):
         """

@@ -29,6 +29,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
+from fabric.actor.core.apis.i_reservation import ReservationCategory
 from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.core.authority_policy import AuthorityPolicy
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
@@ -55,7 +56,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.manage.messages.client_mng import ClientMng
     from fabric.message_bus.messages.slice_avro import SliceAvro
-    from fabric.actor.core.util.resource_type import ResourceType
 
 
 class ServerActorManagementObject(ActorManagementObject):
@@ -67,6 +67,44 @@ class ServerActorManagementObject(ActorManagementObject):
         properties[Constants.PropertyClassName] = ServerActorManagementObject.__name__
         properties[Constants.PropertyModuleName] = ServerActorManagementObject.__module__
         return properties
+
+    def do_get_reservations(self, *, caller: AuthToken, category: ReservationCategory, slice_id: ID = None,
+                            id_token: str = None) -> ResultReservationAvro:
+        result = ResultReservationAvro()
+        result.status = ResultAvro()
+
+        if caller is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            return result
+        try:
+            res_list = None
+            try:
+                res_list = self.db.get_client_reservations()
+            except Exception as e:
+                self.logger.error("get_client_reservations:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+                return result
+
+            if res_list is not None:
+                result.result = []
+                for r in res_list:
+                    slice_obj = self._get_slice_by_id(id=r['slc_id'])
+                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
+                                                                 slice_obj=slice_obj,
+                                                                 logger=self.actor.get_logger())
+                    if rsv_obj is not None:
+                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
+                        result.result.append(rr)
+        except Exception as e:
+            self.logger.error("get_client_reservations: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
 
     def get_broker_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()

@@ -58,6 +58,7 @@ class PsqlDatabase:
     """
     Implements interface to Postgres database
     """
+    OBJECT_NOT_FOUND = "{} Not Found {}"
     def __init__(self, *, user: str, password: str, database: str, db_host: str, logger):
         # Connecting to PostgreSQL server at localhost using psycopg2 DBAPI
         self.db_engine = create_engine("postgresql+psycopg2://{}:{}@{}/{}".format(user, password, db_host, database))
@@ -358,7 +359,7 @@ class PsqlDatabase:
                         result['mo_act_id'] = mo_obj.mo_act_id
                     result['properties'] = mo_obj.properties
                 else:
-                    raise DatabaseException("Manager Object not found")
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Manager Object", mo_key))
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -428,7 +429,7 @@ class PsqlDatabase:
                     if slc_graph_id is not None:
                         slc_obj.slc_graph_id = slc_graph_id
                 else:
-                    raise DatabaseException("Slice not found")
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -510,7 +511,7 @@ class PsqlDatabase:
                 if slc_obj is not None:
                     result = self.generate_slice_dict_from_row(slc_obj)
                 else:
-                    raise DatabaseException("Slice not found for actor {} slice {}".format(act_id, slice_guid))
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slice_guid))
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -530,7 +531,7 @@ class PsqlDatabase:
                 if slc_obj is not None:
                     result = self.generate_slice_dict_from_row(slc_obj)
                 else:
-                    raise DatabaseException("Slice not found for actor {} slice {}".format(act_id, id))
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", id))
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -652,7 +653,7 @@ class PsqlDatabase:
                     if rsv_graph_id is not None:
                         rsv_obj.rsv_graph_id = rsv_graph_id
                 else:
-                    raise DatabaseException("Reservation not found")
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
         except Exception as e:
             print("Exception occurred while updating reservation {}".format(self.get_slices(act_id=act_id)))
             self.logger.error("Exception occurred " + str(e))
@@ -695,7 +696,7 @@ class PsqlDatabase:
         try:
             slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException("Slice for {} not found".format(act_id))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(Reservations.rsv_slc_id.in_(slc_id_list)):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
@@ -717,7 +718,7 @@ class PsqlDatabase:
         try:
             slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None:
-                raise DatabaseException("Slice for {} not found".format(slc_guid))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(Reservations.rsv_slc_id == slc_obj['slc_id']):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
@@ -739,7 +740,7 @@ class PsqlDatabase:
         try:
             slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException("Slice for {} not found".format(act_id))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(
                         Reservations.rsv_state == rsv_state).filter(Reservations.rsv_slc_id.in_(slc_id_list)):
@@ -763,7 +764,7 @@ class PsqlDatabase:
         try:
             slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None:
-                raise DatabaseException("Slice for {} not found".format(slc_guid))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(Reservations.rsv_state == rsv_state).filter(
                         Reservations.rsv_slc_id == slc_obj['slc_id']):
@@ -787,7 +788,7 @@ class PsqlDatabase:
         try:
             slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException("Slice for {} not found".format(act_id))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(
                         Reservations.rsv_category == rsv_cat1 or Reservations.rsv_category == rsv_cat2).filter(
@@ -811,7 +812,7 @@ class PsqlDatabase:
         try:
             slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException("Slice for {} not found".format(act_id))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(
                         Reservations.rsv_category == rsv_cat).filter(
@@ -838,7 +839,7 @@ class PsqlDatabase:
         try:
             slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None:
-                raise DatabaseException("Slice for {} not found".format(slc_guid))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(
                         Reservations.rsv_slc_id == slc_obj['slc_id']).filter(
@@ -863,7 +864,7 @@ class PsqlDatabase:
         try:
             slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None:
-                raise DatabaseException("Slice for {} not found".format(slc_guid))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(Reservations.rsv_slc_id == slc_obj['slc_id']).filter(
                         Reservations.rsv_category == rsv_cat):
@@ -886,12 +887,12 @@ class PsqlDatabase:
         try:
             slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException("Slice for {} not found".format(act_id))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
                 rsv_obj = session.query(Reservations).filter(
                     Reservations.rsv_resid == rsv_resid).filter(Reservations.rsv_slc_id.in_(slc_id_list)).first()
                 if rsv_obj is None:
-                    raise DatabaseException("Reservation not found")
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
                 result = self.generate_reservation_dict_from_row(rsv_obj)
                 if rsv_obj.rsv_joining is not None:
                     result['rsv_joining'] = rsv_obj.rsv_joining
@@ -911,7 +912,7 @@ class PsqlDatabase:
         try:
             slc_id_list = self.get_slice_ids(act_id=act_id)
             if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException("Slice for {} not found".format(act_id))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(
                         Reservations.rsv_resid.in_(rsv_resid_list)).filter(Reservations.rsv_slc_id.in_(slc_id_list)):
@@ -952,7 +953,7 @@ class PsqlDatabase:
                 if prx_obj is not None:
                     prx_obj.properties = properties
                 else:
-                    raise DatabaseException("Proxy not found")
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Proxy", prx_name))
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -1034,7 +1035,7 @@ class PsqlDatabase:
                     cfg_obj.cfgm_path = cfgm_path
                     cfg_obj.properties = properties
                 else:
-                    raise DatabaseException("Reservation not found")
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Config Mapping", cfgm_type))
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -1132,7 +1133,7 @@ class PsqlDatabase:
                 if clt_obj is not None:
                     clt_obj.properties = properties
                 else:
-                    raise DatabaseException("Client not found")
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Client", clt_name))
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -1191,7 +1192,7 @@ class PsqlDatabase:
                 clt_obj = session.query(Clients).filter(Clients.clt_act_id == act_id).filter(
                     Clients.clt_name == clt_name).first()
                 if clt_obj is None:
-                    raise DatabaseException("Client with clt_name {} not found".format(clt_name))
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Client", clt_name))
                 result = self.generate_client_dict_from_row(clt_obj)
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
@@ -1211,7 +1212,7 @@ class PsqlDatabase:
                 clt_obj = session.query(Clients).filter(Clients.clt_act_id == act_id).filter(
                     Clients.clt_guid == clt_guid).first()
                 if clt_obj is None:
-                    raise DatabaseException("Client with guid {} not found".format(clt_guid))
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Client", clt_guid))
                 result = self.generate_client_dict_from_row(clt_obj)
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
@@ -1252,10 +1253,10 @@ class PsqlDatabase:
         try:
             slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             if slc_obj is None:
-                raise DatabaseException("Slice {} not found".format(slc_guid))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             rsv_obj = self.get_reservation(act_id=act_id, rsv_resid=rsv_resid)
             if rsv_obj is None:
-                raise DatabaseException("Reservation {} not found".format(rsv_resid))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
             if slc_obj['slc_id'] != rsv_obj['rsv_slc_id']:
                 raise DatabaseException("Inconsistent Database, slice and reservation do not match Slice:{} "
                                         "Reservation:{}".format(slc_obj, rsv_obj))
@@ -1319,7 +1320,7 @@ class PsqlDatabase:
         try:
             rsv_obj = self.get_reservation(act_id=act_id, rsv_resid=rsv_resid)
             if rsv_obj is None:
-                raise DatabaseException("Reservation {} not found".format(rsv_resid))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
 
             with session_scope(self.db_engine) as session:
                 for row in session.query(Units).filter(Units.unt_rsv_id == rsv_obj['rsv_id']):
@@ -1356,7 +1357,7 @@ class PsqlDatabase:
                 unt_obj = session.query(Units).filter(Units.unt_uid == unt_uid).filter(
                     Units.unt_act_id == act_id).first()
                 if unt_obj is None:
-                    raise DatabaseException("Unit with guid {} not found".format(unt_uid))
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Unit", unt_uid))
                 unt_obj.properties = properties
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
@@ -1437,7 +1438,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 plg_obj = session.query(Plugins).filter(Plugins.plg_local_id == plugin_id).first()
                 if plg_obj is None:
-                    raise DatabaseException("Plugin with guid {} not found".format(plugin_id))
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Plugin", plugin_id))
                 result = self.generate_plugin_dict_from_row(plg_obj)
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
@@ -1478,7 +1479,7 @@ class PsqlDatabase:
                     dlg_obj.dlg_state = dlg_state
                     dlg_obj.properties = properties
                 else:
-                    raise DatabaseException("Slice not found")
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Delegation", dlg_graph_id))
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -1530,6 +1531,7 @@ class PsqlDatabase:
         """
         Get delegation
         @param dlg_act_id actor id
+        @param dlg_graph_id delegation graph id
         @return delegation
         """
         result = {}
@@ -1540,8 +1542,7 @@ class PsqlDatabase:
                 if dlg_obj is not None:
                     result = self.generate_delegation_dict_from_row(dlg_obj)
                 else:
-                    raise DatabaseException("Slice not found for actor {} resource model {}".format(
-                        dlg_act_id, dlg_obj))
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Delegation", dlg_graph_id))
         except Exception as e:
             self.logger.error("Exception occurred " + str(e))
             raise e
@@ -1558,7 +1559,7 @@ class PsqlDatabase:
         try:
             slc_obj = self.get_slice(act_id=dlg_act_id, slice_guid=slc_guid)
             if slc_obj is None:
-                raise DatabaseException("Slice for {} not found".format(slc_guid))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Delegations).filter(Delegations.dlg_slc_id == slc_obj['slc_id']):
                     rsv_obj = self.generate_delegation_dict_from_row(row)

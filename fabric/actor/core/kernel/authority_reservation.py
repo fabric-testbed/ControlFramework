@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_reservation import ReservationCategory
 from fabric.actor.core.apis.i_kernel_authority_reservation import IKernelAuthorityReservation
+from fabric.actor.core.common.exceptions import AuthorityException
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.kernel.request_types import RequestTypes
 from fabric.actor.core.kernel.reservation_server import ReservationServer
@@ -50,6 +51,8 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
     authority side. It coordinates resource allocation, lease generation,
     priming, and shutdown of reservations.
     """
+    UnexpectedExceptionString = "Unexpected reservation state: state={} pending={}"
+
     def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_object: IKernelSlice):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_object)
         # The ticket.
@@ -214,7 +217,7 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                     self.pending_recover:
                 self.generate_update()
         else:
-            raise Exception("Unsupported operation: {}".format(operation))
+            raise AuthorityException("Unsupported operation: {}".format(operation))
 
     def map_and_update(self, *, extend: bool) -> bool:
         """
@@ -359,10 +362,10 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
         remote_auth = failed.get_remote_auth()
         if failed.get_request_type() == RPCRequestType.UpdateLease:
             if self.callback is None or self.callback.get_identity() != remote_auth:
-                raise Exception("Unauthorized Failed reservation RPC: expected={}, but was: {}".format(
+                raise AuthorityException("Unauthorized Failed reservation RPC: expected={}, but was: {}".format(
                     self.callback.get_identity(), remote_auth))
         else:
-            raise Exception("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(
+            raise AuthorityException("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(
                 failed.get_request_type()))
 
     def prepare_extend_lease(self):
@@ -518,8 +521,7 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                     self.actor.close(reservation=self)
 
                 else:
-                    raise Exception("Unexpected reservation state: state={} pending={}".format(self.state,
-                                                                                               self.pending_state))
+                    raise AuthorityException(self.UnexpectedExceptionString.format(self.state, self.pending_state))
 
             elif self.state == ReservationStates.Active:
                 if self.pending_state == ReservationPendingStates.None_:
@@ -538,13 +540,11 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                     self.actor.close(reservation=self)
 
                 else:
-                    raise Exception(
-                        "Unexpected reservation state: state={} pending={}".format(self.state, self.pending_state))
+                    raise AuthorityException(self.UnexpectedExceptionString.format(self.state, self.pending_state))
             elif self.state == ReservationStates.Failed:
                 self.logger.debug("No op")
             else:
-                raise Exception(
-                    "Unexpected reservation state: state={} pending={}".format(self.state, self.pending_state))
+                raise AuthorityException(self.UnexpectedExceptionString.format(self.state, self.pending_state))
         except Exception as e:
             raise e
 

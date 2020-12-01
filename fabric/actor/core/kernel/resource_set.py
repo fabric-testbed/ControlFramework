@@ -27,6 +27,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from datetime import datetime
 from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ResourcesException
 from fabric.actor.core.util.resource_data import ResourceData
 
 if TYPE_CHECKING:
@@ -192,7 +194,7 @@ class ResourceSet:
         @param resource_set resource set
         """
         if reservation is None or resource_set is None:
-            raise Exception("Invalid argument")
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         if self.properties is None:
             self.properties = ResourceData()
@@ -238,7 +240,7 @@ class ResourceSet:
 
     def delta_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            raise Exception("Invalid argument")
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         if self.resources is None:
             # in case of close for a canceled reservation.
@@ -260,7 +262,7 @@ class ResourceSet:
             self.type = resource_set.type
             difference = 0
             if resource_set.gained is None or resource_set.lost is not None or resource_set.modified is not None:
-                raise Exception("Internal Error: service overrun in hardChange")
+                raise ResourcesException("Internal Error: service overrun in hardChange")
 
             if resource_set.gained is not None:
                 self.gained = resource_set.gained
@@ -288,7 +290,7 @@ class ResourceSet:
 
     def full_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            raise Exception("Invalid argument")
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         # take the units and the type
         self.units = resource_set.units
@@ -473,7 +475,7 @@ class ResourceSet:
 
     def service_check(self):
         if self.resources is None:
-            raise Exception("Internal Error: WARNING: service post-op call on non-concrete reservation")
+            raise ResourcesException("Internal Error: WARNING: service post-op call on non-concrete reservation")
 
     def close(self):
         """
@@ -627,7 +629,7 @@ class ResourceSet:
 
     def update(self, *, reservation: IReservation, resource_set: ResourceSet):
         if reservation is None or resource_set is None:
-            raise Exception("Invalid argument")
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         if resource_set.resources is not None:
             self.full_update(reservation=reservation, resource_set=resource_set)
@@ -636,7 +638,7 @@ class ResourceSet:
 
     def update_properties(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            raise Exception("Invalid argument")
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         self.merge_properties(reservation=reservation, resource_set=resource_set)
 
@@ -646,7 +648,7 @@ class ResourceSet:
         @raises Exception in case of error thrown if the set is determined to be invalid
         """
         if self.units < 0:
-            raise Exception("invalid unit count:{}".format(self.units))
+            raise ResourcesException("invalid unit count:{}".format(self.units))
 
     def validate_incoming(self):
         """
@@ -669,10 +671,10 @@ class ResourceSet:
         """
         if self.resources is None:
             if self.units != 0:
-                raise Exception("no resources to back incoming ticket")
+                raise ResourcesException("no resources to back incoming ticket")
             return
         if self.resources.get_units() != self.units:
-            raise Exception("size mismatch on incoming ticket {} != {}".format(self.resources.get_units(),
+            raise ResourcesException("size mismatch on incoming ticket {} != {}".format(self.resources.get_units(),
                                                                                self.units))
         self.resources.validate_concrete(rtype=self.type, units=self.units, term=term)
 

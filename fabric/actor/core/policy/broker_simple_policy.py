@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import BrokerException
 from fabric.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
 from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.util.bids import Bids
@@ -362,7 +363,7 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         except Exception as e:
             self.logger.error("Term not satisfied: Mapper extract failed: has: {} {}".format(
                 ticket.get_concrete_units(), e))
-            raise Exception("Term not satisfied: Mapper extract failed: has: {} {}".format(
+            raise BrokerException("Term not satisfied: Mapper extract failed: has: {} {}".format(
                 ticket.get_concrete_units(), e))
 
         if mine is not None and not reservation.is_failed():

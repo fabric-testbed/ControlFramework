@@ -40,6 +40,12 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
 
 
+class RemoteActorCacheException(Exception):
+    """
+    Exception raised by RemoteActorCache
+    """
+
+
 class RemoteActorCache:
     """
     Maintains Remote Actors to which Actor is connected
@@ -172,7 +178,7 @@ class RemoteActorCache:
                     self.logger.debug("Edge between {} and {} exists (broker)".format(from_guid, to_guid))
                     return True
         except Exception as e:
-            raise Exception("Unable to cast actor {} or {} e={}".format(from_guid, to_guid, e))
+            raise RemoteActorCacheException("Unable to cast actor {} or {} e={}".format(from_guid, to_guid, e))
 
         self.logger.debug("Edge between {} and {} does not exist".format(from_guid, to_guid))
         return False
@@ -192,10 +198,10 @@ class RemoteActorCache:
         to_map = self.get_cache_entry_copy(guid=to_guid)
 
         if from_map is None:
-            raise Exception("Actor {} does not have a registry cache entry".format(from_guid))
+            raise RemoteActorCacheException("Actor {} does not have a registry cache entry".format(from_guid))
 
         if to_map is None:
-            raise Exception("Actor {} does not have a registry cache entry".format(to_guid))
+            raise RemoteActorCacheException("Actor {} does not have a registry cache entry".format(to_guid))
 
         if from_mgmt_actor is not None:
             self.logger.debug("From actor {} is local".format(from_mgmt_actor.get_name()))
@@ -205,7 +211,7 @@ class RemoteActorCache:
 
             if self.ActorLocation in to_map:
                 if self.ActorProtocol not in to_map:
-                    raise Exception("Actor {} does not specify communications protocol (local/kafka)".format(
+                    raise RemoteActorCacheException("Actor {} does not specify communications protocol (local/kafka)".format(
                         to_map[self.ActorName]))
 
                 protocol = to_map.get(self.ActorProtocol, None)
@@ -225,7 +231,7 @@ class RemoteActorCache:
 
                 try:
                     if not from_mgmt_actor.add_broker(broker=proxy):
-                        raise Exception("Could not register broker {}".format(from_mgmt_actor.get_last_error()))
+                        raise RemoteActorCacheException("Could not register broker {}".format(from_mgmt_actor.get_last_error()))
                 except Exception as e:
                     traceback.print_exc()
             else:
@@ -240,18 +246,18 @@ class RemoteActorCache:
                 try:
                     to_mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
                 except Exception as e:
-                    raise Exception("Could not register actor: {} as a client of actor: {} e= {}".format(
+                    raise RemoteActorCacheException("Could not register actor: {} as a client of actor: {} e= {}".format(
                         client.get_name(), to_mgmt_actor.get_name(), e))
         else:
             # fromActor is remote: toActor must be local
             # no-need to create any proxies
             # we only need to register clients
             if to_mgmt_actor is None:
-                raise Exception("Both peer endpoints are non local actors: {} {}".format(
+                raise RemoteActorCacheException("Both peer endpoints are non local actors: {} {}".format(
                     from_map[self.ActorName], to_map[self.ActorName]))
 
             if self.ActorGuid not in from_map:
-                raise Exception("Missing guid for remote actor: {}".format(from_map[self.ActorName]))
+                raise RemoteActorCacheException("Missing guid for remote actor: {}".format(from_map[self.ActorName]))
 
             self.logger.debug("From actor was remote, to actor {} is local".format(to_mgmt_actor.get_name()))
             if self.ActorLocation in from_map:
@@ -264,7 +270,7 @@ class RemoteActorCache:
                 try:
                     to_mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
                 except Exception as e:
-                    raise Exception(
+                    raise RemoteActorCacheException(
                         "Could not register actor: {} as a client of actor: {} e= {}".format(
                             client.get_name(), to_mgmt_actor.get_name(), e))
             else:
@@ -285,7 +291,7 @@ class RemoteActorCache:
         client = None
         if from_guid is None or to_guid is None:
             self.logger.error("Cannot establish peer when either guid is not known")
-            raise Exception("Cannot establish peer when either guid is not known")
+            raise RemoteActorCacheException("Cannot establish peer when either guid is not known")
         try:
             if not self.check_peer(from_mgmt_actor=from_mgmt_actor, from_guid=from_guid,
                                    to_mgmt_actor=to_mgmt_actor, to_guid=to_guid):
@@ -337,7 +343,7 @@ class RemoteActorCacheSingleton:
 
     def __init__(self):
         if self.__instance is not None:
-            raise Exception("Singleton can't be created twice !")
+            raise RemoteActorCacheException("Singleton can't be created twice !")
 
     def get(self):
         """
