@@ -53,6 +53,8 @@ class ReservationCategory(Enum):
     Broker = 2
     # Site authority-side reservations.
     Authority = 3
+    # Used only for Get Operations
+    Inventory = 4
 
 
 class IReservation(IReservationResources, IReservationStatus):

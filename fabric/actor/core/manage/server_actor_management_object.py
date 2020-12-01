@@ -35,6 +35,7 @@ from fabric.actor.core.core.authority_policy import AuthorityPolicy
 from fabric.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric.actor.core.kernel.resource_set import ResourceSet
+from fabric.actor.core.kernel.slice import SliceTypes
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric.actor.core.manage.converter import Converter
@@ -68,7 +69,7 @@ class ServerActorManagementObject(ActorManagementObject):
         properties[Constants.PropertyModuleName] = ServerActorManagementObject.__module__
         return properties
 
-    def do_get_reservations(self, *, caller: AuthToken, category: ReservationCategory, slice_id: ID = None,
+    def get_reservations_by_category(self, *, caller: AuthToken, category: ReservationCategory, slice_id: ID = None,
                             id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
@@ -80,9 +81,20 @@ class ServerActorManagementObject(ActorManagementObject):
         try:
             res_list = None
             try:
-                res_list = self.db.get_client_reservations()
+                if category == ReservationCategory.Client:
+                    if slice_id is None:
+                        res_list = self.db.get_client_reservations()
+                    else:
+                        res_list = self.db.get_client_reservations_by_slice_id(slice_id=slice_id)
+                elif category == ReservationCategory.Broker:
+                    res_list = self.db.get_broker_reservations()
+                elif category == ReservationCategory.Inventory:
+                    if slice_id is None:
+                        res_list = self.db.get_holdings()
+                    else:
+                        res_list = self.db.get_holdings_by_slice_id(slice_id=slice_id)
             except Exception as e:
-                self.logger.error("get_client_reservations:db access {}".format(e))
+                self.logger.error("do_get_reservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
                 result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
@@ -99,124 +111,15 @@ class ServerActorManagementObject(ActorManagementObject):
                         rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
                         result.result.append(rr)
         except Exception as e:
-            self.logger.error("get_client_reservations: {}".format(e))
+            self.logger.error("do_get_reservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def get_broker_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
-        result = ResultReservationAvro()
-        result.status = ResultAvro()
-
-        if caller is None:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            return result
-        try:
-            res_list = None
-            try:
-                res_list = self.db.get_broker_reservations()
-            except Exception as e:
-                self.logger.error("get_broker_reservations:db access {}".format(e))
-                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-                return result
-
-            if res_list is not None:
-                result.result = []
-                for r in res_list:
-                    slice_obj = self._get_slice_by_id(id=r['slc_id'])
-                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
-                                                                 slice_obj=slice_obj,
-                                                                 logger=self.actor.get_logger())
-                    if rsv_obj is not None:
-                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
-                        result.result.append(rr)
-        except Exception as e:
-            self.logger.error("get_broker_reservations: {}".format(e))
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-        return result
-
-    def get_inventory_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
-        result = ResultReservationAvro()
-        result.status = ResultAvro()
-
-        if caller is None:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            return result
-        try:
-            res_list = None
-            try:
-                res_list = self.db.get_holdings()
-            except Exception as e:
-                self.logger.error("get_inventory_reservations:db access {}".format(e))
-                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-                return result
-
-            if res_list is not None:
-                result.result = []
-                for r in res_list:
-                    slice_obj = self._get_slice_by_id(id=r['slc_id'])
-                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
-                                                                 slice_obj=slice_obj,
-                                                                 logger=self.actor.get_logger())
-                    if rsv_obj is not None:
-                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
-                        result.result.append(rr)
-        except Exception as e:
-            self.logger.error("get_inventory_reservations: {}".format(e))
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-        return result
-
-    def get_inventory_reservations_by_slice_id(self, *, caller: AuthToken, slice_id: ID, id_token: str = None) -> ResultReservationAvro:
-        result = ResultReservationAvro()
-        result.status = ResultAvro()
-
-        if caller is None or slice_id is None:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            return result
-        try:
-            res_list = None
-            try:
-                res_list = self.db.get_holdings_by_slice_id(slice_id)
-            except Exception as e:
-                self.logger.error("get_holdings:db access {}".format(e))
-                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-                return result
-
-            if res_list is not None:
-                result.result = []
-                slice_obj = self.get_slice_by_guid(guid=str(slice_id))
-                for r in res_list:
-                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
-                                                                 logger=self.actor.get_logger())
-                    if rsv_obj is not None:
-                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
-                        result.result.append(rr)
-        except Exception as e:
-            self.logger.error("get_holdings: {}".format(e))
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-        return result
-
-    def get_inventory_slices(self, *, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
+    def get_slices_by_slice_type(self, *, caller: AuthToken, slice_type: SliceTypes,
+                                 id_token: str = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -229,9 +132,13 @@ class ServerActorManagementObject(ActorManagementObject):
             slc_list = None
 
             try:
-                slc_list = self.db.get_inventory_slices()
+                if slice_type == SliceTypes.ClientSlice:
+                    slc_list = self.db.get_client_slices()
+                elif slice_type == SliceTypes.InventorySlice:
+                    slc_list = self.db.get_inventory_slices()
+
             except Exception as e:
-                self.logger.error("get_inventory_slices:db access {}".format(e))
+                self.logger.error("get_slices_by_slice_type:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
                 result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
@@ -241,39 +148,7 @@ class ServerActorManagementObject(ActorManagementObject):
                 result.result = Translate.fill_slices(slice_list=slc_list, full=True)
 
         except Exception as e:
-            self.logger.error("get_inventory_slices: {}".format(e))
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-        return result
-
-    def get_client_slices(self, *, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
-        result = ResultSliceAvro()
-        result.status = ResultAvro()
-
-        if caller is None:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            return result
-
-        try:
-            slc_list = None
-
-            try:
-                slc_list = self.db.get_client_slices()
-            except Exception as e:
-                self.logger.error("get_inventory_slices:db access {}".format(e))
-                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-                return result
-
-            if slc_list is not None:
-                result.result = Translate.fill_slices(slice_list=slc_list, full=True)
-
-        except Exception as e:
-            self.logger.error("get_inventory_slices: {}".format(e))
+            self.logger.error("get_slices_by_slice_type: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
@@ -368,7 +243,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_clients(self, *, caller: AuthToken, id_token: str = None) -> ResultClientMng:
+    def get_clients(self, *, caller: AuthToken, guid: ID = None, id_token: str = None) -> ResultClientMng:
         result = ResultClientMng()
         result.status = ResultAvro()
 
@@ -378,37 +253,24 @@ class ServerActorManagementObject(ActorManagementObject):
             return result
 
         try:
-            cl_list = self.db.get_clients()
-            result.result = Converter.fill_clients(client_list=cl_list)
-        except Exception as e:
-            self.logger.error("get_clients: {}".format(e))
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-    def get_client(self, *, caller: AuthToken, guid: ID, id_token: str = None) -> ResultClientMng:
-        result = ResultClientMng()
-        result.status = ResultAvro()
-
-        if caller is None or guid is None:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            return result
-
-        try:
-            cl = self.db.get_client(guid=guid)
-            if cl is not None:
-                cl_list = [cl]
-                result.result = Converter.fill_clients(client_list=cl_list)
+            cl_list = None
+            if guid is None:
+                cl_list = self.db.get_clients()
             else:
-                result.status.set_code(ErrorCodes.ErrorNoSuchActor.value)
-                result.status.set_message(ErrorCodes.ErrorNoSuchActor.name)
+                cl = self.db.get_client(guid=guid)
+                if cl is not None:
+                    cl_list = [cl]
+                else:
+                    result.status.set_code(ErrorCodes.ErrorNoSuchActor.value)
+                    result.status.set_message(ErrorCodes.ErrorNoSuchActor.name)
+
+            if cl_list is not None:
+                result.result = Converter.fill_clients(client_list=cl_list)
         except Exception as e:
             self.logger.error("get_clients: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-        return result
 
     def unregister_client(self, *, guid: ID, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
@@ -434,79 +296,6 @@ class ServerActorManagementObject(ActorManagementObject):
             result.set_code(ErrorCodes.ErrorInternalError.value)
             result.set_message(ErrorCodes.ErrorInternalError.name)
             result = ManagementObject.set_exception_details(result=result, e=e)
-
-        return result
-
-    def get_client_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
-        result = ResultReservationAvro()
-        result.status = ResultAvro()
-
-        if caller is None:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            return result
-        try:
-            res_list = None
-            try:
-                res_list = self.db.get_client_reservations()
-            except Exception as e:
-                self.logger.error("get_client_reservations:db access {}".format(e))
-                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-                return result
-
-            if res_list is not None:
-                result.result = []
-                for r in res_list:
-                    slice_obj = self._get_slice_by_id(id=r['slc_id'])
-                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
-                                                                 slice_obj=slice_obj,
-                                                                 logger=self.actor.get_logger())
-                    if rsv_obj is not None:
-                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
-                        result.result.append(rr)
-        except Exception as e:
-            self.logger.error("get_client_reservations: {}".format(e))
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-        return result
-
-    def get_client_reservations_by_slice_id(self, *, caller: AuthToken, slice_id: ID, id_token: str = None):
-        result = ResultReservationAvro()
-        result.status = ResultAvro()
-
-        if caller is None or slice_id is None:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            return result
-        try:
-            res_list = None
-            try:
-                res_list = self.db.get_client_reservations_by_slice_id(slice_id=slice_id)
-            except Exception as e:
-                self.logger.error("get_client_reservations_by_slice_id:db access {}".format(e))
-                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
-                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-                return result
-
-            if res_list is not None:
-                result.result = []
-                slice_obj = self.get_slice_by_guid(guid=str(slice_id))
-                for r in res_list:
-                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
-                                                                 logger=self.actor.get_logger())
-                    if rsv_obj is not None:
-                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
-                        result.result.append(rr)
-        except Exception as e:
-            self.logger.error("get_client_reservations_by_slice_id: {}".format(e))
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
