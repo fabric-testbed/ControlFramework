@@ -131,3 +131,15 @@ class ActorException(Exception):
     """
     Actor Exception
     """
+
+
+class ControllerException(Exception):
+    """
+    Controller Exception
+    """
+
+
+class TicketException(Exception):
+    """
+    Ticket Exception
+    """

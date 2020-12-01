@@ -29,6 +29,8 @@ import traceback
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ResourcesException
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 
 if TYPE_CHECKING:
@@ -67,7 +69,7 @@ class PoolManager:
     """
     def __init__(self, *, db: IDatabase, identity: IActorIdentity, logger):
         if db is None or identity is None or logger is None:
-            raise Exception("Invalid arguments {} {} {}".format(db, identity, logger))
+            raise ResourcesException("Invalid arguments {} {} {}".format(db, identity, logger))
         self.db = db
         self.identity = identity
         self.logger = logger
@@ -126,7 +128,7 @@ class PoolManager:
         try:
             self.db.update_slice(slice_object=slice_obj)
         except Exception as e:
-            raise Exception("Could not update slice {}".format(e))
+            raise ResourcesException("Could not update slice {}".format(e))
 
     def remove_pool(self, *, pool_id: ID, rtype: ResourceType):
         """
@@ -139,6 +141,6 @@ class PoolManager:
         if temp is not None and len(temp) > 0:
             slice_obj = SliceFactory.create_instance(properties=temp)
             if not slice_obj.is_inventory() or rtype != slice_obj.get_resource_type():
-                raise Exception("Invalid arguments")
+                raise ResourcesException(Constants.invalid_argument)
 
             self.db.remove_slice(slice_id=pool_id)

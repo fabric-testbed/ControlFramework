@@ -204,9 +204,9 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
         if reservation.get_resources() is None:
             return
 
-        self.finish_correct_deficit(rset=None, reservation=reservation)
+        self.finish_correct_deficit(reservation=reservation)
 
-    def finish_correct_deficit(self, *, rset: ResourceSet, reservation: IAuthorityReservation):
+    def finish_correct_deficit(self, *, reservation: IAuthorityReservation, rset: ResourceSet = None):
         """
         Finishes correcting a deficit.
         @param rset correction

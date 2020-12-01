@@ -88,7 +88,7 @@ class IAuthority(IServerActor, IAuthorityPublic):
         """
 
     @abstractmethod
-    def extend_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken):
+    def extend_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken = None):
         """
         Processes an extend lease request for the reservation.
 
@@ -124,7 +124,7 @@ class IAuthority(IServerActor, IAuthorityPublic):
         """
 
     @abstractmethod
-    def redeem(self, *, reservation: IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
+    def redeem(self, *, reservation: IReservation, callback: IControllerCallbackProxy = None, caller: AuthToken = None):
         """
         Processes a redeem request for the reservation.
 

@@ -770,7 +770,7 @@ class Actor(IActor):
                 while not status.done:
                     status.lock.wait()
 
-            if status is not None and status.exception is not None:
+            if status.exception is not None:
                 raise status.exception
 
             return status.result
@@ -989,10 +989,6 @@ class Actor(IActor):
         """
         if Constants.property_pickle_properties not in properties:
             raise ActorException("Invalid arguments")
-        deserialized_actor = None
-        try:
-            serialized_actor = properties[Constants.property_pickle_properties]
-            deserialized_actor = pickle.loads(serialized_actor)
-        except Exception as e:
-            raise e
+        serialized_actor = properties[Constants.property_pickle_properties]
+        deserialized_actor = pickle.loads(serialized_actor)
         return deserialized_actor

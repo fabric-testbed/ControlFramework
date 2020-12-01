@@ -112,7 +112,6 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
         @param reservation reservation
         """
-        return
 
     def bind(self, *, reservation: IBrokerReservation) -> bool:
         return False
@@ -144,7 +143,6 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
         @param reservation reservation
         """
-        return
 
     def remove_for_approval(self, *, reservation: IBrokerReservation):
         """
@@ -157,9 +155,8 @@ class BrokerPolicy(Policy, IBrokerPolicy):
             self.lock.release()
 
     def revisit(self, *, reservation: IReservation):
-        if isinstance(reservation, IClientReservation):
-            if reservation.get_state() == ReservationStates.Ticketed:
-                self.donate_reservation(reservation=reservation)
+        if isinstance(reservation, IClientReservation) and reservation.get_state() == ReservationStates.Ticketed:
+            self.donate_reservation(reservation=reservation)
 
     def revisit_delegation(self, *, delegation: IDelegation):
         if delegation.get_state() == ReservationStates.Ticketed:
@@ -224,16 +221,12 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         """
         result = {}
 
-        try:
-            if Constants.pools_count in response:
-                count = int(response[Constants.pools_count])
-                for i in range(count):
-                    rd = ResourcePoolDescriptor()
-                    rd.reset(properties=response, prefix=Constants.pool_prefix + str(i) + ".")
-                    result[rd.get_resource_type()] = rd
-
-        except Exception as e:
-            raise e
+        if Constants.pools_count in response:
+            count = int(response[Constants.pools_count])
+            for i in range(count):
+                rd = ResourcePoolDescriptor()
+                rd.reset(properties=response, prefix=Constants.pool_prefix + str(i) + ".")
+                result[rd.get_resource_type()] = rd
 
         return result
 

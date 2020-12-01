@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.exceptions import ControllerException
 from fabric.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric.actor.core.proxies.kafka.services.controller_service import ControllerService
@@ -169,11 +170,11 @@ class Controller(Actor, IController):
 
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
                                 broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
-        raise Exception("Not implemented")
+        raise ControllerException("Not implemented")
 
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
                                   broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
-        raise Exception("Not implemented")
+        raise ControllerException("Not implemented")
 
     def close_expiring(self):
         """
@@ -188,12 +189,12 @@ class Controller(Actor, IController):
 
     def demand(self, *, rid: ID):
         if rid is None:
-            raise Exception("Invalid argument")
+            raise ControllerException("Invalid argument")
 
         reservation = self.get_reservation(rid=rid)
 
         if reservation is None:
-            raise Exception("Unknown reservation {}".format(rid))
+            raise ControllerException("Unknown reservation {}".format(rid))
 
         self.policy.demand(reservation=reservation)
         reservation.set_policy(policy=self.policy)
@@ -210,9 +211,9 @@ class Controller(Actor, IController):
 
     def extend_lease(self, *, reservation: IControllerReservation = None, rset: ReservationSet = None):
         if reservation is not None and rset is not None:
-            raise Exception("Invalid Arguments: reservation and rset can not be both not None")
+            raise ControllerException("Invalid Arguments: reservation and rset can not be both not None")
         if reservation is None and rset is None:
-            raise Exception("Invalid Arguments: reservation and rset can not be both None")
+            raise ControllerException("Invalid Arguments: reservation and rset can not be both None")
 
         if reservation is not None:
             self.extend_lease_reservation(reservation=reservation)
@@ -313,18 +314,18 @@ class Controller(Actor, IController):
 
     def update_lease(self, *, reservation: IReservation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise Exception("This actor cannot receive calls")
+            raise ControllerException("This actor cannot receive calls")
 
         self.wrapper.update_lease(reservation=reservation, update_data=update_data, caller=caller)
 
     def update_ticket(self, *, reservation: IReservation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise Exception("This actor cannot receive calls")
+            raise ControllerException("This actor cannot receive calls")
 
         self.wrapper.update_ticket(reservation=reservation, update_data=update_data, caller=caller)
 
     def update_delegation(self, *, delegation: IDelegation, update_data, caller: AuthToken):
-        raise Exception("Not supported in controller")
+        raise ControllerException("Not supported in controller")
 
     def modify(self, *, reservation_id: ID, modify_properties: dict):
         if reservation_id is None or modify_properties is None:
@@ -337,7 +338,7 @@ class Controller(Actor, IController):
             self.logger.error("Could not find reservation #{} e: {}".format(reservation_id, e))
 
         if rc is None:
-            raise Exception("Unknown reservation: {}".format(reservation_id))
+            raise ControllerException("Unknown reservation: {}".format(reservation_id))
 
         if rc.get_resources() is not None:
             curr_config_props = rc.get_resources().get_config_properties()

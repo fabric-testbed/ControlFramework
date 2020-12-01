@@ -221,9 +221,6 @@ class Constants:
     property_reservation_slice_id = 'rsv_slc_id'
     property_reservation_id = "rsv_resid"
 
-    invalid_argument = "Invalid argument"
-    uninitialized_state = "Uninitialized state"
-
     sasl_username = 'sasl.username'
     sasl_password = 'sasl.password'
     sasl_mechanism = 'sasl.mechanism'
@@ -235,3 +232,10 @@ class Constants:
     ssl_key_location = 'ssl.key.location'
     ssl_key_password = 'ssl.key.password'
     schema_registry_url = 'schema.registry.url'
+
+    invalid_argument = "Invalid argument"
+    uninitialized_state = "Uninitialized state"
+    invalid_state = "Invalid state, actor cannot receive calls"
+    object_not_found = "{} not found in datatabase e: {}"
+    failed_to_add = "Failed to add {} to database e: {}"
+    failed_to_remove = "Failed to remove {} from database e: {}"

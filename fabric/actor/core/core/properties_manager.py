@@ -23,12 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.resource_set import ResourceSet
 
 
 class PropertiesManager:
-    ElasticSize = "request.elasticSize"
-    ElasticTime = "request.elasticTime"
 
     @staticmethod
     def get_request_properties(*, rset: ResourceSet, create: bool) -> dict:
@@ -52,7 +51,7 @@ class PropertiesManager:
         @param value value
         """
         properties = PropertiesManager.get_request_properties(rset=rset, create=True)
-        properties[PropertiesManager.ElasticSize] = value
+        properties[Constants.elastic_size] = value
         return properties
 
     @staticmethod
@@ -64,8 +63,8 @@ class PropertiesManager:
         """
         result = False
         properties = rset.get_request_properties()
-        if properties is not None and PropertiesManager.ElasticSize in properties:
-            result = properties[PropertiesManager.ElasticSize]
+        if properties is not None and Constants.elastic_size in properties:
+            result = properties[Constants.elastic_size]
         return result
 
     @staticmethod
@@ -77,7 +76,7 @@ class PropertiesManager:
         @param value value
         """
         properties = PropertiesManager.get_request_properties(rset=rset, create=True)
-        properties[PropertiesManager.ElasticTime] = value
+        properties[Constants.elastic_time] = value
         rset.set_request_properties(p=properties)
         return rset
 
@@ -90,6 +89,6 @@ class PropertiesManager:
         """
         result = False
         properties = rset.get_request_properties()
-        if properties is not None and PropertiesManager.ElasticTime in properties:
-            result = properties[PropertiesManager.ElasticTime]
+        if properties is not None and Constants.elastic_time in properties:
+            result = properties[Constants.elastic_time]
         return result

@@ -35,6 +35,8 @@ from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallba
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import AuthorityException
 from fabric.actor.core.core.actor import Actor
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
@@ -144,7 +146,7 @@ class Authority(Actor, IAuthority):
 
     def close_by_caller(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise Exception("This actor cannot receive calls")
+            raise AuthorityException(Constants.invalid_state)
 
         self.wrapper.close_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
@@ -183,7 +185,7 @@ class Authority(Actor, IAuthority):
         self.wrapper.advertise(delegation=dlg_obj, client=client)
         return dlg_obj.get_delegation_id()
 
-    def extend_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken):
+    def extend_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken = None):
         if caller is None:
             if not self.recovered:
                 self.extending_lease.add(reservation=reservation)
@@ -192,7 +194,7 @@ class Authority(Actor, IAuthority):
                                                   compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.is_stopped():
-                raise Exception("This actor cannot receive calls")
+                raise AuthorityException(Constants.invalid_state)
             self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
     def modify_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken):
@@ -204,7 +206,7 @@ class Authority(Actor, IAuthority):
                                                   compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.stopped:
-                raise Exception("This actor cannot receive calls")
+                raise AuthorityException(Constants.invalid_state)
             self.wrapper.modify_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
     def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
@@ -216,13 +218,13 @@ class Authority(Actor, IAuthority):
 
     def relinquish(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.stopped:
-            raise Exception("This actor cannot receive calls")
+            raise AuthorityException(Constants.invalid_state)
         self.wrapper.relinquish_request(reservation=reservation, caller=caller)
 
     def freed(self, *, resources: ResourceSet):
         self.policy.freed(resources=resources)
 
-    def redeem(self, *, reservation: IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
+    def redeem(self, *, reservation: IReservation, callback: IControllerCallbackProxy = None, caller: AuthToken = None):
         if callback is None and caller is None:
             if not self.recovered:
                 self.redeeming.add(reservation=reservation)
@@ -231,7 +233,7 @@ class Authority(Actor, IAuthority):
                                             callback=reservation.get_callback(), compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.is_stopped():
-                raise Exception("This actor cannot receive calls")
+                raise AuthorityException(Constants.invalid_state)
 
             if self.plugin.validate_incoming(reservation=reservation, auth=caller):
                 self.wrapper.redeem_request(reservation=reservation, caller=caller, callback=callback,
@@ -264,10 +266,7 @@ class Authority(Actor, IAuthority):
         except Exception as e:
             self.logger.debug("Client does not exist")
 
-        try:
-            db.add_client(client=client)
-        except Exception as e:
-            raise e
+        db.add_client(client=client)
 
     def unregister_client(self, *, guid: ID):
         db = self.plugin.get_database()
@@ -286,7 +285,7 @@ class Authority(Actor, IAuthority):
         for reservation in rset.values():
             try:
                 if isinstance(reservation, IAuthorityReservation):
-                    self.redeem(reservation=reservation, callback=None, caller=None)
+                    self.redeem(reservation=reservation)
                 else:
                     self.logger.warning("Reservation # {} cannot be redeemed".format(reservation.get_reservation_id()))
             except Exception as e:
@@ -299,7 +298,7 @@ class Authority(Actor, IAuthority):
         """
         for reservation in rset.values():
             try:
-                self.extend_lease(reservation=reservation, caller=None)
+                self.extend_lease(reservation=reservation)
             except Exception as e:
                 self.logger.error("Could not redeem for # {} {}".format(reservation.get_reservation_id(), e))
 

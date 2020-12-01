@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # MIT License
 #
 # Copyright (c) 2020 FABRIC Testbed
@@ -30,6 +29,8 @@ from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
 from fabric.actor.core.apis.i_concrete_set import IConcreteSet
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import TicketException
 from fabric.actor.core.delegation.resource_ticket import ResourceTicket
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.notice import Notice
@@ -127,13 +128,13 @@ class Ticket(IConcreteSet):
         return self.resource_ticket
 
     def add(self, *, concrete_set, configure: bool):
-        raise Exception("add() is not supported by Ticket")
+        raise TicketException("add() is not supported by Ticket")
 
     def change(self, *, concrete_set: IConcreteSet, configure: bool):
         self.old_units = self.get_units()
 
         if not isinstance(concrete_set, Ticket):
-            raise Exception("Invalid concrete_set type")
+            raise TicketException(Constants.invalid_argument)
 
         assert concrete_set.resource_ticket is not None
 
@@ -195,7 +196,7 @@ class Ticket(IConcreteSet):
 
     def holding(self, *, when: datetime) -> int:
         if when is None:
-            raise Exception("InvalidArgument")
+            raise TicketException(Constants.invalid_argument)
 
         term = self.get_term()
         if term is None:
@@ -221,13 +222,13 @@ class Ticket(IConcreteSet):
         return True
 
     def modify(self, *, concrete_set, configure: bool):
-        raise Exception("Not supported by TicketSet")
+        raise TicketException("Not supported by TicketSet")
 
     def probe(self):
         return
 
     def remove(self, *, concrete_set, configure: bool):
-        raise Exception("Not supported by TicketSet")
+        raise TicketException("Not supported by TicketSet")
 
     def setup(self, *, reservation: IReservation):
         """
@@ -241,7 +242,7 @@ class Ticket(IConcreteSet):
 
     def validate_concrete(self, *, rtype: ResourceType, units: int, term: Term):
         if self.get_units() < units:
-            raise Exception("Ticket not valid for requested units")
+            raise TicketException("Ticket not valid for requested units")
 
     def validate_incoming(self):
         return
