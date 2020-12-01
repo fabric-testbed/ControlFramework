@@ -44,7 +44,7 @@ from fabric.actor.test.core.policy.controller_test_wrapper import ControllerTest
 
 class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestControllerConfigurationFile
+    Globals.config_file = Constants.test_controller_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)

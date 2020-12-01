@@ -191,7 +191,7 @@ class SimpleVMControl(ResourceControl):
                 gained = self.get_vms(pool=pool, needed=difference)
             elif difference < 0:
                 uset = current.get_resources()
-                victims = request_properties[Constants.ConfigVictims]
+                victims = request_properties[Constants.config_victims]
                 to_take = uset.select_extract(count=-difference, victims=victims)
                 lost = UnitSet(plugin=self.authority.get_plugin(), units=to_take)
         return ResourceSet(gained=gained, lost=lost, rtype=rtype)
@@ -212,16 +212,16 @@ class SimpleVMControl(ResourceControl):
                 vm.set_resource_type(rtype=pool.get_type())
 
                 if self.use_ip_set:
-                    vm.set_property(name=Constants.UnitManagementIP, value=self.ipset.allocate())
+                    vm.set_property(name=Constants.unit_management_ip, value=self.ipset.allocate())
 
                 if self.subnet is not None:
-                    vm.set_property(name=Constants.UnitManageSubnet, value=self.subnet)
+                    vm.set_property(name=Constants.unit_manage_subnet, value=self.subnet)
 
                 if self.data_subnet is not None:
-                    vm.set_property(name=Constants.UnitDataSubnet, value=self.data_subnet)
+                    vm.set_property(name=Constants.unit_data_subnet, value=self.data_subnet)
 
                 if self.gateway is not None:
-                    vm.set_property(name=Constants.UnitManageGateway, value=self.gateway)
+                    vm.set_property(name=Constants.unit_manage_gateway, value=self.gateway)
 
                 for att in pool.get_descriptor().get_attributes():
                     if att.get_value() is not None:
@@ -243,7 +243,7 @@ class SimpleVMControl(ResourceControl):
                         raise Exception("no resources of the specified pool")
                     pool.free(count=1)
                     if self.use_ip_set:
-                        self.ipset.free(ip=u.get_property(name=Constants.UnitManagementIP))
+                        self.ipset.free(ip=u.get_property(name=Constants.unit_management_ip))
                 except Exception as e:
                     self.logger.error("Failed to release vm {}".format(e))
 
@@ -262,7 +262,7 @@ class SimpleVMControl(ResourceControl):
                     if pool is None:
                         raise Exception("no resources of the specified pool")
                     pool.reserve(1)
-                    mgmt_ip = u.get_property(name=Constants.UnitManagementIP)
+                    mgmt_ip = u.get_property(name=Constants.unit_management_ip)
                     if mgmt_ip is not None:
                         self.ipset.reserve(ip=mgmt_ip)
             except Exception as e:

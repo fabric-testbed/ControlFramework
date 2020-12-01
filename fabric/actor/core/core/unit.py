@@ -412,11 +412,11 @@ class Unit(ConfigToken):
         Create an Unit instance using the pickled instance read from the database
         @param properties properties
         """
-        if Constants.PropertyPickleProperties not in properties:
+        if Constants.property_pickle_properties not in properties:
             raise Exception("Invalid arguments")
         deserialized_unit = None
         try:
-            serialized_unit = properties[Constants.PropertyPickleProperties]
+            serialized_unit = properties[Constants.property_pickle_properties]
             deserialized_unit = pickle.loads(serialized_unit)
         except Exception as e:
             raise e

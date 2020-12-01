@@ -264,10 +264,10 @@ class Translate:
 
     @staticmethod
     def translate_to_pool_info(*, query_response: dict) -> PoolInfoAvro:
-        bqm = query_response.get(Constants.BrokerQueryModel, None)
+        bqm = query_response.get(Constants.broker_query_model, None)
         pool_info = PoolInfoAvro()
-        pool_info.type = Constants.PoolType
-        pool_info.name = Constants.BrokerQueryModel
+        pool_info.type = Constants.pool_type
+        pool_info.name = Constants.broker_query_model
         if bqm is not None:
-            pool_info.properties = {Constants.BrokerQueryModel: bqm}
+            pool_info.properties = {Constants.broker_query_model: bqm}
         return pool_info

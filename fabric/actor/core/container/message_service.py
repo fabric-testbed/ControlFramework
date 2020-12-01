@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 
 import threading
 
+from fabric.actor.core.common.exceptions import KafkaServiceException
 from fabric.message_bus.consumer import AvroConsumerApi
 from fabric.message_bus.messages.message import IMessageAvro
 
@@ -52,7 +53,7 @@ class MessageService(AvroConsumerApi):
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
-                raise Exception("This Message Service has already been started")
+                raise KafkaServiceException("This Message Service has already been started")
 
             self.thread = threading.Thread(target=self.consume_auto)
             self.thread.setName("MessageService")

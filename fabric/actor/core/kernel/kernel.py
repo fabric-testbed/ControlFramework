@@ -274,7 +274,7 @@ class Kernel:
 
         # check for a pending operation: we cannot service the extend if there is another operation in progress.
         if real.get_pending_state() != ReservationPendingStates.None_:
-            return Constants.ReservationHasPendingOperation
+            return Constants.reservation_has_pending_operation
 
         # attach the desired extension term and resource set
         real.set_approved(term=term, approved_resources=resources)

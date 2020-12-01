@@ -217,7 +217,7 @@ class KafkaActorService(KafkaService):
             elif request.get_slice_id() is not None:
 
                 if request.get_reservation_state() is not None and \
-                        request.get_reservation_state() != Constants.AllReservationStates:
+                        request.get_reservation_state() != Constants.all_reservation_states:
 
                     result = mo.get_reservations_by_slice_id_state(caller=auth, slice_id=ID(id=request.get_slice_id()),
                                                                    state=request.get_reservation_state(),
@@ -229,7 +229,7 @@ class KafkaActorService(KafkaService):
 
             else:
                 if request.get_reservation_state() is not None and \
-                        request.get_reservation_state() != Constants.AllReservationStates:
+                        request.get_reservation_state() != Constants.all_reservation_states:
 
                     result = mo.get_reservations_by_state(caller=auth, state=request.get_reservation_state(),
                                                           id_token=request.get_id_token())
@@ -357,7 +357,7 @@ class KafkaActorService(KafkaService):
             elif request.get_slice_id() is not None:
 
                 if request.get_delegation_state() is not None and \
-                        request.get_delegation_state() != Constants.AllReservationStates:
+                        request.get_delegation_state() != Constants.all_reservation_states:
 
                     result = mo.get_delegations_by_slice_id_state(caller=auth, slice_id=ID(id=request.get_slice_id()),
                                                                   state=request.get_delegation_state(),
@@ -369,7 +369,7 @@ class KafkaActorService(KafkaService):
 
             else:
                 if request.get_delegation_state() is not None and \
-                        request.get_delegation_state() != Constants.AllReservationStates:
+                        request.get_delegation_state() != Constants.all_reservation_states:
 
                     result = mo.get_delegations_by_state(caller=auth, state=request.get_delegation_state(),
                                                          id_token=request.get_id_token())

@@ -53,12 +53,12 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_authority import LocalAuthority
-        local = ProxyProtocolDescriptor(protocol=Constants.ProtocolLocal, 
-                                        proxy_class=LocalAuthority.__name__, 
+        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local,
+                                        proxy_class=LocalAuthority.__name__,
                                         proxy_module=LocalAuthority.__module__)
 
         from fabric.actor.core.manage.kafka.kafka_authority import KafkaAuthority
-        kakfa = ProxyProtocolDescriptor(protocol=Constants.ProtocolKafka, proxy_class=KafkaAuthority.__name__, 
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka, proxy_class=KafkaAuthority.__name__,
                                         proxy_module=KafkaAuthority.__module__)
 
         self.proxies = []
@@ -67,8 +67,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = AuthorityManagementObject.__name__
-        properties[Constants.PropertyModuleName] = AuthorityManagementObject.__module__
+        properties[Constants.property_class_name] = AuthorityManagementObject.__name__
+        properties[Constants.property_module_name] = AuthorityManagementObject.__module__
 
         return properties
 

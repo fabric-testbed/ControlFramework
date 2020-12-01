@@ -213,7 +213,7 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         """
         Return dictionary representing query
         """
-        properties = {Constants.QueryAction: Constants.QueryActionDiscoverPools}
+        properties = {Constants.query_action: Constants.query_action_discover_pools}
         return properties
 
     @staticmethod
@@ -225,11 +225,11 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         result = {}
 
         try:
-            if Constants.PoolsCount in response:
-                count = int(response[Constants.PoolsCount])
+            if Constants.pools_count in response:
+                count = int(response[Constants.pools_count])
                 for i in range(count):
                     rd = ResourcePoolDescriptor()
-                    rd.reset(properties=response, prefix=Constants.PoolPrefix + str(i) + ".")
+                    rd.reset(properties=response, prefix=Constants.pool_prefix + str(i) + ".")
                     result[rd.get_resource_type()] = rd
 
         except Exception as e:
@@ -241,4 +241,4 @@ class BrokerPolicy(Policy, IBrokerPolicy):
     def get_query_action(properties: dict) -> str:
         if properties is None:
             return None
-        return properties.get(Constants.QueryAction, None)
+        return properties.get(Constants.query_action, None)

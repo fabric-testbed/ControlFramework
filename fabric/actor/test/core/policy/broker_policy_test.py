@@ -88,7 +88,7 @@ class BrokerPolicyTest(BaseTestCase):
         proxy = KafkaAuthorityProxy(kafka_topic="test-topic", identity=auth, logger=GlobalsSingleton.get().get_logger())
 
         try:
-            if ActorRegistrySingleton.get().get_proxy(Constants.ProtocolLocal, "mysite") is None:
+            if ActorRegistrySingleton.get().get_proxy(Constants.protocol_local, "mysite") is None:
                 dummy = DummyAuthorityProxy(auth=auth)
                 ActorRegistrySingleton.get().register_proxy(dummy)
         except Exception as e:

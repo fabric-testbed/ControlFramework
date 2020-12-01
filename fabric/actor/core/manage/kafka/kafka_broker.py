@@ -84,7 +84,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -132,7 +132,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -179,7 +179,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -224,7 +224,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -271,7 +271,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -320,7 +320,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -349,18 +349,18 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
     def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.ExtendSameUnits,
+                                       new_units=Constants.extend_same_units,
                                        new_resource_type=None, request_properties=None, config_properties=None)
 
     def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime, request_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.ExtendSameUnits, new_resource_type=None,
+                                       new_units=Constants.extend_same_units, new_resource_type=None,
                                        request_properties=request_properties, config_properties=None)
 
     def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.ExtendSameUnits, new_resource_type=None,
+                                       new_units=Constants.extend_same_units, new_resource_type=None,
                                        request_properties=request_properties, config_properties=config_properties)
 
     def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
@@ -390,7 +390,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -438,7 +438,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -488,7 +488,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")

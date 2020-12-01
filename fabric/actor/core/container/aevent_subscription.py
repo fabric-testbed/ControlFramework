@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.util.id import ID
@@ -92,19 +94,22 @@ class AEventSubscription:
                 return False
         return True
 
+    @abstractmethod
     def deliver_event(self, *, event: IEvent):
         """
         Deliver event
         @param event event
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def drain_events(self, *, timeout: int) -> list:
         """
         Drain events
         @param timeout timeout
         """
-        raise NotImplementedError("Should have implemented this")
 
+    @abstractmethod
     def is_abandoned(self) -> bool:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Returns true if abandoned; otherwise false
+        """

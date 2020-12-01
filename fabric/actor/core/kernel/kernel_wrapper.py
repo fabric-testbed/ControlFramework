@@ -95,7 +95,7 @@ class KernelWrapper:
         @raises Exception in case of error
         """
         if delegation is None or caller is None or callback is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         if id_token is not None:
             AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
@@ -121,7 +121,7 @@ class KernelWrapper:
         @raises Exception in case of error
         """
         if delegation is None or caller is None or callback is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         if id_token is not None:
             AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
@@ -141,7 +141,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if rid is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         target = self.kernel.validate(rid=rid)
         self.kernel.fail(reservation=target, message=message)
@@ -156,7 +156,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if rid is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
         target = self.kernel.validate(rid=rid)
         # NOTE: this call does not require access control check, since
         # it is executed in the context of the actor represented by KernelWrapper.
@@ -168,7 +168,7 @@ class KernelWrapper:
         @param slice_id slice id
         """
         if slice_id is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         if not self.kernel.is_known_slice(slice_id=slice_id):
             raise SliceNotFoundException(slice_id=str(slice_id))
@@ -192,7 +192,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None or caller is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         if compare_sequence_numbers:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
@@ -219,7 +219,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if delegation is None or delegation.get_slice_object() is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         delegation.prepare(callback=None, logger=self.logger)
         self.handle_delegate(delegation=delegation, identity=client)
@@ -232,7 +232,7 @@ class KernelWrapper:
         @raises Exception in case of error
         """
         if reservation is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         target = self.kernel.validate(rid=reservation.get_reservation_id())
 
@@ -256,7 +256,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None or caller is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         if compare_sequence_numbers:
             reservation.validate_incoming()
@@ -290,7 +290,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None or caller is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         if compare_sequence_numbers:
             reservation.validate_incoming()
@@ -322,7 +322,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if rid is None or resources is None or term is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         return self.kernel.extend_reservation(rid=rid, resources=resources, term=term)
 
@@ -334,7 +334,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         target = self.kernel.validate(rid=reservation.get_reservation_id())
 
@@ -358,7 +358,7 @@ class KernelWrapper:
         """
         self.logger.debug("extend_ticket_request")
         if reservation is None or caller is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
         if compare_sequence_numbers:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
 
@@ -390,7 +390,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         target = self.kernel.validate(rid=reservation.get_reservation_id())
 
@@ -402,7 +402,7 @@ class KernelWrapper:
 
     def relinquish_request(self, *, reservation: IBrokerReservation, caller: AuthToken):
         if reservation is None or caller is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         reservation.validate_incoming()
 
@@ -446,7 +446,7 @@ class KernelWrapper:
         @return reservation with the given reservation identifier
         """
         if rid is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
         return self.kernel.get_reservation(rid=rid)
 
     def get_reservations(self, *, slice_id: ID) -> List[IReservation]:
@@ -456,7 +456,7 @@ class KernelWrapper:
         @return an array of all reservations in the slice
         """
         if slice_id is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         return self.kernel.get_reservations(slice_id=slice_id)
 
@@ -468,7 +468,7 @@ class KernelWrapper:
                 is registered with the kernel.
         """
         if slice_id is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
         return self.kernel.get_slice(slice_id=slice_id)
 
     def get_slices(self) -> list:
@@ -490,7 +490,7 @@ class KernelWrapper:
         """
         if delegation.get_slice_object() is None or delegation.get_slice_object().get_name() is None or \
                 delegation.get_slice_object().get_slice_id() is None or delegation.get_delegation_id() is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         # Obtain the previously created slice or create a new slice. When this
         # function returns we will have a slice object that is registered with the kernel
@@ -535,7 +535,7 @@ class KernelWrapper:
         """
         if reservation.get_slice() is None or reservation.get_slice().get_name() is None or \
                 reservation.get_slice().get_slice_id() is None or reservation.get_reservation_id() is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         # Obtain the previously created slice or create a new slice. When this
         # function returns we will have a slice object that is registered with the kernel
@@ -590,7 +590,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         slice_object = reservation.get_slice()
 
@@ -621,7 +621,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None or caller is None or callback is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         try:
             if compare_sequence_numbers:
@@ -666,7 +666,7 @@ class KernelWrapper:
                     structures.
         """
         if reservation is None or not isinstance(reservation, IKernelReservation):
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         self.kernel.register_reservation(reservation=reservation)
 
@@ -695,7 +695,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if rid is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         self.kernel.remove_reservation(rid=rid)
 
@@ -711,7 +711,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if slice_id is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         self.kernel.remove_slice(slice_id=slice_id)
 
@@ -733,7 +733,7 @@ class KernelWrapper:
         @throws RuntimeException if a database error occurs
         """
         if reservation is None or not isinstance(reservation, IKernelReservation):
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         self.kernel.re_register_reservation(reservation=reservation)
 
@@ -749,7 +749,7 @@ class KernelWrapper:
         @throws RuntimeException if a database error occurs
         """
         if delegation is None or not isinstance(delegation, IDelegation):
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         self.kernel.re_register_delegation(delegation=delegation)
 
@@ -763,7 +763,7 @@ class KernelWrapper:
                     unregistered.
         """
         if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, IKernelSlice):
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         self.kernel.re_register_slice(slice_object=slice_object)
 
@@ -789,9 +789,9 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if delegation is None or destination is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
-        callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.ProtocolKafka,
+        callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.protocol_kafka,
                                                              actor_name=destination.get_name())
         if callback is None:
             raise KernelException("Unsupported")
@@ -810,7 +810,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None or destination is None or not isinstance(reservation, IKernelClientReservation):
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         protocol = reservation.get_broker().get_type()
         callback = ActorRegistrySingleton.get().get_callback(protocol=protocol, actor_name=destination.get_name())
@@ -836,7 +836,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None or caller is None or callback is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         try:
             if compare_seq_numbers:
@@ -899,7 +899,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if rid is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         self.kernel.unregister_reservation(rid=rid)
 
@@ -912,7 +912,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if slice_id is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         self.kernel.unregister_slice(slice_id=slice_id)
 
@@ -926,7 +926,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None or update_data is None or caller is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         target = self.kernel.validate(rid=reservation.get_reservation_id())
         reservation.validate_incoming()
@@ -942,7 +942,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if reservation is None or update_data is None or caller is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         target = self.kernel.validate(rid=reservation.get_reservation_id())
         reservation.validate_incoming_ticket()
@@ -958,7 +958,7 @@ class KernelWrapper:
         @throws Exception in case of error
         """
         if delegation is None or update_data is None or caller is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         target = self.kernel.validate_delegation(did=delegation.get_delegation_id())
         delegation.validate_incoming()
@@ -966,7 +966,7 @@ class KernelWrapper:
 
     def process_failed_rpc(self, *, rid: ID, rpc: FailedRPC):
         if rid is None:
-            raise KernelException(Constants.INVALID_ARGUMENT)
+            raise KernelException(Constants.invalid_argument)
 
         target = self.kernel.soft_validate(rid=rid)
         if target is None:

@@ -26,6 +26,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import EventException
 from fabric.actor.core.container.event_subscription import EventSubscription
 from fabric.actor.core.container.synchronous_event_subscription import SynchronousEventSubscription
 
@@ -43,7 +45,7 @@ class EventManager:
 
     def create_subscription(self, *, token: AuthToken, filters: list, handler: IEventHandler) -> ID:
         if token is None:
-            raise Exception("Invalid token")
+            raise EventException(Constants.invalid_argument)
 
         subscription = None
         if handler is None:
@@ -61,11 +63,11 @@ class EventManager:
 
     def get_subscription(self, *, sid: ID, token: AuthToken) -> AEventSubscription:
         if not sid in self.subscriptions:
-            raise Exception("Invalid subscription")
+            raise EventException("Invalid subscription")
 
         subscription = self.subscriptions[id]
         if not subscription.has_access(token=token):
-            raise Exception("Access denied")
+            raise EventException("Access denied")
         return subscription
 
     def drain_events(self, *, sid: ID, token: AuthToken, timeout: int) -> list:

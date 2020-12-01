@@ -39,43 +39,43 @@ class GlobalConfig:
     """
     def __init__(self, *, config: dict):
         self.runtime = {}
-        if Constants.ConfigSectionRuntime in config:
-            for prop in config[Constants.ConfigSectionRuntime]:
+        if Constants.config_section_runtime in config:
+            for prop in config[Constants.config_section_runtime]:
                 for key, value in prop.items():
                     self.runtime[key] = value
         self.logging = {}
-        if Constants.ConfigLoggingSection in config:
-            for prop in config[Constants.ConfigLoggingSection]:
+        if Constants.config_logging_section in config:
+            for prop in config[Constants.config_logging_section]:
                 for key, value in prop.items():
                     self.logging[key] = value
         self.oauth = {}
-        if Constants.ConfigSectionOAuth in config:
-            for prop in config[Constants.ConfigSectionOAuth]:
+        if Constants.config_section_o_auth in config:
+            for prop in config[Constants.config_section_o_auth]:
                 for key, value in prop.items():
                     self.oauth[key] = value
         self.database = {}
-        if Constants.ConfigSectionDatabase in config:
-            for prop in config[Constants.ConfigSectionDatabase]:
+        if Constants.config_section_database in config:
+            for prop in config[Constants.config_section_database]:
                 for key, value in prop.items():
                     self.database[key] = value
         self.container = {}
-        if Constants.ConfigSectionContainer in config:
-            for prop in config[Constants.ConfigSectionContainer]:
+        if Constants.config_section_container in config:
+            for prop in config[Constants.config_section_container]:
                 for key, value in prop.items():
                     self.container[key] = value
         self.time = {}
-        if Constants.ConfigSectionTime in config:
-            for prop in config[Constants.ConfigSectionTime]:
+        if Constants.config_section_time in config:
+            for prop in config[Constants.config_section_time]:
                 for key, value in prop.items():
                     self.time[key] = value
 
         self.neo4j = {}
-        if Constants.ConfigSectionNeo4j in config:
-            self.neo4j = config[Constants.ConfigSectionNeo4j]
+        if Constants.config_section_neo4j in config:
+            self.neo4j = config[Constants.config_section_neo4j]
 
         self.pdp = {}
-        if Constants.ConfigSectionPdp in config:
-            self.pdp = config[Constants.ConfigSectionPdp]
+        if Constants.config_section_pdp in config:
+            self.pdp = config[Constants.config_section_pdp]
 
     def get_runtime(self) -> dict:
         """

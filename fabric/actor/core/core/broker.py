@@ -204,7 +204,7 @@ class Broker(Actor, IBroker):
         delegation.set_slice_object(slice_object=slice_object)
         delegation.set_exported(value=True)
 
-        callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.ProtocolKafka,
+        callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.protocol_kafka,
                                                              actor_name=self.get_name())
         if callback is None:
             raise Exception("Unsupported")
@@ -412,7 +412,7 @@ class Broker(Actor, IBroker):
         ret_val = None
         try:
             client_obj = database.get_client(guid=guid)
-            ret_val = pickle.loads(client_obj.get(Constants.PropertyPickleProperties))
+            ret_val = pickle.loads(client_obj.get(Constants.property_pickle_properties))
         except Exception as e:
             raise Exception("Failed to check if client is present in the database {}".format(e))
 

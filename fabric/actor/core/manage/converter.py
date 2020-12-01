@@ -262,9 +262,9 @@ class Converter:
         result.set_guid(str(proxy.get_guid()))
 
         if isinstance(proxy, LocalProxy):
-            result.set_protocol(Constants.ProtocolLocal)
+            result.set_protocol(Constants.protocol_local)
         elif isinstance(proxy, KafkaProxy):
-            result.set_protocol(Constants.ProtocolKafka)
+            result.set_protocol(Constants.protocol_kafka)
             result.set_kafka_topic(proxy.get_kafka_topic())
 
         return result

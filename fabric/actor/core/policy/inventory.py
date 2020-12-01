@@ -95,7 +95,7 @@ class Inventory:
         rpd = ResourcePoolDescriptor()
         rpd.reset(properties=properties, prefix=None)
 
-        desc_attr = rpd.get_attribute(key=Constants.ResourceClassInventoryForType)
+        desc_attr = rpd.get_attribute(key=Constants.resource_class_inventory_for_type)
         inv = None
         if desc_attr is not None:
             module_name, class_name = desc_attr.get_value().rsplit(".", 1)
@@ -120,11 +120,11 @@ class Inventory:
             rpd = inv.get_descriptor().clone()
             attr = ResourcePoolAttributeDescriptor()
             attr.set_type(rtype=ResourcePoolAttributeType.INTEGER)
-            attr.set_key(value=Constants.ResourceAvailableUnits)
+            attr.set_key(value=Constants.resource_available_units)
             attr.set_value(value=str(inv.get_free()))
             rpd.add_attribute(attribute=attr)
-            result = rpd.save(properties=result, prefix=Constants.PoolPrefix + str(count) + ".")
+            result = rpd.save(properties=result, prefix=Constants.pool_prefix + str(count) + ".")
             count += 1
 
-        result[Constants.PoolsCount] = str(len(self.map))
+        result[Constants.pools_count] = str(len(self.map))
         return result

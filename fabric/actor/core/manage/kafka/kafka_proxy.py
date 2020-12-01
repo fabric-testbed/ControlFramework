@@ -79,7 +79,7 @@ class KafkaProxy(IComponent):
 
     def get_protocols(self) -> List[ProtocolProxyMng]:
         proto = ProtocolProxyMng()
-        proto.set_protocol(protocol=Constants.ProtocolKafka)
+        proto.set_protocol(protocol=Constants.protocol_kafka)
         proto.set_proxy_class(proxy_class=KafkaProxy.__class__.__name__)
         proto.set_proxy_module(proxy_module=KafkaProxy.__module__)
         result = [proto]

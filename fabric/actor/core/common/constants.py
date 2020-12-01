@@ -50,184 +50,188 @@ class Constants:
     """
     Constants
     """
-    ReservationHasPendingOperation = -200001
-    ExtendSameUnits = -1
-    AllReservationStates = -1
-    ManagementApiTimeoutInSeconds = 120.0
+    reservation_has_pending_operation = -200001
+    extend_same_units = -1
+    all_reservation_states = -1
+    management_api_timeout_in_seconds = 120.0
 
-    ContainerManagmentObjectID = "manager"
+    container_managment_object_id = "manager"
 
-    PropertyPickleProperties = "properties"
+    property_pickle_properties = "properties"
 
-    ConfigSectionRuntime = "runtime"
-    PropertyConfKafkaServer = "kafka-server"
-    PropertyConfKafkaSchemaRegistry = "kafka-schema-registry-url"
-    PropertyConfKafkaKeySchema = "kafka-key-schema"
-    PropertyConfKafkaValueSchema = "kafka-value-schema"
-    PropertyConfKafkaSSlCaLocation = "kafka-ssl-ca-location"
-    PropertyConfKafkaSslCertificateLocation = "kafka-ssl-certificate-location"
-    PropertyConfKafkaSslKeyLocation = "kafka-ssl-key-location"
-    PropertyConfKafkaSslKeyPassword = "kafka-ssl-key-password"
-    PropertyConfKafkaSecurityProtocol = "kafka-security-protocol"
-    PropertyConfKafkaGroupId = "kafka-group-id"
-    PropertyConfKafkaSaslProducerUsername = "kafka-sasl-producer-username"
-    PropertyConfKafkaSaslProducerPassword = "kafka-sasl-producer-password"
-    PropertyConfKafkaSaslConsumerUsername = "kafka-sasl-consumer-username"
-    PropertyConfKafkaSaslConsumerPassword = "kafka-sasl-consumer-password"
-    PropertyConfKafkaSaslMechanism = "kafka-sasl-mechanism"
+    config_section_runtime = "runtime"
+    property_conf_kafka_server = "kafka-server"
+    property_conf_kafka_schema_registry = "kafka-schema-registry-url"
+    property_conf_kafka_key_schema = "kafka-key-schema"
+    property_conf_kafka_value_schema = "kafka-value-schema"
+    property_conf_kafka_s_sl_ca_location = "kafka-ssl-ca-location"
+    property_conf_kafka_ssl_certificate_location = "kafka-ssl-certificate-location"
+    property_conf_kafka_ssl_key_location = "kafka-ssl-key-location"
+    property_conf_kafka_ssl_key_password = "kafka-ssl-key-password"
+    property_conf_kafka_security_protocol = "kafka-security-protocol"
+    property_conf_kafka_group_id = "kafka-group-id"
+    property_conf_kafka_sasl_producer_username = "kafka-sasl-producer-username"
+    property_conf_kafka_sasl_producer_password = "kafka-sasl-producer-password"
+    property_conf_kafka_sasl_consumer_username = "kafka-sasl-consumer-username"
+    property_conf_kafka_sasl_consumer_password = "kafka-sasl-consumer-password"
+    property_conf_kafka_sasl_mechanism = "kafka-sasl-mechanism"
 
-    PropertyConfPluginDir = "plugin-dir"
+    kafka_topic = "kafka-topic"
+    name = "name"
+    type = "type"
+    guid = "guid"
+    credmgr_host = "credmgr-host"
 
-    ConfigLoggingSection = 'logging'
+    property_class_name = "ObjectClassName"
+    property_module_name = "ModuleName"
+    property_id = "MOID"
+    property_type_id = "MOTYPEID"
+    property_actor_name = "MOActorName"
+    property_proxies_length = "MOProxiesLength"
+    property_proxies_prefix = "MOProxiesPrefix."
+    property_proxies_protocol = ".protocol"
+    property_proxies_class = ".class"
+    property_proxies_module = ".module"
 
-    ConfigSectionPdp = 'pdp'
+    property_conf_prometheus_rest_port = "prometheus.port"
+    property_conf_controller_rest_port = "orchestrator.rest.port"
+    property_conf_controller_create_wait_time_ms = "orchestrator.create.wait.time.ms"
+    property_conf_controller_delay_resource_types = "orchestrator.delay.resource.types"
 
-    PropertyConfLogFile = 'log-file'
-    PropertyConfLogLevel = 'log-level'
-    PropertyConfLogRetain = 'log-retain'
-    PropertyConfLogSize = 'log-size'
-    PropertyConfLogDirectory = 'log-directory'
-    PropertyConfLogger = "logger"
+    property_substrate_file = "substrate.file"
+    property_aggregate_resource_model = "AggregateResourceModel"
 
-    ConfigSectionContainer = "container"
-    PropertyConfContainerGuid = "container.guid"
+    property_conf_plugin_dir = "plugin-dir"
 
-    ConfigSectionTime = "time"
-    PropertyConfTimeStartTime = "time.startTime"
-    PropertyConfTimeCycleMillis = "time.cycleMillis"
-    PropertyConfTimeManual = "time.manual"
+    config_logging_section = 'logging'
 
-    ConfigSectionOAuth = "oauth"
-    PropertyConfOAuthJwksUrl = "oauth-jwks-url"
-    PropertyConfOAuthTokenPublicKey = "token-public-key"
+    config_section_pdp = 'pdp'
 
-    ConfigSectionDatabase = "database"
-    PropertyConfDbUser = "db-user"
-    PropertyConfDbPassword = "db-password"
-    PropertyConfDbName = "db-name"
-    PropertyConfDbHost = "db-host"
+    property_conf_log_file = 'log-file'
+    property_conf_log_level = 'log-level'
+    property_conf_log_retain = 'log-retain'
+    property_conf_log_size = 'log-size'
+    property_conf_log_directory = 'log-directory'
+    property_conf_logger = "logger"
 
-    ConfigSectionNeo4j = "neo4j"
+    config_section_container = "container"
+    property_conf_container_guid = "container.guid"
 
-    # Type code for proxies using local communication.
-    ProtocolLocal = "local"
-    # Type code for proxies using Kafka communication.
-    ProtocolKafka = "kafka"
+    config_section_time = "time"
+    property_conf_time_start_time = "time.startTime"
+    property_conf_time_cycle_millis = "time.cycleMillis"
+    property_conf_time_manual = "time.manual"
 
-    HomeDirectory = '/usr/src/app/'
-    SuperblockLocation = HomeDirectory + "state_recovery.lock"
-    ControllerLockLocation = HomeDirectory + "controller_recovery.lock"
-    ConfigurationFile = "/etc/fabric/actor/config/config.yaml"
-    StateFileLocation = '/tmp/fabric_actor.tmp'
+    config_section_o_auth = "oauth"
+    property_conf_o_auth_jwks_url = "oauth-jwks-url"
+    property_conf_o_auth_token_public_key = "token-public-key"
 
-    TestDirectory = "/Users/komalthareja/renci/code/fabric/ControlFramework/fabric/actor/test/"
-    TestBrokerConfigurationFile = TestDirectory + "config/config.broker.yaml"
-    TestNetAmConfigurationFile = TestDirectory + "config/config.net-am.yaml"
-    TestVmAmConfigurationFile = TestDirectory + "config/config.site.am.yaml"
-    TestControllerConfigurationFile = TestDirectory + "config/config.orchestrator.yaml"
+    config_section_database = "database"
+    property_conf_db_user = "db-user"
+    property_conf_db_password = "db-password"
+    property_conf_db_name = "db-name"
+    property_conf_db_host = "db-host"
 
-    ElasticTime = "request.elasticTime"
-    ElasticSize = "request.elasticSize"
+    config_section_neo4j = "neo4j"
 
-    PoolName = 'pool.name'
-    PoolPrefix = "pool."
-    PoolsCount = "pools.count"
-    QueryActionDiscoverPools = "discover.pools"
-    QueryAction = "query.action"
-    QueryResponse = "query.response"
-    BrokerQueryModel = "bqm"
-    PoolType = "neo4j"
+    protocol_local = "local"
+    protocol_kafka = "kafka"
 
-    ConfigHandler = "config.handler"
-    ConfigVictims = "config.victims"
-    ConfigImageGuid = "config.image.guid"
-    ConfigSSHKeyPattern = "config.ssh.user%d.keys"
-    ConfigSSHLoginPattern = "config.ssh.user%d.login"
-    ConfigSSHSudoPattern = "config.ssh.user%d.sudo"
-    ConfigSSHUrnPattern = "config.ssh.user%d.urn"
-    ConfigSSHNumLogins = "config.ssh.numlogins"
-    ConfigSSHPrefix = "config.ssh.user"
-    ConfigSSHKeySuffix = ".keys"
-    ConfigSSHLoginSuffix = ".login"
-    ConfigSSHSudoSuffix = ".sudo"
-    ConfigSSHUrnSuffix = ".urn"
+    home_directory = '/usr/src/app/'
+    superblock_location = home_directory + "state_recovery.lock"
+    controller_lock_location = home_directory + "controller_recovery.lock"
+    configuration_file = "/etc/fabric/actor/config/config.yaml"
+    state_file_location = '/tmp/fabric_actor.tmp'
 
-    ResourceMemory = "resource.memory"
-    ResourceCPU = "resource.cpu"
-    ResourceBandwidth = "resource.bandwidth"
-    ResourceNumCPUCores = "resource.numCPUCores"
-    ResourceMemoryCapacity = "resource.memeoryCapacity"
-    ResourceStorageCapacity = "resource.storageCapacity"
-    ResourceClassInventoryForType = "resource.class.invfortype"
-    ResourceAvailableUnits = "resource.units.now"
-    ResourceStartIface = "resource.siface"
-    ResourceEndIface = "resource.eiface"
-    ResourceDomain = "resource.domain"
-    ResourceNeo4jAbstractDomain = "resource.neo4j.adomain"
+    test_directory = "/Users/komalthareja/renci/code/fabric/ControlFramework/fabric/actor/test/"
+    test_broker_configuration_file = test_directory + "config/config.broker.yaml"
+    test_net_am_configuration_file = test_directory + "config/config.net-am.yaml"
+    test_vm_am_configuration_file = test_directory + "config/config.site.am.yaml"
+    test_controller_configuration_file = test_directory + "config/config.orchestrator.yaml"
 
-    UnitManagementIP = "unit.manage.ip"
-    UnitManagementPort = "unit.manage.port"
-    UnitManageSubnet = "unit.manage.subnet"
-    UnitManageGateway = "unit.manage.gateway"
+    elastic_time = "request.elasticTime"
+    elastic_size = "request.elasticSize"
 
-    UnitDataSubnet = "unit.data.subnet"
+    pool_name = 'pool.name'
+    pool_prefix = "pool."
+    pools_count = "pools.count"
+    query_action_discover_pools = "discover.pools"
+    query_action = "query.action"
+    query_response = "query.response"
+    broker_query_model = "bqm"
+    pool_type = "neo4j"
 
-    UnitParentHostName = "unit.parent.hostname"
-    UnitHostName = "unit.hostname"
-    UnitControl = "unit.control"
-    UnitMemory = "unit.memory"
+    config_handler = "config.handler"
+    config_victims = "config.victims"
+    config_image_guid = "config.image.guid"
+    config_ssh_key_pattern = "config.ssh.user%d.keys"
+    config_ssh_login_pattern = "config.ssh.user%d.login"
+    config_ssh_sudo_pattern = "config.ssh.user%d.sudo"
+    config_ssh_urn_pattern = "config.ssh.user%d.urn"
+    config_ssh_num_logins = "config.ssh.numlogins"
+    config_ssh_prefix = "config.ssh.user"
+    config_ssh_key_suffix = ".keys"
+    config_ssh_login_suffix = ".login"
+    config_ssh_sudo_suffix = ".sudo"
+    config_ssh_urn_suffix = ".urn"
+    config_unit_tag = "config.unit.tag"
 
-    UnitVlanTag = "unit.vlan.tag"
-    UnitVlanQoSRate = "unit.vlan.qos.rate"
-    UnitVlanQoSBurstSize = "unit.vlan.qos.burst.size"
+    resource_memory = "resource.memory"
+    resource_cpu = "resource.cpu"
+    resource_bandwidth = "resource.bandwidth"
+    resource_num_cpu_cores = "resource.numCPUCores"
+    resource_memory_capacity = "resource.memeoryCapacity"
+    resource_storage_capacity = "resource.storageCapacity"
+    resource_class_inventory_for_type = "resource.class.invfortype"
+    resource_available_units = "resource.units.now"
+    resource_start_iface = "resource.siface"
+    resource_end_iface = "resource.eiface"
+    resource_domain = "resource.domain"
+    resource_neo4j_abstract_domain = "resource.neo4j.adomain"
 
-    UnitEthPrefix = "unit.eth"
-    UnitNumberInterface = "unit.number.interface"
+    unit_management_ip = "unit.manage.ip"
+    unit_management_port = "unit.manage.port"
+    unit_manage_subnet = "unit.manage.subnet"
+    unit_manage_gateway = "unit.manage.gateway"
+    unit_data_subnet = "unit.data.subnet"
+    unit_parent_host_name = "unit.parent.hostname"
+    unit_host_name = "unit.hostname"
+    unit_control = "unit.control"
+    unit_memory = "unit.memory"
+    unit_vlan_tag = "unit.vlan.tag"
+    unit_vlan_qo_s_rate = "unit.vlan.qos.rate"
+    unit_vlan_qo_s_burst_size = "unit.vlan.qos.burst.size"
+    unit_eth_prefix = "unit.eth"
+    unit_number_interface = "unit.number.interface"
+    unit_modify_prop_message_suffix = ".message"
+    unit_modify_prop_code_suffix = ".code"
+    unit_modify_prop_prefix = "unit.modify."
+    unit_lun_tag = "unit.target.lun"
+    unit_storage_capacity = "unit.target.capacity"
 
-    UnitModifyPropMessageSuffix = ".message"
-    UnitModifyPropCodeSuffix = ".code"
-    UnitModifyPropPrefix = "unit.modify."
+    property_start_vlan = "vlan.tag.start"
+    property_end_vlan = "vlan.tag.end"
+    property_vlan_range_num = "vlan.range.num"
 
-    ConfigUnitTag = "config.unit.tag"
+    property_start_lun = "lun.tag.start"
+    property_end_lun = "lun.tag.end"
+    property_lun_range_num = "lun.range.num"
 
-    PropertyStartVlan = "vlan.tag.start"
-    PropertyEndVlan = "vlan.tag.end"
-    PropertyVlanRangeNum = "vlan.range.num"
+    property_delegation_slice_id = 'dlg_slc_id'
+    property_reservation_slice_id = 'rsv_slc_id'
+    property_reservation_id = "rsv_resid"
 
-    PropertyStartLUN = "lun.tag.start"
-    PropertyEndLUN = "lun.tag.end"
-    PropertyLunRangeNum = "lun.range.num"
+    invalid_argument = "Invalid argument"
+    uninitialized_state = "Uninitialized state"
 
-    UnitLUNTag = "unit.target.lun"
-    UnitStorageCapacity = "unit.target.capacity"
-
-    KafkaTopic = "kafka-topic"
-    Name = "name"
-    Type = "type"
-    Guid = "guid"
-    CredmgrHost = "credmgr-host"
-
-    PropertyClassName = "ObjectClassName"
-    PropertyModuleName = "ModuleName"
-    PropertyID = "MOID"
-    PropertyTypeID = "MOTYPEID"
-    PropertyActorName = "MOActorName"
-    PropertyProxiesLength = "MOProxiesLength"
-    PropertyProxiesPrefix = "MOProxiesPrefix."
-    PropertyProxiesProtocol = ".protocol"
-    PropertyProxiesClass = ".class"
-    PropertyProxiesModule = ".module"
-
-    PropertyConfPrometheusRestPort = "prometheus.port"
-    PropertyConfControllerRestPort = "orchestrator.rest.port"
-    PropertyConfControllerCreateWaitTimeMs = "orchestrator.create.wait.time.ms"
-    PropertyConfControllerDelayResourceTypes = "orchestrator.delay.resource.types"
-
-    PropertySubstrateFile = "substrate.file"
-    PropertyAggregateResourceModel = "AggregateResourceModel"
-
-    PropertyDelegationSliceId = 'dlg_slc_id'
-    PropertyReservationSliceId = 'rsv_slc_id'
-    PropertyReservationID = "rsv_resid"
-
-    INVALID_ARGUMENT = "Invalid argument"
+    sasl_username = 'sasl.username'
+    sasl_password = 'sasl.password'
+    sasl_mechanism = 'sasl.mechanism'
+    bootstrap_servers = 'bootstrap.servers'
+    security_protocol = 'security.protocol'
+    group_id = 'group.id'
+    ssl_ca_location = 'ssl.ca.location'
+    ssl_certificate_location = 'ssl.certificate.location'
+    ssl_key_location = 'ssl.key.location'
+    ssl_key_password = 'ssl.key.password'
+    schema_registry_url = 'schema.registry.url'

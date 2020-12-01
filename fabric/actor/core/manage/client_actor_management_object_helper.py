@@ -433,7 +433,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                     r.get_resources().set_request_properties(p=temp)
 
                     rset = ResourceSet()
-                    if new_units == Constants.ExtendSameUnits:
+                    if new_units == Constants.extend_same_units:
                         rset.set_units(units=r.get_resources().get_units())
                     else:
                         rset.set_units(units=new_units)

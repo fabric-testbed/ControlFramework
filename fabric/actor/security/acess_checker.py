@@ -47,7 +47,7 @@ class AccessChecker:
         """
         from fabric.actor.core.container.globals import GlobalsSingleton
         token_public_key = GlobalsSingleton.get().get_config().get_oauth_config().get(
-            Constants.PropertyConfOAuthTokenPublicKey, None)
+            Constants.property_conf_o_auth_token_public_key, None)
         pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
 
         fabric_token = FabricToken(token_public_key=token_public_key, logger=logger,

@@ -106,7 +106,7 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
         return self.reservation
 
     def get_type(self):
-        return Constants.ProtocolLocal
+        return Constants.protocol_local
 
     def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
         raise Exception("Not implemented")

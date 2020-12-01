@@ -63,13 +63,13 @@ class ModifyStatusChecker(StatusChecker):
             unit = units_list.__iter__().__next__()
 
             properties = unit.get_properties()
-            code_property_name = Constants.UnitModifyPropPrefix + \
+            code_property_name = Constants.unit_modify_prop_prefix + \
                                  rid.get_modify_index() + \
-                                 Constants.UnitModifyPropCodeSuffix
+                                 Constants.unit_modify_prop_code_suffix
 
-            message_property_name = Constants.UnitModifyPropPrefix + \
+            message_property_name = Constants.unit_modify_prop_prefix + \
                                     rid.get_modify_index() + \
-                                    Constants.UnitModifyPropMessageSuffix
+                                    Constants.unit_modify_prop_message_suffix
             modify_failed = False
             modify_error_message = None
             modify_error_code = 0

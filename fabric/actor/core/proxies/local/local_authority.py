@@ -79,7 +79,7 @@ class LocalAuthority(LocalBroker, IAuthorityProxy):
 
         original_ticket = reservation.get_resources().get_resources()
         try:
-            encoded_ticket = original_ticket.encode(protocol=Constants.ProtocolLocal)
+            encoded_ticket = original_ticket.encode(protocol=Constants.protocol_local)
             from fabric.actor.core.proxies.proxy import Proxy
             decoded_ticket = Proxy.decode(encoded=encoded_ticket, plugin=self.get_actor().get_plugin())
             rset.set_resources(cset=decoded_ticket)

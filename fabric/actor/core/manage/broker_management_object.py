@@ -60,12 +60,12 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_broker import LocalBroker
-        local = ProxyProtocolDescriptor(protocol=Constants.ProtocolLocal,
+        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local,
                                         proxy_class=LocalBroker.__name__,
                                         proxy_module=LocalBroker.__module__)
 
         from fabric.actor.core.manage.kafka.kafka_broker import KafkaBroker
-        kafka = ProxyProtocolDescriptor(protocol=Constants.ProtocolKafka,
+        kafka = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka,
                                         proxy_class=KafkaBroker.__name__,
                                         proxy_module=KafkaBroker.__module__)
 
@@ -75,8 +75,8 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = BrokerManagementObject.__name__
-        properties[Constants.PropertyModuleName] = BrokerManagementObject.__module__
+        properties[Constants.property_class_name] = BrokerManagementObject.__name__
+        properties[Constants.property_module_name] = BrokerManagementObject.__module__
 
         return properties
 

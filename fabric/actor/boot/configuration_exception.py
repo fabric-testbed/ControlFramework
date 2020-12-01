@@ -23,21 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
-from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.core.rpc_request_state import RPCRequestState
-from fabric.actor.core.proxies.proxy import Proxy
-from fabric.actor.security.auth_token import AuthToken
 
 
-class DummyProxy(Proxy):
-    class MyRequestState(RPCRequestState):
-        def __init__(self):
-            self.reservation = None
-
-    def __init__(self, *, auth: AuthToken = None):
-        super().__init__(auth=auth)
-        self.proxy_type = Constants.protocol_local
-
-    def execute(self, *, request: IRPCRequestState):
-        raise NotImplementedError
+class ConfigurationException(Exception):
+    """
+    Configuration Exception
+    """

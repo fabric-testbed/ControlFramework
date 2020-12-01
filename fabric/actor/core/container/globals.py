@@ -35,6 +35,7 @@ from typing import TYPE_CHECKING
 import logging
 import os
 
+from fabric.actor.core.common.exceptions import InitializationException
 from fabric.actor.core.container.event_manager import EventManager
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.container.container import Container
@@ -45,15 +46,7 @@ if TYPE_CHECKING:
 
 
 class Globals:
-    LogDir = '.'
-    LogFile = 'actor.log'
-    LogLevel = 'DEBUG'
-    LogRetain = '5'
-    LogFileSize = '5000000'
-    Logger = 'fabric.actor'
-    OauthJwksUri = 'https://cilogon.org/oauth2/certs'
-
-    ConfigFile = Constants.ConfigurationFile
+    config_file = Constants.configuration_file
 
     def __init__(self):
         self.config = None
@@ -89,30 +82,30 @@ class Globals:
             raise RuntimeError('No logging  config information available')
 
         log_path = None
-        if Constants.PropertyConfLogDirectory in log_config and Constants.PropertyConfLogFile in log_config:
-            log_path = log_config[Constants.PropertyConfLogDirectory] + '/' + log_config[Constants.PropertyConfLogFile]
+        if Constants.property_conf_log_directory in log_config and Constants.property_conf_log_file in log_config:
+            log_path = log_config[Constants.property_conf_log_directory] + '/' + log_config[Constants.property_conf_log_file]
 
         if log_path is None:
             raise RuntimeError('The log file path must be specified in config or passed as an argument')
 
         # Get the log level
         log_level = None
-        if Constants.PropertyConfLogLevel in log_config:
-            log_level = log_config.get(Constants.PropertyConfLogLevel, None)
+        if Constants.property_conf_log_level in log_config:
+            log_level = log_config.get(Constants.property_conf_log_level, None)
 
         if log_level is None:
             log_level = logging.INFO
 
         # Set up the root logger
-        log = logging.getLogger(log_config.get(Constants.PropertyConfLogger, None))
+        log = logging.getLogger(log_config.get(Constants.property_conf_logger, None))
         log.setLevel(log_level)
         log_format = \
             '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
 
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-        backup_count = log_config.get(Constants.PropertyConfLogRetain, None)
-        max_log_size = log_config.get(Constants.PropertyConfLogSize, None)
+        backup_count = log_config.get(Constants.property_conf_log_retain, None)
+        max_log_size = log_config.get(Constants.property_conf_log_size, None)
 
         file_handler = RotatingFileHandler(log_path, backupCount=int(backup_count), maxBytes=int(max_log_size))
 
@@ -125,8 +118,8 @@ class Globals:
         """
         Delete Super block file
         """
-        if os.path.isfile(Constants.SuperblockLocation):
-            os.remove(Constants.SuperblockLocation)
+        if os.path.isfile(Constants.superblock_location):
+            os.remove(Constants.superblock_location)
 
     def fail(self, *, e: Exception):
         """
@@ -160,7 +153,7 @@ class Globals:
         """
         try:
             from fabric.actor.boot.configuration_loader import ConfigurationLoader
-            loader = ConfigurationLoader(path=self.ConfigFile)
+            loader = ConfigurationLoader(path=self.config_file)
             self.config = loader.read_configuration()
         except Exception as e:
             raise RuntimeError("Unable to parse configuration file {}".format(e))
@@ -171,7 +164,7 @@ class Globals:
         @return container
         """
         if not self.initialized:
-            raise Exception("Invalid state")
+            raise InitializationException(Constants.uninitialized_state)
         return self.container
 
     def get_config(self) -> Configuration:
@@ -180,7 +173,7 @@ class Globals:
         @return config
         """
         if not self.initialized:
-            raise Exception("Invalid state")
+            raise InitializationException(Constants.uninitialized_state)
         return self.config
 
     def get_kafka_config_admin_client(self) -> dict:
@@ -190,30 +183,30 @@ class Globals:
         """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
-        bootstrap_server = self.config.get_runtime_config().get(Constants.PropertyConfKafkaServer, None)
-        security_protocol = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSecurityProtocol, None)
-        group_id = self.config.get_runtime_config().get(Constants.PropertyConfKafkaGroupId, None)
-        ssl_ca_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSSlCaLocation, None)
+        bootstrap_server = self.config.get_runtime_config().get(Constants.property_conf_kafka_server, None)
+        security_protocol = self.config.get_runtime_config().get(Constants.property_conf_kafka_security_protocol, None)
+        group_id = self.config.get_runtime_config().get(Constants.property_conf_kafka_group_id, None)
+        ssl_ca_location = self.config.get_runtime_config().get(Constants.property_conf_kafka_s_sl_ca_location, None)
         ssl_certificate_location = self.config.get_runtime_config().get(
-            Constants.PropertyConfKafkaSslCertificateLocation, None)
-        ssl_key_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyLocation, None)
-        ssl_key_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyPassword, None)
-        sasl_username = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslProducerUsername, None)
-        sasl_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslProducerPassword, None)
-        sasl_mechanism = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslMechanism, None)
+            Constants.property_conf_kafka_ssl_certificate_location, None)
+        ssl_key_location = self.config.get_runtime_config().get(Constants.property_conf_kafka_ssl_key_location, None)
+        ssl_key_password = self.config.get_runtime_config().get(Constants.property_conf_kafka_ssl_key_password, None)
+        sasl_username = self.config.get_runtime_config().get(Constants.property_conf_kafka_sasl_producer_username, None)
+        sasl_password = self.config.get_runtime_config().get(Constants.property_conf_kafka_sasl_producer_password, None)
+        sasl_mechanism = self.config.get_runtime_config().get(Constants.property_conf_kafka_sasl_mechanism, None)
 
-        conf = {'bootstrap.servers': bootstrap_server,
-                'security.protocol': security_protocol,
-                'group.id': group_id,
-                'ssl.ca.location': ssl_ca_location,
-                'ssl.certificate.location': ssl_certificate_location,
-                'ssl.key.location': ssl_key_location,
-                'ssl.key.password': ssl_key_password}
+        conf = {Constants.bootstrap_servers: bootstrap_server,
+                Constants.security_protocol: security_protocol,
+                Constants.group_id: group_id,
+                Constants.ssl_ca_location: ssl_ca_location,
+                Constants.ssl_certificate_location: ssl_certificate_location,
+                Constants.ssl_key_location: ssl_key_location,
+                Constants.ssl_key_password: ssl_key_password}
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
-            conf['sasl.username'] = sasl_username
-            conf['sasl.password'] = sasl_password
-            conf['sasl.mechanism'] = sasl_mechanism
+            conf[Constants.sasl_username] = sasl_username
+            conf[Constants.sasl_password] = sasl_password
+            conf[Constants.sasl_mechanism] = sasl_mechanism
 
         return conf
 
@@ -224,33 +217,33 @@ class Globals:
         """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
-        bootstrap_server = self.config.get_runtime_config().get(Constants.PropertyConfKafkaServer, None)
-        schema_registry = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSchemaRegistry, None)
-        security_protocol = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSecurityProtocol, None)
-        group_id = self.config.get_runtime_config().get(Constants.PropertyConfKafkaGroupId, None)
-        ssl_ca_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSSlCaLocation, None)
+        bootstrap_server = self.config.get_runtime_config().get(Constants.property_conf_kafka_server, None)
+        schema_registry = self.config.get_runtime_config().get(Constants.property_conf_kafka_schema_registry, None)
+        security_protocol = self.config.get_runtime_config().get(Constants.property_conf_kafka_security_protocol, None)
+        group_id = self.config.get_runtime_config().get(Constants.property_conf_kafka_group_id, None)
+        ssl_ca_location = self.config.get_runtime_config().get(Constants.property_conf_kafka_s_sl_ca_location, None)
         ssl_certificate_location = self.config.get_runtime_config().get(
-            Constants.PropertyConfKafkaSslCertificateLocation, None)
-        ssl_key_location = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyLocation, None)
-        ssl_key_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSslKeyPassword, None)
+            Constants.property_conf_kafka_ssl_certificate_location, None)
+        ssl_key_location = self.config.get_runtime_config().get(Constants.property_conf_kafka_ssl_key_location, None)
+        ssl_key_password = self.config.get_runtime_config().get(Constants.property_conf_kafka_ssl_key_password, None)
 
-        sasl_username = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslProducerUsername, None)
-        sasl_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslProducerPassword, None)
-        sasl_mechanism = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslMechanism, None)
+        sasl_username = self.config.get_runtime_config().get(Constants.property_conf_kafka_sasl_producer_username, None)
+        sasl_password = self.config.get_runtime_config().get(Constants.property_conf_kafka_sasl_producer_password, None)
+        sasl_mechanism = self.config.get_runtime_config().get(Constants.property_conf_kafka_sasl_mechanism, None)
 
-        conf = {'bootstrap.servers': bootstrap_server,
-                'security.protocol': security_protocol,
-                'group.id': group_id,
-                'ssl.ca.location': ssl_ca_location,
-                'ssl.certificate.location': ssl_certificate_location,
-                'ssl.key.location': ssl_key_location,
-                'ssl.key.password': ssl_key_password,
-                'schema.registry.url': schema_registry}
+        conf = {Constants.bootstrap_servers: bootstrap_server,
+                Constants.security_protocol: security_protocol,
+                Constants.group_id: group_id,
+                Constants.ssl_ca_location: ssl_ca_location,
+                Constants.ssl_certificate_location: ssl_certificate_location,
+                Constants.ssl_key_location: ssl_key_location,
+                Constants.ssl_key_password: ssl_key_password,
+                Constants.schema_registry_url: schema_registry}
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
-            conf['sasl.username'] = sasl_username
-            conf['sasl.password'] = sasl_password
-            conf['sasl.mechanism'] = sasl_mechanism
+            conf[Constants.sasl_username] = sasl_username
+            conf[Constants.sasl_password] = sasl_password
+            conf[Constants.sasl_mechanism] = sasl_mechanism
 
         return conf
 
@@ -265,12 +258,12 @@ class Globals:
 
         conf['auto.offset.reset'] = 'earliest'
 
-        sasl_username = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslConsumerUsername, None)
-        sasl_password = self.config.get_runtime_config().get(Constants.PropertyConfKafkaSaslConsumerPassword, None)
+        sasl_username = self.config.get_runtime_config().get(Constants.property_conf_kafka_sasl_consumer_username, None)
+        sasl_password = self.config.get_runtime_config().get(Constants.property_conf_kafka_sasl_consumer_password, None)
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
-            conf['sasl.username'] = sasl_username
-            conf['sasl.password'] = sasl_password
+            conf[Constants.sasl_username] = sasl_username
+            conf[Constants.sasl_password] = sasl_password
         return conf
 
     def get_kafka_schemas(self):
@@ -278,8 +271,8 @@ class Globals:
         Get Avro schema
         @return key and value schema
         """
-        key_schema_file = self.config.get_runtime_config().get(Constants.PropertyConfKafkaKeySchema, None)
-        value_schema_file = self.config.get_runtime_config().get(Constants.PropertyConfKafkaValueSchema, None)
+        key_schema_file = self.config.get_runtime_config().get(Constants.property_conf_kafka_key_schema, None)
+        value_schema_file = self.config.get_runtime_config().get(Constants.property_conf_kafka_value_schema, None)
 
         from confluent_kafka import avro
         file = open(key_schema_file, "r")
@@ -321,7 +314,7 @@ class Globals:
         @return logger
         """
         if not self.initialized:
-            raise Exception("Invalid state")
+            raise InitializationException(Constants.uninitialized_state)
 
         if self.log is None:
             self.log = self.make_logger()
@@ -381,7 +374,7 @@ class Globals:
         Start the timer thread
         """
         if self.timer_thread is not None:
-            raise Exception("This actor has already been started")
+            raise RuntimeError("This actor has already been started")
 
         self.timer_thread = threading.Thread(target=self.timer_loop)
         self.timer_thread.setName('GlobalTimer')
@@ -438,7 +431,7 @@ class GlobalsSingleton:
 
     def __init__(self):
         if self.__instance is not None:
-            raise Exception("Singleton can't be created twice !")
+            raise InitializationException("Singleton can't be created twice !")
 
     def get(self):
         """

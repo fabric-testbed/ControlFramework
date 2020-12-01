@@ -72,11 +72,11 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_actor import LocalActor
-        local = ProxyProtocolDescriptor(protocol=Constants.ProtocolLocal, proxy_class=LocalActor.__name__,
+        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local, proxy_class=LocalActor.__name__,
                                         proxy_module=LocalActor.__module__)
 
         from fabric.actor.core.manage.kafka.kafka_actor import KafkaActor
-        kakfa = ProxyProtocolDescriptor(protocol=Constants.ProtocolKafka, proxy_class=KafkaActor.__name__,
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka, proxy_class=KafkaActor.__name__,
                                         proxy_module=KafkaActor.__module__)
 
         self.proxies = []
@@ -85,15 +85,15 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = ActorManagementObject.__name__
-        properties[Constants.PropertyModuleName] = ActorManagementObject.__module__
+        properties[Constants.property_class_name] = ActorManagementObject.__name__
+        properties[Constants.property_module_name] = ActorManagementObject.__module__
 
         return properties
 
     def recover(self):
         actor_name = None
-        if Constants.PropertyActorName in self.serial:
-            actor_name = self.serial[Constants.PropertyActorName]
+        if Constants.property_actor_name in self.serial:
+            actor_name = self.serial[Constants.property_actor_name]
         else:
             raise Exception("Missing actor name")
 

@@ -42,14 +42,14 @@ def main():
     """
     try:
         # Uncomment when testing as app running
-        #Globals.ConfigFile = './test.yaml'
-        #Constants.SuperblockLocation = './state_recovery.lock'
+        #Globals.config_file = './test.yaml'
+        #Constants.superblock_location = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(force_fresh=True)
 
             runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
             # prometheus server
-            prometheus_port = int(runtime_config.get(Constants.PropertyConfPrometheusRestPort, None))
+            prometheus_port = int(runtime_config.get(Constants.property_conf_prometheus_rest_port, None))
             prometheus_client.start_http_server(prometheus_port)
 
             while True:

@@ -26,18 +26,20 @@
 from __future__ import annotations
 
 from datetime import datetime
+
+from fabric.actor.core.common.exceptions import ResourcesException
 from fabric.actor.core.util.resource_type import ResourceType
 
 from fabric.actor.core.common.resource_pool_attribute_descriptor import ResourcePoolAttributeDescriptor
 
 
 class ResourcePoolDescriptor:
-    PropertyType = "type"
-    PropertyLabel = "label"
-    PropertyDescription = "description"
-    PropertyAttributesPrefix = "attribute."
-    PropertyAttributesCount = "attributescount"
-    PropertyKey = "key"
+    property_type = "type"
+    property_label = "label"
+    property_description = "description"
+    property_attributes_prefix = "attribute."
+    property_attributes_count = "attributescount"
+    property_key = "key"
 
     def __init__(self):
         self.attributes = {}
@@ -252,7 +254,7 @@ class ResourcePoolDescriptor:
         """
         self.attributes[attribute.get_key()] = attribute
 
-    def save(self, *, properties: dict, prefix: str) -> dict:
+    def save(self, *, properties: dict, prefix: str = None) -> dict:
         """
         Save properties
         @param properties properties
@@ -262,15 +264,15 @@ class ResourcePoolDescriptor:
         if prefix is None:
             prefix = ""
 
-        properties[prefix + self.PropertyType] = str(self.resource_type)
-        properties[prefix + self.PropertyLabel] = self.resource_label
+        properties[prefix + self.property_type] = str(self.resource_type)
+        properties[prefix + self.property_label] = self.resource_label
         if self.description is not None:
-            properties[prefix + self.PropertyDescription] = self.description
+            properties[prefix + self.property_description] = self.description
 
-        properties[prefix + self.PropertyAttributesCount] = str(len(self.attributes))
+        properties[prefix + self.property_attributes_count] = str(len(self.attributes))
         i = 0
         for a in self.attributes.values():
-            properties[prefix + self.PropertyAttributesPrefix + str(i) + "." + self.PropertyKey] = a.get_key()
+            properties[prefix + self.property_attributes_prefix + str(i) + "." + self.property_key] = a.get_key()
             if len(prefix) > 0:
                 temp = prefix + a.get_key() + "."
             else:
@@ -279,7 +281,7 @@ class ResourcePoolDescriptor:
             i += 1
         return properties
 
-    def reset(self, *, properties: dict, prefix: str):
+    def reset(self, *, properties: dict, prefix: str = None):
         """
         Reset properties
         @param properties properties
@@ -288,27 +290,27 @@ class ResourcePoolDescriptor:
         if prefix is None:
             prefix = ""
 
-        if (prefix + self.PropertyType) not in properties:
-            raise Exception("Missing resource type")
+        if (prefix + self.property_type) not in properties:
+            raise ResourcesException("Missing resource type")
 
-        self.resource_type = ResourceType(resource_type=properties[prefix + self.PropertyType])
+        self.resource_type = ResourceType(resource_type=properties[prefix + self.property_type])
 
-        if (prefix + self.PropertyLabel) not in properties:
-            raise Exception("Missing resource label")
+        if (prefix + self.property_label) not in properties:
+            raise ResourcesException("Missing resource label")
 
-        self.resource_label = properties[prefix + self.PropertyLabel]
+        self.resource_label = properties[prefix + self.property_label]
 
-        if prefix + self.PropertyDescription in properties:
-            self.description = properties[prefix + self.PropertyDescription]
+        if prefix + self.property_description in properties:
+            self.description = properties[prefix + self.property_description]
 
-        if (prefix + self.PropertyAttributesCount) not in properties:
-            raise Exception("Missing attributes count")
+        if (prefix + self.property_attributes_count) not in properties:
+            raise ResourcesException("Missing attributes count")
 
-        count = int(properties[prefix + self.PropertyAttributesCount])
+        count = int(properties[prefix + self.property_attributes_count])
         for i in range(count):
-            key = prefix + self.PropertyAttributesPrefix + str(i) + "." + self.PropertyKey
+            key = prefix + self.property_attributes_prefix + str(i) + "." + self.property_key
             if key not in properties:
-                raise Exception("Could not find key for attribute #{}".format(i))
+                raise ResourcesException("Could not find key for attribute #{}".format(i))
             key_value = properties[key]
 
             if len(prefix) > 0:
@@ -327,10 +329,10 @@ class ResourcePoolDescriptor:
         @return copy of current object
         """
         properties = {}
-        self.save(properties=properties, prefix=None)
+        self.save(properties=properties)
         copy = ResourcePoolDescriptor()
         try:
-            copy.reset(properties=properties, prefix=None)
+            copy.reset(properties=properties)
         except Exception as e:
-            raise Exception("Unexpected error during deserialization={}".format(e))
+            raise ResourcesException("Unexpected error during deserialization={}".format(e))
         return copy

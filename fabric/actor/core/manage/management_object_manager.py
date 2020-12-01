@@ -60,11 +60,11 @@ class ManagementObjectManager:
         self.lock = threading.Lock()
 
     def create_instance(self, *, mo_obj: dict) -> ManagementObject:
-        if Constants.PropertyClassName not in mo_obj or Constants.PropertyModuleName not in mo_obj:
+        if Constants.property_class_name not in mo_obj or Constants.property_module_name not in mo_obj:
             raise Exception("Missing class name")
 
-        class_name = mo_obj[Constants.PropertyClassName]
-        module_name = mo_obj[Constants.PropertyModuleName]
+        class_name = mo_obj[Constants.property_class_name]
+        module_name = mo_obj[Constants.property_module_name]
 
         self.logger.debug("Creating management object: {}".format(class_name))
 
@@ -139,7 +139,7 @@ class ManagementObjectManager:
         if manager_objects is None:
             return
         for m in manager_objects:
-            manager = self.create_instance(mo_obj=m[Constants.PropertyPickleProperties])
+            manager = self.create_instance(mo_obj=m[Constants.property_pickle_properties])
             try:
                 self.lock.acquire()
                 if manager.get_id() in self.objects:

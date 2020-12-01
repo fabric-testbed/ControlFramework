@@ -58,7 +58,7 @@ class SliceDeferThread:
         self.stopped = False
 
         wait_time = GlobalsSingleton.get().get_config().get_runtime_config().get(
-            Constants.PropertyConfControllerCreateWaitTimeMs, None)
+            Constants.property_conf_controller_create_wait_time_ms, None)
 
         if wait_time is None:
             self.max_create_wait_time = self.DEFAULT_MAX_CREATE_TIME
@@ -66,7 +66,7 @@ class SliceDeferThread:
             self.max_create_wait_time = wait_time
 
         delay_rtype = GlobalsSingleton.get().get_config().get_runtime_config().get(
-            Constants.PropertyConfControllerDelayResourceTypes, None)
+            Constants.property_conf_controller_delay_resource_types, None)
 
         if delay_rtype is None:
             self.delay_resource_types = self.DEFAULT_DELAY_RESOURCE_TYPES.split(" ")

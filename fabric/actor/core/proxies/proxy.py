@@ -74,7 +74,7 @@ class Proxy(IProxy):
         @return IProxy
         @throws Exception in case of error
         """
-        proxy_reload_from_db = pickle.loads(properties.get(Constants.PropertyPickleProperties))
+        proxy_reload_from_db = pickle.loads(properties.get(Constants.property_pickle_properties))
         proxy_type = proxy_reload_from_db.get_type()
         name = proxy_reload_from_db.get_name()
 

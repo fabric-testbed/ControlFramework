@@ -42,10 +42,10 @@ class ResourcePoolAttributeDescriptor:
     """
     Pool Attribute Description
     """
-    PropertyType = "type"
-    PropertyUnit = "unit"
-    PropertyValue = "value"
-    PropertyLabel = "label"
+    property_type = "type"
+    property_unit = "unit"
+    property_value = "value"
+    property_label = "label"
 
     def __init__(self):
         self.key = None
@@ -144,15 +144,15 @@ class ResourcePoolAttributeDescriptor:
         if prefix is None:
             prefix = ""
 
-        properties[prefix + self.PropertyType] = str(self.type.value)
+        properties[prefix + self.property_type] = str(self.type.value)
         if self.value is not None:
-            properties[prefix + self.PropertyValue] = self.value
+            properties[prefix + self.property_value] = self.value
 
         if self.label is not None:
-            properties[prefix + self.PropertyLabel] = self.label
+            properties[prefix + self.property_label] = self.label
 
         if self.unit is not None:
-            properties[prefix + self.PropertyUnit] = self.unit
+            properties[prefix + self.property_unit] = self.unit
 
         return properties
 
@@ -165,9 +165,9 @@ class ResourcePoolAttributeDescriptor:
         if prefix is None:
             prefix = ""
 
-        self.type = ResourcePoolAttributeType(int(properties[prefix + self.PropertyType]))
-        self.value = properties[prefix + self.PropertyValue]
-        if prefix + self.PropertyLabel in properties:
-            self.label = properties[prefix + self.PropertyLabel]
-        if prefix + self.PropertyUnit in properties:
-            self.unit = properties[prefix + self.PropertyUnit]
+        self.type = ResourcePoolAttributeType(int(properties[prefix + self.property_type]))
+        self.value = properties[prefix + self.property_value]
+        if prefix + self.property_label in properties:
+            self.label = properties[prefix + self.property_label]
+        if prefix + self.property_unit in properties:
+            self.unit = properties[prefix + self.property_unit]

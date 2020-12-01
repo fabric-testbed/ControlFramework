@@ -36,6 +36,7 @@ from enum import Enum
 
 from yapsy.PluginManager import PluginManagerSingleton
 
+from fabric.actor.core.common.exceptions import ContainerException
 from fabric.actor.core.container.remote_actor_cache import RemoteActorCacheSingleton
 from fabric.actor.core.container.db.container_database import ContainerDatabase
 from fabric.actor.core.proxies.actor_location import ActorLocation
@@ -59,12 +60,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor_identity import IActorIdentity
     from fabric.actor.core.apis.i_container_database import IContainerDatabase
     from fabric.actor.boot.configuration import Configuration
-
-
-class ContainerException(Exception):
-    """
-    Exception raised by container
-    """
     
 
 class ContainerState(Enum):
@@ -132,7 +127,7 @@ class Container(IActorContainer):
         """
         Determine boot mode is clean restart or stateful restart
         """
-        filename = Constants.SuperblockLocation
+        filename = Constants.superblock_location
         self.logger.debug("Checking if this container is recovering. Looking for: {}".format(filename))
         if os.path.isfile(filename):
             self.logger.debug("Found super block file. This container is recovering")
@@ -148,9 +143,9 @@ class Container(IActorContainer):
         self.logger.debug("Creating superblock")
         file = None
         try:
-            file = open(Constants.SuperblockLocation, 'r')
+            file = open(Constants.superblock_location, 'r')
         except IOError:
-            file = open(Constants.SuperblockLocation, 'w')
+            file = open(Constants.superblock_location, 'w')
         finally:
             if file is not None:
                 file.close()
@@ -176,10 +171,10 @@ class Container(IActorContainer):
         """
         Create Database
         """
-        user = self.config.get_global_config().get_database().get(Constants.PropertyConfDbUser, None)
-        password = self.config.get_global_config().get_database().get(Constants.PropertyConfDbPassword, None)
-        dbname = self.config.get_global_config().get_database().get(Constants.PropertyConfDbName, None)
-        dbhost = self.config.get_global_config().get_database().get(Constants.PropertyConfDbHost, None)
+        user = self.config.get_global_config().get_database().get(Constants.property_conf_db_user, None)
+        password = self.config.get_global_config().get_database().get(Constants.property_conf_db_password, None)
+        dbname = self.config.get_global_config().get_database().get(Constants.property_conf_db_name, None)
+        dbhost = self.config.get_global_config().get_database().get(Constants.property_conf_db_host, None)
         self.db = ContainerDatabase(user=user, password=password, database=dbname, db_host=dbhost, logger=self.logger)
         if self.is_fresh():
             self.db.set_reset_state(value=True)
@@ -246,22 +241,22 @@ class Container(IActorContainer):
         Define Protocols i.e. Kafka and Local
         """
         self.logger.debug("Defining container protocols")
-        desc = ProtocolDescriptor(protocol=Constants.ProtocolLocal, location=None)
-        self.logger.debug("Registering protocol {}".format(Constants.ProtocolLocal))
+        desc = ProtocolDescriptor(protocol=Constants.protocol_local, location=None)
+        self.logger.debug("Registering protocol {}".format(Constants.protocol_local))
         self.register_protocol(protocol=desc)
 
         kafka_topic_name = self.get_config().get_actor().get_kafka_topic()
         self.logger.debug("Kafka Topic {}".format(kafka_topic_name))
         if kafka_topic_name is not None:
-            desc = ProtocolDescriptor(protocol=Constants.ProtocolKafka, location=kafka_topic_name)
-            self.logger.debug("Registering protocol {}".format(Constants.ProtocolKafka))
+            desc = ProtocolDescriptor(protocol=Constants.protocol_kafka, location=kafka_topic_name)
+            self.logger.debug("Registering protocol {}".format(Constants.protocol_kafka))
             self.register_protocol(protocol=desc)
 
     def boot_basic(self):
         """
         Perform basic boot actions
         """
-        self.guid = self.get_config().get_global_config().get_container().get(Constants.PropertyConfContainerGuid, None)
+        self.guid = self.get_config().get_global_config().get_container().get(Constants.property_conf_container_guid, None)
         self.logger.debug("Container guid is {}".format(self.guid))
         self.set_time()
         self.persist_basic()
@@ -278,7 +273,7 @@ class Container(IActorContainer):
         """
         Save container information in database
         """
-        properties = {Constants.PropertyConfContainerGuid: self.guid}
+        properties = {Constants.property_conf_container_guid: self.guid}
         self.db.add_container_properties(properties=properties)
 
     def persist_time(self):
@@ -295,14 +290,14 @@ class Container(IActorContainer):
         """
         Set the Actor clock and time
         """
-        start_time = int(self.config.get_global_config().get_time().get(Constants.PropertyConfTimeStartTime, None))
+        start_time = int(self.config.get_global_config().get_time().get(Constants.property_conf_time_start_time, None))
         if start_time == -1:
             start_time = ActorClock.get_current_milliseconds()
 
-        cycle_millis = int(self.config.get_global_config().get_time().get(Constants.PropertyConfTimeCycleMillis, None))
+        cycle_millis = int(self.config.get_global_config().get_time().get(Constants.property_conf_time_cycle_millis, None))
 
         manual = False
-        if self.config.get_global_config().get_time().get(Constants.PropertyConfTimeManual, None):
+        if self.config.get_global_config().get_time().get(Constants.property_conf_time_manual, None):
             manual = True
 
         self.create_and_start_tick(start_time=start_time, cycle_millis=cycle_millis, manual=manual)
@@ -351,7 +346,7 @@ class Container(IActorContainer):
         """
         self.logger.info("Instantiating extensions...")
         # Load the core from the plugin directory.
-        plugin_dir = self.config.get_global_config().get_runtime().get(Constants.PropertyConfPluginDir, None)
+        plugin_dir = self.config.get_global_config().get_runtime().get(Constants.property_conf_plugin_dir, None)
         manager = PluginManagerSingleton().get()
         manager.setPluginPlaces([plugin_dir])
         manager.collectPlugins()
@@ -383,7 +378,7 @@ class Container(IActorContainer):
         """
         self.logger.debug("Recovering container GUID")
         properties = self.db.get_container_properties()
-        stored_guid = properties.get(Constants.PropertyConfContainerGuid, None)
+        stored_guid = properties.get(Constants.property_conf_container_guid, None)
         if stored_guid is None:
             raise ContainerException("Could not obtain saved container GUID from database")
         self.guid = ID(id=stored_guid)
@@ -426,7 +421,7 @@ class Container(IActorContainer):
             raise ContainerException("Cannot recover actor: no name")
         self.logger.info("Recover actor: {}".format(actor_name))
         self.logger.debug("Restoring actor from saved state")
-        pickled_actor = properties.get(Constants.PropertyPickleProperties, None)
+        pickled_actor = properties.get(Constants.property_pickle_properties, None)
         if pickled_actor is None:
             raise ContainerException("Pickled Actor read from Data is None")
         actor = pickle.loads(pickled_actor)
@@ -610,15 +605,15 @@ class Container(IActorContainer):
     @staticmethod
     def write_state_file():
         try:
-            file = open(Constants.StateFileLocation, 'r')
+            file = open(Constants.state_file_location, 'r')
         except IOError:
-            file = open(Constants.StateFileLocation, 'w')
+            file = open(Constants.state_file_location, 'w')
         finally:
             file.close()
 
     @staticmethod
     def remove_state_file():
-        os.remove(Constants.StateFileLocation)
+        os.remove(Constants.state_file_location)
 
     def get_actor_clock(self) -> ActorClock:
         if self.ticker is None:
@@ -668,12 +663,9 @@ class Container(IActorContainer):
 
     @staticmethod
     def get_proxy(protocol: str, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None):
-        try:
-            proxy = ActorRegistrySingleton.get().get_proxy(protocol=protocol, actor_name=identity.get_name())
-            if proxy is None:
-                proxy = ProxyFactorySingleton.get().new_proxy(protocol=protocol, identity=identity, location=location,
-                                                              proxy_type=proxy_type)
-                ActorRegistrySingleton.get().register_proxy(proxy=proxy)
-            return proxy
-        except Exception as e:
-            raise e
+        proxy = ActorRegistrySingleton.get().get_proxy(protocol=protocol, actor_name=identity.get_name())
+        if proxy is None:
+            proxy = ProxyFactorySingleton.get().new_proxy(protocol=protocol, identity=identity, location=location,
+                                                          proxy_type=proxy_type)
+            ActorRegistrySingleton.get().register_proxy(proxy=proxy)
+        return proxy

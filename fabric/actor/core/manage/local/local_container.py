@@ -63,7 +63,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
                 raise Exception("Management object did not specify any proxies")
             desc = None
             for d in desc_list:
-                if d.get_protocol() == Constants.ProtocolLocal:
+                if d.get_protocol() == Constants.protocol_local:
                     desc = d
                     break
 

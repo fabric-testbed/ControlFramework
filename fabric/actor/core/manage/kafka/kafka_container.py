@@ -68,7 +68,7 @@ class KafkaContainer(KafkaProxy, IMgmtContainer):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")

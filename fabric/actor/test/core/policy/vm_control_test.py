@@ -61,7 +61,7 @@ class VMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
     VmmCapacity = 3
 
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -82,7 +82,7 @@ class VMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         rd.set_resource_type(rtype=self.Type)
         rd.set_resource_type_label(rtype_label=self.Label)
         ad = ResourcePoolAttributeDescriptor()
-        ad.set_key(value=Constants.ResourceMemory)
+        ad.set_key(value=Constants.resource_memory)
         ad.set_label(label="Memory")
         ad.set_unit(unit="MB")
         ad.set_type(rtype=ResourcePoolAttributeType.INTEGER)
@@ -123,9 +123,9 @@ class VMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
 
         for i in range(self.DonateUnits):
             host = Unit(id=ID())
-            host.set_property(name=Constants.UnitHostName, value="Host" + str(i))
-            host.set_property(name=Constants.UnitManagementIP, value="192.168.123." + str(i+1))
-            host.set_property(name=Constants.UnitControl, value="192.168.123." + str(i+1))
+            host.set_property(name=Constants.unit_host_name, value="Host" + str(i))
+            host.set_property(name=Constants.unit_management_ip, value="192.168.123." + str(i + 1))
+            host.set_property(name=Constants.unit_control, value="192.168.123." + str(i + 1))
             uset.add_unit(u=host)
 
         rset.set_resources(cset=uset)
@@ -173,9 +173,9 @@ class VMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
             print("Checking units")
             self.assertEqual(self.TicketUnits, uset.get_units())
             u = uset.get_set().values().__iter__().__next__()
-            self.assertEqual(self.VMMemory, int(u.get_property(name=Constants.UnitMemory)))
-            self.assertIsNotNone(u.get_property(name=Constants.UnitManagementIP))
-            self.assertIsNotNone(u.get_property(name=Constants.UnitManageSubnet))
+            self.assertEqual(self.VMMemory, int(u.get_property(name=Constants.unit_memory)))
+            self.assertIsNotNone(u.get_property(name=Constants.unit_management_ip))
+            self.assertIsNotNone(u.get_property(name=Constants.unit_manage_subnet))
 
             vmm_host_id = u.get_parent_id()
             self.assertIsNotNone(vmm_host_id)
@@ -233,9 +233,9 @@ class VMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         self.assertEqual(self.TicketUnits, uset.get_units())
 
         u = uset.get_set().values().__iter__().__next__()
-        self.assertEqual(self.VMMemory, int(u.get_property(name=Constants.UnitMemory)))
-        self.assertIsNotNone(u.get_property(name=Constants.UnitManagementIP))
-        self.assertIsNotNone(u.get_property(name=Constants.UnitManageSubnet))
+        self.assertEqual(self.VMMemory, int(u.get_property(name=Constants.unit_memory)))
+        self.assertIsNotNone(u.get_property(name=Constants.unit_management_ip))
+        self.assertIsNotNone(u.get_property(name=Constants.unit_manage_subnet))
 
         vmm_host_id = self.my_unit.get_parent_id()
         self.assertIsNotNone(vmm_host_id)

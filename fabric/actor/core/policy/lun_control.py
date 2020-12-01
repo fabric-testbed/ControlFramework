@@ -82,11 +82,11 @@ class LUNControl(ResourceControl):
         self.rtype = rtype
         size = 0
 
-        if Constants.PropertyLunRangeNum in local:
-            num_range = int(local[Constants.PropertyLunRangeNum])
+        if Constants.property_lun_range_num in local:
+            num_range = int(local[Constants.property_lun_range_num])
             for i in range(num_range):
-                start_p = Constants.PropertyStartLUN + str(i)
-                end_p = Constants.PropertyEndLUN + str(i)
+                start_p = Constants.property_start_lun + str(i)
+                end_p = Constants.property_end_lun + str(i)
                 if start_p in local and end_p in local:
                     start = int(local[start_p])
                     end = int(local[end_p])
@@ -122,14 +122,14 @@ class LUNControl(ResourceControl):
             if self.tags.get_free() > 0:
                 tag = self.tags.allocate()
                 rd = ResourceData()
-                rd.resource_properties[Constants.UnitLUNTag] = tag
+                rd.resource_properties[Constants.unit_lun_tag] = tag
                 gained = UnitSet(plugin=self.authority.get_plugin())
                 u = Unit(id=ID())
                 u.set_resource_type(rtype=rtype)
-                u.set_property(name=Constants.UnitLUNTag, value=str(tag))
-                if Constants.ResourceStorageCapacity in ticket_properties:
-                    capacity = int(ticket_properties[Constants.ResourceStorageCapacity])
-                    u.set_property(name=Constants.UnitStorageCapacity, value=str(capacity))
+                u.set_property(name=Constants.unit_lun_tag, value=str(tag))
+                if Constants.resource_storage_capacity in ticket_properties:
+                    capacity = int(ticket_properties[Constants.resource_storage_capacity])
+                    u.set_property(name=Constants.unit_storage_capacity, value=str(capacity))
 
                 gained.add_unit(u=u)
                 return ResourceSet(gained=gained, rtype=rtype, rdata=rd)
@@ -140,8 +140,8 @@ class LUNControl(ResourceControl):
 
     def get_tag(self, *, u: Unit):
         tag = None
-        if u.get_property(name=Constants.UnitLUNTag) is not None:
-            tag = int(u.get_property(name=Constants.UnitLUNTag))
+        if u.get_property(name=Constants.unit_lun_tag) is not None:
+            tag = int(u.get_property(name=Constants.unit_lun_tag))
         return tag
 
     def free(self, *, uset: dict):

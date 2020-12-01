@@ -53,7 +53,7 @@ from fabric.actor.test.core.policy.broker_policy_test import BrokerPolicyTest
 
 class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestBrokerConfigurationFile
+    Globals.config_file = Constants.test_broker_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -87,7 +87,7 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
         rd.set_resource_type(rtype=rtype)
         rd.set_resource_type_label(rtype_label="Pool label: {}".format(rtype))
         ad = ResourcePoolAttributeDescriptor()
-        ad.set_key(value=Constants.ResourceMemory)
+        ad.set_key(value=Constants.resource_memory)
         ad.set_label(label="Memory")
         ad.set_unit(unit="MB")
         ad.set_type(rtype=ResourcePoolAttributeType.INTEGER)
@@ -117,10 +117,10 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
         return source
 
     def check_query_response(self, response: dict, count: int):
-        temp = response.get(Constants.QueryResponse, None)
+        temp = response.get(Constants.query_response, None)
         self.assertIsNotNone(temp)
-        self.assertEqual(temp, Constants.QueryActionDiscoverPools)
-        temp = response.get(Constants.PoolsCount, None)
+        self.assertEqual(temp, Constants.query_action_discover_pools)
+        temp = response.get(Constants.pools_count, None)
         self.assertIsNotNone(temp)
         self.assertEqual(count, int(temp), count)
         result = BrokerPolicy.get_resource_pools(response)
@@ -149,7 +149,7 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
         broker = self.get_broker()
         policy = broker.get_policy()
 
-        request = {Constants.QueryAction:Constants.QueryActionDiscoverPools}
+        request = {Constants.query_action:Constants.query_action_discover_pools}
         response = policy.query(p=request)
 
         print(response)

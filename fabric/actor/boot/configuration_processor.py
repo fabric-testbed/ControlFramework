@@ -28,6 +28,7 @@ from __future__ import annotations
 import traceback
 from typing import TYPE_CHECKING, List
 
+from fabric.actor.boot.configuration_exception import ConfigurationException
 from fabric.actor.boot.inventory.pool_creator import PoolCreator
 from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.common.constants import Constants
@@ -158,17 +159,16 @@ class ConfigurationProcessor:
         else:
             raise ConfigurationException("Unsupported actor type: {}".format(actor_type))
 
-        if actor is not None:
-            actor_guid = ID()
-            if actor_config.get_guid() is not None:
-                actor_guid = ID(id=actor_config.get_guid())
-            auth_token = AuthToken(name=actor_config.get_name(), guid=actor_guid)
-            actor.set_identity(token=auth_token)
-            if actor_config.get_description() is not None:
-                actor.set_description(description=actor_config.get_description())
+        actor_guid = ID()
+        if actor_config.get_guid() is not None:
+            actor_guid = ID(id=actor_config.get_guid())
+        auth_token = AuthToken(name=actor_config.get_name(), guid=actor_guid)
+        actor.set_identity(token=auth_token)
+        if actor_config.get_description() is not None:
+            actor.set_description(description=actor_config.get_description())
 
-            from fabric.actor.core.container.globals import GlobalsSingleton
-            actor.set_actor_clock(clock=GlobalsSingleton.get().get_container().get_actor_clock())
+        from fabric.actor.core.container.globals import GlobalsSingleton
+        actor.set_actor_clock(clock=GlobalsSingleton.get().get_container().get_actor_clock())
 
         return actor
 
@@ -198,10 +198,10 @@ class ConfigurationProcessor:
 
         if plugin.get_database() is None:
             db = None
-            user = self.config.get_global_config().get_database()[Constants.PropertyConfDbUser]
-            password = self.config.get_global_config().get_database()[Constants.PropertyConfDbPassword]
-            db_host = self.config.get_global_config().get_database()[Constants.PropertyConfDbHost]
-            db_name = self.config.get_global_config().get_database()[Constants.PropertyConfDbName]
+            user = self.config.get_global_config().get_database()[Constants.property_conf_db_user]
+            password = self.config.get_global_config().get_database()[Constants.property_conf_db_password]
+            db_host = self.config.get_global_config().get_database()[Constants.property_conf_db_host]
+            db_name = self.config.get_global_config().get_database()[Constants.property_conf_db_name]
             if isinstance(plugin, Substrate):
                 db = SubstrateActorDatabase(user=user, password=password, database=db_name, db_host=db_host,
                                             logger=self.logger)
@@ -426,24 +426,22 @@ class ConfigurationProcessor:
         Populate inventory
         @raises ConfigurationException in case of error
         """
-        if isinstance(self.actor, IAuthority):
-            if isinstance(self.actor.get_plugin(), AuthoritySubstrate):
-                creator = PoolCreator(substrate=self.actor.get_plugin(), pools=self.pools,
-                                      neo4j_config=self.config.get_global_config().get_neo4j_config())
-                creator.process()
+        if isinstance(self.actor, IAuthority) and isinstance(self.actor.get_plugin(), AuthoritySubstrate):
+            creator = PoolCreator(substrate=self.actor.get_plugin(), pools=self.pools,
+                                  neo4j_config=self.config.get_global_config().get_neo4j_config())
+            creator.process()
 
     def populate_inventory_neo4j(self):
         """
         Load Aggregate Resource model
         @raises ConfigurationException in case of error
         """
-        if isinstance(self.actor, IAuthority):
-            if isinstance(self.actor.get_plugin(), AuthoritySubstrate):
-                creator = PoolCreator(substrate=self.actor.get_plugin(), pools=self.resources,
-                                      neo4j_config=self.config.get_global_config().get_neo4j_config())
-                self.aggregate_delegation_models = creator.process_neo4j(actor_name=self.actor.get_name(),
-                                                                         substrate_file=self.config.get_actor().
-                                                                         get_substrate_file())
+        if isinstance(self.actor, IAuthority) and isinstance(self.actor.get_plugin(), AuthoritySubstrate):
+            creator = PoolCreator(substrate=self.actor.get_plugin(), pools=self.resources,
+                                  neo4j_config=self.config.get_global_config().get_neo4j_config())
+            self.aggregate_delegation_models = creator.process_neo4j(actor_name=self.actor.get_name(),
+                                                                     substrate_file=self.config.get_actor().
+                                                                     get_substrate_file())
 
     def recover_actor(self):
         """
@@ -453,7 +451,7 @@ class ConfigurationProcessor:
         try:
             self.actor.recover()
         except Exception as e:
-            raise ConfigurationException("Recovery failed for actor: {}".format(self.actor.get_name()))
+            raise ConfigurationException("Recovery failed for actor: {} e: {}".format(self.actor.get_name(), e))
 
     def enable_ticking(self):
         """
@@ -506,22 +504,22 @@ class ConfigurationProcessor:
         if peer.get_guid() is None:
             raise ConfigurationException("Actor must specify a guid")
 
-        protocol = Constants.ProtocolLocal
+        protocol = Constants.protocol_local
         kafka_topic = None
         if peer.get_kafka_topic() is not None:
-            protocol = Constants.ProtocolKafka
+            protocol = Constants.protocol_kafka
             kafka_topic = peer.get_kafka_topic()
 
         actor_type = peer.get_type().lower()
 
         entry = {
-            RemoteActorCache.ActorName: peer.get_name(),
-            RemoteActorCache.ActorGuid: ID(id=peer.get_guid()),
-            RemoteActorCache.ActorType: actor_type,
-            RemoteActorCache.ActorProtocol: protocol
+            RemoteActorCache.actor_name: peer.get_name(),
+            RemoteActorCache.actor_guid: ID(id=peer.get_guid()),
+            RemoteActorCache.actor_type: actor_type,
+            RemoteActorCache.actor_protocol: protocol
         }
         if kafka_topic is not None:
-            entry[RemoteActorCache.ActorLocation] = kafka_topic
+            entry[RemoteActorCache.actor_location] = kafka_topic
 
         RemoteActorCacheSingleton.get().add_partial_cache_entry(guid=ID(id=peer.get_guid()), entry=entry)
 
@@ -611,9 +609,3 @@ class ConfigurationProcessor:
         if info.exported is None:
             raise ConfigurationException("Could not export resources from actor: {} to actor: {} Error = {}".format(
                 info.exporter.get_name(), info.client.get_name(), info.exporter.get_last_error()))
-
-
-class ConfigurationException(Exception):
-    """
-    Configuration Exception
-    """

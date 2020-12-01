@@ -224,7 +224,7 @@ class VMControl(ResourceControl):
             pool = VmmPool(rtype=rtype, properties=resource)
             rd = ResourcePoolDescriptor()
             rd.reset(properties=resource, prefix=None)
-            memory = int(rd.get_attribute(key=Constants.ResourceMemory).get_value())
+            memory = int(rd.get_attribute(key=Constants.resource_memory).get_value())
             capacity = 0
             if self.PropertyCapacity in local:
                 capacity = int(local[self.PropertyCapacity])
@@ -283,7 +283,7 @@ class VMControl(ResourceControl):
                 gained = self.get_vms(pool=pool, needed=difference)
             elif difference < 0:
                 unit_set = current.get_resources()
-                victims = request_properties[Constants.ConfigVictims]
+                victims = request_properties[Constants.config_victims]
                 to_take = unit_set.select_extract(count=-difference, victims=victims)
                 lost = UnitSet(plugin=self.authority.get_plugin(), units=to_take)
 
@@ -305,21 +305,21 @@ class VMControl(ResourceControl):
                     vm = Unit(id=ID())
                     vm.set_resource_type(rtype=pool.get_type())
                     vm.set_parent_id(parent_id=vmm.get_host().get_id())
-                    vm.set_property(name=Constants.UnitParentHostName,
-                                    value=vmm.get_host().get_property(name=Constants.UnitHostName))
-                    vm.set_property(name=Constants.UnitControl,
-                                    value=vmm.get_host().get_property(name=Constants.UnitControl))
-                    vm.set_property(name=Constants.UnitMemory,
+                    vm.set_property(name=Constants.unit_parent_host_name,
+                                    value=vmm.get_host().get_property(name=Constants.unit_host_name))
+                    vm.set_property(name=Constants.unit_control,
+                                    value=vmm.get_host().get_property(name=Constants.unit_control))
+                    vm.set_property(name=Constants.unit_memory,
                                     value=str(pool.get_memory()))
                     if self.use_ip_set:
-                        vm.set_property(name=Constants.UnitManagementIP,
+                        vm.set_property(name=Constants.unit_management_ip,
                                         value=self.ipset.allocate())
 
                     if self.subnet is not None:
-                        vm.set_property(name=Constants.UnitManageSubnet, value=self.subnet)
+                        vm.set_property(name=Constants.unit_manage_subnet, value=self.subnet)
 
                     if self.gateway is not None:
-                        vm.set_property(name=Constants.UnitManageGateway, value=self.gateway)
+                        vm.set_property(name=Constants.unit_manage_gateway, value=self.gateway)
 
                     vmm.host(vm=vm)
                     uset.add_unit(u=vm)
@@ -339,7 +339,7 @@ class VMControl(ResourceControl):
                     vmm = pool.get_vmm(uid=host)
                     vmm.release(vm=u)
                     if self.use_ip_set:
-                        self.ipset.free(ip=u.get_property(Constants.UnitManagementIP))
+                        self.ipset.free(ip=u.get_property(Constants.unit_management_ip))
                     self.logger.debug("Released unit: {}".format(u))
                 except Exception as e:
                     self.logger.error("Failed to release unit: {} exception:{}".format(u, e))
@@ -360,8 +360,8 @@ class VMControl(ResourceControl):
                     vmm = pool.get_vmm(uid=id)
                     vmm.host(vm=u)
                     self.logger.debug("VMControl.revisit(); recovering management IP {}".format(
-                        u.get_property(name=Constants.UnitManagementIP)))
-                    self.ipset.reserve(ip=u.get_property(name=Constants.UnitManagementIP))
+                        u.get_property(name=Constants.unit_management_ip)))
+                    self.ipset.reserve(ip=u.get_property(name=Constants.unit_management_ip))
             except Exception as e:
                 self.fail(u=u, message="revisit with vmcontrol", e=e)
 

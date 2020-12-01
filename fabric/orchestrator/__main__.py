@@ -44,8 +44,8 @@ def main():
     try:
         from fabric.actor.core.container.globals import Globals, GlobalsSingleton
         # Uncomment when testing as app running
-        #Globals.ConfigFile = './test.yaml'
-        #Constants.SuperblockLocation = './state_recovery.lock'
+        #Globals.config_file = './test.yaml'
+        #Constants.superblock_location = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
 
             GlobalsSingleton.get().start(force_fresh=True)
@@ -60,10 +60,10 @@ def main():
             runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
 
             # prometheus server
-            prometheus_port = int(runtime_config.get(Constants.PropertyConfPrometheusRestPort, None))
+            prometheus_port = int(runtime_config.get(Constants.property_conf_prometheus_rest_port, None))
             prometheus_client.start_http_server(prometheus_port)
 
-            rest_port = int(runtime_config.get(Constants.PropertyConfControllerRestPort, None))
+            rest_port = int(runtime_config.get(Constants.property_conf_controller_rest_port, None))
 
             if rest_port is None:
                 raise Exception("Invalid configuration rest port not specified")

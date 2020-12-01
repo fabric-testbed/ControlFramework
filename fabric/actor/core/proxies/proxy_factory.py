@@ -41,8 +41,8 @@ class ProxyFactory:
         self.load_factories()
 
     def load_factories(self):
-        self.factories[Constants.ProtocolLocal] = LocalProxyFactory()
-        self.factories[Constants.ProtocolKafka] = KafkaProxyFactory()
+        self.factories[Constants.protocol_local] = LocalProxyFactory()
+        self.factories[Constants.protocol_kafka] = KafkaProxyFactory()
 
     def new_callback(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation):
         if protocol in self.factories:

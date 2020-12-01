@@ -29,6 +29,7 @@ import pickle
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import DatabaseException
 from fabric.actor.core.extensions.plugin import Plugin
 from fabric.actor.core.apis.i_actor import IActor, ActorType
 from fabric.actor.core.apis.i_container_database import IContainerDatabase
@@ -190,10 +191,10 @@ class ContainerDatabase(IContainerDatabase):
         Get Plugin from database row
         @param plug_obj plugin object read from database
         """
-        if Constants.PropertyPickleProperties not in plug_obj:
-            raise Exception("Invalid arguments")
+        if Constants.property_pickle_properties not in plug_obj:
+            raise DatabaseException(Constants.invalid_argument)
 
-        serialized_plugin = plug_obj[Constants.PropertyPickleProperties]
+        serialized_plugin = plug_obj[Constants.property_pickle_properties]
         deserialized_plugin = pickle.loads(serialized_plugin)
         return deserialized_plugin
 

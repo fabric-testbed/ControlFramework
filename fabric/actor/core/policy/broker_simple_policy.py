@@ -475,7 +475,7 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
             self.lock.acquire()
             if self.combined_broker_model is not None:
                 graph = self.combined_broker_model.get_bqm(some=5)
-                result[Constants.BrokerQueryModel] = graph.serialize_graph()
+                result[Constants.broker_query_model] = graph.serialize_graph()
                 graph.delete_graph()
         finally:
             self.lock.release()

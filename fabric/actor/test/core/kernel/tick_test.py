@@ -31,7 +31,7 @@ from fabric.actor.core.kernel.kernel_tick import KernelTick
 
 class TickTest(unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().initialize()

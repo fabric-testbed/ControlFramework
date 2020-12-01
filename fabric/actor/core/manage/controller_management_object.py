@@ -62,13 +62,13 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_controller import LocalController
-        local = ProxyProtocolDescriptor(protocol=Constants.ProtocolLocal, 
-                                        proxy_class=LocalController.__name__, 
+        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local,
+                                        proxy_class=LocalController.__name__,
                                         proxy_module=LocalController.__module__)
 
         from fabric.actor.core.manage.kafka.kafka_controller import KafkaController
-        kakfa = ProxyProtocolDescriptor(protocol=Constants.ProtocolKafka, 
-                                        proxy_class=KafkaController.__name__, 
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka,
+                                        proxy_class=KafkaController.__name__,
                                         proxy_module=KafkaController.__module__)
 
         self.proxies = []
@@ -77,8 +77,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = ControllerManagementObject.__name__
-        properties[Constants.PropertyModuleName] = ControllerManagementObject.__module__
+        properties[Constants.property_class_name] = ControllerManagementObject.__name__
+        properties[Constants.property_module_name] = ControllerManagementObject.__module__
 
         return properties
 

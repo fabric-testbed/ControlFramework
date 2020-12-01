@@ -26,6 +26,7 @@
 import yaml
 
 from fabric.actor.boot.configuration import Configuration
+from fabric.actor.boot.configuration_exception import ConfigurationException
 from fabric.actor.boot.configuration_processor import ConfigurationProcessor
 
 
@@ -54,7 +55,7 @@ class ConfigurationLoader:
         Read config file
         """
         if self.path is None:
-            raise Exception("No data source has been specified")
+            raise ConfigurationException("No data source has been specified")
         print("Reading config file: {}".format(self.path))
         config_dict = None
         with open(self.path) as f:

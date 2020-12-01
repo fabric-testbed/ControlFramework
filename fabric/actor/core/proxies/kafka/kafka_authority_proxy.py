@@ -144,7 +144,7 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
 
         encoded = None
         if cset is not None:
-            encoded = cset.encode(protocol=Constants.ProtocolKafka)
+            encoded = cset.encode(protocol=Constants.protocol_kafka)
             if encoded is None:
                 raise Exception("Unsupported IConcreteSet: {}".format(type(cset)))
 

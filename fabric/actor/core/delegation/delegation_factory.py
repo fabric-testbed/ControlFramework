@@ -63,10 +63,10 @@ class DelegationFactory:
 
         @raises Exception in case of error
         """
-        if Constants.PropertyPickleProperties not in properties:
+        if Constants.property_pickle_properties not in properties:
             raise Exception("Invalid arguments")
 
-        serialized_delegation = properties[Constants.PropertyPickleProperties]
+        serialized_delegation = properties[Constants.property_pickle_properties]
         deserialized_delegation = None
         try:
             deserialized_delegation = pickle.loads(serialized_delegation)

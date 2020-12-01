@@ -46,11 +46,11 @@ class SliceFactory(ISliceFactory):
 
     @staticmethod
     def create_instance(*, properties: dict) -> ISlice:
-        if Constants.PropertyPickleProperties not in properties:
+        if Constants.property_pickle_properties not in properties:
             raise Exception("Invalid arguments")
         deserialized_slice = None
         try:
-            serialized_slice = properties[Constants.PropertyPickleProperties]
+            serialized_slice = properties[Constants.property_pickle_properties]
             deserialized_slice = pickle.loads(serialized_slice)
             graph_id = str(deserialized_slice.get_graph_id())
             if graph_id is not None:

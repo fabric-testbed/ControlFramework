@@ -194,7 +194,7 @@ class ResourceSet:
         @param resource_set resource set
         """
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.INVALID_ARGUMENT)
+            raise ResourcesException(Constants.invalid_argument)
 
         if self.properties is None:
             self.properties = ResourceData()
@@ -240,7 +240,7 @@ class ResourceSet:
 
     def delta_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.INVALID_ARGUMENT)
+            raise ResourcesException(Constants.invalid_argument)
 
         if self.resources is None:
             # in case of close for a canceled reservation.
@@ -290,7 +290,7 @@ class ResourceSet:
 
     def full_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.INVALID_ARGUMENT)
+            raise ResourcesException(Constants.invalid_argument)
 
         # take the units and the type
         self.units = resource_set.units
@@ -629,7 +629,7 @@ class ResourceSet:
 
     def update(self, *, reservation: IReservation, resource_set: ResourceSet):
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.INVALID_ARGUMENT)
+            raise ResourcesException(Constants.invalid_argument)
 
         if resource_set.resources is not None:
             self.full_update(reservation=reservation, resource_set=resource_set)
@@ -638,7 +638,7 @@ class ResourceSet:
 
     def update_properties(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.INVALID_ARGUMENT)
+            raise ResourcesException(Constants.invalid_argument)
 
         self.merge_properties(reservation=reservation, resource_set=resource_set)
 

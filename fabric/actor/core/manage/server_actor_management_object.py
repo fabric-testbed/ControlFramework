@@ -65,8 +65,8 @@ class ServerActorManagementObject(ActorManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = ServerActorManagementObject.__name__
-        properties[Constants.PropertyModuleName] = ServerActorManagementObject.__module__
+        properties[Constants.property_class_name] = ServerActorManagementObject.__name__
+        properties[Constants.property_module_name] = ServerActorManagementObject.__module__
         return properties
 
     def get_reservations_by_category(self, *, caller: AuthToken, category: ReservationCategory, slice_id: ID = None,

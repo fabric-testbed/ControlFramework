@@ -56,7 +56,7 @@ class LocalProxy(Proxy, ICallbackProxy):
     def __init__(self, *, actor: IActor):
         super().__init__(auth=actor.get_identity())
         self.logger = actor.get_logger()
-        self.proxy_type = Constants.ProtocolLocal
+        self.proxy_type = Constants.protocol_local
 
     def execute(self, *, request):
         try:

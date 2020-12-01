@@ -95,3 +95,39 @@ class BrokerException(Exception):
     """
     Authority Exception
     """
+
+
+class DatabaseException(Exception):
+    """
+    Database exception
+    """
+
+
+class EventException(Exception):
+    """
+    Event exception
+    """
+
+
+class ContainerException(Exception):
+    """
+    Exception raised by container
+    """
+
+
+class InitializationException(Exception):
+    """
+    Exception raised for Initialization Errors
+    """
+
+
+class KafkaServiceException(Exception):
+    """
+    Exception raised for Kafka Service Errors
+    """
+
+
+class ActorException(Exception):
+    """
+    Actor Exception
+    """

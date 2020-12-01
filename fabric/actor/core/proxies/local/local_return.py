@@ -101,7 +101,7 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
             if concrete is not None:
                 cset = None
                 try:
-                    encoded = concrete.encode(protocol=Constants.ProtocolLocal)
+                    encoded = concrete.encode(protocol=Constants.protocol_local)
                     cset = Proxy.decode(encoded=encoded, plugin=plugin)
                 except Exception as e:
                     raise Exception("Error while encoding concrete set {}".format(e))

@@ -68,7 +68,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
         super().__init__(auth=identity)
         self.kafka_topic = kafka_topic
         self.logger = logger
-        self.proxy_type = Constants.ProtocolKafka
+        self.proxy_type = Constants.protocol_kafka
         self.type = self.TypeDefault
         self.producer = self.create_kafka_producer()
 

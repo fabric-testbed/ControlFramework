@@ -90,7 +90,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -139,7 +139,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -185,7 +185,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -230,7 +230,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -275,7 +275,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -329,7 +329,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -355,7 +355,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         return response.reservations
 
     def get_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
-        return self.do_get_reservations(slice_id=None, state=Constants.AllReservationStates, reservation_id=None,
+        return self.do_get_reservations(slice_id=None, state=Constants.all_reservation_states, reservation_id=None,
                                         id_token=id_token)
 
     def get_reservations_by_state(self, *, state: int, id_token: str = None) -> List[ReservationMng]:
@@ -372,7 +372,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_status = status
             return None
 
-        return self.do_get_reservations(slice_id=slice_id, state=Constants.AllReservationStates, reservation_id=None,
+        return self.do_get_reservations(slice_id=slice_id, state=Constants.all_reservation_states, reservation_id=None,
                                         id_token=id_token)
 
     def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[ReservationMng]:
@@ -413,7 +413,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -439,7 +439,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         return response.delegations
 
     def get_delegations(self, *, id_token: str = None) -> List[DelegationAvro]:
-        return self.do_get_delegations(slice_id=None, state=Constants.AllReservationStates, delegation_id=None,
+        return self.do_get_delegations(slice_id=None, state=Constants.all_reservation_states, delegation_id=None,
                                        id_token=id_token)
 
     def get_delegations_by_state(self, *, state: int, id_token: str = None) -> List[DelegationAvro]:
@@ -456,7 +456,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             self.last_status = status
             return None
 
-        return self.do_get_delegations(slice_id=slice_id, state=Constants.AllReservationStates, delegation_id=None,
+        return self.do_get_delegations(slice_id=slice_id, state=Constants.all_reservation_states, delegation_id=None,
                                        id_token=id_token)
 
     def get_delegations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[DelegationAvro]:
@@ -494,7 +494,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -545,7 +545,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -596,7 +596,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -647,7 +647,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")
@@ -701,7 +701,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.ManagementApiTimeoutInSeconds)
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
                     self.logger.debug("Timeout occurred!")

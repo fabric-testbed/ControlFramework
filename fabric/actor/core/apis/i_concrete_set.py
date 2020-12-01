@@ -51,9 +51,6 @@ class IConcreteSet:
     be executed on a separate thread. Once the configuration action completes, an event
     should be queued to the actor to be processed on the actor main thread.
     """
-    PropertyResourceType = "cs.resourceType"
-    PropertyUnits = "cs.units"
-
     @abstractmethod
     def add(self, *, concrete_set: IConcreteSet, configure: bool):
         """

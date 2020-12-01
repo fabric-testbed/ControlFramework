@@ -30,6 +30,7 @@ from contextlib import contextmanager
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
+from fabric.actor.core.common.exceptions import DatabaseException
 from fabric.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
     Miscellaneous, Plugins, Actors, Delegations
 
@@ -48,10 +49,7 @@ def session_scope(psql_db_engine):
         session.close()
 
 
-class DatabaseException(Exception):
-    """
-    Database exception
-    """
+
 
 
 class PsqlDatabase:
@@ -59,6 +57,7 @@ class PsqlDatabase:
     Implements interface to Postgres database
     """
     OBJECT_NOT_FOUND = "{} Not Found {}"
+
     def __init__(self, *, user: str, password: str, database: str, db_host: str, logger):
         # Connecting to PostgreSQL server at localhost using psycopg2 DBAPI
         self.db_engine = create_engine("postgresql+psycopg2://{}:{}@{}/{}".format(user, password, db_host, database))

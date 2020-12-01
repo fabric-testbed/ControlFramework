@@ -46,16 +46,16 @@ if TYPE_CHECKING:
 class ContainerManagementObject(ManagementObject):
     def __init__(self):
         super().__init__()
-        self.id = ID(id=Constants.ContainerManagmentObjectID)
+        self.id = ID(id=Constants.container_managment_object_id)
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_container import LocalContainer
-        local = ProxyProtocolDescriptor(protocol=Constants.ProtocolLocal,
+        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local,
                                         proxy_class=LocalContainer.__name__,
                                         proxy_module=LocalContainer.__module__)
 
         from fabric.actor.core.manage.kafka.kafka_container import KafkaContainer
-        kakfa = ProxyProtocolDescriptor(protocol=Constants.ProtocolKafka,
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka,
                                         proxy_class=KafkaContainer.__name__,
                                         proxy_module=KafkaContainer.__module__)
 
@@ -65,8 +65,8 @@ class ContainerManagementObject(ManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = ContainerManagementObject.__name__
-        properties[Constants.PropertyModuleName] = ContainerManagementObject.__module__
+        properties[Constants.property_class_name] = ContainerManagementObject.__name__
+        properties[Constants.property_module_name] = ContainerManagementObject.__module__
 
         return properties
 

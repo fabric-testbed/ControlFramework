@@ -41,6 +41,7 @@ from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_reservation_tracker import IReservationTracker
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ActorException
 from fabric.actor.core.container.message_service import MessageService
 from fabric.actor.core.core.reservation_tracker import ReservationTracker
 from fabric.actor.core.delegation.delegation_factory import DelegationFactory
@@ -257,7 +258,7 @@ class Actor(IActor):
                     always
         """
         self.logger.error(err)
-        raise Exception(err)
+        raise ActorException(err)
 
     def extend(self, *, rid: ID, resources: ResourceSet, term: Term):
         self.wrapper.extend_reservation(rid=rid, resources=resources, term=term)
@@ -369,25 +370,25 @@ class Actor(IActor):
 
         if not self.initialized:
             if self.identity is None:
-                raise Exception("The actor is not properly created: no identity")
+                raise ActorException("The actor is not properly created: no identity")
 
             if self.plugin is None:
-                raise Exception("The actor is not properly created: no plugin")
+                raise ActorException("The actor is not properly created: no plugin")
 
             if self.policy is None:
-                raise Exception("The actor is not properly created: no policy")
+                raise ActorException("The actor is not properly created: no policy")
 
             if self.name is None:
                 self.name = self.identity.get_name()
 
             if self.name is None:
-                raise Exception("The actor is not properly created: no name")
+                raise ActorException("The actor is not properly created: no name")
 
             if self.clock is None:
                 self.clock = GlobalsSingleton.get().get_container().get_actor_clock()
 
             if self.clock is None:
-                raise Exception("The actor is not properly created: no clock")
+                raise ActorException("The actor is not properly created: no clock")
 
             if self.logger is None:
                 self.logger = GlobalsSingleton.get().get_logger()
@@ -485,10 +486,11 @@ class Actor(IActor):
         Recover slice
         @param properties properties
         """
+        if properties.get('slc_guid', None) is None:
+            raise ActorException("Missing slice guid")
+
         slice_id = ID(id=properties['slc_guid'])
 
-        if slice_id is None:
-            raise Exception("Missing slice guid")
         slice_obj = self.get_slice(slice_id=slice_id)
         self.logger.debug("Found slice_id: {} slice:{}".format(slice_id, slice_obj))
 
@@ -524,7 +526,7 @@ class Actor(IActor):
             reservations = self.plugin.get_database().get_reservations_by_slice_id(slice_id=slice_obj.get_slice_id())
         except Exception as e:
             self.logger.error(e)
-            raise Exception(
+            raise ActorException(
                 "Could not fetch reservation records for slice {}({}) from database".format(slice_obj.get_name(),
                                                                                             slice_obj.get_slice_id()))
 
@@ -576,7 +578,7 @@ class Actor(IActor):
         except Exception as e:
             traceback.print_exc()
             self.logger.error("Exception occurred in recovering reservation e={}".format(e))
-            raise Exception("Could not recover Reservation #{}".format(properties))
+            raise ActorException("Could not recover Reservation #{}".format(properties))
 
     def recover_delegations(self, *, slice_obj: ISlice):
         """
@@ -590,7 +592,7 @@ class Actor(IActor):
             delegations = self.plugin.get_database().get_delegations_by_slice_id(slice_id=slice_obj.get_slice_id())
         except Exception as e:
             self.logger.error(e)
-            raise Exception(
+            raise ActorException(
                 "Could not fetch delegations records for slice {}({}) from database".format(slice_obj.get_name(),
                                                                                             slice_obj.get_slice_id()))
 
@@ -642,7 +644,7 @@ class Actor(IActor):
         except Exception as e:
             traceback.print_exc()
             self.logger.error("Exception occurred in recovering delegation e={}".format(e))
-            raise Exception("Could not recover delegation #{}".format(properties))
+            raise ActorException("Could not recover delegation #{}".format(properties))
 
     def register(self, *, reservation: IReservation):
         self.wrapper.register_reservation(reservation=reservation)
@@ -790,7 +792,7 @@ class Actor(IActor):
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
-                raise Exception("This actor has already been started")
+                raise ActorException("This actor has already been started")
 
             self.thread = threading.Thread(target=self.run)
             self.thread.setName(self.get_name())
@@ -985,11 +987,11 @@ class Actor(IActor):
         Create an Actor instance using the pickled instance read from the database
         @param properties properties
         """
-        if Constants.PropertyPickleProperties not in properties:
-            raise Exception("Invalid arguments")
+        if Constants.property_pickle_properties not in properties:
+            raise ActorException("Invalid arguments")
         deserialized_actor = None
         try:
-            serialized_actor = properties[Constants.PropertyPickleProperties]
+            serialized_actor = properties[Constants.property_pickle_properties]
             deserialized_actor = pickle.loads(serialized_actor)
         except Exception as e:
             raise e
