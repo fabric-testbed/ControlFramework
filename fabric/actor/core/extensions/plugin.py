@@ -29,34 +29,6 @@ class Plugin:
     """
     Plugin class describes metadatata about an plugin supplied
     """
-    PluginId = 'plg_id'
-    PluginLocalId = 'plg_local_id'
-    PluginType = 'plg_type'
-    PluginActorType = 'plg_actor_type'
-    # Plugin types.
-    TypeAll = 0
-    # Specifies a plugin that provides a new actor implementation.
-    TypeActorObject = 1
-    # Specified a plugin that provides a new policy implementation.
-    TypePolicy = 2
-    # Specifies a plugin that provides a new manager object implementation.
-    TypeManagerObject = 3
-    # Specifies a plugin that provides a new portal plugin implementation.
-    TypePortalPlugin = 4
-    # Specifies a plugin that provides a new actor orchestrator implementation.
-    TypeActorController = 5
-    # Specified a new plugin that provides an new application implementation.
-    TypeApplicationController = 6
-    # Specified a new plugin that provides a new workload implementation.
-    TypeWorkloadController = 7
-    # Specified a new plugin that provides a new site control implementation.
-    TypeSiteControl = 8
-    # Specifies a handler support library: not a real handler
-    TypeHandlerSupportLibrary = 9
-    # Specifies a configuration handler
-    TypeHandler = 10
-    PluginPropertyHandlerFile = "handler.file"
-
     def __init__(self):
         self.id = None
         self.plugin_type = None

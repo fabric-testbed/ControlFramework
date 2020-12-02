@@ -29,6 +29,7 @@ from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
 from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
 from fabric.actor.core.apis.i_delegation import DelegationState, IDelegation
 from fabric.actor.core.apis.i_policy import IPolicy
+from fabric.actor.core.common.exceptions import DelegationException
 from fabric.actor.core.delegation.delegation import Delegation
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric.actor.core.util.id import ID
@@ -87,7 +88,7 @@ class BrokerDelegation(Delegation):
         return self.exported
 
     def claim(self):
-        raise Exception("Not supported on Broker Delegation")
+        raise DelegationException("Not supported on Broker Delegation")
 
     def delegate(self, policy: IPolicy, id_token: str = None):
         self.policy = policy
@@ -99,13 +100,20 @@ class BrokerDelegation(Delegation):
                 RPCManagerSingleton.get().claim_delegation(delegation=self, id_token=id_token)
                 self.transition(prefix="delegate", state=DelegationState.Delegated)
             else:
-                self.error(err="Invalid state for claim. Did you already claim this Delegation?")
+                self.logger.error(
+                    self.error_string_prefix.format(self, self.invalid_state_prefix.format('claim', 'claim')))
+                raise DelegationException(self.invalid_state_prefix.format('claim', 'claim'))
 
         elif self.state == DelegationState.Delegated:
             if self.exported:
-                self.error(err="Invalid state for claim. Did you already claim this Delegation?")
+                self.logger.error(
+                    self.error_string_prefix.format(self, self.invalid_state_prefix.format('claim', 'claim')))
+                raise DelegationException(self.invalid_state_prefix.format('claim', 'claim'))
+            
         elif self.state == DelegationState.Closed:
-            self.error(err="initiating reserve on defunct Delegation")
+            self.logger.error(
+                self.error_string_prefix.format(self, "initiating delegate on defunct Delegation"))
+            raise DelegationException("initiating delegate on defunct Delegation")
 
     def reclaim(self, id_token: str = None):
         if self.state == DelegationState.Delegated:
@@ -115,7 +123,9 @@ class BrokerDelegation(Delegation):
             self.transition(prefix="reclaimed", state=DelegationState.Delegated)
             self.service_reclaim(id_token=id_token)
         else:
-            self.error(err="Wrong delegation state for delegation reclaim")
+            self.logger.error(
+                self.error_string_prefix.format(self, self.invalid_state_prefix.format('reclaim', 'reclaim')))
+            raise DelegationException(self.invalid_state_prefix.format('reclaim', 'reclaim'))
 
     def service_reclaim(self, id_token: str = None):
         """
@@ -143,10 +153,12 @@ class BrokerDelegation(Delegation):
         Validate outgoing delegation
         """
         if self.slice_object is None:
-            self.error(err="No slice specified")
+            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("slice")))
+            raise DelegationException(self.not_specified_prefix.format("slice"))
 
         if self.dlg_graph_id is None:
-            self.error(err="No Graph specified")
+            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("graph id")))
+            raise DelegationException(self.not_specified_prefix.format("graph id"))
 
     def do_relinquish(self):
         """

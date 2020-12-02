@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric.actor.core.common.exceptions import ResourcesException
 from fabric.actor.core.common.resource_vector import ResourceVector
 from fabric.actor.core.apis.i_resource_ticket_factory import IResourceTicketFactory
 from fabric.actor.core.delegation.resource_delegation import ResourceDelegation
@@ -43,9 +44,9 @@ class ResourceTicket:
         @params factory: factory
         """
         if factory is None:
-            raise Exception("factory Null")
+            raise ResourcesException("factory Null")
         if delegation is None:
-            raise Exception("delegation Null")
+            raise ResourcesException("delegation Null")
 
         self.factory = factory
         # All delegation records represented by this ticket.
@@ -55,7 +56,7 @@ class ResourceTicket:
 
         if source is not None:
             if not isinstance(source, ResourceTicket):
-                raise Exception("Invalid argument")
+                raise ResourcesException("Invalid argument")
 
             for d in source.delegations:
                 self.delegations.append(d)

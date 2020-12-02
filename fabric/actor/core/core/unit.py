@@ -29,6 +29,7 @@ from enum import Enum
 
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import UnitException
 from fabric.actor.core.plugins.config.config_token import ConfigToken
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.notice import Notice
@@ -413,11 +414,7 @@ class Unit(ConfigToken):
         @param properties properties
         """
         if Constants.property_pickle_properties not in properties:
-            raise Exception("Invalid arguments")
-        deserialized_unit = None
-        try:
-            serialized_unit = properties[Constants.property_pickle_properties]
-            deserialized_unit = pickle.loads(serialized_unit)
-        except Exception as e:
-            raise e
+            raise UnitException(Constants.invalid_argument)
+        serialized_unit = properties[Constants.property_pickle_properties]
+        deserialized_unit = pickle.loads(serialized_unit)
         return deserialized_unit

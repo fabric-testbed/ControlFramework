@@ -29,7 +29,7 @@ import pickle
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-
+from fabric.actor.core.common.exceptions import UnitException
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.notice import Notice
 
@@ -99,7 +99,7 @@ class UnitSet(IConcreteSet):
         @param cset cset
         """
         if not isinstance(cset, UnitSet):
-            raise Exception("Must be UnitSet")
+            raise UnitException("Must be UnitSet")
 
     def add_unit(self, *, u: Unit):
         """
@@ -139,7 +139,7 @@ class UnitSet(IConcreteSet):
 
     def change(self, *, concrete_set: IConcreteSet, configure: bool):
         if not isinstance(concrete_set, UnitSet):
-            raise Exception("Must be UnitSet")
+            raise UnitException("Must be UnitSet")
 
         lost = self.missing(units=concrete_set.units)
         gained = concrete_set.missing(units=self.units)
@@ -166,6 +166,13 @@ class UnitSet(IConcreteSet):
             u.set_slice_id(self.reservation.get_slice_id())
             u.set_actor_id(self.plugin.get_actor().get_guid())
             self.plugin.update_props(reservation=self.reservation, u=u)
+
+    def clone(self):
+        result = UnitSet(plugin=self.plugin, units=self.units.copy())
+        result.is_closed = self.is_closed
+        result.is_fresh = self.is_fresh
+        result.reservation = self.reservation
+        return result
 
     def clone_empty(self) -> UnitSet:
         result = UnitSet(plugin=self.plugin)
@@ -293,7 +300,7 @@ class UnitSet(IConcreteSet):
 
     def validate_concrete(self, *, rtype: ResourceType, units: int, term: Term):
         if self.get_units() < units:
-            raise Exception("Insufficient units")
+            raise UnitException("Insufficient units")
 
     def validate_incoming(self):
         """
@@ -402,13 +409,6 @@ class UnitSet(IConcreteSet):
         """
         for u in units.values():
             self.transfer_out(u=u)
-
-    def clone(self):
-        result = UnitSet(plugin=self.plugin, units=self.units.copy())
-        result.is_closed = self.is_closed
-        result.is_fresh = self.is_fresh
-        result.reservation = self.reservation
-        return result
 
     def get_set(self) -> dict:
         """

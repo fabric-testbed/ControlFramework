@@ -31,6 +31,7 @@ from ..apis.i_actor import IActor
 from ..apis.i_delegation import IDelegation
 from ..apis.i_slice import ISlice
 from ..common.constants import Constants
+from ..common.exceptions import DelegationException
 
 
 class DelegationFactory:
@@ -64,13 +65,9 @@ class DelegationFactory:
         @raises Exception in case of error
         """
         if Constants.property_pickle_properties not in properties:
-            raise Exception("Invalid arguments")
+            raise DelegationException(Constants.invalid_argument)
 
         serialized_delegation = properties[Constants.property_pickle_properties]
-        deserialized_delegation = None
-        try:
-            deserialized_delegation = pickle.loads(serialized_delegation)
-            deserialized_delegation.restore(actor=actor, slice_obj=slice_obj, logger=logger)
-        except Exception as e:
-            raise e
+        deserialized_delegation = pickle.loads(serialized_delegation)
+        deserialized_delegation.restore(actor=actor, slice_obj=slice_obj, logger=logger)
         return deserialized_delegation

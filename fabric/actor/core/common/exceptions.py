@@ -143,3 +143,21 @@ class TicketException(Exception):
     """
     Ticket Exception
     """
+
+
+class UnitException(Exception):
+    """
+    Unit Exception
+    """
+
+
+class DelegationException(Exception):
+    """
+    Delegation Exception
+    """
+
+
+class PluginException(Exception):
+    """
+    Plugin Exception
+    """

@@ -26,6 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import PluginException
 from fabric.actor.core.extensions.plugin import Plugin
 
 if TYPE_CHECKING:
@@ -51,7 +52,7 @@ class PluginManager:
         @throws Exception in case of error
         """
         if db is None:
-            raise Exception("database cannot be null")
+            raise PluginException("database cannot be null")
         if not self.initialized:
             self.db = db
             self.initialized = True
@@ -78,7 +79,7 @@ class PluginManager:
         @throws Exception in case of error
         """
         if self.is_registered(plugin_id=plugin.get_id()):
-            raise Exception("A plugin with this id/package id already exists")
+            raise PluginException("A plugin with this id/package id already exists")
         else:
             self.db.add_plugin(plugin=plugin)
 

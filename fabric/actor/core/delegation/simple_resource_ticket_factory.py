@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.common.exceptions import ResourcesException
 from fabric.actor.core.common.resource_vector import ResourceVector
 from fabric.actor.core.apis.i_resource_ticket_factory import IResourceTicketFactory
 from fabric.actor.core.delegation.resource_bin import ResourceBin
@@ -50,7 +51,7 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
         """
         if not self.initialized:
             if self.actor is None:
-                raise Exception("Factory does not have an actor")
+                raise ResourcesException("Factory does not have an actor")
             self.initialized = True
 
     def ensure_initialized(self):
@@ -59,7 +60,7 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
         """
 
         if not self.initialized:
-            raise Exception("ticket factory has not been initialized")
+            raise ResourcesException("ticket factory has not been initialized")
 
     def get_issuer_id(self):
         """
@@ -72,7 +73,7 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                         properties: dict = None, holder: ID = None) -> ResourceDelegation:
         self.ensure_initialized()
         if (sources is None and bins is not None) or (sources is not None and bins is None):
-            raise Exception("sources and bins must both be null or non-null")
+            raise ResourcesException("sources and bins must both be null or non-null")
 
         issuer = self.get_issuer_id()
 
@@ -118,7 +119,7 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
             if delegation.bins is not None:
                 bin_list = []
                 for b in delegation.bins:
-                    bin = {'guid': b.get_guid(), 'physical_units': b.get_physical_units()}
+                    b_bin = {'guid': b.get_guid(), 'physical_units': b.get_physical_units()}
 
                     if b.get_parent_guid() is not None:
                         b['parent_guid'] = b.get_parent_guid()
@@ -127,8 +128,8 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                             'end_time': ActorClock.to_milliseconds(when=b.get_term().get_end_time()),
                             'new_start_time': ActorClock.to_milliseconds(when=b.get_term().get_new_start_time())}
 
-                    bin['term'] = term
-                    bin_list.append(bin)
+                    b_bin['term'] = term
+                    bin_list.append(b_bin)
                 d['bins'] = bin_list
 
             delegation_list.append(d)
