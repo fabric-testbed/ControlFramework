@@ -264,7 +264,7 @@ class Authority(Actor, IAuthority):
         try:
             db.get_client(guid=client.get_guid())
         except Exception as e:
-            self.logger.debug("Client does not exist")
+            self.logger.debug("Client does not exist e:{}".format(e))
 
         db.add_client(client=client)
 

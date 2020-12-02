@@ -31,6 +31,7 @@ from fabric.actor.core.apis.i_actor_event import IActorEvent
 from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.apis.i_broker import IBroker
 from fabric.actor.core.apis.i_controller import IController
+from fabric.actor.core.util.rpc_exception import RPCException
 
 if TYPE_CHECKING:
 
@@ -202,4 +203,4 @@ class IncomingRPCEvent(IActorEvent):
             if done:
                 return
 
-        raise Exception("Unsupported RPC request type: {}".format(self.rpc.get_request_type()))
+        raise RPCException(message="Unsupported RPC request type: {}".format(self.rpc.get_request_type()))

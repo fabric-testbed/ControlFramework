@@ -24,14 +24,15 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from fabric.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ReservationException
 
 
 class PredecessorState:
-    PredecessorPrefix = "predecessor."
 
     def __init__(self, *, reservation: IKernelControllerReservation, filter: dict = None):
         if reservation is None:
-            raise Exception("Invalid Arguments")
+            raise ReservationException(Constants.invalid_argument)
         self.reservation = reservation
         self.filter = filter
 

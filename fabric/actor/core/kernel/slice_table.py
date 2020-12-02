@@ -28,6 +28,9 @@ from typing import TYPE_CHECKING
 
 import threading
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import SliceException
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
     from fabric.actor.core.util.id import ID
@@ -54,13 +57,13 @@ class SliceTable:
         @throws Exception if the slice is already present in the table
         """
         if slice_object.get_slice_id() is None or slice_object.get_name() is None:
-            raise Exception("Invalid Argument")
+            raise SliceException(Constants.invalid_argument)
 
         try:
             self.lock.acquire()
 
             if slice_object.get_slice_id() in self.slices:
-                raise Exception("Already exists")
+                raise SliceException("Already exists")
 
             if slice_object.is_inventory():
                 self.inventory_slices[slice_object.get_slice_id()] = slice_object
@@ -69,7 +72,7 @@ class SliceTable:
             elif slice_object.is_client():
                 self.client_slices[slice_object.get_slice_id()] = slice_object
             else:
-                raise Exception("Unsupported slice type")
+                raise SliceException("Unsupported slice type")
 
             self.slices[slice_object.get_slice_id()] = slice_object
 
@@ -110,7 +113,7 @@ class SliceTable:
         @return slice or null if the slice is not present in the table
         """
         if slice_id is None:
-            raise Exception("Invalid argument")
+            raise SliceException("Invalid argument")
 
         result = None
         try:
@@ -121,7 +124,7 @@ class SliceTable:
         finally:
             self.lock.release()
         if raise_exception and result is None:
-            raise Exception("not registered")
+            raise SliceException("not registered")
         return result
 
     def get_slice_name(self, *, slice_name: str) -> list:
@@ -220,14 +223,14 @@ class SliceTable:
         @throws Exception if the specified slice is not in the table
         """
         if slice_id is None:
-            raise Exception("Invalid argument")
+            raise SliceException("Invalid argument")
 
         try:
             self.lock.acquire()
             slice_obj = self.slices.pop(slice_id)
 
             if slice_obj is None:
-                raise Exception("not registered")
+                raise SliceException("not registered")
 
             if slice_obj.is_inventory():
                 self.inventory_slices.pop(slice_id)
@@ -236,7 +239,7 @@ class SliceTable:
             elif slice_obj.is_client():
                 self.client_slices.pop(slice_id)
             else:
-                raise Exception("Unsupported slice type")
+                raise SliceException("Unsupported slice type")
             if slice_obj.get_name() in self.slices_by_name:
                 entry = self.slices_by_name[slice_obj.get_name()]
                 if entry is not None:

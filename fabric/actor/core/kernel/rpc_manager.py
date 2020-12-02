@@ -39,6 +39,7 @@ from fabric.actor.core.apis.i_controller_reservation import IControllerReservati
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_query_response_handler import IQueryResponseHandler
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.claim_timeout import ClaimTimeout, ReclaimTimeout
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.kernel.failed_rpc_event import FailedRPCEvent
@@ -77,43 +78,42 @@ class RPCManager:
     @staticmethod
     def validate_delegation(*, delegation: IDelegation, check_requested: bool = False):
         if delegation is None:
-            raise Exception("Missing delegation")
+            raise RPCException(message=Constants.not_specified_prefix.format("delegation"))
 
         if delegation.get_slice_object() is None:
-            raise Exception("Missing slice")
+            raise RPCException(message=Constants.not_specified_prefix.format("slice"))
 
-        if check_requested:
-            if delegation.get_graph() is None:
-                raise Exception("Missing graph")
+        if check_requested and delegation.get_graph() is None:
+            raise RPCException(message=Constants.not_specified_prefix.format("graph"))
 
     @staticmethod
     def validate(*, reservation: IReservation, check_requested: bool = False):
         if reservation is None:
-            raise Exception("Missing reservation")
+            raise RPCException(message=Constants.not_specified_prefix.format("reservation"))
 
         if reservation.get_slice() is None:
-            raise Exception("Missing slice")
+            raise RPCException(message=Constants.not_specified_prefix.format("slice"))
 
         if check_requested:
             if reservation.get_requested_resources() is None:
-                raise Exception("Missing requested resources")
+                raise RPCException(message=Constants.not_specified_prefix.format("requested resources"))
 
             if reservation.get_requested_term() is None:
-                raise Exception("Missing requested term")
+                raise RPCException(message=Constants.not_specified_prefix.format("requested term"))
 
         if isinstance(reservation, IClientReservation):
             if reservation.get_broker() is None:
-                raise Exception("Missing broker proxy")
+                raise RPCException(message=Constants.not_specified_prefix.format("broker proxy"))
 
             if reservation.get_client_callback_proxy() is None:
-                raise Exception("Missing client callback proxy")
+                raise RPCException(message=Constants.not_specified_prefix.format("client callback proxy"))
 
         elif isinstance(reservation, IControllerReservation):
             if reservation.get_authority() is None:
-                raise Exception("Missing authority proxy")
+                raise RPCException(message=Constants.not_specified_prefix.format("authority proxy"))
 
             if reservation.get_client_callback_proxy() is None:
-                raise Exception("Missing client callback proxy")
+                raise RPCException(message=Constants.not_specified_prefix.format("client callback proxy"))
 
     def start(self):
         self.do_start()
@@ -123,21 +123,21 @@ class RPCManager:
 
     def retry(self, *, request: RPCRequest):
         if request is None:
-            raise Exception("Missing request")
+            raise RPCException(message=Constants.not_specified_prefix.format("request"))
         self.do_retry(rpc=request)
 
     def failed_rpc(self, *, actor: IActor, rpc: IncomingRPC, e: Exception):
         if actor is None:
-            raise Exception("Missing actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
 
         if rpc is None:
-            raise Exception("Missing rpc")
+            raise RPCException(message=Constants.not_specified_prefix.format("rpc"))
 
         if rpc.get_callback() is None:
-            raise Exception("Missing callback in rpc")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
 
         if isinstance(rpc, IncomingFailedRPC):
-            raise Exception("Cannot reply to a FailedRPC with a FailedRPC")
+            raise RPCException(message="Cannot reply to a FailedRPC with a FailedRPC")
 
         self.do_failed_rpc(actor=actor, proxy=rpc.get_callback(), rpc=rpc, e=e, caller=actor.get_identity())
 
@@ -201,7 +201,7 @@ class RPCManager:
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
         if callback is None:
-            raise Exception("Missing callback")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
         self.do_update_ticket(actor=reservation.get_actor(), proxy=reservation.get_callback(),
                               reservation=reservation, update_data=reservation.get_update_data(),
                               callback=callback, caller=reservation.get_actor().get_identity())
@@ -212,7 +212,7 @@ class RPCManager:
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=delegation.get_actor(), protocol=delegation.get_callback().get_type())
         if callback is None:
-            raise Exception("Missing callback")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
         self.do_update_delegation(actor=delegation.get_actor(), proxy=delegation.get_callback(),
                                   delegation=delegation, update_data=delegation.get_update_data(),
                                   callback=callback, caller=delegation.get_actor().get_identity())
@@ -223,7 +223,7 @@ class RPCManager:
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
         if callback is None:
-            raise Exception("Missing callback")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
         self.do_update_lease(actor=reservation.get_actor(), proxy=reservation.get_callback(),
                              reservation=reservation, update_data=reservation.get_update_data(),
                              callback=callback, caller=reservation.get_actor().get_identity())
@@ -231,38 +231,38 @@ class RPCManager:
     def query(self, *, actor: IActor, remote_actor: IActorProxy, callback: ICallbackProxy,
               query: dict, handler: IQueryResponseHandler, id_token: str):
         if actor is None:
-            raise Exception("Missing actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
         if remote_actor is None:
-            raise Exception("Missing remote actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("remote actor"))
         if callback is None:
-            raise Exception("Missing callback")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
         if query is None:
-            raise Exception("Missing query")
+            raise RPCException(message=Constants.not_specified_prefix.format("query"))
         if handler is None:
-            raise Exception("Missing handler")
+            raise RPCException(message=Constants.not_specified_prefix.format("handler"))
         self.do_query(actor=actor, remote_actor=remote_actor, local_actor=callback, query=query,
                       handler=handler, caller=callback.get_identity(), id_token=id_token)
 
     def query_result(self, *, actor: IActor, remote_actor: ICallbackProxy, request_id: str, response: dict,
                      caller: AuthToken):
         if actor is None:
-            raise Exception("Missing actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
         if remote_actor is None:
-            raise Exception("Missing remote actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("remote actor"))
         if request_id is None:
-            raise Exception("Missing request_id")
+            raise RPCException(message=Constants.not_specified_prefix.format("request id"))
         if response is None:
-            raise Exception("Missing response")
+            raise RPCException(message=Constants.not_specified_prefix.format("response"))
         if caller is None:
-            raise Exception("Missing caller")
+            raise RPCException(message=Constants.not_specified_prefix.format("caller"))
         self.do_query_result(actor=actor, remote_actor=remote_actor, request_id=request_id, response=response,
                              caller=caller)
 
     def dispatch_incoming(self, *, actor: IActor, rpc: IncomingRPC):
         if actor is None:
-            raise Exception("Missing actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
         if rpc is None:
-            raise Exception("Missing rpc")
+            raise RPCException(message=Constants.not_specified_prefix.format("rpc"))
         self.do_dispatch_incoming_rpc(actor=actor, rpc=rpc)
 
     def await_nothing_pending(self):
@@ -614,7 +614,7 @@ class RPCManager:
     def de_queued(self):
         with self.stats_lock:
             if self.num_queued == 0:
-                raise Exception("De-queued invoked, but nothing is queued!!!")
+                raise RPCException(message="De-queued invoked, but nothing is queued!!!")
 
             self.num_queued -= 1
             print("DeQueued: {}".format(self.num_queued))

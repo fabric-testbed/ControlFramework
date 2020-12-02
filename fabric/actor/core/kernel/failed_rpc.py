@@ -41,10 +41,10 @@ class FailedRPC:
     def __init__(self, *, e: RPCException = None, request_type: RPCRequestType = None, rid: ID = None,
                  auth: AuthToken = None, request: RPCRequest = None):
         if e is None:
-            raise Exception("error cannot be None")
+            raise RPCException(message="error cannot be None")
 
         if rid is None and request is None:
-            raise Exception("Both request and rid cannot be None")
+            raise RPCException(message="Both request and rid cannot be None")
 
         self.error = e
         self.request_type = request_type

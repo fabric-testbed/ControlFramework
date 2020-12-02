@@ -204,17 +204,10 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
         # ticket/extendTicket after recovery. If there is nothing pending for
         # this reservation, we resend the last update.
 
-        if operation == RequestTypes.RequestRedeem:
+        if operation == RequestTypes.RequestRedeem or operation == RequestTypes.RequestExtendLease or \
+                operation == RequestTypes.RequestModifyLease:
             if self.pending_state == ReservationPendingStates.None_ and not self.bid_pending and \
                     not self.pending_recover:
-                self.generate_update()
-        elif operation == RequestTypes.RequestExtendLease:
-            if self.pending_state == ReservationPendingStates.None_ and not self.bid_pending and not \
-                    self.pending_recover:
-                self.generate_update()
-        elif operation == RequestTypes.RequestModifyLease:
-            if self.pending_state == ReservationPendingStates.None_ and not self.bid_pending and not \
-                    self.pending_recover:
                 self.generate_update()
         else:
             raise AuthorityException("Unsupported operation: {}".format(operation))
@@ -419,54 +412,53 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                 self.pending_recover = False
                 self.generate_update()
 
-        elif self.pending_state == ReservationPendingStates.Priming:
+        elif self.pending_state == ReservationPendingStates.Priming and self.resources.is_active():
             # We are an authority filling a ticket claim. Got resources? Note
             # that active() just means no primes/closes/modifies are still in
             # progress. The primes/closes/modifies could have failed. If
             # something succeeded, then we report what we got as active, else
             # it's a complete bust.
-            if self.resources.is_active():
-                # If something failed or we are recovering, we need to correct
-                # the deficit. For a recovering reservation we need to call
-                # correctDeficit regardless of whether there is a real deficit,
-                # since the individual nodes may be inconsistent with what the
-                # client/broker wanted. For example, they may have the wrong
-                # logical ids and resource shares.
-                if self.pending_recover or self.get_deficit() != 0:
-                    # The abstract and the concrete units may be different. We
-                    # need to adjust the abstract to equal concrete so that
-                    # future additions of resources will not result in
-                    # inconsistent abstract unit count.
-                    self.resources.fix_abstract_units()
-                    # Policies can instruct us to let go a reservation with a
-                    # deficit. For example, a policy failed adding resources to
-                    # the reservation multiple times and it wants to prevent
-                    # exhausting its inventory from servicing this particular
-                    # request: probably something is wrong with the request.
-                    if not self.send_with_deficit:
-                        # Call the policy to correct the deficit
-                        self.policy.correct_deficit(reservation=self)
-                        # XXX: be careful here. we are reusing extending for
-                        # the purpose of triggering configuration actions on
-                        # the newly assigned nodes. If this is not appropriate,
-                        # we may need a new servicePending value
-                        self.service_pending = ReservationPendingStates.ExtendingLease
-                    else:
-                        self.pending_recover = False
-                        if self.resources.get_units() == 0:
-                            message = "no information available"
-                            if self.update_data.get_events() is not None:
-                                message = self.update_data.get_events()
-                            self.fail(message="all units failed priming: {}".format(message))
-                        else:
-                            self.transition(prefix="prime complete1", state=ReservationStates.Active,
-                                            pending=ReservationPendingStates.None_)
-                        self.generate_update()
+            # If something failed or we are recovering, we need to correct
+            # the deficit. For a recovering reservation we need to call
+            # correctDeficit regardless of whether there is a real deficit,
+            # since the individual nodes may be inconsistent with what the
+            # client/broker wanted. For example, they may have the wrong
+            # logical ids and resource shares.
+            if self.pending_recover or self.get_deficit() != 0:
+                # The abstract and the concrete units may be different. We
+                # need to adjust the abstract to equal concrete so that
+                # future additions of resources will not result in
+                # inconsistent abstract unit count.
+                self.resources.fix_abstract_units()
+                # Policies can instruct us to let go a reservation with a
+                # deficit. For example, a policy failed adding resources to
+                # the reservation multiple times and it wants to prevent
+                # exhausting its inventory from servicing this particular
+                # request: probably something is wrong with the request.
+                if not self.send_with_deficit:
+                    # Call the policy to correct the deficit
+                    self.policy.correct_deficit(reservation=self)
+                    # XXX: be careful here. we are reusing extending for
+                    # the purpose of triggering configuration actions on
+                    # the newly assigned nodes. If this is not appropriate,
+                    # we may need a new servicePending value
+                    self.service_pending = ReservationPendingStates.ExtendingLease
                 else:
                     self.pending_recover = False
-                    self.transition(prefix="prime complete2", state=ReservationStates.Active,
-                                    pending=ReservationPendingStates.None_)
+                    if self.resources.get_units() == 0:
+                        message = "no information available"
+                        if self.update_data.get_events() is not None:
+                            message = self.update_data.get_events()
+                        self.fail(message="all units failed priming: {}".format(message))
+                    else:
+                        self.transition(prefix="prime complete1", state=ReservationStates.Active,
+                                        pending=ReservationPendingStates.None_)
                     self.generate_update()
+            else:
+                self.pending_recover = False
+                self.transition(prefix="prime complete2", state=ReservationStates.Active,
+                                pending=ReservationPendingStates.None_)
+                self.generate_update()
 
     def service_probe(self):
         # An exception in one of these service routines should mean some
@@ -504,49 +496,46 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
             self.logger.error("exception in authority reap e: {}".format(e))
 
     def recover(self):
-        try:
-            if self.state == ReservationStates.Ticketed:
-                if self.pending_state == ReservationPendingStates.None_:
-                    self.actor.redeem(reservation=self, callback=None, caller=None)
+        if self.state == ReservationStates.Ticketed:
+            if self.pending_state == ReservationPendingStates.None_:
+                self.actor.redeem(reservation=self, callback=None, caller=None)
 
-                elif self.pending_state == ReservationPendingStates.Redeeming:
-                    self.transition(prefix="[recover]", state=self.state, pending=ReservationPendingStates.None_)
-                    self.actor.redeem(reservation=self, callback=None, caller=None)
+            elif self.pending_state == ReservationPendingStates.Redeeming:
+                self.transition(prefix="[recover]", state=self.state, pending=ReservationPendingStates.None_)
+                self.actor.redeem(reservation=self, callback=None, caller=None)
 
-                elif self.pending_state == ReservationPendingStates.Priming:
-                    self.pending_recover = True
-                    self.actor.close(reservation=self)
+            elif self.pending_state == ReservationPendingStates.Priming:
+                self.pending_recover = True
+                self.actor.close(reservation=self)
 
-                elif self.pending_state == ReservationPendingStates.Closing:
-                    self.actor.close(reservation=self)
+            elif self.pending_state == ReservationPendingStates.Closing:
+                self.actor.close(reservation=self)
 
-                else:
-                    raise AuthorityException(self.UnexpectedExceptionString.format(self.state, self.pending_state))
-
-            elif self.state == ReservationStates.Active:
-                if self.pending_state == ReservationPendingStates.None_:
-                    self.logger.debug("No op")
-
-                elif self.pending_state == ReservationPendingStates.ExtendingLease:
-                    self.transition(prefix="[recover]", state=self.state,
-                                    pending=ReservationPendingStates.None_)
-                    self.actor.extend_lease(self, None)
-
-                elif self.pending_state == ReservationPendingStates.Priming:
-                    self.pending_recover = True
-                    self.actor.close(reservation=self)
-
-                elif self.pending_state == ReservationPendingStates.Closing:
-                    self.actor.close(reservation=self)
-
-                else:
-                    raise AuthorityException(self.UnexpectedExceptionString.format(self.state, self.pending_state))
-            elif self.state == ReservationStates.Failed:
-                self.logger.debug("No op")
             else:
                 raise AuthorityException(self.UnexpectedExceptionString.format(self.state, self.pending_state))
-        except Exception as e:
-            raise e
+
+        elif self.state == ReservationStates.Active:
+            if self.pending_state == ReservationPendingStates.None_:
+                self.logger.debug("No op")
+
+            elif self.pending_state == ReservationPendingStates.ExtendingLease:
+                self.transition(prefix="[recover]", state=self.state,
+                                pending=ReservationPendingStates.None_)
+                self.actor.extend_lease(self, None)
+
+            elif self.pending_state == ReservationPendingStates.Priming:
+                self.pending_recover = True
+                self.actor.close(reservation=self)
+
+            elif self.pending_state == ReservationPendingStates.Closing:
+                self.actor.close(reservation=self)
+
+            else:
+                raise AuthorityException(self.UnexpectedExceptionString.format(self.state, self.pending_state))
+        elif self.state == ReservationStates.Failed:
+            self.logger.debug("No op")
+        else:
+            raise AuthorityException(self.UnexpectedExceptionString.format(self.state, self.pending_state))
 
     def set_send_with_deficit(self, *, value: bool):
         self.send_with_deficit = value

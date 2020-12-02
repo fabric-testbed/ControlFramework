@@ -161,3 +161,27 @@ class PluginException(Exception):
     """
     Plugin Exception
     """
+
+
+class ReservationException(Exception):
+    """
+    Reservation Exception
+    """
+
+
+class SliceException(Exception):
+    """
+    Slice Exception
+    """
+
+
+class TickException(Exception):
+    """
+    Tick Exception
+    """
+
+
+class ManageException(Exception):
+    """
+    Manage Exception
+    """

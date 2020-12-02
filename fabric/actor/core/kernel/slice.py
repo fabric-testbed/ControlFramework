@@ -30,6 +30,7 @@ from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
 from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
+from fabric.actor.core.common.exceptions import SliceException
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.reservation_set import ReservationSet
 from fabric.actor.core.util.resource_data import ResourceData
@@ -175,13 +176,13 @@ class Slice(IKernelSlice):
 
     def register(self, *, reservation: IKernelReservation):
         if self.reservations.contains(rid=reservation.get_reservation_id()):
-            raise Exception("Reservation #{} already exists in slice".format(reservation.get_reservation_id()))
+            raise SliceException("Reservation #{} already exists in slice".format(reservation.get_reservation_id()))
 
         self.reservations.add(reservation=reservation)
 
     def register_delegation(self, *, delegation: IDelegation):
         if delegation.get_delegation_id() in self.delegations:
-            raise Exception("Delegation #{} already exists in slice".format(delegation.get_delegation_id()))
+            raise SliceException("Delegation #{} already exists in slice".format(delegation.get_delegation_id()))
 
         self.delegations[delegation.get_delegation_id()] = delegation
 

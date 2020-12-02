@@ -58,5 +58,5 @@ class QueryTimeout(ITimerTask):
             else:
                 self.req.actor.get_logger().debug("Query timeout. Query already completed RPC={}".format(self.req))
         except Exception as e:
-            traceback.print_exc()
-            self.req.actor.get_logger().debug("Claim timeout. RPC={}".format(self.req.reservation))
+            self.req.actor.get_logger().error("Claim timeout. RPC={} e: {}".format(self.req.reservation, e))
+            self.req.actor.get_logger().error(traceback.format_exc())

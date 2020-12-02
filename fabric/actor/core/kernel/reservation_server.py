@@ -217,9 +217,8 @@ class ReservationServer(Reservation, IKernelServerReservation):
         elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait:
             if self.resources is not None:
                 rc.tally_close(resource_type=self.resources.type, count=self.resources.get_units())
-        elif self.state == ReservationStates.Failed:
-            if self.resources is not None:
-                rc.tally_failed(resource_type=self.resources.type, count=self.resources.get_units())
+        elif self.state == ReservationStates.Failed and self.resources is not None:
+            rc.tally_failed(resource_type=self.resources.type, count=self.resources.get_units())
 
     def fail(self, *, message: str, exception: Exception = None):
         self.update_data.error(message=message)
@@ -231,7 +230,7 @@ class ReservationServer(Reservation, IKernelServerReservation):
         @param message message
         """
         self.generate_update()
-        self.fail(message=message, exception=None)
+        self.fail(message=message)
 
     def fail_warn(self, *, message: str):
         self.update_data.error(message=message)

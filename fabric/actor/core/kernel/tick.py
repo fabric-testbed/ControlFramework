@@ -28,6 +28,7 @@ from abc import abstractmethod
 from datetime import datetime
 
 from fabric.actor.core.apis.i_ticker import ITicker
+from fabric.actor.core.common.exceptions import TickException
 from fabric.actor.core.time.actor_clock import ActorClock
 
 
@@ -69,7 +70,7 @@ class Tick(ITicker):
         the clock has not been initialized.
         """
         if not self.initialized:
-            raise Exception("The clock must be initialized first.")
+            raise TickException("The clock must be initialized first.")
 
     def check_not_initialized(self):
         """
@@ -77,7 +78,7 @@ class Tick(ITicker):
         exception if the clock has been initialized.
         """
         if self.initialized:
-            raise Exception("The clock is already initialized")
+            raise TickException("The clock is already initialized")
 
     def check_running(self):
         """
@@ -85,7 +86,7 @@ class Tick(ITicker):
         clock is not running.
         """
         if self.stopped:
-            raise Exception("The clock is stopped.")
+            raise TickException("The clock is stopped.")
 
     def check_stopped(self):
         """
@@ -93,7 +94,7 @@ class Tick(ITicker):
         clock is running.
         """
         if not self.stopped:
-            raise Exception("The clock is already running.")
+            raise TickException("The clock is already running.")
 
     def clear(self):
         try:
@@ -197,5 +198,5 @@ class Tick(ITicker):
         self.check_initialized()
         self.check_running()
         if not self.manual:
-            raise Exception("The clock is automatic. No manual calls are allowed.")
+            raise TickException("The clock is automatic. No manual calls are allowed.")
         self.next_tick()

@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, List
 from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric.actor.core.common.constants import Constants, ErrorCodes
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.kernel.resource_set import ResourceSet
@@ -277,7 +278,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                             if rr is not None:
                                 result.append(str(rr))
                             else:
-                                raise Exception("Could not add reservation")
+                                raise ManageException("Could not add reservation")
                     except Exception as e:
                         for r in reservations:
                             self.parent.client.unregister(reservation=r)
@@ -536,7 +537,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 delegation = Translate.translate_delegation_to_avro(delegation=rc)
                 result.delegations.append(delegation)
             else:
-                raise Exception("Internal Error")
+                raise ManageException("Internal Error")
         except Exception as e:
             traceback.print_exc()
             self.logger.error("claim_delegations {}".format(e))
@@ -582,7 +583,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 delegation = Translate.translate_delegation_to_avro(delegation=rc)
                 result.delegations.append(delegation)
             else:
-                raise Exception("Internal Error")
+                raise ManageException("Internal Error")
         except Exception as e:
             traceback.print_exc()
             self.logger.error("reclaim_delegations {}".format(e))

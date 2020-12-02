@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
+from fabric.actor.core.common.exceptions import ReservationException
 from fabric.actor.core.kernel.reservation_state_transition_event import ReservationStateTransitionEvent
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
 from fabric.actor.core.util.reservation_state import ReservationState
@@ -206,7 +207,7 @@ class Reservation(IKernelReservation):
         Internal error log and raise exception
         """
         self.logger.error("internal error for reservation: {} : {}".format(self, err))
-        raise Exception("internal error: {}".format(err))
+        raise ReservationException("internal error: {}".format(err))
 
     def error(self, *, err: str):
         """
@@ -216,7 +217,7 @@ class Reservation(IKernelReservation):
             self.logger.error("error for reservation: {} : {}".format(self, err))
         else:
             print("error for reservation: {} : {}".format(self, err))
-        raise Exception("error: {}".format(err))
+        raise ReservationException("error: {}".format(err))
 
     def clear_dirty(self):
         """
@@ -598,8 +599,7 @@ class Reservation(IKernelReservation):
         return msg
 
     def transition(self, *, prefix: str, state: ReservationStates, pending: ReservationPendingStates):
-        if self.state == ReservationStates.Failed:
-            if self.logger is not None:
+        if self.state == ReservationStates.Failed and self.logger is not None:
                 self.logger.debug("failed")
 
         if self.logger is not None:

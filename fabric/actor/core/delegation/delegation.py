@@ -39,7 +39,6 @@ from fim.graph.abc_property_graph import ABCPropertyGraph
 
 class Delegation(IDelegation):
     error_string_prefix = 'error for delegation: {} : {}'
-    not_specified_prefix = "No {} specified"
     invalid_state_prefix = "Invalid state for {}. Did you already {} this Delegation?"
 
     def __init__(self, dlg_graph_id: ID, slice_id: ID):
@@ -176,8 +175,8 @@ class Delegation(IDelegation):
         # a client-specified delegation id.
 
         if self.callback is not None and self.dlg_graph_id is None:
-            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("graph id")))
-            raise DelegationException(self.not_specified_prefix.format("graph id"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
+            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
 
         self.set_dirty()
 
@@ -382,29 +381,29 @@ class Delegation(IDelegation):
 
     def validate_incoming(self):
         if self.slice_object is None:
-            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("slice")))
-            raise DelegationException(self.not_specified_prefix.format("slice"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("slice")))
+            raise DelegationException(Constants.not_specified_prefix.format("slice"))
 
         if self.dlg_graph_id is None:
-            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("graph id")))
-            raise DelegationException(self.not_specified_prefix.format("graph id"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
+            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
 
         if self.graph is None:
-            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("graph")))
-            raise DelegationException(self.not_specified_prefix.format("graph"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph")))
+            raise DelegationException(Constants.not_specified_prefix.format("graph"))
 
     def validate_outgoing(self):
         if self.slice_object is None:
-            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("slice")))
-            raise DelegationException(self.not_specified_prefix.format("slice"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("slice")))
+            raise DelegationException(Constants.not_specified_prefix.format("slice"))
 
         if self.dlg_graph_id is None:
-            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("graph id")))
-            raise DelegationException(self.not_specified_prefix.format("graph id"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
+            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
 
         if self.graph is None:
-            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("graph")))
-            raise DelegationException(self.not_specified_prefix.format("graph"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph")))
+            raise DelegationException(Constants.not_specified_prefix.format("graph"))
 
     def set_owner(self, *, owner: AuthToken):
         """

@@ -68,7 +68,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
     def prepare(self, *, callback_topic:str):
         self.callback_topic = callback_topic
 
-    def get_slices(self, *, id_token: str = None) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None, slice_id: ID = None) -> List[SliceAvro]:
         self.clear_last()
 
         status = ResultAvro()
@@ -81,6 +81,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.id_token = id_token
+            request.slice_id = slice_id
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -103,55 +104,6 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     if status.code == 0:
                         rret_val = message_wrapper.response.slices
 
-            else:
-                self.logger.debug("Failed to send the message")
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.name
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.name
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
-
-    def get_slice(self, *, slice_id: ID, id_token: str = None) -> SliceAvro:
-        self.clear_last()
-        status = ResultAvro()
-        rret_val = None
-
-        try:
-            request = GetSlicesRequestAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.callback_topic = self.callback_topic
-            request.message_id = str(ID())
-            request.slice_id = str(slice_id)
-            request.id_token = id_token
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
-
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
-
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
-
-                if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.name
-                else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0 and message_wrapper.response.slices is not None and \
-                            len(message_wrapper.response.slices) > 0:
-                        rret_val = message_wrapper.response.slices.__iter__().__next__()
             else:
                 self.logger.debug("Failed to send the message")
                 status.code = ErrorCodes.ErrorTransportFailure.value
@@ -300,8 +252,8 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         return status.code == 0
 
-    def do_get_reservations(self, *, slice_id: ID = None, state: int = None,
-                            reservation_id: ID = None, id_token: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, id_token: str = None, state: int = None,
+                         slice_id: ID = None, rid: ID = None) -> List[ReservationMng]:
         self.clear_last()
         response = ResultReservationAvro()
         response.status = ResultAvro()
@@ -317,8 +269,8 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             if slice_id is not None:
                 request.slice_id = str(slice_id)
 
-            if reservation_id is not None:
-                request.reservation_id = str(reservation_id)
+            if rid is not None:
+                request.reservation_id = str(rid)
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -354,38 +306,8 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         return response.reservations
 
-    def get_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
-        return self.do_get_reservations(slice_id=None, state=Constants.all_reservation_states, reservation_id=None,
-                                        id_token=id_token)
-
-    def get_reservations_by_state(self, *, state: int, id_token: str = None) -> List[ReservationMng]:
-        return self.do_get_reservations(slice_id=None, state=state, reservation_id=None, id_token=id_token)
-
-    def get_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
-        status = ResultAvro()
-
-        self.clear_last()
-        if slice_id is None:
-            self.last_exception = Exception("Invalid arguments")
-            status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            self.last_status = status
-            return None
-
-        return self.do_get_reservations(slice_id=slice_id, state=Constants.all_reservation_states, reservation_id=None,
-                                        id_token=id_token)
-
-    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[ReservationMng]:
-        return self.do_get_reservations(slice_id=slice_id, state=state, reservation_id=None, id_token=id_token)
-
-    def get_reservation(self, *, rid: ID, id_token: str = None) -> ReservationMng:
-        reservation_list = self.do_get_reservations(slice_id=None, state=None, reservation_id=rid)
-        if reservation_list is not None and len(reservation_list) > 0:
-            return reservation_list.__iter__().__next__()
-        return None
-
-    def do_get_delegations(self, *, slice_id: ID = None, state: int = None,
-                           delegation_id: ID = None, id_token: str = None) -> List[DelegationAvro]:
+    def get_delegations(self, *, slice_id: ID = None, state: int = None,
+                        delegation_id: ID = None, id_token: str = None) -> List[DelegationAvro]:
         self.clear_last()
         response = ResultDelegationAvro()
         response.status = ResultAvro()
@@ -437,36 +359,6 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         self.last_status = response.status
 
         return response.delegations
-
-    def get_delegations(self, *, id_token: str = None) -> List[DelegationAvro]:
-        return self.do_get_delegations(slice_id=None, state=Constants.all_reservation_states, delegation_id=None,
-                                       id_token=id_token)
-
-    def get_delegations_by_state(self, *, state: int, id_token: str = None) -> List[DelegationAvro]:
-        return self.do_get_delegations(slice_id=None, state=state, delegation_id=None, id_token=id_token)
-
-    def get_delegations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[DelegationAvro]:
-        status = ResultAvro()
-
-        self.clear_last()
-        if slice_id is None:
-            self.last_exception = Exception("Invalid arguments")
-            status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            self.last_status = status
-            return None
-
-        return self.do_get_delegations(slice_id=slice_id, state=Constants.all_reservation_states, delegation_id=None,
-                                       id_token=id_token)
-
-    def get_delegations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> List[DelegationAvro]:
-        return self.do_get_delegations(slice_id=slice_id, state=state, delegation_id=None)
-
-    def get_delegation(self, *, did: ID, id_token: str = None) -> DelegationAvro:
-        delegation_list = self.do_get_delegations(slice_id=None, state=None, delegation_id=did, id_token=id_token)
-        if delegation_list is not None and len(delegation_list) > 0:
-            return next(iter(delegation_list))
-        return None
 
     def remove_reservation(self, *, rid: ID) -> bool:
         status = ResultAvro()

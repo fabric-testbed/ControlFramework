@@ -776,7 +776,8 @@ class KernelWrapper:
         try:
             self.kernel.tick()
         except Exception as e:
-            traceback.print_exc()
+            self.logger.error("Tick error: {}".format(e))
+            self.logger.error(traceback.format_exc())
 
     def delegate(self, *, delegation: IDelegation, destination: IActorIdentity, id_token: str = None):
         """

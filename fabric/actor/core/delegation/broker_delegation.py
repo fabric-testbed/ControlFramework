@@ -153,12 +153,12 @@ class BrokerDelegation(Delegation):
         Validate outgoing delegation
         """
         if self.slice_object is None:
-            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("slice")))
-            raise DelegationException(self.not_specified_prefix.format("slice"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("slice")))
+            raise DelegationException(Constants.not_specified_prefix.format("slice"))
 
         if self.dlg_graph_id is None:
-            self.logger.error(self.error_string_prefix.format(self, self.not_specified_prefix.format("graph id")))
-            raise DelegationException(self.not_specified_prefix.format("graph id"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
+            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
 
     def do_relinquish(self):
         """

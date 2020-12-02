@@ -70,7 +70,7 @@ class ServerActorManagementObject(ActorManagementObject):
         return properties
 
     def get_reservations_by_category(self, *, caller: AuthToken, category: ReservationCategory, slice_id: ID = None,
-                            id_token: str = None) -> ResultReservationAvro:
+                                     id_token: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 

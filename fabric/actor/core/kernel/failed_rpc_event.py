@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
+from fabric.actor.core.util.rpc_exception import RPCException
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -78,4 +79,5 @@ class FailedRPCEvent(IActorEvent):
                 self.actor.get_logger().error("Could not process failed RPC: reservation id is null")
             self.actor.handle_failed_rpc(rid=rid, rpc=self.failed)
         else:
-            raise Exception("Unsupported RPC request type: {}".format(self.failed.get_request().get_request_type()))
+            raise RPCException(message="Unsupported RPC request type: {}".format(
+                self.failed.get_request().get_request_type()))

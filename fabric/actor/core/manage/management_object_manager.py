@@ -29,6 +29,7 @@ import threading
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.util.reflection_utils import ReflectionUtils
 
 if TYPE_CHECKING:
@@ -61,7 +62,7 @@ class ManagementObjectManager:
 
     def create_instance(self, *, mo_obj: dict) -> ManagementObject:
         if Constants.property_class_name not in mo_obj or Constants.property_module_name not in mo_obj:
-            raise Exception("Missing class name")
+            raise ManageException("Missing class name")
 
         class_name = mo_obj[Constants.property_class_name]
         module_name = mo_obj[Constants.property_module_name]
@@ -71,7 +72,7 @@ class ManagementObjectManager:
         obj = ReflectionUtils.create_instance(module_name=module_name, class_name=class_name)
 
         if not isinstance(obj, ManagementObject):
-            raise Exception("Object does not implement ManagementObject interface")
+            raise ManageException("Object does not implement ManagementObject interface")
 
         obj.reset(properties=mo_obj)
         obj.initialize()
@@ -99,7 +100,7 @@ class ManagementObjectManager:
         @throws Exception in case of error
         """
         if db is None:
-            raise Exception("database cannot be null")
+            raise ManageException("database cannot be null")
 
         if not self.initialized:
             from fabric.actor.core.container.globals import GlobalsSingleton
@@ -143,7 +144,7 @@ class ManagementObjectManager:
             try:
                 self.lock.acquire()
                 if manager.get_id() in self.objects:
-                    raise Exception("there is already a management object in memory with the specified id")
+                    raise ManageException("there is already a management object in memory with the specified id")
 
                 self.objects[manager.get_id()] = manager
 

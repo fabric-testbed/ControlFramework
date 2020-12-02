@@ -154,8 +154,10 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
     def get_substrate_database(self) -> ISubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
-    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
+                          id_token: str = None) -> ResultDelegationAvro:
         return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)
 
-    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
+                            id_token: str = None) -> ResultDelegationAvro:
         return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)
