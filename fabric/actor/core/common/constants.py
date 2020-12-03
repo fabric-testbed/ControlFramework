@@ -245,3 +245,10 @@ class Constants:
     invalid_pending_state = "Invalid pending state"
     restarting_actions = "Restarting configuration actions for reservation #{}"
     restarting_actions_complete = "Restarting configuration actions for reservation #{} complete"
+    extend_ticket = "[extend ticket]"
+
+    management_inter_actor_outbound_message = "Outbound [Kafka] [Management] Message {} written to {}"
+    management_inter_actor_inbound_message = "Inbound [Kafka] [Management] Message received {}"
+    management_api_timeout_occurred = "Management API Timeout Occurred"
+    management_inter_actor_message_failed = "Outbound [Kafka] [Management] Message {} could not be written to {}"
+

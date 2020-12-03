@@ -52,8 +52,8 @@ class SliceFactory(ISliceFactory):
 
         serialized_slice = properties[Constants.property_pickle_properties]
         deserialized_slice = pickle.loads(serialized_slice)
-        graph_id = str(deserialized_slice.get_graph_id())
-        if graph_id is not None:
+        if deserialized_slice.get_graph_id() is not None:
+            graph_id = str(deserialized_slice.get_graph_id())
             arm_graph = Neo4jResourcePoolFactory.get_arm_graph(graph_id=graph_id)
             deserialized_slice.set_graph(arm_graph)
         return deserialized_slice

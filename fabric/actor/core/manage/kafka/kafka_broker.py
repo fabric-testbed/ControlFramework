@@ -78,7 +78,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -87,12 +87,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = message_wrapper.response.result_str
@@ -126,7 +126,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -135,12 +135,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = message_wrapper.response.result
@@ -173,7 +173,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -182,12 +182,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
                 self.logger.debug("Failed to send the message")
@@ -218,7 +218,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -227,12 +227,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
                 self.logger.debug("Failed to send the message")
@@ -265,7 +265,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -274,12 +274,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = message_wrapper.response.proxies
@@ -314,7 +314,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -323,12 +323,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = message_wrapper.response.pools
@@ -352,7 +352,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                                        new_units=Constants.extend_same_units,
                                        new_resource_type=None, request_properties=None, config_properties=None)
 
-    def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime, request_properties: dict) -> bool:
+    def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime,
+                                            request_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
                                        new_units=Constants.extend_same_units, new_resource_type=None,
                                        request_properties=request_properties, config_properties=None)
@@ -384,7 +385,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -393,12 +394,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
                 self.logger.debug("Failed to send the message")
@@ -432,7 +433,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -441,12 +442,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0 and message_wrapper.response.delegations is not None and len(
                             message_wrapper.response.delegations) > 0:
@@ -482,7 +483,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -491,12 +492,12 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0 and message_wrapper.response.delegations is not None and len(
                             message_wrapper.response.delegations) > 0:

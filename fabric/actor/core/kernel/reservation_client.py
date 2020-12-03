@@ -588,12 +588,12 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
         if self.state == ReservationStates.Ticketed:
             if self.is_controller(actor=actor):
-                self.transition(prefix="extend ticket", state=ReservationStates.Ticketed,
+                self.transition(prefix=Constants.extend_ticket, state=ReservationStates.Ticketed,
                                 pending=ReservationPendingStates.ExtendingTicket)
             else:
                 raise ReservationException("Cannot extend ticket while in Ticketed")
         elif self.state == ReservationStates.Active:
-            self.transition(prefix="extend ticket", state=ReservationStates.Active,
+            self.transition(prefix=Constants.extend_ticket, state=ReservationStates.Active,
                             pending=ReservationPendingStates.ExtendingTicket)
         else:
             self.error(err="Wrong state to initiate extend ticket: {}".format(ReservationStates(self.state).name))
@@ -1311,7 +1311,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
             self.transition(prefix=Constants.recovery, state=self.state, pending=ReservationPendingStates.None_)
             self.set_ticket_sequence_out(sequence=self.get_ticket_sequence_in() - 1)
             self.actor.extend_ticket(reservation=self)
-            self.logger.debug(Constants.issue_operation.format("extend ticket",
+            self.logger.debug(Constants.issue_operation.format(Constants.extend_ticket,
                                                                self.get_reservation_id(), self.print_state()))
 
         else:
@@ -1382,7 +1382,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.transition(prefix=Constants.recovery, state=self.state, pending=ReservationPendingStates.None_)
         self.set_ticket_sequence_out(sequence=self.get_ticket_sequence_out() - 1)
         self.actor.extend_ticket(reservation=self)
-        self.logger.debug(Constants.issue_operation.format("extend ticket", self.get_reservation_id(),
+        self.logger.debug(Constants.issue_operation.format(Constants.extend_ticket, self.get_reservation_id(),
                                                            self.print_state()))
 
     def recover_active_ticketed_extending_lease(self):

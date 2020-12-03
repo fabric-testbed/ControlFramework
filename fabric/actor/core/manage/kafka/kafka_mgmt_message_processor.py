@@ -26,6 +26,7 @@
 import threading
 import traceback
 
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.message_bus.consumer import AvroConsumerApi
 from fabric.message_bus.messages.message import IMessageAvro
 
@@ -52,7 +53,7 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
-                raise Exception("KafkaMgmtMessageProcessor has already been started")
+                raise ManageException("KafkaMgmtMessageProcessor has already been started")
 
             self.thread = threading.Thread(target=self.consume_auto)
             self.thread.setName("KafkaMgmtMessageProcessor")

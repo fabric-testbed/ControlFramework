@@ -279,7 +279,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                                 result.append(str(rr))
                             else:
                                 raise ManageException("Could not add reservation")
-                    except Exception as e:
+                    except Exception:
                         for r in reservations:
                             self.parent.client.unregister(reservation=r)
                         result.clear()

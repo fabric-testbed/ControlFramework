@@ -286,7 +286,7 @@ class Converter:
             from fabric.actor.core.container.container import Container
             return Container.get_proxy(protocol=mng.get_protocol(), identity=identity, location=location,
                                        type=mng.get_type())
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             return None
 
@@ -356,13 +356,7 @@ class Converter:
         for a in act_list:
             act_mng = Converter.fill_actor_from_db(properties=a)
 
-            if status == 0:
-                result.append(act_mng)
-
-            elif status == 1 and act_mng.get_online():
-                result.append(act_mng)
-
-            elif status == 2 and not act_mng.get_online():
+            if status == 0 or (status == 1 and act_mng.get_online()) or (status == 2 and not act_mng.get_online()):
                 result.append(act_mng)
 
         return result
@@ -371,5 +365,5 @@ class Converter:
     def fill_resource_pool_descriptor(*, pool: PoolInfoAvro) -> ResourcePoolDescriptor:
         rpd = ResourcePoolDescriptor()
         properties = pool.get_properties()
-        rpd.reset(properties=properties, prefix=None)
+        rpd.reset(properties=properties)
         return rpd

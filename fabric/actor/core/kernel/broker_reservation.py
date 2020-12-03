@@ -327,12 +327,11 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             elif self.pending_state == ReservationPendingStates.Priming:
                 self.service_pending = ReservationPendingStates.AbsorbUpdate
 
-            elif self.pending_state == ReservationPendingStates.None_:
+            elif self.pending_state == ReservationPendingStates.None_ and self.must_send_update:
                 # for exported reservations that have been claimed, we need to
                 # schedule a ticketUpdate
-                if self.must_send_update:
-                    self.service_pending = ReservationPendingStates.SendUpdate
-                    self.must_send_update = False
+                self.service_pending = ReservationPendingStates.SendUpdate
+                self.must_send_update = False
 
     def service_probe(self):
         try:

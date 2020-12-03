@@ -35,8 +35,7 @@ from fabric.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 from fabric.actor.core.util.id import ID
 from fabric.message_bus.messages.actor_avro import ActorAvro
 from fabric.message_bus.messages.auth_avro import AuthAvro
-from fabric.message_bus.messages.get_actors_avro import GetActorsAvro
-from fabric.message_bus.messages.result_actor_avro import ResultActorAvro
+from fabric.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
 from fabric.message_bus.producer import AvroProducerApi
 
@@ -53,7 +52,7 @@ class KafkaContainer(KafkaProxy, IMgmtContainer):
         rret_val = None
 
         try:
-            request = GetActorsAvro()
+            request = GetActorsRequestAvro()
             request.guid = str(self.management_id)
             request.auth = self.auth
             request.message_id = str(ID())
@@ -62,7 +61,7 @@ class KafkaContainer(KafkaProxy, IMgmtContainer):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -71,17 +70,18 @@ class KafkaContainer(KafkaProxy, IMgmtContainer):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = message_wrapper.response.actors
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 

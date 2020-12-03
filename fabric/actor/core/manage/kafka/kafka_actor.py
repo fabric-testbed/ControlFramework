@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 from fabric.message_bus.messages.close_reservations_avro import CloseReservationsAvro
@@ -85,7 +86,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -94,18 +95,19 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = message_wrapper.response.slices
 
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -131,7 +133,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.slice_id = str(slice_id)
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -140,15 +142,16 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -176,7 +179,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.slice_obj = slice_obj
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -185,17 +188,18 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = ID(id=message_wrapper.response.get_result())
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -221,7 +225,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
             request.slice_obj = slice_obj
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -230,15 +234,16 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -274,7 +279,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
             response.message_id = request.message_id
 
             if ret_val:
@@ -284,15 +289,16 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     response.status.code = ErrorCodes.ErrorTransportTimeout.value
                     response.status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     response = message_wrapper.response
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 response.status.code = ErrorCodes.ErrorTransportFailure.value
                 response.status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -328,7 +334,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
             response.message_id = request.message_id
 
             if ret_val:
@@ -338,15 +344,16 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     response.status.code = ErrorCodes.ErrorTransportTimeout.value
                     response.status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     response = message_wrapper.response
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 response.status.code = ErrorCodes.ErrorTransportFailure.value
                 response.status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -364,7 +371,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         status = ResultAvro()
         self.clear_last()
         if rid is None:
-            self.last_exception = Exception("Invalid arguments")
+            self.last_exception = ManageException(Constants.invalid_argument)
             status.set_code(ErrorCodes.ErrorInvalidArguments.value)
             status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             self.last_status = status
@@ -380,7 +387,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -389,15 +396,16 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -415,7 +423,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         status = ResultAvro()
         self.clear_last()
         if rid is None:
-            self.last_exception = Exception("Invalid arguments")
+            self.last_exception = ManageException(Constants.invalid_argument)
             status.set_code(ErrorCodes.ErrorInvalidArguments.value)
             status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             self.last_status = status
@@ -431,7 +439,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -440,15 +448,16 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -466,7 +475,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         status = ResultAvro()
         self.clear_last()
         if slice_id is None:
-            self.last_exception = Exception("Invalid arguments")
+            self.last_exception = ManageException(Constants.invalid_argument)
             status.set_code(ErrorCodes.ErrorInvalidArguments.value)
             status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             self.last_status = status
@@ -482,7 +491,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -491,15 +500,16 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -517,7 +527,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         status = ResultAvro()
         self.clear_last()
         if reservation is None:
-            self.last_exception = Exception("Invalid arguments")
+            self.last_exception = ManageException(Constants.invalid_argument)
             status.set_code(ErrorCodes.ErrorInvalidArguments.value)
             status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             self.last_status = status
@@ -533,7 +543,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -542,15 +552,16 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -564,11 +575,12 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
         return status.get_code() == 0
 
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID], id_token: str = None) -> List[ReservationStateAvro]:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID],
+                                               id_token: str = None) -> List[ReservationStateAvro]:
         status = ResultAvro()
         self.clear_last()
         if reservation_list is None:
-            self.last_exception = Exception("Invalid arguments")
+            self.last_exception = ManageException(Constants.invalid_argument)
             status.set_code(ErrorCodes.ErrorInvalidArguments.value)
             status.set_message(ErrorCodes.ErrorInvalidArguments.name)
             self.last_status = status
@@ -587,7 +599,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug("Message {} written to {}".format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
@@ -596,17 +608,18 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                     message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
 
                 if not message_wrapper.done:
-                    self.logger.debug("Timeout occurred!")
+                    self.logger.debug(Constants.management_api_timeout_occurred)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
                     status.message = ErrorCodes.ErrorTransportTimeout.name
                 else:
-                    self.logger.debug("Received response {}".format(message_wrapper.response))
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.get_code() == 0:
                         return message_wrapper.response.reservation_states
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 

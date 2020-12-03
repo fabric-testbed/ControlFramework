@@ -29,6 +29,7 @@ from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.apis.i_delegation import IDelegation, DelegationState
 from fabric.actor.core.apis.i_policy import IPolicy
 from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.common.exceptions import DelegationException
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric.actor.core.util.id import ID
@@ -379,7 +380,7 @@ class Delegation(IDelegation):
     def service_update_delegation(self):
         return
 
-    def validate_incoming(self):
+    def validate(self):
         if self.slice_object is None:
             self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("slice")))
             raise DelegationException(Constants.not_specified_prefix.format("slice"))
@@ -391,19 +392,12 @@ class Delegation(IDelegation):
         if self.graph is None:
             self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph")))
             raise DelegationException(Constants.not_specified_prefix.format("graph"))
+
+    def validate_incoming(self):
+        self.validate()
 
     def validate_outgoing(self):
-        if self.slice_object is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("slice")))
-            raise DelegationException(Constants.not_specified_prefix.format("slice"))
-
-        if self.dlg_graph_id is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
-            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
-
-        if self.graph is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph")))
-            raise DelegationException(Constants.not_specified_prefix.format("graph"))
+        self.validate()
 
     def set_owner(self, *, owner: AuthToken):
         """
