@@ -119,8 +119,8 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
-            result = mo.get_slices(slice_id=ID(id=request.slice_id), caller=auth, id_token=request.get_id_token())
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
+            result = mo.get_slices(slice_id=ID(uid=request.slice_id), caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -142,7 +142,7 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.add_slice(slice_obj=request.slice_obj, caller=auth)
             result.message_id = request.message_id
@@ -164,7 +164,7 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result.status = mo.update_slice(request.slice_obj, auth)
             result.message_id = request.message_id
@@ -187,9 +187,9 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result.status = mo.remove_slice(slice_id=ID(id=request.slice_id), caller=auth)
+            result.status = mo.remove_slice(slice_id=ID(uid=request.slice_id), caller=auth)
             result.message_id = request.message_id
 
         except Exception as e:
@@ -209,10 +209,10 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             if request.get_reservation_id() is not None:
-                result = mo.get_reservations(caller=auth, rid=ID(id=request.get_reservation_id()),
+                result = mo.get_reservations(caller=auth, rid=ID(uid=request.get_reservation_id()),
                                              id_token=request.get_id_token())
 
             elif request.get_slice_id() is not None:
@@ -220,12 +220,12 @@ class KafkaActorService(KafkaService):
                 if request.get_reservation_state() is not None and \
                         request.get_reservation_state() != Constants.all_reservation_states:
 
-                    result = mo.get_reservations(caller=auth, slice_id=ID(id=request.get_slice_id()),
+                    result = mo.get_reservations(caller=auth, slice_id=ID(uid=request.get_slice_id()),
                                                  state=request.get_reservation_state(),
                                                  id_token=request.get_id_token())
 
                 else:
-                    result = mo.get_reservations(caller=auth, slice_id=ID(id=request.get_slice_id()),
+                    result = mo.get_reservations(caller=auth, slice_id=ID(uid=request.get_slice_id()),
                                                  id_token=request.get_id_token())
 
             else:
@@ -257,7 +257,7 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result.status = mo.update_reservation(reservation=request.reservation_obj, caller=auth)
             result.message_id = request.message_id
@@ -279,8 +279,8 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
-            result.status = mo.remove_reservation(caller=auth, rid=ID(id=request.reservation_id))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
+            result.status = mo.remove_reservation(caller=auth, rid=ID(uid=request.reservation_id))
             result.message_id = request.message_id
 
         except Exception as e:
@@ -300,12 +300,12 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             if request.get_slice_id() is not None:
-                result.status = mo.close_slice_reservations(caller=auth, slice_id=ID(id=request.slice_id))
+                result.status = mo.close_slice_reservations(caller=auth, slice_id=ID(uid=request.slice_id))
             else:
-                result.status = mo.close_reservation(caller=auth, rid=ID(id=request.reservation_id))
+                result.status = mo.close_reservation(caller=auth, rid=ID(uid=request.reservation_id))
 
             result.message_id = request.message_id
 
@@ -326,7 +326,7 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.get_reservation_state_for_reservations(caller=auth, rids=request.get_reservation_ids(),
                                                                id_token=request.get_id_token())
@@ -349,14 +349,14 @@ class KafkaActorService(KafkaService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             if request.get_delegation_id() is not None:
-                result = mo.get_delegations(caller=auth, did=ID(id=request.get_delegation_id()),
+                result = mo.get_delegations(caller=auth, did=ID(uid=request.get_delegation_id()),
                                             id_token=request.get_id_token())
 
             elif request.get_slice_id() is not None:
-                result = mo.get_delegations(caller=auth, slice_id=ID(id=request.get_slice_id()),
+                result = mo.get_delegations(caller=auth, slice_id=ID(uid=request.get_slice_id()),
                                             id_token=request.get_id_token())
 
             else:

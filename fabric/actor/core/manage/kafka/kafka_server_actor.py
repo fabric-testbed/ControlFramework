@@ -339,7 +339,7 @@ class KafkaServerActor(KafkaActor, IMgmtServerActor):
                     self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
-                        rret_val = ID(id=message_wrapper.response.get_result())
+                        rret_val = ID(uid=message_wrapper.response.get_result())
             else:
                 self.logger.debug(Constants.management_inter_actor_message_failed.format(
                     request.name, self.kafka_topic))

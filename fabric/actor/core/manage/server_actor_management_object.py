@@ -171,9 +171,8 @@ class ServerActorManagementObject(ActorManagementObject):
 
             if owner_mng is not None:
                 owner = Translate.translate_auth_from_avro(auth_avro=owner_mng)
-                if owner is not None:
-                    if owner.get_name() is not None and owner.get_guid() is not None:
-                        owner_is_ok = True
+                if owner is not None and owner.get_name() is not None and owner.get_guid() is not None:
+                    owner_is_ok = True
 
             if not owner_is_ok:
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)

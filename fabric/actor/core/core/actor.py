@@ -489,7 +489,7 @@ class Actor(IActor):
         if properties.get('slc_guid', None) is None:
             raise ActorException("Missing slice guid")
 
-        slice_id = ID(id=properties['slc_guid'])
+        slice_id = ID(uid=properties['slc_guid'])
 
         slice_obj = self.get_slice(slice_id=slice_id)
         self.logger.debug("Found slice_id: {} slice:{}".format(slice_id, slice_obj))

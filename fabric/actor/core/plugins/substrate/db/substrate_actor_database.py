@@ -26,6 +26,8 @@
 import pickle
 import threading
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import DatabaseException
 from fabric.actor.core.core.unit import Unit
 from fabric.actor.core.plugins.db.server_actor_database import ServerActorDatabase
 from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
@@ -45,7 +47,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
     def add_unit(self, *, u: Unit):
         try:
             if u.get_resource_type() is None:
-                raise Exception("Invalid argument: resource_type")
+                raise DatabaseException(Constants.invalid_argument)
             self.lock.acquire()
             if self.get_unit(unit_id=u.get_id()) is not None:
                 self.logger.info("unit {} is already present in database".format(u.get_id()))

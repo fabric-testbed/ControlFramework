@@ -29,6 +29,7 @@ import traceback
 from typing import List
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.container_management_object import ContainerManagementObject
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
@@ -48,7 +49,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
     def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
         if not isinstance(manager, ContainerManagementObject):
-            raise Exception("Invalid manager object. Required: {}".format(type(ContainerManagementObject)))
+            raise ManageException("Invalid manager object. Required: {}".format(type(ContainerManagementObject)))
 
     def get_management_object(self, *, key: ID):
         try:
@@ -60,7 +61,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             desc_list = obj.get_proxies()
 
             if desc_list is None:
-                raise Exception("Management object did not specify any proxies")
+                raise ManageException("Management object did not specify any proxies")
             desc = None
             for d in desc_list:
                 if d.get_protocol() == Constants.protocol_local:
@@ -68,7 +69,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
                     break
 
             if desc is None or desc.get_proxy_class() is None or desc.get_proxy_module() is None:
-                raise Exception("Manager object did not specify local proxy")
+                raise ManageException("Manager object did not specify local proxy")
 
             try:
                 mgmt_obj = ReflectionUtils.create_instance_with_params(module_name=desc.get_proxy_module(),
@@ -77,7 +78,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
                 return mgmt_obj
             except Exception as e:
                 traceback.print_exc()
-                raise Exception("Could not instantiate proxy {}".format(e))
+                raise ManageException("Could not instantiate proxy {}".format(e))
         except Exception as e:
             traceback.print_exc()
             raise e
@@ -90,7 +91,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
                 if isinstance(component, IMgmtActor):
                     return component
                 else:
-                    self.last_exception = Exception("Invalid Management Object type")
+                    self.last_exception = Exception(Constants.invalid_management_object_type.format(type(component)))
 
             return None
         except Exception as e:
@@ -255,7 +256,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             if isinstance(component, IMgmtBroker):
                 return component
             else:
-                self.last_exception = Exception("Invalid Management Object type")
+                self.last_exception = Exception(Constants.invalid_management_object_type.format(type(component)))
 
         return None
 
@@ -266,6 +267,6 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             if isinstance(component, IMgmtAuthority):
                 return component
             else:
-                self.last_exception = Exception("Invalid Management Object type")
+                self.last_exception = Exception(Constants.invalid_management_object_type.format(type(component)))
 
         return None

@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PolicyException
 from fabric.actor.core.core.unit import Unit, UnitState
 from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.policy.free_allocated_set import FreeAllocatedSet
@@ -72,13 +73,13 @@ class VlanControl(ResourceControl):
         self.logger.debug("VlanControl.donate(): donating resouces r={}".format(reservation))
 
         if self.tags.size() != 0:
-            raise Exception("only a single source reservation is supported")
+            raise PolicyException("only a single source reservation is supported")
 
         rset = reservation.get_resources()
         rtype = reservation.get_type()
         local = rset.get_local_properties()
         if local is None:
-            raise Exception("Missing local properties")
+            raise PolicyException("Missing local properties")
 
         self.rtype = rtype
         size = 0
@@ -102,7 +103,7 @@ class VlanControl(ResourceControl):
                     self.logger.info("VlanControl.donate(): Tag Donation:{}:{}-{}:{}".format(rtype, start, end, size))
 
         if size < reservation.get_units():
-            raise Exception("Insufficient vlan tags specified in donated reservation: donated {} rset says: {}".format(
+            raise PolicyException("Insufficient vlan tags specified in donated reservation: donated {} rset says: {}".format(
                 size, reservation.get_units()))
 
     def donate(self, *, resource_set: ResourceSet):
@@ -112,7 +113,7 @@ class VlanControl(ResourceControl):
         reservation.set_send_with_deficit(value=True)
 
         if self.tags.size() == 0:
-            raise Exception("no inventory")
+            raise PolicyException("no inventory")
 
         requested = reservation.get_requested_resources()
         rtype = requested.get_type()

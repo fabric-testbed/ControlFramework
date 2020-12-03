@@ -32,6 +32,7 @@ from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.apis.i_concrete_set import IConcreteSet
 from fabric.actor.core.apis.i_proxy import IProxy
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.util.id import ID
@@ -55,11 +56,11 @@ class Proxy(IProxy):
         @return ICallbackProxy
         """
         if actor is None:
-            raise Exception("actor cannot be None")
+            raise ProxyException(Constants.not_specified_prefix.format("actor"))
 
         callback = ActorRegistrySingleton.get().get_callback(protocol=protocol, actor_name=actor.get_name())
         if callback is None:
-            raise Exception("Could not obtain callback proxy: protocol={}".format(protocol))
+            raise ProxyException("Could not obtain callback proxy: protocol={}".format(protocol))
         return callback
 
     @staticmethod

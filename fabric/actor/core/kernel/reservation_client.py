@@ -795,7 +795,9 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 self.transition_with_join(prefix="unblocked join", state=self.state, pending=self.pending_state,
                                           join_state=JoinState.Joining)
                 self.service_pending = JoinState.Joining
-        elif self.joinstate == JoinState.Joining:
+        elif self.joinstate == JoinState.Joining and self.service_pending == JoinState.None_ and \
+                self.leased_resources.is_active() and not self.pending_recover and\
+                self.state != ReservationStates.ActiveTicketed:
             # Tracking initial join processing for first lease on a service
             # manager. The reservation is already "active", but we log
             # completion of the join here and Fail if it failed completely.
@@ -808,17 +810,15 @@ class ReservationClient(Reservation, IKernelControllerReservation):
             # NoJoin: pendingRecover may have already been cleared by an
             # updateTicket message but we still must get the lease from the
             # site.
-            if self.service_pending == JoinState.None_ and self.leased_resources.is_active() \
-                    and not self.pending_recover and self.state != ReservationStates.ActiveTicketed:
-                # join completed: go ahead and transition to NoJoin
-                self.transition_with_join(prefix="join complete", state=self.state, pending=self.pending_state,
-                                          join_state=JoinState.NoJoin)
-                if self.leased_resources.get_concrete_units() == 0:
-                    if self.leased_resources.get_notices().get_notice() is not None:
-                        self.fail(message="resources failed to join: {}".
-                                  format(self.leased_resources.get_notices().get_notice()), exception=None)
-                    else:
-                        self.fail(message="resources failed to join: (no details)", exception=None)
+            # join completed: go ahead and transition to NoJoin
+            self.transition_with_join(prefix="join complete", state=self.state, pending=self.pending_state,
+                                      join_state=JoinState.NoJoin)
+            if self.leased_resources.get_concrete_units() == 0:
+                if self.leased_resources.get_notices().get_notice() is not None:
+                    self.fail(message="resources failed to join: {}".
+                              format(self.leased_resources.get_notices().get_notice()), exception=None)
+                else:
+                    self.fail(message="resources failed to join: (no details)", exception=None)
 
     def probe_pending(self):
         # Process join state to complete or restart join-related operations for Controller

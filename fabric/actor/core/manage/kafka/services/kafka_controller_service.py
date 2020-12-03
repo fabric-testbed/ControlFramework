@@ -67,9 +67,9 @@ class KafkaControllerService(KafkaClientActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_reservation_units(caller=auth, rid=ID(id=request.reservation_id),
+            result = mo.get_reservation_units(caller=auth, rid=ID(uid=request.reservation_id),
                                               id_token=request.get_id_token())
             result.message_id = request.message_id
 

@@ -203,7 +203,7 @@ class UnitSet(IConcreteSet):
 
         if victims is not None:
             for v in victims.split(" "):
-                uid = ID(id=v)
+                uid = ID(uid=v)
                 if uid in self.units:
                     taken[uid] = self.units[uid]
                     num_taken += 1

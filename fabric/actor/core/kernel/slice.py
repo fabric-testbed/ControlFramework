@@ -101,7 +101,7 @@ class Slice(IKernelSlice):
 
     def set_graph(self, *, graph: ABCPropertyGraph):
         self.graph = graph
-        self.set_graph_id(graph_id=ID(id=self.graph.get_graph_id()))
+        self.set_graph_id(graph_id=ID(uid=self.graph.get_graph_id()))
 
     def get_graph(self) -> ABCPropertyGraph:
         return self.graph

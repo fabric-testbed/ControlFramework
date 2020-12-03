@@ -29,6 +29,8 @@ from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_controller_policy import IControllerPolicy
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ControllerException
 from fabric.actor.core.core.policy import Policy
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.kernel.resource_set import ResourceSet
@@ -317,7 +319,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                 self.calendar.add_closing(reservation=reservation,
                                           cycle=self.get_close(reservation=reservation, term=reservation.get_term()))
 
-                if reservation.is_renewable():
+                if reservation.is_renewable() and reservation.get_renew_time() != 0:
                     # Scheduling renewal is a bit tricky, since it may
                     # involve communication with the upstream broker.
                     # However, in some recovery cases, typical in one
@@ -332,11 +334,10 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                     # it is non-zero, we will use it, otherwise we will
                     # schedule the renew after we get the lease back
                     # from the authority.
-                    if reservation.get_renew_time() != 0:
-                        self.calendar.add_renewing(reservation=reservation, cycle=reservation.get_renew_time())
+                    self.calendar.add_renewing(reservation=reservation, cycle=reservation.get_renew_time())
 
             elif reservation.get_pending_state() == ReservationPendingStates.Redeeming:
-                raise Exception("This state should not be reached during recovery")
+                raise ControllerException(Constants.invalid_recovery_state)
 
         elif reservation.get_state() == ReservationStates.Active:
             if reservation.get_pending_state() == ReservationPendingStates.None_:
@@ -355,7 +356,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                                                                term=reservation.get_lease_term()))
 
             elif reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket:
-                raise Exception("This state should not be reached during recovery")
+                raise ControllerException(Constants.invalid_recovery_state)
 
         elif reservation.get_state() == ReservationStates.ActiveTicketed:
 
@@ -379,7 +380,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                     self.calendar.add_renewing(reservation=reservation, cycle=reservation.get_renew_time())
 
             elif reservation.get_pending_state() == ReservationPendingStates.ExtendingLease:
-                raise Exception("This state should not be reached during recovery")
+                raise ControllerException(Constants.invalid_recovery_state)
 
     def ticket_satisfies(self, *, requested_resources: ResourceSet, actual_resources: ResourceSet,
                          requested_term: Term, actual_term: Term):

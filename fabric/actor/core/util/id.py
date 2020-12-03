@@ -27,43 +27,43 @@ import uuid
 
 
 class ID:
-    def __init__(self, *, id: str = None):
-        if id is None:
-            self.id = uuid.uuid4().__str__()
+    def __init__(self, *, uid: str = None):
+        if uid is None:
+            self.uid = uuid.uuid4().__str__()
         else:
-            self.id = id
+            self.uid = uid
 
     def __str__(self):
-        return str(self.id)
+        return str(self.uid)
 
     def print(self):
-        print(str(self.id))
+        print(str(self.uid))
 
     def __hash__(self):
-        return hash(self.id)
+        return hash(self.uid)
 
     def __lt__(self, other):
         if not isinstance(other, ID):
             # don't attempt to compare against unrelated types
             return NotImplemented
 
-        return self.id < other.id
+        return self.uid < other.uid
 
     def __eq__(self, other):
         if not isinstance(other, ID):
             # don't attempt to compare against unrelated types
             return NotImplemented
 
-        return self.id == other.id
+        return self.uid == other.uid
 
 
 def main():
-    id = ID()
-    id.print()
-    print(id.__hash__())
-    id1 = ID(id="manager")
-    id1.print()
-    print(id1.__hash__())
+    uid = ID()
+    uid.print()
+    print(uid.__hash__())
+    uid1 = ID(uid="manager")
+    uid1.print()
+    print(uid1.__hash__())
 
 
 if __name__ == "__main__":

@@ -29,6 +29,8 @@ import threading
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import BrokerException
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.time.calendar.broker_calendar import BrokerCalendar
 from fabric.actor.core.util.resource_count import ResourceCount
@@ -150,11 +152,10 @@ class BrokerCalendarPolicy(BrokerPolicy):
             if not reservation.is_nascent() and reservation.is_no_pending():
                 self.logger.debug("Pending request completed {}".format(reservation))
 
-            if not reservation.is_terminal():
-                if reservation.is_renewable():
-                    cycle = self.get_renew(reservation=reservation)
-                    reservation.set_renew_time(time=cycle)
-                    reservation.set_dirty()
+            if not reservation.is_terminal() and reservation.is_renewable():
+                cycle = self.get_renew(reservation=reservation)
+                reservation.set_renew_time(time=cycle)
+                reservation.set_dirty()
 
             self.calendar.remove_pending(reservation)
 
@@ -218,7 +219,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
         @throws Exception in case of error
         """
-        raise Exception("not implemented")
+        raise BrokerException("not implemented")
 
     def initialize(self):
         if not self.initialized:
@@ -264,13 +265,13 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
         @throws Exception in case of error
         """
-        if reservation.get_state() == ReservationStates.Nascent:
-            if reservation.get_pending_state() == ReservationPendingStates.None_:
-                self.calendar.add_pending(reservation=reservation)
+        if reservation.get_state() == ReservationStates.Nascent and\
+                reservation.get_pending_state() == ReservationPendingStates.None_:
+            self.calendar.add_pending(reservation=reservation)
 
-        elif reservation.get_state() == ReservationStates.Ticketed:
-            if reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket:
-                self.calendar.add_pending(reservation=reservation)
+        elif reservation.get_state() == ReservationStates.Ticketed and\
+                reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket:
+            self.calendar.add_pending(reservation=reservation)
 
     def revisit_server(self, *, reservation: IBrokerReservation):
         """
@@ -280,20 +281,20 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
         @throws Exception in case of error
         """
-        if reservation.get_state() == ReservationStates.Ticketed:
-            if reservation.get_pending_state() == ReservationPendingStates.None_ or \
-                    reservation.get_pending_state() == ReservationPendingStates.Priming:
-                source = reservation.get_source()
-                if source is None:
-                    raise Exception("Missing source reservation")
+        if reservation.get_state() == ReservationStates.Ticketed and \
+                (reservation.get_pending_state() == ReservationPendingStates.None_ or
+                    reservation.get_pending_state() == ReservationPendingStates.Priming):
+            source = reservation.get_source()
+            if source is None:
+                raise BrokerException(Constants.not_specified_prefix.format("source reservation"))
 
-                self.calendar.add_outlay(source=source,
-                                         client=reservation,
-                                         start=reservation.get_term().get_new_start_time(),
-                                         end=reservation.get_term().get_end_time())
+            self.calendar.add_outlay(source=source,
+                                     client=reservation,
+                                     start=reservation.get_term().get_new_start_time(),
+                                     end=reservation.get_term().get_end_time())
 
-                self.calendar.add_closing(reservation=reservation,
-                                          cycle=self.clock.cycle(when=reservation.get_term().get_end_time()))
+            self.calendar.add_closing(reservation=reservation,
+                                      cycle=self.clock.cycle(when=reservation.get_term().get_end_time()))
 
     def query(self, *, p):
         self.logger.debug("Processing Query with properties: {}".format(p))

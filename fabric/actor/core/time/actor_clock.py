@@ -25,6 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import TimeException
+
 
 class ActorClock:
     """
@@ -41,10 +44,10 @@ class ActorClock:
         Constructor
         @params beginning_of_time : time offset (milliseconds)
         @params cycle_millis : cycle length (milliseconds)
-        @raise Exception for invalid arguments
+        @raise TimeException for invalid arguments
         """
         if beginning_of_time < 0 or cycle_millis < 1:
-            raise Exception("Invalid arguments {} {}".format(beginning_of_time, cycle_millis))
+            raise TimeException("Invalid arguments {} {}".format(beginning_of_time, cycle_millis))
 
         self.beginning_of_time = beginning_of_time
         self.cycle_millis = cycle_millis
@@ -54,10 +57,10 @@ class ActorClock:
         Returns the number of cycles those milliseconds represent.
         @params millis : milliseconds
         @return cycles
-        @raise Exception for invalid arguments
+        @raise TimeException for invalid arguments
         """
         if millis < 0:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
 
         return int(millis / self.cycle_millis)
 
@@ -68,7 +71,7 @@ class ActorClock:
         @return cycles
         """
         if when is None:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
 
         millis = self.to_milliseconds(when=when)
 
@@ -85,7 +88,7 @@ class ActorClock:
         @return last millisecond of the cycle
         """
         if cycle < 0:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
 
         millis = (self.beginning_of_time + ((cycle + 1) * self.cycle_millis)) - 1
 
@@ -106,7 +109,7 @@ class ActorClock:
         @returns first millisecond of the cycle
         """
         if cycle < 0:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
 
         return self.date(cycle=cycle)
 
@@ -126,7 +129,7 @@ class ActorClock:
         @raises Exception in case of invalid arguments
         """
         if cycle < 0:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
 
         millis = self.beginning_of_time + (cycle * self.cycle_millis)
         return self.from_milliseconds(milli_seconds=millis)
@@ -155,7 +158,7 @@ class ActorClock:
         @raises Exception in case of invalid arguments
         """
         if cycle < 0:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
         return cycle * self.cycle_millis
 
     @staticmethod

@@ -146,7 +146,7 @@ class Authority(Actor, IAuthority):
 
     def close_by_caller(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise AuthorityException(Constants.invalid_state)
+            raise AuthorityException(Constants.invalid_actor_state)
 
         self.wrapper.close_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
@@ -194,7 +194,7 @@ class Authority(Actor, IAuthority):
                                                   compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.is_stopped():
-                raise AuthorityException(Constants.invalid_state)
+                raise AuthorityException(Constants.invalid_actor_state)
             self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
     def modify_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken):
@@ -206,7 +206,7 @@ class Authority(Actor, IAuthority):
                                                   compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.stopped:
-                raise AuthorityException(Constants.invalid_state)
+                raise AuthorityException(Constants.invalid_actor_state)
             self.wrapper.modify_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
     def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
@@ -218,7 +218,7 @@ class Authority(Actor, IAuthority):
 
     def relinquish(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.stopped:
-            raise AuthorityException(Constants.invalid_state)
+            raise AuthorityException(Constants.invalid_actor_state)
         self.wrapper.relinquish_request(reservation=reservation, caller=caller)
 
     def freed(self, *, resources: ResourceSet):
@@ -233,7 +233,7 @@ class Authority(Actor, IAuthority):
                                             callback=reservation.get_callback(), compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.is_stopped():
-                raise AuthorityException(Constants.invalid_state)
+                raise AuthorityException(Constants.invalid_actor_state)
 
             if self.plugin.validate_incoming(reservation=reservation, auth=caller):
                 self.wrapper.redeem_request(reservation=reservation, caller=caller, callback=callback,

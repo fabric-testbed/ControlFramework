@@ -26,6 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.message_bus.messages.delegation_avro import DelegationAvro
 
 from fabric.actor.core.manage.actor_management_object import ActorManagementObject
@@ -46,7 +47,7 @@ class LocalActor(LocalProxy, IMgmtActor):
         super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, ActorManagementObject):
-            raise Exception("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
+            raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
     def get_slices(self, *, slice_id: ID = None, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
@@ -128,7 +129,7 @@ class LocalActor(LocalProxy, IMgmtActor):
             self.last_status = result.status
 
             if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(id=result.result)
+                return ID(uid=result.result)
 
         except Exception as e:
             self.last_exception = e

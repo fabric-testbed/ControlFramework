@@ -28,6 +28,7 @@ from __future__ import annotations
 import traceback
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.message_bus.messages.failed_rpc_avro import FailedRpcAvro
 from fabric.message_bus.messages.query_avro import QueryAvro
@@ -122,7 +123,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
             avro_message.error_details = request.error_details
 
         else:
-            raise Exception("Unsupported RPC: type={}".format(request.get_type()))
+            raise ProxyException("Unsupported RPC: type={}".format(request.get_type()))
 
         if self.producer is None:
             self.producer = self.create_kafka_producer()

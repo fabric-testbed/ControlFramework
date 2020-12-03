@@ -97,7 +97,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     if status.code == 0:
                         rret_val = message_wrapper.response.result_str
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -145,7 +146,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     if status.code == 0:
                         rret_val = message_wrapper.response.result
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -190,7 +192,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -235,7 +238,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -284,7 +288,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     if status.code == 0:
                         rret_val = message_wrapper.response.proxies
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -333,7 +338,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     if status.code == 0:
                         rret_val = message_wrapper.response.pools
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -349,24 +355,24 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
     def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.extend_same_units,
-                                       new_resource_type=None, request_properties=None, config_properties=None)
+                                       new_units=Constants.extend_same_units)
 
     def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime,
                                             request_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.extend_same_units, new_resource_type=None,
-                                       request_properties=request_properties, config_properties=None)
+                                       new_units=Constants.extend_same_units,
+                                       request_properties=request_properties)
 
     def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.extend_same_units, new_resource_type=None,
-                                       request_properties=request_properties, config_properties=config_properties)
+                                       new_units=Constants.extend_same_units,
+                                       request_properties=request_properties,
+                                       config_properties=config_properties)
 
     def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType, request_properties: dict,
-                           config_properties: dict) -> bool:
+                           new_resource_type: ResourceType = None, request_properties: dict = None,
+                           config_properties: dict = None) -> bool:
         self.clear_last()
         status = ResultAvro()
 
@@ -402,7 +408,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                     self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
                     status = message_wrapper.response.status
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
 
@@ -453,7 +460,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                             message_wrapper.response.delegations) > 0:
                         rret_val = next(iter(message_wrapper.response.delegations))
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
         except Exception as e:
@@ -503,7 +511,8 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                             message_wrapper.response.delegations) > 0:
                         rret_val = next(iter(message_wrapper.response.delegations))
             else:
-                self.logger.debug("Failed to send the message")
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
                 status.message = ErrorCodes.ErrorTransportFailure.name
         except Exception as e:

@@ -94,7 +94,7 @@ class KafkaServerActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.get_reservations_by_category(caller=auth, category=category, id_token=request.get_id_token(),
                                                      slice_id=request.slice_id)
@@ -117,7 +117,7 @@ class KafkaServerActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.get_slices_by_slice_type(caller=auth, slice_type=slice_type, id_token=request.get_id_token())
             result.message_id = request.message_id
@@ -140,7 +140,7 @@ class KafkaServerActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.add_client_slice(caller=auth, slice_obj=request.slice_obj)
             result.message_id = request.message_id

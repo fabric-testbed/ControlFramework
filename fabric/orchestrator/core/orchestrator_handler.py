@@ -78,7 +78,7 @@ class OrchestratorHandler:
         try:
             brokers = controller.get_brokers()
             if brokers is not None:
-                return ID(id=next(iter(brokers), None).get_guid())
+                return ID(uid=next(iter(brokers), None).get_guid())
 
         except Exception as e:
             self.logger.debug(traceback.format_exc())

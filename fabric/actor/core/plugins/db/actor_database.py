@@ -33,6 +33,8 @@ from fabric.actor.core.apis.i_database import IDatabase
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import DatabaseException
 from fabric.actor.core.kernel.slice import SliceTypes
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_type import ResourceType
@@ -85,13 +87,13 @@ class ActorDatabase(IDatabase):
     def initialize(self):
         if not self.initialized:
             if self.actor_name is None:
-                raise Exception("Missing actor_name")
+                raise DatabaseException(Constants.not_specified_prefix.format("actor name"))
             self.initialized = True
 
     def actor_added(self):
         self.actor_id = self.get_actor_id_from_name(actor_name=self.actor_name)
         if self.actor_id is None:
-            raise Exception("Actor record is not present in the database: {}".format(self.actor_name))
+            raise DatabaseException(Constants.object_not_found.format("actor", self.actor_name))
 
     def revisit(self, *, actor: IActor, properties: dict):
         return
@@ -133,7 +135,7 @@ class ActorDatabase(IDatabase):
     def add_slice(self, *, slice_object: ISlice):
         try:
             if self.get_slice(slice_id=slice_object.get_slice_id()) is not None:
-                raise Exception("Slice # {} already exists".format(slice_object.get_slice_id()))
+                raise DatabaseException("Slice # {} already exists".format(slice_object.get_slice_id()))
             self.lock.acquire()
             properties = pickle.dumps(slice_object)
             self.db.add_slice(act_id=self.actor_id, slc_guid=str(slice_object.get_slice_id()),
@@ -208,7 +210,9 @@ class ActorDatabase(IDatabase):
     def get_slice_by_resource_type(self, *, rtype: ResourceType) -> dict:
         try:
             self.lock.acquire()
-            return self.db.get_slices_by_resource_type(act_id=self.actor_id, slc_resource_type=str(rtype))
+            result_list = self.db.get_slices_by_resource_type(act_id=self.actor_id, slc_resource_type=str(rtype))
+            if result_list is not None and len(result_list) > 0:
+                return next(iter(result_list))
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -437,7 +441,7 @@ class ActorDatabase(IDatabase):
 
             slice_object = self.get_slice(slice_id=delegation.get_slice_id())
             if slice_object is None:
-                raise Exception("Slice with id: {} not found".format(delegation.get_slice_id()))
+                raise DatabaseException("Slice with id: {} not found".format(delegation.get_slice_id()))
 
             properties = pickle.dumps(delegation)
             self.db.add_delegation(dlg_act_id=self.actor_id,

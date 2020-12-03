@@ -27,6 +27,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_delegation import IDelegation
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PluginException
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_actor_event import IActorEvent
@@ -85,25 +87,22 @@ class BasePlugin(IBasePlugin):
 
     def initialize(self):
         if not self.initialized:
-            try:
-                if self.actor is None:
-                    raise Exception("Missing actor")
+            if self.actor is None:
+                raise PluginException(Constants.not_specified_prefix.format("actor"))
 
-                if self.ticket_factory is None:
-                    self.ticket_factory = self.make_ticket_factory()
+            if self.ticket_factory is None:
+                self.ticket_factory = self.make_ticket_factory()
 
-                if self.db is not None:
-                    self.db.set_logger(logger=self.logger)
-                    self.db.set_actor_name(name=self.actor.get_name())
-                    from fabric.actor.core.container.globals import GlobalsSingleton
-                    is_fresh = GlobalsSingleton.get().get_container().is_fresh()
-                    self.db.set_reset_state(state=is_fresh)
-                    self.db.initialize()
+            if self.db is not None:
+                self.db.set_logger(logger=self.logger)
+                self.db.set_actor_name(name=self.actor.get_name())
+                from fabric.actor.core.container.globals import GlobalsSingleton
+                is_fresh = GlobalsSingleton.get().get_container().is_fresh()
+                self.db.set_reset_state(state=is_fresh)
+                self.db.initialize()
 
-                self.ticket_factory.initialize()
-                self.initialized = True
-            except Exception as e:
-                raise e
+            self.ticket_factory.initialize()
+            self.initialized = True
 
     def configure(self, *, properties):
         self.config_properties = properties
@@ -140,14 +139,14 @@ class BasePlugin(IBasePlugin):
         return True
 
     def process_configuration_complete(self, *, token: ConfigToken, properties: dict):
-        target = properties[Config.PropertyTargetName]
+        target = properties[Config.property_target_name]
         unsupported = False
 
-        if target == Config.TargetCreate:
+        if target == Config.target_create:
             self.process_create_complete(token=token, properties=properties)
-        elif target == Config.TargetDelete:
+        elif target == Config.target_delete:
             self.process_delete_complete(token=token, properties=properties)
-        elif target == Config.TargetModify:
+        elif target == Config.target_modify:
             self.process_modify_complete(token=token, properties=properties)
         else:
             unsupported = True

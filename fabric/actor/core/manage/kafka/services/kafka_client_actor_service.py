@@ -29,7 +29,8 @@ import traceback
 from datetime import datetime
 
 from fabric.actor.core.apis.i_actor import ActorType
-from fabric.actor.core.common.constants import ErrorCodes
+from fabric.actor.core.common.constants import ErrorCodes, Constants
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.kafka.services.kafka_actor_service import KafkaActorService
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.time.actor_clock import ActorClock
@@ -102,7 +103,7 @@ class KafkaClientActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result.status = mo.add_reservation(reservation=request.reservation_obj, caller=auth)
             result.message_id = request.message_id
@@ -124,7 +125,7 @@ class KafkaClientActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result.status = mo.add_reservations(reservations=request.reservation_list, caller=auth)
             result.message_id = request.message_id
@@ -154,10 +155,10 @@ class KafkaClientActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             if request.reservation_id is not None:
-                result.status = mo.demand_reservation_rid(rid=ID(id=request.reservation_id), caller=auth)
+                result.status = mo.demand_reservation_rid(rid=ID(uid=request.reservation_id), caller=auth)
             else:
                 result.status = mo.demand_reservation(reservation=request.reservation_obj, caller=auth)
 
@@ -180,7 +181,7 @@ class KafkaClientActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.get_brokers(caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
@@ -202,9 +203,9 @@ class KafkaClientActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_pool_info(broker=ID(id=request.broker_id), caller=auth, id_token=request.get_id_token())
+            result = mo.get_pool_info(broker=ID(uid=request.broker_id), caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -224,14 +225,14 @@ class KafkaClientActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             end_time = ActorClock.from_milliseconds(milli_seconds=request.end_time)
             rtype = None
             if request.new_resource_type is not None:
                 rtype = ResourceType(resource_type=request.new_resource_type)
 
-            result.status = mo.extend_reservation(rid=ID(id=request.reservation_id), new_end_time=end_time,
+            result.status = mo.extend_reservation(rid=ID(uid=request.reservation_id), new_end_time=end_time,
                                                   new_units=request.new_units, new_resource_type=rtype,
                                                   request_properties=request.request_properties,
                                                   config_properties=request.config_properties, caller=auth)
@@ -244,7 +245,7 @@ class KafkaClientActorService(KafkaActorService):
 
         return result
 
-    def _claim_delegations(self, *, request: ClaimResourcesAvro) -> ResultDelegationAvro:
+    def claim(self, *, request: ClaimResourcesAvro):
         result = ResultDelegationAvro()
         result.status = ResultAvro()
         try:
@@ -254,7 +255,7 @@ class KafkaClientActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             if mo is None:
                 self.logger.debug("Management object could not be found: guid: {} auth: {}".format(request.guid, auth))
@@ -262,7 +263,7 @@ class KafkaClientActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
                 return result
 
-            result = mo.claim_delegations(broker=ID(id=request.broker_id), did=request.delegation_id, caller=auth,
+            result = mo.claim_delegations(broker=ID(uid=request.broker_id), did=request.delegation_id, caller=auth,
                                           id_token=request.id_token)
 
             result.message_id = request.message_id
@@ -275,7 +276,7 @@ class KafkaClientActorService(KafkaActorService):
 
         return result
 
-    def _reclaim_delegations(self, *, request: ReclaimResourcesAvro) -> ResultDelegationAvro:
+    def reclaim(self, *, request: ReclaimResourcesAvro):
         result = ResultDelegationAvro()
         result.status = ResultAvro()
         try:
@@ -285,7 +286,7 @@ class KafkaClientActorService(KafkaActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             if mo is None:
                 self.logger.debug("Management object could not be found: guid: {} auth: {}".format(request.guid, auth))
@@ -293,7 +294,7 @@ class KafkaClientActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
                 return result
 
-            result = mo.reclaim_delegations(broker=ID(id=request.broker_id), did=request.delegation_id, caller=auth,
+            result = mo.reclaim_delegations(broker=ID(uid=request.broker_id), did=request.delegation_id, caller=auth,
                                             id_token=request.id_token)
 
             result.message_id = request.message_id
@@ -305,15 +306,3 @@ class KafkaClientActorService(KafkaActorService):
             result.status.set_details(traceback.format_exc())
 
         return result
-
-    def claim(self, *, request: ClaimResourcesAvro):
-        if request.delegation_id is not None:
-            return self._claim_delegations(request=request)
-        else:
-            raise Exception("Invalid request, reservation id and delegation id; both cannot be empty")
-
-    def reclaim(self, *, request: ReclaimResourcesAvro):
-        if request.delegation_id is not None:
-            return self._reclaim_delegations(request=request)
-        else:
-            raise Exception("Invalid request, reservation id and delegation id; both cannot be empty")

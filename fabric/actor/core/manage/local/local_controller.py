@@ -30,6 +30,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric.actor.core.manage.local.local_actor import LocalActor
@@ -52,7 +53,7 @@ class LocalController(LocalActor, IMgmtController):
         super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, ControllerManagementObject):
-            raise Exception("Invalid manager object. Required: {}".format(type(ControllerManagementObject)))
+            raise ManageException("Invalid manager object. Required: {}".format(type(ControllerManagementObject)))
 
     def add_broker(self, *, broker: ProxyAvro) -> bool:
         self.clear_last()
@@ -150,7 +151,7 @@ class LocalController(LocalActor, IMgmtController):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return ID(id=result.result)
+                return ID(uid=result.result)
         except Exception as e:
             self.last_exception = e
 
@@ -165,7 +166,7 @@ class LocalController(LocalActor, IMgmtController):
             if result.status.get_code() == 0:
                 rids = []
                 for r in result.result:
-                    rids.append(ID(id=r))
+                    rids.append(ID(uid=r))
 
                 return rids
         except Exception as e:
@@ -197,9 +198,9 @@ class LocalController(LocalActor, IMgmtController):
 
         return False
 
-    def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType, request_properties: dict,
-                           config_properties: dict) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
+                           new_resource_type: ResourceType = None, request_properties: dict = None,
+                           config_properties: dict = None) -> bool:
         self.clear_last()
         try:
             result = self.manager.extend_reservation(reservation, new_end_time, new_units, new_resource_type,
@@ -214,19 +215,18 @@ class LocalController(LocalActor, IMgmtController):
 
     def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.extend_same_units, new_resource_type=None,
-                                       request_properties=None, config_properties=None)
+                                       new_units=Constants.extend_same_units)
 
     def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime,
                                             request_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.extend_same_units, new_resource_type=None,
-                                       request_properties=request_properties, config_properties=None)
+                                       new_units=Constants.extend_same_units,
+                                       request_properties=request_properties)
 
     def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.extend_same_units, new_resource_type=None,
+                                       new_units=Constants.extend_same_units,
                                        request_properties=request_properties, config_properties=config_properties)
 
     def clone(self):

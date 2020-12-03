@@ -235,7 +235,7 @@ class Constants:
 
     invalid_argument = "Invalid argument"
     uninitialized_state = "Uninitialized state"
-    invalid_state = "Invalid state, actor cannot receive calls"
+    invalid_actor_state = "Invalid state, actor cannot receive calls"
     object_not_found = "{} not found in datatabase e: {}"
     failed_to_add = "Failed to add {} to database e: {}"
     failed_to_remove = "Failed to remove {} from database e: {}"
@@ -251,4 +251,10 @@ class Constants:
     management_inter_actor_inbound_message = "Inbound [Kafka] [Management] Message received {}"
     management_api_timeout_occurred = "Management API Timeout Occurred"
     management_inter_actor_message_failed = "Outbound [Kafka] [Management] Message {} could not be written to {}"
+
+    invalid_management_object_type = "Invalid Management Object type {}"
+    no_pool = "there is no pool to satisfy this request"
+    invalid_recovery_state = "This state should not be reached during recovery"
+
+    invalid_state = "Invalid state"
 

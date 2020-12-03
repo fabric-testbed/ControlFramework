@@ -161,7 +161,7 @@ class ConfigurationProcessor:
 
         actor_guid = ID()
         if actor_config.get_guid() is not None:
-            actor_guid = ID(id=actor_config.get_guid())
+            actor_guid = ID(uid=actor_config.get_guid())
         auth_token = AuthToken(name=actor_config.get_name(), guid=actor_guid)
         actor.set_identity(token=auth_token)
         if actor_config.get_description() is not None:
@@ -514,14 +514,14 @@ class ConfigurationProcessor:
 
         entry = {
             RemoteActorCache.actor_name: peer.get_name(),
-            RemoteActorCache.actor_guid: ID(id=peer.get_guid()),
+            RemoteActorCache.actor_guid: ID(uid=peer.get_guid()),
             RemoteActorCache.actor_type: actor_type,
             RemoteActorCache.actor_protocol: protocol
         }
         if kafka_topic is not None:
             entry[RemoteActorCache.actor_location] = kafka_topic
 
-        RemoteActorCacheSingleton.get().add_partial_cache_entry(guid=ID(id=peer.get_guid()), entry=entry)
+        RemoteActorCacheSingleton.get().add_partial_cache_entry(guid=ID(uid=peer.get_guid()), entry=entry)
 
     def process_peer(self, *, peer: Peer):
         """
@@ -529,7 +529,7 @@ class ConfigurationProcessor:
         @param peer peer
         @raises ConfigurationException in case of error
         """
-        from_guid = ID(id=peer.get_guid())
+        from_guid = ID(uid=peer.get_guid())
         from_type = ActorType.get_actor_type_from_string(actor_type=peer.get_type())
         to_guid = self.actor.get_guid()
         to_type = self.actor.get_type()
@@ -604,7 +604,7 @@ class ConfigurationProcessor:
 
         info.exported = info.exporter.advertise_resources(delegation=delegation,
                                                           client=AuthToken(name=info.client.get_name(),
-                                                                           guid=ID(id=info.client.get_guid())))
+                                                                           guid=ID(uid=info.client.get_guid())))
 
         if info.exported is None:
             raise ConfigurationException("Could not export resources from actor: {} to actor: {} Error = {}".format(

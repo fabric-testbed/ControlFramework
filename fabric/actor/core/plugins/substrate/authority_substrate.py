@@ -77,9 +77,8 @@ class AuthoritySubstrate(Substrate):
 
     def revisit(self, *, slice_obj: ISlice = None, reservation: IReservation = None,
                 delegation: IDelegation = None):
-        if slice_obj is not None:
-            if slice_obj.is_inventory():
-                self.recover_inventory_slice(slice_obj=slice_obj)
+        if slice_obj is not None and slice_obj.is_inventory():
+            self.recover_inventory_slice(slice_obj=slice_obj)
 
     def recover_inventory_slice(self, *, slice_obj: ISlice):
         return

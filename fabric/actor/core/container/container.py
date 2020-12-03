@@ -381,7 +381,7 @@ class Container(IActorContainer):
         stored_guid = properties.get(Constants.property_conf_container_guid, None)
         if stored_guid is None:
             raise ContainerException("Could not obtain saved container GUID from database")
-        self.guid = ID(id=stored_guid)
+        self.guid = ID(uid=stored_guid)
         self.logger.info("Recovered container guid: {}".format(self.guid))
 
     def recover_time(self):

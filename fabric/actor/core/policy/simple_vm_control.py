@@ -29,6 +29,7 @@ import traceback
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PolicyException
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric.actor.core.core.unit import Unit, UnitState
 from fabric.actor.core.core.unit_set import UnitSet
@@ -56,23 +57,23 @@ class PoolData:
         self.total += count
         self.free_ += count
 
-    def allocate(self, *, count: int):
+    def _allocate_reserve(self, *, count: int):
         if self.free_ < count:
-            raise Exception("insufficient units (allocate): needed= {} available: {}".format(count, self.free_))
+            raise PolicyException("insufficient units (allocate): needed= {} available: {}".format(count, self.free_))
 
         self.free_ -= count
 
+    def allocate(self, *, count: int):
+        self._allocate_reserve(count=count)
+
     def free(self, *, count: int):
         if self.free_ + count > self.total:
-            raise Exception("too many units to free")
+            raise PolicyException("too many units to free")
 
         self.free_ += count
 
     def reserve(self, *, count: int):
-        if self.free_ < count:
-            raise Exception("insufficient units (allocate): needed= {} available: {}".format(count, self.free_))
-
-        self.free_ -= count
+        self._allocate_reserve(count=count)
 
     def get_free(self) -> int:
         return self.free_
@@ -157,7 +158,7 @@ class SimpleVMControl(ResourceControl):
     def assign(self, *, reservation: IAuthorityReservation) -> ResourceSet:
         reservation.set_send_with_deficit(value=True)
         if len(self.inventory) == 0:
-            raise Exception("no inventory")
+            raise PolicyException("no inventory")
         requested = reservation.get_requested_resources()
         request_properties = requested.get_resource_properties()
         rtype = requested.get_type()
@@ -165,15 +166,13 @@ class SimpleVMControl(ResourceControl):
 
         ticket = requested.get_resources()
         term = reservation.get_requested_term()
-        start = self.authority.get_actor_clock().cycle(when=term.get_new_start_time())
-        end = self.authority.get_actor_clock().cycle(when=term.get_end_time())
 
         gained = None
         lost = None
         if current is None:
             pool = self.inventory.get(rtype, None)
             if pool is None:
-                raise Exception("no resources of the specified pool")
+                raise PolicyException(Constants.no_pool)
 
             needed = ticket.get_units()
             gained = self.get_vms(pool=pool, needed=needed)
@@ -184,7 +183,7 @@ class SimpleVMControl(ResourceControl):
             rtype = current.get_type()
             pool = self.inventory.get(rtype, None)
             if pool is None:
-                raise Exception("no resources of the specified pool")
+                raise PolicyException(Constants.no_pool)
             current_units = current.get_units()
             difference = ticket.get_units() - current_units
             if difference > 0:
@@ -240,7 +239,7 @@ class SimpleVMControl(ResourceControl):
                     rtype = u.get_resource_type()
                     pool = self.inventory.get(rtype, None)
                     if pool is None:
-                        raise Exception("no resources of the specified pool")
+                        raise PolicyException(Constants.no_pool)
                     pool.free(count=1)
                     if self.use_ip_set:
                         self.ipset.free(ip=u.get_property(name=Constants.unit_management_ip))
@@ -260,7 +259,7 @@ class SimpleVMControl(ResourceControl):
                     rtype = u.get_resource_type()
                     pool = self.inventory.get(rtype, None)
                     if pool is None:
-                        raise Exception("no resources of the specified pool")
+                        raise PolicyException(Constants.no_pool)
                     pool.reserve(1)
                     mgmt_ip = u.get_property(name=Constants.unit_management_ip)
                     if mgmt_ip is not None:

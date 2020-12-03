@@ -158,7 +158,7 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
             temp = reservation.get_requested_resources().get_request_properties().get(self.PropertySourceTicket, None)
 
             if temp is not None:
-                rid = ID(id=temp)
+                rid = ID(uid=temp)
 
         ticket_found = None
         if rid is not None:

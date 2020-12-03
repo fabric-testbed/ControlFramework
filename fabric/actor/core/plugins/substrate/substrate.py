@@ -26,6 +26,9 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PluginException
 from fabric.actor.core.plugins.config.config import Config
 from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
 from fabric.actor.core.plugins.base_plugin import BasePlugin
@@ -43,7 +46,7 @@ class Substrate(BasePlugin, ISubstrate):
     def initialize(self):
         super().initialize()
         if not isinstance(self.db, ISubstrateDatabase):
-            raise Exception("Substrate database class must implement ISubstrateDatabase")
+            raise PluginException("Substrate database class must implement ISubstrateDatabase")
 
     def transfer_in(self, *, reservation: IReservation, unit: Unit):
         try:
@@ -93,7 +96,6 @@ class Substrate(BasePlugin, ISubstrate):
         @param unit unit to prepare
         @throws Exception in case of error
         """
-        return
 
     def prepare_transfer_out(self, *, reservation: IReservation, unit: Unit):
         """
@@ -105,7 +107,6 @@ class Substrate(BasePlugin, ISubstrate):
         @param unit unit to prepare
         @throws Exception in case of error
         """
-        return
 
     def prepare_modify(self, *, reservation: IReservation, unit: Unit):
         """
@@ -114,7 +115,6 @@ class Substrate(BasePlugin, ISubstrate):
         @param unit unit to prepare
         @throws Exception in case of error
         """
-        return
 
     def get_config_properties_from_reservation(self, *, reservation: IReservation, unit: Unit) -> dict:
         temp = reservation.get_resources().get_local_properties()
@@ -180,7 +180,7 @@ class Substrate(BasePlugin, ISubstrate):
         self.logger.debug(properties)
 
         if self.actor.is_stopped():
-            raise Exception("This actor cannot receive updates")
+            raise PluginException(Constants.invalid_actor_state)
 
         sequence = Config.get_action_sequence_number(properties=properties)
         notice = None
@@ -224,7 +224,7 @@ class Substrate(BasePlugin, ISubstrate):
         self.logger.debug(properties)
 
         if self.actor.is_stopped():
-            raise Exception("This actor cannot receive updates")
+            raise PluginException(Constants.invalid_actor_state)
 
         sequence = Config.get_action_sequence_number(properties=properties)
         notice = None
@@ -268,7 +268,7 @@ class Substrate(BasePlugin, ISubstrate):
         self.logger.debug(properties)
 
         if self.actor.is_stopped():
-            raise Exception("This actor cannot receive updates")
+            raise PluginException(Constants.invalid_actor_state)
 
         sequence = Config.get_action_sequence_number(properties=properties)
         notice = None
@@ -314,7 +314,7 @@ class Substrate(BasePlugin, ISubstrate):
 
     def set_database(self, *, db: IDatabase):
         if db is not None and not isinstance(db, ISubstrateDatabase):
-            raise Exception("db must implement ISubstrateDatabase")
+            raise PluginException("db must implement ISubstrateDatabase")
 
         super().set_database(db=db)
 

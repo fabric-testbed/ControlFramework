@@ -29,6 +29,8 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.apis.i_broker import IBroker
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.proxies.kafka.kafka_authority_proxy import KafkaAuthorityProxy
 from fabric.actor.core.proxies.kafka.kafka_broker_proxy import KafkaBrokerProxy
 from fabric.actor.core.proxies.kafka.kafka_retun import KafkaReturn
@@ -70,9 +72,9 @@ class KafkaProxyFactory(IProxyFactory):
                     result = KafkaBrokerProxy(kafka_topic=kafka_topic, identity=identity.get_identity(),
                                               logger=GlobalsSingleton.get().get_logger())
                 else:
-                    raise Exception("Unsupported proxy type: {}".format(proxy_type))
+                    raise ProxyException("Unsupported proxy type: {}".format(proxy_type))
             else:
-                raise Exception("Missing proxy type")
+                raise ProxyException(Constants.not_specified_prefix.format("proxy type"))
         return result
 
     def new_callback(self, *, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:

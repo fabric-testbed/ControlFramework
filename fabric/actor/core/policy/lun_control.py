@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PolicyException
 from fabric.actor.core.core.unit import Unit, UnitState
 from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.policy.free_allocated_set import FreeAllocatedSet
@@ -70,14 +71,14 @@ class LUNControl(ResourceControl):
 
     def donate_reservation(self, *, reservation: IClientReservation):
         if self.tags.size() != 0:
-            raise Exception("only a single source reservation is supported")
+            raise PolicyException("only a single source reservation is supported")
 
         rset = reservation.get_resources()
         rtype = reservation.get_type()
         local = rset.get_local_properties()
 
         if local is None:
-            raise Exception("Missing local properties")
+            raise PolicyException(Constants.not_specified_prefix.format("local properties"))
 
         self.rtype = rtype
         size = 0
@@ -99,13 +100,13 @@ class LUNControl(ResourceControl):
                     self.logger.info("Tag donation: {}:{}-{}:{}".format(self.rtype, start, end, size))
 
         if size < reservation.get_units():
-            raise Exception("Insufficient lun tags specified in donated reservation: donated {} rset says: {}".format(size, reservation.get_units()))
+            raise PolicyException("Insufficient lun tags specified in donated reservation: donated {} rset says: {}".format(size, reservation.get_units()))
 
     def assign(self, *, reservation: IAuthorityReservation) -> ResourceSet:
         reservation.set_send_with_deficit(value=True)
 
         if self.tags.size() == 0:
-            raise Exception("no inventory")
+            raise PolicyException("no inventory")
 
         requested = reservation.get_requested_resources()
         rtype = reservation.get_type()

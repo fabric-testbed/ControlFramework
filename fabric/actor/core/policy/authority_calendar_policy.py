@@ -98,7 +98,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             try:
                 self.register_control_types(control=c)
             except Exception as e:
-                raise AuthorityException("Cannot restore resource control")
+                raise AuthorityException("Cannot restore resource control e:{}".format(e))
 
     def initialize(self):
         """

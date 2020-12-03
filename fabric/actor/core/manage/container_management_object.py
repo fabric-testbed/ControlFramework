@@ -46,7 +46,7 @@ if TYPE_CHECKING:
 class ContainerManagementObject(ManagementObject):
     def __init__(self):
         super().__init__()
-        self.id = ID(id=Constants.container_managment_object_id)
+        self.id = ID(uid=Constants.container_managment_object_id)
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_container import LocalContainer

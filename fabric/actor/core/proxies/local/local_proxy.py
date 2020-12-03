@@ -27,6 +27,7 @@ from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.core.rpc_request_state import RPCRequestState
 from fabric.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
 from fabric.actor.core.kernel.incoming_query_rpc import IncomingQueryRPC
@@ -118,11 +119,11 @@ class LocalProxy(Proxy, ICallbackProxy):
                                              failed_reservation_id=request.failed_reservation_id,
                                              error_details=request.error_detail, caller=request.get_caller())
             else:
-                raise Exception("Unsupported RPC type: {}".format(request.get_type()))
+                raise ProxyException("Unsupported RPC type: {}".format(request.get_type()))
             RPCManagerSingleton.get().dispatch_incoming(actor=self.get_actor(), rpc=incoming)
 
         except Exception as e:
-            raise Exception("Error while processing RPC request{} {}".format(RPCError.InvalidRequest, e))
+            raise ProxyException("Error while processing RPC request{} {}".format(RPCError.InvalidRequest, e))
 
     def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken, id_token: str):
         state = self.LocalProxyRequestState()
@@ -149,5 +150,5 @@ class LocalProxy(Proxy, ICallbackProxy):
     def get_actor(self) -> IActor:
         result = ActorRegistrySingleton.get().get_actor(self.get_name())
         if result is None:
-            raise Exception("Actor does not exist.")
+            raise ProxyException("Actor does not exist.")
         return result

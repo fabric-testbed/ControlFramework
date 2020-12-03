@@ -112,21 +112,21 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
 
                         # If any Reservations that are being redeemed, that means the
                         # slice has already cleared TicketReview.
-                        if slice_reservation.is_redeeming():
+                        if slice_reservation.is_redeeming() and \
+                                slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
                             # There shouldn't be any Nascent reservations, if a reservation is being Redeemed.
-                            if slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
-                                self.logger.error(
-                                    "Nascent reservation found while Reservation {} in slice {} is redeeming"
-                                    .format(slice_reservation.get_reservation_id(), slice_obj.get_name()))
+                            self.logger.error(
+                                "Nascent reservation found while Reservation {} in slice {} is redeeming"
+                                .format(slice_reservation.get_reservation_id(), slice_obj.get_name()))
 
-                                # We may have previously found a Failed Reservation,
-                                # but if a ticketed reservation is being redeemed,
-                                # the failure _should_ be from the AM, not Controller
-                                # so it should be ignored by TicketReview
-                                slice_status_map[slice_id] = TicketReviewSliceState.Redeemable
+                            # We may have previously found a Failed Reservation,
+                            # but if a ticketed reservation is being redeemed,
+                            # the failure _should_ be from the AM, not Controller
+                            # so it should be ignored by TicketReview
+                            slice_status_map[slice_id] = TicketReviewSliceState.Redeemable
 
-                                #  we don't need to look at any other reservations in this slice
-                                break
+                            #  we don't need to look at any other reservations in this slice
+                            break
 
                         # if any tickets are Nascent,
                         # as soon as we remove the Failed reservation,

@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import BrokerException
 from fabric.actor.core.kernel.reservation_states import ReservationStates
 from fabric.actor.core.time.actor_clock import ActorClock
 from fabric.actor.core.time.term import Term
@@ -111,10 +112,9 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
         advance_cycle = self.get_end_for_allocation(allocation_cycle=cycle)
         requests = self.calendar.get_all_requests(cycle=advance_cycle)
 
-        if requests is None or requests.size() == 0:
-            if self.queue is None or self.queue.size() == 0:
-                self.logger.debug("no requests for auction start cycle {}".format(start_cycle))
-                return
+        if requests is None or requests.size() == 0 and self.queue is None or self.queue.size() == 0:
+            self.logger.debug("no requests for auction start cycle {}".format(start_cycle))
+            return
 
         self.logger.debug("allocating resources for cycle {}".format(start_cycle))
 
@@ -145,7 +145,7 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
                         ext_term = Term(start=reservation.get_term().get_start_time(), end=end, new_start=start)
                         self.extend_private(reservation=reservation, inv=inv, term=ext_term)
                     else:
-                        reservation.fail(message="there is no pool to satisfy this request")
+                        reservation.fail(message=Constants.no_pool)
 
     def allocate_ticketing(self, *, requests: ReservationSet, start_cycle: int):
         if requests is not None:
@@ -156,10 +156,9 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
                 if self.ticket(reservation=reservation, start_cycle=start_cycle):
                     continue
 
-                if self.queue is None:
-                    if not reservation.is_failed():
-                        reservation.fail(message="Insufficient resources")
-                        continue
+                if self.queue is None and not reservation.is_failed():
+                    reservation.fail(message="Insufficient resources")
+                    continue
 
                 if not reservation.is_failed():
                     if PropList.is_elastic_time(rset=reservation.get_requested_resources()):
@@ -214,9 +213,9 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
 
                 return self.ticket_inventory(reservation=reservation, inv=inv, term=term)
             else:
-                reservation.fail(message="there is no pool to satisfy this request")
+                reservation.fail(message=Constants.no_pool)
         else:
-            reservation.fail(message="there is no pool to satisfy this request")
+            reservation.fail(message=Constants.no_pool)
 
         return False
 
@@ -230,9 +229,8 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
             if to_allocate == 0:
                 return False
 
-            if to_allocate < needed:
-                if not PropList.is_elastic_size(rset=reservation.get_requested_resources()):
-                    return False
+            if to_allocate < needed and not PropList.is_elastic_size(rset=reservation.get_requested_resources()):
+                return False
 
             properties = inv.allocate(count=to_allocate, request=rset.get_request_properties())
             properties = PropList.merge_properties(incoming=inv.get_properties(), outgoing=properties)
@@ -310,7 +308,7 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
                 reservation.set_bid_pending(value=False)
         else:
             if mine is None:
-                raise Exception("There was an error extracting a ticket from the source ticket")
+                raise BrokerException("There was an error extracting a ticket from the source ticket")
 
     def release(self, *, reservation):
         if isinstance(reservation, IBrokerReservation):
@@ -342,7 +340,7 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
                 return
             inv = self.inventory.get(resource_type=rset.get_type())
             if inv is None:
-                raise Exception("Cannot release resources: missing inventory")
+                raise BrokerException("Cannot release resources: missing inventory")
             inv.free(count=rset.get_units(), resource=rset.get_resource_properties())
         except Exception as e:
             self.logger.error("release resources {}".format(e))
@@ -358,7 +356,7 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
         rtype = rset.get_type()
         inv = self.inventory.get(resource_type=rtype)
         if inv is None:
-            raise Exception("cannot free resources: no inventory")
+            raise BrokerException("cannot free resources: no inventory")
 
         inv.allocate_revisit(count=rset.get_units(), resource=rset.get_resource_properties())
 

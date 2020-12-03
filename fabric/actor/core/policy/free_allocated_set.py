@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric.actor.core.common.exceptions import PolicyException
 
 
 class FreeAllocatedSet:
@@ -43,10 +44,10 @@ class FreeAllocatedSet:
         @param item item to add
         """
         if item is None:
-            raise Exception("item cannot be null")
+            raise PolicyException("item cannot be null")
 
         if item in self.allocated:
-            raise Exception("item is already in allocated")
+            raise PolicyException("item is already in allocated")
 
         self.free_set.add(item)
 
@@ -70,7 +71,7 @@ class FreeAllocatedSet:
                 if config_tag:
                     item = tag
                     if item not in self.free_set:
-                        raise Exception("item is already in allocated: {}".format(item))
+                        raise PolicyException("item is already in allocated: {}".format(item))
                 else:
                     item = self.free_set.pop()
                 self.allocated.add(item)
@@ -89,22 +90,22 @@ class FreeAllocatedSet:
     def free(self, *, item=None, count: int = None):
         if item is None and count is None:
             if len(self.allocated) == 0:
-                raise Exception("no items have been allocated")
+                raise PolicyException("no items have been allocated")
 
             item = self.allocated.pop()
             self.free_set.add(item)
         elif item is not None:
             if item not in self.allocated:
-                raise Exception("item has not been allocated")
+                raise PolicyException("item has not been allocated")
             if item in self.free_set:
-                raise Exception("item has already been freed")
+                raise PolicyException("item has already been freed")
 
             self.allocated.remove(item)
             self.free_set.add(item)
         elif count is not None:
             for i in range(count):
                 if len(self.allocated) == 0:
-                    raise Exception("no items have been allocated")
+                    raise PolicyException("no items have been allocated")
 
                 item = self.allocated.pop()
                 self.free_set.add(item)

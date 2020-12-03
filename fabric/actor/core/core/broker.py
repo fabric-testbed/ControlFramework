@@ -221,14 +221,14 @@ class Broker(Actor, IBroker):
     def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
                          id_token: str = None):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_state)
+            raise BrokerException(Constants.invalid_actor_state)
         self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback,
                                               id_token=id_token)
 
     def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
                            id_token: str = None):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_state)
+            raise BrokerException(Constants.invalid_actor_state)
         self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback,
                                                 id_token=id_token)
 
@@ -293,7 +293,7 @@ class Broker(Actor, IBroker):
 
     def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
         if not self.recovered or self.is_stopped():
-            raise BrokerException(Constants.invalid_state)
+            raise BrokerException(Constants.invalid_actor_state)
         self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
     def get_broker(self, *, guid: ID) -> IBrokerProxy:
@@ -358,13 +358,13 @@ class Broker(Actor, IBroker):
 
     def ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_state)
+            raise BrokerException(Constants.invalid_actor_state)
 
         self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback, compare_seq_numbers=True)
 
     def relinquish(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_state)
+            raise BrokerException(Constants.invalid_actor_state)
         self.wrapper.relinquish_request(reservation=reservation, caller=caller)
 
     def tick_handler(self):
@@ -374,12 +374,12 @@ class Broker(Actor, IBroker):
 
     def update_ticket(self, *, reservation: IReservation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_state)
+            raise BrokerException(Constants.invalid_actor_state)
         self.wrapper.update_ticket(reservation=reservation, update_data=update_data, caller=caller)
 
     def update_delegation(self, *, delegation: IDelegation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_state)
+            raise BrokerException(Constants.invalid_actor_state)
         self.wrapper.update_delegation(delegation=delegation, update_data=update_data, caller=caller)
 
     def register_client(self, *, client: Client):

@@ -185,3 +185,27 @@ class ManageException(Exception):
     """
     Manage Exception
     """
+
+
+class PolicyException(Exception):
+    """
+    Policy Exception
+    """
+
+
+class ProxyException(Exception):
+    """
+    Proxy Exception
+    """
+
+
+class RegistryException(Exception):
+    """
+    Registry Exception
+    """
+
+
+class TimeException(Exception):
+    """
+    Time Exception
+    """

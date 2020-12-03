@@ -46,7 +46,7 @@ class ReservationHoldingsTest(unittest.TestCase):
         print(output)
 
     def make_reservation(self, *, rid: str) -> IReservation:
-        return ClientReservationFactory.create(rid=ID(id=rid))
+        return ClientReservationFactory.create(rid=ID(uid=rid))
 
     def check_exists(self, *, holdings: ReservationHoldings, reservation: IReservation):
         rset = holdings.get_reservations()

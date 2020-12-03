@@ -26,6 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.authority_management_object import AuthorityManagementObject
 from fabric.actor.core.apis.i_mgmt_authority import IMgmtAuthority
 from fabric.actor.core.manage.local.local_server_actor import LocalServerActor
@@ -44,7 +45,7 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
         super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, AuthorityManagementObject):
-            raise Exception("Invalid manager object. Required: {}".format(type(AuthorityManagementObject)))
+            raise ManageException("Invalid manager object. Required: {}".format(type(AuthorityManagementObject)))
 
     def get_authority_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()

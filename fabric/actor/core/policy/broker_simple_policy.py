@@ -503,7 +503,6 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
 
         @throws Exception in case of error
         """
-        mine = None
         approved = self.get_approved_term(reservation=reservation)
 
         # Shift the requested term to start at the start time
@@ -531,8 +530,8 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         approved.set_end_time(date=aligned_end)
 
         # Get the ticket with the correct resources
-        mine = self.extract_ticket(reservation=reservation, source=source, approved=approved,
-                                   resource_share=resource_share)
+        self.extract_ticket(reservation=reservation, source=source, approved=approved,
+                            resource_share=resource_share)
 
         # Add to the calendar
         self.add_to_calendar(reservation=reservation)

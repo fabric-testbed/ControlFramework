@@ -178,7 +178,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
     def add_reservation_private(self, *, reservation: TicketReservationAvro):
         result = ResultAvro()
-        slice_id = ID(id=reservation.get_slice_id())
+        slice_id = ID(uid=reservation.get_slice_id())
         rset = Converter.get_resource_set(res_mng=reservation)
         term = Term(start=ActorClock.from_milliseconds(milli_seconds=reservation.get_start()),
                     end=ActorClock.from_milliseconds(milli_seconds=reservation.get_end()))
@@ -186,7 +186,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         broker = None
 
         if reservation.get_broker() is not None:
-            broker = ID(id=reservation.get_broker())
+            broker = ID(uid=reservation.get_broker())
 
         rc = ControllerReservationFactory.create(rid=ID(), resources=rset, term=term)
         rc.set_renewable(renewable=reservation.is_renewable())
@@ -341,7 +341,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
                 def run(self):
                     result = ResultAvro()
-                    rid = ID(id=reservation.get_reservation_id())
+                    rid = ID(uid=reservation.get_reservation_id())
                     r = self.actor.get_reservation(rid=rid)
                     if r is None:
                         result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
@@ -357,7 +357,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                                                     "but missing reservation id of predecessor".format(rid))
                                 continue
 
-                            predid = ID(id=pred.get_reservation_id())
+                            predid = ID(uid=pred.get_reservation_id())
                             pr = self.actor.get_reservation(rid=predid)
 
                             if pr is None:
@@ -419,7 +419,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
                 def run(self):
                     result = ResultAvro()
-                    r = self.actor.get_reservation(rid=ID(id=reservation.get_reservation_id()))
+                    r = self.actor.get_reservation(rid=ID(uid=reservation.get_reservation_id()))
                     if r is None:
                         result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.name)

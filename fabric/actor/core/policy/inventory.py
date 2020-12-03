@@ -27,6 +27,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PolicyException
 from fabric.actor.core.common.resource_pool_attribute_descriptor import ResourcePoolAttributeDescriptor, \
     ResourcePoolAttributeType
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
@@ -46,7 +47,7 @@ class Inventory:
 
     def contains_type(self, *, resource_type: ResourceType):
         if resource_type is None:
-            raise Exception("Invalid argument")
+            raise PolicyException(Constants.invalid_argument)
 
         if resource_type in self.map:
             return True
@@ -55,7 +56,7 @@ class Inventory:
 
     def get(self, *, resource_type: ResourceType) -> InventoryForType:
         if resource_type is None:
-            raise Exception("Invalid argument")
+            raise PolicyException(Constants.invalid_argument)
 
         return self.map.get(resource_type, None)
 
@@ -77,12 +78,12 @@ class Inventory:
 
     def get_new(self, *, reservation: IClientReservation):
         if reservation is None:
-            raise Exception("Invalid argument")
+            raise PolicyException(Constants.invalid_argument)
 
         rtype = reservation.get_type()
 
         if rtype in self.map:
-            raise Exception("There is already inventory for type: {}".format(rtype))
+            raise PolicyException("There is already inventory for type: {}".format(rtype))
 
         properties = {}
 
@@ -93,7 +94,7 @@ class Inventory:
         properties = ticket.get_properties()
         properties = PropList.merge_properties(incoming=rset.get_resource_properties(), outgoing=properties)
         rpd = ResourcePoolDescriptor()
-        rpd.reset(properties=properties, prefix=None)
+        rpd.reset(properties=properties)
 
         desc_attr = rpd.get_attribute(key=Constants.resource_class_inventory_for_type)
         inv = None

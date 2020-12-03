@@ -28,6 +28,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PolicyException
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.policy.resource_control import ResourceControl
@@ -46,9 +47,9 @@ if TYPE_CHECKING:
 class Vmm:
     def __init__(self, *, host: Unit, capacity: int):
         if host is None:
-            raise Exception("host cannot be None")
+            raise PolicyException(Constants.not_specified_prefix.format("host"))
         if capacity < 1:
-            raise Exception("capacity must be at least 1")
+            raise PolicyException("capacity must be at least 1")
         self._host = host
         self.hosted = set()
         self.capacity = capacity
@@ -66,19 +67,19 @@ class Vmm:
 
     def release(self, *, vm: Unit):
         if vm is None:
-            raise Exception("vm cannot be None")
+            raise PolicyException(Constants.not_specified_prefix.format("vm"))
 
         if vm not in self.hosted:
-            raise Exception("the specified node is not hosted on this vmm")
+            raise PolicyException("the specified node is not hosted on this vmm")
 
         self.hosted.remove(vm)
 
     def host(self, *, vm: Unit):
         if vm is None:
-            raise Exception("vm cannot be None")
+            raise PolicyException(Constants.not_specified_prefix.format("vm"))
 
         if vm in self.hosted:
-            raise Exception("the specified node is already hosted on this vmm")
+            raise PolicyException("the specified node is already hosted on this vmm")
 
         self.hosted.add(vm)
 
@@ -111,10 +112,10 @@ class VmmPool:
 
     def donate(self, *, vm: Vmm):
         if vm is None:
-            raise Exception("vm cannot be None")
+            raise PolicyException(Constants.not_specified_prefix.format("vm"))
 
         if vm.get_host().get_actor_id() in self.vmms:
-            raise Exception("the specified vm already in the pool")
+            raise PolicyException("the specified vm already in the pool")
 
         self.vmms[vm.get_host().get_id()] = vm
 
@@ -223,7 +224,7 @@ class VMControl(ResourceControl):
         if pool is None:
             pool = VmmPool(rtype=rtype, properties=resource)
             rd = ResourcePoolDescriptor()
-            rd.reset(properties=resource, prefix=None)
+            rd.reset(properties=resource)
             memory = int(rd.get_attribute(key=Constants.resource_memory).get_value())
             capacity = 0
             if self.PropertyCapacity in local:
@@ -251,7 +252,7 @@ class VMControl(ResourceControl):
         reservation.set_send_with_deficit(value=True)
 
         if len(self.inventory) == 0:
-            raise Exception("no inventory")
+            raise PolicyException("no inventory")
 
         requested = reservation.get_requested_resources()
         request_properties = requested.get_request_properties()
@@ -265,7 +266,7 @@ class VMControl(ResourceControl):
         if current is None:
             pool = self.inventory.get(rtype)
             if pool is None:
-                raise Exception("no resources of the specified pool")
+                raise PolicyException("no resources of the specified pool")
 
             needed = ticket.get_units()
             gained = self.get_vms(pool=pool, needed=needed)
@@ -356,8 +357,8 @@ class VMControl(ResourceControl):
                         u.get_state() == UnitState.MODIFYING:
                     rtype = u.get_resource_type()
                     pool = self.inventory.get(rtype)
-                    id = u.get_parent_id()
-                    vmm = pool.get_vmm(uid=id)
+                    uid = u.get_parent_id()
+                    vmm = pool.get_vmm(uid=uid)
                     vmm.host(vm=u)
                     self.logger.debug("VMControl.revisit(); recovering management IP {}".format(
                         u.get_property(name=Constants.unit_management_ip)))

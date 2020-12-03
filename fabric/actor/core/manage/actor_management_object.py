@@ -217,7 +217,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
-            slice_id = ID(id=slice_mng.get_slice_id())
+            slice_id = ID(uid=slice_mng.get_slice_id())
 
             class Runner(IActorRunnable):
                 def __init__(self, *, actor: IActor):
@@ -432,7 +432,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
-            rid = ID(id=reservation.get_reservation_id())
+            rid = ID(uid=reservation.get_reservation_id())
 
             class Runner(IActorRunnable):
                 def __init__(self, *, actor: IActor):

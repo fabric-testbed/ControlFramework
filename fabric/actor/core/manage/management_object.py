@@ -139,10 +139,10 @@ class ManagementObject(IManagementObject):
                     Constants.property_proxies_prefix + str(i) + Constants.property_proxies_module])
 
     def reset(self, *, properties: dict):
-        self.id = ID(id=properties[Constants.property_id])
+        self.id = ID(uid=properties[Constants.property_id])
 
         if Constants.property_type_id in properties:
-            self.type_id = ID(id=properties[Constants.property_type_id])
+            self.type_id = ID(uid=properties[Constants.property_type_id])
 
         self.load_protocols(properties=properties)
 
@@ -153,7 +153,6 @@ class ManagementObject(IManagementObject):
         Performs recovery actions for this manager object.
         @throws Exception in case of error
         """
-        return
 
     def get_id(self) -> ID:
         return self.id

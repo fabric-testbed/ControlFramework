@@ -66,7 +66,7 @@ class ReservationFactory:
         @throws Exception if the properties list does not contain a reservation
                 identifier
         """
-        return ID(id=properties[Constants.property_reservation_id])
+        return ID(uid=properties[Constants.property_reservation_id])
 
     @staticmethod
     def get_slice_id(*, properties: dict) -> int:

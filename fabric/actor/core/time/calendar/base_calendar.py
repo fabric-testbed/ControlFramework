@@ -42,4 +42,3 @@ class BaseCalendar:
         Removes all reservations associated with time not after the specified cycle
         @params cycle cycle
         """
-        return

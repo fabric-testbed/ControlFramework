@@ -73,7 +73,7 @@ class SimpleTicketTest(BaseTestCase, unittest.TestCase):
         source_list = [bin0.get_guid()]
         bin_list = [bin0]
         d0 = self.factory.make_delegation(units=self.units, term=self.term, rtype=self.type, sources=source_list,
-                                          bins=bin_list, holder=ID(id=self.factory.get_actor().get_name()))
+                                          bins=bin_list, holder=ID(uid=self.factory.get_actor().get_name()))
         ticket0 = self.factory.make_ticket(delegation=d0)
 
         print(self.factory.to_json(ticket=ticket0))

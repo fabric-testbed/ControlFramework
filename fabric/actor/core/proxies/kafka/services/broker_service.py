@@ -53,7 +53,7 @@ class BrokerService(ActorService):
         slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
         term = Translate.translate_term_from_avro(term=reservation.term)
         resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)
-        rid = ID(id=reservation.reservation_id)
+        rid = ID(uid=reservation.reservation_id)
 
         result = BrokerReservationFactory.create(rid=rid, resources=resource_set, term=term, slice_obj=slice_obj)
         result.set_owner(owner=self.actor.get_identity())
@@ -77,7 +77,7 @@ class BrokerService(ActorService):
         try:
             rsvn = self.pass_agent(reservation=request.reservation)
             callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
-            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Ticket,
+            rpc = IncomingReservationRPC(message_id=ID(uid=request.message_id), request_type=RPCRequestType.Ticket,
                                          reservation=rsvn, callback=callback, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid Ticket request: {}".format(e))
@@ -90,7 +90,7 @@ class BrokerService(ActorService):
         try:
             dlg = self.pass_agent_delegation(delegation=request.delegation)
             callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
-            rpc = IncomingDelegationRPC(message_id=ID(id=request.message_id),
+            rpc = IncomingDelegationRPC(message_id=ID(uid=request.message_id),
                                         request_type=RPCRequestType.ClaimDelegation,
                                         delegation=dlg, callback=callback, caller=auth_token)
         except Exception as e:
@@ -104,7 +104,7 @@ class BrokerService(ActorService):
         try:
             dlg = self.pass_agent_delegation(delegation=request.delegation)
             callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
-            rpc = IncomingDelegationRPC(message_id=ID(id=request.message_id),
+            rpc = IncomingDelegationRPC(message_id=ID(uid=request.message_id),
                                         request_type=RPCRequestType.ReclaimDelegation,
                                         delegation=dlg, callback=callback, caller=auth_token)
         except Exception as e:
@@ -118,7 +118,7 @@ class BrokerService(ActorService):
         try:
             rsvn = self.pass_agent(reservation=request.reservation)
             callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
-            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.ExtendTicket,
+            rpc = IncomingReservationRPC(message_id=ID(uid=request.message_id), request_type=RPCRequestType.ExtendTicket,
                                          reservation=rsvn, caller=auth_token, callback=callback)
         except Exception as e:
             self.logger.error("Invalid extend_ticket request: {}".format(e))
@@ -131,7 +131,7 @@ class BrokerService(ActorService):
         try:
             rsvn = self.pass_agent(reservation=request.reservation)
             callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
-            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Relinquish,
+            rpc = IncomingReservationRPC(message_id=ID(uid=request.message_id), request_type=RPCRequestType.Relinquish,
                                          reservation=rsvn, caller=auth_token, callback=callback)
         except Exception as e:
             self.logger.error("Invalid extend_ticket request: {}".format(e))

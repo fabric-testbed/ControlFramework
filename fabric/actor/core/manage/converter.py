@@ -220,7 +220,7 @@ class Converter:
     def fill_client(*, client_mng: ClientMng) -> Client:
         result = Client()
         result.set_name(name=client_mng.get_name())
-        result.set_guid(guid=ID(id=client_mng.get_guid()))
+        result.set_guid(guid=ID(uid=client_mng.get_guid()))
         return result
 
     @staticmethod
@@ -282,7 +282,7 @@ class Converter:
     def get_agent_proxy(*, mng: ProxyAvro):
         try:
             location = ActorLocation(location=mng.get_kafka_topic())
-            identity = ActorIdentity(name=mng.get_name(), guid=ID(id=mng.get_guid()))
+            identity = ActorIdentity(name=mng.get_name(), guid=ID(uid=mng.get_guid()))
             from fabric.actor.core.container.container import Container
             return Container.get_proxy(protocol=mng.get_protocol(), identity=identity, location=location,
                                        type=mng.get_type())

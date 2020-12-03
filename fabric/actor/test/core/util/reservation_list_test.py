@@ -40,7 +40,7 @@ class ReservationListTest(unittest.TestCase):
         self.assertEqual(r_list.count, 0)
 
     def make_reservation(self, rid: str) -> IReservation:
-        return ClientReservationFactory.create(rid=ID(id=rid))
+        return ClientReservationFactory.create(rid=ID(uid=rid))
 
     def test_add_reservation(self):
         r_list = ReservationList()

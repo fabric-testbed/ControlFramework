@@ -43,7 +43,7 @@ class AuthToken:
             if self.PropertyName in properties:
                 self.name = properties[self.PropertyName]
             if self.PropertyGuid in properties:
-                self.guid = ID(id=properties[self.PropertyGuid])
+                self.guid = ID(uid=properties[self.PropertyGuid])
 
     def get_name(self) -> str:
         """

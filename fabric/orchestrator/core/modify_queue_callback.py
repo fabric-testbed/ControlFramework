@@ -80,7 +80,7 @@ class ModifyQueueCallback(IStatusUpdateCallback):
             self.lock.release()
 
     def enqueue_modify(self, *, res: str, modify_sub_command: str, properties: dict):
-        rid = ID(id=res)
+        rid = ID(uid=res)
         try:
             self.lock.acquire()
             reservation_queue = None

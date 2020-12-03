@@ -140,15 +140,16 @@ class Ticket(IConcreteSet):
 
         self.resource_ticket = self.plugin.get_ticket_factory().clone(original=concrete_set.resource_ticket)
 
-    def clone(self):
+    def _clone(self):
         result = Ticket(ticket=self.resource_ticket, plugin=self.plugin, authority=self.authority)
         result.old_units = self.old_units
         return result
 
+    def clone(self):
+        return self._clone()
+
     def clone_empty(self):
-        result = Ticket(ticket=self.resource_ticket, plugin=self.plugin, authority=self.authority)
-        result.old_units = self.old_units
-        return result
+        return self._clone()
 
     def close(self):
         return
