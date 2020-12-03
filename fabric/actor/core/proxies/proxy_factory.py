@@ -26,6 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.proxies.kafka.kafka_proxy_factory import KafkaProxyFactory
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.proxies.local.local_proxy_factory import LocalProxyFactory
@@ -62,7 +63,7 @@ class ProxyFactorySingleton:
 
     def __init__(self):
         if self.__instance is not None:
-            raise Exception("Singleton can't be created twice !")
+            raise ProxyException("Singleton can't be created twice !")
 
     def get(self):
         """

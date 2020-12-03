@@ -26,6 +26,7 @@
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric.actor.core.kernel.reservation_states import ReservationStates
 from fabric.actor.core.util.id import ID
+from fabric.orchestrator.core.exceptions import OrchestratorException
 from fabric.orchestrator.core.status_checker import StatusChecker, Status
 
 
@@ -44,7 +45,7 @@ class ActiveStatusChecker(StatusChecker):
             units = controller.get_reservation_units(rid=rid)
 
             if reservation is None:
-                raise Exception("Unable to obtain reservation information for {}".format(rid))
+                raise OrchestratorException("Unable to obtain reservation information for {}".format(rid))
 
             if reservation.get_state() == ReservationStates.Active:
                 if units is None or len(units) == 0:

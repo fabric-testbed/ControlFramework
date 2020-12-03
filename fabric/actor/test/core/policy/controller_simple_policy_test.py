@@ -51,7 +51,7 @@ class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
-    def get_controller(self, name: str = BaseTestCase.ControllerName, guid: ID = BaseTestCase.ControllerGuid):
+    def get_controller(self, name: str = BaseTestCase.controller_name, guid: ID = BaseTestCase.controller_guid):
         db = self.get_container_database()
         db.reset_db()
         controller = super().get_controller()

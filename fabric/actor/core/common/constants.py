@@ -257,4 +257,5 @@ class Constants:
     invalid_recovery_state = "This state should not be reached during recovery"
 
     invalid_state = "Invalid state"
-
+    invalid_ip = "Invalid ip address: {}"
+    exception_occurred = "Exception occurred {}"

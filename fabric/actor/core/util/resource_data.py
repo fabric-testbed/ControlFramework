@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric.actor.core.common.exceptions import ResourcesException
 
 
 class ResourceData:
@@ -92,7 +93,7 @@ class ResourceData:
         @param other other
         """
         if other is None or not isinstance(other, ResourceData):
-            raise Exception("Invalid object type")
+            raise ResourcesException("Invalid object type")
 
         self.local_properties = self.merge_properties(from_props=other.local_properties,
                                                       to_props=self.local_properties)

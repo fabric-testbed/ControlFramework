@@ -27,6 +27,7 @@ import threading
 from typing import List
 
 from fabric.actor.core.util.id import ID
+from fabric.orchestrator.core.exceptions import OrchestratorException
 from fabric.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
 from fabric.orchestrator.core.i_status_update_callback import IStatusUpdateCallback
 from fabric.orchestrator.core.modify_operation import ModifyOperation
@@ -50,15 +51,15 @@ class ModifyQueueCallback(IStatusUpdateCallback):
             self.lock.acquire()
             res_queue = self.modify_queue.get(ok_or_failed.get_reservation_id(), None)
             if res_queue is None:
-                raise Exception("no queue found for {}, skipping processing".format(ok_or_failed))
+                raise OrchestratorException("no queue found for {}, skipping processing".format(ok_or_failed))
 
             mop = res_queue.pop(0)
 
             if mop is None:
-                raise Exception("no modify operation found at top of the queue, proceeding")
+                raise OrchestratorException("no modify operation found at top of the queue, proceeding")
 
             if mop.get() != ok_or_failed:
-                raise Exception("dequeued reservation {} which doesn't match expected {}".format(mop.get(),
+                raise OrchestratorException("dequeued reservation {} which doesn't match expected {}".format(mop.get(),
                                                                                                  ok_or_failed))
 
             if len(res_queue) > 0:
@@ -108,11 +109,11 @@ class ModifyQueueCallback(IStatusUpdateCallback):
             controller = OrchestratorStateSingleton.get().get_management_actor()
             reservation = controller.get_reservation(rid=rid)
             if reservation is None:
-                raise Exception("Unable to find reservation {}".format(rid))
+                raise OrchestratorException("Unable to find reservation {}".format(rid))
 
             config_props = reservation.get_config_properties()
             if config_props is None:
-                raise Exception("Unable to get configuration properties for reservation {}".format(rid))
+                raise OrchestratorException("Unable to get configuration properties for reservation {}".format(rid))
 
             # Update the properties
             # TODO
@@ -121,7 +122,7 @@ class ModifyQueueCallback(IStatusUpdateCallback):
             controller.modify_reservation(rid=rid, modify_properties=properties)
             return index
         except Exception as e:
-            raise Exception("Unable to modify sliver reservation: {}".format(e))
+            raise OrchestratorException("Unable to modify sliver reservation: {}".format(e))
 
 
 class ModifyQueueCallbackSingleton:
@@ -129,7 +130,7 @@ class ModifyQueueCallbackSingleton:
 
     def __init__(self):
         if self.__instance is not None:
-            raise Exception("Singleton can't be created twice !")
+            raise OrchestratorException("Singleton can't be created twice !")
 
     def get(self):
         """

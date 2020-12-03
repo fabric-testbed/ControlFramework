@@ -26,6 +26,7 @@
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
+from fabric.orchestrator.core.exceptions import OrchestratorException
 from fabric.orchestrator.core.reservation_id_with_modify_index import ReservationIDWithModifyIndex
 from fabric.orchestrator.core.status_checker import StatusChecker, Status
 
@@ -43,7 +44,7 @@ class ModifyStatusChecker(StatusChecker):
         try:
             reservation = controller.get_reservation(rid=rid.get_reservation_id())
             if reservation is None:
-                raise Exception("Unable to obtain reservation information for {}".format(rid.get_reservation_id()))
+                raise OrchestratorException("Unable to obtain reservation information for {}".format(rid.get_reservation_id()))
 
             if reservation.get_state() != ReservationStates.Active or \
                     reservation.get_pending_state() != ReservationPendingStates.None_:
@@ -58,7 +59,7 @@ class ModifyStatusChecker(StatusChecker):
             units_list = controller.get_reservation_units(rid=rid.get_reservation_id())
 
             if len(units_list) == 0:
-                raise Exception("No units associated with reservation {}".format(rid.get_reservation_id()))
+                raise OrchestratorException("No units associated with reservation {}".format(rid.get_reservation_id()))
 
             unit = units_list.__iter__().__next__()
 

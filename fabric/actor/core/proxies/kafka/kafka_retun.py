@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.kafka.kafka_proxy import KafkaProxy, KafkaProxyRequestState
 from fabric.actor.core.proxies.kafka.translate import Translate
@@ -150,7 +151,7 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
         if cset is not None:
             encoded = cset.encode(protocol=Constants.protocol_kafka)
             if encoded is None:
-                raise Exception("Unsupported IConcreteSet: {}".format(type(cset)))
+                raise ProxyException("Unsupported IConcreteSet: {}".format(type(cset)))
 
         rset.concrete = encoded
 

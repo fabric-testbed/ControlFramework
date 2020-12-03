@@ -31,19 +31,11 @@ class AuthToken:
     """
     Represents the Authentication Token for an actor
     """
-    PropertyName = 'name'
-    PropertyGuid = 'guid'
 
-    def __init__(self, *, name: str = None, guid: ID = None, properties: dict = None):
+    def __init__(self, *, name: str = None, guid: ID = None):
         self.name = name
         self.guid = guid
         self.id_token = None
-
-        if properties is not None:
-            if self.PropertyName in properties:
-                self.name = properties[self.PropertyName]
-            if self.PropertyGuid in properties:
-                self.guid = ID(uid=properties[self.PropertyGuid])
 
     def get_name(self) -> str:
         """

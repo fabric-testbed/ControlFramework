@@ -73,41 +73,15 @@ class LocalProxy(Proxy, ICallbackProxy):
                                             id_token=request.get_id_token(),
                                             caller=request.get_caller(), request_id=request.request_id)
 
-            elif request.get_type() == RPCRequestType.Ticket:
+            elif request.get_type() == RPCRequestType.Ticket or request.get_type() == RPCRequestType.Redeem or \
+                    request.get_type() == RPCRequestType.ExtendTicket or \
+                    request.get_type() == RPCRequestType.ExtendLease or \
+                    request.get_type() == RPCRequestType.Close or request.get_type() == RPCRequestType.Relinquish:
                 incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
                                                   reservation=request.reservation,
                                                   callback=request.callback, caller=request.get_caller())
-            elif request.get_type() == RPCRequestType.Redeem:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  callback=request.callback, caller=request.get_caller())
 
-            elif request.get_type() == RPCRequestType.ExtendTicket:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.ExtendLease:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.Close:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.Relinquish:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.UpdateTicket:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  update_data=request.update_data, caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.UpdateLease:
+            elif request.get_type() == RPCRequestType.UpdateTicket or request.get_type() == RPCRequestType.UpdateLease:
                 incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
                                                   reservation=request.reservation,
                                                   update_data=request.update_data, caller=request.get_caller())

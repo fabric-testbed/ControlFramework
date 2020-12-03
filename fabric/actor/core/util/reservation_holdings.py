@@ -153,9 +153,8 @@ class ReservationHoldings:
         while i < count:
             entry = self.list[i]
 
-            if rtype is None or rtype == entry.reservation.getType():
-                if entry.start <= time <= entry.end:
-                    result.add(reservation=entry.reservation)
+            if rtype is None or rtype == entry.reservation.getType() and entry.start <= time <= entry.end:
+                result.add(reservation=entry.reservation)
             i += 1
 
         # Scan the lower part of the list until no further intersections are possible
@@ -165,9 +164,8 @@ class ReservationHoldings:
             if entry.end < time:
                 break
 
-            if entry.start <= time:
-                if rtype is None or entry.reservation.getType() == rtype:
-                    result.add(reservation=entry.reservation)
+            if entry.start <= time and rtype is None or entry.reservation.getType() == rtype:
+                result.add(reservation=entry.reservation)
             i -= 1
 
         return result

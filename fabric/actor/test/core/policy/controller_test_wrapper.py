@@ -91,15 +91,12 @@ class ControllerTestWrapper(Controller):
                 else:
                     print("cycle: {} extending lease for reservation r: {}".format(self.current_cycle, r))
 
-                try:
-                    delegation = self.get_plugin().get_ticket_factory().make_delegation(units=r.resources.get_units(),
-                                                                                        term=r.term,
-                                                                                        rtype=r.resources.get_type(), vector=None)
-                    ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
-                    cs = Ticket(ticket=ticket, plugin=self.get_plugin())
-                    self.update_lease_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs, r.get_approved_term())
-                except Exception as e:
-                    raise e
+                delegation = self.get_plugin().get_ticket_factory().make_delegation(units=r.resources.get_units(),
+                                                                                    term=r.term,
+                                                                                    rtype=r.resources.get_type(), vector=None)
+                ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
+                cs = Ticket(ticket=ticket, plugin=self.get_plugin())
+                self.update_lease_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs, r.get_approved_term())
 
     def update_lease_wrapper(self, reservation: ReservationClient, rtype: ResourceType, units: int, cs: IConcreteSet, term: Term):
         if reservation.state == ReservationStates.Ticketed:

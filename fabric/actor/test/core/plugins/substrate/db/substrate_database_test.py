@@ -42,13 +42,13 @@ from fabric.actor.test.core.plugins.db.actor_database_test import ActorDatabaseT
 
 class SubstrateDatabaseTest(ActorDatabaseTest):
 
-    Logger = logging.getLogger('AuthorityPolicyTest')
+    logger = logging.getLogger('AuthorityPolicyTest')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
     logging.basicConfig(format=log_format, filename="actor.log")
     Logger.setLevel(logging.INFO)
 
     def make_actor_database(self) -> IDatabase:
-        db = SubstrateActorDatabase(user=self.DbUser, password=self.DbPwd, database=self.DbName, db_host=self.DbHost,
+        db = SubstrateActorDatabase(user=self.db_user, password=self.db_pwd, database=self.db_name, db_host=self.db_host,
                                     logger=self.Logger)
         return db
 

@@ -43,4 +43,5 @@ class KernelTimer:
             queue.logger.debug("Timer scheduled")
             return timer
         except Exception as e:
-            traceback.print_exc()
+            queue.logger.error(e)
+            queue.logger.error(traceback.format_exc())

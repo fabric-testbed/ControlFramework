@@ -77,24 +77,24 @@ class PdpAuth:
     """
     Responsible for Authorization against PDP
     """
-    CoManageProjectLeadsProject = 'project-leads'
-    ProjectLeadRole = 'projectLead'
+    co_manage_project_leads_project = 'project-leads'
+    project_lead_role = 'projectLead'
 
-    Request = 'Request'
-    Attribute = 'Attribute'
-    AttributeId = 'AttributeId'
-    Category = 'Category'
-    CategoryId = 'CategoryId'
-    Value = 'Value'
-    Email = 'email'
-    SubjectIdUrn = 'urn:oasis:names:tc:xacml:1.0:subject:subject-id'
-    CategorySubjectUrn = 'urn:oasis:names:tc:xacml:1.0:subject-category:access-subject'
-    CategoryResourceUrn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:resource'
-    ResourceTypeUrn = 'urn:fabric:xacml:attributes:resource-type'
-    ResourceIdUrn = 'urn:oasis:names:tc:xacml:1.0:resource:resource-id'
-    CategoryActionUrn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:action'
-    ActionIdUrn = 'urn:oasis:names:tc:xacml:1.0:action:action-id'
-    CategoryEnvironmentUrn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:environment'
+    request = 'Request'
+    attribute = 'Attribute'
+    attribute_id = 'AttributeId'
+    category = 'Category'
+    category_id = 'CategoryId'
+    value = 'Value'
+    email = 'email'
+    subject_id_urn = 'urn:oasis:names:tc:xacml:1.0:subject:subject-id'
+    category_subject_urn = 'urn:oasis:names:tc:xacml:1.0:subject-category:access-subject'
+    category_resource_urn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:resource'
+    resource_type_urn = 'urn:fabric:xacml:attributes:resource-type'
+    resource_id_urn = 'urn:oasis:names:tc:xacml:1.0:resource:resource-id'
+    category_action_urn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:action'
+    action_id_urn = 'urn:oasis:names:tc:xacml:1.0:action:action-id'
+    category_environment_urn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:environment'
 
     subject_fabric_role_attribute_json = {
         "IncludeInResult": False,
@@ -155,7 +155,7 @@ class PdpAuth:
         @param token fabric token
         @return updated subject category
         """
-        attributes = subject.get(PdpAuth.Attribute, None)
+        attributes = subject.get(PdpAuth.attribute, None)
         if attributes is None:
             raise PdpAuthException("Missing Attributes")
 
@@ -164,16 +164,16 @@ class PdpAuth:
         if len(attributes) > 1:
             raise PdpAuthException("Should only have subject Id Attribute {}".format(subject))
 
-        if attributes[0][PdpAuth.AttributeId] != PdpAuth.SubjectIdUrn:
+        if attributes[0][PdpAuth.attribute_id] != PdpAuth.subject_id_urn:
             raise PdpAuthException("Should only have subject Id Attribute {}".format(subject))
 
-        attributes[0][PdpAuth.Value] = [token[PdpAuth.Email]]
+        attributes[0][PdpAuth.value] = [token[PdpAuth.email]]
 
         if len(roles) < 1:
             raise PdpAuthException("No roles available in Token")
 
         for r in roles:
-            if r != PdpAuth.CoManageProjectLeadsProject:
+            if r != PdpAuth.co_manage_project_leads_project:
                 attr = self.subject_fabric_role_attribute_json.copy()
                 attr['Value'] = self.project_member.format(r)
                 attributes.append(attr)
@@ -192,21 +192,21 @@ class PdpAuth:
         @param resource_id resource id
         @return updated Resource category
         """
-        attributes = resource.get(PdpAuth.Attribute, None)
+        attributes = resource.get(PdpAuth.attribute, None)
         if attributes is None:
             raise PdpAuthException("Missing Attributes")
 
         if len(attributes) > 1:
             raise PdpAuthException("Should only have Resource Type Attribute {}".format(resource))
 
-        if attributes[0][PdpAuth.AttributeId] != PdpAuth.ResourceTypeUrn:
+        if attributes[0][PdpAuth.attribute_id] != PdpAuth.resource_type_urn:
             raise PdpAuthException("Should only have Resource Type Attribute {}".format(resource))
 
-        attributes[0][PdpAuth.Value] = [resource_type.name]
+        attributes[0][PdpAuth.value] = [resource_type.name]
 
         if resource_id is not None:
             attr = self.resource_id_attribute_json.copy()
-            attr[PdpAuth.Value] = resource_id
+            attr[PdpAuth.value] = resource_id
             attributes.append(attr)
 
         return resource
@@ -218,17 +218,17 @@ class PdpAuth:
         @param action_id action id
         @return updated Action category
         """
-        attributes = action.get(PdpAuth.Attribute, None)
+        attributes = action.get(PdpAuth.attribute, None)
         if attributes is None:
             raise PdpAuthException("Missing Attributes")
 
         if len(attributes) > 1:
             raise PdpAuthException("Should only have Action-Id Attribute {}".format(action))
 
-        if attributes[0][PdpAuth.AttributeId] != PdpAuth.ActionIdUrn:
+        if attributes[0][PdpAuth.attribute_id] != PdpAuth.action_id_urn:
             raise PdpAuthException("Should only have Action-Id Attribute {}".format(action))
 
-        attributes[0][PdpAuth.Value] = [action_id.name]
+        attributes[0][PdpAuth.value] = [action_id.name]
 
         return action
 
@@ -260,18 +260,18 @@ class PdpAuth:
             f.close()
 
         ## Subject
-        categories = request_json[PdpAuth.Request][PdpAuth.Category]
+        categories = request_json[PdpAuth.request][PdpAuth.category]
         for c in categories:
-            if c[PdpAuth.CategoryId] == PdpAuth.CategorySubjectUrn:
+            if c[PdpAuth.category_id] == PdpAuth.category_subject_urn:
                 c = self.update_subject_category(subject=c, token=fabric_token)
 
-            elif c[PdpAuth.CategoryId] == PdpAuth.CategoryResourceUrn:
+            elif c[PdpAuth.category_id] == PdpAuth.category_resource_urn:
                 c = self.update_resource_category(resource=c, resource_type=resource_type, resource_id=resource_id)
 
-            elif c[PdpAuth.CategoryId] == PdpAuth.CategoryActionUrn:
+            elif c[PdpAuth.category_id] == PdpAuth.category_action_urn:
                 c = self.update_action_category(action=c, action_id=action_id)
 
-            elif c[PdpAuth.CategoryId] == PdpAuth.CategoryEnvironmentUrn:
+            elif c[PdpAuth.category_id] == PdpAuth.category_environment_urn:
                 if self.logger is None:
                     print("Do nothing, ignore Envirnment category")
                 else:
@@ -280,7 +280,7 @@ class PdpAuth:
             else:
                 raise PdpAuthException("Invalid Category: {}".format(c))
 
-        request_json[PdpAuth.Request][PdpAuth.Category] = categories
+        request_json[PdpAuth.request][PdpAuth.category] = categories
 
         return request_json
 

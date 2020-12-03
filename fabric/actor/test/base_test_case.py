@@ -52,26 +52,26 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class BaseTestCase:
-    ActorName = "testActor"
-    ActorGuid = ID()
+    actor_name = "testActor"
+    actor_guid = ID()
 
-    AuthorityName = "Test-Authority"
-    BrokerName = "Test-Broker"
-    ControllerName = "Test-Controller"
+    authority_name = "Test-Authority"
+    broker_name = "Test-Broker"
+    controller_name = "Test-Controller"
 
-    ControllerGuid = "test-orchestrator-guid"
-    AuthorityGuid = "test-authority-guid"
-    BrokerGuid = "test-broker-guid"
+    controller_guid = "test-orchestrator-guid"
+    authority_guid = "test-authority-guid"
+    broker_guid = "test-broker-guid"
 
-    DbUser = 'fabric'
-    DbPwd = 'fabric'
-    DbName = 'test'
-    DbHost = '127.0.0.1:8432'
+    db_user = 'fabric'
+    db_pwd = 'fabric'
+    db_name = 'test'
+    db_host = '127.0.0.1:8432'
 
-    Logger = logging.getLogger('BaseTestCase')
+    logger = logging.getLogger('BaseTestCase')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
     logging.basicConfig(format=log_format, filename="./actor.log")
-    Logger.setLevel(logging.INFO)
+    logger.setLevel(logging.INFO)
 
     Term.set_cycles = False
 
@@ -84,9 +84,9 @@ class BaseTestCase:
         return GlobalsSingleton.get().get_container().get_actor_clock()
 
     def make_actor_database(self) -> IDatabase:
-        return ActorDatabase(user=self.DbUser, password=self.DbPwd, database=self.DbName,
-                             db_host=self.DbHost,
-                             logger=self.Logger)
+        return ActorDatabase(user=self.db_user, password=self.db_pwd, database=self.db_name,
+                             db_host=self.db_host,
+                             logger=self.logger)
 
     def make_controller_database(self) -> IDatabase:
         return self.make_actor_database()
@@ -103,7 +103,7 @@ class BaseTestCase:
 
     def get_actor_database(self, *, name: str = None) -> IDatabase:
         if name is None:
-            name = self.ActorName
+            name = self.actor_name
         db = self.make_actor_database()
         self.initialize_database(db=db, name=name)
         return db
@@ -131,7 +131,7 @@ class BaseTestCase:
 
     def get_plugin(self, *, name: str = None) -> IBasePlugin:
         if name is None:
-            name = self.ActorName
+            name = self.actor_name
         plugin = self.make_plugin()
         plugin.set_database(db=self.get_actor_database(name=name))
         return plugin
@@ -229,25 +229,25 @@ class BaseTestCase:
         actor.get_plugin().set_ticket_factory(ticket_factory=tf)
         return actor
 
-    def get_actor(self, *, name: str = ActorName, guid: ID = ActorGuid) -> IActor:
+    def get_actor(self, *, name: str = actor_name, guid: ID = actor_guid) -> IActor:
         actor = self.get_uninitialized_actor(name=name, guid=guid)
         actor.initialize()
         self.register_new_actor(actor=actor)
         return actor
 
-    def get_controller(self, *, name: str = ControllerName, guid: ID = ControllerGuid) -> IController:
+    def get_controller(self, *, name: str = controller_name, guid: ID = controller_guid) -> IController:
         actor = self.get_uninitialized_controller(name=name, guid=guid)
         actor.initialize()
         self.register_new_actor(actor=actor)
         return actor
 
-    def get_broker(self, *, name: str = BrokerName, guid: ID = BrokerGuid) -> IBroker:
+    def get_broker(self, *, name: str = broker_name, guid: ID = broker_guid) -> IBroker:
         actor = self.get_uninitialized_broker(name=name, guid=guid)
         actor.initialize()
         self.register_new_actor(actor=actor)
         return actor
 
-    def get_authority(self, *, name: str = AuthorityName, guid: ID = AuthorityGuid) -> IAuthority:
+    def get_authority(self, *, name: str = authority_name, guid: ID = authority_guid) -> IAuthority:
         actor = self.get_uninitialized_authority(name=name, guid=guid)
         actor.initialize()
         self.register_new_actor(actor=actor)

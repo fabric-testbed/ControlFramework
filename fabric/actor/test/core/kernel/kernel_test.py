@@ -100,7 +100,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_reservation(reservation=reservation)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -147,7 +147,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_slice(slice_object=slice_obj)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -196,7 +196,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_slice(slice_object=slice_obj)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -249,7 +249,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             failed = False
             try:
                 kernel.register_reservation(reservation=res)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -269,7 +269,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             failed = False
             try:
                 kernel.re_register_reservation(reservation=res)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -292,7 +292,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             failed = False
             try:
                 kernel.re_register_reservation(reservation=res)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -318,7 +318,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.re_register_slice(slice_object=slice_obj)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -338,7 +338,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel2.register_slice(slice_object=s)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -375,7 +375,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.unregister_reservation(rid=res.get_reservation_id())
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -419,7 +419,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             failed = False
             try:
                 kernel.unregister_slice(slice_id=s.get_slice_id())
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -449,7 +449,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.unregister_slice(slice_id=slice_obj.get_slice_id())
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -484,7 +484,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_reservation(reservation=reservation)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -505,7 +505,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_slice(slice_object=slice_obj)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)

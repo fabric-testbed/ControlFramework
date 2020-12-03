@@ -44,7 +44,7 @@ class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
 
     def get_clean_database(self) -> IDatabase:
         db = self.get_actor_database()
-        db.set_actor_name(name=self.ActorName)
+        db.set_actor_name(name=self.actor_name)
         db.set_reset_state(state=True)
         db.initialize()
         return db

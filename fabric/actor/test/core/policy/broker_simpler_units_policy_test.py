@@ -154,7 +154,7 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
 
         print(response)
 
-        rd = self.check_query_response(response, 0)
+        self.check_query_response(response, 0)
 
         slice_obj = SliceFactory.create(slice_id=ID(), name="inventory_slice")
         slice_obj.set_inventory(value=True)
@@ -166,7 +166,7 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
 
             response = policy.query(p=request)
             print(response)
-            rd = self.check_query_response(response, i)
+            self.check_query_response(response, i)
 
     def test_g_advanced_request(self):
         broker = self.get_broker()

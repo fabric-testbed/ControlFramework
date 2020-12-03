@@ -67,7 +67,7 @@ class TickTest(unittest.TestCase):
 
         try:
             tick.set_cycle_millis(cycle_millis=cycle_length + 10)
-        except Exception as e:
+        except Exception:
             failed = True
 
         if not failed:
@@ -83,7 +83,7 @@ class TickTest(unittest.TestCase):
 
         try:
             tick.tick()
-        except Exception as e:
+        except Exception:
             failed = True
 
         self.assertTrue(failed)
@@ -94,7 +94,7 @@ class TickTest(unittest.TestCase):
 
         try:
             tick.start()
-        except Exception as e:
+        except Exception:
             failed = True
 
         self.assertTrue(failed)
@@ -105,7 +105,7 @@ class TickTest(unittest.TestCase):
 
         try:
             tick.stop()
-        except Exception as e:
+        except Exception:
             failed = True
 
         self.assertTrue(failed)

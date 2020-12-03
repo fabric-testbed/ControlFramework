@@ -34,6 +34,7 @@ from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_server_reservation import IServerReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
@@ -103,10 +104,10 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
                     encoded = concrete.encode(protocol=Constants.protocol_local)
                     cset = Proxy.decode(encoded=encoded, plugin=plugin)
                 except Exception as e:
-                    raise Exception("Error while encoding concrete set {}".format(e))
+                    raise ProxyException("Error while encoding concrete set {}".format(e))
 
                 if cset is None:
-                    raise Exception("Unsupported ConcreteSet type: {}".format(type(concrete)))
+                    raise ProxyException("Unsupported ConcreteSet type: {}".format(type(concrete)))
 
                 rset.set_resources(cset=cset)
 

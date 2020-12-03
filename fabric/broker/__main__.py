@@ -56,7 +56,7 @@ def main():
                 time.sleep(0.0001)
                 if h.interrupted:
                     GlobalsSingleton.get().stop()
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
 
 

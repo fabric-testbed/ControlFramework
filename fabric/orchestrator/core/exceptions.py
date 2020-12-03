@@ -23,28 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import unittest
-import time
-from fabric.actor.core.apis.i_database import IDatabase
-from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
-from fabric.actor.test.base_test_case import BaseTestCase
 
 
-class SubstrateTestBase(BaseTestCase, unittest.TestCase):
-    from fabric.actor.core.container.globals import Globals
-    Globals.config_file = Constants.test_vm_am_configuration_file
-
-    from fabric.actor.core.container.globals import GlobalsSingleton
-    GlobalsSingleton.get().start(force_fresh=True)
-    while not GlobalsSingleton.get().start_completed:
-        time.sleep(0.0001)
-
-    def make_actor_database(self) -> IDatabase:
-        db = SubstrateActorDatabase(user=self.db_user, password=self.db_pwd, database=self.db_name, db_host=self.db_host,
-                                    logger=self.logger)
-        return db
-
-    def test_actor(self):
-        actor = self.get_actor()
-        self.assertIsNotNone(actor)
+class OrchestratorException(Exception):
+    """
+    Orchestrator Exception
+    """

@@ -23,15 +23,15 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import FrameworkException
+
+
 class UpdateData:
     """
     UpdateData wraps state passed with a ticket or lease update. Server-side code registers status
     of operations as they execute; client-side code queries for status, and may also post status.
     """
-    PropertyMessage = "UpdateDataMessage"
-    PropertyEvents = "UpdateDataEvents"
-    PropertyFailed = "UpdateDataFailed"
-
     def __init__(self, *, message: str = None):
         self.message = message
         self.events = None
@@ -46,7 +46,7 @@ class UpdateData:
         the status message from the absorbed UpdateData.
         """
         if not isinstance(other, UpdateData):
-            raise Exception("Invalid Argument")
+            raise FrameworkException(Constants.invalid_argument)
 
         self.post(event=other.events)
         if self.message is not None:

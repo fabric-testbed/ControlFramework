@@ -209,3 +209,9 @@ class TimeException(Exception):
     """
     Time Exception
     """
+
+
+class FrameworkException(Exception):
+    """
+    Framework Exception
+    """
