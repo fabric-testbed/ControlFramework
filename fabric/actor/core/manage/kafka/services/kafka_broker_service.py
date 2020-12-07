@@ -42,39 +42,51 @@ class KafkaBrokerService(KafkaClientActorService, KafkaServerActorService):
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
-        if message.get_message_name() == IMessageAvro.ClaimResources:
+        if message.get_message_name() == IMessageAvro.claim_resources:
             result = self.claim(request=message)
-        elif message.get_message_name() == IMessageAvro.ReclaimResources:
+
+        elif message.get_message_name() == IMessageAvro.reclaim_resources:
             result = self.reclaim(request=message)
-        elif message.get_message_name() == IMessageAvro.AddReservation:
+
+        elif message.get_message_name() == IMessageAvro.add_reservation:
             result = self.add_reservation(request=message)
-        elif message.get_message_name() == IMessageAvro.AddReservations:
+
+        elif message.get_message_name() == IMessageAvro.add_reservations:
             result = self.add_reservations(request=message)
-        elif message.get_message_name() == IMessageAvro.DemandReservation:
+
+        elif message.get_message_name() == IMessageAvro.demand_reservation:
             result = self.demand_reservation(request=message)
-        elif message.get_message_name() == IMessageAvro.GetActorsRequest:
+
+        elif message.get_message_name() == IMessageAvro.get_actors_request:
             result = self.get_brokers(request=message)
-        elif message.get_message_name() == IMessageAvro.GetPoolInfoRequest:
+
+        elif message.get_message_name() == IMessageAvro.get_pool_info_request:
             result = self.get_pool_info(request=message)
-        elif message.get_message_name() == IMessageAvro.ExtendReservation:
+
+        elif message.get_message_name() == IMessageAvro.extend_reservation:
             result = self.extend_reservation(request=message)
-        elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
+
+        elif message.get_message_name() == IMessageAvro.get_reservations_request and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Broker.name:
-            result = self.get_broker_reservations(request=message)
-        elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
+            result = self.get_reservations_by_category(request=message, category=ReservationCategory.Broker)
+
+        elif message.get_message_name() == IMessageAvro.get_slices_request and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.InventorySlice.name:
-            result = self.get_inventory_slices(request=message)
-        elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
+            result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.InventorySlice)
+
+        elif message.get_message_name() == IMessageAvro.get_reservations_request and \
                 message.get_reservation_type() is not None and \
-                message.get_reservation_type() == ReservationCategory.Client.name:
-            result = self.get_inventory_reservations(request=message)
-        elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
+                message.get_reservation_type() == ReservationCategory.Inventory.name:
+            result = self.get_reservations_by_category(request=message, category=ReservationCategory.Inventory)
+
+        elif message.get_message_name() == IMessageAvro.get_slices_request and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.ClientSlice.name:
-            result = self.get_client_slices(request=message)
-        elif message.get_message_name() == IMessageAvro.AddSlice and message.slice_obj is not None and \
+            result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.ClientSlice)
+
+        elif message.get_message_name() == IMessageAvro.add_slice and message.slice_obj is not None and \
                 (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
             result = self.add_client_slice(request=message)
         else:

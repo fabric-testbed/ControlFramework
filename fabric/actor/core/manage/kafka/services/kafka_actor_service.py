@@ -27,8 +27,10 @@ from __future__ import annotations
 
 import traceback
 
+from fabric.actor.core.apis.i_reservation import ReservationCategory
 from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.common.exceptions import ManageException
+from fabric.actor.core.kernel.slice import SliceTypes
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_service import KafkaService
 from fabric.actor.core.proxies.kafka.translate import Translate
@@ -61,34 +63,34 @@ class KafkaActorService(KafkaService):
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
-        if message.get_message_name() == IMessageAvro.GetSlicesRequest:
+        if message.get_message_name() == IMessageAvro.get_slices_request:
             result = self.get_slices(request=message)
 
-        elif message.get_message_name() == IMessageAvro.RemoveSlice:
+        elif message.get_message_name() == IMessageAvro.remove_slice:
             result = self.remove_slice(request=message)
 
-        elif message.get_message_name() == IMessageAvro.AddSlice:
+        elif message.get_message_name() == IMessageAvro.add_slice:
             result = self.add_slice(request=message)
 
-        elif message.get_message_name() == IMessageAvro.UpdateSlice:
+        elif message.get_message_name() == IMessageAvro.update_slice:
             result = self.update_slice(request=message)
 
-        elif message.get_message_name() == IMessageAvro.GetReservationsRequest:
+        elif message.get_message_name() == IMessageAvro.get_reservations_request:
             result = self.get_reservations(request=message)
 
-        elif message.get_message_name() == IMessageAvro.GetDelegations:
+        elif message.get_message_name() == IMessageAvro.get_delegations:
             result = self.get_delegations(request=message)
 
-        elif message.get_message_name() == IMessageAvro.RemoveReservation:
+        elif message.get_message_name() == IMessageAvro.remove_reservation:
             result = self.remove_reservation(request=message)
 
-        elif message.get_message_name() == IMessageAvro.CloseReservations:
+        elif message.get_message_name() == IMessageAvro.close_reservations:
             result = self.close_reservations(request=message)
 
-        elif message.get_message_name() == IMessageAvro.UpdateReservation:
+        elif message.get_message_name() == IMessageAvro.update_reservation:
             result = self.update_reservation(request=message)
 
-        elif message.get_message_name() == IMessageAvro.GetReservationsStateRequest:
+        elif message.get_message_name() == IMessageAvro.get_reservations_state_request:
             result = self.get_reservation_state(request=message)
 
         else:
