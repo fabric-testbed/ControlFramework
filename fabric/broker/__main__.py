@@ -23,6 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+"""
+Main Entry Module for Broker
+"""
 import time
 import traceback
 
@@ -34,23 +37,26 @@ from fabric.actor.core.container.globals import Globals, GlobalsSingleton
 
 
 def main():
+    """
+    Broker entry function
+    """
     try:
         # Uncomment when testing as app running
-        #Globals.ConfigFile = './test.yaml'
-        #Constants.SuperblockLocation = './state_recovery.lock'
+        #Globals.config_file = './test.yaml'
+        #Constants.superblock_location = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(force_fresh=True)
 
             runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
             # prometheus server
-            prometheus_port = int(runtime_config.get(Constants.PropertyConfPrometheusRestPort, None))
+            prometheus_port = int(runtime_config.get(Constants.property_conf_prometheus_rest_port, None))
             prometheus_client.start_http_server(prometheus_port)
 
             while True:
                 time.sleep(0.0001)
                 if h.interrupted:
                     GlobalsSingleton.get().stop()
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
 
 

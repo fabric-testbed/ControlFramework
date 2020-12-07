@@ -22,8 +22,8 @@
 # SOFTWARE.
 #
 # Author Komal Thareja (kthare10@renci.org)
-from bisect import bisect_left, bisect_right
-from datetime import datetime
+from bisect import bisect_left
+
 
 
 def binary_search(*, a, x):

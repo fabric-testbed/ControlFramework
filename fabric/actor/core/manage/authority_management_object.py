@@ -38,8 +38,8 @@ from fabric.actor.core.manage.server_actor_management_object import ServerActorM
 from fabric.actor.security.acess_checker import AccessChecker
 from fabric.actor.security.pdp_auth import ActionId, ResourceType
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
-from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
+from fabric.message_bus.messages.result_units_avro import ResultUnitsAvro
 
 if TYPE_CHECKING:
     from fabric.actor.security.auth_token import AuthToken
@@ -53,12 +53,12 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_authority import LocalAuthority
-        local = ProxyProtocolDescriptor(protocol=Constants.ProtocolLocal, 
-                                        proxy_class=LocalAuthority.__name__, 
+        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local,
+                                        proxy_class=LocalAuthority.__name__,
                                         proxy_module=LocalAuthority.__module__)
 
         from fabric.actor.core.manage.kafka.kafka_authority import KafkaAuthority
-        kakfa = ProxyProtocolDescriptor(protocol=Constants.ProtocolKafka, proxy_class=KafkaAuthority.__name__, 
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka, proxy_class=KafkaAuthority.__name__,
                                         proxy_module=KafkaAuthority.__module__)
 
         self.proxies = []
@@ -67,8 +67,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = AuthorityManagementObject.__name__
-        properties[Constants.PropertyModuleName] = AuthorityManagementObject.__module__
+        properties[Constants.property_class_name] = AuthorityManagementObject.__name__
+        properties[Constants.property_module_name] = AuthorityManagementObject.__module__
 
         return properties
 
@@ -118,8 +118,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
     def get_substrate_database(self) -> ISubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
-    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitAvro:
-        result = ResultUnitAvro()
+    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitsAvro:
+        result = ResultUnitsAvro()
         result.status = ResultAvro()
 
         if caller is None:
@@ -149,8 +149,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         return result
 
-    def get_reservation_unit(self, *, caller: AuthToken, uid: ID, id_token: str = None) -> ResultUnitAvro:
-        result = ResultUnitAvro()
+    def get_reservation_unit(self, *, caller: AuthToken, uid: ID, id_token: str = None) -> ResultUnitsAvro:
+        result = ResultUnitsAvro()
         result.status = ResultAvro()
 
         if caller is None:

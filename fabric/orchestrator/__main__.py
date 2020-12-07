@@ -36,6 +36,7 @@ from flask import jsonify
 
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
+from fabric.orchestrator.core.exceptions import OrchestratorException
 from fabric.orchestrator.swagger_server import encoder
 
 
@@ -44,8 +45,8 @@ def main():
     try:
         from fabric.actor.core.container.globals import Globals, GlobalsSingleton
         # Uncomment when testing as app running
-        #Globals.ConfigFile = './test.yaml'
-        #Constants.SuperblockLocation = './state_recovery.lock'
+        #Globals.config_file = './test.yaml'
+        #Constants.superblock_location = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
 
             GlobalsSingleton.get().start(force_fresh=True)
@@ -60,13 +61,13 @@ def main():
             runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
 
             # prometheus server
-            prometheus_port = int(runtime_config.get(Constants.PropertyConfPrometheusRestPort, None))
+            prometheus_port = int(runtime_config.get(Constants.property_conf_prometheus_rest_port, None))
             prometheus_client.start_http_server(prometheus_port)
 
-            rest_port = int(runtime_config.get(Constants.PropertyConfControllerRestPort, None))
+            rest_port_str = runtime_config.get(Constants.property_conf_controller_rest_port, None)
 
-            if rest_port is None:
-                raise Exception("Invalid configuration rest port not specified")
+            if rest_port_str is None:
+                raise OrchestratorException("Invalid configuration rest port not specified")
 
             print("Starting REST")
             # start swagger
@@ -75,13 +76,13 @@ def main():
             app.add_api('swagger.yaml', arguments={'title': 'Fabric Orchestrator API'}, pythonic_params=True)
 
             # Start up the server to expose the metrics.
-            waitress.serve(app, port=rest_port)
+            waitress.serve(app, port=int(rest_port_str))
             while True:
                 time.sleep(0.0001)
                 if h.interrupted:
                     GlobalsSingleton.get().stop()
                     OrchestratorStateSingleton.get().stop_threads()
-    except Exception as e:
+    except Exception:
         traceback.print_exc()
 
     @app.route('/stopServer', methods=['GET'])

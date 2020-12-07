@@ -31,6 +31,7 @@ from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.core.authority_policy import AuthorityPolicy
+from fabric.actor.core.common.exceptions import AuthorityException
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.plugins.config.config_token import ConfigToken
 from fabric.actor.core.apis.i_resource_control import IResourceControl
@@ -45,6 +46,8 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     """
     The base for authority policy implementations
     """
+    UNSUPPORTED_RESOURCE_TYPE = "Unsupported resource type: {}"
+
     def __init__(self):
         """
         Creates a new instance.
@@ -95,7 +98,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             try:
                 self.register_control_types(control=c)
             except Exception as e:
-                raise Exception("Cannot restore resource control")
+                raise AuthorityException("Cannot restore resource control e:{}".format(e))
 
     def initialize(self):
         """
@@ -122,7 +125,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         if rc is not None:
             rc.donate(resource_set=resources)
         else:
-            raise Exception("Unsupported resource type {}".format(resources.get_type()))
+            raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(resources.get_type()))
 
     def eject(self, *, resources: ResourceSet):
         code = super().unavailable(resources=resources)
@@ -131,7 +134,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             if rc is not None:
                 code = rc.unavailable(resource_set=resources)
             else:
-                raise Exception("Unsupported resource type")
+                raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(resources.get_type()))
         return code
 
     def available(self, *, resources: ResourceSet):
@@ -140,7 +143,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         if rc is not None:
             rc.available(resource_set=resources)
         else:
-            raise Exception("Unsupported resource type " + resources.get_type())
+            raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(resources.get_type()))
 
     def freed(self, *, resources: ResourceSet):
         super().freed(resources=resources)
@@ -148,7 +151,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         if rc is not None:
             rc.freed(resource_set=resources)
         else:
-            raise Exception("Unsupported resource type " + resources.get_type())
+            raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(resources.get_type()))
 
     def release(self, *, resources: ResourceSet):
         super().release(resources=resources)
@@ -156,7 +159,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         if rc is not None:
             rc.release(resource_set=resources)
         else:
-            raise Exception("Unsupported resource type " + resources.get_type())
+            raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(resources.get_type()))
 
     def recovery_starting(self):
         super().recovery_starting()
@@ -175,7 +178,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             self.logger.debug("Resource type for recovered reservation: " + rtype)
             control = self.get_control_by_type(rtype=rtype)
             if control is None:
-                raise Exception("Missing resource control")
+                raise AuthorityException("Missing resource control")
             control.revisit(reservation=reservation)
 
     def recovery_ended(self):
@@ -189,7 +192,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         if rc is not None:
             rc.donate_reservation(reservation=reservation)
         else:
-            raise Exception("Unsupported resource type")
+            raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(reservation.get_type()))
 
     def bind(self, *, reservation: IAuthorityReservation) -> bool:
         if isinstance(reservation, IBrokerReservation):
@@ -221,7 +224,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         # exception.
 
         if resources is not None and term is not None:
-            raise Exception("Not implemented")
+            raise AuthorityException("Not implemented")
         current_cycle = self.actor.get_current_cycle()
         approved = reservation.get_requested_term()
         start = self.clock.cycle(when=approved.get_new_start_time())
@@ -244,7 +247,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             if rc is not None:
                 self.finish_correct_deficit(rset=rc.correct_deficit(reservation=reservation), reservation=reservation)
             else:
-                raise Exception("Unsupported resource type")
+                raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(reservation.get_type()))
 
     def close(self, *, reservation: IReservation):
         self.calendar.remove_schedule_or_in_progress(reservation=reservation)
@@ -253,16 +256,14 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             if rc is not None:
                 rc.close(reservation=reservation)
             else:
-                raise Exception("Unsupported resource type")
+                raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(reservation.get_type()))
 
     def closed(self, *, reservation: IReservation):
         if isinstance(reservation, IAuthorityReservation):
             self.calendar.remove_outlay(reservation=reservation)
 
     def remove(self, *, reservation: IReservation):
-        # TODO KOMAL
-        #raise Exception("Not implemented")
-        self.calendar.remove(reservation=reservation)
+        raise AuthorityException("Not implemented")
 
     def finish(self, *, cycle: int):
         super().finish(cycle=cycle)
@@ -361,7 +362,8 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             reservation.set_bid_pending(value=False)
         else:
             if not reservation.is_terminal():
-                self.logger.debug("Deferring reservation {} for the next cycle: {}".format(reservation, self.actor.get_current_cycle() + 1))
+                self.logger.debug("Deferring reservation {} for the next cycle: {}".format(
+                    reservation, self.actor.get_current_cycle() + 1))
                 self.reschedule(reservation=reservation)
 
     def assign_reservation(self, *, reservation: IAuthorityReservation):
@@ -382,7 +384,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                 self.logger.error("Could not assign {}".format(e))
                 return None
         else:
-            raise Exception("Unsupported resource type")
+            raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(reservation.get_type()))
 
     def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         super().configuration_complete(action=action, token=token, out_properties=out_properties)
@@ -390,7 +392,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         if rc is not None:
             rc.configuration_complete(action=action, token=token, out_properties=out_properties)
         else:
-            raise Exception("Unsupported resource type")
+            raise AuthorityException(self.UNSUPPORTED_RESOURCE_TYPE.format(token.get_resource_type()))
 
     def is_expired(self, *, reservation: IReservation) -> bool:
         """
@@ -468,16 +470,16 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     def register_control_types(self, *, control: IResourceControl):
         types = control.get_types()
         if types is None or len(types) == 0:
-            raise Exception("Resource control does not specify any types")
+            raise AuthorityException("Resource control does not specify any types")
         for t in types:
             if t is None:
-                raise Exception("Invalid resource type specified")
+                raise AuthorityException("Invalid resource type specified")
 
         index = 0
         try:
             for rtype in types:
                 if rtype in self.controls_by_resource_type:
-                    raise Exception("There is already a control associated with resource type {}".format(rtype))
+                    raise AuthorityException("There is already a control associated with resource type {}".format(rtype))
                 self.controls_by_resource_type[rtype] = control
                 index += 1
         except Exception as e:

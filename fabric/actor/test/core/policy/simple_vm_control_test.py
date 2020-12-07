@@ -55,7 +55,7 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
     AttributeValueMemory = "128"
 
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -76,7 +76,7 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         rd.set_resource_type(rtype=self.Type)
         rd.set_resource_type_label(rtype_label=self.Label)
         ad = ResourcePoolAttributeDescriptor()
-        ad.set_key(value=Constants.ResourceMemory)
+        ad.set_key(value=Constants.resource_memory)
         ad.set_label(label="Memory")
         ad.set_unit(unit="MB")
         ad.set_type(rtype=ResourcePoolAttributeType.INTEGER)
@@ -134,9 +134,9 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         self.assertEqual(self.TicketUnits, uset.get_units())
 
         u = uset.get_set().values().__iter__().__next__()
-        self.assertEqual(self.AttributeValueMemory, u.get_property(name=Constants.UnitMemory))
-        self.assertIsNotNone(u.get_property(name=Constants.UnitManagementIP))
-        self.assertIsNotNone(u.get_property(name=Constants.UnitManageSubnet))
+        self.assertEqual(self.AttributeValueMemory, u.get_property(name=Constants.unit_memory))
+        self.assertIsNotNone(u.get_property(name=Constants.unit_management_ip))
+        self.assertIsNotNone(u.get_property(name=Constants.unit_manage_subnet))
         pool = control.inventory.get(self.Type)
         self.assertIsNotNone(pool)
         self.assertEqual(1, pool.get_allocated())
@@ -174,9 +174,9 @@ class SimpleVMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         self.assertEqual(self.TicketUnits, uset.get_units())
 
         u = uset.get_set().values().__iter__().__next__()
-        self.assertEqual(self.AttributeValueMemory, int(u.get_property(name=Constants.UnitMemory)))
-        self.assertIsNotNone(u.get_property(name=Constants.UnitManagementIP))
-        self.assertIsNotNone(u.get_property(name=Constants.UnitManageSubnet))
+        self.assertEqual(self.AttributeValueMemory, int(u.get_property(name=Constants.unit_memory)))
+        self.assertIsNotNone(u.get_property(name=Constants.unit_management_ip))
+        self.assertIsNotNone(u.get_property(name=Constants.unit_manage_subnet))
 
         pool = control.inventory.get(self.Type)
         self.assertIsNotNone(pool)

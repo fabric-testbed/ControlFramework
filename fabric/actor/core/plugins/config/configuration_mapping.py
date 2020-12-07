@@ -23,10 +23,12 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+
+
 class ConfigurationMapping:
-    PropertyType = "mapping.type"
-    PropertyFile = "mapping.file"
-    PropertyProperties = "mapping.properties"
+    property_type = "mapping.type"
+    property_file = "mapping.file"
+    property_properties = "mapping.properties"
 
     def __init__(self):
         self.type = None

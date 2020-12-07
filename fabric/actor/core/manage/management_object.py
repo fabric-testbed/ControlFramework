@@ -96,53 +96,53 @@ class ManagementObject(IManagementObject):
 
     def save(self) -> dict:
         properties = {
-                        Constants.PropertyClassName: ManagementObject.__name__,
-                        Constants.PropertyModuleName: ManagementObject.__module__,
-                        Constants.PropertyID: str(self.id)
+                        Constants.property_class_name: ManagementObject.__name__,
+                        Constants.property_module_name: ManagementObject.__module__,
+                        Constants.property_id: str(self.id)
                      }
 
         if self.type_id is not None:
-            properties[Constants.PropertyTypeID] = str(self.type_id)
+            properties[Constants.property_type_id] = str(self.type_id)
 
         self.save_protocols(properties=properties)
 
         if self.get_actor_name() is not None:
-            properties[Constants.PropertyActorName] = self.get_actor_name()
+            properties[Constants.property_actor_name] = self.get_actor_name()
 
         return properties
 
     def save_protocols(self, *, properties: dict) -> dict:
         if self.proxies is not None:
-            properties[Constants.PropertyProxiesLength] = len(self.proxies)
+            properties[Constants.property_proxies_length] = len(self.proxies)
             i = 0
             for p in self.proxies:
                 properties[
-                    Constants.PropertyProxiesPrefix + str(i) + Constants.PropertyProxiesProtocol] = p.get_protocol()
+                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_protocol] = p.get_protocol()
                 properties[
-                    Constants.PropertyProxiesPrefix + str(i) + Constants.PropertyProxiesClass] = p.get_proxy_class()
+                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_class] = p.get_proxy_class()
                 properties[
-                    Constants.PropertyProxiesPrefix + str(i) + Constants.PropertyProxiesModule] = p.get_proxy_module()
+                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_module] = p.get_proxy_module()
                 i += 1
         return properties
 
     def load_protocols(self, *, properties: dict):
-        if Constants.PropertyProxiesLength in properties:
-            count = int(properties[Constants.PropertyProxiesLength])
+        if Constants.property_proxies_length in properties:
+            count = int(properties[Constants.property_proxies_length])
             self.proxies = []
             for i in range(count):
                 proxy = ProxyProtocolDescriptor()
                 proxy.set_protocol(protocol=properties[
-                    Constants.PropertyProxiesPrefix + str(i) + Constants.PropertyProxiesProtocol])
+                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_protocol])
                 proxy.set_proxy_class(proxy_class=properties[
-                    Constants.PropertyProxiesPrefix + str(i) + Constants.PropertyProxiesClass])
+                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_class])
                 proxy.set_proxy_module(proxy_module=properties[
-                    Constants.PropertyProxiesPrefix + str(i) + Constants.PropertyProxiesModule])
+                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_module])
 
     def reset(self, *, properties: dict):
-        self.id = ID(id=properties[Constants.PropertyID])
+        self.id = ID(uid=properties[Constants.property_id])
 
-        if Constants.PropertyTypeID in properties:
-            self.type_id = ID(id=properties[Constants.PropertyTypeID])
+        if Constants.property_type_id in properties:
+            self.type_id = ID(uid=properties[Constants.property_type_id])
 
         self.load_protocols(properties=properties)
 
@@ -153,7 +153,6 @@ class ManagementObject(IManagementObject):
         Performs recovery actions for this manager object.
         @throws Exception in case of error
         """
-        return
 
     def get_id(self) -> ID:
         return self.id

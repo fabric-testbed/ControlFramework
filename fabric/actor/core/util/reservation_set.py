@@ -26,6 +26,7 @@
 import datetime
 
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.exceptions import FrameworkException
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_count import ResourceCount
 
@@ -102,17 +103,17 @@ class ReservationSet:
         """
         Returns the specified reservation. If the reservation is not
         present in the set, throws an exception.
-       
+
         @param rid the reservation identifier
-       
+
         @return Reservation identified by rid
-       
+
         @throws Exception if the requested reservation is not present in the set
         """
         if rid in self.reservations:
             return self.reservations.get(rid)
 
-        raise Exception("No reservation with ID {}".format(rid))
+        raise FrameworkException("No reservation with ID {}".format(rid))
 
     def is_empty(self) -> bool:
         """

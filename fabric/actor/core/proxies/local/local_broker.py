@@ -45,40 +45,39 @@ class LocalBroker(LocalProxy, IBrokerProxy):
     def __init__(self, *, actor: IActor):
         super().__init__(actor=actor)
 
-    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                       caller: AuthToken) -> IRPCRequestState:
+    def _prepare_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
+                            caller: AuthToken, id_token: str = None) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
+        state.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         state.callback = callback
         return state
 
     def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                 caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+                                 caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+
+    def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
+                                   caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+
+    def _prepare(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                 caller: AuthToken) -> IRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
-        state.delegation = self.pass_delegation(delegation=delegation, auth=caller)
+        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                   caller: AuthToken, id_token:str = None) -> IRPCRequestState:
-        state = LocalProxy.LocalProxyRequestState()
-        state.delegation = self.pass_delegation(delegation=delegation, auth=caller)
-        state.callback = callback
-        return state
+    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                       caller: AuthToken) -> IRPCRequestState:
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                               caller: AuthToken) -> IRPCRequestState:
-        state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
-        state.callback = callback
-        return state
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                            caller: AuthToken) -> IRPCRequestState:
-        state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
-        state.callback = callback
-        return state
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def pass_reservation(self, *, reservation: IClientReservation, auth: AuthToken) -> IBrokerReservation:
         slice_obj = reservation.get_slice().clone_request()

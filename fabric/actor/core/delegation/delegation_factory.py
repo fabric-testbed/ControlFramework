@@ -31,11 +31,21 @@ from ..apis.i_actor import IActor
 from ..apis.i_delegation import IDelegation
 from ..apis.i_slice import ISlice
 from ..common.constants import Constants
+from ..common.exceptions import DelegationException
 
 
 class DelegationFactory:
+    """
+    Factory class to create delegation instances
+    """
     @staticmethod
-    def create(did: str, slice_id: ID) -> IDelegation:
+    def create(did: ID, slice_id: ID) -> IDelegation:
+        """
+        Create a delegation
+        @param did delegation id
+        @param slice_id slice id
+        @return delegation
+        """
         delegation = Delegation(dlg_graph_id=did, slice_id=slice_id)
         return delegation
 
@@ -52,17 +62,12 @@ class DelegationFactory:
 
         @return delegation instance
 
-        @throws Exception in case of error
+        @raises Exception in case of error
         """
-        ## TODO
-        if Constants.PropertyPickleProperties not in properties:
-            raise Exception("Invalid arguments")
+        if Constants.property_pickle_properties not in properties:
+            raise DelegationException(Constants.invalid_argument)
 
-        serialized_delegation = properties[Constants.PropertyPickleProperties]
-        deserialized_delegation = None
-        try:
-            deserialized_delegation = pickle.loads(serialized_delegation)
-            deserialized_delegation.restore(actor=actor, slice_obj=slice_obj, logger=logger)
-        except Exception as e:
-            raise e
+        serialized_delegation = properties[Constants.property_pickle_properties]
+        deserialized_delegation = pickle.loads(serialized_delegation)
+        deserialized_delegation.restore(actor=actor, slice_obj=slice_obj, logger=logger)
         return deserialized_delegation

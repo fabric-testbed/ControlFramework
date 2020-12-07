@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# MIT License
+#
 # Copyright (c) 2020 FABRIC Testbed
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,22 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.util.resource_type import ResourceType
 
 
-class SiteResourceType:
-    def __init__(self, *, rtype: ResourceType):
-        self.resource_type = rtype
-        self.available_units = 0
-
-    def get_resource_type(self) -> ResourceType:
-        return self.resource_type
-
-    def get_available_units(self) -> int:
-        return self.available_units
-
-    def set_available_units(self, *, available_units: int):
-        self.available_units = available_units
-
-    def __str__(self):
-        return "{'resource_type': {}, 'available_units': {}}".format(self.resource_type, self.available_units)
+class OrchestratorException(Exception):
+    """
+    Orchestrator Exception
+    """

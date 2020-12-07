@@ -27,6 +27,9 @@ from enum import Enum
 
 
 class ResourcePoolAttributeType(Enum):
+    """
+    Attribute Type Enumeration
+    """
     UNDEFINED = 1
     INTEGER = 2
     FLOAT = 3
@@ -36,10 +39,13 @@ class ResourcePoolAttributeType(Enum):
 
 
 class ResourcePoolAttributeDescriptor:
-    PropertyType = "type"
-    PropertyUnit = "unit"
-    PropertyValue = "value"
-    PropertyLabel = "label"
+    """
+    Pool Attribute Description
+    """
+    property_type = "type"
+    property_unit = "unit"
+    property_value = "value"
+    property_label = "label"
 
     def __init__(self):
         self.key = None
@@ -49,64 +55,119 @@ class ResourcePoolAttributeDescriptor:
         self.unit = None
 
     def get_type(self) -> ResourcePoolAttributeType:
+        """
+        Get type
+        @return type
+        """
         return self.type
 
     def set_type(self, *, rtype: ResourcePoolAttributeType):
+        """
+        Set type
+        @param rtype rtype
+        """
         self.type = rtype
 
     def get_value(self) -> str:
+        """
+        Get value
+        @return value
+        """
         return self.value
 
     def get_int_value(self) -> int:
+        """
+        Get Integer value
+        @return in value
+        """
         return int(self.value)
 
     def set_value(self, *, value: str):
+        """
+        Set value
+        @param value value
+        """
         self.value = value
 
     def get_key(self) -> str:
+        """
+        Return key
+        @return key
+        """
         return self.key
 
     def set_key(self, *, value: str):
+        """
+        Set key
+        @param value value
+        """
         self.key = value
 
     def set_label(self, *, label: str):
+        """
+        Set label
+        @param label label
+        """
         self.label = label
 
     def get_label(self) -> str:
+        """
+        Get label
+        @return label
+        """
         return self.label
 
     def get_unit(self) -> str:
+        """
+        Get unit
+        @return unit
+        """
         return self.unit
 
     def set_unit(self, *, unit: str):
+        """
+        Set unit
+        @param unit unit
+        """
         self.unit = unit
 
     def __str__(self):
         return "{}:{}:{}".format(self.key, self.value, self.type)
 
     def save(self, *, properties: dict, prefix: str) -> dict:
+        """
+        Save in properties
+        @param properties properties
+        @param prefix prefix
+        @return saved properties
+        """
         if prefix is None:
             prefix = ""
 
-        properties[prefix + self.PropertyType] = str(self.type.value)
+        properties[prefix + self.property_type] = str(self.type.value)
         if self.value is not None:
-            properties[prefix + self.PropertyValue] = self.value
+            properties[prefix + self.property_value] = self.value
 
         if self.label is not None:
-            properties[prefix + self.PropertyLabel] = self.label
+            properties[prefix + self.property_label] = self.label
 
         if self.unit is not None:
-            properties[prefix + self.PropertyUnit] = self.unit
+            properties[prefix + self.property_unit] = self.unit
 
         return properties
 
     def reset(self, *, properties: dict, prefix: str):
+        """
+        Reset the properties
+        @param properties properties
+        @param prefix prefix
+        """
         if prefix is None:
             prefix = ""
 
-        self.type = ResourcePoolAttributeType(int(properties[prefix + self.PropertyType]))
-        self.value = properties[prefix + self.PropertyValue]
-        if prefix + self.PropertyLabel in properties:
-            self.label = properties[prefix + self.PropertyLabel]
-        if prefix + self.PropertyUnit in properties:
-            self.unit = properties[prefix + self.PropertyUnit]
+        self.type = ResourcePoolAttributeType(int(properties[prefix + self.property_type]))
+        self.value = properties[prefix + self.property_value]
+        if prefix + self.property_label in properties:
+            self.label = properties[prefix + self.property_label]
+        if prefix + self.property_unit in properties:
+            self.unit = properties[prefix + self.property_unit]

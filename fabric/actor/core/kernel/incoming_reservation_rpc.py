@@ -38,6 +38,9 @@ if TYPE_CHECKING:
 
 
 class IncomingReservationRPC(IncomingRPC):
+    """
+    Represents Incoming RPC message carrying a reservation
+    """
     def __init__(self, *, message_id: ID, request_type: RPCRequestType, reservation: IReservation,
                  callback: ICallbackProxy = None, update_data: UpdateData = None, caller: AuthToken = None):
         super().__init__(message_id=message_id, request_type=request_type, callback=callback, caller=caller)
@@ -45,9 +48,17 @@ class IncomingReservationRPC(IncomingRPC):
         self.update_data = update_data
 
     def get_reservation(self) -> IReservation:
+        """
+        Get Reservation
+        @return reservation
+        """
         return self.reservation
 
     def get_update_data(self) -> UpdateData:
+        """
+        Get Update Data
+        @return update data
+        """
         return self.update_data
 
     def __str__(self):

@@ -26,6 +26,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
+from fabric.actor.core.common.exceptions import ManageException
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
+
 from fabric.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric.actor.core.manage.local.local_proxy import LocalProxy
@@ -44,29 +47,16 @@ class LocalActor(LocalProxy, IMgmtActor):
         super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, ActorManagementObject):
-            raise Exception("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
+            raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
-    def get_slices(self, *, id_token: str = None) -> List[SliceAvro]:
+    def get_slices(self, *, slice_id: ID = None, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_slices(caller=self.auth)
+            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
-        except Exception as e:
-            self.last_exception = e
-
-        return None
-
-    def get_slice(self, *, slice_id: ID, id_token: str = None) -> SliceAvro:
-        self.clear_last()
-        try:
-            result = self.manager.get_slice(slice_id=slice_id, caller=self.auth)
-            self.last_status = result.status
-
-            if result.status.get_code() == 0:
-                return self.get_first(result_list=result.result)
+                return result.slices
         except Exception as e:
             self.last_exception = e
 
@@ -84,28 +74,16 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def get_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, id_token: str = None, state: int = None,
+                         slice_id: ID = None, rid: ID = None) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_reservations(caller=self.auth)
+            result = self.manager.get_reservations(caller=self.auth, state=state, slice_id=slice_id, rid=rid,
+                                                   id_token=id_token)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
-
-        except Exception as e:
-            self.last_exception = e
-
-        return None
-
-    def get_reservations_by_state(self, *, state: int, id_token: str = None) -> List[ReservationMng]:
-        self.clear_last()
-        try:
-            result = self.manager.get_reservations(caller=self.auth, state=state)
-            self.last_status = result.status
-
-            if result.status.get_code() == 0:
-                return result.result
+                return result.reservations
 
         except Exception as e:
             self.last_exception = e
@@ -151,7 +129,7 @@ class LocalActor(LocalProxy, IMgmtActor):
             self.last_status = result.status
 
             if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(id=result.result)
+                return ID(uid=result.result)
 
         except Exception as e:
             self.last_exception = e
@@ -172,64 +150,8 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def create_event_subscription(self) -> ID:
-        self.clear_last()
-        try:
-            result = self.manager.create_event_subscription(caller=self.auth)
-            self.last_status = result.status
-
-            if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(id=self.get_first(result_list=result.result))
-
-        except Exception as e:
-            self.last_exception = e
-
-        return None
-
-    def delete_event_subscription(self, *, subscription_id: ID) -> bool:
-        self.clear_last()
-        try:
-            result = self.manager.delete_event_subscription(caller=self.auth, subscription_id=subscription_id)
-            self.last_status = result
-
-            if self.last_status.get_code() == 0:
-                return True
-
-        except Exception as e:
-            self.last_exception = e
-
-        return False
-
-    def drain_events(self, *, subscription_id: ID, timeout: int) -> list:
-        self.clear_last()
-        try:
-            result = self.manager.drain_events(caller=self.auth, subscription_id=subscription_id, timeout=timeout)
-            self.last_status = result.status
-
-            if self.last_status.get_code() == 0:
-                return result.result
-
-        except Exception as e:
-            self.last_exception = e
-
-        return None
-
     def clone(self):
         return LocalActor(manager=self.manager, auth=self.auth)
-
-    def get_reservations_by_slice_id_and_state(self, *, slice_id: ID, state: int, id_token: str = None) -> list:
-        self.clear_last()
-        try:
-            result = self.manager.get_reservations_by_slice_id_state(caller=self.auth, slice_id=slice_id, state=state)
-            self.last_status = result.status
-
-            if result.status.get_code() == 0:
-                return result.result
-
-        except Exception as e:
-            self.last_exception = e
-
-        return None
 
     def update_reservation(self, *, reservation: ReservationMng) -> bool:
         self.clear_last()
@@ -259,28 +181,31 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return False
 
-    def get_reservation_state(self, *, rid: ID, id_token: str = None) -> ReservationStateAvro:
-        self.clear_last()
-        try:
-            result = self.manager.get_reservation_state(caller=self.auth, rid=rid)
-            self.last_status = result.status
-
-            if result.status.get_code() == 0:
-                return result.result
-
-        except Exception as e:
-            self.last_exception = e
-
-        return None
-
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID], id_token: str = None) -> List[ReservationStateAvro]:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID],
+                                               id_token: str = None) -> List[ReservationStateAvro]:
         self.clear_last()
         try:
             result = self.manager.get_reservation_state_for_reservations(caller=self.auth, rids=reservation_list)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.reservation_states
+
+        except Exception as e:
+            self.last_exception = e
+
+        return None
+
+    def get_delegations(self, *, slice_id: ID = None, state: int = None,
+                        delegation_id: ID = None, id_token: str = None) -> List[DelegationAvro]:
+        self.clear_last()
+        try:
+            result = self.manager.get_delegations(caller=self.auth, slice_id=slice_id, did=delegation_id,
+                                                  id_token=id_token)
+            self.last_status = result.status
+
+            if result.status.get_code() == 0:
+                return result.reservations
 
         except Exception as e:
             self.last_exception = e

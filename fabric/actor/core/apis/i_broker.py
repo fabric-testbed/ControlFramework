@@ -27,11 +27,12 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import TYPE_CHECKING
-if TYPE_CHECKING:
-    from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 
 from fabric.actor.core.apis.i_client_actor import IClientActor
 from fabric.actor.core.apis.i_server_actor import IServerActor
+
+if TYPE_CHECKING:
+    from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 
 
 class IBroker(IClientActor, IServerActor):
@@ -42,10 +43,10 @@ class IBroker(IClientActor, IServerActor):
     def extend_ticket_broker(self, *, reservation: IBrokerReservation):
         """
         Processes an extend ticket request for the reservation.
-       
+
         @param reservation reservation representing a request for a ticket
                extension
-       
+
         @throws Exception in case of error
         """
 
@@ -53,8 +54,8 @@ class IBroker(IClientActor, IServerActor):
     def ticket_broker(self, *, reservation: IBrokerReservation):
         """
         Processes a ticket request for the reservation.
-       
+
         @param reservation reservation representing a request for a new ticket
-       
+
         @throws Exception in case of error
         """

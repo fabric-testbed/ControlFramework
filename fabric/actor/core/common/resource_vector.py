@@ -25,22 +25,32 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import array as arr
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ResourcesException
+
 
 class ResourceVector:
+    """
+    Resource Vector
+    """
     def __init__(self, *, dimensions: int):
         self.vector = arr.array('L')
         for i in range(dimensions):
             self.vector.append(0)
 
     def _enforce_compatibility(self, *, other):
+        """
+        Enforce compatibility
+        @param other other
+        """
         if other is None:
-            raise Exception("other cannot be null")
+            raise ResourcesException("other cannot be null")
 
         if not isinstance(other, ResourceVector):
-            raise Exception("Invalid argument")
+            raise ResourcesException(Constants.invalid_argument)
 
         if len(other.vector) != len(self.vector):
-            raise Exception("mismatched dimensions")
+            raise ResourcesException("mismatched dimensions")
 
     def add(self, *, other):
         """

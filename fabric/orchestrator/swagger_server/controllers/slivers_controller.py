@@ -16,7 +16,7 @@ def slivers_get(slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    return rc.slivers_get(slice_id)
+    return 'do some magic!'
 
 
 def slivers_modify_sliver_idput(body, sliver_id, slice_id):  # noqa: E501
@@ -35,7 +35,7 @@ def slivers_modify_sliver_idput(body, sliver_id, slice_id):  # noqa: E501
     """
     if connexion.request.is_json:
         body = str.from_dict(connexion.request.get_json())  # noqa: E501
-    return rc.slivers_modify_sliver_idput(body, sliver_id, slice_id)
+    return 'do some magic!'
 
 
 def slivers_poa_sliver_idpost(body, sliver_id):  # noqa: E501
@@ -52,7 +52,7 @@ def slivers_poa_sliver_idpost(body, sliver_id):  # noqa: E501
     """
     if connexion.request.is_json:
         body = str.from_dict(connexion.request.get_json())  # noqa: E501
-    return rc.slivers_poa_sliver_idpost(body, sliver_id)
+    return 'do some magic!'
 
 
 def slivers_sliver_idget(slice_id, sliver_id):  # noqa: E501
@@ -67,7 +67,7 @@ def slivers_sliver_idget(slice_id, sliver_id):  # noqa: E501
 
     :rtype: Success
     """
-    return rc.slivers_sliver_idget(slice_id, sliver_id)
+    return 'do some magic!'
 
 
 def slivers_status_sliver_idget(slice_id, sliver_id):  # noqa: E501
@@ -82,4 +82,4 @@ def slivers_status_sliver_idget(slice_id, sliver_id):  # noqa: E501
 
     :rtype: Success
     """
-    return rc.slivers_status_sliver_idget(slice_id, sliver_id)
+    return 'do some magic!'

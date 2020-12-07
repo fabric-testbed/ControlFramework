@@ -26,6 +26,9 @@
 
 
 class DelegationNotFoundException(Exception):
+    """
+    Delegation Not Found Exception
+    """
     def __init__(self, *, text: str = None, did=None):
         super(DelegationNotFoundException, self).__init__()
         if text is not None:
@@ -39,6 +42,9 @@ class DelegationNotFoundException(Exception):
 
 
 class ReservationNotFoundException(Exception):
+    """
+    Reservation not found exception
+    """
     def __init__(self, *, text: str = None, rid=None):
         super(ReservationNotFoundException, self).__init__()
         if text is not None:
@@ -52,6 +58,9 @@ class ReservationNotFoundException(Exception):
 
 
 class SliceNotFoundException(Exception):
+    """
+    Slice not found exception
+    """
     def __init__(self, *, text: str = None, slice_id=None):
         super(SliceNotFoundException, self).__init__()
         if text is not None:
@@ -62,3 +71,147 @@ class SliceNotFoundException(Exception):
 
     def __str__(self):
         return self.text
+
+
+class AuthorityException(Exception):
+    """
+    Authority Exception
+    """
+
+
+class KernelException(Exception):
+    """
+    Kernel Exception
+    """
+
+
+class ResourcesException(Exception):
+    """
+    Resources Exception
+    """
+
+
+class BrokerException(Exception):
+    """
+    Authority Exception
+    """
+
+
+class DatabaseException(Exception):
+    """
+    Database exception
+    """
+
+
+class EventException(Exception):
+    """
+    Event exception
+    """
+
+
+class ContainerException(Exception):
+    """
+    Exception raised by container
+    """
+
+
+class InitializationException(Exception):
+    """
+    Exception raised for Initialization Errors
+    """
+
+
+class KafkaServiceException(Exception):
+    """
+    Exception raised for Kafka Service Errors
+    """
+
+
+class ActorException(Exception):
+    """
+    Actor Exception
+    """
+
+
+class ControllerException(Exception):
+    """
+    Controller Exception
+    """
+
+
+class TicketException(Exception):
+    """
+    Ticket Exception
+    """
+
+
+class UnitException(Exception):
+    """
+    Unit Exception
+    """
+
+
+class DelegationException(Exception):
+    """
+    Delegation Exception
+    """
+
+
+class PluginException(Exception):
+    """
+    Plugin Exception
+    """
+
+
+class ReservationException(Exception):
+    """
+    Reservation Exception
+    """
+
+
+class SliceException(Exception):
+    """
+    Slice Exception
+    """
+
+
+class TickException(Exception):
+    """
+    Tick Exception
+    """
+
+
+class ManageException(Exception):
+    """
+    Manage Exception
+    """
+
+
+class PolicyException(Exception):
+    """
+    Policy Exception
+    """
+
+
+class ProxyException(Exception):
+    """
+    Proxy Exception
+    """
+
+
+class RegistryException(Exception):
+    """
+    Registry Exception
+    """
+
+
+class TimeException(Exception):
+    """
+    Time Exception
+    """
+
+
+class FrameworkException(Exception):
+    """
+    Framework Exception
+    """

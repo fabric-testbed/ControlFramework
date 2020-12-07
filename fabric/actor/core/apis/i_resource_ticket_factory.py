@@ -38,6 +38,9 @@ if TYPE_CHECKING:
 
 
 class IResourceTicketFactory:
+    """
+    Interface for Factory class for Resource Tickets
+    """
     @abstractmethod
     def set_actor(self, *, actor: IActor):
         """
@@ -60,8 +63,9 @@ class IResourceTicketFactory:
         """
 
     @abstractmethod
-    def make_delegation(self, *, units: int, vector: ResourceVector, term: Term, rtype: ResourceType, sources: list = None,
-                        bins: list = None, properties: dict = None, holder: ID = None) -> ResourceDelegation:
+    def make_delegation(self, *, units: int, vector: ResourceVector, term: Term, rtype: ResourceType,
+                        sources: list = None, bins: list = None, properties: dict = None,
+                        holder: ID = None) -> ResourceDelegation:
         """
         Creates a new ResourceDelegation
         @param units number of units
@@ -96,7 +100,7 @@ class IResourceTicketFactory:
         """
 
     @abstractmethod
-    def toJson(self, *, ticket: ResourceTicket) -> str:
+    def to_json(self, *, ticket: ResourceTicket) -> str:
         """
         Converts the resource ticket to JSON.
         @param ticket ticket to convert
@@ -104,9 +108,9 @@ class IResourceTicketFactory:
         """
 
     @abstractmethod
-    def fromJson(self, *, json_string: str) -> ResourceTicket:
+    def from_json(self, *, incoming: dict) -> ResourceTicket:
         """
         Obtains a resource ticket from JSON.
-        @param json_string JSON string representation
+        @param incoming JSON string representation
         @return resource ticket
         """

@@ -36,6 +36,8 @@ from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_database import IDatabase
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import AuthorityException
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
@@ -67,16 +69,16 @@ class AuthorityPolicyTest(BaseTestCase):
     TicketNewEndCycle = TicketEndCycle + 10
     TicketUnits = 1
 
-    Logger = logging.getLogger('AuthorityPolicyTest')
+    logger = logging.getLogger('AuthorityPolicyTest')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
     logging.basicConfig(format=log_format, filename="actor.log")
-    Logger.setLevel(logging.INFO)
+    logger.setLevel(logging.INFO)
 
     authority = None
 
     def make_actor_database(self) -> IDatabase:
-        db = SubstrateActorDatabase(user=self.DbUser, password=self.DbPwd, database=self.DbName, db_host=self.DbHost,
-                                    logger=self.Logger)
+        db = SubstrateActorDatabase(user=self.db_user, password=self.db_pwd, database=self.db_name, db_host=self.db_host,
+                                    logger=self.logger)
         return db
 
     def make_plugin(self):
@@ -84,7 +86,7 @@ class AuthorityPolicyTest(BaseTestCase):
         plugin = Substrate(actor=None, db=None, config=config)
         return plugin
 
-    def get_authority(self, name: str = BaseTestCase.AuthorityName, guid: ID = BaseTestCase.AuthorityGuid):
+    def get_authority(self, name: str = BaseTestCase.authority_name, guid: ID = BaseTestCase.authority_guid):
         db = self.get_container_database()
         db.reset_db()
         authority = super().get_authority()
@@ -93,7 +95,7 @@ class AuthorityPolicyTest(BaseTestCase):
         return authority
 
     def get_source(self, units: int, rtype: ResourceType, term: Term, actor: IActor, slice_obj: ISlice):
-        raise Exception("Not implemented")
+        raise AuthorityException("Not implemented")
 
     def get_ticket(self, units: int, rtype: ResourceType, term: Term, source: IClientReservation, actor: IActor, holder: ID) -> Ticket:
         src_ticket = source.get_resources().get_resources().get_ticket()
@@ -254,7 +256,7 @@ class AuthorityPolicyTest(BaseTestCase):
                     self.parent.check_incoming_close_lease(site, request, reservation, update_data)
                     self.waiting_for_close = False
                 else:
-                    raise Exception("Invalid state")
+                    raise AuthorityException(Constants.invalid_state)
 
             def check_termination(self):
                 self.parent.assertFalse(self.waiting_for_lease)
@@ -305,7 +307,7 @@ class AuthorityPolicyTest(BaseTestCase):
                     self.parent.check_incoming_close_lease(site, request, reservation, update_data)
                     self.waiting_for_close = False
                 else:
-                    raise Exception("Invalid state")
+                    raise AuthorityException(Constants.invalid_state)
 
             def check_termination(self):
                 self.parent.assertFalse(self.waiting_for_lease)
@@ -361,7 +363,7 @@ class AuthorityPolicyTest(BaseTestCase):
                                                            udd=update_data)
                     self.waiting_for_close = False
                 else:
-                    raise Exception("Invalid state")
+                    raise AuthorityException(Constants.invalid_state)
 
             def check_termination(self):
                 self.parent.assertFalse(self.waiting_for_lease)

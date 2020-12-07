@@ -25,13 +25,15 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 import ipaddress
-from typing import TYPE_CHECKING
+
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import FrameworkException
 
 
 class IPv4Set:
-    EntrySeparator = ","
-    SubnetMark = "/"
-    RangeMark = "-"
+    entry_separator = ","
+    subnet_mark = "/"
+    range_mark = "-"
 
     def __init__(self, *, ip_list: str = None):
         self.free_set = set()
@@ -41,29 +43,29 @@ class IPv4Set:
             self.add(ip_list=ip_list)
 
     def add(self, *, ip_list: str):
-        for token in ip_list.split(self.EntrySeparator):
-            if token.find(self.SubnetMark) > -1:
+        for token in ip_list.split(self.entry_separator):
+            if token.find(self.subnet_mark) > -1:
                 self.process_subnet(token=token)
-            elif token.find(self.RangeMark) > -1:
+            elif token.find(self.range_mark) > -1:
                 self.process_range(token=token)
             else:
                 self.process_single(token=token)
 
     def process_subnet(self, *, token: str):
-        tokens = token.split(self.SubnetMark)
+        tokens = token.split(self.subnet_mark)
         if len(tokens) != 2:
-            raise Exception("Invalid subnet: {}".find(token))
+            raise FrameworkException("Invalid subnet: {}".find(token))
 
-        base = self.to_IP4(ip=tokens[0])
+        base = self.to_ip4(ip=tokens[0])
 
         size = int(tokens[1])
 
         if size < 16 or size > 32:
-            raise Exception("Invalid subnet size: {}".format(size))
+            raise FrameworkException("Invalid subnet size: {}".format(size))
 
         network = ipaddress.IPv4Network(token, False)
-        all = list(network.hosts())
-        last = all[-1]
+        all_ips = list(network.hosts())
+        last = all_ips[-1]
         start = base
         end = int(last)
 
@@ -72,23 +74,23 @@ class IPv4Set:
             start += 1
 
     def process_range(self, *, token: str):
-        tokens = token.split(self.RangeMark)
+        tokens = token.split(self.range_mark)
         if len(tokens) != 2:
-            raise Exception("Invalid range: {}".find(token))
+            raise FrameworkException("Invalid range: {}".find(token))
 
         start = str(self.pad_if_needed(token=tokens[0]))
-        start_ip = self.to_IP4(ip=start)
+        start_ip = self.to_ip4(ip=start)
         end = tokens[1]
 
         if end.find(".") == -1:
             end = start[0:start.rfind(".")] + "." + end
 
-        end_ip = self.to_IP4(ip=end)
+        end_ip = self.to_ip4(ip=end)
 
         size = end_ip - start_ip + 1
 
         if size < 0 | size > 65536:
-            raise Exception("Range must be positive and less than 65536")
+            raise FrameworkException("Range must be positive and less than 65536")
 
         for i in range(size):
             self.free_set.add(start_ip + i)
@@ -108,21 +110,21 @@ class IPv4Set:
         return token
 
     def process_single(self, *, token: str):
-        self.free_set.add(self.to_IP4(ip=token))
+        self.free_set.add(self.to_ip4(ip=token))
 
     def allocate(self):
         item = self.free_set.pop()
         self.allocated.add(item)
-        ret_val = self.int_to_IP4(ip=item)
+        ret_val = self.int_to_ip4(ip=item)
         return ret_val
 
     def free(self, *, ip: str):
-        val = self.to_IP4(ip=ip)
+        val = self.to_ip4(ip=ip)
         self.allocated.remove(val)
         self.free_set.add(val)
 
     def reserve(self, *, ip: str):
-        val = self.to_IP4(ip=ip)
+        val = self.to_ip4(ip=ip)
         self.free_set.remove(val)
         self.allocated.add(val)
 
@@ -139,25 +141,17 @@ class IPv4Set:
             return True
         return False
 
-    def to_IP4(self, *, ip: str):
+    def to_ip4(self, *, ip: str):
         tokens = ip.split(".")
         if len(tokens) != 4:
-            raise Exception("Invalid ip address: {}".format(ip))
+            raise FrameworkException(Constants.invalid_ip.format(ip))
 
-        result = 0
-        try:
-            result = int(ipaddress.ip_address(ip))
-        except Exception as e:
-            raise Exception("Invalid ip address: {}".format(ip))
+        result = int(ipaddress.ip_address(ip))
 
         return result
 
-    def int_to_IP4(self, *, ip: int):
-        result = None
-        try:
-            result = ipaddress.ip_address(ip).__str__()
-        except Exception as e:
-            raise Exception("Invalid ip address: {}".format(ip))
+    def int_to_ip4(self, *, ip: int):
+        result = ipaddress.ip_address(ip).__str__()
 
         return result
 

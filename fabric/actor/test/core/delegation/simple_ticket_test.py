@@ -37,7 +37,7 @@ from fabric.actor.test.base_test_case import BaseTestCase
 
 class SimpleTicketTest(BaseTestCase, unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -66,15 +66,15 @@ class SimpleTicketTest(BaseTestCase, unittest.TestCase):
         d0 = self.factory.make_delegation(units=self.units, term=self.term, rtype=self.type)
         ticket0 = self.factory.make_ticket(delegation=d0)
 
-        print(self.factory.toJson(ticket=ticket0))
+        print(self.factory.to_json(ticket=ticket0))
 
     def test_simple_ticket_with_bins(self):
         bin0 = ResourceBin(physical_units=self.units, term=self.term)
         source_list = [bin0.get_guid()]
         bin_list = [bin0]
         d0 = self.factory.make_delegation(units=self.units, term=self.term, rtype=self.type, sources=source_list,
-                                          bins=bin_list, holder=ID(id=self.factory.get_actor().get_name()))
+                                          bins=bin_list, holder=ID(uid=self.factory.get_actor().get_name()))
         ticket0 = self.factory.make_ticket(delegation=d0)
 
-        print(self.factory.toJson(ticket=ticket0))
+        print(self.factory.to_json(ticket=ticket0))
 

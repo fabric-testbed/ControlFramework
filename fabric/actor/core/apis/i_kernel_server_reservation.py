@@ -45,7 +45,7 @@ class IKernelServerReservation(IKernelReservation, IServerReservation):
     def set_requested_resources(self, *, resources: ResourceSet):
         """
         Sets the requested resources.
-       
+
         @param resources requested resources
         """
 
@@ -53,6 +53,6 @@ class IKernelServerReservation(IKernelReservation, IServerReservation):
     def set_requested_term(self, *, term: Term):
         """
         Sets the requested term.
-       
+
         @param term requested term
         """

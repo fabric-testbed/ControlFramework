@@ -29,14 +29,13 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_delegation import IDelegation
+from fabric.actor.core.apis.i_server_proxy import IServerProxy
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
     from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.security.auth_token import AuthToken
-
-from fabric.actor.core.apis.i_server_proxy import IServerProxy
 
 
 class IBrokerProxy(IServerProxy):
@@ -76,7 +75,7 @@ class IBrokerProxy(IServerProxy):
 
     @abstractmethod
     def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                 caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+                                 caller: AuthToken, id_token: str = None) -> IRPCRequestState:
         """
         Prepare a claim delegation
         @params delegation: delegation
@@ -86,7 +85,7 @@ class IBrokerProxy(IServerProxy):
 
     @abstractmethod
     def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                   caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+                                   caller: AuthToken, id_token: str = None) -> IRPCRequestState:
         """
         Prepare a reclaim delegation
         @params delegation: delegation

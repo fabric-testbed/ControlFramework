@@ -28,6 +28,7 @@ import threading
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.apis.i_proxy import IProxy
+from fabric.actor.core.common.exceptions import RegistryException
 from fabric.actor.core.registry.callback_registry import CallbackRegistry
 from fabric.actor.core.registry.proxy_registry import ProxyRegistry
 
@@ -158,7 +159,7 @@ class ActorRegistry:
         try:
             self.lock.acquire()
             if actor_name in self.actors or guid in self.actors_by_guid:
-                raise Exception("An actor name {} already exists".format(actor_name))
+                raise RegistryException("An actor name {} already exists".format(actor_name))
 
             entry = self.ActorRegistryEntry(actor=actor)
             self.actors_by_guid[guid] = entry
@@ -177,7 +178,7 @@ class ActorRegistry:
         try:
             self.lock.acquire()
             if actor_name not in self.actors:
-                raise Exception("Actor name {} not found".format(actor_name))
+                raise RegistryException("Actor name {} not found".format(actor_name))
 
             entry = self.actors[actor_name]
             entry.register_kafka_topic(protocol, kafka_topic)
@@ -212,7 +213,7 @@ class ActorRegistrySingleton:
 
     def __init__(self):
         if self.__instance is not None:
-            raise Exception("Singleton can't be created twice !")
+            raise RegistryException("Singleton can't be created twice !")
 
     def get(self):
         """

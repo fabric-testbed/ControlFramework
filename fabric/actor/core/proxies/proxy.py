@@ -31,6 +31,8 @@ from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.apis.i_concrete_set import IConcreteSet
 from fabric.actor.core.apis.i_proxy import IProxy
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.util.id import ID
@@ -43,11 +45,7 @@ class Proxy(IProxy):
     Proxy class represents a stub to an actor. Proxies define a general interface, which is implementation
     independent and enables easy implementation of new communication protocols.
     """
-    PropertyProxyType = "ProxyType"
-    PropertyProxyActorAuth = "ProxyActorAuth"
-    PropertyProxyActorName = "ProxyActorName"
-    PropertyProxyActorGuid = "ProxyActorGuid"
-    PropertyProxyCallback = "ProxyCallback"
+    PropertyProxyActorName = "prx_name"
 
     @staticmethod
     def get_callback(*, actor: IActor, protocol: str) -> ICallbackProxy:
@@ -58,11 +56,11 @@ class Proxy(IProxy):
         @return ICallbackProxy
         """
         if actor is None:
-            raise Exception("actor cannot be None")
+            raise ProxyException(Constants.not_specified_prefix.format("actor"))
 
         callback = ActorRegistrySingleton.get().get_callback(protocol=protocol, actor_name=actor.get_name())
         if callback is None:
-            raise Exception("Could not obtain callback proxy: protocol={}".format(protocol))
+            raise ProxyException("Could not obtain callback proxy: protocol={}".format(protocol))
         return callback
 
     @staticmethod
@@ -77,50 +75,47 @@ class Proxy(IProxy):
         @return IProxy
         @throws Exception in case of error
         """
-        name = properties[Proxy.PropertyProxyActorName]
-        type = properties[Proxy.PropertyProxyType]
-        is_callback = properties[Proxy.PropertyProxyCallback]
+        proxy_reload_from_db = pickle.loads(properties.get(Constants.property_pickle_properties))
+        proxy_type = proxy_reload_from_db.get_type()
+        name = proxy_reload_from_db.get_name()
+
+        is_callback = proxy_reload_from_db.callback
+
         proxy = None
         if is_callback:
-            proxy = ActorRegistrySingleton.get().get_callback(protocol=type, actor_name=name)
+            proxy = ActorRegistrySingleton.get().get_callback(protocol=proxy_type, actor_name=name)
         else:
-            proxy = ActorRegistrySingleton.get().get_proxy(protocol=type, actor_name=name)
+            proxy = ActorRegistrySingleton.get().get_proxy(protocol=proxy_type, actor_name=name)
 
         if proxy is None:
-            Proxy.recover_proxy(properties=properties, register=True)
+            proxy = Proxy.recover_proxy(proxy_reload_from_db=proxy_reload_from_db, register=True)
         else:
-            # TODO
-            proxy = Proxy.recover_proxy(properties=properties, register=False)
+            proxy = Proxy.recover_proxy(proxy_reload_from_db=proxy_reload_from_db, register=False)
         return proxy
 
     @staticmethod
-    def recover_proxy(*, properties: dict, register: bool):
+    def recover_proxy(*, proxy_reload_from_db: IProxy, register: bool) -> IProxy:
         """
         Creates a proxy list from a properties list representing the
         serialization of the proxy. Optionally, the resulting object may be
         registered with the ActorRegistry so that it becomes visible
         to the rest of the system.
-        @param properties Properties dict representing the proxy
+        @param proxy_reload_from_db proxy_reload_from_db
         @param register If true, the resulting proxy is registered with the
                    container's ActorRegistry
         @return Proxy
         @throws Exception in case of error
         """
-        # TODO restore
-        proxy = None
-        name = "unknown actor"
-        if Proxy.PropertyProxyActorName in properties:
-            name = properties[Proxy.PropertyProxyActorName]
 
         from fabric.actor.core.container.globals import GlobalsSingleton
-        proxy.set_logger(GlobalsSingleton.get().get_logger())
+        proxy_reload_from_db.set_logger(GlobalsSingleton.get().get_logger())
 
         if register:
-            if proxy.callback:
-                ActorRegistrySingleton.get().register_callback(callback=proxy)
+            if proxy_reload_from_db.callback:
+                ActorRegistrySingleton.get().register_callback(callback=proxy_reload_from_db)
             else:
-                ActorRegistrySingleton.get().register_proxy(proxy=proxy)
-        return proxy
+                ActorRegistrySingleton.get().register_proxy(proxy=proxy_reload_from_db)
+        return proxy_reload_from_db
 
     @staticmethod
     def decode(*, encoded, plugin: IBasePlugin) -> IConcreteSet:

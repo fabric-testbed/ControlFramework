@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
     from fabric.actor.core.apis.i_slice import ISlice
-    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.util.reservation_set import ReservationSet
 
@@ -57,7 +56,7 @@ class IClientActor(IActor, IClientPublic):
         """
         Registers a broker. If this is the first broker to be registered, it is
         set as the default broker.
-        
+
         @params broker broker to register
         """
 
@@ -73,10 +72,10 @@ class IClientActor(IActor, IClientPublic):
         """
         Issues a ticket extend request for the given reservation. Note: the
         reservation must have already been registered with the actor.
-        
+
         @param reservation reservation to extend the ticket for
         @param rset set of reservations to extend tickets for
-        
+
         @throws Exception in case of error
         """
 
@@ -96,9 +95,9 @@ class IClientActor(IActor, IClientPublic):
     def get_broker(self, *, guid: ID) -> IBrokerProxy:
         """
         Gets the broker proxy with the given guid
-        
+
         @param guid broker guid
-        
+
         @return requested broker
         """
 
@@ -106,7 +105,7 @@ class IClientActor(IActor, IClientPublic):
     def get_brokers(self) -> list:
         """
         Returns all brokers registered with the actor.
-        
+
         @return an array of brokers
         """
 
@@ -114,7 +113,7 @@ class IClientActor(IActor, IClientPublic):
     def get_default_broker(self) -> IBrokerProxy:
         """
         Returns the default broker.
-        
+
         @return the default broker
         """
 
@@ -123,12 +122,12 @@ class IClientActor(IActor, IClientPublic):
         """
         Issues a ticket request for the given reservation. Note: the reservation
         must have already been registered with the actor.
-        
+
         All exceptions are caught and logged but no exception is propagated. No information will
         be delivered to indicate that some failure has taken place, e.g., failure
         to communicate with a broker. Inspect the state of individual
         reservations to determine whether/what failures have taken place.
-        
+
         @param reservation reservation to obtain a ticket for
 
         @throws Exception in case of error
@@ -155,7 +154,7 @@ class IClientActor(IActor, IClientPublic):
         """
         Issue modify request for given reservation. Note: the reservation
         must have already been registered with the actor.
-       
+
         @param reservation_id reservationID for the reservation to modify
         @param modify_properties property list for modify
         @throws Exception in case of error
@@ -163,7 +162,7 @@ class IClientActor(IActor, IClientPublic):
 
     @abstractmethod
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
+                                broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         """
         Claims already exported resources from the given broker. The delegation
         will be stored in the default slice.
@@ -179,7 +178,7 @@ class IClientActor(IActor, IClientPublic):
 
     @abstractmethod
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                  broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
+                                  broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         """
         Reclaims already exported resources from the given broker. The delegation
         will be stored in the default slice.

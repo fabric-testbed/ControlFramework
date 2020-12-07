@@ -30,12 +30,24 @@ from fabric.actor.security.pdp_auth import ActionId, ResourceType, PdpAuth
 
 
 class AccessChecker:
+    """
+    Check access for Incoming operation against Policy Decision Point PDP
+    """
     @staticmethod
     def check_access(*, action_id: ActionId, resource_type: ResourceType, token: str,
-                     resource_id: str = None, logger = None, actor_type: ActorType) -> bool:
+                     resource_id: str = None, logger=None, actor_type: ActorType) -> bool:
+        """
+        Check access for Incoming operation against Policy Decision Point PDP
+        @param action_id action id
+        @param resource_type resource type
+        @param token fabric token
+        @param resource_id resource id
+        @param logger logger
+        @param actor_type actor type
+        """
         from fabric.actor.core.container.globals import GlobalsSingleton
         token_public_key = GlobalsSingleton.get().get_config().get_oauth_config().get(
-            Constants.PropertyConfOAuthTokenPublicKey, None)
+            Constants.property_conf_o_auth_token_public_key, None)
         pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
 
         fabric_token = FabricToken(token_public_key=token_public_key, logger=logger,

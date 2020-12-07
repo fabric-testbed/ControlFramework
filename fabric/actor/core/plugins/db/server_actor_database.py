@@ -33,32 +33,6 @@ from fabric.actor.core.util.id import ID
 
 
 class ServerActorDatabase(ActorDatabase, ClientDatabase):
-    def __init__(self, *, user: str, password: str, database: str, db_host: str, logger):
-        super().__init__(user=user, password=password, database=database, db_host=db_host, logger=logger)
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['db']
-        del state['actor_name']
-        del state['actor_id']
-        del state['initialized']
-        del state['logger']
-        del state['reset_state']
-        del state['lock']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        from fabric.actor.db.psql_database import PsqlDatabase
-        self.db = PsqlDatabase(user=self.user, password=self.password, database=self.database, db_host=self.db_host,
-                               logger=None)
-        self.actor_name = None
-        self.actor_id = None
-        self.initialized = False
-        self.logger = None
-        self.reset_state = False
-        self.lock = threading.Lock()
-
     def add_client(self, *, client: Client):
         try:
             self.lock.acquire()

@@ -28,12 +28,15 @@ from typing import TYPE_CHECKING
 
 import threading
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import SliceException
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
     from fabric.actor.core.util.id import ID
 
 
-class SliceTable2:
+class SliceTable:
     def __init__(self):
         self.lock = threading.Lock()
         self.slices = {}
@@ -47,20 +50,20 @@ class SliceTable2:
     def add(self, *, slice_object: IKernelSlice):
         """
         Adds the given slice to the slice table.
-       
+
         @param slice_object slice to add
-       
+
         @throws Exception if the slice is invalid
         @throws Exception if the slice is already present in the table
         """
         if slice_object.get_slice_id() is None or slice_object.get_name() is None:
-            raise Exception("Invalid Argument")
+            raise SliceException(Constants.invalid_argument)
 
         try:
             self.lock.acquire()
 
             if slice_object.get_slice_id() in self.slices:
-                raise Exception("Already exists")
+                raise SliceException("Already exists")
 
             if slice_object.is_inventory():
                 self.inventory_slices[slice_object.get_slice_id()] = slice_object
@@ -69,7 +72,7 @@ class SliceTable2:
             elif slice_object.is_client():
                 self.client_slices[slice_object.get_slice_id()] = slice_object
             else:
-                raise Exception("Unsupported slice type")
+                raise SliceException("Unsupported slice type")
 
             self.slices[slice_object.get_slice_id()] = slice_object
 
@@ -87,9 +90,9 @@ class SliceTable2:
     def contains(self, *, slice_id: ID) -> bool:
         """
         Checks if the specified slice is contained in the table.
-       
+
         @param slice_id identifier of slice to check
-       
+
         @return true if the slice is contained in the table, false otherwise
         """
         ret_val = False
@@ -103,14 +106,14 @@ class SliceTable2:
     def get(self, *, slice_id: ID, raise_exception: bool = False) -> IKernelSlice:
         """
         Returns the specified slice.
-       
+
         @param slice_id identifier of slice to return
         @param raise_exception: raise_exception
-       
+
         @return slice or null if the slice is not present in the table
         """
         if slice_id is None:
-            raise Exception("Invalid argument")
+            raise SliceException("Invalid argument")
 
         result = None
         try:
@@ -121,15 +124,15 @@ class SliceTable2:
         finally:
             self.lock.release()
         if raise_exception and result is None:
-            raise Exception("not registered")
+            raise SliceException("not registered")
         return result
 
     def get_slice_name(self, *, slice_name: str) -> list:
         """
         Returns all slices with the given name.
-       
+
         @param slice_name slice name
-       
+
         @return an list of slices with the given name
         """
         ret_val = None
@@ -147,7 +150,7 @@ class SliceTable2:
     def get_broker_client_slices(self) -> list:
         """
         Returns all broker client slices in the table.
-       
+
         @return a list of broker client slices
         """
         ret_val = None
@@ -164,7 +167,7 @@ class SliceTable2:
     def get_client_slices(self) -> list:
         """
         Returns all client slices in the table.
-       
+
         @return an array of client slices
         """
         ret_val = None
@@ -182,7 +185,7 @@ class SliceTable2:
     def get_inventory_slices(self) -> list:
         """
         Returns all inventory slices in the table.
-       
+
         @return a list of inventory slices
         """
         ret_val = None
@@ -198,7 +201,7 @@ class SliceTable2:
     def get_slices(self) -> list:
         """
         Returns all slices in the table.
-       
+
         @return a list of slices
         """
         ret_val = None
@@ -214,20 +217,20 @@ class SliceTable2:
     def remove(self, *, slice_id: ID):
         """
         Removes the specified slice.
-       
+
         @param slice_id identifier of slice to remove
-       
+
         @throws Exception if the specified slice is not in the table
         """
         if slice_id is None:
-            raise Exception("Invalid argument")
+            raise SliceException("Invalid argument")
 
         try:
             self.lock.acquire()
             slice_obj = self.slices.pop(slice_id)
 
             if slice_obj is None:
-                raise Exception("not registered")
+                raise SliceException("not registered")
 
             if slice_obj.is_inventory():
                 self.inventory_slices.pop(slice_id)
@@ -236,7 +239,7 @@ class SliceTable2:
             elif slice_obj.is_client():
                 self.client_slices.pop(slice_id)
             else:
-                raise Exception("Unsupported slice type")
+                raise SliceException("Unsupported slice type")
             if slice_obj.get_name() in self.slices_by_name:
                 entry = self.slices_by_name[slice_obj.get_name()]
                 if entry is not None:

@@ -26,18 +26,20 @@
 from __future__ import annotations
 
 from datetime import datetime
+
+from fabric.actor.core.common.exceptions import ResourcesException
 from fabric.actor.core.util.resource_type import ResourceType
 
 from fabric.actor.core.common.resource_pool_attribute_descriptor import ResourcePoolAttributeDescriptor
 
 
 class ResourcePoolDescriptor:
-    PropertyType = "type"
-    PropertyLabel = "label"
-    PropertyDescription = "description"
-    PropertyAttributesPrefix = "attribute."
-    PropertyAttributesCount = "attributescount"
-    PropertyKey = "key"
+    property_type = "type"
+    property_label = "label"
+    property_description = "description"
+    property_attributes_prefix = "attribute."
+    property_attributes_count = "attributescount"
+    property_key = "key"
 
     def __init__(self):
         self.attributes = {}
@@ -62,100 +64,215 @@ class ResourcePoolDescriptor:
                    self.factory_class)
 
     def get_resource_type(self) -> ResourceType:
+        """
+        Get resource type
+        @return resource type
+        """
         return self.resource_type
 
     def set_resource_type(self, *, rtype: ResourceType):
+        """
+        Set resource type
+        @param rtype resource type
+        """
         self.resource_type = rtype
 
     def get_handler_module(self) -> str:
+        """
+        Get Handler Module
+        @return handler module
+        """
         return self.handler_module
 
     def set_handler_module(self, *, module: str):
+        """
+        Set Handler module
+        @param module Handler module
+        """
         self.handler_module = module
 
     def set_handler_class(self, *, handler_class: str):
+        """
+        Set Handler class
+        @param handler_class Handler class
+        """
         self.handler_class = handler_class
 
     def get_handler_class(self) -> str:
+        """
+        Get Handler class
+        @return handler class
+        """
         return self.handler_class
 
     def get_handler_properties(self) -> dict:
+        """
+        Get Handler Properties
+        @return handler Properties
+        """
         return self.handler_properties
 
     def set_handler_properties(self, *, properties: dict):
+        """
+        Set handler Properties
+        @param properties handler Properties
+        """
         self.handler_properties = properties
 
     def get_pool_properties(self) -> dict:
+        """
+        Get Pool Properties
+        @return Pool Properties
+        """
         return self.pool_properties
 
     def set_pool_properties(self, *, properties: dict):
+        """
+        Set Pool Properties
+        @param properties Pool Properties
+        """
         self.pool_properties = properties
 
     def get_resource_type_label(self) -> str:
+        """
+        Get resource type label
+        @return resource type label
+        """
         return self.resource_label
 
     def set_resource_type_label(self, *, rtype_label: str):
+        """
+        Set resource type label
+        @param rtype_label resource type label
+        """
         self.resource_label = rtype_label
 
     def get_units(self) -> int:
+        """
+        Get units
+        @return units
+        """
         return self.units
 
     def set_units(self, *, units: int):
+        """
+        Set units
+        @param units units
+        """
         self.units = units
 
     def get_start(self) -> datetime:
+        """
+        Get Start Lease Time
+        @return Start Lease Time
+        """
         return self.start
 
     def set_start(self, *, start: datetime):
+        """
+        Set start Lease Time
+        @param start start Lease Time
+        """
         self.start = start
 
     def get_end(self) -> datetime:
+        """
+        Get End Lease Time
+        @return End Lease Time
+        """
         return self.end
 
     def set_end(self, *, end: datetime):
+        """
+        Set End Lease Time
+        @param end End Lease Time
+        """
         self.end = end
 
     def get_description(self) -> str:
+        """
+        Get Description
+        @return description
+        """
         return self.description
 
     def set_description(self, *, description: str):
+        """
+        Set description
+        @param description description
+        """
         self.description = description
 
     def get_pool_factory_module(self) -> str:
+        """
+        Get Pool Factory Module
+        @return factory module
+        """
         return self.factory_module
 
     def set_pool_factory_module(self, *, factory_module: str):
+        """
+        Set Pool factory module
+        @param factory_module factory module
+        """
         self.factory_module = factory_module
 
     def get_pool_factory_class(self) -> str:
+        """
+        Get Pool Factory class
+        @return pool factory class
+        """
         return self.factory_class
 
     def set_pool_factory_class(self, *, factory_class: str):
+        """
+        Set Pool Factory Class
+        @param factory_class factory class
+        """
         self.factory_module = factory_class
 
     def get_attribute(self, *, key: str) -> ResourcePoolAttributeDescriptor:
+        """
+        Get an attribute
+        @param key attribute key
+        """
         if key in self.attributes:
             return self.attributes[key]
+        return None
 
     def get_attributes(self) -> list:
+        """
+        Return attributes
+        @return list of attributes
+        """
         return [x for x in self.attributes.values()]
 
     def add_attribute(self, *, attribute: ResourcePoolAttributeDescriptor):
+        """
+        Add an attribute
+        @param attribute Attribute
+        """
         self.attributes[attribute.get_key()] = attribute
 
-    def save(self, *, properties: dict, prefix: str) -> dict:
+    def save(self, *, properties: dict, prefix: str = None) -> dict:
+        """
+        Save properties
+        @param properties properties
+        @param prefix prefix
+        @return properties
+        """
         if prefix is None:
             prefix = ""
 
-        properties[prefix + self.PropertyType] = str(self.resource_type)
-        properties[prefix + self.PropertyLabel] = self.resource_label
+        properties[prefix + self.property_type] = str(self.resource_type)
+        properties[prefix + self.property_label] = self.resource_label
         if self.description is not None:
-            properties[prefix + self.PropertyDescription] = self.description
+            properties[prefix + self.property_description] = self.description
 
-        properties[prefix + self.PropertyAttributesCount] = str(len(self.attributes))
+        properties[prefix + self.property_attributes_count] = str(len(self.attributes))
         i = 0
         for a in self.attributes.values():
-            properties[prefix + self.PropertyAttributesPrefix + str(i) + "." + self.PropertyKey] = a.get_key()
+            properties[prefix + self.property_attributes_prefix + str(i) + "." + self.property_key] = a.get_key()
             if len(prefix) > 0:
                 temp = prefix + a.get_key() + "."
             else:
@@ -164,31 +281,36 @@ class ResourcePoolDescriptor:
             i += 1
         return properties
 
-    def reset(self, *, properties: dict, prefix: str):
+    def reset(self, *, properties: dict, prefix: str = None):
+        """
+        Reset properties
+        @param properties properties
+        @param prefix prefix
+        """
         if prefix is None:
             prefix = ""
 
-        if (prefix + self.PropertyType) not in properties:
-            raise Exception("Missing resource type")
+        if (prefix + self.property_type) not in properties:
+            raise ResourcesException("Missing resource type")
 
-        self.resource_type = ResourceType(resource_type=properties[prefix + self.PropertyType])
+        self.resource_type = ResourceType(resource_type=properties[prefix + self.property_type])
 
-        if (prefix + self.PropertyLabel) not in properties:
-            raise Exception("Missing resource label")
+        if (prefix + self.property_label) not in properties:
+            raise ResourcesException("Missing resource label")
 
-        self.resource_label = properties[prefix + self.PropertyLabel]
+        self.resource_label = properties[prefix + self.property_label]
 
-        if prefix + self.PropertyDescription in properties:
-            self.description = properties[prefix + self.PropertyDescription]
+        if prefix + self.property_description in properties:
+            self.description = properties[prefix + self.property_description]
 
-        if (prefix + self.PropertyAttributesCount) not in properties:
-            raise Exception("Missing attributes count")
+        if (prefix + self.property_attributes_count) not in properties:
+            raise ResourcesException("Missing attributes count")
 
-        count = int(properties[prefix + self.PropertyAttributesCount])
+        count = int(properties[prefix + self.property_attributes_count])
         for i in range(count):
-            key = prefix + self.PropertyAttributesPrefix + str(i) + "." + self.PropertyKey
+            key = prefix + self.property_attributes_prefix + str(i) + "." + self.property_key
             if key not in properties:
-                raise Exception("Could not find key for attribute #{}".format(i))
+                raise ResourcesException("Could not find key for attribute #{}".format(i))
             key_value = properties[key]
 
             if len(prefix) > 0:
@@ -202,11 +324,15 @@ class ResourcePoolDescriptor:
             self.add_attribute(attribute=attribute)
 
     def clone(self):
+        """
+        Clone an object
+        @return copy of current object
+        """
         properties = {}
-        self.save(properties=properties, prefix=None)
+        self.save(properties=properties)
         copy = ResourcePoolDescriptor()
         try:
-            copy.reset(properties=properties, prefix=None)
+            copy.reset(properties=properties)
         except Exception as e:
-            raise Exception("Unexpected error during deserialization={}".format(e))
+            raise ResourcesException("Unexpected error during deserialization={}".format(e))
         return copy

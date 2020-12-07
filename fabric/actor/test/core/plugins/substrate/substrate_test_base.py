@@ -33,7 +33,7 @@ from fabric.actor.test.base_test_case import BaseTestCase
 
 class SubstrateTestBase(BaseTestCase, unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -41,8 +41,8 @@ class SubstrateTestBase(BaseTestCase, unittest.TestCase):
         time.sleep(0.0001)
 
     def make_actor_database(self) -> IDatabase:
-        db = SubstrateActorDatabase(user=self.DbUser, password=self.DbPwd, database=self.DbName, db_host=self.DbHost,
-                                    logger=self.Logger)
+        db = SubstrateActorDatabase(user=self.db_user, password=self.db_pwd, database=self.db_name, db_host=self.db_host,
+                                    logger=self.logger)
         return db
 
     def test_actor(self):

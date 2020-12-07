@@ -37,6 +37,9 @@ if TYPE_CHECKING:
 
 
 class ISubstrate(IBasePlugin):
+    """
+    Base class for Substrate Plugin
+    """
     @abstractmethod
     def get_substrate_database(self) -> ISubstrateDatabase:
         """
@@ -77,4 +80,3 @@ class ISubstrate(IBasePlugin):
         @param reservation reservation that contains the unit
         @param unit unit to be modified.
         """
-

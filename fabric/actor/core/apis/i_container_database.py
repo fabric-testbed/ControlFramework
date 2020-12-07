@@ -42,9 +42,9 @@ class IContainerDatabase:
     def add_container_properties(self, *, properties: dict):
         """
         Adds the container properties  to the database.
-       
+
         @param properties container properties dict.
-       
+
         @throws Exception if an error occurs while accessing the database
         """
 
@@ -60,7 +60,7 @@ class IContainerDatabase:
     def set_reset_state(self, *, value: bool):
         """
         Controls whether the database should reset its state.
-       
+
         @param value TRUE if reset is required, FALSE otherwise
         """
 

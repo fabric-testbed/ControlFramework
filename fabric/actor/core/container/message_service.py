@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 
 import threading
 
+from fabric.actor.core.common.exceptions import KafkaServiceException
 from fabric.message_bus.consumer import AvroConsumerApi
 from fabric.message_bus.messages.message import IMessageAvro
 
@@ -40,9 +41,9 @@ if TYPE_CHECKING:
 
 class MessageService(AvroConsumerApi):
     def __init__(self, *, kafka_service: ActorService, kafka_mgmt_service: KafkaActorService, conf: dict, key_schema,
-                 record_schema, topics, batchSize=5, logger=None):
+                 record_schema, topics, batch_size=5, logger=None):
         super().__init__(conf=conf, key_schema=key_schema, record_schema=record_schema, topics=topics,
-                         batchSize=batchSize, logger=logger)
+                         batch_size=batch_size, logger=logger)
         self.thread_lock = threading.Lock()
         self.thread = None
         self.kafka_service = kafka_service
@@ -52,7 +53,7 @@ class MessageService(AvroConsumerApi):
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
-                raise Exception("This Message Service has already been started")
+                raise KafkaServiceException("This Message Service has already been started")
 
             self.thread = threading.Thread(target=self.consume_auto)
             self.thread.setName("MessageService")
@@ -82,22 +83,22 @@ class MessageService(AvroConsumerApi):
 
     def handle_message(self, *, message: IMessageAvro):
         try:
-            if message.get_message_name() == IMessageAvro.ClaimResources or \
-                    message.get_message_name() == IMessageAvro.ReclaimResources or \
-                    message.get_message_name() == IMessageAvro.GetSlicesRequest or \
-                    message.get_message_name() == IMessageAvro.GetReservationsRequest or \
-                    message.get_message_name() == IMessageAvro.GetReservationsStateRequest or \
-                    message.get_message_name() == IMessageAvro.GetDelegations or \
-                    message.get_message_name() == IMessageAvro.GetReservationUnitsRequest or \
-                    message.get_message_name() == IMessageAvro.GetUnitRequest or \
-                    message.get_message_name() == IMessageAvro.GetPoolInfoRequest or \
-                    message.get_message_name() == IMessageAvro.AddSlice or \
-                    message.get_message_name() == IMessageAvro.UpdateSlice or \
-                    message.get_message_name() == IMessageAvro.RemoveSlice or \
-                    message.get_message_name() == IMessageAvro.CloseReservations or \
-                    message.get_message_name() == IMessageAvro.UpdateReservation or \
-                    message.get_message_name() == IMessageAvro.RemoveReservation or \
-                    message.get_message_name() == IMessageAvro.ExtendReservation:
+            if message.get_message_name() == IMessageAvro.claim_resources or \
+                    message.get_message_name() == IMessageAvro.reclaim_resources or \
+                    message.get_message_name() == IMessageAvro.get_slices_request or \
+                    message.get_message_name() == IMessageAvro.get_reservations_request or \
+                    message.get_message_name() == IMessageAvro.get_reservations_state_request or \
+                    message.get_message_name() == IMessageAvro.get_delegations or \
+                    message.get_message_name() == IMessageAvro.get_reservation_units_request or \
+                    message.get_message_name() == IMessageAvro.get_unit_request or \
+                    message.get_message_name() == IMessageAvro.get_pool_info_request or \
+                    message.get_message_name() == IMessageAvro.add_slice or \
+                    message.get_message_name() == IMessageAvro.update_slice or \
+                    message.get_message_name() == IMessageAvro.remove_slice or \
+                    message.get_message_name() == IMessageAvro.close_reservations or \
+                    message.get_message_name() == IMessageAvro.update_reservation or \
+                    message.get_message_name() == IMessageAvro.remove_reservation or \
+                    message.get_message_name() == IMessageAvro.extend_reservation:
                 self.kafka_mgmt_service.process(message=message)
             else:
                 self.kafka_service.process(message=message)
@@ -105,5 +106,3 @@ class MessageService(AvroConsumerApi):
             traceback.print_exc()
             self.logger.error(e)
             self.logger.error("Discarding the incoming message {}".format(message))
-
-

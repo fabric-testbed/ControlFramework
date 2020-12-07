@@ -37,6 +37,9 @@ if TYPE_CHECKING:
 
 
 class IMgmtController(IMgmtActor, IMgmtClientActor):
+    """
+    Interface for Management Interface for a Controller
+    """
     @abstractmethod
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         """

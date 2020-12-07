@@ -33,14 +33,12 @@ from fabric.actor.core.kernel.controller_reservation_factory import ControllerRe
 from fabric.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.util.id import ID
-from fabric.actor.security.access_monitor import AccessMonitor
-from fabric.actor.security.guard import Guard
 from fabric.actor.test.base_test_case import BaseTestCase
 
 
 class KernelTest(BaseTestCase, unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -69,8 +67,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
         self.assertIsNone(slice_obj)
 
     def get_kernel_wrapper(self, *, actor: IActor) -> KernelWrapper:
-        wrapper = KernelWrapper(actor=actor, plugin=actor.get_plugin(), policy=actor.get_policy(), 
-                                monitor=AccessMonitor(), guard=Guard())
+        wrapper = KernelWrapper(actor=actor, plugin=actor.get_plugin(), policy=actor.get_policy())
         return wrapper
 
     def prepare_actor(self):
@@ -103,7 +100,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_reservation(reservation=reservation)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -150,7 +147,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_slice(slice_object=slice_obj)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -199,7 +196,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_slice(slice_object=slice_obj)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -252,7 +249,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             failed = False
             try:
                 kernel.register_reservation(reservation=res)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -272,7 +269,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             failed = False
             try:
                 kernel.re_register_reservation(reservation=res)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -295,7 +292,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             failed = False
             try:
                 kernel.re_register_reservation(reservation=res)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -321,7 +318,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.re_register_slice(slice_object=slice_obj)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -341,7 +338,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel2.register_slice(slice_object=s)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -378,7 +375,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.unregister_reservation(rid=res.get_reservation_id())
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -422,7 +419,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             failed = False
             try:
                 kernel.unregister_slice(slice_id=s.get_slice_id())
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -452,7 +449,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.unregister_slice(slice_id=slice_obj.get_slice_id())
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -487,7 +484,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_reservation(reservation=reservation)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)
@@ -508,7 +505,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
             try:
                 kernel.register_slice(slice_object=slice_obj)
-            except Exception as e:
+            except Exception:
                 failed = True
 
             self.assertTrue(failed)

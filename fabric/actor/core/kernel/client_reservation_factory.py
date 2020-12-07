@@ -37,9 +37,21 @@ from fabric.actor.core.util.id import ID
 
 
 class ClientReservationFactory(ReservationFactory, IClientReservationFactory):
+    """
+    Factory class for creating client reservations
+    """
     @staticmethod
     def create(*, rid: ID, resources: ResourceSet = None, term: Term = None, slice_object: ISlice = None,
                broker: IBrokerProxy = None, actor: IActor = None):
+        """
+        Create client reservation
+        @param resources resources
+        @param term term
+        @param slice_object slice object
+        @param broker broker
+        @param actor actor
+        @return client Reservation
+        """
         result = ReservationClient(rid=rid, resources=resources, term=term, slice_object=slice_object, broker=broker)
         if actor is not None:
             result.restore(actor=actor, slice_obj=slice_object, logger=actor.get_logger())

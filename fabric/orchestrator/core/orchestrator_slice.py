@@ -42,7 +42,7 @@ class OrchestratorSlice:
     def __init__(self, *, controller: IMgmtController, slice_obj: SliceAvro, name: str, user_dn: str,
                  ssh_credentials: list, recover: bool):
         self.slice_lock = threading.Lock()
-        self.state_machine = SliceStateMachine(slice_id=ID(id=slice_obj.get_slice_id()), recover=recover)
+        self.state_machine = SliceStateMachine(slice_id=ID(uid=slice_obj.get_slice_id()), recover=recover)
         self.slice_urn = name
         self.user_dn = user_dn
         self.ssh_credentials = ssh_credentials
@@ -126,7 +126,7 @@ class OrchestratorSlice:
         return self.slice_urn
 
     def get_slice_id(self) -> ID:
-        return ID(id=self.slice_obj.get_slice_id())
+        return ID(uid=self.slice_obj.get_slice_id())
 
     def get_reservation_converter(self) -> ReservationConverter:
         return self.reservation_converter

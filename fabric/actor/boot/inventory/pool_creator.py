@@ -43,6 +43,9 @@ if TYPE_CHECKING:
 
 
 class PoolCreator:
+    """
+    Responsible for setting up inventory pools on startup
+    """
     def __init__(self, *, substrate: AuthoritySubstrate = None, pools: dict = None, neo4j_config: dict = None):
         self.substrate = substrate
         self.pools = pools
@@ -52,27 +55,37 @@ class PoolCreator:
         self.logger = GlobalsSingleton.get().get_logger()
 
     def get_factory2(self):
+        """
+        Create Neo4j ResourcePool Factory instance
+        """
         factory = Neo4jResourcePoolFactory()
         factory.set_substrate(substrate=self.substrate)
         return factory
 
     def get_factory(self, *, rd: ResourcePoolDescriptor) -> IResourcePoolFactory:
+        """
+        Create ResourcePool Factory instance
+        @param rd resource pool descriptor
+        """
         factory = None
         if rd.get_pool_factory_module() is None or rd.get_pool_factory_class() is None:
             factory = ResourcePoolFactory()
         else:
             try:
-                factory = ReflectionUtils.create_instance_with_params(module_name=rd.get_pool_factory_module(),
-                                                                      class_name=rd.get_pool_factory_class())(self.neo4j_config)
+                factory = ReflectionUtils.create_instance_with_params(
+                    module_name=rd.get_pool_factory_module(), class_name=rd.get_pool_factory_class())(self.neo4j_config)
             except Exception as e:
-                raise Exception("Could not instantiate class= {}.{} {}".format(rd.get_pool_factory_module(),
-                                                                               rd.get_pool_factory_class(), e))
+                raise PoolCreatorException("Could not instantiate class= {}.{} {}".format(
+                    rd.get_pool_factory_module(), rd.get_pool_factory_class(), e))
 
         factory.set_substrate(substrate=self.substrate)
         factory.set_descriptor(descriptor=rd)
         return factory
 
     def process(self):
+        """
+        Create Pools
+        """
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.container = GlobalsSingleton.get().get_container()
         for pool in self.pools.values():
@@ -93,8 +106,8 @@ class PoolCreator:
                                                                                resource_data=rd)
 
             if create_pool_result.code != PoolManagerError.ErrorNone:
-                raise Exception("Could not create resource pool: {}. error={}".format(pool.get_resource_type_label(),
-                                                                                      create_pool_result.code))
+                raise PoolCreatorException("Could not create resource pool: {}. error={}".format(
+                    pool.get_resource_type_label(), create_pool_result.code))
 
             self.register_handler(pool=pool)
             source = factory.create_source_reservation(slice_obj=create_pool_result.slice)
@@ -103,29 +116,29 @@ class PoolCreator:
                 self.logger.debug("Adding source reservation to database {}".format(source))
                 self.logger.debug("Source reservation has resources of type {}"
                                   .format(source.get_resources().get_resources().__class__.__name__))
-                self.logger.debug("Source reservation has delegation of type {}"
-                                  .format(source.get_resources().get_resources().get_ticket().get_delegation().__class__.__name__))
+                self.logger.debug("Source reservation has delegation of type {}".format(
+                    source.get_resources().get_resources().get_ticket().get_delegation().__class__.__name__))
 
                 self.substrate.get_database().add_reservation(reservation=source)
             except Exception as e:
-                raise Exception("Could not add source reservation to database {}".format(e))
+                raise PoolCreatorException("Could not add source reservation to database {}".format(e))
 
     def process_neo4j(self, substrate_file: str, actor_name: str) -> Dict:
+        """
+        Create Pools for Neo4j
+        """
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.container = GlobalsSingleton.get().get_container()
         factory = self.get_factory2()
 
         rd = ResourceData()
-        create_pool_result = self.substrate.get_pool_manager().create_pool(slice_id=ID(),
-                                                                           name=actor_name,
-                                                                           rtype=ResourceType(
-                                                                               resource_type=
-                                                                               Constants.PropertyAggregateResourceModel),
-                                                                           resource_data=rd)
+        create_pool_result = self.substrate.get_pool_manager().create_pool(
+            slice_id=ID(), name=actor_name, rtype=ResourceType(resource_type=Constants.property_aggregate_resource_model),
+            resource_data=rd)
 
         if create_pool_result.code != PoolManagerError.ErrorNone:
-            raise Exception("Could not create resource pool: {}. error={}".format(actor_name,
-                                                                                  create_pool_result.code))
+            raise PoolCreatorException("Could not create resource pool: {}. error={}".format(
+                actor_name, create_pool_result.code))
 
         self.logger.debug("Created aggregate manager resource slice# {}".format(create_pool_result.slice))
 
@@ -155,6 +168,10 @@ class PoolCreator:
         return arm_graph.generate_adms()
 
     def register_handler(self, *, pool: ResourcePoolDescriptor):
+        """
+        Register Handlers
+        @param pool Resource pool descriptor
+        """
         handler_module = pool.get_handler_module()
         handler_class = pool.get_handler_class()
 
@@ -169,3 +186,9 @@ class PoolCreator:
         config_map.set_properties(properties=pool.get_handler_properties())
 
         config.add_config_mapping(mapping=config_map)
+
+
+class PoolCreatorException(Exception):
+    """
+    Pool Creator Exception
+    """

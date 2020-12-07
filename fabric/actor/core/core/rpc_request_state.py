@@ -30,6 +30,9 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class RPCRequestState(IRPCRequestState):
+    """
+    Implements RPC Request which carries state of an incoming/outgoing message
+    """
     def __init__(self):
         self.caller = None
         self.rtype = None
@@ -52,7 +55,15 @@ class RPCRequestState(IRPCRequestState):
         return self.message_id
 
     def get_id_token(self) -> str:
+        """
+        Returns id token
+        @return  id token
+        """
         return self.id_token
 
-    def set_id_token(self, id_token:str):
+    def set_id_token(self, id_token: str):
+        """
+        Set id token
+        @param id_token id token
+        """
         self.id_token = id_token

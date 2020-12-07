@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.kafka.kafka_proxy import KafkaProxy, KafkaProxyRequestState
 from fabric.actor.core.proxies.kafka.translate import Translate
@@ -89,7 +90,8 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
             avro_message.callback_topic = request.callback_topic
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
         else:
-            return super().execute(request=request)
+            super().execute(request=request)
+            return
 
         if self.producer is None:
             self.producer = self.create_kafka_producer()
@@ -100,47 +102,42 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                       caller: AuthToken) -> IRPCRequestState:
+    def _prepare_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
+                            caller: AuthToken, id_token: str = None) -> IRPCRequestState:
         request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
+        request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
+        request.id_token = id_token
         return request
 
     def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                      caller: AuthToken, id_token:str = None) -> IRPCRequestState:
-        request = KafkaProxyRequestState()
-        request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
-        request.callback_topic = callback.get_kafka_topic()
-        request.caller = caller
-        request.id_token = id_token
-        return request
+                                 caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
 
     def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                        caller: AuthToken, id_token:str = None) -> IRPCRequestState:
+                                   caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+
+    def _prepare(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                 caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
-        request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
+        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
-        request.id_token = id_token
         return request
+
+    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
+                       caller: AuthToken) -> IRPCRequestState:
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                               caller: AuthToken) -> IRPCRequestState:
-        request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
-        request.callback_topic = callback.get_kafka_topic()
-        request.caller = caller
-        return request
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy,
                            caller: AuthToken) -> IRPCRequestState:
-        request = KafkaProxyRequestState()
-        request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
-        request.callback_topic = callback.get_kafka_topic()
-        request.caller = caller
-        return request
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     @staticmethod
     def pass_broker_reservation(reservation: IReservation, auth: AuthToken) -> ReservationAvro:
@@ -151,14 +148,14 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         avro_reservation.sequence = reservation.get_ticket_sequence_out()
 
         rset = Translate.translate_resource_set(resource_set=reservation.get_requested_resources(),
-                                                direction=Translate.DirectionAgent)
+                                                direction=Translate.direction_agent)
         cset = reservation.get_requested_resources().get_resources()
 
         encoded = None
         if cset is not None:
-            encoded = cset.encode(protocol=Constants.ProtocolKafka)
+            encoded = cset.encode(protocol=Constants.protocol_kafka)
             if encoded is None:
-                raise Exception("Unsupported IConcreteSet: {}".format(type(cset)))
+                raise ProxyException("Unsupported IConcreteSet: {}".format(type(cset)))
 
         rset.concrete = encoded
 

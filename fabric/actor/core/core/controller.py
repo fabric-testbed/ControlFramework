@@ -32,10 +32,15 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.exceptions import ControllerException
 from fabric.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric.actor.core.proxies.kafka.services.controller_service import ControllerService
 from fabric.actor.core.util.prop_list import PropList
+from fabric.actor.core.apis.i_controller import IController
+from fabric.actor.core.core.actor import Actor
+from fabric.actor.core.registry.peer_registry import PeerRegistry
+from fabric.actor.core.util.reservation_set import ReservationSet
 
 if TYPE_CHECKING:
     from fabric.actor.core.time.actor_clock import ActorClock
@@ -43,17 +48,14 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
     from fabric.actor.core.apis.i_slice import ISlice
-    from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 
-from fabric.actor.core.apis.i_controller import IController
-from fabric.actor.core.core.actor import Actor
-from fabric.actor.core.registry.peer_registry import PeerRegistry
-from fabric.actor.core.util.reservation_set import ReservationSet
-
 
 class Controller(Actor, IController):
+    """
+    Implements Controller
+    """
     saved_extended_renewable = ReservationSet()
 
     def __init__(self, *, identity: AuthToken = None, clock: ActorClock = None):
@@ -80,7 +82,6 @@ class Controller(Actor, IController):
         del state['wrapper']
         del state['logger']
         del state['clock']
-        del state['monitor']
         del state['current_cycle']
         del state['first_tick']
         del state['stopped']
@@ -109,7 +110,6 @@ class Controller(Actor, IController):
         self.wrapper = None
         self.logger = None
         self.clock = None
-        self.monitor = None
         self.current_cycle = -1
         self.first_tick = True
         self.stopped = False
@@ -142,7 +142,7 @@ class Controller(Actor, IController):
         """
         Bids for resources as dictated by the plugin bidding policy for the
         current cycle.
-        
+
         @throws Exception in case of error
         """
         # Invoke policy module to select candidates for ticket and extend. Note
@@ -169,12 +169,12 @@ class Controller(Actor, IController):
                         extend.fail(message="unexpected extend failure {}".format(e))
 
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
-        raise Exception("Not implemented")
+                                broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
+        raise ControllerException("Not implemented")
 
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                  broker: IBrokerProxy = None, id_token:str = None) -> IDelegation:
-        raise Exception("Not implemented")
+                                  broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
+        raise ControllerException("Not implemented")
 
     def close_expiring(self):
         """
@@ -189,17 +189,21 @@ class Controller(Actor, IController):
 
     def demand(self, *, rid: ID):
         if rid is None:
-            raise Exception("Invalid argument")
+            raise ControllerException("Invalid argument")
 
         reservation = self.get_reservation(rid=rid)
 
         if reservation is None:
-            raise Exception("Unknown reservation {}".format(rid))
+            raise ControllerException("Unknown reservation {}".format(rid))
 
         self.policy.demand(reservation=reservation)
         reservation.set_policy(policy=self.policy)
 
     def extend_lease_reservation(self, *, reservation: IControllerReservation):
+        """
+        Extend Lease for a reservation
+        @param reservation reservation
+        """
         if not self.recovered:
             self.extending_lease.add(reservation=reservation)
         else:
@@ -207,22 +211,24 @@ class Controller(Actor, IController):
 
     def extend_lease(self, *, reservation: IControllerReservation = None, rset: ReservationSet = None):
         if reservation is not None and rset is not None:
-            raise Exception("Invalid Arguments: reservation and rset can not be both not None")
+            raise ControllerException("Invalid Arguments: reservation and rset can not be both not None")
         if reservation is None and rset is None:
-            raise Exception("Invalid Arguments: reservation and rset can not be both None")
+            raise ControllerException("Invalid Arguments: reservation and rset can not be both None")
 
         if reservation is not None:
             self.extend_lease_reservation(reservation=reservation)
 
         if rset is not None:
-            for reservation in rset.values():
+            for r in rset.values():
                 try:
-                    if isinstance(reservation, IControllerReservation):
-                        self.extend_lease_reservation(reservation=reservation)
+                    if isinstance(r, IControllerReservation):
+                        self.extend_lease_reservation(reservation=r)
                     else:
-                        self.logger.warning("Reservation #{} cannot extendLease".format(reservation.get_reservation_id()))
+                        self.logger.warning("Reservation #{} cannot extendLease".format(
+                            r.get_reservation_id()))
                 except Exception as e:
-                    self.logger.error("Could not extend_lease for #{} e={}".format(reservation.get_reservation_id(), e))
+                    self.logger.error("Could not extend_lease for #{} e={}".format(
+                        r.get_reservation_id(), e))
 
     def extend_ticket_client(self, *, reservation: IClientReservation):
         if not self.recovered:
@@ -238,7 +244,7 @@ class Controller(Actor, IController):
                 else:
                     self.logger.warning("Reservation # {} cannot be ticketed".format(reservation.get_reservation_id()))
             except Exception as e:
-                self.logger.error("Could not ticket for #{}".format(reservation.get_reservation_id()))
+                self.logger.error("Could not ticket for #{} e: {}".format(reservation.get_reservation_id(), e))
 
     def get_broker(self, *, guid: ID) -> IBrokerProxy:
         return self.registry.get_broker(guid=guid)
@@ -299,7 +305,7 @@ class Controller(Actor, IController):
                 else:
                     self.logger.warning("Reservation #{} cannot be ticketed".format(reservation.get_reservation_id()))
             except Exception as e:
-                self.logger.error("Could not ticket for #{}".format(reservation.get_reservation_id()))
+                self.logger.error("Could not ticket for #{} e: {}".format(reservation.get_reservation_id(), e))
 
     def tick_handler(self):
         self.close_expiring()
@@ -308,18 +314,18 @@ class Controller(Actor, IController):
 
     def update_lease(self, *, reservation: IReservation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise Exception("This actor cannot receive calls")
+            raise ControllerException("This actor cannot receive calls")
 
         self.wrapper.update_lease(reservation=reservation, update_data=update_data, caller=caller)
 
     def update_ticket(self, *, reservation: IReservation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise Exception("This actor cannot receive calls")
+            raise ControllerException("This actor cannot receive calls")
 
         self.wrapper.update_ticket(reservation=reservation, update_data=update_data, caller=caller)
 
     def update_delegation(self, *, delegation: IDelegation, update_data, caller: AuthToken):
-        raise Exception("Not supported in controller")
+        raise ControllerException("Not supported in controller")
 
     def modify(self, *, reservation_id: ID, modify_properties: dict):
         if reservation_id is None or modify_properties is None:
@@ -329,10 +335,10 @@ class Controller(Actor, IController):
         try:
             rc = self.get_reservation(rid=reservation_id)
         except Exception as e:
-            self.logger.error("Could not find reservation #{}".format(reservation_id))
+            self.logger.error("Could not find reservation #{} e: {}".format(reservation_id, e))
 
         if rc is None:
-            raise Exception("Unknown reservation: {}".format(reservation_id))
+            raise ControllerException("Unknown reservation: {}".format(reservation_id))
 
         if rc.get_resources() is not None:
             curr_config_props = rc.get_resources().get_config_properties()
@@ -344,9 +350,11 @@ class Controller(Actor, IController):
                 curr_config_props = PropList.merge_properties(incoming=modify_properties, outgoing=curr_config_props)
                 rc.get_leased_resources().set_config_properties(p=curr_config_props)
             else:
-                self.logger.warning("There were no leased resources for {}, no modify properties will be added".format(reservation_id))
+                self.logger.warning("There were no leased resources for {}, no modify properties will be added".format(
+                    reservation_id))
         else:
-            self.logger.warning("There are no approved resources for {}, no modify properties will be added".format(reservation_id))
+            self.logger.warning("There are no approved resources for {}, no modify properties will be added".format(
+                reservation_id))
 
         if not self.recovered:
             self.modifying_lease.add(reservation=rc)
@@ -367,7 +375,8 @@ class Controller(Actor, IController):
                 else:
                     self.logger.warning("Reservation #{} cannot be remarked".format(reservation.get_reservation_id()))
             except Exception as e:
-                self.logger.error("Could not mark ticket renewable for #{}".format(reservation.get_reservation_id()))
+                self.logger.error("Could not mark ticket renewable for #{} e: {}".format(
+                    reservation.get_reservation_id(), e))
 
     def restore_extending_renewable(self):
         """
@@ -377,7 +386,8 @@ class Controller(Actor, IController):
             try:
                 reservation.set_renewable(renewable=False)
             except Exception as e:
-                self.logger.error("Could not remark ticket non renewable for #{}".format(reservation.get_reservation_id()))
+                self.logger.error("Could not remark ticket non renewable for #{} e: {}".format(
+                    reservation.get_reservation_id(), e))
 
     def issue_delayed(self):
         super().issue_delayed()

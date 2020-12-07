@@ -28,6 +28,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.server_actor_management_object import ServerActorManagementObject
 from fabric.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
 from fabric.actor.core.manage.local.local_actor import LocalActor
@@ -49,7 +50,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
         super().__init__(manager=manager, auth=auth)
 
         if not isinstance(manager, ServerActorManagementObject):
-            raise Exception("Invalid manager object. Required: {}".format(type(ServerActorManagementObject)))
+            raise ManageException("Invalid manager object. Required: {}".format(type(ServerActorManagementObject)))
 
     def get_client_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
@@ -209,7 +210,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
             result = self.manager.advertise_resources(delegation=delegation, client=client, caller=self.auth)
             self.last_status = result.status
             if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(id=result.result)
+                return ID(uid=result.result)
         except Exception as e:
             self.last_exception = e
 

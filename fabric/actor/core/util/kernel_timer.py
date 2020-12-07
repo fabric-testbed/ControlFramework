@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import threading
 import traceback
 
 from fabric.actor.core.apis.i_timer_queue import ITimerQueue
@@ -44,4 +43,5 @@ class KernelTimer:
             queue.logger.debug("Timer scheduled")
             return timer
         except Exception as e:
-            traceback.print_exc()
+            queue.logger.error(e)
+            queue.logger.error(traceback.format_exc())

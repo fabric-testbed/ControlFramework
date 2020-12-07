@@ -26,21 +26,32 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from fabric.actor.core.util.id import ID
-
 from fabric.actor.core.apis.i_actor_identity import IActorIdentity
 from fabric.actor.security.auth_token import AuthToken
 
+if TYPE_CHECKING:
+    from fabric.actor.core.util.id import ID
+
 
 class ActorIdentity(IActorIdentity):
+    """
+    Represent Actor Identity
+    """
     def __init__(self, *, name: str, guid: ID):
         self.auth = AuthToken(name=name, guid=guid)
 
     def get_guid(self) -> ID:
+        """
+        Return guid
+        @return guid
+        """
         return self.auth.get_guid()
 
     def get_identity(self) -> AuthToken:
+        """
+        Return identity
+        @return identity
+        """
         return self.auth
 
     def get_name(self) -> str:

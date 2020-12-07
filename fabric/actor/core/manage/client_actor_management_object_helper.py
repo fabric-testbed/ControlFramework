@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, List
 from fabric.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric.actor.core.common.constants import Constants, ErrorCodes
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.kernel.resource_set import ResourceSet
@@ -177,7 +178,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
     def add_reservation_private(self, *, reservation: TicketReservationAvro):
         result = ResultAvro()
-        slice_id = ID(id=reservation.get_slice_id())
+        slice_id = ID(uid=reservation.get_slice_id())
         rset = Converter.get_resource_set(res_mng=reservation)
         term = Term(start=ActorClock.from_milliseconds(milli_seconds=reservation.get_start()),
                     end=ActorClock.from_milliseconds(milli_seconds=reservation.get_end()))
@@ -185,7 +186,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         broker = None
 
         if reservation.get_broker() is not None:
-            broker = ID(id=reservation.get_broker())
+            broker = ID(uid=reservation.get_broker())
 
         rc = ControllerReservationFactory.create(rid=ID(), resources=rset, term=term)
         rc.set_renewable(renewable=reservation.is_renewable())
@@ -277,8 +278,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                             if rr is not None:
                                 result.append(str(rr))
                             else:
-                                raise Exception("Could not add reservation")
-                    except Exception as e:
+                                raise ManageException("Could not add reservation")
+                    except Exception:
                         for r in reservations:
                             self.parent.client.unregister(reservation=r)
                         result.clear()
@@ -340,7 +341,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
                 def run(self):
                     result = ResultAvro()
-                    rid = ID(id=reservation.get_reservation_id())
+                    rid = ID(uid=reservation.get_reservation_id())
                     r = self.actor.get_reservation(rid=rid)
                     if r is None:
                         result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
@@ -356,7 +357,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                                                     "but missing reservation id of predecessor".format(rid))
                                 continue
 
-                            predid = ID(id=pred.get_reservation_id())
+                            predid = ID(uid=pred.get_reservation_id())
                             pr = self.actor.get_reservation(rid=predid)
 
                             if pr is None:
@@ -418,7 +419,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
                 def run(self):
                     result = ResultAvro()
-                    r = self.actor.get_reservation(rid=ID(id=reservation.get_reservation_id()))
+                    r = self.actor.get_reservation(rid=ID(uid=reservation.get_reservation_id()))
                     if r is None:
                         result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.name)
@@ -433,7 +434,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                     r.get_resources().set_request_properties(p=temp)
 
                     rset = ResourceSet()
-                    if new_units == Constants.ExtendSameUnits:
+                    if new_units == Constants.extend_same_units:
                         rset.set_units(units=r.get_resources().get_units())
                     else:
                         rset.set_units(units=new_units)
@@ -536,7 +537,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 delegation = Translate.translate_delegation_to_avro(delegation=rc)
                 result.delegations.append(delegation)
             else:
-                raise Exception("Internal Error")
+                raise ManageException("Internal Error")
         except Exception as e:
             traceback.print_exc()
             self.logger.error("claim_delegations {}".format(e))
@@ -582,7 +583,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 delegation = Translate.translate_delegation_to_avro(delegation=rc)
                 result.delegations.append(delegation)
             else:
-                raise Exception("Internal Error")
+                raise ManageException("Internal Error")
         except Exception as e:
             traceback.print_exc()
             self.logger.error("reclaim_delegations {}".format(e))

@@ -29,6 +29,7 @@ import traceback
 from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.error import Error
 from fabric.actor.core.apis.i_component import IComponent
 from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
@@ -79,11 +80,11 @@ class KafkaProxy(IComponent):
 
     def get_protocols(self) -> List[ProtocolProxyMng]:
         proto = ProtocolProxyMng()
-        proto.set_protocol(protocol=Constants.ProtocolKafka)
+        proto.set_protocol(protocol=Constants.protocol_kafka)
         proto.set_proxy_class(proxy_class=KafkaProxy.__class__.__name__)
         proto.set_proxy_module(proxy_module=KafkaProxy.__module__)
         result = [proto]
         return result
 
     def get_type_id(self) -> str:
-        raise Exception("Not implemented")
+        raise ManageException("Not implemented")

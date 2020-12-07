@@ -1,33 +1,9 @@
-#!/usr/bin/env python3
-# MIT License
-#
-# Copyright (c) 2020 FABRIC Testbed
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-#
-#
-# Author: Komal Thareja (kthare10@renci.org)
 import connexion
 import six
 
 from fabric.orchestrator.swagger_server.models.success import Success  # noqa: E501
 from fabric.orchestrator.swagger_server import util
+from fabric.orchestrator.swagger_server.response import slivers_controller as rc
 
 
 def slivers_get(slice_id):  # noqa: E501
@@ -62,16 +38,20 @@ def slivers_modify_sliver_idput(body, sliver_id, slice_id):  # noqa: E501
     return 'do some magic!'
 
 
-def slivers_poa_sliver_idpost(sliver_id):  # noqa: E501
+def slivers_poa_sliver_idpost(body, sliver_id):  # noqa: E501
     """Perform Operational Action
 
     Perform the named operational action on the named resources, possibly changing the operational status of the named resources. E.G. &#x27;reboot&#x27; a VM.   # noqa: E501
 
+    :param body: 
+    :type body: dict | bytes
     :param sliver_id: Sliver identifier as UUID
     :type sliver_id: str
 
     :rtype: Success
     """
+    if connexion.request.is_json:
+        body = str.from_dict(connexion.request.get_json())  # noqa: E501
     return 'do some magic!'
 
 

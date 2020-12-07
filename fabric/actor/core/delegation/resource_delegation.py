@@ -38,7 +38,7 @@ class ResourceDelegation:
     """
     def __init__(self, *, units: int = None, vector: ResourceVector = None, term: Term = None,
                  rtype: ResourceType = None, sources: list = None, bins: list = None, properties: dict = None,
-                 issuer : ID = None, holder: ID = None):
+                 issuer: ID = None, holder: ID = None):
         # The delegation's unique identifier.
         self.guid = ID()
         # Lease interval.
@@ -79,42 +79,86 @@ class ResourceDelegation:
 
     def is_valid(self) -> bool:
         if self.guid is None or self.term is None or self.units <= 0 or self.vector is None or \
-                self.vector.is_positive() == False or self.type is None or self.sources is None \
+                not self.vector.is_positive() or self.type is None or self.sources is None \
                 or len(self.sources) == 0 or self.bins is None or len(self.bins) == 0:
             return False
         return True
 
     def get_guid(self) -> ID:
+        """
+        Get guid
+        @return guid
+        """
         return self.guid
 
     def get_resource_vector(self) -> ResourceVector:
+        """
+        Get Resource Vector
+        @return resource vector
+        """
         return self.vector
 
     def get_resource_type(self) -> ResourceType:
+        """
+        Get Resource Type
+        @return resource type
+        """
         return self.type
 
     def get_properties(self) -> dict:
+        """
+        Get Properties
+        @return properties
+        """
         return self.properties
 
     def get_term(self) -> Term:
+        """
+        Get Term
+        @return term
+        """
         return self.term
 
     def get_units(self) -> int:
+        """
+        Get Units
+        @return units
+        """
         return self.units
 
     def get_issuer(self) -> ID:
+        """
+        Get Issuer
+        @return issuer
+        """
         return self.issuer
 
     def get_holder(self) -> ID:
+        """
+        Get holder
+        @return holder
+        """
         return self.holder
 
-    def set_issuer(self, *, id: ID):
-        self.issuer = id
+    def set_issuer(self, *, guid: ID):
+        """
+        Set issuer
+        @param guid issuer guid
+        """
+        self.issuer = guid
 
-    def set_holder(self, *, id: ID):
-        self.holder = id
+    def set_holder(self, *, guid: ID):
+        """
+        Set holder
+        @param guid holder guid
+        """
+        self.holder = guid
 
     def set_units(self, *, units: int):
+        """
+        Set units
+        @param units units
+        """
         self.units = units
 
     def get_map(self):

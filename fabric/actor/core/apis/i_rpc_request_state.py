@@ -48,7 +48,7 @@ class IRPCRequestState:
         Set the caller
         @param caller caller
         """
-        
+
     @abstractmethod
     def get_type(self) -> RPCRequestType:
         """
@@ -62,7 +62,7 @@ class IRPCRequestState:
         Set Request Type
         @param rtype: rpc request type
         """
-        
+
     @abstractmethod
     def get_message_id(self) -> ID:
         """

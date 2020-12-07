@@ -47,7 +47,7 @@ class OrchestratorHandler:
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
         self.token_public_key = GlobalsSingleton.get().get_config().get_oauth_config().get(
-            Constants.PropertyConfOAuthTokenPublicKey, None)
+            Constants.property_conf_o_auth_token_public_key, None)
         self.pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
 
     def get_logger(self):
@@ -78,7 +78,7 @@ class OrchestratorHandler:
         try:
             brokers = controller.get_brokers()
             if brokers is not None:
-                return ID(id=next(iter(brokers), None).get_guid())
+                return ID(uid=next(iter(brokers), None).get_guid())
 
         except Exception as e:
             self.logger.debug(traceback.format_exc())
@@ -100,7 +100,7 @@ class OrchestratorHandler:
         response = None
         for p in my_pools:
             try:
-                bqm = p.properties.get(Constants.BrokerQueryModel, None)
+                bqm = p.properties.get(Constants.broker_query_model, None)
                 if bqm is not None:
                     graph = Neo4jResourcePoolFactory.get_graph_from_string(graph_str=bqm)
                     graph.validate_graph()

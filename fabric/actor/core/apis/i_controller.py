@@ -45,16 +45,16 @@ class IController(IClientActor, IControllerPublic):
         """
         Issues an extend lease request for the given reservation. Note:
         the reservation must have already been registered with the actor.
-        
+
         All exceptions are caught and logged but no exception is propagated. No
         information will be delivered to indicate that some failure has taken
         place, e.g., failure to communicate with a broker. Inspect the state of
         individual reservations to determine whether/what failures have taken
         place.
-       
+
         @param reservation reservation to be redeemed
         @param rset set of reservations to extend the lease for
-       
+
         @throws Exception in case of error
         """
 
@@ -63,9 +63,9 @@ class IController(IClientActor, IControllerPublic):
         """
         Issues a redeem request for the given reservation. Note: the
         reservation must have already been registered with the actor.
-       
+
         @param reservation reservation to be redeemed
-       
+
         @throws Exception in case of error
         """
 
@@ -78,6 +78,6 @@ class IController(IClientActor, IControllerPublic):
         place, e.g., failure to communicate with a broker. Inspect the state of
         individual reservations to determine whether/what failures have taken
         place.
-       
+
         @param rset set of reservations to redeem
         """

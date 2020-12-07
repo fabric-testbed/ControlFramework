@@ -36,7 +36,7 @@ from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
 from fabric.message_bus.messages.result_delegation_avro import ResultDelegationAvro
-from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
+from fabric.message_bus.messages.result_units_avro import ResultUnitsAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
 
 if TYPE_CHECKING:
@@ -62,13 +62,13 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
     def register_protocols(self):
         from fabric.actor.core.manage.local.local_controller import LocalController
-        local = ProxyProtocolDescriptor(protocol=Constants.ProtocolLocal, 
-                                        proxy_class=LocalController.__name__, 
+        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local,
+                                        proxy_class=LocalController.__name__,
                                         proxy_module=LocalController.__module__)
 
         from fabric.actor.core.manage.kafka.kafka_controller import KafkaController
-        kakfa = ProxyProtocolDescriptor(protocol=Constants.ProtocolKafka, 
-                                        proxy_class=KafkaController.__name__, 
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka,
+                                        proxy_class=KafkaController.__name__,
                                         proxy_module=KafkaController.__module__)
 
         self.proxies = []
@@ -77,8 +77,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.PropertyClassName] = ControllerManagementObject.__name__
-        properties[Constants.PropertyModuleName] = ControllerManagementObject.__module__
+        properties[Constants.property_class_name] = ControllerManagementObject.__name__
+        properties[Constants.property_module_name] = ControllerManagementObject.__module__
 
         return properties
 
@@ -122,8 +122,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
     def modify_reservation(self, *, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
         return self.client_helper.modify_reservation(rid=rid, modify_properties=modify_properties, caller=caller)
 
-    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitAvro:
-        result = ResultUnitAvro()
+    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitsAvro:
+        result = ResultUnitsAvro()
         result.status = ResultAvro()
 
         if caller is None:
@@ -154,8 +154,10 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
     def get_substrate_database(self) -> ISubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
-    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
+                          id_token: str = None) -> ResultDelegationAvro:
         return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)
 
-    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
+                            id_token: str = None) -> ResultDelegationAvro:
         return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)

@@ -29,6 +29,8 @@ import traceback
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ResourcesException
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 
 if TYPE_CHECKING:
@@ -41,6 +43,9 @@ if TYPE_CHECKING:
 
 
 class PoolManagerError(Enum):
+    """
+    Enumeration for Pool Manager errors
+    """
     ErrorNone = 0
     ErrorPoolExists = -10
     ErrorTypeExists = -20
@@ -49,23 +54,36 @@ class PoolManagerError(Enum):
     ErrorInternalError = -50
 
 
+class CreatePoolResult:
+    """
+    Result of Create Pool
+    """
+    def __init__(self):
+        self.code = PoolManagerError.ErrorNone
+        self.slice = None
+
+
 class PoolManager:
-
-    class CreatePoolResult:
-        def __init__(self):
-            self.code = PoolManagerError.ErrorNone
-            self.slice = None
-
+    """
+    Implements the class responsible for creating pools on startup
+    """
     def __init__(self, *, db: IDatabase, identity: IActorIdentity, logger):
         if db is None or identity is None or logger is None:
-            raise Exception("Invalid arguments {} {} {}".format(db, identity, logger))
+            raise ResourcesException("Invalid arguments {} {} {}".format(db, identity, logger))
         self.db = db
         self.identity = identity
         self.logger = logger
 
     def create_pool(self, *, slice_id: ID, name: str, rtype: ResourceType,
                     resource_data: ResourceData) -> CreatePoolResult:
-        result = self.CreatePoolResult()
+        """
+        Create Inventory Pool at boot
+        @param slice_id slice id
+        @param name name
+        @param rtype resource type
+        @param resource_data resource data
+        """
+        result = CreatePoolResult()
         if slice_id is None or name is None or rtype is None:
             result.code = PoolManagerError.ErrorInvalidArguments
             return result
@@ -94,26 +112,35 @@ class PoolManager:
             try:
                 self.db.add_slice(slice_object=slice_obj)
                 result.slice = slice_obj
-            except Exception as e:
+            except Exception:
                 traceback.print_exc()
                 result.code = PoolManagerError.ErrorDatabaseError
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             result.code = PoolManagerError.ErrorInternalError
         return result
 
     def update_pool(self, *, slice_obj: ISlice):
+        """
+        Update the resource pool
+        @param slice_obj slice object
+        """
         try:
             self.db.update_slice(slice_object=slice_obj)
         except Exception as e:
-            raise Exception("Could not update slice {}".format(e))
+            raise ResourcesException("Could not update slice {}".format(e))
 
     def remove_pool(self, *, pool_id: ID, rtype: ResourceType):
+        """
+        Remove a pool
+        @param pool_id pool id
+        @param rtype resource type
+        """
         temp = self.db.get_slice(slice_id=pool_id)
 
         if temp is not None and len(temp) > 0:
             slice_obj = SliceFactory.create_instance(properties=temp)
             if not slice_obj.is_inventory() or rtype != slice_obj.get_resource_type():
-                raise Exception("Invalid arguments")
+                raise ResourcesException(Constants.invalid_argument)
 
             self.db.remove_slice(slice_id=pool_id)

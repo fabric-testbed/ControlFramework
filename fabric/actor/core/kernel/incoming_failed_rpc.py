@@ -35,8 +35,11 @@ if TYPE_CHECKING:
 
 
 class IncomingFailedRPC(IncomingRPC):
-    def __init__(self, *, message_id: ID, failed_request_type: RPCRequestType, request_id: str, failed_reservation_id: ID,
-                 error_details: str, caller: AuthToken):
+    """
+    Represents an incoming failed rpc message
+    """
+    def __init__(self, message_id: ID, failed_request_type: RPCRequestType, request_id: str,
+                 failed_reservation_id: ID, error_details: str, caller: AuthToken):
         super().__init__(message_id=message_id, request_type=RPCRequestType.FailedRPC, caller=caller,
                          callback=None)
         self.failed_request_type = failed_request_type
@@ -45,10 +48,22 @@ class IncomingFailedRPC(IncomingRPC):
         self.request_id = request_id
 
     def get_error_details(self) -> str:
+        """
+        Get Error details
+        @return error details
+        """
         return self.error_details
 
     def get_failed_request_type(self) -> RPCRequestType:
+        """
+        Get failed request type
+        @return failed request type
+        """
         return self.failed_request_type
 
     def get_failed_reservation_id(self) -> ID():
+        """
+        Get failed reservation id
+        @return failed reservation id
+        """
         return self.failed_reservation_id

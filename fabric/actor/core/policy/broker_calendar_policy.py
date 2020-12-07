@@ -29,18 +29,19 @@ import threading
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import BrokerException
 from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric.actor.core.time.calendar.broker_calendar import BrokerCalendar
 from fabric.actor.core.util.resource_count import ResourceCount
 from fabric.actor.core.util.reservation_set import ReservationSet
+from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
+from fabric.actor.core.core.broker_policy import BrokerPolicy
+from fabric.actor.core.apis.i_client_reservation import IClientReservation
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
     from fabric.actor.core.apis.i_reservation import IReservation
-
-from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
-from fabric.actor.core.core.broker_policy import BrokerPolicy
-from fabric.actor.core.apis.i_client_reservation import IClientReservation
 
 
 class BrokerCalendarPolicy(BrokerPolicy):
@@ -88,13 +89,11 @@ class BrokerCalendarPolicy(BrokerPolicy):
         if self.required_approval:
             self.for_approval = ReservationSet()
 
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
     def add_for_approval_calendar(self, *, reservation: IBrokerReservation):
         """
         Adds the reservation to the approval list and removes the
         reservation from the closing calendar (if it belongs to it).
-       
+
         @param reservation reservation to add
         @throws Exception in case of error
         """
@@ -104,7 +103,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
     def add_to_calendar(self, *, reservation: IBrokerReservation):
         """
         Records the reservation in the calendar.
-       
+
         @param reservation reservation
         """
         if reservation.get_approved_resources() is not None and not reservation.is_failed():
@@ -141,7 +140,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
         Checks pending bids, and installs successfully completed
         requests in the holdings calendar. Note that the policy module must add
         bids to the pending set, or they may not install in the calendar.
-       
+
         @throws Exception in case of error
         """
         rvset = self.calendar.get_pending()
@@ -153,15 +152,14 @@ class BrokerCalendarPolicy(BrokerPolicy):
             if not reservation.is_nascent() and reservation.is_no_pending():
                 self.logger.debug("Pending request completed {}".format(reservation))
 
-            if not reservation.is_terminal():
-                if reservation.is_renewable():
-                    cycle = self.get_renew(reservation=reservation)
-                    reservation.set_renew_time(time=cycle)
-                    reservation.set_dirty()
+            if not reservation.is_terminal() and reservation.is_renewable():
+                cycle = self.get_renew(reservation=reservation)
+                reservation.set_renew_time(time=cycle)
+                reservation.set_dirty()
 
             self.calendar.remove_pending(reservation)
 
-    def close(self, *, reservation:IReservation):
+    def close(self, *, reservation: IReservation):
         if isinstance(reservation, IClientReservation):
             rset = self.calendar.get_outlays(source=reservation)
             self.logger.debug("Client reservation; get outlays: {}".format(rset))
@@ -176,10 +174,10 @@ class BrokerCalendarPolicy(BrokerPolicy):
     def count(self, *, rvset: ReservationSet, when: datetime):
         """
         Returns a counter for the passed set and the specified data.
-       
+
         @param rvset the set of reservations being counted
         @param when the date when to count the resources
-       
+
         @return counter
         """
         rc = ResourceCount()
@@ -214,14 +212,14 @@ class BrokerCalendarPolicy(BrokerPolicy):
     def get_renew(self, *, reservation: IClientReservation) -> int:
         """
         Returns the cycle when the reservation must be renewed.
-       
+
         @param reservation reservation for which to calculate renew time
-       
+
         @return renew cycle
-       
+
         @throws Exception in case of error
         """
-        raise Exception("not implemented")
+        raise BrokerException("not implemented")
 
     def initialize(self):
         if not self.initialized:
@@ -262,41 +260,39 @@ class BrokerCalendarPolicy(BrokerPolicy):
     def revisit_client(self, *, reservation: IClientReservation):
         """
         Recovers a source reservation.
-       
+
         @param reservation reservation to recover
-       
+
         @throws Exception in case of error
         """
-        if reservation.get_state() == ReservationStates.Nascent:
-            if reservation.get_pending_state() == ReservationPendingStates.None_:
-                self.calendar.add_pending(reservation=reservation)
-
-        elif reservation.get_state() == ReservationStates.Ticketed:
-            if reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket:
-                self.calendar.add_pending(reservation=reservation)
+        if (reservation.get_state() == ReservationStates.Nascent and
+            reservation.get_pending_state() == ReservationPendingStates.None_) or \
+            (reservation.get_state() == ReservationStates.Ticketed and
+             reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket):
+            self.calendar.add_pending(reservation=reservation)
 
     def revisit_server(self, *, reservation: IBrokerReservation):
         """
         Recovers a client reservation.
-       
+
         @param reservation reservation to recover
-       
+
         @throws Exception in case of error
         """
-        if reservation.get_state() == ReservationStates.Ticketed:
-            if reservation.get_pending_state() == ReservationPendingStates.None_ or \
-                    reservation.get_pending_state() == ReservationPendingStates.Priming:
-                source = reservation.get_source()
-                if source is None:
-                    raise Exception("Missing source reservation")
+        if reservation.get_state() == ReservationStates.Ticketed and \
+                (reservation.get_pending_state() == ReservationPendingStates.None_ or
+                    reservation.get_pending_state() == ReservationPendingStates.Priming):
+            source = reservation.get_source()
+            if source is None:
+                raise BrokerException(Constants.not_specified_prefix.format("source reservation"))
 
-                self.calendar.add_outlay(source=source,
-                                         client=reservation,
-                                         start=reservation.get_term().get_new_start_time(),
-                                         end=reservation.get_term().get_end_time())
+            self.calendar.add_outlay(source=source,
+                                     client=reservation,
+                                     start=reservation.get_term().get_new_start_time(),
+                                     end=reservation.get_term().get_end_time())
 
-                self.calendar.add_closing(reservation=reservation,
-                                          cycle=self.clock.cycle(when=reservation.get_term().get_end_time()))
+            self.calendar.add_closing(reservation=reservation,
+                                      cycle=self.clock.cycle(when=reservation.get_term().get_end_time()))
 
     def query(self, *, p):
         self.logger.debug("Processing Query with properties: {}".format(p))

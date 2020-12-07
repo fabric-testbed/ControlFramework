@@ -58,6 +58,6 @@ class IKernelControllerReservation(IKernelClientReservation, IControllerReservat
     def validate_redeem(self):
         """
         Validates an outgoing redeem request.
-       
+
         @throws Exception if validation fails
         """

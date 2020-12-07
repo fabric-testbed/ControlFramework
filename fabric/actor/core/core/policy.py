@@ -27,6 +27,7 @@ from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_policy import IPolicy
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.exceptions import ActorException
 from fabric.actor.core.plugins.config.config_token import ConfigToken
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
@@ -71,21 +72,17 @@ class Policy(IPolicy):
         self.clock = None
         self.initialized = False
 
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
-    def close(self, *, reservation:IReservation):
+    def close(self, *, reservation: IReservation):
         """
         Close a reservation
         @params reservation: reservation about to be closed
         """
-        return
 
     def closed(self, *, reservation: IReservation):
         """
         Notifies the policy that a reservation has been closed.
         @params reservation: reservation about to be closed
         """
-        return
 
     def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         """
@@ -96,7 +93,6 @@ class Policy(IPolicy):
         @params token : object or a token for the object whose configuration action has completed
         @params outProperties : output properties produced by the configuration action
         """
-        return
 
     def error(self, *, message: str):
         """
@@ -105,7 +101,7 @@ class Policy(IPolicy):
         @raises Exception in case of error
         """
         self.logger.error(message)
-        raise Exception(message)
+        raise ActorException(message)
 
     def extend(self, *, reservation: IReservation, resources: ResourceSet, term: Term):
         return
@@ -120,21 +116,24 @@ class Policy(IPolicy):
         return self.guid
 
     def initialize(self):
+        """
+        Initialize the policy object
+        """
         if not self.initialized:
             if self.actor is None:
-                raise Exception("Missing actor")
+                raise ActorException("Missing actor")
 
             if self.logger is None:
                 self.logger = self.actor.get_logger()
 
             if self.logger is None:
-                raise Exception("Missing logger")
+                raise ActorException("Missing logger")
 
             if self.clock is None:
                 self.clock = self.actor.get_actor_clock()
 
             if self.clock is None:
-                raise Exception("Missing clock")
+                raise ActorException("Missing clock")
 
             self.initialized = True
 
@@ -145,7 +144,7 @@ class Policy(IPolicy):
         @raises Exception in case of error
         """
         self.logger.error("Internal error: " + message)
-        raise Exception("Internal error: " + message)
+        raise ActorException("Internal error: " + message)
 
     def log_error(self, *, message: str):
         """
@@ -187,3 +186,6 @@ class Policy(IPolicy):
 
     def set_actor(self, *, actor: IActor):
         self.actor = actor
+
+    def closed_delegation(self, *, delegation: IDelegation):
+        return

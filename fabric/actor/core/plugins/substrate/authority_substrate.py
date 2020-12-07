@@ -27,12 +27,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_delegation import IDelegation
-from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.core.pool_manager import PoolManager
-from fabric.actor.core.kernel.resource_set import ResourceSet
-from fabric.actor.core.util.resource_data import ResourceData
-from fabric.actor.core.util.resource_type import ResourceType
+from fabric.actor.core.plugins.substrate.substrate import Substrate
 
 if TYPE_CHECKING:
     from fabric.actor.core.core.actor import Actor
@@ -40,8 +37,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.core.apis.i_slice import ISlice
-
-from fabric.actor.core.plugins.substrate.substrate import Substrate
 
 
 class AuthoritySubstrate(Substrate):
@@ -63,7 +58,6 @@ class AuthoritySubstrate(Substrate):
         return state
 
     def __setstate__(self, state):
-        # TODO fetch actor via actor_id
         self.__dict__.update(state)
         self.logger = None
         self.ticket_factory = None
@@ -83,28 +77,11 @@ class AuthoritySubstrate(Substrate):
 
     def revisit(self, *, slice_obj: ISlice = None, reservation: IReservation = None,
                 delegation: IDelegation = None):
-        if slice_obj is not None:
-            if slice_obj.is_inventory():
-                self.recover_inventory_slice(slice_obj=slice_obj)
+        if slice_obj is not None and slice_obj.is_inventory():
+            self.recover_inventory_slice(slice_obj=slice_obj)
 
     def recover_inventory_slice(self, *, slice_obj: ISlice):
         return
-        '''
-        try:
-            rtype = slice_obj.get_resource_type()
-            uset = self.get_units(slice_obj=slice_obj)
-            rd = ResourceData()
-
-            props = ResourceData.merge_properties(from_props=slice_obj.get_resource_properties(),
-                                                  to_props=rd.get_resource_properties())
-            rd.resource_properties = props
-
-            rset = ResourceSet(concrete=uset, rtype=rtype, rdata=rd)
-
-            self.actor.donate(resources=rset)
-        except Exception as e:
-            raise e
-        '''
 
     def get_units(self, *, slice_obj: ISlice) -> UnitSet:
         # TODO recovery from database

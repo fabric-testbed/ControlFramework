@@ -36,6 +36,11 @@ if TYPE_CHECKING:
     from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 
 
+class ResourcePoolException(Exception):
+    """
+    Resource Pool Exception
+    """
+
 class IResourcePoolFactory:
     @abstractmethod
     def set_substrate(self, *, substrate: ISubstrate):

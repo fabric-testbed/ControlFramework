@@ -52,9 +52,9 @@ class ITick:
     def external_tick(self, *, cycle: int):
         """
         Processes a timer interrupt (a tick).
-       
+
         @param cycle cycle number
-       
+
         @throws Exception if a critical error occurs while processing the timer
                 interrupt. In general, the implementor must catch exceptions
                 internally and only pass exceptions up the call stack when

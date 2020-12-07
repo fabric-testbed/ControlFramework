@@ -26,6 +26,8 @@
 import pickle
 import threading
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import DatabaseException
 from fabric.actor.core.core.unit import Unit
 from fabric.actor.core.plugins.db.server_actor_database import ServerActorDatabase
 from fabric.actor.core.apis.i_substrate_database import ISubstrateDatabase
@@ -33,32 +35,6 @@ from fabric.actor.core.util.id import ID
 
 
 class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
-    def __init__(self, *, user: str, password: str, database: str, db_host: str, logger):
-        super().__init__(user=user, password=password, database=database, db_host=db_host, logger=logger)
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['db']
-        del state['actor_name']
-        del state['actor_id']
-        del state['initialized']
-        del state['logger']
-        del state['reset_state']
-        del state['lock']
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        from fabric.actor.db.psql_database import PsqlDatabase
-        self.db = PsqlDatabase(user=self.user, password=self.password, database=self.database, db_host=self.db_host,
-                               logger=None)
-        self.actor_id = None
-        self.actor_name = None
-        self.initialized = False
-        self.logger = None
-        self.reset_state = False
-        self.lock = threading.Lock()
-
     def get_unit(self, *, unit_id: ID):
         result = None
         try:
@@ -71,7 +47,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
     def add_unit(self, *, u: Unit):
         try:
             if u.get_resource_type() is None:
-                raise Exception("Invalid argument: resource_type")
+                raise DatabaseException(Constants.invalid_argument)
             self.lock.acquire()
             if self.get_unit(unit_id=u.get_id()) is not None:
                 self.logger.info("unit {} is already present in database".format(u.get_id()))
@@ -106,7 +82,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
     def remove_unit(self, *, uid: ID):
         try:
             self.lock.acquire()
-            self.db.remove_unit(act_id=self.actor_id, unt_uid=str(uid))
+            self.db.remove_unit(unt_uid=str(uid))
         finally:
             self.lock.release()
 
@@ -117,6 +93,3 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
             self.db.update_unit(act_id=self.actor_id, unt_uid=str(u.get_id()), properties=properties)
         finally:
             self.lock.release()
-
-
-

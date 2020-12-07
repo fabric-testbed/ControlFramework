@@ -54,7 +54,7 @@ class IClientPolicy(IPolicy):
         resources is policy-specific. For example, the policy may choose to
         combine several reservation requests into one, split a reservation
         request onto multiple brokers, etc.
-        
+
         @params reservation : reservation representing resource demand
         """
 
@@ -83,7 +83,7 @@ class IClientPolicy(IPolicy):
         but not null.
 
         @params cycle: The current time
-        
+
         @return Two collections:
                 - ticketing - set of new reservations
                 - extending - set of reservations to be extended. Can be None if no action should be taken
@@ -98,7 +98,7 @@ class IClientPolicy(IPolicy):
         Checks if the resources and term received in a ticket are in compliance
         with what was initially requested. The policy can prevent the application
         of the incoming update if it disagrees with it.
-        
+
         @params requested_resources: resources requested from broker
         @params actual_resources: resources received from broker
         @params requested_term: term requested from broker
@@ -111,7 +111,7 @@ class IClientPolicy(IPolicy):
         """
         Notifies the policy that a ticket update operation has completed. The
         policy may use this upcall to update its internal state.
-        
+
         @params reservation: reservation for which an update ticket operation has completed
         @raises Exception in case of error
         """

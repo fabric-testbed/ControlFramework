@@ -29,6 +29,7 @@ from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ReservationException
 from fabric.actor.core.util.id import ID
 
 
@@ -45,17 +46,12 @@ class ReservationFactory:
 
         @throws Exception in case of error
         """
-        ## TODO
-        if Constants.PropertyPickleProperties not in properties:
-            raise Exception("Invalid arguments")
+        if Constants.property_pickle_properties not in properties:
+            raise ReservationException(Constants.invalid_argument)
 
-        serialized_reservation = properties[Constants.PropertyPickleProperties]
-        deserialized_reservation = None
-        try:
-            deserialized_reservation = pickle.loads(serialized_reservation)
-            deserialized_reservation.restore(actor=actor, slice_obj=slice_obj, logger=logger)
-        except Exception as e:
-            raise e
+        serialized_reservation = properties[Constants.property_pickle_properties]
+        deserialized_reservation = pickle.loads(serialized_reservation)
+        deserialized_reservation.restore(actor=actor, slice_obj=slice_obj, logger=logger)
         return deserialized_reservation
 
     @staticmethod
@@ -70,7 +66,7 @@ class ReservationFactory:
         @throws Exception if the properties list does not contain a reservation
                 identifier
         """
-        return ID(id=properties[Constants.PropertyReservationID])
+        return ID(uid=properties[Constants.property_reservation_id])
 
     @staticmethod
     def get_slice_id(*, properties: dict) -> int:
@@ -83,7 +79,7 @@ class ReservationFactory:
 
         @throws Exception if the properties list does not contain a slice name
         """
-        slice_id = properties.get(Constants.PropertyReservationSliceId, None)
+        slice_id = properties.get(Constants.property_reservation_slice_id, None)
         if slice_id is not None:
             return int(slice_id)
         return None
@@ -99,7 +95,7 @@ class ReservationFactory:
 
         @throws Exception if the properties list does not contain a slice name
         """
-        slice_id = properties.get(Constants.PropertyDelegationSliceId, None)
+        slice_id = properties.get(Constants.property_delegation_slice_id, None)
         if slice_id is not None:
             return int(slice_id)
         return None

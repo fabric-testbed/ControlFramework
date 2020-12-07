@@ -34,6 +34,7 @@ from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_server_reservation import IServerReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
@@ -50,18 +51,8 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
         super().__init__(actor=actor)
         self.callback = True
 
-    def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
-                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
-
-        state = LocalProxy.LocalProxyRequestState()
-        state.reservation = LocalReturn.pass_reservation(reservation=reservation, plugin=self.get_actor().get_plugin())
-        state.update_data = UpdateData()
-        state.update_data.absorb(other=update_data)
-        state.callback = callback
-        return state
-
     def prepare_update_delegation(self, *, delegation: IDelegation, update_data: UpdateData,
-                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+                                  callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
 
         state = LocalProxy.LocalProxyRequestState()
         state.delegation = LocalReturn.pass_delegation(delegation=delegation)
@@ -70,14 +61,23 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
         state.callback = callback
         return state
 
-    def prepare_update_lease(self, *, reservation: IAuthorityReservation,  update_data, callback: ICallbackProxy,
-                             caller: AuthToken) -> IRPCRequestState:
+    def _prepare(self, *, reservation: IServerReservation, update_data: UpdateData,
+                 callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+
         state = LocalProxy.LocalProxyRequestState()
         state.reservation = LocalReturn.pass_reservation(reservation=reservation, plugin=self.get_actor().get_plugin())
         state.update_data = UpdateData()
         state.update_data.absorb(other=update_data)
         state.callback = callback
         return state
+
+    def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
+                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+        return self._prepare(reservation=reservation, update_data=update_data, callback=callback, caller=caller)
+
+    def prepare_update_lease(self, *, reservation: IAuthorityReservation, update_data, callback: ICallbackProxy,
+                             caller: AuthToken) -> IRPCRequestState:
+        return self._prepare(reservation=reservation, update_data=update_data, callback=callback, caller=caller)
 
     @staticmethod
     def pass_reservation(*, reservation: IServerReservation, plugin: IBasePlugin) -> IReservation:
@@ -101,13 +101,13 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
             if concrete is not None:
                 cset = None
                 try:
-                    encoded = concrete.encode(protocol=Constants.ProtocolLocal)
+                    encoded = concrete.encode(protocol=Constants.protocol_local)
                     cset = Proxy.decode(encoded=encoded, plugin=plugin)
                 except Exception as e:
-                    raise Exception("Error while encoding concrete set {}".format(e))
+                    raise ProxyException("Error while encoding concrete set {}".format(e))
 
                 if cset is None:
-                    raise Exception("Unsupported ConcreteSet type: {}".format(type(concrete)))
+                    raise ProxyException("Unsupported ConcreteSet type: {}".format(type(concrete)))
 
                 rset.set_resources(cset=cset)
 
@@ -127,7 +127,8 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
     def pass_delegation(*, delegation: IDelegation) -> IDelegation:
         slice_obj = delegation.get_slice_object().clone_request()
 
-        delegation_new = DelegationFactory.create(did=delegation.get_delegation_id(), slice_id= delegation.get_slice_id())
+        delegation_new = DelegationFactory.create(did=delegation.get_delegation_id(),
+                                                  slice_id=delegation.get_slice_id())
         delegation_new.set_slice_object(slice_object=slice_obj)
         # TODO
         delegation_new.set_graph(delegation.get_graph())

@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
-import time
 
 from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_actor_proxy import IActorProxy
@@ -40,6 +39,7 @@ from fabric.actor.core.apis.i_controller_reservation import IControllerReservati
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_query_response_handler import IQueryResponseHandler
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.kernel.claim_timeout import ClaimTimeout, ReclaimTimeout
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
 from fabric.actor.core.kernel.failed_rpc_event import FailedRPCEvent
@@ -61,6 +61,9 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class RPCManager:
+    """
+    Class responsible for message exchange across Kafka
+    """
     CLAIM_TIMEOUT_SECONDS = 120
     QUERY_TIMEOUT_SECONDS = 120
 
@@ -68,50 +71,49 @@ class RPCManager:
         # Table of pending RPC requests.
         self.pending = {}
         self.started = False
-        self.numQueued = 0
+        self.num_queued = 0
         self.pending_lock = threading.Lock()
         self.stats_lock = threading.Condition()
 
     @staticmethod
     def validate_delegation(*, delegation: IDelegation, check_requested: bool = False):
         if delegation is None:
-            raise Exception("Missing delegation")
+            raise RPCException(message=Constants.not_specified_prefix.format("delegation"))
 
         if delegation.get_slice_object() is None:
-            raise Exception("Missing slice")
+            raise RPCException(message=Constants.not_specified_prefix.format("slice"))
 
-        if check_requested:
-            if delegation.get_graph() is None:
-                raise Exception("Missing graph")
+        if check_requested and delegation.get_graph() is None:
+            raise RPCException(message=Constants.not_specified_prefix.format("graph"))
 
     @staticmethod
     def validate(*, reservation: IReservation, check_requested: bool = False):
         if reservation is None:
-            raise Exception("Missing reservation")
+            raise RPCException(message=Constants.not_specified_prefix.format("reservation"))
 
         if reservation.get_slice() is None:
-            raise Exception("Missing slice")
+            raise RPCException(message=Constants.not_specified_prefix.format("slice"))
 
-        if check_requested :
+        if check_requested:
             if reservation.get_requested_resources() is None:
-                raise Exception("Missing requested resources")
+                raise RPCException(message=Constants.not_specified_prefix.format("requested resources"))
 
             if reservation.get_requested_term() is None:
-                raise Exception("Missing requested term")
+                raise RPCException(message=Constants.not_specified_prefix.format("requested term"))
 
         if isinstance(reservation, IClientReservation):
             if reservation.get_broker() is None:
-                raise Exception("Missing broker proxy")
+                raise RPCException(message=Constants.not_specified_prefix.format("broker proxy"))
 
             if reservation.get_client_callback_proxy() is None:
-                raise Exception("Missing client callback proxy")
+                raise RPCException(message=Constants.not_specified_prefix.format("client callback proxy"))
 
         elif isinstance(reservation, IControllerReservation):
             if reservation.get_authority() is None:
-                raise Exception("Missing authority proxy")
+                raise RPCException(message=Constants.not_specified_prefix.format("authority proxy"))
 
             if reservation.get_client_callback_proxy() is None:
-                raise Exception("Missing client callback proxy")
+                raise RPCException(message=Constants.not_specified_prefix.format("client callback proxy"))
 
     def start(self):
         self.do_start()
@@ -121,35 +123,35 @@ class RPCManager:
 
     def retry(self, *, request: RPCRequest):
         if request is None:
-            raise Exception("Missing request")
+            raise RPCException(message=Constants.not_specified_prefix.format("request"))
         self.do_retry(rpc=request)
 
     def failed_rpc(self, *, actor: IActor, rpc: IncomingRPC, e: Exception):
         if actor is None:
-            raise Exception("Missing actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
 
         if rpc is None:
-            raise Exception("Missing rpc")
+            raise RPCException(message=Constants.not_specified_prefix.format("rpc"))
 
         if rpc.get_callback() is None:
-            raise Exception("Missing callback in rpc")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
 
         if isinstance(rpc, IncomingFailedRPC):
-            raise Exception("Cannot reply to a FailedRPC with a FailedRPC")
+            raise RPCException(message="Cannot reply to a FailedRPC with a FailedRPC")
 
         self.do_failed_rpc(actor=actor, proxy=rpc.get_callback(), rpc=rpc, e=e, caller=actor.get_identity())
 
-    def claim_delegation(self, *, delegation: IDelegation, id_token:str = None):
+    def claim_delegation(self, *, delegation: IDelegation, id_token: str = None):
         self.validate_delegation(delegation=delegation)
         self.do_claim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
-                      delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                      caller=delegation.get_slice_object().get_owner(), id_token=id_token)
+                                 delegation=delegation, callback=delegation.get_client_callback_proxy(),
+                                 caller=delegation.get_slice_object().get_owner(), id_token=id_token)
 
     def reclaim_delegation(self, *, delegation: IDelegation, id_token: str = None):
         self.validate_delegation(delegation=delegation)
         self.do_reclaim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
-                        delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                        caller=delegation.get_slice_object().get_owner(), id_token=id_token)
+                                   delegation=delegation, callback=delegation.get_client_callback_proxy(),
+                                   caller=delegation.get_slice_object().get_owner(), id_token=id_token)
 
     def ticket(self, *, reservation: IClientReservation):
         self.validate(reservation=reservation, check_requested=True)
@@ -199,7 +201,7 @@ class RPCManager:
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
         if callback is None:
-            raise Exception("Missing callback")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
         self.do_update_ticket(actor=reservation.get_actor(), proxy=reservation.get_callback(),
                               reservation=reservation, update_data=reservation.get_update_data(),
                               callback=callback, caller=reservation.get_actor().get_identity())
@@ -210,10 +212,10 @@ class RPCManager:
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=delegation.get_actor(), protocol=delegation.get_callback().get_type())
         if callback is None:
-            raise Exception("Missing callback")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
         self.do_update_delegation(actor=delegation.get_actor(), proxy=delegation.get_callback(),
-                              delegation=delegation, update_data=delegation.get_update_data(),
-                              callback=callback, caller=delegation.get_actor().get_identity())
+                                  delegation=delegation, update_data=delegation.get_update_data(),
+                                  callback=callback, caller=delegation.get_actor().get_identity())
 
     def update_lease(self, *, reservation: IAuthorityReservation):
         self.validate(reservation=reservation)
@@ -221,7 +223,7 @@ class RPCManager:
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
         if callback is None:
-            raise Exception("Missing callback")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
         self.do_update_lease(actor=reservation.get_actor(), proxy=reservation.get_callback(),
                              reservation=reservation, update_data=reservation.get_update_data(),
                              callback=callback, caller=reservation.get_actor().get_identity())
@@ -229,38 +231,38 @@ class RPCManager:
     def query(self, *, actor: IActor, remote_actor: IActorProxy, callback: ICallbackProxy,
               query: dict, handler: IQueryResponseHandler, id_token: str):
         if actor is None:
-            raise Exception("Missing actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
         if remote_actor is None:
-            raise Exception("Missing remote actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("remote actor"))
         if callback is None:
-            raise Exception("Missing callback")
+            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
         if query is None:
-            raise Exception("Missing query")
+            raise RPCException(message=Constants.not_specified_prefix.format("query"))
         if handler is None:
-            raise Exception("Missing handler")
+            raise RPCException(message=Constants.not_specified_prefix.format("handler"))
         self.do_query(actor=actor, remote_actor=remote_actor, local_actor=callback, query=query,
                       handler=handler, caller=callback.get_identity(), id_token=id_token)
 
     def query_result(self, *, actor: IActor, remote_actor: ICallbackProxy, request_id: str, response: dict,
                      caller: AuthToken):
         if actor is None:
-            raise Exception("Missing actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
         if remote_actor is None:
-            raise Exception("Missing remote actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("remote actor"))
         if request_id is None:
-            raise Exception("Missing request_id")
+            raise RPCException(message=Constants.not_specified_prefix.format("request id"))
         if response is None:
-            raise Exception("Missing response")
+            raise RPCException(message=Constants.not_specified_prefix.format("response"))
         if caller is None:
-            raise Exception("Missing caller")
+            raise RPCException(message=Constants.not_specified_prefix.format("caller"))
         self.do_query_result(actor=actor, remote_actor=remote_actor, request_id=request_id, response=response,
                              caller=caller)
 
     def dispatch_incoming(self, *, actor: IActor, rpc: IncomingRPC):
         if actor is None:
-            raise Exception("Missing actor")
+            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
         if rpc is None:
-            raise Exception("Missing rpc")
+            raise RPCException(message=Constants.not_specified_prefix.format("rpc"))
         self.do_dispatch_incoming_rpc(actor=actor, rpc=rpc)
 
     def await_nothing_pending(self):
@@ -268,7 +270,7 @@ class RPCManager:
 
     def do_await_nothing_pending(self):
         with self.stats_lock:
-            while self.numQueued > 0:
+            while self.num_queued > 0:
                 self.stats_lock.wait()
 
     def do_start(self):
@@ -307,10 +309,11 @@ class RPCManager:
         self.enqueue(rpc=outgoing)
 
     def do_claim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
-                 callback: IClientCallbackProxy, caller: AuthToken, id_token:str = None):
+                            callback: IClientCallbackProxy, caller: AuthToken, id_token: str = None):
         proxy.get_logger().info("Outbound claim delegation request from <{}>: {}".format(caller.get_name(), delegation))
 
-        state = proxy.prepare_claim_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+        state = proxy.prepare_claim_delegation(delegation=delegation, callback=callback,
+                                               caller=caller, id_token=id_token)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ClaimDelegation)
 
@@ -321,10 +324,12 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_reclaim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
-                              callback: IClientCallbackProxy, caller: AuthToken, id_token:str = None):
-        proxy.get_logger().info("Outbound reclaim delegation request from <{}>: {}".format(caller.get_name(), delegation))
+                              callback: IClientCallbackProxy, caller: AuthToken, id_token: str = None):
+        proxy.get_logger().info("Outbound reclaim delegation request from <{}>: {}".format(
+            caller.get_name(), delegation))
 
-        state = proxy.prepare_reclaim_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+        state = proxy.prepare_reclaim_delegation(delegation=delegation, callback=callback,
+                                                 caller=caller, id_token=id_token)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ReclaimDelegation)
 
@@ -335,7 +340,7 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_ticket(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
-                 callback: IClientCallbackProxy, caller: AuthToken):
+                  callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound ticket request from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_ticket(reservation=reservation, callback=callback, caller=caller)
@@ -357,7 +362,7 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_relinquish(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
-                         callback: IClientCallbackProxy, caller: AuthToken):
+                      callback: IClientCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound relinquish request from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_relinquish(reservation=reservation, callback=callback, caller=caller)
@@ -368,7 +373,7 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_redeem(self, *, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
-                         callback: IControllerCallbackProxy, caller: AuthToken):
+                  callback: IControllerCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound relinquish redeem from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_redeem(reservation=reservation, callback=callback, caller=caller)
@@ -390,7 +395,7 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_modify_lease(self, *, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
-                         callback: IControllerCallbackProxy, caller: AuthToken):
+                        callback: IControllerCallbackProxy, caller: AuthToken):
         proxy.get_logger().info("Outbound modify lease request from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_modify_lease(reservation=reservation, callback=callback, caller=caller)
@@ -424,8 +429,9 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_update_delegation(self, *, actor: IActor, proxy: IClientCallbackProxy, delegation: IDelegation,
-                         update_data: UpdateData, callback: ICallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound update delegation request from <{}>: {}".format(caller.get_name(), delegation))
+                             update_data: UpdateData, callback: ICallbackProxy, caller: AuthToken):
+        proxy.get_logger().info("Outbound update delegation request from <{}>: {}".format(
+            caller.get_name(), delegation))
 
         state = proxy.prepare_update_delegation(delegation=delegation, update_data=update_data, callback=callback,
                                                 caller=caller)
@@ -494,12 +500,12 @@ class RPCManager:
                 actor.get_logger().warning("No queryRequest to match to inbound queryResponse. Ignoring response")
 
         elif rpc.get_request_type() == RPCRequestType.ClaimDelegation:
-            actor.get_logger().info("Inbound claim delegation request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                rpc.get_delegation()))
+            actor.get_logger().info("Inbound claim delegation request from <{}>:{}".format(
+                rpc.get_caller().get_name(), rpc.get_delegation()))
 
         elif rpc.get_request_type() == RPCRequestType.ReclaimDelegation:
-            actor.get_logger().info("Inbound reclaim delegation request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                rpc.get_delegation()))
+            actor.get_logger().info("Inbound reclaim delegation request from <{}>:{}".format(
+                rpc.get_caller().get_name(), rpc.get_delegation()))
 
         elif rpc.get_request_type() == RPCRequestType.Ticket:
             actor.get_logger().info("Inbound ticket request from <{}>:{}".format(rpc.get_caller().get_name(),
@@ -519,7 +525,7 @@ class RPCManager:
 
         elif rpc.get_request_type() == RPCRequestType.UpdateDelegation:
             actor.get_logger().info("Inbound update delegation request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                        rpc.get_delegation()))
+                                                                                            rpc.get_delegation()))
 
         elif rpc.get_request_type() == RPCRequestType.Redeem:
             actor.get_logger().info("Inbound redeem request from <{}>:{}".format(rpc.get_caller().get_name(),
@@ -572,7 +578,7 @@ class RPCManager:
         from fabric.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
         logger.debug("Retrying RPC({}) count={} actor={}".format(rpc.get_request_type(), rpc.retry_count,
-                                                          rpc.get_actor().get_name()))
+                                                                 rpc.get_actor().get_name()))
         self.enqueue(rpc=rpc)
 
     def add_pending_request(self, *, guid: str, request: RPCRequest):
@@ -602,17 +608,17 @@ class RPCManager:
 
     def queued(self):
         with self.stats_lock:
-            self.numQueued += 1
-            print("Queued: {}".format(self.numQueued))
+            self.num_queued += 1
+            print("Queued: {}".format(self.num_queued))
 
     def de_queued(self):
         with self.stats_lock:
-            if self.numQueued == 0:
-                raise Exception("De-queued invoked, but nothing is queued!!!")
+            if self.num_queued == 0:
+                raise RPCException(message="De-queued invoked, but nothing is queued!!!")
 
-            self.numQueued -= 1
-            print("DeQueued: {}".format(self.numQueued))
-            if self.numQueued == 0:
+            self.num_queued -= 1
+            print("DeQueued: {}".format(self.num_queued))
+            if self.num_queued == 0:
                 self.stats_lock.notify_all()
 
     def enqueue(self, *, rpc: RPCRequest):

@@ -53,32 +53,6 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
     # close on its behalf, which would eliminate any state the Controller needs to save.
     ADVANCE_CLOSE = 1
 
-    def __init__(self):
-        super().__init__()
-
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['logger']
-        del state['actor']
-        del state['clock']
-        del state['initialized']
-        del state['pending_notify']
-        del state['lazy_close']
-
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-
-        self.logger = None
-        self.actor = None
-        self.clock = None
-        self.initialized = False
-        self.pending_notify = ReservationSet()
-        self.lazy_close = False
-
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
     def formulate_bids(self, *, cycle: int) -> Bids:
         """
         Form bids for expiring reservations and new demands. Return sets of reservations for new bids and renewals.

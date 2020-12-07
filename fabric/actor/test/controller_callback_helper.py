@@ -36,15 +36,20 @@ from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.update_data import UpdateData
 from fabric.actor.security.auth_token import AuthToken
 from fabric.actor.test.client_callback_helper import ClientCallbackHelper
+from fabric.actor.test.test_exception import TestException
 
 
 class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
     class IUpdateLeaseHandler:
         def handle_update_lease(self, *, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
-            pass
+            """
+            Implemented by derived class
+            """
 
         def check_termination(self):
-            pass
+            """
+            Implemented by derived class
+            """
 
     def __init__(self, *, name: str, guid: ID):
         super().__init__(name=name, guid=guid)
@@ -106,11 +111,11 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
         return self.reservation
 
     def get_type(self):
-        return Constants.ProtocolLocal
+        return Constants.protocol_local
 
     def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
-        raise Exception("Not implemented")
+        raise TestException(Constants.not_implemented)
 
     def prepare_failed_request(self, *, request_id: str, failed_request_type,
                                failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
-        raise ("Not implemented")
+        raise TestException(Constants.not_implemented)

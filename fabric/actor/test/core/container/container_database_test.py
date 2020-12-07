@@ -32,7 +32,7 @@ from fabric.actor.test.base_test_case import BaseTestCase
 
 class ContainerDatabaseTest(BaseTestCase, unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -54,9 +54,9 @@ class ContainerDatabaseTest(BaseTestCase, unittest.TestCase):
     def test_b_add_remove_actor(self):
         db = self.get_clean_database()
 
-        actor = self.get_actor()
+        self.get_actor()
 
-        result = db.get_actor(actor_name=self.ActorName)
+        result = db.get_actor(actor_name=self.actor_name)
         self.assertIsNotNone(result)
 
         result = db.get_actors()
@@ -64,8 +64,8 @@ class ContainerDatabaseTest(BaseTestCase, unittest.TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(2, len(result), "Two actor")
 
-        db.remove_actor(actor_name=self.ActorName)
+        db.remove_actor(actor_name=self.actor_name)
 
-        self.assertIsNone(db.get_actor(actor_name=self.ActorName))
+        self.assertIsNone(db.get_actor(actor_name=self.actor_name))
 
         self.assertEqual(1, len(db.get_actors()), "One actor")

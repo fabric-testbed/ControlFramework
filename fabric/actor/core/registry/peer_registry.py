@@ -28,7 +28,8 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
-
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import RegistryException
 from fabric.actor.core.proxies.proxy import Proxy
 
 if TYPE_CHECKING:
@@ -98,7 +99,7 @@ class PeerRegistry:
     def initialize(self):
         if not self.initialized:
             if self.plugin is None:
-                raise Exception("missing plugin")
+                raise RegistryException(Constants.not_specified_prefix.format("plugin"))
 
             self.logger = self.plugin.get_logger()
 

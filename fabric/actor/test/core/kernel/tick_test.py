@@ -31,7 +31,7 @@ from fabric.actor.core.kernel.kernel_tick import KernelTick
 
 class TickTest(unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().initialize()
@@ -67,7 +67,7 @@ class TickTest(unittest.TestCase):
 
         try:
             tick.set_cycle_millis(cycle_millis=cycle_length + 10)
-        except Exception as e:
+        except Exception:
             failed = True
 
         if not failed:
@@ -83,7 +83,7 @@ class TickTest(unittest.TestCase):
 
         try:
             tick.tick()
-        except Exception as e:
+        except Exception:
             failed = True
 
         self.assertTrue(failed)
@@ -94,7 +94,7 @@ class TickTest(unittest.TestCase):
 
         try:
             tick.start()
-        except Exception as e:
+        except Exception:
             failed = True
 
         self.assertTrue(failed)
@@ -105,7 +105,7 @@ class TickTest(unittest.TestCase):
 
         try:
             tick.stop()
-        except Exception as e:
+        except Exception:
             failed = True
 
         self.assertTrue(failed)

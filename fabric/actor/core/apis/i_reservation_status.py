@@ -25,14 +25,14 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import datetime
 
 
-class IReservationStatus:
+class IReservationStatus(ABC):
     """
     IReservationStatus defines a set of predicates that can be used to query the state of a reservation.
     """
@@ -54,15 +54,6 @@ class IReservationStatus:
 
         Args:
               message: error message
-        """
-
-    @abstractmethod
-    def is_action(self) -> bool:
-        """
-        Checks if the reservation is active.
-
-        Returns:
-            true if the reservation is active
         """
 
     @abstractmethod

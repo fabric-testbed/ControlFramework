@@ -29,6 +29,7 @@ import threading
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import BrokerException
 from fabric.actor.core.policy.broker_simple_policy import BrokerSimplePolicy
 from fabric.actor.core.policy.fifo_queue import FIFOQueue
 from fabric.actor.core.time.actor_clock import ActorClock
@@ -40,7 +41,7 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 
 
-class BrokerPriorityPolicy (BrokerSimplePolicy):
+class BrokerPriorityPolicy(BrokerSimplePolicy):
     """
     BrokerPriorityPolicy allocates requests based on requestType
     priorities set in the configuration at the broker. There may be multiple
@@ -102,8 +103,6 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
 
         self.queue = None
 
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
     def configure(self, *, properties: dict):
         """
         Processes a list of configuration properties
@@ -119,14 +118,14 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
             elif queue_type == self.QueueTypeNone:
                 self.logger.debug("No queue")
             else:
-                raise Exception("Unsupported queue type: {}".format(queue_type))
+                raise BrokerException("Unsupported queue type: {}".format(queue_type))
 
     def align_end(self, *, when: datetime) -> datetime:
         """
         Aligns the specified date with the end of the closest cycle.
-       
+
         @param when when to align
-       
+
         @return date aligned with the end of the closes cycle
         """
         cycle = self.clock.cycle(when=when)
@@ -149,9 +148,9 @@ class BrokerPriorityPolicy (BrokerSimplePolicy):
         return reservation.get_source().get_type()
 
     def get_requested_pool_id(self, *, reservation: IBrokerReservation):
-        if reservation.get_requested_resources() is not None:
-            if reservation.get_requested_resources().get_request_properties() is not None:
-                if self.PropertyPoolId in reservation.get_requested_resources().get_request_properties():
-                    return reservation.get_requested_resources().get_request_properties()[self.PropertyPoolId]
+        if reservation.get_requested_resources() is not None and\
+                reservation.get_requested_resources().get_request_properties() is not None and\
+                self.PropertyPoolId in reservation.get_requested_resources().get_request_properties():
+            return reservation.get_requested_resources().get_request_properties()[self.PropertyPoolId]
 
         return None

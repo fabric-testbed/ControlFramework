@@ -29,6 +29,8 @@ from typing import TYPE_CHECKING
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.apis.i_authority import IAuthority
 from fabric.actor.core.apis.i_broker import IBroker
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.proxies.kafka.kafka_authority_proxy import KafkaAuthorityProxy
 from fabric.actor.core.proxies.kafka.kafka_broker_proxy import KafkaBrokerProxy
 from fabric.actor.core.proxies.kafka.kafka_retun import KafkaReturn
@@ -43,7 +45,7 @@ if TYPE_CHECKING:
 
 
 class KafkaProxyFactory(IProxyFactory):
-    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, type: str = None) -> IProxy:
+    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None) -> IProxy:
         result = None
         actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
 
@@ -60,19 +62,19 @@ class KafkaProxyFactory(IProxyFactory):
         else:
             kafka_topic = location.get_location()
 
-            if type is not None:
+            if proxy_type is not None:
                 from fabric.actor.core.container.globals import GlobalsSingleton
-                if type.lower() == ActorType.Authority.name.lower():
+                if proxy_type.lower() == ActorType.Authority.name.lower():
                     result = KafkaAuthorityProxy(kafka_topic=kafka_topic, identity=identity.get_identity(),
                                                  logger=GlobalsSingleton.get().get_logger())
 
-                elif type.lower() == ActorType.Broker.name.lower():
+                elif proxy_type.lower() == ActorType.Broker.name.lower():
                     result = KafkaBrokerProxy(kafka_topic=kafka_topic, identity=identity.get_identity(),
                                               logger=GlobalsSingleton.get().get_logger())
                 else:
-                    raise Exception("Unsupported proxy type: {}".format(type))
+                    raise ProxyException("Unsupported proxy type: {}".format(proxy_type))
             else:
-                raise Exception("Missing proxy type")
+                raise ProxyException(Constants.not_specified_prefix.format("proxy type"))
         return result
 
     def new_callback(self, *, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:

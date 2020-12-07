@@ -35,6 +35,9 @@ if TYPE_CHECKING:
 
 
 class IActorManagementObject(IManagementObject):
+    """
+    Interface for Management Object for an Actor
+    """
     @abstractmethod
     def set_actor(self, *, actor: IActor):
         """

@@ -26,8 +26,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
-
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_slice import ISlice
@@ -40,7 +39,7 @@ class ISliceOperations:
     This interface is implemented by each  actor.
     """
     @abstractmethod
-    def get_client_slices(self):
+    def get_client_slices(self) -> List[ISlice]:
         """
         Returns all client slices registered with the actor.
 
@@ -49,7 +48,7 @@ class ISliceOperations:
         """
 
     @abstractmethod
-    def get_slices(self):
+    def get_slices(self) -> List[ISlice]:
         """
         Returns all slices registered with the actor.
 
@@ -69,7 +68,7 @@ class ISliceOperations:
         """
 
     @abstractmethod
-    def register_slice(self, *, slice_object:ISlice):
+    def register_slice(self, *, slice_object: ISlice):
         """
         Registers the slice with the actor. The slice must be a newly created one without a database record.
         If the slice is a recovered/previously unregistered one use re_register_slice(Slice) instead.

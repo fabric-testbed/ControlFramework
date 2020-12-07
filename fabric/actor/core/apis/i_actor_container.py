@@ -28,6 +28,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.apis.i_container_clock import IContainerClock
 
 if TYPE_CHECKING:
     from fabric.actor.boot.configuration import Configuration
@@ -36,8 +37,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.extensions.plugin_manager import PluginManager
     from fabric.actor.core.manage.management_object_manager import ManagementObjectManager
     from fabric.actor.core.util.id import ID
-
-from fabric.actor.core.apis.i_container_clock import IContainerClock
 
 
 class IActorContainer(IContainerClock):
@@ -147,7 +146,7 @@ class IActorContainer(IContainerClock):
         Un-register an actor
         @params actor: actor
         """
-        
+
     @abstractmethod
     def remove_actor(self, *, actor_name: str):
         """

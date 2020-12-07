@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PolicyException
 from fabric.actor.core.core.unit import Unit, UnitState
 from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.policy.free_allocated_set import FreeAllocatedSet
@@ -72,25 +73,25 @@ class VlanControl(ResourceControl):
         self.logger.debug("VlanControl.donate(): donating resouces r={}".format(reservation))
 
         if self.tags.size() != 0:
-            raise Exception("only a single source reservation is supported")
+            raise PolicyException("only a single source reservation is supported")
 
         rset = reservation.get_resources()
         rtype = reservation.get_type()
         local = rset.get_local_properties()
         if local is None:
-            raise Exception("Missing local properties")
+            raise PolicyException("Missing local properties")
 
         self.rtype = rtype
         size = 0
 
-        if Constants.PropertyVlanRangeNum in local:
-            num_range = int(local[Constants.PropertyVlanRangeNum])
+        if Constants.property_vlan_range_num in local:
+            num_range = int(local[Constants.property_vlan_range_num])
             for i in range(num_range):
-                startP = Constants.PropertyStartVlan + str(i)
-                endP = Constants.PropertyEndVlan + str(i)
-                if startP in local and endP in local:
-                    start = int(local[startP])
-                    end = int(local[endP])
+                start_p = Constants.property_start_vlan + str(i)
+                end_p = Constants.property_end_vlan + str(i)
+                if start_p in local and end_p in local:
+                    start = int(local[start_p])
+                    end = int(local[end_p])
 
                     if start == 0 and end == 0:
                         break
@@ -102,7 +103,7 @@ class VlanControl(ResourceControl):
                     self.logger.info("VlanControl.donate(): Tag Donation:{}:{}-{}:{}".format(rtype, start, end, size))
 
         if size < reservation.get_units():
-            raise Exception("Insufficient vlan tags specified in donated reservation: donated {} rset says: {}".format(
+            raise PolicyException("Insufficient vlan tags specified in donated reservation: donated {} rset says: {}".format(
                 size, reservation.get_units()))
 
     def donate(self, *, resource_set: ResourceSet):
@@ -112,7 +113,7 @@ class VlanControl(ResourceControl):
         reservation.set_send_with_deficit(value=True)
 
         if self.tags.size() == 0:
-            raise Exception("no inventory")
+            raise PolicyException("no inventory")
 
         requested = reservation.get_requested_resources()
         rtype = requested.get_type()
@@ -127,7 +128,7 @@ class VlanControl(ResourceControl):
             if needed > 1:
                 reservation.fail(message="Cannot assign more than 1 VLAN per reservation", exception=None)
 
-            config_tag = config_properties.get(Constants.ConfigUnitTag, None)
+            config_tag = config_properties.get(Constants.config_unit_tag, None)
             static_tag = None
             if config_tag is not None:
                 static_tag = int(config_tag)
@@ -140,17 +141,17 @@ class VlanControl(ResourceControl):
                     tag = self.tags.allocate(tag=static_tag, config_tag=True)
 
                 rd = ResourceData()
-                rd.resource_properties[Constants.UnitVlanTag] = tag
+                rd.resource_properties[Constants.unit_vlan_tag] = tag
                 gained = UnitSet(plugin=self.authority.get_plugin())
                 unit = Unit(id=ID())
                 unit.set_resource_type(rtype=rtype)
-                unit.set_property(name=Constants.UnitVlanTag, value=str(tag))
+                unit.set_property(name=Constants.unit_vlan_tag, value=str(tag))
 
-                if Constants.ResourceBandwidth in ticket_properties:
-                    bw = int(ticket_properties[Constants.ResourceBandwidth])
+                if Constants.resource_bandwidth in ticket_properties:
+                    bw = int(ticket_properties[Constants.resource_bandwidth])
                     burst = bw/8
-                    unit.set_property(name=Constants.UnitVlanQoSRate, value=str(bw))
-                    unit.set_property(name=Constants.UnitVlanQoSBurstSize, value=str(burst))
+                    unit.set_property(name=Constants.unit_vlan_qo_s_rate, value=str(bw))
+                    unit.set_property(name=Constants.unit_vlan_qo_s_burst_size, value=str(burst))
                 gained.add_unit(u=unit)
                 return ResourceSet(gained=gained, rtype=rtype, rdata=rd)
             else:
@@ -160,8 +161,8 @@ class VlanControl(ResourceControl):
 
     def get_tag(self, *, u: Unit) -> int:
         tag = None
-        if u.get_property(name=Constants.UnitVlanTag) is not None:
-            tag = int(u.get_property(name=Constants.UnitVlanTag))
+        if u.get_property(name=Constants.unit_vlan_tag) is not None:
+            tag = int(u.get_property(name=Constants.unit_vlan_tag))
         return tag
 
     def free(self, *, uset: dict):

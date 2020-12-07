@@ -23,13 +23,13 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
 from fabric.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
 from fabric.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
 from fabric.actor.core.proxies.local.local_broker import LocalBroker
 from fabric.actor.core.proxies.local.local_proxy import LocalProxy
@@ -38,40 +38,32 @@ from fabric.actor.security.auth_token import AuthToken
 
 
 class LocalAuthority(LocalBroker, IAuthorityProxy):
-    def __init__(self, *, actor: IActor):
-        super().__init__(actor=actor)
+    def _prepare(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+                 caller: AuthToken) -> IRPCRequestState:
+        state = LocalProxy.LocalProxyRequestState()
+        state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
+        state.callback = callback
+        return state
 
     def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                        caller: AuthToken) -> IRPCRequestState:
-        state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
-        state.callback = callback
-        return state
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_extend_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
-        state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
-        state.callback = callback
-        return state
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_modify_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
-        state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
-        state.callback = callback
-        return state
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_close(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                       caller: AuthToken) -> IRPCRequestState:
-        state = LocalProxy.LocalProxyRequestState()
-        state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
-        state.callback = callback
-        return state
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def pass_reservation_authority(self, *, reservation: IControllerReservation, auth: AuthToken) -> IReservation:
         if reservation.get_resources().get_resources() is None:
-            raise Exception("Missing ticket")
+            raise ProxyException(Constants.not_specified_prefix.format("concrete set"))
 
         slice_obj = reservation.get_slice().clone_request()
         term = reservation.get_term().clone()
@@ -82,13 +74,10 @@ class LocalAuthority(LocalBroker, IAuthorityProxy):
             to_props=rset.get_resource_data().get_configuration_properties())
 
         original_ticket = reservation.get_resources().get_resources()
-        try:
-            encoded_ticket = original_ticket.encode(protocol=Constants.ProtocolLocal)
-            from fabric.actor.core.proxies.proxy import Proxy
-            decoded_ticket = Proxy.decode(encoded=encoded_ticket, plugin=self.get_actor().get_plugin())
-            rset.set_resources(cset=decoded_ticket)
-        except Exception as e:
-            raise e
+        encoded_ticket = original_ticket.encode(protocol=Constants.protocol_local)
+        from fabric.actor.core.proxies.proxy import Proxy
+        decoded_ticket = Proxy.decode(encoded=encoded_ticket, plugin=self.get_actor().get_plugin())
+        rset.set_resources(cset=decoded_ticket)
 
         authority_reservation = AuthorityReservationFactory.create(resources=rset, term=term, slice_obj=slice_obj,
                                                                    rid=reservation.get_reservation_id())

@@ -53,7 +53,7 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
     VlanBW = 100
 
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -73,11 +73,11 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         resources = ResourceSet(units=units, rtype=rtype, rdata=ResourceData())
 
         local = resources.get_local_properties()
-        local[Constants.PropertyVlanRangeNum] = "1"
-        local[Constants.PropertyStartVlan + "0"] = str(self.StartVlan)
-        local[Constants.PropertyEndVlan + "0"] = str(self.EndVlan)
+        local[Constants.property_vlan_range_num] = "1"
+        local[Constants.property_start_vlan + "0"] = str(self.StartVlan)
+        local[Constants.property_end_vlan + "0"] = str(self.EndVlan)
 
-        properties = {Constants.ResourceBandwidth: str(self.VlanBW)}
+        properties = {Constants.resource_bandwidth: str(self.VlanBW)}
 
         delegation = actor.get_plugin().get_ticket_factory().make_delegation(units=units, term=term, rtype=rtype,
                                                                              properties=properties, vector=None)
@@ -118,7 +118,7 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         self.assertEqual(self.TicketUnits, uset.get_units())
 
         u = uset.get_set().values().__iter__().__next__()
-        stag = u.get_property(name=Constants.UnitVlanTag)
+        stag = u.get_property(name=Constants.unit_vlan_tag)
         self.assertIsNotNone(stag)
         self.vlan_tag = int(stag)
         self.assertEqual(self.DonateUnits - 1, control.tags.get_free())
@@ -149,7 +149,7 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         self.assertEqual(self.TicketUnits, uset.get_units())
 
         u = uset.get_set().values().__iter__().__next__()
-        stag = u.get_property(Constants.UnitVlanTag)
+        stag = u.get_property(Constants.unit_vlan_tag)
         self.assertIsNotNone(stag)
         self.assertEqual(self.vlan_tag, int(stag))
         self.assertEqual(self.DonateUnits - 1, control.tags.get_free())

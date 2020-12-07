@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.kafka.kafka_broker_proxy import KafkaBrokerProxy
 from fabric.actor.core.proxies.kafka.kafka_proxy import KafkaProxyRequestState
@@ -82,7 +83,8 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         else:
-            return super().execute(request=request)
+            super().execute(request=request)
+            return
 
         if self.producer is None:
             self.producer = self.create_kafka_producer()
@@ -93,43 +95,35 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy, caller:
-    AuthToken) -> IRPCRequestState:
+    def _prepare(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+                 caller: AuthToken) -> IRPCRequestState:
         request = KafkaProxyRequestState()
         request.callback_topic = callback.get_kafka_topic()
         request.reservation = self.pass_authority_reservation(reservation=reservation, caller=caller)
         request.caller = caller
         return request
+
+    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
+                       caller: AuthToken) -> IRPCRequestState:
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_extend_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
-        request = KafkaProxyRequestState()
-        request.callback_topic = callback.get_kafka_topic()
-        request.reservation = self.pass_authority_reservation(reservation=reservation, caller=caller)
-        request.caller = caller
-        return request
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_modify_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                              caller: AuthToken) -> IRPCRequestState:
-        request = KafkaProxyRequestState()
-        request.callback_topic = callback.get_kafka_topic()
-        request.reservation = self.pass_authority_reservation(reservation=reservation, caller=caller)
-        request.caller = caller
-        return request
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     def prepare_close(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
                       caller: AuthToken) -> IRPCRequestState:
-        request = KafkaProxyRequestState()
-        request.callback_topic = callback.get_kafka_topic()
-        request.reservation = self.pass_authority_reservation(reservation=reservation, caller=caller)
-        request.caller = caller
-        return request
+        return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     @staticmethod
     def pass_authority_reservation(reservation: IReservation, caller: AuthToken) -> ReservationAvro:
         cs = reservation.get_resources().get_resources()
         if cs is None:
-            raise Exception("Missing ticket")
+            raise ProxyException(Constants.not_specified_prefix.format("ticket"))
 
         avro_reservation = ReservationAvro()
         avro_reservation.slice = Translate.translate_slice_to_avro(slice_obj=reservation.get_slice())
@@ -138,14 +132,14 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
         avro_reservation.sequence = reservation.get_lease_sequence_out()
 
         rset = Translate.translate_resource_set(resource_set=reservation.get_resources(),
-                                                direction=Translate.DirectionAuthority)
+                                                direction=Translate.direction_authority)
         cset = reservation.get_requested_resources().get_resources()
 
         encoded = None
         if cset is not None:
-            encoded = cset.encode(protocol=Constants.ProtocolKafka)
+            encoded = cset.encode(protocol=Constants.protocol_kafka)
             if encoded is None:
-                raise Exception("Unsupported IConcreteSet: {}".format(type(cset)))
+                raise ProxyException("Unsupported IConcreteSet: {}".format(type(cset)))
 
         rset.concrete = encoded
 

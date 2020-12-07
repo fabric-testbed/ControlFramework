@@ -23,27 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.core.util.resource_type import ResourceType
 
 
-class SiteResourceTypes:
-    def __init__(self, *, domain: str):
-        self.domain = domain
-        self.map = {}
-
-    def get_domain(self) -> str:
-        return self.domain
-
-    def get_resources(self):
-        return self.map.values()
-
-    def get_resource(self, *, rtype: ResourceType):
-        return self.map.get(rtype, None)
-
-    def get_default_resource(self):
-        next(iter(self.map.values()))
-
-    def add_resource(self, *, resource):
-        if resource.get_resource_type() in self.map:
-            raise Exception("Resource type {} already exists".format(resource.get_resource_type()))
-        self.map[resource.get_resource_type()] = resource
+class TestException(Exception):
+    """
+    Test Exception
+    """

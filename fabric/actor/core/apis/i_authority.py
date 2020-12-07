@@ -29,6 +29,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_authority_public import IAuthorityPublic
+from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_server_actor import IServerActor
 
 if TYPE_CHECKING:
@@ -49,7 +50,7 @@ class IAuthority(IServerActor, IAuthorityPublic):
         Informs the actor that the following resources are available for
         allocation.
 
-        @params resources resources
+        @param resources resources
 
         @raises Exception in case of error
         """
@@ -60,8 +61,18 @@ class IAuthority(IServerActor, IAuthorityPublic):
         Accepts concrete resources to be used for allocation of client
         requests.
 
-        @params resources resource set representing resources to be used for
+        @param resources resource set representing resources to be used for
                allocation
+
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
+    def donate_delegation(self, *, delegation: IDelegation):
+        """
+        Accepts delegations to be merged to Model.
+
+        @param delegation delegation
 
         @raises Exception in case of error
         """
@@ -71,31 +82,31 @@ class IAuthority(IServerActor, IAuthorityPublic):
         """
         Ejects the specified resources from the inventory.
 
-        @params resources resources
+        @param resources resources
 
         @raises Exception in case of error
         """
 
     @abstractmethod
-    def extend_lease(self, *, reservation:IAuthorityReservation, caller: AuthToken):
+    def extend_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken = None):
         """
         Processes an extend lease request for the reservation.
 
-        @params reservation reservation representing a request for a lease
+        @param reservation reservation representing a request for a lease
                extension
-        @params caller : caller
+        @param caller : caller
 
         @raises Exception in case of error
         """
 
     @abstractmethod
-    def modify_lease(self, *, reservation:IAuthorityReservation, caller: AuthToken):
+    def modify_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken):
         """
         Processes an modify lease request for the reservation.
 
-        @params reservation :  reservation representing a request for a lease
+        @param reservation :  reservation representing a request for a lease
                modification
-        @params caller : caller
+        @param caller : caller
 
         @raises Exception in case of error
         """
@@ -107,19 +118,19 @@ class IAuthority(IServerActor, IAuthorityPublic):
         and can be considered as free, regardless of the state of the
         individual units.
 
-        @params resources resource set representing freed resources
+        @param resources resource set representing freed resources
 
         @raises Exception in case of error
         """
 
     @abstractmethod
-    def redeem(self, *, reservation:IReservation, callback: IControllerCallbackProxy, caller: AuthToken):
+    def redeem(self, *, reservation: IReservation, callback: IControllerCallbackProxy = None, caller: AuthToken = None):
         """
         Processes a redeem request for the reservation.
 
-        @params reservation reservation representing a request for a new lease
-        @params callback callback
-        @params caller caller
+        @param reservation reservation representing a request for a new lease
+        @param callback callback
+        @param caller caller
         @raises Exception in case of error
         """
 
@@ -131,7 +142,7 @@ class IAuthority(IServerActor, IAuthorityPublic):
 
         @param resources resources
 
-        @returns 
+        @return number of unavailable units
 
         @raises Exception in case of error
         """

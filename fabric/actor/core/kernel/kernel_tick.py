@@ -28,11 +28,12 @@ from datetime import datetime
 
 from fabric.actor.core.apis.i_tick import ITick
 from fabric.actor.core.kernel.tick import Tick
-from fabric.actor.core.time.actor_clock import ActorClock
-from fabric.actor.core.time.term import Term
 
 
 class KernelTick(Tick):
+    """
+    Timer object.
+    """
     def __init__(self):
         super().__init__()
         self.timer = None
@@ -41,38 +42,58 @@ class KernelTick(Tick):
         self.stopped_worker = threading.Event()
 
     def add_tickable(self, *, tickable: ITick):
+        """
+        Add object which needs to receive periodic tick
+        """
         with self.lock:
             self.to_tick.add(tickable)
 
     def remove_tickable(self, *, tickable: ITick):
+        """
+        Remove tickable object
+        """
         with self.lock:
             self.to_tick.remove(tickable)
 
     def start_worker(self):
+        """
+        Start timer thread
+        """
         self.timer = threading.Thread(target=self.tick_notifier)
         self.timer.setDaemon(True)
         self.timer.setName("KernelTick")
         self.timer.start()
 
     def stop_worker(self):
+        """
+        Stop timer thread
+        """
         self.stopped_worker.set()
         self.timer.join()
 
     def next_tick(self):
+        """
+        Generate a tick to the registered objects
+        """
         with self.lock:
             now = datetime.utcnow()
             self.current_cycle = self.clock.cycle(when=now)
-            self.logger.info("Clock interrupt: now= {} cycle={}".format(now, self.current_cycle))
+            self.logger.debug("Clock interrupt: now= {} cycle={}".format(now, self.current_cycle))
             if not self.manual and self.timer is None:
                 return
 
             for t in self.to_tick:
                 try:
-                    self.logger.info("Delivering external tick to {} cycle= {}".format(t.get_name(), self.current_cycle))
+                    self.logger.debug("Delivering external tick to {} cycle= {}".format(
+                        t.get_name(), self.current_cycle))
                     t.external_tick(cycle=self.current_cycle)
                 except Exception as e:
-                    self.logger.error("Unexpected error while delivering tick notification for {} {}".format(t.get_name(), e))
+                    self.logger.error("Unexpected error while delivering tick notification for {} {}".format(
+                        t.get_name(), e))
 
     def tick_notifier(self):
+        """
+        Timer main loop
+        """
         while not self.stopped_worker.wait(timeout=self.cycle_millis / 1000):
             self.next_tick()

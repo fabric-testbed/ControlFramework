@@ -35,7 +35,7 @@ class AuthoritySubstrateTest(SubstrateTestBase):
     def get_actor_instance(self) -> IActor:
         return Authority()
 
-    def get_authority(self, name: str = BaseTestCase.AuthorityName, guid: ID = BaseTestCase.AuthorityGuid):
+    def get_authority(self, name: str = BaseTestCase.authority_name, guid: ID = BaseTestCase.authority_guid):
         authority = self.get_registered_new_actor()
         authority.set_recovered(value=True)
         Term.set_clock(clock=authority.get_actor_clock())

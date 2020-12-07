@@ -23,29 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric.actor.security.auth_token import AuthToken
-from fabric.actor.security.guard import Guard
 
 
-class AccessMonitor:
+class ConfigurationException(Exception):
     """
-    AccessMonitor encapsulates access control policy and any means of proving or gaining access to resources,
-    e.g., payment. This should be an abstract pluggable class. Each operation on a slices actor includes an AuthToken
-    to represent identity and any ancillary information. AccessMonitor determines whether any given access is permitted,
-    given the AuthToken and a per-object auth.Guard, which encapsulates an access control list.
+    Configuration Exception
     """
-    def __init__(self):
-        return
-
-    def check_reserve(self, *, guard: Guard, requester: AuthToken):
-        guard.check_reserve(requester=requester)
-
-    def check_update(self, *, guard: Guard, requester: AuthToken):
-        guard.check_update(requester=requester)
-
-    def check_proxy(self, *, proxy: AuthToken, requester: AuthToken):
-        if requester is None:
-            return proxy
-
-        # TODO
-        return requester

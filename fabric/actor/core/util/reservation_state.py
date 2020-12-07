@@ -94,9 +94,7 @@ class ReservationState(IState):
         return self.state.name
 
     def __str__(self):
-        if self.joining == -1 :
+        if self.joining == -1:
             return "[{}, {}]".format(self.get_state_name(), self.get_pending_name())
         else:
             return "[{}, {}, {}]".format(self.get_state_name(), self.get_pending_name(), self.get_joining_name())
-
-

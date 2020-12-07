@@ -29,6 +29,7 @@ from enum import Enum
 
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import UnitException
 from fabric.actor.core.plugins.config.config_token import ConfigToken
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.notice import Notice
@@ -92,151 +93,291 @@ class Unit(ConfigToken):
         self.reservation = None
 
     def transition(self, *, to_state: UnitState):
+        """
+        Transition the state
+        @param to_state ti state
+        """
         self.state = to_state
 
     def merge_properties(self, *, incoming: dict):
+        """
+        Merge properties
+        @param incoming incoming properties
+        """
         self.properties = {**incoming, **self.properties}
 
     def fail(self, *, message: str, exception: Exception = None):
+        """
+        Fail a unit
+        @param message
+        @param exception exception
+        """
         self.notices.add(msg=message, ex=exception)
         self.transition(to_state=UnitState.FAILED)
 
     def fail_on_modify(self, *, message: str, exception: Exception = None):
+        """
+        Fail on modify
+        @param message message
+        @param exception exception
+        """
         self.notices.add(msg=message, ex=exception)
         self.transition(to_state=UnitState.ACTIVE)
         self.merge_properties(incoming=self.modified.properties)
 
     def set_state(self, *, state: UnitState):
+        """
+        Set state
+        @param state state
+        """
         self.transition(to_state=state)
 
     def start_close(self):
+        """
+        Start close on a unit
+        """
         self.transition(to_state=UnitState.CLOSING)
         self.transfer_out_started = True
 
     def start_prime(self) -> bool:
+        """
+        Start priming the unit
+        """
         if self.state == UnitState.DEFAULT or self.state == UnitState.PRIMING:
             self.transition(to_state=UnitState.PRIMING)
             return True
         return False
 
     def start_modify(self) -> bool:
+        """
+        Start modifying
+        """
         if self.state == UnitState.ACTIVE or self.state == UnitState.MODIFYING:
             self.transition(to_state=UnitState.MODIFYING)
             return True
         return False
 
     def activate(self):
+        """
+        Mark the unit as active
+        """
         self.state = UnitState.ACTIVE
 
     def close(self):
+        """
+        Mark the unit as closed
+        """
         self.state = UnitState.CLOSED
 
     def get_id(self) -> ID:
+        """
+        Get unit id
+        @return unit id
+        """
         return self.id
 
     def get_properties(self) -> dict:
+        """
+        Get unit properties
+        @return unit properties
+        """
         return self.properties
 
     def set_property(self, *, name: str, value: str):
+        """
+        Set property
+        @param name name
+        @param value value
+        """
         self.properties[name] = value
 
     def get_property(self, *, name: str) -> str:
+        """
+        Get Property
+        @param name name
+        @return value
+        """
         ret_val = None
         if name in self.properties:
             ret_val = self.properties[name]
         return ret_val
 
     def get_state(self) -> UnitState:
+        """
+        Get Unit state
+        @return unit state
+        """
         return self.state
 
     def clone(self):
+        """
+        Clone a unit
+        @return copy of the object
+        """
         ret_val = Unit(id=self.id, properties=self.properties, state=self.state)
         return ret_val
 
     def get_sequence(self) -> int:
+        """
+        Get Sequence number
+        @return sequence number
+        """
         return self.sequence
 
     def get_sequence_increment(self) -> int:
+        """
+        Get Sequence number and increment it
+        @return sequence number and increment it
+        """
         self.sequence += 1
         ret_val = self.sequence
         return ret_val
 
     def increment_sequence(self) -> int:
+        """
+        Increment sequence number
+        """
         self.sequence += 1
         ret_val = self.sequence
         return ret_val
 
     def decrement_sequence(self) -> int:
+        """
+        Decrement sequence number
+        """
         self.sequence -= 1
         ret_val = self.sequence
         return ret_val
 
     def set_reservation(self, *, reservation: IReservation):
+        """
+        Set Reservation
+        @param reservation reservation
+        """
         self.reservation = reservation
         self.reservation_id = reservation.get_reservation_id()
 
     def set_slice_id(self, *, slice_id: ID):
+        """
+        Set slice id
+        @param slice_id slice id
+        """
         self.slice_id = slice_id
 
     def set_actor_id(self, *, actor_id: ID):
+        """
+        Set actor id
+        @param actor_id actor id
+        """
         self.actor_id = actor_id
 
     def is_failed(self) -> bool:
+        """
+        Check fail status
+        @return true if unit is failed, false otherwise
+        """
         ret_val = self.state == UnitState.FAILED
         return ret_val
 
     def is_closed(self) -> bool:
+        """
+        Check close status
+        @return true if unit is closed, false otherwise
+        """
         ret_val = self.state == UnitState.CLOSED
         return ret_val
 
     def is_active(self) -> bool:
+        """
+        Check active status
+        @return true if unit is active, false otherwise
+        """
         ret_val = self.state == UnitState.ACTIVE
         return ret_val
 
     def has_pending_action(self) -> bool:
-        ret_val = self.state == UnitState.MODIFYING or self.state == UnitState.PRIMING or \
-                  self.state == UnitState.CLOSING
-        return ret_val
+        """
+        Check pending action status
+        @return true if unit has pending operation, false otherwise
+        """
+        return self.state == UnitState.MODIFYING or self.state == UnitState.PRIMING or self.state == UnitState.CLOSING
 
     def set_modified(self, *, modified):
+        """
+        Set modified unit
+        @param modified modified
+        """
         self.modified = modified
 
     def get_modified(self):
-        ret_val = self.modified
-        return ret_val
+        """
+        Get modified unit
+        @return modified unit
+        """
+        return self.modified
 
     def get_slice_id(self) -> ID:
-        ret_val = self.slice_id
-        return ret_val
+        """
+        Return slice id
+        @return slice id
+        """
+        return self.slice_id
 
     def get_reservation_id(self) -> ID:
-        ret_val = self.reservation_id
-        return ret_val
+        """
+        Get Reservation Id
+        @return reservation id
+        """
+        return self.reservation_id
 
     def get_reservation(self) -> IReservation:
+        """
+        Get Reservation
+        @return reservation
+        """
         ret_val = self.reservation
         return ret_val
 
     def get_parent_id(self) -> ID:
-        ret_val = self.parent_id
-        return ret_val
+        """
+        Get Parent Id
+        @return parent guid
+        """
+        return self.parent_id
 
     def set_parent_id(self, *, parent_id: ID):
+        """
+        Set Parent id
+        @param parent_id parent id
+        """
         self.parent_id = parent_id
 
     def complete_modify(self):
+        """
+        Complete Modify operation
+        """
         self.transition(to_state=UnitState.ACTIVE)
         self.merge_properties(incoming=self.modified.properties)
 
     def get_actor_id(self) -> ID:
-        ret_val = self.actor_id
-        return ret_val
+        """
+        Get Actor id
+        @return actor id
+        """
+        return self.actor_id
 
     def get_resource_type(self) -> ResourceType:
-        ret_val = self.rtype
-        return ret_val
+        """
+        Get Resource Type
+        @return resource type
+        """
+        return self.rtype
 
     def set_resource_type(self, *, rtype: ResourceType):
+        """
+        Set resource type
+        @param rtype resource type
+        """
         self.rtype = rtype
 
     def __eq__(self, other):
@@ -246,10 +387,18 @@ class Unit(ConfigToken):
         return self.id == other.id
 
     def get_notices(self) -> Notice:
+        """
+        Get notices
+        @return notices
+        """
         ret_val = self.notices
         return ret_val
 
     def add_notice(self, *, notice: str):
+        """
+        Add a notice
+        @param notice notice
+        """
         self.notices.add(msg=notice)
 
     def __str__(self):
@@ -260,12 +409,12 @@ class Unit(ConfigToken):
 
     @staticmethod
     def create_instance(properties: dict):
-        if Constants.PropertyPickleProperties not in properties:
-            raise Exception("Invalid arguments")
-        deserialized_unit = None
-        try:
-            serialized_unit = properties[Constants.PropertyPickleProperties]
-            deserialized_unit = pickle.loads(serialized_unit)
-        except Exception as e:
-            raise e
+        """
+        Create an Unit instance using the pickled instance read from the database
+        @param properties properties
+        """
+        if Constants.property_pickle_properties not in properties:
+            raise UnitException(Constants.invalid_argument)
+        serialized_unit = properties[Constants.property_pickle_properties]
+        deserialized_unit = pickle.loads(serialized_unit)
         return deserialized_unit

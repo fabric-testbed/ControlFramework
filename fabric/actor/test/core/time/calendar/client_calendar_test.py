@@ -41,7 +41,7 @@ class ClientCalendarTest(unittest.TestCase):
         return ClientCalendar(clock=clock)
 
     def _make_reservation(self, *, id: str):
-        return ClientReservationFactory.create(rid=ID(id=id))
+        return ClientReservationFactory.create(rid=ID(uid=id))
 
     def test_create(self):
         cal = self._get_calendar()

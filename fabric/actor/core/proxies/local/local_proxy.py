@@ -27,6 +27,7 @@ from fabric.actor.core.apis.i_actor import IActor
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.core.rpc_request_state import RPCRequestState
 from fabric.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
 from fabric.actor.core.kernel.incoming_query_rpc import IncomingQueryRPC
@@ -56,7 +57,7 @@ class LocalProxy(Proxy, ICallbackProxy):
     def __init__(self, *, actor: IActor):
         super().__init__(auth=actor.get_identity())
         self.logger = actor.get_logger()
-        self.proxy_type = Constants.ProtocolLocal
+        self.proxy_type = Constants.protocol_local
 
     def execute(self, *, request):
         try:
@@ -72,41 +73,15 @@ class LocalProxy(Proxy, ICallbackProxy):
                                             id_token=request.get_id_token(),
                                             caller=request.get_caller(), request_id=request.request_id)
 
-            elif request.get_type() == RPCRequestType.Ticket:
+            elif request.get_type() == RPCRequestType.Ticket or request.get_type() == RPCRequestType.Redeem or \
+                    request.get_type() == RPCRequestType.ExtendTicket or \
+                    request.get_type() == RPCRequestType.ExtendLease or \
+                    request.get_type() == RPCRequestType.Close or request.get_type() == RPCRequestType.Relinquish:
                 incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
                                                   reservation=request.reservation,
                                                   callback=request.callback, caller=request.get_caller())
-            elif request.get_type() == RPCRequestType.Redeem:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  callback=request.callback, caller=request.get_caller())
 
-            elif request.get_type() == RPCRequestType.ExtendTicket:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.ExtendLease:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.Close:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.Relinquish:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.UpdateTicket:
-                incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
-                                                  reservation=request.reservation,
-                                                  update_data=request.update_data, caller=request.get_caller())
-
-            elif request.get_type() == RPCRequestType.UpdateLease:
+            elif request.get_type() == RPCRequestType.UpdateTicket or request.get_type() == RPCRequestType.UpdateLease:
                 incoming = IncomingReservationRPC(message_id=request.get_message_id(), request_type=request.get_type(),
                                                   reservation=request.reservation,
                                                   update_data=request.update_data, caller=request.get_caller())
@@ -118,11 +93,11 @@ class LocalProxy(Proxy, ICallbackProxy):
                                              failed_reservation_id=request.failed_reservation_id,
                                              error_details=request.error_detail, caller=request.get_caller())
             else:
-                raise Exception("Unsupported RPC type: {}".format(request.get_type()))
+                raise ProxyException("Unsupported RPC type: {}".format(request.get_type()))
             RPCManagerSingleton.get().dispatch_incoming(actor=self.get_actor(), rpc=incoming)
 
         except Exception as e:
-            raise Exception("Error while processing RPC request{} {}".format(RPCError.InvalidRequest, e))
+            raise ProxyException("Error while processing RPC request{} {}".format(RPCError.InvalidRequest, e))
 
     def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken, id_token: str):
         state = self.LocalProxyRequestState()
@@ -149,5 +124,5 @@ class LocalProxy(Proxy, ICallbackProxy):
     def get_actor(self) -> IActor:
         result = ActorRegistrySingleton.get().get_actor(self.get_name())
         if result is None:
-            raise Exception("Actor does not exist.")
+            raise ProxyException("Actor does not exist.")
         return result

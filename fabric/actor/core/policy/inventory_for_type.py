@@ -28,6 +28,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import PolicyException
 
 if TYPE_CHECKING:
     from fabric.actor.core.util.resource_type import ResourceType
@@ -50,7 +51,7 @@ class InventoryForType:
 
     def donate(self, *, source: IClientReservation):
         if self.source is not None:
-            raise Exception("This inventory pool already has a source.")
+            raise PolicyException("This inventory pool already has a source.")
         self.source = source
 
     def get_source(self) -> IClientReservation:
@@ -66,7 +67,7 @@ class InventoryForType:
         return self.properties
 
     @abstractmethod
-    def allocate(self, *, count:int, request: dict, resource: dict = None) -> dict:
+    def allocate(self, *, count: int, request: dict, resource: dict = None) -> dict:
         """
         Allocates the specified number of units given the client request
         properties. This method is called for new ticketing/extending reservations.

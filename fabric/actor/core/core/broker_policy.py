@@ -36,6 +36,9 @@ from fabric.actor.core.kernel.reservation_states import ReservationStates
 from fabric.actor.core.util.prop_list import PropList
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.resource_type import ResourceType
+from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
+from fabric.actor.core.core.policy import Policy
+from fabric.actor.core.kernel.resource_set import ResourceSet
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker import IBroker
@@ -47,12 +50,11 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_server_reservation import IServerReservation
     from fabric.actor.core.util.id import ID
 
-from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
-from fabric.actor.core.core.policy import Policy
-from fabric.actor.core.kernel.resource_set import ResourceSet
-
 
 class BrokerPolicy(Policy, IBrokerPolicy):
+    """
+    Base implementation for Broker policy
+    """
     def __init__(self, *, actor: IBroker):
         super().__init__(actor=actor)
         # If true, every allocated ticket will require administrative approval
@@ -88,8 +90,6 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
         self.lock = threading.Lock()
 
-        # TODO Fetch Actor object and setup logger, actor and clock member variables
-
     def add_for_approval(self, *, reservation: IBrokerReservation):
         """
         Adds the reservation to the approval list.
@@ -112,7 +112,6 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
         @param reservation reservation
         """
-        return
 
     def bind(self, *, reservation: IBrokerReservation) -> bool:
         return False
@@ -129,7 +128,7 @@ class BrokerPolicy(Policy, IBrokerPolicy):
     def donate_delegation(self, *, delegation: IDelegation):
         return
 
-    def extend_broker(self, *, reservation:IBrokerReservation) -> bool:
+    def extend_broker(self, *, reservation: IBrokerReservation) -> bool:
         return False
 
     def initialize(self):
@@ -141,12 +140,14 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         """
         Releases the resources for a reservation that was rejected by the
         administrator.
-        
+
         @param reservation reservation
         """
-        return
 
     def remove_for_approval(self, *, reservation: IBrokerReservation):
+        """
+        Remove reservation from approval list
+        """
         try:
             self.lock.acquire()
             self.for_approval.remove(reservation=reservation)
@@ -154,9 +155,8 @@ class BrokerPolicy(Policy, IBrokerPolicy):
             self.lock.release()
 
     def revisit(self, *, reservation: IReservation):
-        if isinstance(reservation, IClientReservation):
-            if reservation.get_state() == ReservationStates.Ticketed:
-                self.donate_reservation(reservation=reservation)
+        if isinstance(reservation, IClientReservation) and reservation.get_state() == ReservationStates.Ticketed:
+            self.donate_reservation(reservation=reservation)
 
     def revisit_delegation(self, *, delegation: IDelegation):
         if delegation.get_state() == ReservationStates.Ticketed:
@@ -175,10 +175,10 @@ class BrokerPolicy(Policy, IBrokerPolicy):
     def extract(self, *, source: ResourceSet, delegation: ResourceDelegation) -> ResourceSet:
         """
         Creates a new resource set using the source and the specified delegation.
-        
+
         @param source source
-        @param delegation delegation 
-        @return returns ResourceSet 
+        @param delegation delegation
+        @return returns ResourceSet
         @throws Exception in case of error
         """
         rd = ResourceData()
@@ -200,27 +200,33 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         return extracted
 
     def get_client_id(self, *, reservation: IServerReservation) -> ID:
+        """
+        Get Client Id
+        """
         return reservation.get_client_auth_token().get_guid()
 
     @staticmethod
     def get_resource_pools_query() -> dict:
-        properties = {Constants.QueryAction: Constants.QueryActionDiscoverPools}
+        """
+        Return dictionary representing query
+        """
+        properties = {Constants.query_action: Constants.query_action_discover_pools}
         return properties
 
     @staticmethod
     def get_resource_pools(response: dict) -> Dict[ResourceType, ResourcePoolDescriptor]:
+        """
+        Get Resource Pools from Query response
+        @param response query response
+        """
         result = {}
 
-        try:
-            if Constants.PoolsCount in response:
-                count = int(response[Constants.PoolsCount])
-                for i in range(count):
-                    rd = ResourcePoolDescriptor()
-                    rd.reset(properties=response, prefix=Constants.PoolPrefix + str(i) + ".")
-                    result[rd.get_resource_type()] = rd
-
-        except Exception as e:
-            raise e
+        if Constants.pools_count in response:
+            count = int(response[Constants.pools_count])
+            for i in range(count):
+                rd = ResourcePoolDescriptor()
+                rd.reset(properties=response, prefix=Constants.pool_prefix + str(i) + ".")
+                result[rd.get_resource_type()] = rd
 
         return result
 
@@ -228,4 +234,4 @@ class BrokerPolicy(Policy, IBrokerPolicy):
     def get_query_action(properties: dict) -> str:
         if properties is None:
             return None
-        return properties.get(Constants.QueryAction, None)
+        return properties.get(Constants.query_action, None)

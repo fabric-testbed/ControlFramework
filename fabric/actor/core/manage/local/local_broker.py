@@ -29,6 +29,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.broker_management_object import BrokerManagementObject
 from fabric.actor.core.apis.i_mgmt_broker import IMgmtBroker
 from fabric.actor.core.manage.local.local_server_actor import LocalServerActor
@@ -49,7 +50,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
     def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
         if not isinstance(manager, BrokerManagementObject):
-            raise Exception("Invalid manager object. Required: {}".format(type(BrokerManagementObject)))
+            raise ManageException("Invalid manager object. Required: {}".format(type(BrokerManagementObject)))
 
     def add_broker(self, *, broker: ProxyAvro) -> bool:
         self.clear_last()
@@ -135,7 +136,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return ID(id=result.result)
+                return ID(uid=result.result)
         except Exception as e:
             self.last_exception = e
 
@@ -150,7 +151,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
             if result.status.get_code() == 0:
                 rids = []
                 for r in result.result:
-                    rids.append(ID(id=r))
+                    rids.append(ID(uid=r))
 
                 return rids
         except Exception as e:
@@ -183,8 +184,8 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
         return False
 
     def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType, request_properties: dict,
-                           config_properties: dict) -> bool:
+                           new_resource_type: ResourceType = None, request_properties: dict = None,
+                           config_properties: dict = None) -> bool:
         self.clear_last()
         try:
             result = self.manager.extend_reservation(reservation=reservation, new_end_time=new_end_time,
@@ -201,18 +202,17 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
     def extend_reservation_end_time(self, *, reservation: id, new_end_time: datetime) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.ExtendSameUnits, new_resource_type=None,
-                                       request_properties=None, config_properties=None)
+                                       new_units=Constants.extend_same_units)
 
     def extend_reservation_end_time_request(self, *, reservation: id, new_end_time: datetime,
                                             request_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.ExtendSameUnits, new_resource_type=None,
-                                       request_properties=request_properties,
-                                       config_properties=None)
+                                       new_units=Constants.extend_same_units,
+                                       request_properties=request_properties)
 
     def extend_reservation_end_time_request_config(self, *, reservation: id, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.ExtendSameUnits, new_resource_type=None,
-                                       request_properties=request_properties, config_properties=config_properties)
+                                       new_units=Constants.extend_same_units,
+                                       request_properties=request_properties,
+                                       config_properties=config_properties)

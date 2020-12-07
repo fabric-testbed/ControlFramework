@@ -45,9 +45,9 @@ class IAuthorityPolicy(IServerPolicy):
         Accepts inventory resources to be used for allocation of client requests.
         The policy should add the resources represented by this resource set to
         its inventory.
-        
+
         @params resources: resource set representing resources to be used for allocation
-        
+
         @raises Exception in case of error
         """
 
@@ -58,9 +58,9 @@ class IAuthorityPolicy(IServerPolicy):
         the policy must remove the specified concrete nodes from its inventory.
         Any nodes that reside on ejected hosts should be marked as failed. The
         policy should take no action to destroy those nodes.
-        
+
         @params resources : resources to be ejected
-        
+
         @raises Exception in case of error
         """
 
@@ -90,7 +90,7 @@ class IAuthorityPolicy(IServerPolicy):
         request.
 
         @params reservation: reservation to allocate resources for.
-        
+
         @returns true, if the request has been fulfilled, false, if the allocation
                 of resources will be delayed until a later time.
         @raises Exception in case of error
@@ -103,9 +103,9 @@ class IAuthorityPolicy(IServerPolicy):
         once per cycle. The method should determine whether to perform resource
         allocation on the given cycle and what requests to consider in that
         process.
-        
+
         @params cycle: the cycle the authority is making assignment for
-        
+
         @raises Exception in case of error
         """
 
@@ -117,14 +117,14 @@ class IAuthorityPolicy(IServerPolicy):
         fail the reservation, or indicate that the reservation should be sent
         back to the client with the deficit.
         See {@link IAuthorityReservation#setSendWithDeficit(boolean)}
-        
+
         @params reservation: reservation with deficit
-        
+
         @raises Exception in case of error
         """
 
     @abstractmethod
-    def extend_authority(self, *, reservation:IAuthorityReservation) -> bool:
+    def extend_authority(self, *, reservation: IAuthorityReservation) -> bool:
         """
         Handles a requests to extend the allocation of previously allocated
         resources. The requested resources can be obtained by calling
@@ -171,9 +171,9 @@ class IAuthorityPolicy(IServerPolicy):
         administrator will issue a call to freed(ResourceSet), which is
         used to free resources unconditionally.
 
-        
+
         @params resources: the resource set to be released
-        
+
         @raises Exception in case of error
         """
 
@@ -186,9 +186,9 @@ class IAuthorityPolicy(IServerPolicy):
         update its data structures to reflect the fact that the incoming
         resources are no longer in use. The policy should disregard any state
         information that individual resource units may contain.
-        
+
         @params resources: resources
-        
+
         @raises Exception in case of error
         """
 
@@ -205,12 +205,12 @@ class IAuthorityPolicy(IServerPolicy):
         hosts away from the problematic host and then it can retry the operation.
         Alternatively, the caller may use eject to force the removal of the
         concrete resources from the policy inventory.
-        
+
         @params resources : set of unavailable inventory resources
-        
+
         @returns 0 success, -1, at least one resource has hosted units on it and
                 cannot be marked unavailable
-        
+
         @raises Exception in case of error
         """
 
@@ -219,7 +219,7 @@ class IAuthorityPolicy(IServerPolicy):
         """
         Informs the policy that inventory resources have failed. This is a new
         method, which may change in the future.
-        
+
         @params resources: set of failed inventory resources
         """
 
@@ -228,9 +228,8 @@ class IAuthorityPolicy(IServerPolicy):
         """
         Informs the policy that inventory resources have failed. This is a new
         method, which may change in the future.
-        
-        @params resources
-                   set of failed inventory resources
+
+        @params resources: set of failed inventory resources
         """
 
     @abstractmethod
@@ -239,6 +238,6 @@ class IAuthorityPolicy(IServerPolicy):
         Informs the policy that previously failed inventory nodes have been
         recovered and now are ready to use. This is a new method and may change
         in the future.
-        
+
         @params resources: set of recovered inventory resources
         """

@@ -30,12 +30,12 @@ from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
 from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
+from fabric.actor.core.common.exceptions import SliceException
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.reservation_set import ReservationSet
 from fabric.actor.core.util.resource_data import ResourceData
 from fabric.actor.core.util.resource_type import ResourceType
 from fabric.actor.security.auth_token import AuthToken
-from fabric.actor.security.guard import Guard
 from fim.graph.abc_property_graph import ABCPropertyGraph
 
 
@@ -55,9 +55,9 @@ class Slice(IKernelSlice):
     reservations at many sites; and on the site Authority, where each slice may
     hold multiple reservations for resources at that site.
     """
-    def __init__(self, *, id: ID = None, name: str = "unspecified", data: ResourceData = None):
+    def __init__(self, *, slice_id: ID = None, name: str = "unspecified", data: ResourceData = None):
         # Globally unique identifier.
-        self.guid = id
+        self.guid = slice_id
         # Slice name. Not required to be globally or locally unique.
         self.name = name
         # Description string. Has only local meaning.
@@ -70,8 +70,6 @@ class Slice(IKernelSlice):
         self.type = SliceTypes.ClientSlice
         # The owner of the slice.
         self.owner = None
-        # Access control monitor.
-        self.guard = Guard()
         # Resource type associated with this slice. Used when the slice is used to
         # represent an inventory pool.
         self.resource_type = None
@@ -101,16 +99,16 @@ class Slice(IKernelSlice):
     def get_graph_id(self) -> ID:
         return self.graph_id
 
-    def set_graph(self, graph: ABCPropertyGraph):
+    def set_graph(self, *, graph: ABCPropertyGraph):
         self.graph = graph
-        self.set_graph_id(graph_id=ID(id=self.graph.get_graph_id()))
+        self.set_graph_id(graph_id=ID(uid=self.graph.get_graph_id()))
 
     def get_graph(self) -> ABCPropertyGraph:
         return self.graph
 
     def clone_request(self) -> ISlice:
         result = Slice()
-        result.slice_name = self.name
+        result.name = self.name
         result.guid = self.guid
         return result
 
@@ -121,9 +119,6 @@ class Slice(IKernelSlice):
 
     def get_description(self):
         return self.description
-
-    def get_guard(self) -> Guard:
-        return self.guard
 
     def get_local_properties(self):
         if self.rsrcdata is not None:
@@ -147,7 +142,7 @@ class Slice(IKernelSlice):
     def get_reservations(self) -> ReservationSet:
         return self.reservations
 
-    def get_delegations(self) -> Dict[str, IDelegation] :
+    def get_delegations(self) -> Dict[str, IDelegation]:
         return self.delegations
 
     def get_reservations_list(self) -> list:
@@ -181,13 +176,13 @@ class Slice(IKernelSlice):
 
     def register(self, *, reservation: IKernelReservation):
         if self.reservations.contains(rid=reservation.get_reservation_id()):
-            raise Exception("Reservation #{} already exists in slice".format(reservation.get_reservation_id()))
+            raise SliceException("Reservation #{} already exists in slice".format(reservation.get_reservation_id()))
 
         self.reservations.add(reservation=reservation)
 
     def register_delegation(self, *, delegation: IDelegation):
         if delegation.get_delegation_id() in self.delegations:
-            raise Exception("Delegation #{} already exists in slice".format(delegation.get_delegation_id()))
+            raise SliceException("Delegation #{} already exists in slice".format(delegation.get_delegation_id()))
 
         self.delegations[delegation.get_delegation_id()] = delegation
 
@@ -199,9 +194,6 @@ class Slice(IKernelSlice):
 
     def set_description(self, *, description: str):
         self.description = description
-
-    def set_guard(self, *, g: Guard):
-        self.guard = g
 
     def set_inventory(self, *, value: bool):
         if value:
@@ -217,8 +209,6 @@ class Slice(IKernelSlice):
 
     def set_owner(self, *, owner: AuthToken):
         self.owner = owner
-        self.guard.set_owner(owner=owner)
-        self.guard.set_object_id(object_id=self.guid)
 
     def set_properties(self, *, rsrcdata: ResourceData):
         self.rsrcdata = rsrcdata

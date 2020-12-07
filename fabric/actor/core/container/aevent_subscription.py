@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.util.id import ID
@@ -35,6 +37,9 @@ if TYPE_CHECKING:
 
 
 class AEventSubscription:
+    """
+    All event Subscription class
+    """
     def __init__(self, *, token: AuthToken, filters: list):
         self.subscription_id = ID()
         self.token = token
@@ -43,9 +48,16 @@ class AEventSubscription:
             self.filters[ID()] = f
 
     def get_subscription_id(self):
+        """
+        Get Subscription Id
+        """
         return self.subscription_id
 
     def has_access(self, *, token: AuthToken) -> bool:
+        """
+        Returns true if the token matches
+        @param token token
+        """
         if token is None:
             return False
         if token.get_name() is None:
@@ -55,14 +67,26 @@ class AEventSubscription:
         return self.token.get_name() == token.get_name()
 
     def add_event_filter(self, *, f: IEventFilter):
+        """
+        Add event filter
+        @param f filter
+        """
         fid = ID()
         self.filters[fid] = f
 
     def delete_filter(self, *, fid: ID):
+        """
+        Delete filter
+        @param fid fid
+        """
         if fid in self.filters:
             self.filters.pop(fid)
 
     def matches(self, *, event: IEvent):
+        """
+        Check if event matches the filters
+        @param event event
+        """
         if len(self.filters) == 0:
             return True
         for f in self.filters.values():
@@ -70,11 +94,22 @@ class AEventSubscription:
                 return False
         return True
 
+    @abstractmethod
     def deliver_event(self, *, event: IEvent):
-        raise NotImplementedError("Should have implemented this")
+        """
+        Deliver event
+        @param event event
+        """
 
+    @abstractmethod
     def drain_events(self, *, timeout: int) -> list:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Drain events
+        @param timeout timeout
+        """
 
+    @abstractmethod
     def is_abandoned(self) -> bool:
-        raise NotImplementedError("Should have implemented this")
+        """
+        Returns true if abandoned; otherwise false
+        """

@@ -28,22 +28,22 @@ from __future__ import annotations
 import traceback
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.proxies.kafka.translate import Translate
-from fabric.message_bus.messages.failed_rpc_avro import FailedRPCAvro
+from fabric.message_bus.messages.failed_rpc_avro import FailedRpcAvro
 from fabric.message_bus.messages.query_avro import QueryAvro
 from fabric.message_bus.messages.query_result_avro import QueryResultAvro
 from fabric.message_bus.producer import AvroProducerApi
-
-if TYPE_CHECKING:
-    from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
-    from fabric.actor.security.auth_token import AuthToken
-    from fabric.actor.core.util.id import ID
-
 from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.rpc_request_state import RPCRequestState
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric.actor.core.proxies.proxy import Proxy
+
+if TYPE_CHECKING:
+    from fabric.actor.core.apis.i_rpc_request_state import IRPCRequestState
+    from fabric.actor.security.auth_token import AuthToken
+    from fabric.actor.core.util.id import ID
 
 
 class KafkaProxyRequestState(RPCRequestState):
@@ -69,7 +69,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
         super().__init__(auth=identity)
         self.kafka_topic = kafka_topic
         self.logger = logger
-        self.proxy_type = Constants.ProtocolKafka
+        self.proxy_type = Constants.protocol_kafka
         self.type = self.TypeDefault
         self.producer = self.create_kafka_producer()
 
@@ -110,7 +110,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         elif request.get_type() == RPCRequestType.FailedRPC:
-            avro_message = FailedRPCAvro()
+            avro_message = FailedRpcAvro()
             avro_message.message_id = str(request.get_message_id())
             avro_message.request_id = str(request.request_id)
             avro_message.request_type = request.failed_request_type.value
@@ -123,7 +123,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
             avro_message.error_details = request.error_details
 
         else:
-            raise Exception("Unsupported RPC: type={}".format(request.get_type()))
+            raise ProxyException("Unsupported RPC: type={}".format(request.get_type()))
 
         if self.producer is None:
             self.producer = self.create_kafka_producer()

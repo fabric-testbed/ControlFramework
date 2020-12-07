@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PolicyException
 from fabric.actor.core.core.unit import Unit, UnitState
 from fabric.actor.core.core.unit_set import UnitSet
 from fabric.actor.core.policy.free_allocated_set import FreeAllocatedSet
@@ -70,26 +71,26 @@ class LUNControl(ResourceControl):
 
     def donate_reservation(self, *, reservation: IClientReservation):
         if self.tags.size() != 0:
-            Exception("only a single source reservation is supported")
+            raise PolicyException("only a single source reservation is supported")
 
         rset = reservation.get_resources()
         rtype = reservation.get_type()
         local = rset.get_local_properties()
 
         if local is None:
-            raise Exception("Missing local properties")
+            raise PolicyException(Constants.not_specified_prefix.format("local properties"))
 
         self.rtype = rtype
         size = 0
 
-        if Constants.PropertyLunRangeNum in local:
-            num_range = int(local[Constants.PropertyLunRangeNum])
+        if Constants.property_lun_range_num in local:
+            num_range = int(local[Constants.property_lun_range_num])
             for i in range(num_range):
-                startP = Constants.PropertyStartLUN + str(i)
-                endP = Constants.PropertyEndLUN + str(i)
-                if startP in local and endP in local:
-                    start = int(local[startP])
-                    end = int(local[endP])
+                start_p = Constants.property_start_lun + str(i)
+                end_p = Constants.property_end_lun + str(i)
+                if start_p in local and end_p in local:
+                    start = int(local[start_p])
+                    end = int(local[end_p])
                     if start == 0 and end == 0:
                         break
                     for j in range(start, end):
@@ -99,13 +100,13 @@ class LUNControl(ResourceControl):
                     self.logger.info("Tag donation: {}:{}-{}:{}".format(self.rtype, start, end, size))
 
         if size < reservation.get_units():
-            raise Exception("Insufficient lun tags specified in donated reservation: donated {} rset says: {}".format(size, reservation.get_units()))
+            raise PolicyException("Insufficient lun tags specified in donated reservation: donated {} rset says: {}".format(size, reservation.get_units()))
 
     def assign(self, *, reservation: IAuthorityReservation) -> ResourceSet:
         reservation.set_send_with_deficit(value=True)
 
         if self.tags.size() == 0:
-            raise Exception("no inventory")
+            raise PolicyException("no inventory")
 
         requested = reservation.get_requested_resources()
         rtype = reservation.get_type()
@@ -122,14 +123,14 @@ class LUNControl(ResourceControl):
             if self.tags.get_free() > 0:
                 tag = self.tags.allocate()
                 rd = ResourceData()
-                rd.resource_properties[Constants.UnitLUNTag] = tag
+                rd.resource_properties[Constants.unit_lun_tag] = tag
                 gained = UnitSet(plugin=self.authority.get_plugin())
                 u = Unit(id=ID())
                 u.set_resource_type(rtype=rtype)
-                u.set_property(name=Constants.UnitLUNTag, value=str(tag))
-                if Constants.ResourceStorageCapacity in ticket_properties:
-                    capacity = int(ticket_properties[Constants.ResourceStorageCapacity])
-                    u.set_property(name=Constants.UnitStorageCapacity, value=str(capacity))
+                u.set_property(name=Constants.unit_lun_tag, value=str(tag))
+                if Constants.resource_storage_capacity in ticket_properties:
+                    capacity = int(ticket_properties[Constants.resource_storage_capacity])
+                    u.set_property(name=Constants.unit_storage_capacity, value=str(capacity))
 
                 gained.add_unit(u=u)
                 return ResourceSet(gained=gained, rtype=rtype, rdata=rd)
@@ -140,8 +141,8 @@ class LUNControl(ResourceControl):
 
     def get_tag(self, *, u: Unit):
         tag = None
-        if u.get_property(name=Constants.UnitLUNTag) is not None:
-            tag = int(u.get_property(name=Constants.UnitLUNTag))
+        if u.get_property(name=Constants.unit_lun_tag) is not None:
+            tag = int(u.get_property(name=Constants.unit_lun_tag))
         return tag
 
     def free(self, *, uset: dict):

@@ -25,10 +25,15 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import traceback
 from typing import TYPE_CHECKING
 
 from datetime import datetime
+from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
+from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
+from fabric.actor.core.common.exceptions import ReservationException
+from fabric.actor.core.kernel.reservation_state_transition_event import ReservationStateTransitionEvent
+from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
+from fabric.actor.core.util.reservation_state import ReservationState
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -40,13 +45,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.util.resource_type import ResourceType
-
-from fabric.actor.core.apis.i_reservation import IReservation, ReservationCategory
-from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
-from fabric.actor.core.kernel.reservation_state_transition_event import ReservationStateTransitionEvent
-from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
-from fabric.actor.core.util.reservation_state import ReservationState
-from fabric.actor.security.guard import Guard
 
 
 class Reservation(IKernelReservation):
@@ -91,8 +89,6 @@ class Reservation(IKernelReservation):
         self.state = ReservationStates.Nascent
         # Reservation pending state.
         self.pending_state = ReservationPendingStates.None_
-        # Access control monitor
-        self.guard = Guard()
         # Has this reservation ever been extended?
         self.extended = False
         # The current resources associated with this reservation.
@@ -207,33 +203,26 @@ class Reservation(IKernelReservation):
         return True
 
     def internal_error(self, *, err: str):
+        """
+        Internal error log and raise exception
+        """
         self.logger.error("internal error for reservation: {} : {}".format(self, err))
-        raise Exception("internal error: {}".format(err))
+        raise ReservationException("internal error: {}".format(err))
 
     def error(self, *, err: str):
+        """
+        Error log and raise exception
+        """
         if self.logger is not None:
             self.logger.error("error for reservation: {} : {}".format(self, err))
         else:
             print("error for reservation: {} : {}".format(self, err))
-        raise Exception("error: {}".format(err))
-
-    def log_warning(self, *, message: str):
-        self.logger.warning("reservation #{} : {}".format(self.rid, message))
-
-    def log_debug(self, *, message: str):
-        self.logger.debug("reservation #{} : {}".format(self.rid, message))
-
-    def log_info(self, *, message: str):
-        self.logger.info("reservation #{} : {}".format(self.rid, message))
-
-    def log_error(self, *, message: str, exception: Exception):
-        traceback.print_exc()
-        self.logger.warning("reservation #{} : {} : {}".format(self.rid, message, exception))
-
-    def log_remote_error(self, *, message: str, exception: Exception):
-        self.log_error(message="remote error: {}".format(message), exception=exception)
+        raise ReservationException("error: {}".format(err))
 
     def clear_dirty(self):
+        """
+        Clear dirty flag
+        """
         self.dirty = False
         self.state_transition = False
 
@@ -241,31 +230,45 @@ class Reservation(IKernelReservation):
         """
         Clears all event notices associated with the reservation.
         """
-        return
 
     def close(self):
-        return
+        """
+        Close a reservation
+        """
 
     def extend_lease(self):
-        return
+        """
+        Extend lease on reservation
+        """
 
     def modify_lease(self):
-        return
+        """
+        Modify lease on reservation
+        """
 
     def extend_ticket(self, *, actor: IActor):
+        """
+        Extend a ticket
+        """
         self.internal_error(err="abstract extend_ticket trap")
 
     def fail(self, *, message: str, exception: Exception = None):
+        """
+        Fail a reservation
+        """
         self.error_message = message
         self.bid_pending = False
         self.transition(prefix=message, state=ReservationStates.Failed, pending=ReservationPendingStates.None_)
-        self.log_error(message=message, exception=exception)
+        self.logger.error(message + " e: {}".format(exception))
 
     def fail_warn(self, *, message: str):
+        """
+        Fail with a warning
+        """
         self.error_message = message
         self.transition(prefix=message, state=ReservationStates.Failed, pending=ReservationPendingStates.None_)
         message = "reservation has failed: {} : [{}]".format(message, self)
-        self.log_warning(message=message)
+        self.logger.warning(message)
 
     def get_actor(self):
         return self.actor
@@ -288,9 +291,6 @@ class Reservation(IKernelReservation):
 
     def get_category(self) -> ReservationCategory:
         return self.category
-
-    def get_guard(self) -> Guard:
-        return self.guard
 
     def get_kernel_slice(self) -> IKernelSlice:
         return self.slice
@@ -343,9 +343,6 @@ class Reservation(IKernelReservation):
         return 0
 
     def get_reservation_id(self) -> ID:
-        return self.rid
-
-    def get_reference(self) -> ID:
         return self.rid
 
     def get_reservation_state(self) -> ReservationState:
@@ -406,6 +403,10 @@ class Reservation(IKernelReservation):
         return self.approved
 
     def is_bid_pending(self) -> bool:
+        """
+        Is bid pending
+        @return bid pending
+        """
         return self.bid_pending
 
     def is_closed(self) -> bool:
@@ -450,6 +451,10 @@ class Reservation(IKernelReservation):
         return self.pending_state == ReservationPendingStates.Redeeming
 
     def is_renewable(self) -> bool:
+        """
+        Is reservation renewable
+        @return true if renewable; false otherwise
+        """
         return self.renewable
 
     def is_terminal(self) -> bool:
@@ -491,6 +496,9 @@ class Reservation(IKernelReservation):
         return
 
     def setup(self):
+        """
+        Setup a reservation
+        """
         if self.resources is not None:
             self.resources.setup(reservation=self)
 
@@ -545,9 +553,16 @@ class Reservation(IKernelReservation):
         self.approved_term = term
 
     def set_bid_pending(self, *, value: bool):
+        """
+        Set Bid Pending
+        @param value value
+        """
         self.bid_pending = value
 
     def set_dirty(self):
+        """
+        Set dirty
+        """
         self.dirty = True
 
     def set_expired(self, *, value: bool):
@@ -556,7 +571,7 @@ class Reservation(IKernelReservation):
     def set_logger(self, *, logger):
         self.logger = logger
 
-    def set_pending_recover(self, *, pending_recover:bool):
+    def set_pending_recover(self, *, pending_recover: bool):
         self.pending_recover = pending_recover
 
     def set_service_pending(self, *, code: ReservationPendingStates):
@@ -584,8 +599,7 @@ class Reservation(IKernelReservation):
         return msg
 
     def transition(self, *, prefix: str, state: ReservationStates, pending: ReservationPendingStates):
-        if self.state == ReservationStates.Failed:
-            if self.logger is not None:
+        if self.state == ReservationStates.Failed and self.logger is not None:
                 self.logger.debug("failed")
 
         if self.logger is not None:
@@ -640,12 +654,25 @@ class Reservation(IKernelReservation):
         self.term.validate()
 
     def set_local_property(self, *, key: str, value: str):
+        """
+        Set local property
+        @param key key
+        @param value value
+        """
         self.resources.get_local_properties()[key] = value
 
     def get_local_property(self, *, key: str) -> str:
+        """
+        Get local property
+        @return local property
+        """
         return self.resources.get_local_properties()[key]
 
     def get_join_state(self) -> JoinState:
+        """
+        Get Join State
+        @return join state
+        """
         return JoinState.None_
 
     class CountHelper:

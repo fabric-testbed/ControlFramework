@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # MIT License
 #
 # Copyright (c) 2020 FABRIC Testbed
@@ -30,6 +29,8 @@ from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
 from fabric.actor.core.apis.i_concrete_set import IConcreteSet
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import TicketException
 from fabric.actor.core.delegation.resource_ticket import ResourceTicket
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.notice import Notice
@@ -70,8 +71,6 @@ class Ticket(IConcreteSet):
         self.logger = None
         self.reservation = None
 
-        # TODO Fetch reservation object and setup logger, reservation and plugin variables
-
     def __str__(self):
         result = "Ticket [units = {} oldUnits = {} ".format(self.get_units(), self.old_units)
         if self.reservation is not None:
@@ -84,7 +83,12 @@ class Ticket(IConcreteSet):
         result += "]"
         return result
 
-    def restore(self, *,  plugin: IBasePlugin, reservation: IReservation):
+    def restore(self, *, plugin: IBasePlugin, reservation: IReservation):
+        """
+        Restore members after instantiating the object post database read
+        @param plugin plugin
+        @param reservation reservation
+        """
         self.plugin = plugin
         self.logger = self.plugin.get_logger()
         self.reservation = reservation
@@ -97,46 +101,55 @@ class Ticket(IConcreteSet):
             self.logger.error("Exception occurred while encoding {}".format(e))
         return None
 
-    def decode(self, *, encoded_ticket, plugin: IBasePlugin):
+    def decode(self, *, encoded, plugin: IBasePlugin):
         try:
-            ticket = pickle.loads(encoded_ticket)
+            ticket = pickle.loads(encoded)
             ticket.plugin = plugin
             ticket.logger = plugin.get_logger()
+            return ticket
         except Exception as e:
             self.logger.error("Exception occurred while decoding {}".format(e))
         return None
 
     def get_type(self) -> ResourceType:
+        """
+        Return resource type
+        @return resource type
+        """
         if self.resource_ticket is None:
             return None
         return self.resource_ticket.get_type()
 
     def get_ticket(self) -> ResourceTicket:
+        """
+        Return resource ticket
+        @return resource ticket
+        """
         return self.resource_ticket
 
     def add(self, *, concrete_set, configure: bool):
-        raise Exception("add() is not supported by Ticket")
+        raise TicketException("add() is not supported by Ticket")
 
     def change(self, *, concrete_set: IConcreteSet, configure: bool):
         self.old_units = self.get_units()
 
         if not isinstance(concrete_set, Ticket):
-            raise Exception("Invalid concrete_set type")
+            raise TicketException(Constants.invalid_argument)
 
         assert concrete_set.resource_ticket is not None
 
-        # TODO
         self.resource_ticket = self.plugin.get_ticket_factory().clone(original=concrete_set.resource_ticket)
 
-    def clone(self):
+    def _clone(self):
         result = Ticket(ticket=self.resource_ticket, plugin=self.plugin, authority=self.authority)
         result.old_units = self.old_units
         return result
 
+    def clone(self):
+        return self._clone()
+
     def clone_empty(self):
-        result = Ticket(ticket=self.resource_ticket, plugin=self.plugin, authority=self.authority)
-        result.old_units = self.old_units
-        return result
+        return self._clone()
 
     def close(self):
         return
@@ -157,6 +170,10 @@ class Ticket(IConcreteSet):
         return self.resource_ticket.get_properties()
 
     def get_authority(self) -> IAuthorityProxy:
+        """
+        Return corresponding Authority
+        @return authority
+        """
         return self.authority
 
     def get_plugin(self) -> IBasePlugin:
@@ -167,6 +184,10 @@ class Ticket(IConcreteSet):
         return self.plugin
 
     def get_site_proxy(self) -> IAuthorityProxy:
+        """
+        Return corresponding Authority
+        @return authority
+        """
         return self.authority
 
     def get_term(self) -> Term:
@@ -176,7 +197,7 @@ class Ticket(IConcreteSet):
 
     def holding(self, *, when: datetime) -> int:
         if when is None:
-            raise Exception("InvalidArgument")
+            raise TicketException(Constants.invalid_argument)
 
         term = self.get_term()
         if term is None:
@@ -202,13 +223,13 @@ class Ticket(IConcreteSet):
         return True
 
     def modify(self, *, concrete_set, configure: bool):
-        raise Exception("Not supported by TicketSet")
+        raise TicketException("Not supported by TicketSet")
 
     def probe(self):
         return
 
     def remove(self, *, concrete_set, configure: bool):
-        raise Exception("Not supported by TicketSet")
+        raise TicketException("Not supported by TicketSet")
 
     def setup(self, *, reservation: IReservation):
         """
@@ -222,7 +243,7 @@ class Ticket(IConcreteSet):
 
     def validate_concrete(self, *, rtype: ResourceType, units: int, term: Term):
         if self.get_units() < units:
-            raise Exception("Ticket not valid for requested units")
+            raise TicketException("Ticket not valid for requested units")
 
     def validate_incoming(self):
         return

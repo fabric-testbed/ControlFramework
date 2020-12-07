@@ -35,6 +35,7 @@ from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import BrokerException
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.proxies.kafka.kafka_authority_proxy import KafkaAuthorityProxy
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
@@ -51,12 +52,12 @@ from fabric.actor.test.dummy_authority_proxy import DummyAuthorityProxy
 class BrokerPolicyTest(BaseTestCase):
     DonateStartCycle = 10
     DonateEndCycle = 100
-    Logger = logging.getLogger('BrokerPolicyTest')
+    logger = logging.getLogger('BrokerPolicyTest')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
     logging.basicConfig(format=log_format, filename="actor.log")
-    Logger.setLevel(logging.INFO)
+    logger.setLevel(logging.INFO)
 
-    def get_broker(self) -> IBroker:
+    def get_broker(self, *, name: str = BaseTestCase.broker_name, guid: ID = BaseTestCase.broker_guid) -> IBroker:
         db = self.get_container_database()
         db.reset_db()
         broker = super().get_broker()
@@ -65,13 +66,13 @@ class BrokerPolicyTest(BaseTestCase):
         return broker
 
     def get_source(self, units: int, rtype: ResourceType, broker: IBroker, slice_obj: ISlice):
-        raise Exception("not implemented")
+        raise BrokerException(Constants.not_implemented)
 
     def get_request(self, units: int, rtype: ResourceType, start: datetime, end: datetime):
-        raise Exception("not implemented")
+        raise BrokerException(Constants.not_implemented)
 
     def get_request_from_request(self, request: IBrokerReservation, units: int, rtype: ResourceType, start: datetime, end: datetime):
-        raise Exception("not implemented")
+        raise BrokerException(Constants.not_implemented)
 
     def assert_ticketed(self, r: IReservation, units: int, rtype: ResourceType, start: datetime, end: datetime):
         self.assertIsNotNone(r)
@@ -87,12 +88,9 @@ class BrokerPolicyTest(BaseTestCase):
         from fabric.actor.core.container.globals import GlobalsSingleton
         proxy = KafkaAuthorityProxy(kafka_topic="test-topic", identity=auth, logger=GlobalsSingleton.get().get_logger())
 
-        try:
-            if ActorRegistrySingleton.get().get_proxy(Constants.ProtocolLocal, "mysite") is None:
-                dummy = DummyAuthorityProxy(auth=auth)
-                ActorRegistrySingleton.get().register_proxy(dummy)
-        except Exception as e:
-            raise e
+        if ActorRegistrySingleton.get().get_proxy(Constants.protocol_local, "mysite") is None:
+            dummy = DummyAuthorityProxy(auth=auth)
+            ActorRegistrySingleton.get().register_proxy(dummy)
         return proxy
 
     def _test_a_create(self):

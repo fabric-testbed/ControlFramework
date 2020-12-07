@@ -27,6 +27,7 @@ import pickle
 import queue
 import threading
 import traceback
+from typing import List
 
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_policy import IPolicy
@@ -40,6 +41,7 @@ from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_reservation_tracker import IReservationTracker
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ActorException
 from fabric.actor.core.container.message_service import MessageService
 from fabric.actor.core.core.reservation_tracker import ReservationTracker
 from fabric.actor.core.delegation.delegation_factory import DelegationFactory
@@ -57,12 +59,13 @@ from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.iterable_queue import IterableQueue
 from fabric.actor.core.util.reflection_utils import ReflectionUtils
 from fabric.actor.core.util.reservation_set import ReservationSet
-from fabric.actor.security.access_monitor import AccessMonitor
 from fabric.actor.security.auth_token import AuthToken
-from fabric.actor.security.guard import Guard
 
 
 class ExecutionStatus:
+    """
+    Execution status of an action on Actor Thread
+    """
     def __init__(self):
         self.done = False
         self.exception = None
@@ -70,15 +73,24 @@ class ExecutionStatus:
         self.lock = threading.Condition()
 
     def mark_done(self):
+        """
+        Mark as done
+        """
         self.done = True
 
 
 class ActorEvent(IActorEvent):
+    """
+    Actor Event
+    """
     def __init__(self, *, status: ExecutionStatus, runnable: IActorRunnable):
         self.status = status
         self.runnable = runnable
 
     def process(self):
+        """
+        Process an event
+        """
         try:
             self.status.result = self.runnable.run()
         except Exception as e:
@@ -127,8 +139,6 @@ class Actor(IActor):
         self.logger = None
         # Factory for term.
         self.clock = clock
-        # Access control monitor
-        self.monitor = None
         # current cycle
         self.current_cycle = -1
         # True if the current tick is the first tick this actor has received.
@@ -181,7 +191,6 @@ class Actor(IActor):
         self.wrapper = None
         self.logger = None
         self.clock = None
-        self.monitor = None
         self.current_cycle = -1
         self.first_tick = True
         self.stopped = False
@@ -201,9 +210,8 @@ class Actor(IActor):
         self.reservation_tracker = ReservationTracker()
         filters = [AllActorEventsFilter(actor_guid=self.get_guid())]
         from fabric.actor.core.container.globals import GlobalsSingleton
-        self.subscription_id = GlobalsSingleton.get().event_manager.create_subscription(token=self.identity,
-                                                                                        filters=filters,
-                                                                                        handler=self.reservation_tracker)
+        self.subscription_id = GlobalsSingleton.get().event_manager.create_subscription(
+            token=self.identity, filters=filters, handler=self.reservation_tracker)
 
     def actor_removed(self):
         if self.subscription_id is not None:
@@ -250,7 +258,7 @@ class Actor(IActor):
                     always
         """
         self.logger.error(err)
-        raise Exception(err)
+        raise ActorException(err)
 
     def extend(self, *, rid: ID, resources: ResourceSet, term: Term):
         self.wrapper.extend_reservation(rid=rid, resources=resources, term=term)
@@ -306,14 +314,14 @@ class Actor(IActor):
     def get_actor_clock(self) -> ActorClock:
         return self.clock
 
-    def get_client_slices(self) -> list:
+    def get_client_slices(self) -> List[ISlice]:
         return self.wrapper.get_client_slices()
 
     def get_current_cycle(self) -> int:
         return self.current_cycle
 
     def get_description(self) -> str:
-        return self.get_description()
+        return self.description
 
     def get_guid(self) -> ID:
         if self.identity is not None:
@@ -323,7 +331,11 @@ class Actor(IActor):
     def get_identity(self) -> AuthToken:
         return self.identity
 
-    def get_inventory_slices(self) -> list:
+    def get_inventory_slices(self) -> List[ISlice]:
+        """
+        Get inventory slices
+        @return inventory slices
+        """
         return self.wrapper.get_inventory_slices()
 
     def get_logger(self):
@@ -338,7 +350,7 @@ class Actor(IActor):
     def get_reservation(self, *, rid: ID) -> IReservation:
         return self.wrapper.get_reservation(rid=rid)
 
-    def get_reservations(self, *, slice_id: ID) -> list:
+    def get_reservations(self, *, slice_id: ID) -> List[IReservation]:
         return self.wrapper.get_reservations(slice_id=slice_id)
 
     def get_plugin(self):
@@ -358,28 +370,25 @@ class Actor(IActor):
 
         if not self.initialized:
             if self.identity is None:
-                raise Exception("The actor is not properly created: no identity")
+                raise ActorException("The actor is not properly created: no identity")
 
             if self.plugin is None:
-                raise Exception("The actor is not properly created: no plugin")
+                raise ActorException("The actor is not properly created: no plugin")
 
             if self.policy is None:
-                raise Exception("The actor is not properly created: no policy")
-
-            if self.monitor is None:
-                self.monitor = AccessMonitor()
+                raise ActorException("The actor is not properly created: no policy")
 
             if self.name is None:
                 self.name = self.identity.get_name()
 
             if self.name is None:
-                raise Exception("The actor is not properly created: no name")
+                raise ActorException("The actor is not properly created: no name")
 
             if self.clock is None:
                 self.clock = GlobalsSingleton.get().get_container().get_actor_clock()
 
             if self.clock is None:
-                raise Exception("The actor is not properly created: no clock")
+                raise ActorException("The actor is not properly created: no clock")
 
             if self.logger is None:
                 self.logger = GlobalsSingleton.get().get_logger()
@@ -391,8 +400,7 @@ class Actor(IActor):
             self.policy.set_actor(actor=self)
             self.policy.initialize()
 
-            self.wrapper = KernelWrapper(actor=self, plugin=self.plugin, policy=self.policy, monitor=self.monitor,
-                                         guard=Guard())
+            self.wrapper = KernelWrapper(actor=self, plugin=self.plugin, policy=self.policy)
 
             self.current_cycle = -1
 
@@ -406,8 +414,16 @@ class Actor(IActor):
     def is_stopped(self) -> bool:
         return self.stopped
 
-    def query(self, *, query: dict = None, caller: AuthToken= None, actor_proxy: IActorProxy = None,
+    def query(self, *, query: dict = None, caller: AuthToken = None, actor_proxy: IActorProxy = None,
               handler: IQueryResponseHandler = None, id_token: str = None) -> dict:
+        """
+        Query an actor
+        @param query query
+        @param caller caller
+        @param actor_proxy actor proxy
+        @param handler response handler
+        @param id_token identity token
+        """
         if actor_proxy is None and handler is None:
             return self.wrapper.query(properties=query, caller=caller, id_token=id_token)
         else:
@@ -417,6 +433,9 @@ class Actor(IActor):
             return None
 
     def recover(self):
+        """
+        Recover
+        """
         self.logger.info("Starting recovery")
         self.recovery_starting()
         self.logger.debug("Recovering inventory slices")
@@ -438,27 +457,40 @@ class Actor(IActor):
         self.logger.info("Recovery complete")
 
     def recovery_starting(self):
+        """
+        Recovery starting
+        """
         self.plugin.recovery_starting()
         self.policy.recovery_starting()
 
     def recovery_ended(self):
+        """
+        Recovery ended
+        """
         self.plugin.recovery_ended()
         self.policy.recovery_ended()
 
     def recover_slices(self, *, properties: list):
+        """
+        Recover slices
+        @param properties properties
+        """
         for p in properties:
             try:
                 self.recover_slice(properties=p)
             except Exception as e:
                 self.logger.error("Error in recoverSlice for property list {}".format(e))
-                # TODO
-                raise e
 
     def recover_slice(self, *, properties: dict):
-        slice_id = ID(id=properties['slc_guid'])
+        """
+        Recover slice
+        @param properties properties
+        """
+        if properties.get('slc_guid', None) is None:
+            raise ActorException("Missing slice guid")
 
-        if slice_id is None:
-            raise Exception("Missing slice guid")
+        slice_id = ID(uid=properties['slc_guid'])
+
         slice_obj = self.get_slice(slice_id=slice_id)
         self.logger.debug("Found slice_id: {} slice:{}".format(slice_id, slice_obj))
 
@@ -472,7 +504,7 @@ class Actor(IActor):
             self.plugin.revisit(slice_obj=slice_obj)
 
             self.logger.debug("Registering slice: {}".format(slice_id))
-            self.re_register_slice(slice_obj=slice_obj)
+            self.re_register_slice(slice_object=slice_obj)
 
             self.logger.debug("Recovering reservations in slice: {}".format(slice_id))
             self.recover_reservations(slice_obj=slice_obj)
@@ -483,6 +515,10 @@ class Actor(IActor):
             self.logger.info("Recovery of slice {} complete".format(slice_id))
 
     def recover_reservations(self, *, slice_obj: ISlice):
+        """
+        Recover reservations
+        @param slice_obj slice object
+        """
         self.logger.info(
             "Starting to recover reservations in slice {}({})".format(slice_obj.get_name(), slice_obj.get_slice_id()))
         reservations = None
@@ -490,7 +526,7 @@ class Actor(IActor):
             reservations = self.plugin.get_database().get_reservations_by_slice_id(slice_id=slice_obj.get_slice_id())
         except Exception as e:
             self.logger.error(e)
-            raise Exception(
+            raise ActorException(
                 "Could not fetch reservation records for slice {}({}) from database".format(slice_obj.get_name(),
                                                                                             slice_obj.get_slice_id()))
 
@@ -506,6 +542,11 @@ class Actor(IActor):
         self.logger.info("Recovery for reservations in slice {} completed".format(slice_obj))
 
     def recover_reservation(self, *, properties: dict, slice_obj: ISlice):
+        """
+        Recover reservation
+        @param properties properties
+        @param slice_obj slice object
+        """
         try:
             r = ReservationFactory.create_instance(properties=properties, actor=self, slice_obj=slice_obj,
                                                    logger=self.logger)
@@ -537,9 +578,13 @@ class Actor(IActor):
         except Exception as e:
             traceback.print_exc()
             self.logger.error("Exception occurred in recovering reservation e={}".format(e))
-            raise Exception("Could not recover Reservation #{}".format(properties))
+            raise ActorException("Could not recover Reservation #{}".format(properties))
 
     def recover_delegations(self, *, slice_obj: ISlice):
+        """
+        Recover delegations for a slice
+        @param slice_obj slice object
+        """
         self.logger.info(
             "Starting to recover delegations in slice {}({})".format(slice_obj.get_name(), slice_obj.get_slice_id()))
         delegations = None
@@ -547,7 +592,7 @@ class Actor(IActor):
             delegations = self.plugin.get_database().get_delegations_by_slice_id(slice_id=slice_obj.get_slice_id())
         except Exception as e:
             self.logger.error(e)
-            raise Exception(
+            raise ActorException(
                 "Could not fetch delegations records for slice {}({}) from database".format(slice_obj.get_name(),
                                                                                             slice_obj.get_slice_id()))
 
@@ -563,6 +608,11 @@ class Actor(IActor):
         self.logger.info("Recovery for delegations in slice {} completed".format(slice_obj))
 
     def recover_delegation(self, *, properties: dict, slice_obj: ISlice):
+        """
+        Recover delegation
+        @param properties properties
+        @param slice_obj slice object
+        """
         try:
             d = DelegationFactory.create_instance(properties=properties, actor=self, slice_obj=slice_obj,
                                                   logger=self.logger)
@@ -594,7 +644,7 @@ class Actor(IActor):
         except Exception as e:
             traceback.print_exc()
             self.logger.error("Exception occurred in recovering delegation e={}".format(e))
-            raise Exception("Could not recover delegation #{}".format(properties))
+            raise ActorException("Could not recover delegation #{}".format(properties))
 
     def register(self, *, reservation: IReservation):
         self.wrapper.register_reservation(reservation=reservation)
@@ -609,8 +659,8 @@ class Actor(IActor):
         if rid is not None:
             self.wrapper.remove_reservation(rid=rid)
 
-    def remove_slice(self, *, slice_obj: ISlice):
-        self.wrapper.remove_slice(slice_id=slice_obj.get_slice_id())
+    def remove_slice(self, *, slice_object: ISlice):
+        self.wrapper.remove_slice(slice_id=slice_object.get_slice_id())
 
     def remove_slice_by_slice_id(self, *, slice_id: ID):
         self.wrapper.remove_slice(slice_id=slice_id)
@@ -621,41 +671,80 @@ class Actor(IActor):
     def re_register(self, *, reservation: IReservation):
         self.wrapper.re_register_reservation(reservation=reservation)
 
-    def re_register_slice(self, *, slice_obj: ISlice):
-        self.wrapper.re_register_slice(slice_object=slice_obj)
+    def re_register_slice(self, *, slice_object: ISlice):
+        self.wrapper.re_register_slice(slice_object=slice_object)
 
     def issue_delayed(self):
+        """
+        Issues delayed operations
+        """
+        assert self.recovered
         self.close_reservations(reservations=self.closing)
         self.closing.clear()
 
     def reset(self):
+        """
+        Reset an actor
+        """
         self.issue_delayed()
         self.policy.reset()
 
     def set_actor_clock(self, *, clock):
+        """
+        Set actor clock
+        @param clock clock
+        """
         self.clock = clock
 
     def set_description(self, *, description: str):
+        """
+        Set description
+        @param description description
+        """
         self.description = description
 
     def set_identity(self, *, token: AuthToken):
+        """
+        Set identity
+        @param token token
+        """
         self.identity = token
         self.name = self.identity.get_name()
         self.guid = token.get_guid()
 
     def set_policy(self, *, policy):
+        """
+        Set policy
+        @param policy policy
+        """
         self.policy = policy
 
     def set_recovered(self, *, value: bool):
+        """
+        Set recovered flag
+        @param value value
+        """
         self.recovered = value
 
     def set_plugin(self, *, plugin):
+        """
+        Set plugin
+        @param plugin
+        """
         self.plugin = plugin
 
     def set_stopped(self, *, value: bool):
+        """
+        Set stopped flag
+        @param value value
+        """
         self.stopped = value
 
     def is_on_actor_thread(self) -> bool:
+        """
+        Check if running on actor thread
+        @return true if running on actor thread, false otherwise
+        """
         result = False
         try:
             self.thread_lock.acquire()
@@ -665,6 +754,10 @@ class Actor(IActor):
         return result
 
     def execute_on_actor_thread_and_wait(self, *, runnable: IActorRunnable):
+        """
+        Execute an incoming action on actor thread
+        @param runnable incoming action/operation
+        """
         if self.is_on_actor_thread():
             return runnable.run()
         else:
@@ -677,12 +770,15 @@ class Actor(IActor):
                 while not status.done:
                     status.lock.wait()
 
-            if status is not None and status.exception is not None:
+            if status.exception is not None:
                 raise status.exception
 
             return status.result
 
     def run(self):
+        """
+        Actor run function for actor thread
+        """
         try:
             self.actor_count -= 1
             self.actor_main()
@@ -690,10 +786,13 @@ class Actor(IActor):
             self.logger.error("Unexpected error {}".format(e))
 
     def start(self):
+        """
+        Start an Actor
+        """
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
-                raise Exception("This actor has already been started")
+                raise ActorException("This actor has already been started")
 
             self.thread = threading.Thread(target=self.run)
             self.thread.setName(self.get_name())
@@ -705,6 +804,9 @@ class Actor(IActor):
         self.message_service.start()
 
     def stop(self):
+        """
+        Stop an actor
+        """
         self.stopped = True
         self.message_service.stop()
         try:
@@ -727,52 +829,80 @@ class Actor(IActor):
                 self.thread_lock.release()
 
     def tick_handler(self):
-        return
+        """
+        Tick handler
+        """
 
     def handle_failed_rpc(self, *, rid: ID, rpc: FailedRPC):
+        """
+        Handler failed rpc
+        """
         self.wrapper.process_failed_rpc(rid=rid, rpc=rpc)
 
     def __str__(self):
-        return "actor"
+        return "actor: [{}/{}]".format(self.name, self.guid)
 
     def unregister(self, *, reservation: IReservation, rid: ID):
+        """
+        Unregister reservation
+        @param reservation reservation
+        @param rid reservation id
+        """
         if reservation is not None:
             self.wrapper.unregister_reservation(rid=reservation.get_reservation_id())
 
         if rid is not None:
             self.wrapper.unregister_reservation(rid=rid)
 
-    def unregister_slice(self, *, slice_obj: ISlice):
-        self.wrapper.unregister_slice(slice_id=slice_obj.get_slice_id())
+    def unregister_slice(self, *, slice_object: ISlice):
+        """
+        Unregister slice
+        @param slice_obj slice object
+        """
+        self.wrapper.unregister_slice(slice_id=slice_object.get_slice_id())
 
     def unregister_slice_by_slice_id(self, *, slice_id: ID):
+        """
+        Unregister slice by slice id
+        @param slice_id slice id
+        """
         self.wrapper.unregister_slice(slice_id=slice_id)
 
     def queue_timer(self, timer: ITimerTask):
+        """
+        Queue an event on Actor timer queue
+        """
         with self.actor_main_lock:
             self.timer_queue.put_nowait(timer)
             self.logger.debug("Added timer to timer queue {}".format(timer.__class__.__name__))
             self.actor_main_lock.notify_all()
 
     def queue_event(self, *, incoming: IActorEvent):
+        """
+        Queue an even on Actor Event Queue
+        """
         with self.actor_main_lock:
             self.event_queue.put_nowait(incoming)
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
             self.actor_main_lock.notify_all()
 
     def await_no_pending_reservations(self):
+        """
+        Await until no pending reservations
+        """
         self.wrapper.await_nothing_pending()
 
     def get_reservation_tracker(self) -> IReservationTracker:
+        """
+        Get Reservation Tracker
+        @return reservation tracker
+        """
         return self.reservation_tracker
 
-    def get_recovery_root(self):
-        return self
-
-    def get_reference(self) -> ID:
-        return self.guid
-
     def actor_main(self):
+        """
+        Actor Main loop
+        """
         while True:
             events = []
             timers = []
@@ -819,6 +949,9 @@ class Actor(IActor):
                         self.logger.error("Error while processing a timer {}".format(e))
 
     def setup_message_service(self):
+        """
+        Set up Message Service for incoming Kafka Messages
+        """
         try:
             # Kafka Proxy Service object
             module_name = self.get_kafka_service_module()
@@ -850,12 +983,12 @@ class Actor(IActor):
 
     @staticmethod
     def create_instance(properties: dict) -> IActor:
-        if Constants.PropertyPickleProperties not in properties:
-            raise Exception("Invalid arguments")
-        deserialized_actor = None
-        try:
-            serialized_actor = properties[Constants.PropertyPickleProperties]
-            deserialized_actor = pickle.loads(serialized_actor)
-        except Exception as e:
-            raise e
+        """
+        Create an Actor instance using the pickled instance read from the database
+        @param properties properties
+        """
+        if Constants.property_pickle_properties not in properties:
+            raise ActorException("Invalid arguments")
+        serialized_actor = properties[Constants.property_pickle_properties]
+        deserialized_actor = pickle.loads(serialized_actor)
         return deserialized_actor

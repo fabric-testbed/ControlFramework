@@ -43,13 +43,13 @@ class IClientPublic:
     def update_ticket(self, *, reservation: IReservation, update_data, caller: AuthToken):
         """
         Handles an incoming ticket update.
-       
+
         @param reservation reservation represented by this update. The
                reservation object will contain the ticket (if any) as well
                information about the actually allocated resources.
         @param update_data status of the remote operation.
         @param caller identity of the caller
-       
+
         @throws Exception in case of error
         """
 

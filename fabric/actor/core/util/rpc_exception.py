@@ -37,7 +37,7 @@ class RPCError(Enum):
 
 
 class RPCException(Exception):
-    def __init__(self, *, message: str, error: RPCError):
+    def __init__(self, *, message: str, error: RPCError = None):
         super().__init__(message)
         self.error = error
 

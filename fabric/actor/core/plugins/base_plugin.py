@@ -27,7 +27,15 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_delegation import IDelegation
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PluginException
 from fabric.actor.core.util.id import ID
+from fabric.actor.core.apis.i_actor import ActorType
+from fabric.actor.core.apis.i_actor_event import IActorEvent
+from fabric.actor.core.apis.i_base_plugin import IBasePlugin
+from fabric.actor.core.delegation.simple_resource_ticket_factory import SimpleResourceTicketFactory
+from fabric.actor.core.kernel.slice_factory import SliceFactory
+from fabric.actor.core.plugins.config.config import Config
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -39,13 +47,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.plugins.config.config_token import ConfigToken
     from fabric.actor.core.util.resource_data import ResourceData
     from fabric.actor.security.auth_token import AuthToken
-
-from fabric.actor.core.apis.i_actor import ActorType
-from fabric.actor.core.apis.i_actor_event import IActorEvent
-from fabric.actor.core.apis.i_base_plugin import IBasePlugin
-from fabric.actor.core.delegation.simple_resource_ticket_factory import SimpleResourceTicketFactory
-from fabric.actor.core.kernel.slice_factory import SliceFactory
-from fabric.actor.core.plugins.config.config import Config
 
 
 class BasePlugin(IBasePlugin):
@@ -69,7 +70,6 @@ class BasePlugin(IBasePlugin):
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        state['actor_id'] = self.actor.get_guid()
         del state['logger']
         del state['ticket_factory']
         del state['actor']
@@ -78,31 +78,31 @@ class BasePlugin(IBasePlugin):
         return state
 
     def __setstate__(self, state):
-        actor_id = state['actor_id']
-        # TODO fetch actor via actor_id
-        del state['actor_id']
         self.__dict__.update(state)
+        from fabric.actor.core.container.globals import GlobalsSingleton
+        self.logger = GlobalsSingleton.get().get_logger()
+        self.ticket_factory = None
+        self.actor = None
+        self.initialized = False
 
     def initialize(self):
         if not self.initialized:
-            try:
-                if self.actor is None:
-                    raise Exception("Missing actor")
+            if self.actor is None:
+                raise PluginException(Constants.not_specified_prefix.format("actor"))
 
-                if self.ticket_factory is None:
-                    self.ticket_factory = self.make_ticket_factory()
+            if self.ticket_factory is None:
+                self.ticket_factory = self.make_ticket_factory()
 
-                if self.db is not None:
-                    self.db.set_logger(logger=self.logger)
-                    self.db.set_actor_name(name=self.actor.get_name())
-                    # TODO
-                    self.db.set_reset_state(state=True)
-                    self.db.initialize()
+            if self.db is not None:
+                self.db.set_logger(logger=self.logger)
+                self.db.set_actor_name(name=self.actor.get_name())
+                from fabric.actor.core.container.globals import GlobalsSingleton
+                is_fresh = GlobalsSingleton.get().get_container().is_fresh()
+                self.db.set_reset_state(state=is_fresh)
+                self.db.initialize()
 
-                self.ticket_factory.initialize()
-                self.initialized = True
-            except Exception as e:
-                raise e
+            self.ticket_factory.initialize()
+            self.initialized = True
 
     def configure(self, *, properties):
         self.config_properties = properties
@@ -139,14 +139,14 @@ class BasePlugin(IBasePlugin):
         return True
 
     def process_configuration_complete(self, *, token: ConfigToken, properties: dict):
-        target = properties[Config.PropertyTargetName]
+        target = properties[Config.property_target_name]
         unsupported = False
 
-        if target == Config.TargetCreate:
+        if target == Config.target_create:
             self.process_create_complete(token=token, properties=properties)
-        elif target == Config.TargetDelete:
+        elif target == Config.target_delete:
             self.process_delete_complete(token=token, properties=properties)
-        elif target == Config.TargetModify:
+        elif target == Config.target_modify:
             self.process_modify_complete(token=token, properties=properties)
         else:
             unsupported = True
@@ -217,4 +217,3 @@ class BasePlugin(IBasePlugin):
 
     def is_site_authority(self):
         return self.actor.get_type() == ActorType.Authority
-

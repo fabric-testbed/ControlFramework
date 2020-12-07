@@ -26,6 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import EventException
 from fabric.actor.core.container.aevent_subscription import AEventSubscription
 
 if TYPE_CHECKING:
@@ -44,7 +45,7 @@ class SynchronousEventSubscription(AEventSubscription):
             self.handler.handle(event=event)
 
     def drain_events(self, *, timeout: int) -> list:
-        raise Exception("drainEvents is not supported on synchronous subscriptions")
+        raise EventException("drainEvents is not supported on synchronous subscriptions")
 
     def is_abandoned(self) -> bool:
         return False

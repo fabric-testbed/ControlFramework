@@ -26,6 +26,8 @@
 import bisect
 
 from fabric.actor.core.apis.i_reservation import IReservation
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import FrameworkException
 from fabric.actor.core.util.reservation_set import ReservationSet
 
 
@@ -94,7 +96,7 @@ class ReservationList:
         @params cycle: the cycle with which to associate the reservation
         """
         if reservation is None or cycle < 0 or reservation.get_reservation_id() is None:
-            raise Exception("Invalid arguments")
+            raise FrameworkException(Constants.invalid_argument)
 
         if reservation.get_reservation_id() in self.reservation_id_to_cycle:
             existing_cycle = self.reservation_id_to_cycle[reservation.get_reservation_id()]
@@ -121,7 +123,7 @@ class ReservationList:
 
         self.reservation_id_to_cycle[reservation.get_reservation_id()] = cycle
 
-    def add_to_list(self, *, reservation_set:ReservationSet, cycle: int):
+    def add_to_list(self, *, reservation_set: ReservationSet, cycle: int):
         """
         Adds an entry to the sorted list
         @params reservation_set: reservation set

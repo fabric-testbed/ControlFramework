@@ -38,7 +38,7 @@ class IKernelBrokerReservation(IKernelServerReservation, IBrokerReservation):
     def is_exporting(self) -> bool:
         """
         Checks if the reservation is exporting.
-       
+
         @return true if the reservation is exporting
         """
 

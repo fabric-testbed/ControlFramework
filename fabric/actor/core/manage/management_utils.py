@@ -103,7 +103,7 @@ class ManagementUtils:
     def get_local_container(*, caller: AuthToken):
         from fabric.actor.core.container.globals import GlobalsSingleton
         manager = GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(
-            key=ID(id=Constants.ContainerManagmentObjectID))
+            key=ID(uid=Constants.container_managment_object_id))
         proxy = LocalContainer(manager=manager, auth=caller)
         return proxy
 

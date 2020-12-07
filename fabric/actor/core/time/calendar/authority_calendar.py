@@ -92,7 +92,7 @@ class AuthorityCalendar(BaseCalendar):
             self.remove_request(reservation=reservation)
             self.remove_closing(reservation=reservation)
 
-    def get_requests(self, *, cycle : int) -> ReservationSet:
+    def get_requests(self, *, cycle: int) -> ReservationSet:
         """
         Returns all client requests for the specified cycle.
         @params cycle:  cycle

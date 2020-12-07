@@ -28,11 +28,11 @@ from queue import Queue, Empty
 
 class IterableQueue:
     def __init__(self, *,source_queue: Queue):
-            self.source_queue = source_queue
+        self.source_queue = source_queue
 
     def __iter__(self):
         while True:
             try:
-               yield self.source_queue.get_nowait()
+                yield self.source_queue.get_nowait()
             except Empty:
-               return
+                return

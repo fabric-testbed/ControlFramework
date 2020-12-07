@@ -29,14 +29,14 @@ import pickle
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-
+from fabric.actor.core.common.exceptions import UnitException
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.notice import Notice
 
 from fabric.actor.core.apis.i_concrete_set import IConcreteSet
+from fabric.actor.core.core.unit import UnitState, Unit
 
 if TYPE_CHECKING:
-    from fabric.actor.core.core.unit import UnitState, Unit
     from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
     from fabric.actor.core.apis.i_base_plugin import IBasePlugin
     from fabric.actor.core.apis.i_reservation import IReservation
@@ -45,6 +45,9 @@ if TYPE_CHECKING:
 
 
 class UnitSet(IConcreteSet):
+    """
+    Represents the unit in a reservation
+    """
     def __init__(self, *, plugin: IBasePlugin, units: dict = None):
         self.units = units
         if self.units is None:
@@ -73,7 +76,6 @@ class UnitSet(IConcreteSet):
         self.plugin = None
         self.reservation = None
         self.released = None
-        # TODO Fetch reservation object and setup logger, reservation and plugin variables
 
     def __str__(self):
         result = ""
@@ -82,15 +84,28 @@ class UnitSet(IConcreteSet):
         return result
 
     def restore(self, *, plugin: IBasePlugin, reservation: IReservation):
+        """
+        Restore post read from database
+        @param plugin plugin
+        @param reservation reservation
+        """
         self.plugin = plugin
         self.logger = plugin.get_logger()
         self.reservation = reservation
 
     def ensure_type(self, *, cset: IConcreteSet):
+        """
+        Validate the type of incoming concrete set
+        @param cset cset
+        """
         if not isinstance(cset, UnitSet):
-            raise Exception("Must be UnitSet")
+            raise UnitException("Must be UnitSet")
 
     def add_unit(self, *, u: Unit):
+        """
+        Add a unit
+        @parm u unit
+        """
         if u.get_id() not in self.units:
             self.units[u.get_id()] = u
 
@@ -103,11 +118,19 @@ class UnitSet(IConcreteSet):
             self.transfer_in_units(units=concrete_set.units)
 
     def add_from_dict(self, *, units: dict):
+        """
+        Add units from a dictionary
+        @param units units
+        """
         self.is_fresh = False
         for u in units.values():
             self.add_unit(u=u)
 
     def missing(self, *, units: dict) -> dict:
+        """
+        Find units not present in incoming units
+        @param units incoming units
+        """
         result = {}
         for u in self.units.values():
             if u.get_id() not in units:
@@ -116,7 +139,7 @@ class UnitSet(IConcreteSet):
 
     def change(self, *, concrete_set: IConcreteSet, configure: bool):
         if not isinstance(concrete_set, UnitSet):
-            raise Exception("Must be UnitSet")
+            raise UnitException("Must be UnitSet")
 
         lost = self.missing(units=concrete_set.units)
         gained = concrete_set.missing(units=self.units)
@@ -134,11 +157,22 @@ class UnitSet(IConcreteSet):
             self.transfer_in_units(units=gained)
 
     def update(self, *, units: dict):
+        """
+        Update the units
+        @param units units to be updated
+        """
         for u in units.values():
             u.set_reservation(self.reservation)
             u.set_slice_id(self.reservation.get_slice_id())
             u.set_actor_id(self.plugin.get_actor().get_guid())
             self.plugin.update_props(reservation=self.reservation, u=u)
+
+    def clone(self):
+        result = UnitSet(plugin=self.plugin, units=self.units.copy())
+        result.is_closed = self.is_closed
+        result.is_fresh = self.is_fresh
+        result.reservation = self.reservation
+        return result
 
     def clone_empty(self) -> UnitSet:
         result = UnitSet(plugin=self.plugin)
@@ -159,12 +193,17 @@ class UnitSet(IConcreteSet):
         return result
 
     def select_extract(self, *, count: int, victims: str) -> dict:
+        """
+        Extract specified victims
+        @param count count
+        @param victims token string identifying the victims
+        """
         num_taken = 0
         taken = {}
 
         if victims is not None:
             for v in victims.split(" "):
-                uid = ID(id=v)
+                uid = ID(uid=v)
                 if uid in self.units:
                     taken[uid] = self.units[uid]
                     num_taken += 1
@@ -197,6 +236,9 @@ class UnitSet(IConcreteSet):
         return self.get_units()
 
     def get_pending_count(self) -> int:
+        """
+        Get Pending Action Count
+        """
         count = 0
         for u in self.units.values():
             if u.has_pending_action():
@@ -241,6 +283,11 @@ class UnitSet(IConcreteSet):
         self.remove_from_dict(units=configure.units, configure=configure)
 
     def remove_from_dict(self, *, units: dict, configure: bool):
+        """
+        Remove units from units dictionary
+        @param units units to be removed
+        @param configure flag to indicate if transfer_out to be triggerd or not
+        """
         self.is_fresh = False
         for u in units.values():
             if u in self.units:
@@ -251,17 +298,25 @@ class UnitSet(IConcreteSet):
     def setup(self, *, reservation: IReservation):
         self.reservation = reservation
 
-    def validate_concrete(self, *, type: ResourceType, units: int, term: Term):
+    def validate_concrete(self, *, rtype: ResourceType, units: int, term: Term):
         if self.get_units() < units:
-            raise Exception("Insufficient units")
+            raise UnitException("Insufficient units")
 
     def validate_incoming(self):
-        return
+        """
+        Validate incoming unit
+        """
 
     def validate_outgoing(self):
-        return
+        """
+        Validate an outgoing unit
+        """
 
     def modify_unit(self, *, u: Unit):
+        """
+        Modify a unit
+        @param u unit
+        """
         try:
             u.start_modify()
             self.plugin.modify(reservation=self.reservation, u=u)
@@ -269,9 +324,12 @@ class UnitSet(IConcreteSet):
             self.fail(u=u, message="Modify for node failed", e=e)
 
     def restart_actions(self):
+        """
+        Restart actions
+        """
         for u in self.units.values():
             if u.get_state() == UnitState.ACTIVE:
-                return
+                self.logger.debug("Do nothing")
             elif u.get_state() == UnitState.CLOSING:
                 u.decrement_sequence()
                 self.transfer_out(u=u)
@@ -282,9 +340,13 @@ class UnitSet(IConcreteSet):
                 u.decrement_sequence()
                 self.modify_unit(u=u)
             elif u.get_state() == UnitState.FAILED or u.get_state() == UnitState.CLOSED:
-                return
+                self.logger.debug("Do nothing")
 
     def transfer_in(self, *, unit: Unit):
+        """
+        Transfer in a unit
+        @param unit unit
+        """
         try:
             if unit.start_prime():
                 unit.set_reservation(reservation=self.reservation)
@@ -297,10 +359,21 @@ class UnitSet(IConcreteSet):
             self.fail(u=unit, message="Transfer in for node failed", e=e)
 
     def post(self, *, u: Unit, message: str):
+        """
+        Post the notice
+        @param u unit
+        @param message message
+        """
         self.logger.error(message)
         u.add_notice(notice=message)
 
     def fail(self, *, u: Unit, message: str, e: Exception = None):
+        """
+        Fail a unit and log error message
+        @param u unit
+        @param message message
+        @param e exception
+        """
         self.logger.error(message)
         if e is not None:
             self.logger.error(e)
@@ -308,10 +381,18 @@ class UnitSet(IConcreteSet):
         u.fail(message=message, exception=e)
 
     def transfer_in_units(self, *, units: dict):
+        """
+        Transfer in the units
+        @param units units to be transferred
+        """
         for u in units.values():
             self.transfer_in(unit=u)
 
     def transfer_out(self, *, u: Unit):
+        """
+        Transfer a unit
+        @param u unit to be transferred
+        """
         if u.transfer_out_started:
             return
 
@@ -322,17 +403,17 @@ class UnitSet(IConcreteSet):
             self.fail(u=u, message="tranferOut error", e=e)
 
     def transfer_out_units(self, *, units: dict):
+        """
+        Transfer out units
+        @param units units to be transferred
+        """
         for u in units.values():
             self.transfer_out(u=u)
 
-    def clone(self):
-        result = UnitSet(plugin=self.plugin, units=self.units.copy())
-        result.is_closed = self.is_closed
-        result.is_fresh = self.is_fresh
-        result.reservation = self.reservation
-        return result
-
     def get_set(self) -> dict:
+        """
+        Get a copy of the units
+        """
         return self.units.copy()
 
     def encode(self, *, protocol: str):
@@ -343,11 +424,12 @@ class UnitSet(IConcreteSet):
             self.logger.error("Exception occurred while encoding {}".format(e))
         return None
 
-    def decode(self, *, encoded_ticket, plugin: IBasePlugin):
+    def decode(self, *, encoded, plugin: IBasePlugin):
         try:
-            unit_set = pickle.loads(encoded_ticket)
+            unit_set = pickle.loads(encoded)
             unit_set.plugin = plugin
             unit_set.logger = plugin.get_logger()
+            return unit_set
         except Exception as e:
             self.logger.error("Exception occurred while decoding {}".format(e))
         return None

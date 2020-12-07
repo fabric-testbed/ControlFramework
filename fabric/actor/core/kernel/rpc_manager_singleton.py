@@ -24,14 +24,18 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from fabric.actor.core.kernel.rpc_manager import RPCManager
+from fabric.actor.core.util.rpc_exception import RPCException
 
 
 class RPCManagerSingleton:
+    """
+    Singleton Class for RPC Manager
+    """
     __instance = None
 
     def __init__(self):
         if self.__instance is not None:
-            raise Exception("Singleton can't be created twice !")
+            raise RPCException(message="Singleton can't be created twice !")
 
     def get(self):
         """

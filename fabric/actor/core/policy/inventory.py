@@ -27,7 +27,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.common.resource_pool_attribute_descriptor import ResourcePoolAttributeDescriptor, ResourcePoolAttributeType
+from fabric.actor.core.common.exceptions import PolicyException
+from fabric.actor.core.common.resource_pool_attribute_descriptor import ResourcePoolAttributeDescriptor, \
+    ResourcePoolAttributeType
 from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric.actor.core.policy.simpler_units_inventory import SimplerUnitsInventory
 from fabric.actor.core.util.prop_list import PropList
@@ -45,7 +47,7 @@ class Inventory:
 
     def contains_type(self, *, resource_type: ResourceType):
         if resource_type is None:
-            raise Exception("Invalid argument")
+            raise PolicyException(Constants.invalid_argument)
 
         if resource_type in self.map:
             return True
@@ -54,7 +56,7 @@ class Inventory:
 
     def get(self, *, resource_type: ResourceType) -> InventoryForType:
         if resource_type is None:
-            raise Exception("Invalid argument")
+            raise PolicyException(Constants.invalid_argument)
 
         return self.map.get(resource_type, None)
 
@@ -76,12 +78,12 @@ class Inventory:
 
     def get_new(self, *, reservation: IClientReservation):
         if reservation is None:
-            raise Exception("Invalid argument")
+            raise PolicyException(Constants.invalid_argument)
 
         rtype = reservation.get_type()
 
         if rtype in self.map:
-            raise Exception("There is already inventory for type: {}".format(rtype))
+            raise PolicyException("There is already inventory for type: {}".format(rtype))
 
         properties = {}
 
@@ -92,9 +94,9 @@ class Inventory:
         properties = ticket.get_properties()
         properties = PropList.merge_properties(incoming=rset.get_resource_properties(), outgoing=properties)
         rpd = ResourcePoolDescriptor()
-        rpd.reset(properties=properties, prefix=None)
+        rpd.reset(properties=properties)
 
-        desc_attr = rpd.get_attribute(key=Constants.ResourceClassInventoryForType)
+        desc_attr = rpd.get_attribute(key=Constants.resource_class_inventory_for_type)
         inv = None
         if desc_attr is not None:
             module_name, class_name = desc_attr.get_value().rsplit(".", 1)
@@ -119,11 +121,11 @@ class Inventory:
             rpd = inv.get_descriptor().clone()
             attr = ResourcePoolAttributeDescriptor()
             attr.set_type(rtype=ResourcePoolAttributeType.INTEGER)
-            attr.set_key(value=Constants.ResourceAvailableUnits)
+            attr.set_key(value=Constants.resource_available_units)
             attr.set_value(value=str(inv.get_free()))
             rpd.add_attribute(attribute=attr)
-            result = rpd.save(properties=result, prefix=Constants.PoolPrefix + str(count) + ".")
+            result = rpd.save(properties=result, prefix=Constants.pool_prefix + str(count) + ".")
             count += 1
 
-        result[Constants.PoolsCount] = str(len(self.map))
+        result[Constants.pools_count] = str(len(self.map))
         return result

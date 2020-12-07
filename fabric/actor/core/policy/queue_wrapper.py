@@ -28,8 +28,6 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
-from fabric.actor.core.util.iterable_queue import IterableQueue
-
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_broker_reservation import IBrokerReservation
 

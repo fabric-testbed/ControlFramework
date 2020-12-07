@@ -29,6 +29,8 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PolicyException
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.apis.i_resource_control import IResourceControl
 from fabric.actor.core.util.resource_type import ResourceType
@@ -53,7 +55,7 @@ class ResourceControl(IResourceControl):
         if ResourceControl.PropertySubstrateFile in rset.get_resource_properties():
             substrate_file = rset.get_resource_properties()[ResourceControl.PropertySubstrateFile]
         if substrate_file is None:
-            raise Exception("Missing substrate file property")
+            raise PolicyException(Constants.not_specified_prefix.format("substrate file"))
         return substrate_file
 
     def __init__(self):
@@ -80,7 +82,7 @@ class ResourceControl(IResourceControl):
     def initialize(self):
         if not self.initialized:
             if self.authority is None:
-                raise Exception("authority is not set")
+                raise PolicyException(Constants.not_specified_prefix.format("authority"))
             self.logger = self.authority.get_logger()
             self.initialized = True
 
@@ -111,28 +113,26 @@ class ResourceControl(IResourceControl):
     def recovered(self, *, resource_set: ResourceSet):
         return
 
-    def freed(self, *, resource_set: ResourceSet):
+    def _free_resources(self, *, resource_set: ResourceSet):
         group = resource_set.get_resources()
         if group is None:
-            raise Exception("Missing concrete set")
+            raise PolicyException(Constants.not_specified_prefix.format("concrete set"))
         self.free(uset=group.get_set())
 
+    def freed(self, *, resource_set: ResourceSet):
+        self._free_resources(resource_set=resource_set)
+
     def release(self, *, resource_set: ResourceSet):
-        group = resource_set.get_resources()
-        if group is None:
-            raise Exception("Missing concrete set")
-        self.free(uset=group.get_set())
+        self._free_resources(resource_set=resource_set)
 
     def correct_deficit(self, *, reservation: IAuthorityReservation) -> ResourceSet:
         return self.assign(reservation=reservation)
 
-    def configuration_complete(self, *, action:str, token: ConfigToken, out_properties: dict):
+    def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         self.logger.debug("configuration complete")
-        return
 
     def close(self, *, reservation: IReservation):
         self.logger.debug("close")
-        return
 
     def recovery_starting(self):
         return

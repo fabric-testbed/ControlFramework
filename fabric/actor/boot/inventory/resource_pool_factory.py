@@ -26,13 +26,15 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric.actor.boot.inventory.i_resource_pool_factory import IResourcePoolFactory
+from fabric.actor.boot.inventory.i_resource_pool_factory import IResourcePoolFactory, ResourcePoolException
 from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric.actor.core.util.id import ID
+from fabric.actor.core.time.term import Term
+from fabric.actor.core.util.resource_data import ResourceData
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_client_reservation import IClientReservation
@@ -40,9 +42,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.delegation.resource_ticket import ResourceTicket
     from fabric.actor.core.apis.i_substrate import ISubstrate
     from fabric.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
-
-from fabric.actor.core.time.term import Term
-from fabric.actor.core.util.resource_data import ResourceData
 
 
 class ResourcePoolFactory(IResourcePoolFactory):
@@ -66,7 +65,6 @@ class ResourcePoolFactory(IResourcePoolFactory):
         # and resource pool properties needed by the resource pool. Resource pool attributes will become resource
         # properties (of the pool/slice and source reservation), while properties attached to the resource pool
         # descriptor will become local properties.
-        return
 
     def create_term(self) -> Term:
         """
@@ -101,13 +99,13 @@ class ResourcePoolFactory(IResourcePoolFactory):
             ticket = self.substrate.get_ticket_factory().make_ticket(delegation=delegation)
             return ticket
         except Exception as e:
-            raise Exception("Could not make ticket {}".format(e))
+            raise ResourcePoolException("Could not make ticket {}".format(e))
 
     def create_resource_data(self) -> ResourceData:
         rdata = ResourceData()
         rdata.resource_properties = self.slice_obj.get_resource_properties()
         rdata.local_properties = self.desc.get_pool_properties()
-        rdata.resource_properties[Constants.PoolName] = self.slice_obj.get_name()
+        rdata.resource_properties[Constants.pool_name] = self.slice_obj.get_name()
         return rdata
 
     def create_source_reservation(self, *, slice_obj: ISlice) -> IClientReservation:
@@ -132,9 +130,9 @@ class ResourcePoolFactory(IResourcePoolFactory):
         self.substrate = substrate
         auth = self.substrate.get_actor().get_identity()
         try:
-            self.proxy = ActorRegistrySingleton.get().get_proxy(protocol=Constants.ProtocolKafka,
+            self.proxy = ActorRegistrySingleton.get().get_proxy(protocol=Constants.protocol_kafka,
                                                                 actor_name=auth.get_name())
             if self.proxy is None:
-                raise Exception("Missing proxy")
+                raise ResourcePoolException("Missing proxy")
         except Exception as e:
-            raise Exception("Could not obtain authority proxy: {} {}".format(auth.get_name(), e))
+            raise ResourcePoolException("Could not obtain authority proxy: {} {}".format(auth.get_name(), e))

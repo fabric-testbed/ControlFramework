@@ -28,6 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from yapsy.IPlugin import IPlugin
+
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.util.id import ID
 
@@ -39,8 +41,6 @@ if TYPE_CHECKING:
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.apis.i_reservation import IReservation
     from fabric.actor.core.apis.i_slice import ISlice
-
-from yapsy.IPlugin import IPlugin
 
 
 class IBasePlugin(IPlugin):
@@ -110,12 +110,13 @@ class IBasePlugin(IPlugin):
         """
 
     @abstractmethod
-    def revisit(self, *, slice: ISlice = None, reservation: IReservation = None, delegation: IDelegation = None):
+    def revisit(self, *, slice_obj: ISlice = None, reservation: IReservation = None, delegation: IDelegation = None):
         """
-        Rebuilds plugin state associated with a restored slice/reservation. Called once for each restored slice/reservation.
+        Rebuilds plugin state associated with a restored slice/reservation. Called once for each restored
+        slice/reservation.
 
         Args:
-            slice: restored slice
+            slice_obj: restored slice
             reservation: restored reservation
             delegation: restored delegation
         Raises:
@@ -219,7 +220,7 @@ class IBasePlugin(IPlugin):
     def get_logger(self):
         """
         Returns the logger.
-        
+
         @returns logger instance
         """
 
@@ -227,15 +228,15 @@ class IBasePlugin(IPlugin):
     def get_database(self) -> IDatabase:
         """
         Obtains the actor's database instance.
-        
+
         @return database instance
         """
-        
+
     @abstractmethod
     def set_database(self, *, db: IDatabase):
         """
         Sets the actor's database instance.
-        
+
         @param db
                    database instance
         """

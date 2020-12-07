@@ -26,14 +26,14 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.proxies.kafka.kafka_proxy_factory import KafkaProxyFactory
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.proxies.local.local_proxy_factory import LocalProxyFactory
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor_identity import IActorIdentity
     from fabric.actor.core.proxies.actor_location import ActorLocation
-
-from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.proxies.local.local_proxy_factory import LocalProxyFactory
 
 
 class ProxyFactory:
@@ -42,8 +42,8 @@ class ProxyFactory:
         self.load_factories()
 
     def load_factories(self):
-        self.factories[Constants.ProtocolLocal] = LocalProxyFactory()
-        self.factories[Constants.ProtocolKafka] = KafkaProxyFactory()
+        self.factories[Constants.protocol_local] = LocalProxyFactory()
+        self.factories[Constants.protocol_kafka] = KafkaProxyFactory()
 
     def new_callback(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation):
         if protocol in self.factories:
@@ -51,10 +51,10 @@ class ProxyFactory:
             return factory.new_callback(identity=identity, location=location)
         return None
 
-    def new_proxy(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation, type: str = None):
+    def new_proxy(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None):
         if protocol in self.factories:
             factory = self.factories[protocol]
-            return factory.new_proxy(identity=identity, location=location, type=type)
+            return factory.new_proxy(identity=identity, location=location, proxy_type=proxy_type)
         return None
 
 
@@ -63,7 +63,7 @@ class ProxyFactorySingleton:
 
     def __init__(self):
         if self.__instance is not None:
-            raise Exception("Singleton can't be created twice !")
+            raise ProxyException("Singleton can't be created twice !")
 
     def get(self):
         """

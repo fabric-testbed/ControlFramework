@@ -31,6 +31,9 @@ from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
 
 
 class Neo4jResourcePoolFactory(ResourcePoolFactory):
+    """
+    Provides methods to load Graph Models and perform various operations on them
+    """
     @staticmethod
     def get_neo4j_importer() -> Neo4jGraphImporter:
         """

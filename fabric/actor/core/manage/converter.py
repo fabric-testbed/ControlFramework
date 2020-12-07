@@ -220,7 +220,7 @@ class Converter:
     def fill_client(*, client_mng: ClientMng) -> Client:
         result = Client()
         result.set_name(name=client_mng.get_name())
-        result.set_guid(guid=ID(id=client_mng.get_guid()))
+        result.set_guid(guid=ID(uid=client_mng.get_guid()))
         return result
 
     @staticmethod
@@ -262,9 +262,9 @@ class Converter:
         result.set_guid(str(proxy.get_guid()))
 
         if isinstance(proxy, LocalProxy):
-            result.set_protocol(Constants.ProtocolLocal)
+            result.set_protocol(Constants.protocol_local)
         elif isinstance(proxy, KafkaProxy):
-            result.set_protocol(Constants.ProtocolKafka)
+            result.set_protocol(Constants.protocol_kafka)
             result.set_kafka_topic(proxy.get_kafka_topic())
 
         return result
@@ -282,11 +282,11 @@ class Converter:
     def get_agent_proxy(*, mng: ProxyAvro):
         try:
             location = ActorLocation(location=mng.get_kafka_topic())
-            identity = ActorIdentity(name=mng.get_name(), guid=ID(id=mng.get_guid()))
+            identity = ActorIdentity(name=mng.get_name(), guid=ID(uid=mng.get_guid()))
             from fabric.actor.core.container.container import Container
             return Container.get_proxy(protocol=mng.get_protocol(), identity=identity, location=location,
                                        type=mng.get_type())
-        except Exception as e:
+        except Exception:
             traceback.print_exc()
             return None
 
@@ -356,13 +356,7 @@ class Converter:
         for a in act_list:
             act_mng = Converter.fill_actor_from_db(properties=a)
 
-            if status == 0:
-                result.append(act_mng)
-
-            elif status == 1 and act_mng.get_online():
-                result.append(act_mng)
-
-            elif status == 2 and not act_mng.get_online():
+            if status == 0 or (status == 1 and act_mng.get_online()) or (status == 2 and not act_mng.get_online()):
                 result.append(act_mng)
 
         return result
@@ -371,5 +365,5 @@ class Converter:
     def fill_resource_pool_descriptor(*, pool: PoolInfoAvro) -> ResourcePoolDescriptor:
         rpd = ResourcePoolDescriptor()
         properties = pool.get_properties()
-        rpd.reset(properties=properties, prefix=None)
+        rpd.reset(properties=properties)
         return rpd

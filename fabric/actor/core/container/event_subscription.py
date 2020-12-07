@@ -77,5 +77,3 @@ class EventSubscription(AEventSubscription):
 
     def is_abandoned(self) -> bool:
         return datetime.utcnow().timestamp() - self.last_drain_time_stamp > self.MAX_IDLE_TIME
-
-

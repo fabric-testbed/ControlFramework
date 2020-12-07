@@ -28,6 +28,9 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import PluginException
+
 if TYPE_CHECKING:
     from fabric.actor.core.plugins.base_plugin import BasePlugin
     from fabric.actor.core.plugins.config.config_token import ConfigToken
@@ -36,22 +39,22 @@ if TYPE_CHECKING:
 
 class Config:
     # Specifies a configuration file or action to execute.
-    PropertyConfig = "config.action"
-    PropertyExceptionMessage = "exception.message"
-    PropertyExceptionStack = "exception.stack"
-    PropertyTargetName = "target.name"
-    PropertyTargetResultCode = "target.code"
-    PropertyTargetResultCodeMessage = "target.code.message"
-    PropertyConfigurationProperties = "config"
-    PropertyActionSequenceNumber = "action.sequence"
+    property_config = "config.action"
+    property_exception_message = "exception.message"
+    property_exception_stack = "exception.stack"
+    property_target_name = "target.name"
+    property_target_result_code = "target.code"
+    property_target_result_code_message = "target.code.message"
+    property_configuration_properties = "config"
+    property_action_sequence_number = "action.sequence"
 
-    ResultCodeException = -1
-    ResultCodeOK = 0
-    TargetCreate = "create"
-    TargetDelete = "delete"
-    TargetModify = "modify"
-    PropertyResourceType = "unit.resourceType"
-    PropertyUnitAll = "unit.all"
+    result_code_exception = -1
+    result_code_ok = 0
+    target_create = "create"
+    target_delete = "delete"
+    target_modify = "modify"
+    property_resource_type = "unit.resourceType"
+    property_unit_all = "unit.all"
 
     def __init__(self):
         self.is_sync = False
@@ -80,7 +83,7 @@ class Config:
     def initialize(self):
         if not self.initialized:
             if self.plugin is None:
-                raise Exception("Missing plugin")
+                raise PluginException(Constants.not_specified_prefix.format("plugin"))
             self.logger = self.plugin.get_logger()
             self.initialized = True
 
@@ -94,10 +97,9 @@ class Config:
     def create(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Join")
 
-        # TODO
-        result = {self.PropertyTargetName: self.TargetCreate,
-                  self.PropertyTargetResultCode: self.ResultCodeOK,
-                  self.PropertyActionSequenceNumber: 0 }
+        result = {self.property_target_name: self.target_create,
+                  self.property_target_result_code: self.result_code_ok,
+                  self.property_action_sequence_number: 0}
 
         self.plugin.configuration_complete(token=token, properties=result)
         self.logger.info("Executing Join completed")
@@ -105,10 +107,9 @@ class Config:
     def delete(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Leave")
 
-        # TODO
-        result = {self.PropertyTargetName: self.TargetDelete,
-                  self.PropertyTargetResultCode: self.ResultCodeOK,
-                  self.PropertyActionSequenceNumber: 0}
+        result = {self.property_target_name: self.target_delete,
+                  self.property_target_result_code: self.result_code_ok,
+                  self.property_action_sequence_number: 0}
 
         self.plugin.configuration_complete(token=token, properties=result)
         self.logger.info("Executing Leave completed")
@@ -116,10 +117,9 @@ class Config:
     def modify(self, *, token: ConfigToken, properties: dict):
         self.logger.info("Executing Modify")
 
-        # TODO
-        result = {self.PropertyTargetName: self.TargetModify,
-                  self.PropertyTargetResultCode: self.ResultCodeOK,
-                  self.PropertyActionSequenceNumber: 0}
+        result = {self.property_target_name: self.target_modify,
+                  self.property_target_result_code: self.result_code_ok,
+                  self.property_action_sequence_number: 0}
 
         self.plugin.configuration_complete(token=token, properties=result)
         self.logger.info("Executing Modify completed")
@@ -133,39 +133,39 @@ class Config:
     @staticmethod
     def get_action_sequence_number(*, properties: dict):
         if properties is None:
-            raise Exception("Invalid Argument")
+            raise PluginException(Constants.invalid_argument)
 
-        if Config.PropertyActionSequenceNumber in properties:
-            return int(properties[Config.PropertyActionSequenceNumber])
+        if Config.property_action_sequence_number in properties:
+            return int(properties[Config.property_action_sequence_number])
 
-        raise Exception("Action Sequence Number not found")
+        raise PluginException("Action Sequence Number not found")
 
     @staticmethod
     def get_result_code(*, properties: dict):
         if properties is None:
-            raise Exception("Invalid Argument")
+            raise PluginException(Constants.invalid_argument)
 
-        if Config.PropertyTargetResultCode in properties:
-            return int(properties[Config.PropertyTargetResultCode])
+        if Config.property_target_result_code in properties:
+            return int(properties[Config.property_target_result_code])
 
-        raise Exception("Target Result code not found")
+        raise PluginException("Target Result code not found")
 
     @staticmethod
     def get_result_code_message(*, properties: dict):
         if properties is None:
-            raise Exception("Invalid Argument")
+            raise PluginException(Constants.invalid_argument)
 
-        if Config.PropertyTargetResultCodeMessage in properties:
-            return properties[Config.PropertyTargetResultCodeMessage]
+        if Config.property_target_result_code_message in properties:
+            return properties[Config.property_target_result_code_message]
 
         return None
 
     @staticmethod
     def get_exception_message(*, properties: dict):
         if properties is None:
-            raise Exception("Invalid Argument")
+            raise PluginException(Constants.invalid_argument)
 
-        if Config.PropertyExceptionMessage in properties:
-            return properties[Config.PropertyExceptionMessage]
+        if Config.property_exception_message in properties:
+            return properties[Config.property_exception_message]
 
         return None

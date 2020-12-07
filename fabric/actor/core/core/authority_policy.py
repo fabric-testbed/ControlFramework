@@ -158,7 +158,7 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
             temp = reservation.get_requested_resources().get_request_properties().get(self.PropertySourceTicket, None)
 
             if temp is not None:
-                rid = ID(id=temp)
+                rid = ID(uid=temp)
 
         ticket_found = None
         if rid is not None:
@@ -204,9 +204,15 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
         if reservation.get_resources() is None:
             return
 
-        self.finish_correct_deficit(rset=None, reservation=reservation)
+        self.finish_correct_deficit(reservation=reservation)
 
-    def finish_correct_deficit(self, *, rset: ResourceSet, reservation: IAuthorityReservation):
+    def finish_correct_deficit(self, *, reservation: IAuthorityReservation, rset: ResourceSet = None):
+        """
+        Finishes correcting a deficit.
+        @param rset correction
+        @param reservation reservation
+        @raises Exception in case of error
+        """
         # We could have a partial set if there's a shortage. Go ahead and
         # install it: we'll come back later for the rest if we return a null
         # term. Alternatively, we could release them and throw an error.
@@ -230,6 +236,13 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
         return False
 
     def extract(self, *, source: ResourceSet, delegation: ResourceDelegation):
+        """
+        Creates a new resource set using the source and the specified delegation.
+        @param source source
+        @param delegation delegation
+        @return created resource set
+        @raises Exception in case of error
+        """
         if source is None or delegation is None:
             self.error(message="Invalid Argument")
 

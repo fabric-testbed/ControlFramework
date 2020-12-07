@@ -34,7 +34,7 @@ if TYPE_CHECKING:
 
 class IEventHandler:
     @abstractmethod
-    def handle(self, event: IEvent):
+    def handle(self, *, event: IEvent):
         """
         Handle the incoming event
         @param event: event

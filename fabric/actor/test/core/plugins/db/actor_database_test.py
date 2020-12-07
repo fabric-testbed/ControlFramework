@@ -35,7 +35,7 @@ from fabric.actor.test.base_test_case import BaseTestCase
 
 class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestVmAmConfigurationFile
+    Globals.config_file = Constants.test_vm_am_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -44,7 +44,7 @@ class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
 
     def get_clean_database(self) -> IDatabase:
         db = self.get_actor_database()
-        db.set_actor_name(name=self.ActorName)
+        db.set_actor_name(name=self.actor_name)
         db.set_reset_state(state=True)
         db.initialize()
         return db

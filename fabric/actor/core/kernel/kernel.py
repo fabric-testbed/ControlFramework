@@ -25,17 +25,18 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 import traceback
+from typing import List
 
 from fabric.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.apis.i_policy import IPolicy
 from fabric.actor.core.apis.i_slice import ISlice
 from fabric.actor.core.common.constants import Constants
-from fabric.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException
+from fabric.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException, \
+    KernelException
 from fabric.actor.core.container.globals import GlobalsSingleton
 from fabric.actor.core.kernel.authority_reservation import AuthorityReservation
 from fabric.actor.core.kernel.failed_rpc import FailedRPC
-from fabric.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
 from fabric.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
 from fabric.actor.core.apis.i_kernel_reservation import IKernelReservation
 from fabric.actor.core.apis.i_kernel_server_reservation import IKernelServerReservation
@@ -46,7 +47,7 @@ from fabric.actor.core.kernel.reservation_purged_event import ReservationPurgedE
 from fabric.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
-from fabric.actor.core.kernel.slice_table2 import SliceTable2
+from fabric.actor.core.kernel.slice_table import SliceTable
 from fabric.actor.core.time.term import Term
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.reservation_set import ReservationSet
@@ -64,7 +65,7 @@ class Kernel:
         # Logger
         self.logger = logger
         # All slices managed by the kernel
-        self.slices = SliceTable2()
+        self.slices = SliceTable()
         # All reservations managed by the kernel.
         self.reservations = ReservationSet()
         self.delegations = {}
@@ -132,6 +133,11 @@ class Kernel:
                 delegation.get_delegation_id()), e=e)
 
     def fail(self, *, reservation: IKernelReservation, message: str):
+        """
+        Handle a failed reservation
+        @param reservation reservation
+        @param message message
+        """
         if not reservation.is_failed() and not reservation.is_closed():
             reservation.fail(message=message, exception=None)
         self.plugin.get_database().update_reservation(reservation=reservation)
@@ -181,7 +187,9 @@ class Kernel:
                 code = SequenceComparisonCodes.SequenceSmaller
         return code
 
-    def compare_and_update_ignore_pending(self, *, incoming: IKernelServerReservation, current: IKernelServerReservation):
+    @staticmethod
+    def compare_and_update_ignore_pending(*, incoming: IKernelServerReservation,
+                                          current: IKernelServerReservation):
         """
         Compares the incoming request to the corresponding reservation stored at
         this actor. First compares sequence numbers. If the incoming request has
@@ -263,11 +271,11 @@ class Kernel:
         ticket = True
 
         if real is None:
-            raise Exception("Unknown reservation rid: {}".format(rid))
+            raise KernelException("Unknown reservation rid: {}".format(rid))
 
         # check for a pending operation: we cannot service the extend if there is another operation in progress.
         if real.get_pending_state() != ReservationPendingStates.None_:
-            return Constants.ReservationHasPendingOperation
+            return Constants.reservation_has_pending_operation
 
         # attach the desired extension term and resource set
         real.set_approved(term=term, approved_resources=resources)
@@ -305,7 +313,7 @@ class Kernel:
             if reservation.can_renew():
                 reservation.extend_ticket(actor=self.plugin.get_actor())
             else:
-                raise Exception("The reservation state prevents it from extending its ticket.")
+                raise KernelException("The reservation state prevents it from extending its ticket.")
 
             self.plugin.get_database().update_reservation(reservation=reservation)
 
@@ -316,14 +324,14 @@ class Kernel:
             self.error(err="An error occurred during extend ticket for reservation #{}".format(
                 reservation.get_reservation_id()), e=e)
 
-    def get_client_slices(self) -> list:
+    def get_client_slices(self) -> List[IKernelSlice]:
         """
         Returns all client slices.
         @return an array of client slices
         """
         return self.slices.get_client_slices()
 
-    def get_inventory_slices(self) -> list:
+    def get_inventory_slices(self) -> List[IKernelSlice]:
         """
         Returns all inventory slices.
         @return an array of inventory slices
@@ -340,7 +348,7 @@ class Kernel:
         @throws Exception if no locally registered slice object exists
         """
         if slice_object is None or slice_object.get_slice_id() is None:
-            raise Exception("Invalid Argument")
+            raise KernelException(Constants.invalid_argument)
 
         return self.slices.get(slice_id=slice_object.get_slice_id(), raise_exception=True)
 
@@ -385,7 +393,7 @@ class Kernel:
             return self.reservations.get(rid=rid)
         return None
 
-    def get_reservations(self, *, slice_id: ID) -> list:
+    def get_reservations(self, *, slice_id: ID) -> List[IKernelReservation]:
         """
         Returns all reservations in the specified slice.
         @param slice_id slice id
@@ -411,13 +419,18 @@ class Kernel:
         @return slice object
         """
         if slice_id is None:
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
 
         return self.slices.get(slice_id=slice_id)
 
     def is_known_slice(self, *, slice_id: ID) -> bool:
+        """
+        Is slice known
+        @param slice_id slice id
+        @return true if slice exists; false otherwise
+        """
         if slice_id is None:
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
         return self.slices.contains(slice_id=slice_id)
 
     def get_slices(self) -> list:
@@ -508,11 +521,15 @@ class Kernel:
         return self.policy.query(p=properties)
 
     def redeem(self, *, reservation: IKernelControllerReservation):
+        """
+        Redeem a reservation
+        @param reservation reservation
+        """
         try:
             if reservation.can_redeem():
                 reservation.reserve(policy=self.policy)
             else:
-                raise Exception("The current reservation state prevent it from being redeemed")
+                raise KernelException("The current reservation state prevent it from being redeemed")
 
             self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
@@ -545,7 +562,7 @@ class Kernel:
             # register with the reservations table
             if self.reservations.contains(reservation=reservation):
                 slice_object.unregister(reservation=reservation)
-                raise Exception("There is already a reservation with the given identifier")
+                raise KernelException("There is already a reservation with the given identifier")
 
             self.reservations.add(reservation=reservation)
 
@@ -555,7 +572,8 @@ class Kernel:
             reservation.set_slice(slice_object=slice_object)
             add = True
         else:
-            self.logger.warning("Attempting to register a closed reservation #{}".format(reservation.get_reservation_id()))
+            self.logger.warning("Attempting to register a closed reservation #{}".format(
+                reservation.get_reservation_id()))
 
         return add
 
@@ -582,7 +600,7 @@ class Kernel:
             # register with the reservations table
             if delegation.get_delegation_id() in self.delegations:
                 slice_object.unregister_delegation(delegation=delegation)
-                raise Exception("There is already a reservation with the given identifier")
+                raise KernelException("There is already a reservation with the given identifier")
 
             self.delegations[delegation.get_delegation_id()] = delegation
 
@@ -592,7 +610,8 @@ class Kernel:
             delegation.set_slice_object(slice_object=slice_object)
             add = True
         else:
-            self.logger.warning("Attempting to register a closed reservation #{}".format(delegation.get_delegation_id()))
+            self.logger.warning("Attempting to register a closed reservation #{}".format(
+                delegation.get_delegation_id()))
 
         return add
 
@@ -604,7 +623,7 @@ class Kernel:
         """
         if delegation is None or delegation.get_delegation_id() is None or \
                 delegation.get_slice_object() is None or delegation.get_slice_object().get_name() is None:
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
 
         local_slice = None
         add = False
@@ -612,7 +631,7 @@ class Kernel:
         local_slice = self.slices.get(slice_id=delegation.get_slice_id(), raise_exception=True)
         add = self.register_delegation_with_slice(delegation=delegation, slice_object=local_slice)
 
-        if add :
+        if add:
             try:
                 self.plugin.get_database().add_delegation(delegation=delegation)
             except Exception as e:
@@ -627,7 +646,7 @@ class Kernel:
         """
         if reservation is None or reservation.get_reservation_id() is None or \
                 reservation.get_slice() is None or reservation.get_slice().get_name() is None:
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
 
         local_slice = None
         add = False
@@ -635,7 +654,7 @@ class Kernel:
         local_slice = self.slices.get(slice_id=reservation.get_slice().get_slice_id(), raise_exception=True)
         add = self.register(reservation=reservation, slice_object=local_slice)
 
-        if add :
+        if add:
             try:
                 self.plugin.get_database().add_reservation(reservation=reservation)
             except Exception as e:
@@ -664,7 +683,7 @@ class Kernel:
         @throws Exception
         """
         if rid is None:
-            raise Exception("Invalid Argument")
+            raise KernelException(Constants.invalid_argument)
 
         real = self.reservations.get(rid=rid)
 
@@ -672,7 +691,7 @@ class Kernel:
             if real.is_closed() or real.is_failed() or real.get_state() == ReservationStates.CloseWait:
                 self.unregister_reservation(rid=rid)
             else:
-                raise Exception("Only reservations in failed, closed, or closewait state can be removed.")
+                raise KernelException("Only reservations in failed, closed, or closewait state can be removed.")
         else:
             self.logger.debug("Reservation # {} not found".format(rid))
 
@@ -686,7 +705,7 @@ class Kernel:
         @throws Exception if the slice contains active reservations or removal fails
         """
         if slice_id is None:
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
 
         possible = False
         slice_object = self.get_slice(slice_id=slice_id)
@@ -715,26 +734,22 @@ class Kernel:
         """
         if delegation is None or delegation.get_delegation_id() is None or \
                 delegation.get_slice_object() is None or delegation.get_slice_object().get_slice_id() is None:
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
 
         local_slice = None
         local_slice = self.slices.get(slice_id=delegation.get_slice_object().get_slice_id(), raise_exception=True)
 
         if local_slice is None:
-            raise Exception("slice not registered with the kernel")
+            raise KernelException("slice not registered with the kernel")
         else:
             self.register_delegation(delegation=delegation)
 
-        # Check if the reservation has a database record.
-        temp = None
-        try:
-            temp = self.plugin.get_database().get_delegation(dlg_graph_id=delegation.get_delegation_id())
-        except Exception as e:
-            raise e
+        # Check if the delegation has a database record.
+        temp = self.plugin.get_database().get_delegation(dlg_graph_id=delegation.get_delegation_id())
 
         if temp is None or len(temp) == 0:
             self.unregister_no_check_d(delegation=delegation, slice_object=local_slice)
-            raise Exception("The delegation has no database record")
+            raise KernelException("The delegation has no database record")
 
     def re_register_reservation(self, *, reservation: IKernelReservation):
         """
@@ -744,26 +759,23 @@ class Kernel:
         """
         if reservation is None or reservation.get_reservation_id() is None or \
                 reservation.get_slice() is None or reservation.get_slice().get_slice_id() is None:
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
 
         local_slice = None
         local_slice = self.slices.get(slice_id=reservation.get_slice().get_slice_id(), raise_exception=True)
 
         if local_slice is None:
-            raise Exception("slice not registered with the kernel")
+            raise KernelException("slice not registered with the kernel")
         else:
             self.register(reservation=reservation, slice_object=local_slice)
 
         # Check if the reservation has a database record.
         temp = None
-        try:
-            temp = self.plugin.get_database().get_reservation(rid=reservation.get_reservation_id())
-        except Exception as e:
-            raise e
+        temp = self.plugin.get_database().get_reservation(rid=reservation.get_reservation_id())
 
         if temp is None or len(temp) == 0:
             self.unregister_no_check(reservation=reservation, slice_object=local_slice)
-            raise Exception("The reservation has no database record")
+            raise KernelException("The reservation has no database record")
 
     def re_register_slice(self, *, slice_object: IKernelSlice):
         """
@@ -777,7 +789,7 @@ class Kernel:
         try:
             temp = self.plugin.get_database().get_slice(slice_id=slice_object.get_slice_id())
             if temp is None:
-                raise Exception("The slice does not have a database record")
+                raise KernelException("The slice does not have a database record")
         except Exception as e:
             try:
                 self.lock.acquire()
@@ -806,7 +818,7 @@ class Kernel:
             self.error(err="An error occurred during reserve for reservation #{}".format(
                 reservation.get_reservation_id()), e=e)
 
-    def delegate(self, *, delegation: IDelegation, id_token:str = None):
+    def delegate(self, *, delegation: IDelegation, id_token: str = None):
         """
         Handles a delegate operation for the delegation.
         Broker: process a request for a new delegate.
@@ -838,7 +850,7 @@ class Kernel:
                     not locally registered
         """
         if delegation is None and did is None:
-            raise Exception("Invalid arguments")
+            raise KernelException(Constants.invalid_argument)
 
         result = None
 
@@ -870,7 +882,7 @@ class Kernel:
                     not locally registered
         """
         if reservation is None and rid is None:
-            raise Exception("Invalid arguments")
+            raise KernelException(Constants.invalid_argument)
 
         result = None
 
@@ -906,6 +918,10 @@ class Kernel:
             self.error(err="exception in Kernel.tick", e=e)
 
     def has_something_pending(self) -> bool:
+        """
+        Check is kernel has any pending reservations
+        @return true if no terminal/nascent/pending reservations exist; false otherwise
+        """
         for reservation in self.reservations.values():
             if not reservation.is_terminal() and (reservation.is_nascent() or not reservation.is_no_pending()):
                 return True
@@ -913,11 +929,17 @@ class Kernel:
         return False
 
     def check_nothing_pending(self):
+        """
+        Check for pending reservations
+        """
         if not self.has_something_pending():
             with self.nothing_pending:
                 self.nothing_pending.notify_all()
 
     def await_nothing_pending(self):
+        """
+        Await until nothing is pending
+        """
         with self.nothing_pending:
             self.nothing_pending.wait()
 
@@ -933,7 +955,7 @@ class Kernel:
             slice_object.unregister(reservation=reservation)
             self.reservations.remove(reservation=reservation)
         else:
-            raise Exception("Only reservations in failed, closed, or closewait state can be unregistered.")
+            raise KernelException("Only reservations in failed, closed, or closewait state can be unregistered.")
 
     def unregister_no_check(self, *, reservation: IKernelReservation, slice_object: IKernelSlice):
         """
@@ -965,7 +987,7 @@ class Kernel:
         @throws Exception
         """
         if rid is None:
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
         local_reservation = self.reservations.get_exception(rid=rid)
         self.unregister(reservation=local_reservation, slice_object=local_reservation.get_kernel_slice())
 
@@ -980,18 +1002,18 @@ class Kernel:
                     kernel
         """
         if slice_id is None:
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
 
         s = self.get_slice(slice_id=slice_id)
 
         if s is None:
-            raise Exception("Trying to unregister a slice, which is not registered with the kernel")
+            raise KernelException("Trying to unregister a slice, which is not registered with the kernel")
 
         if s.get_reservations().size() == 0:
             self.slices.remove(slice_id=slice_id)
             self.plugin.release_slice(slice_obj=s)
         else:
-            raise Exception("Slice cannot be unregistered: not empty")
+            raise KernelException("Slice cannot be unregistered: not empty")
 
     def update_lease(self, *, reservation: IKernelReservation, update: Reservation, update_data: UpdateData):
         """
@@ -1039,7 +1061,7 @@ class Kernel:
 
     def update_delegation(self, *, delegation: IDelegation, update: IDelegation, update_data: UpdateData):
         """
-        Handles an incoming update ticket operation (client side only).
+        Handles an incoming update delegation operation (client side only).
         @param delegation local delegation
         @param update update sent from upstream broker
         @param update_data status of the operation the broker is informing us about
@@ -1066,7 +1088,7 @@ class Kernel:
                     the passed reservation
         """
         if (reservation is not None and rid is not None) or (reservation is None and rid is None):
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
 
         if reservation is not None:
             local = self.soft_validate(reservation=reservation)
@@ -1080,7 +1102,14 @@ class Kernel:
                 self.error(err="reservation not found", e=ReservationNotFoundException(rid=rid))
             return local
 
+        return None
+
     def handle_failed_rpc(self, *, reservation: IKernelReservation, rpc: FailedRPC):
+        """
+        Handle failed rpc
+        @param reservation reservation
+        @param rpc rpc
+        """
         reservation.handle_failed_rpc(failed=rpc)
 
     def validate_delegation(self, *, delegation: IDelegation = None, did: ID = None):
@@ -1096,7 +1125,7 @@ class Kernel:
                     the passed delegation
         """
         if (delegation is not None and did is not None) or (delegation is None and did is None):
-            raise Exception("Invalid argument")
+            raise KernelException(Constants.invalid_argument)
 
         if delegation is not None:
             local = self.soft_validate_delegation(delegation=delegation)
@@ -1109,3 +1138,5 @@ class Kernel:
             if local is None:
                 self.error(err="delegation not found", e=DelegationNotFoundException(did=did))
             return local
+
+        return None

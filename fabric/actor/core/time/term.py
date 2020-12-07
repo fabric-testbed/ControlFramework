@@ -25,6 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime
 
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import TimeException
 from fabric.actor.core.time.actor_clock import ActorClock
 
 
@@ -43,11 +45,6 @@ class Term:
     This number will be returned when calling getLength(). To obtain the
     number of milliseconds in the closed interval [start, end], use getFullLength().
     """
-
-    PropertyStartTime = "TermStartTime"
-    PropertyEndTime = "TermEndTime"
-    PropertyNewStartTime = "TermNewStartTime"
-
     '''
     Flag that controls, whether cycle numbers should be calculated.
     '''
@@ -122,7 +119,7 @@ class Term:
                 start_ms = ActorClock.to_milliseconds(when=start) + length - 1
                 self.end_time = ActorClock.from_milliseconds(milli_seconds=start_ms)
             else:
-                raise Exception("Invalid arguments, length and end both not specified")
+                raise TimeException("Invalid arguments, length and end both not specified")
 
         # Start time for this section of the lease
         if new_start is not None:
@@ -183,18 +180,20 @@ class Term:
         @returns true if the term contains the given date or term; false otherwise
         """
         if date is None and term is None:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
 
         if self.start_time is None or self.end_time is None:
-            raise Exception("Invalid state")
+            raise TimeException(Constants.invalid_state)
 
         if date is not None:
             return (not self.start_time > date) and (not self.end_time < date)
 
         if term is not None:
             if not isinstance(term, Term):
-                raise Exception("Invalid arguments")
+                raise TimeException(Constants.invalid_argument)
             return (not self.start_time > term.start_time) and (not self.end_time < term.end_time)
+
+        return False
 
     def ends_after(self, *, date: datetime) -> bool:
         """
@@ -203,10 +202,10 @@ class Term:
         @returns true if the term ends after the given date
         """
         if date is None:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
 
         if self.end_time is None:
-            raise Exception("Invalid state")
+            raise TimeException(Constants.invalid_state)
 
         return date < self.end_time
 
@@ -217,10 +216,10 @@ class Term:
         @returns true if the term ends before the given date
         """
         if date is None:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
 
         if self.end_time is None:
-            raise Exception("Invalid state")
+            raise TimeException(Constants.invalid_state)
 
         return date > self.end_time
 
@@ -232,11 +231,11 @@ class Term:
         @raises Exception if this term does not extend the old term
         """
         if not isinstance(old_term, Term):
-            raise Exception("Invalid type: {}".format(type(old_term)))
+            raise TimeException("Invalid type: {}".format(type(old_term)))
 
         flag = self.extends_term(old_term=old_term)
         if flag is False:
-            raise Exception("New term does not extend previous term")
+            raise TimeException("New term does not extend previous term")
 
     def __eq__(self, other):
         """
@@ -267,10 +266,10 @@ class Term:
         @returns true if the term expires before the specified time
         """
         if date is None:
-            raise Exception("Invalid arguments")
+            raise TimeException(Constants.invalid_argument)
 
         if self.end_time is None:
-            raise Exception("Invalid state")
+            raise TimeException(Constants.invalid_state)
 
         return date > self.end_time
 
@@ -282,7 +281,7 @@ class Term:
         @returns term extended with the current term length
         """
         if self.start_time is None or self.end_time is None:
-            raise Exception("Invalid state")
+            raise TimeException(Constants.invalid_state)
         length_to_use = self.get_length()
         if length != 0:
             length_to_use = length
@@ -300,10 +299,10 @@ class Term:
         @returns true if this term extends the old one, false if not
         """
         if old_term is None or old_term.start_time is None or old_term.end_time is None:
-            raise Exception("Invalid state")
+            raise TimeException(Constants.invalid_state)
 
         if self.start_time is None or self.end_time is None or self.new_start_time is None:
-            raise Exception("Invalid state")
+            raise TimeException(Constants.invalid_state)
 
         return self.start_time == old_term.start_time and self.end_time > self.new_start_time
 
@@ -321,7 +320,7 @@ class Term:
         @returns term length
         """
         if self.start_time is None or self.end_time is None:
-            raise Exception("Invalid state")
+            raise TimeException(Constants.invalid_state)
 
         start_ms = ActorClock.to_milliseconds(when=self.start_time)
         end_ms = ActorClock.to_milliseconds(when=self.end_time)
@@ -335,7 +334,7 @@ class Term:
         @returns term length
         """
         if self.new_start_time is None or self.end_time is None:
-            raise Exception("Invalid state")
+            raise TimeException(Constants.invalid_state)
 
         new_start_ms = ActorClock.to_milliseconds(when=self.new_start_time)
         end_ms = ActorClock.to_milliseconds(when=self.end_time)
@@ -385,15 +384,16 @@ class Term:
         @returns term starting at the specified time, with the length of the current term
         """
         if date is None:
-            raise Exception("Invalid argument")
+            raise TimeException("Invalid argument")
 
         return Term(start=date, length=self.get_length())
 
     def __str__(self):
-        if Term.set_cycles :
+        if Term.set_cycles:
             return "term=[{}:{}:{}]".format(self.cycle_start, self.cycle_new_start, self.cycle_end)
         else:
-            return "Start: {} End: {}".format(Term.get_readable_date(self.start_time), Term.get_readable_date(self.end_time))
+            return "Start: {} End: {}".format(Term.get_readable_date(self.start_time),
+                                              Term.get_readable_date(self.end_time))
 
     def validate(self):
         """
@@ -402,22 +402,22 @@ class Term:
                 end time for term thrown if negative duration for term
         """
         if self.start_time is None:
-            raise Exception("Invalid start time")
+            raise TimeException("Invalid start time")
 
         if self.end_time is None:
-            raise Exception("Invalid end time")
+            raise TimeException("Invalid end time")
 
         if self.end_time < self.start_time:
-            raise Exception("negative duration for term")
+            raise TimeException("negative duration for term")
 
         if self.start_time == self.end_time:
-            raise Exception("zero duration for term")
+            raise TimeException("zero duration for term")
 
         if self.new_start_time < self.start_time:
-            raise Exception("new start before start")
+            raise TimeException("new start before start")
 
         if self.new_start_time > self.end_time:
-            raise Exception("new start after end")
+            raise TimeException("new start after end")
 
     def clone(self):
         return Term(start=self.start_time, new_start=self.new_start_time, end=self.end_time)

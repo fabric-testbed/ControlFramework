@@ -26,6 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
 from fabric.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
 from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
@@ -41,12 +42,9 @@ from fabric.message_bus.messages.message import IMessageAvro
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_authority_reservation import IAuthorityReservation
-    from fabric.actor.core.apis.i_actor import IActor
 
 
 class AuthorityService(BrokerService):
-    def __init__(self, *, actor:IActor):
-        super().__init__(actor=actor)
 
     def pass_authority(self, *, reservation: ReservationAvro) -> IAuthorityReservation:
         slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
@@ -55,10 +53,10 @@ class AuthorityService(BrokerService):
         resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)
         cset = self.get_concrete(reservation=reservation)
         if cset is None:
-            raise Exception("Unsupported Concrete type")
+            raise ProxyException("Unsupported Concrete type")
 
         resource_set.set_resources(cset=cset)
-        rid = ID(id=reservation.reservation_id)
+        rid = ID(uid=reservation.reservation_id)
 
         result = AuthorityReservationFactory.create(resources=resource_set, term=term, slice_obj=slice_obj, rid=rid)
         result.set_owner(owner=self.actor.get_identity())
@@ -68,11 +66,11 @@ class AuthorityService(BrokerService):
 
     def close(self, *, request: CloseAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
-            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Close,
-                                         reservation=rsvn, caller=authToken)
+            rpc = IncomingReservationRPC(message_id=ID(uid=request.message_id), request_type=RPCRequestType.Close,
+                                         reservation=rsvn, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid close request: {}".format(e))
             raise e
@@ -80,12 +78,12 @@ class AuthorityService(BrokerService):
 
     def redeem(self, *, request: RedeemAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
-            callback = self.get_callback(kafka_topic=request.callback_topic, auth=authToken)
-            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id), request_type=RPCRequestType.Redeem,
-                                         reservation=rsvn, callback=callback, caller=authToken)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
+            rpc = IncomingReservationRPC(message_id=ID(uid=request.message_id), request_type=RPCRequestType.Redeem,
+                                         reservation=rsvn, callback=callback, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid redeem request: {}".format(e))
             raise e
@@ -93,11 +91,11 @@ class AuthorityService(BrokerService):
 
     def extend_lease(self, *, request: ExtendLeaseAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
-            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id),
-                                         request_type=RPCRequestType.ExtendLease, reservation=rsvn, caller=authToken)
+            rpc = IncomingReservationRPC(message_id=ID(uid=request.message_id),
+                                         request_type=RPCRequestType.ExtendLease, reservation=rsvn, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid extend_lease request: {}".format(e))
             raise e
@@ -105,28 +103,28 @@ class AuthorityService(BrokerService):
 
     def modify_lease(self, *, request: ModifyLeaseAvro):
         rpc = None
-        authToken = Translate.translate_auth_from_avro(auth_avro=request.auth)
+        auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
-            rpc = IncomingReservationRPC(message_id=ID(id=request.message_id),
-                                         request_type=RPCRequestType.ModifyLease, reservation=rsvn, caller=authToken)
+            rpc = IncomingReservationRPC(message_id=ID(uid=request.message_id),
+                                         request_type=RPCRequestType.ModifyLease, reservation=rsvn, caller=auth_token)
         except Exception as e:
             self.logger.error("Invalid modify_lease request: {}".format(e))
             raise e
         self.do_dispatch(rpc=rpc)
 
     def process(self, *, message: IMessageAvro):
-        if message.get_message_name() == IMessageAvro.Close:
+        if message.get_message_name() == IMessageAvro.close:
             self.close(request=message)
-        elif message.get_message_name() == IMessageAvro.Redeem:
+        elif message.get_message_name() == IMessageAvro.redeem:
             self.redeem(request=message)
-        elif message.get_message_name() == IMessageAvro.ExtendLease:
+        elif message.get_message_name() == IMessageAvro.extend_lease:
             self.extend_lease(request=message)
-        elif message.get_message_name() == IMessageAvro.ModifyLease:
+        elif message.get_message_name() == IMessageAvro.modify_lease:
             self.modify_lease(request=message)
-        elif message.get_message_name() == IMessageAvro.ResultReservation:
+        elif message.get_message_name() == IMessageAvro.result_reservation:
             self.logger.debug("Claim Resources Response receieved: {}".format(message))
-        elif message.get_message_name() == IMessageAvro.ResultDelegation:
+        elif message.get_message_name() == IMessageAvro.result_delegation:
             self.logger.debug("Claim Delegation Response receieved: {}".format(message))
         else:
             super().process(message=message)

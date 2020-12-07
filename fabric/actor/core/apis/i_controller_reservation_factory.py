@@ -46,7 +46,7 @@ class IControllerReservationFactory:
         @param term term
         @param slice_object slice
         @param broker broker
-       
+
         @return an instance of IControllerReservation
         """
         raise NotImplementedError("Should have implemented this")

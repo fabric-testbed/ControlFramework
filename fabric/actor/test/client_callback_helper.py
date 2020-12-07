@@ -67,7 +67,7 @@ class ClientCallbackHelper(IClientCallbackProxy):
         return self.reservation
 
     def get_type(self):
-        return Constants.ProtocolLocal
+        return Constants.protocol_local
 
     def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
                               callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:

@@ -26,7 +26,6 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
@@ -36,12 +35,14 @@ if TYPE_CHECKING:
     from fabric.actor.core.util.id import ID
     from fabric.actor.core.manage.messages.client_mng import ClientMng
     from fabric.actor.security.auth_token import AuthToken
-    from fabric.actor.core.util.resource_type import ResourceType
     from fabric.message_bus.messages.reservation_mng import ReservationMng
     from fabric.message_bus.messages.slice_avro import SliceAvro
 
 
 class IMgmtServerActor(IMgmtActor):
+    """
+    Interface for Management Server Actor
+    """
     @abstractmethod
     def get_broker_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         """

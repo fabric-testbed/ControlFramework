@@ -29,6 +29,8 @@ from fabric.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric.actor.core.apis.i_delegation import IDelegation, DelegationState
 from fabric.actor.core.apis.i_policy import IPolicy
 from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import DelegationException
 from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.update_data import UpdateData
@@ -37,6 +39,9 @@ from fim.graph.abc_property_graph import ABCPropertyGraph
 
 
 class Delegation(IDelegation):
+    error_string_prefix = 'error for delegation: {} : {}'
+    invalid_state_prefix = "Invalid state for {}. Did you already {} this Delegation?"
+
     def __init__(self, dlg_graph_id: ID, slice_id: ID):
         self.dlg_graph_id = dlg_graph_id
         self.slice_id = slice_id
@@ -106,7 +111,7 @@ class Delegation(IDelegation):
     def get_state_name(self) -> str:
         return self.state.name
 
-    def set_logger(self, logger):
+    def set_logger(self, *, logger):
         self.logger = logger
 
     def set_slice_object(self, *, slice_object: ISlice):
@@ -123,16 +128,18 @@ class Delegation(IDelegation):
         self.state_transition = True
 
     def clear_notice(self):
+        """
+        Clear the notices
+        """
         self.update_data.clear()
 
     def get_notices(self) -> str:
-        msg = "Delegation {} (Slice {} ) is in state [{}]".format(self.get_delegation_id(), self.get_slice_id(),
-                                                                  DelegationState(self.state).name)
+        s = "Delegation {} (Slice {} ) is in state [{}]".format(self.get_delegation_id(), self.get_slice_id(),
+                                                                DelegationState(self.state).name)
         if self.error_message is not None and self.error_message != "":
-            msg += ", err={}".format(self.error_message)
+            s += ", err={}".format(self.error_message)
 
         notices = self.update_data.get_events()
-        s = ""
         if notices is not None:
             s += "\n{}".format(notices)
 
@@ -158,6 +165,9 @@ class Delegation(IDelegation):
         self.actor = actor
 
     def prepare(self, *, callback: ICallbackProxy, logger):
+        """
+        Prepare a delegation
+        """
         self.set_logger(logger=logger)
         self.callback = callback
 
@@ -165,24 +175,16 @@ class Delegation(IDelegation):
         # exported delegation. Else the request is from a client and must have
         # a client-specified delegation id.
 
-        if self.callback is not None:
-            if self.dlg_graph_id is None:
-                self.error(err="no delegation ID specified for request")
+        if self.callback is not None and self.dlg_graph_id is None:
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
+            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
 
         self.set_dirty()
 
     def is_closed(self) -> bool:
         return self.state == DelegationState.Closed
 
-    def error(self, *, err: str):
-        self.error_message = err
-        if self.logger is not None:
-            self.logger.error("error for delegation: {} : {}".format(self, err))
-        else:
-            print("error for delegation: {} : {}".format(self, err))
-        raise Exception("error: {}".format(err))
-
-    def delegate(self, policy: IPolicy, id_token:str = None):
+    def delegate(self, policy: IPolicy, id_token: str = None):
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
         # protocol: so we may receive a reserve or extend when there is already
@@ -202,7 +204,8 @@ class Delegation(IDelegation):
             self.transition(prefix="claim", state=DelegationState.Delegated)
             self.must_send_update = True
         else:
-            self.error(err="Wrong delegation state for claim")
+            self.logger.error(self.error_string_prefix.format(self, self.invalid_state_prefix.format('claim', 'claim')))
+            raise DelegationException(self.invalid_state_prefix.format('claim', 'claim'))
 
     def reclaim(self, id_token: str = None):
         if self.state == DelegationState.Delegated:
@@ -210,7 +213,8 @@ class Delegation(IDelegation):
             self.must_send_update = True
             self.transition(prefix="reclaimed", state=DelegationState.Reclaimed)
         else:
-            self.error(err="Wrong delegation state for reclaim")
+            self.logger.error(self.error_string_prefix.format(self, self.invalid_state_prefix.format('reclaim', 'reclaim')))
+            raise DelegationException(self.invalid_state_prefix.format('reclaim', 'reclaim'))
 
     def close(self):
         send_notification = False
@@ -238,9 +242,13 @@ class Delegation(IDelegation):
         # Disallow any further requests on a closed delegation. Generate and update to reset the client.
         if self.is_closed():
             self.generate_update()
-            self.error(err="server cannot satisfy request closing")
+            self.logger.error(self.error_string_prefix.format(self, "server cannot satisfy request closing"))
+            raise DelegationException("server cannot satisfy request closing")
 
     def generate_update(self):
+        """
+        Generate an update
+        """
         self.logger.debug("Generating update")
         if self.callback is None:
             self.logger.warning("Cannot generate update: no callback.")
@@ -305,6 +313,10 @@ class Delegation(IDelegation):
         return success
 
     def fail_notify(self, *, message: str):
+        """
+        Notify a failed delegation by generating an update
+        @param message message
+        """
         self.error_message = message
         self.generate_update()
         self.logger.error(message)
@@ -349,6 +361,10 @@ class Delegation(IDelegation):
         return self.update_data
 
     def set_sequence_in(self, value: int):
+        """
+        Set incoming sequence number
+        @param value value
+        """
         self.sequence_in = value
 
     def get_sequence_in(self) -> int:
@@ -358,32 +374,36 @@ class Delegation(IDelegation):
         return self.sequence_out
 
     def update_delegation(self, *, incoming: IDelegation, update_data: UpdateData):
-        self.error(err="Cannot update a authority delegation")
+        self.logger.error(self.error_string_prefix.format(self, "Cannot update a authority delegation"))
+        raise DelegationException("Cannot update a authority delegation")
 
     def service_update_delegation(self):
         return
 
-    def validate_incoming(self):
+    def validate(self):
         if self.slice_object is None:
-            self.error(err="No slice specified")
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("slice")))
+            raise DelegationException(Constants.not_specified_prefix.format("slice"))
 
         if self.dlg_graph_id is None:
-            self.error(err="No Graph specified")
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
+            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
 
         if self.graph is None:
-            self.error(err="No Graph specified")
+            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph")))
+            raise DelegationException(Constants.not_specified_prefix.format("graph"))
+
+    def validate_incoming(self):
+        self.validate()
 
     def validate_outgoing(self):
-        if self.slice_object is None:
-            self.error(err="No slice specified")
-
-        if self.dlg_graph_id is None:
-            self.error(err="No Graph specified")
-
-        if self.graph is None:
-            self.error(err="No Graph specified")
+        self.validate()
 
     def set_owner(self, *, owner: AuthToken):
+        """
+        Set owner
+        @param owner owner
+        """
         self.owner = owner
 
     def load_graph(self, *, graph_str: str):

@@ -25,9 +25,21 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 from __future__ import annotations
+
+from datetime import datetime
 from typing import TYPE_CHECKING
 
+from fabric.actor.core.common.exceptions import BrokerException
 from fabric.actor.core.util.id import ID
+from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
+from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
+from fabric.actor.core.apis.i_reservation import ReservationCategory
+from fabric.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
+from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
+from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
+from fabric.actor.core.kernel.request_types import RequestTypes
+from fabric.actor.core.kernel.reservation_server import ReservationServer
+from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_actor import IActor
@@ -40,17 +52,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.apis.i_kernel_slice import IKernelSlice
     from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.time.term import Term
-
-from datetime import datetime
-from fabric.actor.core.apis.i_authority_policy import IAuthorityPolicy
-from fabric.actor.core.apis.i_broker_policy import IBrokerPolicy
-from fabric.actor.core.apis.i_reservation import ReservationCategory
-from fabric.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
-from fabric.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-from fabric.actor.core.kernel.rpc_request_type import RPCRequestType
-from fabric.actor.core.kernel.request_types import RequestTypes
-from fabric.actor.core.kernel.reservation_server import ReservationServer
-from fabric.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 
 
 class BrokerReservation(ReservationServer, IKernelBrokerReservation):
@@ -65,10 +66,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     is no remoteRid), and does not issue an updateTicket (since there is no
     callback).
     """
-    PropertySource = "AgentReservationSource"
-    PropertyExporting = "AgentReservationExporting"
-    PropertyAuthority = "AgentReservationAuthority"
-    PropertyMustSendUpdate = "AgentReservationMustSendUpdate"
+    updated_absorbed = "update absorbed"
 
     def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_obj: IKernelSlice):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_obj)
@@ -147,67 +145,70 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         return "[{},{}] ({})({})".format(self.get_state_name(), self.get_pending_state_name(), self.get_sequence_in(),
                                          self.get_sequence_out())
 
-    def recover(self, *, parent, saved_state):
+    def recover(self):
+        """
+        Recover the reservation post stateful restart
+        """
         if isinstance(self.policy, IAuthorityPolicy):
             self.logger.debug("No recovery necessary for reservation #{}".format(self.get_reservation_id()))
             return
 
         if not isinstance(self.policy, IBrokerPolicy):
-            raise Exception("Do not know how to recover: policy={}".format(self.policy))
+            raise BrokerException("Do not know how to recover: policy={}".format(self.policy))
 
-        try:
-            if self.state == ReservationStates.Nascent:
-                if self.pending_state == ReservationPendingStates.None_:
-                    self.actor.ticket(self)
-                    self.logger.info("Added reservation #{} to the ticketing list. State={}".format(self.get_reservation_id(), self.print_state()))
+        if self.state == ReservationStates.Nascent:
+            if self.pending_state == ReservationPendingStates.None_:
+                self.actor.ticket(self)
+                self.logger.info("Added reservation #{} to the ticketing list. State={}".format(
+                    self.get_reservation_id(), self.print_state()))
 
-                elif self.pending_state == ReservationPendingStates.Ticketing:
-                    self.set_pending_recover(pending_recover=True)
-                    self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
-                    self.actor.ticket(self)
-                    self.logger.info(
-                        "Added reservation #{} to the ticketing list. State={}".format(self.get_reservation_id(),
-                                                                                       self.print_state()))
+            elif self.pending_state == ReservationPendingStates.Ticketing:
+                self.set_pending_recover(pending_recover=True)
+                self.transition(prefix="[recovery]", state=self.state, pending=ReservationPendingStates.None_)
+                self.actor.ticket(self)
+                self.logger.info(
+                    "Added reservation #{} to the ticketing list. State={}".format(self.get_reservation_id(),
+                                                                                   self.print_state()))
 
-                else:
-                    raise Exception("Unexpected pending state")
-
-            elif self.state == ReservationStates.Ticketed:
-                if self.pending_state == ReservationPendingStates.None_ or self.pending_state == ReservationPendingStates.Priming:
-                    self.set_service_pending(code=ReservationPendingStates.None_)
-                    self.logger.debug("No recovery necessary for reservation #{}".format(self.get_reservation_id()))
-
-                elif self.pending_state == ReservationPendingStates.ExtendingTicket:
-                    self.set_pending_recover(pending_recover=True)
-                    self.transition(prefix="[recovery]", state=self.state,
-                                    pending=ReservationPendingStates.None_)
-                    self.actor.extend_ticket(reservation=self)
-                    self.logger.info(
-                        "Added reservation #{} to the extending list. State={}".format(self.get_reservation_id(),
-                                                                                       self.print_state()))
-                else:
-                    raise Exception("Unexpected pending state")
-
-            elif self.state == ReservationStates.Failed:
-                self.logger.warning("Reservation #{} has failed".format(self.get_reservation_id()))
             else:
-                raise Exception("Unexpected reservation state")
+                raise BrokerException("Unexpected pending state")
 
-        except Exception as e:
-            raise e
+        elif self.state == ReservationStates.Ticketed:
+            if self.pending_state == ReservationPendingStates.None_ or \
+                    self.pending_state == ReservationPendingStates.Priming:
+                self.set_service_pending(code=ReservationPendingStates.None_)
+                self.logger.debug("No recovery necessary for reservation #{}".format(self.get_reservation_id()))
+
+            elif self.pending_state == ReservationPendingStates.ExtendingTicket:
+                self.set_pending_recover(pending_recover=True)
+                self.transition(prefix="[recovery]", state=self.state,
+                                pending=ReservationPendingStates.None_)
+                self.actor.extend_ticket(reservation=self)
+                self.logger.info(
+                    "Added reservation #{} to the extending list. State={}".format(self.get_reservation_id(),
+                                                                                   self.print_state()))
+            else:
+                raise BrokerException("Unexpected pending state")
+
+        elif self.state == ReservationStates.Failed:
+            self.logger.warning("Reservation #{} has failed".format(self.get_reservation_id()))
+        else:
+            raise BrokerException("Unexpected reservation state")
 
     def handle_failed_rpc(self, *, failed: FailedRPC):
         # make sure that the failed RPC came from the callback identity
         remote_auth = failed.get_remote_auth()
         if failed.get_request_type() == RPCRequestType.UpdateTicket:
             if self.callback is None or self.callback.get_identity() != remote_auth:
-                raise Exception("Unauthorized Failed reservation RPC: expected={}, but was: {}".format(self.callback.get_identity(), remote_auth))
+                raise BrokerException("Unauthorized Failed reservation RPC: expected={}, but was: {}".format(
+                    self.callback.get_identity(), remote_auth))
         else:
-            Exception("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(failed.get_request_type()))
+            raise BrokerException("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(
+                failed.get_request_type()))
 
         super().handle_failed_rpc(failed=failed)
 
-    def prepare(self, *, callback: ICallbackProxy, logger, reclaim: bool=False):
+    def prepare(self, *, callback: ICallbackProxy, logger):
         self.set_logger(logger=logger)
         self.callback = callback
 
@@ -215,9 +216,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         # exported reservation. Else the request is from a client and must have
         # a client-specified RID.
 
-        if self.callback is not None:
-            if self.rid is None:
-                self.error(err="no reservation ID specified for request")
+        if self.callback is not None and self.rid is None:
+            self.error(err="no reservation ID specified for request")
 
         self.set_dirty()
 
@@ -245,7 +245,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         if self.resources is not None:
             self.resources.service_update(reservation=self)
             if not self.is_failed():
-                self.transition(prefix="update absorbed", state=ReservationStates.Ticketed,
+                self.transition(prefix=self.updated_absorbed, state=ReservationStates.Ticketed,
                                 pending=ReservationPendingStates.None_)
                 self.generate_update()
 
@@ -272,7 +272,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         if self.pending_state == ReservationPendingStates.None_:
             self.resources.service_update(self)
             if not self.is_failed():
-                self.transition(prefix="update absorbed", state=ReservationStates.Ticketed,
+                self.transition(prefix=self.updated_absorbed, state=ReservationStates.Ticketed,
                                 pending=ReservationPendingStates.None_)
                 self.generate_update()
 
@@ -327,19 +327,18 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             elif self.pending_state == ReservationPendingStates.Priming:
                 self.service_pending = ReservationPendingStates.AbsorbUpdate
 
-            elif self.pending_state == ReservationPendingStates.None_:
+            elif self.pending_state == ReservationPendingStates.None_ and self.must_send_update:
                 # for exported reservations that have been claimed, we need to
                 # schedule a ticketUpdate
-                if self.must_send_update:
-                    self.service_pending = ReservationPendingStates.SendUpdate
-                    self.must_send_update = False
+                self.service_pending = ReservationPendingStates.SendUpdate
+                self.must_send_update = False
 
     def service_probe(self):
         try:
             if self.service_pending == ReservationPendingStates.AbsorbUpdate:
                 self.resources.service_update(reservation=self)
                 if not self.is_failed():
-                    self.transition(prefix="update absorbed", state=ReservationStates.Ticketed,
+                    self.transition(prefix=self.updated_absorbed, state=ReservationStates.Ticketed,
                                     pending=ReservationPendingStates.None_)
                     self.generate_update()
 
@@ -347,7 +346,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.generate_update()
 
         except Exception as e:
-            self.log_error(message="failed while servicing probe", exception=e)
+            self.logger.error("failed while servicing probe e:{}".format(e))
             self.fail_notify(message=str(e))
 
         self.service_pending = ReservationPendingStates.None_
@@ -358,7 +357,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         # ticket/extendTicket after recovery. If there is nothing pending for
         # this reservation, we resend the last update.
         if operation == RequestTypes.RequestTicket:
-            if self.pending_state == ReservationPendingStates.None_ and self.state != ReservationStates.Nascent and not self.pending_recover:
+            if self.pending_state == ReservationPendingStates.None_ and self.state != ReservationStates.Nascent and \
+                    not self.pending_recover:
                 self.generate_update()
 
         elif operation == RequestTypes.RequestExtendTicket:
@@ -366,13 +366,13 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.generate_update()
 
         elif operation == RequestTypes.RequestRelinquish:
-            self.log_debug(message="no op")
+            self.logger.debug("no op")
 
         else:
-            raise Exception("unsupported operation {}".format(RequestTypes(operation).name))
+            raise BrokerException("unsupported operation {}".format(RequestTypes(operation).name))
 
     def generate_update(self):
-        self.log_debug(message="Generating update")
+        self.logger.debug("Generating update")
         if self.callback is None:
             self.logger.warning("Cannot generate update: no callback.")
             return
@@ -386,7 +386,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             # Note that this may result in a "stuck" reservation... not much we
             # can do if the receiver has failed or rejects our update. We will
             # regenerate on any user-initiated probe.
-            self.log_remote_error(message="callback failed", exception=e)
+            self.logger.error("callback failed e:{}".format(e))
 
     def map_and_update(self, *, ticketed: bool):
         """
@@ -410,7 +410,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             if ticketed:
                 self.fail_notify(message="reservation is not yet ticketed")
             else:
-                self.log_debug(message="Using policy {} to bind reservation".format(self.policy.__class__.__name__))
+                self.logger.debug("Using policy {} to bind reservation".format(self.policy.__class__.__name__))
                 try:
                     granted = False
                     # If the policy has processed this reservation, granted should
@@ -430,7 +430,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                     self.transition(prefix="ticket request", state=ReservationStates.Nascent,
                                     pending=ReservationPendingStates.Ticketing)
                 except Exception as e:
-                    self.log_error(message="mapAndUpdate bindTicket failed for ticketRequest:", exception=e)
+                    self.logger.error("mapAndUpdate bindTicket failed for ticketRequest:", exception=e)
                     self.fail_notify(message=str(e))
                     return success
 
@@ -444,7 +444,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                         self.transition(prefix="ticketed", state=ReservationStates.Ticketed,
                                         pending=ReservationPendingStates.Priming)
                     except Exception as e:
-                        self.log_error(message="mapAndUpdate ticket failed for ticketRequest", exception=e)
+                        self.logger.error("mapAndUpdate ticket failed for ticketRequest", exception=e)
                         self.fail_notify(message=str(e))
         elif self.state == ReservationStates.Ticketed:
             if not ticketed:
@@ -469,7 +469,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                     else:
                         granted = True
                 except Exception as e:
-                    self.log_error(message="mapAndUpdate extendTicket failed for ticketRequest:", exception=e)
+                    self.logger.error("mapAndUpdate extendTicket failed for ticketRequest:", exception=e)
                     self.fail_notify(message=str(e))
                     return success
 
@@ -484,10 +484,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                         self.term = self.approved_term
                         self.resources.update(reservation=self, resource_set=self.approved_resources)
                     except Exception as e:
-                        self.log_error(message="mapAndUpdate ticket failed for ticketRequest", exception=e)
+                        self.logger.error("mapAndUpdate ticket failed for ticketRequest", exception=e)
                         self.fail_notify(message=str(e))
         else:
-            self.log_error(message="broker mapAndUpdate: unexpected state", exception=None)
+            self.logger.error("broker mapAndUpdate: unexpected state")
             self.fail_notify(message="invalid operation for the current reservation state")
 
         return success
@@ -515,6 +515,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         self.exporting = True
 
     def set_source(self, *, source: IClientReservation):
+        """
+        Set source
+        @param source source
+        """
         self.source = source
 
     def set_authority(self, *, authority: IAuthorityProxy):

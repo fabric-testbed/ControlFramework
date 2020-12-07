@@ -29,4 +29,3 @@ class IState:
     """
     IState is a generic interface used to represent a state.
     """
-    pass

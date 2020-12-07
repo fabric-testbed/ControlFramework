@@ -23,9 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import datetime
 
 from fabric.actor.core.apis.i_actor import IActor
+from fabric.actor.core.common.exceptions import ResourcesException
 from fabric.actor.core.common.resource_vector import ResourceVector
 from fabric.actor.core.apis.i_resource_ticket_factory import IResourceTicketFactory
 from fabric.actor.core.delegation.resource_bin import ResourceBin
@@ -38,30 +38,42 @@ from fabric.actor.core.util.resource_type import ResourceType
 
 
 class SimpleResourceTicketFactory(IResourceTicketFactory):
+    """
+    Factory class to create Resource Tickets
+    """
     def __init__(self):
         self.actor = None
         self.initialized = False
 
     def initialize(self):
+        """
+        Initialize
+        """
         if not self.initialized:
             if self.actor is None:
-                raise Exception("Factory does not have an actor")
+                raise ResourcesException("Factory does not have an actor")
             self.initialized = True
 
     def ensure_initialized(self):
+        """
+        Ensure if the factory is initialized
+        """
+
         if not self.initialized:
-            raise Exception("ticket factory has not been initialized")
+            raise ResourcesException("ticket factory has not been initialized")
 
     def get_issuer_id(self):
+        """
+        Get Actor Guid
+        """
         return self.actor.get_identity().get_guid()
 
     def make_delegation(self, *, units: int = None, vector: ResourceVector = None, term: Term = None,
                         rtype: ResourceType = None, sources: list = None, bins: list = None,
                         properties: dict = None, holder: ID = None) -> ResourceDelegation:
-
         self.ensure_initialized()
         if (sources is None and bins is not None) or (sources is not None and bins is None):
-            raise Exception("sources and bins must both be null or non-null")
+            raise ResourcesException("sources and bins must both be null or non-null")
 
         issuer = self.get_issuer_id()
 
@@ -80,11 +92,11 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
 
     def clone(self, *, original: ResourceTicket) -> ResourceTicket:
         self.ensure_initialized()
-        ticket_json = self.toJson(ticket=original)
-        result = self.fromJson(incoming=ticket_json)
+        ticket_json = self.to_json(ticket=original)
+        result = self.from_json(incoming=ticket_json)
         return result
 
-    def toJson(self, *, ticket: ResourceTicket) -> dict:
+    def to_json(self, *, ticket: ResourceTicket) -> dict:
         outgoing_ticket = {}
         delegation_list = []
         for delegation in ticket.delegations:
@@ -107,7 +119,7 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
             if delegation.bins is not None:
                 bin_list = []
                 for b in delegation.bins:
-                    bin = {'guid': b.get_guid(), 'physical_units': b.get_physical_units()}
+                    b_bin = {'guid': b.get_guid(), 'physical_units': b.get_physical_units()}
 
                     if b.get_parent_guid() is not None:
                         b['parent_guid'] = b.get_parent_guid()
@@ -116,15 +128,15 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                             'end_time': ActorClock.to_milliseconds(when=b.get_term().get_end_time()),
                             'new_start_time': ActorClock.to_milliseconds(when=b.get_term().get_new_start_time())}
 
-                    bin['term'] = term
-                    bin_list.append(bin)
+                    b_bin['term'] = term
+                    bin_list.append(b_bin)
                 d['bins'] = bin_list
 
             delegation_list.append(d)
         outgoing_ticket['delegations'] = delegation_list
         return {'ticket': outgoing_ticket}
 
-    def fromJson(self, *, incoming: dict) -> ResourceTicket:
+    def from_json(self, *, incoming: dict) -> ResourceTicket:
         ticket = None
 
         incoming_ticket = incoming.get('ticket', None)
@@ -177,5 +189,3 @@ class SimpleResourceTicketFactory(IResourceTicketFactory):
                         ticket.delegations.append(dd)
 
         return ticket
-
-

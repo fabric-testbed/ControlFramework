@@ -29,18 +29,21 @@ import pickle
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import DatabaseException
 from fabric.actor.core.extensions.plugin import Plugin
 from fabric.actor.core.apis.i_actor import IActor, ActorType
+from fabric.actor.core.apis.i_container_database import IContainerDatabase
+from fabric.actor.db.psql_database import PsqlDatabase
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_management_object import IManagementObject
     from fabric.actor.core.util.id import ID
 
-from fabric.actor.core.apis.i_container_database import IContainerDatabase
-from fabric.actor.db.psql_database import PsqlDatabase
-
 
 class ContainerDatabase(IContainerDatabase):
+    """
+    Implements Container Interface to various Database operations
+    """
     PropertyTime = "time"
     PropertyContainer = "container"
 
@@ -67,6 +70,9 @@ class ContainerDatabase(IContainerDatabase):
         self.reset_state = False
 
     def initialize(self):
+        """
+        Initialize
+        """
         if not self.initialized:
             if self.reset_state:
                 self.db.create_db()
@@ -74,23 +80,47 @@ class ContainerDatabase(IContainerDatabase):
             self.initialized = True
 
     def set_reset_state(self, *, value: bool):
+        """
+        Set Reset State
+        """
         self.reset_state = value
 
     def reset_db(self):
+        """
+        Reset the database
+        """
         self.db.reset_db()
 
     def add_actor(self, *, actor: IActor):
+        """
+        Add an actor
+        @param actor actor
+        """
         properties = pickle.dumps(actor)
         self.db.add_actor(name=actor.get_name(), guid=str(actor.get_guid()), act_type=actor.get_type().value,
                           properties=properties)
 
     def remove_actor(self, *, actor_name: str):
+        """
+        Remove an actor
+        @param actor_name actor name
+        """
         self.db.remove_actor(name=actor_name)
 
     def remove_actor_database(self, *, actor_name: str):
+        """
+        Remove an actor
+        @param actor_name actor name
+        """
         self.db.remove_actor(name=actor_name)
 
     def get_actors(self, *, name: str = None, actor_type: int = None) -> list:
+        """
+        Get Actors
+        @param name actor name
+        @param actor_type actor type
+        @return list of actors
+        """
         result = None
         try:
             if name is None and actor_type is None:
@@ -106,6 +136,11 @@ class ContainerDatabase(IContainerDatabase):
         return result
 
     def get_actor(self, *, actor_name: str) -> dict:
+        """
+        Get Actor
+        @param name actor name
+        @return actor
+        """
         result = None
         try:
             result = self.db.get_actor(name=actor_name)
@@ -114,9 +149,17 @@ class ContainerDatabase(IContainerDatabase):
         return result
 
     def add_time(self, *, properties: dict):
+        """
+        Add time
+        @param properties properties
+        """
         self.db.add_miscellaneous(name=self.PropertyTime, properties=properties)
 
     def get_time(self) -> dict:
+        """
+        Get Time
+        @param time properties
+        """
         result = None
         try:
             result = self.db.get_miscellaneous(name=self.PropertyTime)
@@ -125,9 +168,17 @@ class ContainerDatabase(IContainerDatabase):
         return result
 
     def add_container_properties(self, *, properties: dict):
+        """
+        Add container properties
+        @param properties properties
+        """
         self.db.add_miscellaneous(name=self.PropertyContainer, properties=properties)
 
     def get_container_properties(self) -> dict:
+        """
+        Get Container Properties
+        @return properties
+        """
         result = None
         try:
             result = self.db.get_miscellaneous(name=self.PropertyContainer)
@@ -136,10 +187,14 @@ class ContainerDatabase(IContainerDatabase):
         return result
 
     def _get_plugin_from_dict(self, *, plug_obj: dict) -> Plugin:
-        if Constants.PropertyPickleProperties not in plug_obj:
-            raise Exception("Invalid arguments")
+        """
+        Get Plugin from database row
+        @param plug_obj plugin object read from database
+        """
+        if Constants.property_pickle_properties not in plug_obj:
+            raise DatabaseException(Constants.invalid_argument)
 
-        serialized_plugin = plug_obj[Constants.PropertyPickleProperties]
+        serialized_plugin = plug_obj[Constants.property_pickle_properties]
         deserialized_plugin = pickle.loads(serialized_plugin)
         return deserialized_plugin
 
@@ -174,14 +229,27 @@ class ContainerDatabase(IContainerDatabase):
         return result
 
     def add_plugin(self, *, plugin: Plugin):
+        """
+        Add plugin
+        @param plugin plugin
+        """
         properties = pickle.dumps(plugin)
         self.db.add_plugin(plugin_id=plugin.get_id(), plg_type=plugin.get_plugin_type(),
                            plg_actor_type=plugin.get_actor_type(), properties=properties)
 
     def remove_plugin(self, *, plugin_id: str):
+        """
+        Remove plugin
+        @param plugin_id plugin id
+        """
         self.db.remove_plugin(plugin_id=plugin_id)
 
     def get_manager_objects_by_actor_name(self, *, actor_name: str) -> list:
+        """
+        Get Management Object by actor name
+        @param actor_name actor name
+        @return list of management objects
+        """
         result = None
         try:
             result = self.db.get_manager_objects_by_actor_name(act_name=actor_name)
@@ -190,6 +258,10 @@ class ContainerDatabase(IContainerDatabase):
         return result
 
     def get_manager_containers(self) -> list:
+        """
+        Get Management Container
+        @return list of management objects for containers
+        """
         result = None
         try:
             result = self.db.get_manager_containers()
@@ -198,11 +270,16 @@ class ContainerDatabase(IContainerDatabase):
         return result
 
     def add_manager_object(self, *, manager: IManagementObject):
+        """
+        Add Management object
+        @param manager management object
+        """
         properties = manager.save()
         self.db.add_manager_object(manager_key=str(manager.get_id()), properties=properties)
 
     def remove_manager_object(self, *, mid: ID):
+        """
+        Remove management object
+        @param mid management object id
+        """
         self.db.remove_manager_object(manager_key=str(mid))
-
-
-

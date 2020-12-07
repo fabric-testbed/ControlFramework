@@ -33,9 +33,9 @@ if TYPE_CHECKING:
     from fabric.actor.core.kernel.slice import SliceTypes
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.util.resource_type import ResourceType
-    from fabric.actor.security.guard import Guard
     from fabric.actor.core.util.id import ID
     from fim.graph.abc_property_graph import ABCPropertyGraph
+    from fabric.actor.core.util.resource_data import ResourceData
 
 
 class ISlice:
@@ -232,27 +232,11 @@ class ISlice:
         """
 
     @abstractmethod
-    def get_guard(self) -> Guard:
-        """
-        Returns the slice guard.
-       
-        @return the guard
-        """
-
-    @abstractmethod
-    def set_guard(self, *, g: Guard):
-        """
-        Sets the slice guard.
-       
-        @param g the guard
-        """
-
-    @abstractmethod
     def clone_request(self):
         """
         Makes a minimal clone of the slice object sufficient for
         cross-actor calls.
-       
+
         @return a slice object to use when making cross-actor calls.
         """
 
@@ -294,8 +278,7 @@ class ISlice:
         """
         Sets the resource model graph.
 
-        Args:
-            graph: graph
+        @param graph graph
         """
 
     @abstractmethod
@@ -308,7 +291,7 @@ class ISlice:
     def set_graph_id(self, graph_id: ID):
         """
         Set graph id
-        @params graph_id:  graph_id
+        @param graph_id:  graph_id
         """
 
     @abstractmethod
@@ -316,6 +299,12 @@ class ISlice:
         """
         Returns the graph id
 
-        Returns:
-            graph id
+        @return graph id
+        """
+
+    @abstractmethod
+    def set_properties(self, *, rsrcdata: ResourceData):
+        """
+        Sets the slice properties.
+        @param properties slice properties
         """

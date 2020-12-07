@@ -25,12 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import pickle
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric.actor.core.apis.i_delegation import IDelegation
 from fabric.actor.core.common.constants import Constants
+from fabric.actor.core.common.exceptions import ProxyException
 from fabric.actor.core.kernel.resource_set import ResourceSet
 from fabric.actor.core.kernel.slice_factory import SliceFactory
 from fabric.actor.core.time.actor_clock import ActorClock
@@ -51,7 +50,6 @@ from fabric.message_bus.messages.slice_avro import SliceAvro
 from fabric.message_bus.messages.term_avro import TermAvro
 from fabric.message_bus.messages.update_data_avro import UpdateDataAvro
 
-from fabric.actor.core.apis.i_reservation import IReservation
 
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_slice import ISlice
@@ -60,9 +58,9 @@ if TYPE_CHECKING:
 class Translate:
     # The direction constants specify the direction of a request. They are used
     # to determine what properties should pass from one actor to another.
-    DirectionAgent = 1
-    DirectionAuthority = 2
-    DirectionReturn = 3
+    direction_agent = 1
+    direction_authority = 2
+    direction_return = 3
 
     @staticmethod
     def translate_udd(*, udd: UpdateData) -> UpdateDataAvro:
@@ -84,7 +82,7 @@ class Translate:
             return None
 
         if slice_id is None:
-            raise Exception("Missing guid")
+            raise ProxyException(Constants.not_specified_prefix.format("Slice id"))
 
         slice_obj = SliceFactory.create(slice_id=slice_id, name=slice_name)
         return slice_obj
@@ -148,15 +146,15 @@ class Translate:
             return None
 
         avro_rdata = ResourceDataAvro()
-        if direction == Translate.DirectionAgent:
+        if direction == Translate.direction_agent:
             properties = resource_data.get_request_properties()
             avro_rdata.request_properties = properties
 
-        elif direction == Translate.DirectionAuthority:
+        elif direction == Translate.direction_authority:
             properties = resource_data.get_configuration_properties()
             avro_rdata.config_properties = properties
 
-        elif direction == Translate.DirectionReturn:
+        elif direction == Translate.direction_return:
             properties = resource_data.get_resource_properties()
             avro_rdata.resource_properties = properties
 
@@ -267,10 +265,10 @@ class Translate:
 
     @staticmethod
     def translate_to_pool_info(*, query_response: dict) -> PoolInfoAvro:
-        bqm = query_response.get(Constants.BrokerQueryModel, None)
+        bqm = query_response.get(Constants.broker_query_model, None)
         pool_info = PoolInfoAvro()
-        pool_info.type = Constants.PoolType
-        pool_info.name = Constants.BrokerQueryModel
+        pool_info.type = Constants.pool_type
+        pool_info.name = Constants.broker_query_model
         if bqm is not None:
-            pool_info.properties = {Constants.BrokerQueryModel: bqm}
+            pool_info.properties = {Constants.broker_query_model: bqm}
         return pool_info

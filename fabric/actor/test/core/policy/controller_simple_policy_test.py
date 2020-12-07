@@ -44,14 +44,14 @@ from fabric.actor.test.core.policy.controller_test_wrapper import ControllerTest
 
 class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.ConfigFile = Constants.TestControllerConfigurationFile
+    Globals.config_file = Constants.test_controller_configuration_file
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
-    def get_controller(self, name: str = BaseTestCase.ControllerName, guid: ID = BaseTestCase.ControllerGuid):
+    def get_controller(self, name: str = BaseTestCase.controller_name, guid: ID = BaseTestCase.controller_guid):
         db = self.get_container_database()
         db.reset_db()
         controller = super().get_controller()

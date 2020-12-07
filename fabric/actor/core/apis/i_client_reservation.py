@@ -27,6 +27,8 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from typing import TYPE_CHECKING
+from fabric.actor.core.apis.i_reservation import IReservation
+
 if TYPE_CHECKING:
     from fabric.actor.core.apis.i_authority_proxy import IAuthorityProxy
     from fabric.actor.core.apis.i_broker_proxy import IBrokerProxy
@@ -35,8 +37,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.time.term import Term
     from fabric.actor.core.kernel.resource_set import ResourceSet
     from fabric.actor.core.util.resource_type import ResourceType
-
-from fabric.actor.core.apis.i_reservation import IReservation
 
 
 class IClientReservation(IReservation):

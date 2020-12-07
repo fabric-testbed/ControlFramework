@@ -32,12 +32,12 @@ from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.actor.core.util.id import ID
 from fabric.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
-from fabric.message_bus.messages.get_reservation_units_avro import GetReservationUnitsAvro
-from fabric.message_bus.messages.get_unit_avro import GetUnitAvro
+from fabric.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
+from fabric.message_bus.messages.get_unit_request_avro import GetUnitRequestAvro
 from fabric.message_bus.messages.message import IMessageAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
 from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
-from fabric.message_bus.messages.result_unit_avro import ResultUnitAvro
+from fabric.message_bus.messages.result_units_avro import ResultUnitsAvro
 
 
 class KafkaAuthorityService(KafkaServerActorService):
@@ -78,7 +78,7 @@ class KafkaAuthorityService(KafkaServerActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.get_authority_reservations(caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
@@ -90,8 +90,8 @@ class KafkaAuthorityService(KafkaServerActorService):
 
         return result
 
-    def get_reservation_units(self, *, request:GetReservationUnitsAvro) -> ResultUnitAvro:
-        result = ResultUnitAvro()
+    def get_reservation_units(self, *, request: GetReservationUnitsRequestAvro) -> ResultUnitsAvro:
+        result = ResultUnitsAvro()
         result.status = ResultAvro()
         try:
             if request.guid is None or request.reservation_id is None:
@@ -100,9 +100,9 @@ class KafkaAuthorityService(KafkaServerActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_reservation_units(caller=auth, rid=ID(id=request.reservation_id),
+            result = mo.get_reservation_units(caller=auth, rid=ID(uid=request.reservation_id),
                                               id_token=request.get_id_token())
             result.message_id = request.message_id
 
@@ -113,8 +113,8 @@ class KafkaAuthorityService(KafkaServerActorService):
 
         return result
 
-    def get_unit(self, *, request:GetUnitAvro) -> ResultUnitAvro:
-        result = ResultUnitAvro()
+    def get_unit(self, *, request: GetUnitRequestAvro) -> ResultUnitsAvro:
+        result = ResultUnitsAvro()
         result.status = ResultAvro()
         try:
             if request.guid is None or request.unit_id is None:
@@ -123,9 +123,9 @@ class KafkaAuthorityService(KafkaServerActorService):
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(id=request.guid))
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_reservation_unit(caller=auth, uid=ID(id=request.unit_id), id_token=request.get_id_token())
+            result = mo.get_reservation_unit(caller=auth, uid=ID(uid=request.unit_id), id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:

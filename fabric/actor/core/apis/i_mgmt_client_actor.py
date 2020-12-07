@@ -42,6 +42,9 @@ if TYPE_CHECKING:
 
 
 class IMgmtClientActor(IComponent):
+    """
+    Implements base class for Management Interface for a Client Actor
+    """
     @abstractmethod
     def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
         """
@@ -119,8 +122,8 @@ class IMgmtClientActor(IComponent):
 
     @abstractmethod
     def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType, request_properties: dict,
-                           config_properties: dict) -> bool:
+                           new_resource_type: ResourceType = None, request_properties: dict = None,
+                           config_properties: dict = None) -> bool:
         """
         Extend a reservation
         @params reservation: reservation id

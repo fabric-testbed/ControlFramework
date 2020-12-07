@@ -273,7 +273,7 @@ class TermTest(unittest.TestCase):
 
         try:
             term.validate()
-        except Exception as e:
+        except Exception:
             failed = True
 
         self.assertTrue(failed)
