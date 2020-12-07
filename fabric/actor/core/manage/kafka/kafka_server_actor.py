@@ -41,18 +41,10 @@ from fabric.message_bus.messages.result_avro import ResultAvro
 from fabric.message_bus.messages.slice_avro import SliceAvro
 
 if TYPE_CHECKING:
-    from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
     from fabric.actor.core.util.id import ID
-    from fabric.message_bus.messages.auth_avro import AuthAvro
-    from fabric.message_bus.producer import AvroProducerApi
 
 
 class KafkaServerActor(KafkaActor, IMgmtServerActor):
-    def __init__(self, *, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
-                 message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
-        super().__init__(guid=guid, kafka_topic=kafka_topic, auth=auth, logger=logger,
-                         message_processor=message_processor, producer=producer)
-
     def get_broker_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         status = ResultAvro()

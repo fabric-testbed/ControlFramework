@@ -31,25 +31,17 @@ from typing import List
 from fabric.actor.core.apis.i_mgmt_authority import IMgmtAuthority
 from fabric.actor.core.apis.i_reservation import ReservationCategory
 from fabric.actor.core.common.constants import Constants, ErrorCodes
-from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric.actor.core.manage.kafka.kafka_server_actor import KafkaServerActor
 from fabric.actor.core.util.id import ID
-from fabric.message_bus.messages.auth_avro import AuthAvro
 from fabric.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
 from fabric.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
 from fabric.message_bus.messages.get_unit_request_avro import GetUnitRequestAvro
 from fabric.message_bus.messages.reservation_mng import ReservationMng
 from fabric.message_bus.messages.result_avro import ResultAvro
 from fabric.message_bus.messages.unit_avro import UnitAvro
-from fabric.message_bus.producer import AvroProducerApi
 
 
 class KafkaAuthority (KafkaServerActor, IMgmtAuthority):
-    def __init__(self, *, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
-                 message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
-        super().__init__(guid=guid, kafka_topic=kafka_topic, auth=auth, logger=logger,
-                         message_processor=message_processor, producer=producer)
-
     def get_authority_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         status = ResultAvro()
@@ -203,3 +195,10 @@ class KafkaAuthority (KafkaServerActor, IMgmtAuthority):
             return rret_val.__iter__().__next__()
 
         return rret_val
+
+    def clone(self):
+        return KafkaAuthority(guid=self.management_id,
+                              kafka_topic=self.kafka_topic,
+                              auth=self.auth, logger=self.logger,
+                              message_processor=self.message_processor,
+                              producer=self.producer)
