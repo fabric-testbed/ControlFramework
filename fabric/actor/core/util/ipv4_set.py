@@ -64,8 +64,8 @@ class IPv4Set:
             raise FrameworkException("Invalid subnet size: {}".format(size))
 
         network = ipaddress.IPv4Network(token, False)
-        all = list(network.hosts())
-        last = all[-1]
+        all_ips = list(network.hosts())
+        last = all_ips[-1]
         start = base
         end = int(last)
 
@@ -115,7 +115,7 @@ class IPv4Set:
     def allocate(self):
         item = self.free_set.pop()
         self.allocated.add(item)
-        ret_val = self.int_to_IP4(ip=item)
+        ret_val = self.int_to_ip4(ip=item)
         return ret_val
 
     def free(self, *, ip: str):
@@ -150,7 +150,7 @@ class IPv4Set:
 
         return result
 
-    def int_to_IP4(self, *, ip: int):
+    def int_to_ip4(self, *, ip: int):
         result = ipaddress.ip_address(ip).__str__()
 
         return result

@@ -96,6 +96,8 @@ class PdpAuth:
     action_id_urn = 'urn:oasis:names:tc:xacml:1.0:action:action-id'
     category_environment_urn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:environment'
 
+    missing_parameter = "Missing {}"
+
     subject_fabric_role_attribute_json = {
         "IncludeInResult": False,
         "AttributeId": "urn:fabric:xacml:attributes:fabric-role",
@@ -126,27 +128,18 @@ class PdpAuth:
         }
         return headers
 
-    def get_roles(self, *, token: dict) -> List[str]:
+    def get_roles(self, *, fabric_token: dict) -> List[str]:
         """
         Get Roles from a fabric token
-        @param token fabric token
+        @param fabric_token fabric token
         @return list of the roles
         """
         ret_val = []
-        roles = token.get('roles', None)
+        roles = fabric_token.get('roles', None)
         if roles is None:
-            raise PdpAuthException('Missing roles in token')
-        for r in roles:
-            found = ''
-            try:
-                found = re.search(self.roles_re, r).group(1)
-            except AttributeError:
-                found = ''
+            raise PdpAuthException(self.missing_parameter.format("roles"))
 
-            if found != '':
-                ret_val.append(found)
-
-        return ret_val
+        return roles
 
     def update_subject_category(self, *, subject: dict, token: dict) -> dict:
         """
@@ -157,9 +150,9 @@ class PdpAuth:
         """
         attributes = subject.get(PdpAuth.attribute, None)
         if attributes is None:
-            raise PdpAuthException("Missing Attributes")
+            raise PdpAuthException(self.missing_parameter.format("attributes"))
 
-        roles = self.get_roles(token=token)
+        roles = self.get_roles(fabric_token=token)
 
         if len(attributes) > 1:
             raise PdpAuthException("Should only have subject Id Attribute {}".format(subject))
@@ -194,7 +187,7 @@ class PdpAuth:
         """
         attributes = resource.get(PdpAuth.attribute, None)
         if attributes is None:
-            raise PdpAuthException("Missing Attributes")
+            raise PdpAuthException(self.missing_parameter.format("attributes"))
 
         if len(attributes) > 1:
             raise PdpAuthException("Should only have Resource Type Attribute {}".format(resource))
@@ -220,7 +213,7 @@ class PdpAuth:
         """
         attributes = action.get(PdpAuth.attribute, None)
         if attributes is None:
-            raise PdpAuthException("Missing Attributes")
+            raise PdpAuthException(self.missing_parameter.format("attributes"))
 
         if len(attributes) > 1:
             raise PdpAuthException("Should only have Action-Id Attribute {}".format(action))
@@ -273,9 +266,9 @@ class PdpAuth:
 
             elif c[PdpAuth.category_id] == PdpAuth.category_environment_urn:
                 if self.logger is None:
-                    print("Do nothing, ignore Envirnment category")
+                    print("Do nothing, ignore Environment category")
                 else:
-                    self.logger.debug("Do nothing, ignore Envirnment category")
+                    self.logger.debug("Do nothing, ignore Environment category")
 
             else:
                 raise PdpAuthException("Invalid Category: {}".format(c))

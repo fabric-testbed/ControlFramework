@@ -259,3 +259,4 @@ class Constants:
     invalid_state = "Invalid state"
     invalid_ip = "Invalid ip address: {}"
     exception_occurred = "Exception occurred {}"
+    not_implemented = "Not Implemented"

@@ -28,6 +28,7 @@ from __future__ import annotations
 import traceback
 
 from fabric.actor.core.common.constants import Constants, ErrorCodes
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_service import KafkaService
 from fabric.actor.core.proxies.kafka.translate import Translate
@@ -107,7 +108,7 @@ class KafkaActorService(KafkaService):
             from fabric.actor.core.container.globals import GlobalsSingleton
             return GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(key=guid)
         except Exception as e:
-            raise Exception("Invalid actor id={}! e={}".format(guid, e))
+            raise ManageException("Invalid actor id={}! e={}".format(guid, e))
 
     def get_slices(self, *, request: GetSlicesRequestAvro) -> ResultSliceAvro:
         result = ResultSliceAvro()

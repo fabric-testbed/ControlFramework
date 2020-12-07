@@ -165,7 +165,6 @@ class SimpleVMControl(ResourceControl):
         current = reservation.get_resources()
 
         ticket = requested.get_resources()
-        term = reservation.get_requested_term()
 
         gained = None
         lost = None

@@ -265,12 +265,10 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
         @throws Exception in case of error
         """
-        if reservation.get_state() == ReservationStates.Nascent and\
-                reservation.get_pending_state() == ReservationPendingStates.None_:
-            self.calendar.add_pending(reservation=reservation)
-
-        elif reservation.get_state() == ReservationStates.Ticketed and\
-                reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket:
+        if (reservation.get_state() == ReservationStates.Nascent and
+            reservation.get_pending_state() == ReservationPendingStates.None_) or \
+            (reservation.get_state() == ReservationStates.Ticketed and
+             reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket):
             self.calendar.add_pending(reservation=reservation)
 
     def revisit_server(self, *, reservation: IBrokerReservation):

@@ -36,6 +36,7 @@ from fabric.actor.core.apis.i_client_reservation import IClientReservation
 from fabric.actor.core.apis.i_database import IDatabase
 from fabric.actor.core.apis.i_reservation import IReservation
 from fabric.actor.core.apis.i_slice import ISlice
+from fabric.actor.core.common.constants import Constants
 from fabric.actor.core.common.exceptions import AuthorityException
 from fabric.actor.core.core.ticket import Ticket
 from fabric.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
@@ -77,7 +78,7 @@ class AuthorityPolicyTest(BaseTestCase):
 
     def make_actor_database(self) -> IDatabase:
         db = SubstrateActorDatabase(user=self.db_user, password=self.db_pwd, database=self.db_name, db_host=self.db_host,
-                                    logger=self.Logger)
+                                    logger=self.logger)
         return db
 
     def make_plugin(self):
@@ -255,7 +256,7 @@ class AuthorityPolicyTest(BaseTestCase):
                     self.parent.check_incoming_close_lease(site, request, reservation, update_data)
                     self.waiting_for_close = False
                 else:
-                    raise AuthorityException("Invalid state")
+                    raise AuthorityException(Constants.invalid_state)
 
             def check_termination(self):
                 self.parent.assertFalse(self.waiting_for_lease)
@@ -306,7 +307,7 @@ class AuthorityPolicyTest(BaseTestCase):
                     self.parent.check_incoming_close_lease(site, request, reservation, update_data)
                     self.waiting_for_close = False
                 else:
-                    raise AuthorityException("Invalid state")
+                    raise AuthorityException(Constants.invalid_state)
 
             def check_termination(self):
                 self.parent.assertFalse(self.waiting_for_lease)
@@ -362,7 +363,7 @@ class AuthorityPolicyTest(BaseTestCase):
                                                            udd=update_data)
                     self.waiting_for_close = False
                 else:
-                    raise AuthorityException("Invalid state")
+                    raise AuthorityException(Constants.invalid_state)
 
             def check_termination(self):
                 self.parent.assertFalse(self.waiting_for_lease)

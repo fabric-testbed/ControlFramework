@@ -49,7 +49,7 @@ class SubstrateDatabaseTest(ActorDatabaseTest):
 
     def make_actor_database(self) -> IDatabase:
         db = SubstrateActorDatabase(user=self.db_user, password=self.db_pwd, database=self.db_name, db_host=self.db_host,
-                                    logger=self.Logger)
+                                    logger=self.logger)
         return db
 
     def test_d_add_update_get_unit(self):

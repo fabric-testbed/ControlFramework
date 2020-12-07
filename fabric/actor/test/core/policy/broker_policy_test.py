@@ -66,13 +66,13 @@ class BrokerPolicyTest(BaseTestCase):
         return broker
 
     def get_source(self, units: int, rtype: ResourceType, broker: IBroker, slice_obj: ISlice):
-        raise BrokerException("not implemented")
+        raise BrokerException(Constants.not_implemented)
 
     def get_request(self, units: int, rtype: ResourceType, start: datetime, end: datetime):
-        raise BrokerException("not implemented")
+        raise BrokerException(Constants.not_implemented)
 
     def get_request_from_request(self, request: IBrokerReservation, units: int, rtype: ResourceType, start: datetime, end: datetime):
-        raise BrokerException("not implemented")
+        raise BrokerException(Constants.not_implemented)
 
     def assert_ticketed(self, r: IReservation, units: int, rtype: ResourceType, start: datetime, end: datetime):
         self.assertIsNotNone(r)
