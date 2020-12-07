@@ -75,7 +75,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def get_brokers(self, *, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
+    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None, id_token: str = None) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -85,36 +85,21 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            brokers = self.client.get_brokers()
-            result.proxies = Converter.fill_proxies(proxies=brokers)
+            brokers = None
+            if broker_id is None:
+                brokers = self.client.get_brokers()
+            else:
+                broker = self.client.get_broker(guid=broker_id)
+                if broker is not None:
+                    brokers = [broker]
+                    result.proxies = Converter.fill_proxies(proxies=brokers)
+                else:
+                    result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
+                    result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
+            if brokers is not None:
+                result.proxies = Converter.fill_proxies(proxies=brokers)
         except Exception as e:
             self.logger.error("get_brokers {}".format(e))
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-        return result
-
-    def get_broker(self, *, broker_id: ID, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
-        result = ResultProxyAvro()
-        result.status = ResultAvro()
-
-        if broker_id is None or caller is None:
-            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-            return result
-
-        try:
-            broker = self.client.get_broker(guid=broker_id)
-            if broker is not None:
-                brokers = [broker]
-                result.proxies = Converter.fill_proxies(proxies=brokers)
-            else:
-                result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
-                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
-        except Exception as e:
-            traceback.print_exc()
-            self.logger.error("get_broker {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.name)
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)

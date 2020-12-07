@@ -98,22 +98,13 @@ class IClientActorManagementObject:
         """
 
     @abstractmethod
-    def get_brokers(self, *, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
+    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None, id_token: str = None) -> ResultProxyAvro:
         """
         Get all brokers
         @param caller: caller
+        @param broker_id : broker_id
         @param id_token: id token
         @return list of all the brokers
-        """
-
-    @abstractmethod
-    def get_broker(self, *, broker_id: ID, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
-        """
-        Get a broker
-        @param broker_id : broker_id
-        @param caller: caller
-        @param id_token: id token
-        @return broker information
         """
 
     @abstractmethod

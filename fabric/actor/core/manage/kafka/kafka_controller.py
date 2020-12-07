@@ -26,7 +26,22 @@
 from __future__ import annotations
 
 import traceback
+from datetime import datetime
 from typing import List
+
+from fabric.actor.core.util.resource_type import ResourceType
+from fabric.message_bus.messages.reservation_mng import ReservationMng
+
+from fabric.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
+
+from fabric.message_bus.messages.delegation_avro import DelegationAvro
+
+from fabric.message_bus.messages.pool_info_avro import PoolInfoAvro
+
+from fabric.actor.core.apis.i_actor import ActorType
+from fabric.actor.core.common.exceptions import ManageException
+from fabric.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
+from fabric.message_bus.messages.proxy_avro import ProxyAvro
 
 from fabric.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric.actor.core.common.constants import Constants, ErrorCodes
@@ -38,6 +53,76 @@ from fabric.message_bus.messages.unit_avro import UnitAvro
 
 
 class KafkaController(KafkaActor, IMgmtController):
+    def clone(self):
+        return KafkaController(guid=self.management_id,
+                               kafka_topic=self.kafka_topic,
+                               auth=self.auth, logger=self.logger,
+                               message_processor=self.message_processor,
+                               producer=self.producer)
+
+    def add_broker(self, *, broker: ProxyAvro) -> bool:
+        raise ManageException(Constants.not_implemented)
+
+    def get_brokers(self, *, broker: ID = None, id_token: str = None) -> List[ProxyAvro]:
+        self.clear_last()
+        status = ResultAvro()
+        rret_val = None
+
+        try:
+            request = GetActorsRequestAvro()
+            request.guid = str(self.management_id)
+            request.auth = self.auth
+            request.message_id = str(ID())
+            request.callback_topic = self.callback_topic
+            request.type = ActorType.Broker.name
+            request.id_token = id_token
+            request.broker_id = broker
+
+            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
+
+            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
+
+            if ret_val:
+                message_wrapper = self.message_processor.add_message(message=request)
+
+                with message_wrapper.condition:
+                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
+
+                if not message_wrapper.done:
+                    self.logger.debug(Constants.management_api_timeout_occurred)
+                    self.message_processor.remove_message(msg_id=request.get_message_id())
+                    status.code = ErrorCodes.ErrorTransportTimeout.value
+                    status.message = ErrorCodes.ErrorTransportTimeout.name
+                else:
+                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
+                    status = message_wrapper.response.status
+                    if status.code == 0:
+                        rret_val = message_wrapper.response.proxies
+            else:
+                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                    request.name, self.kafka_topic))
+                status.code = ErrorCodes.ErrorTransportFailure.value
+                status.message = ErrorCodes.ErrorTransportFailure.name
+
+        except Exception as e:
+            self.last_exception = e
+            status.code = ErrorCodes.ErrorInternalError.value
+            status.message = ErrorCodes.ErrorInternalError.name
+            status.details = traceback.format_exc()
+
+        self.last_status = status
+
+        return rret_val
+
+    def get_pool_info(self, *, broker: ID, id_token: str) -> List[PoolInfoAvro]:
+        raise ManageException(Constants.not_implemented)
+
+    def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
+        raise ManageException(Constants.not_implemented)
+
+    def reclaim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
+        raise ManageException(Constants.not_implemented)
+
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         self.clear_last()
         status = ResultAvro()
@@ -88,9 +173,33 @@ class KafkaController(KafkaActor, IMgmtController):
 
         return rret_val
 
-    def clone(self):
-        return KafkaController(guid=self.management_id,
-                               kafka_topic=self.kafka_topic,
-                               auth=self.auth, logger=self.logger,
-                               message_processor=self.message_processor,
-                               producer=self.producer)
+    def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
+        raise ManageException(Constants.not_implemented)
+
+    def add_reservations(self, *, reservations: List[ReservationMng]) ->list:
+        raise ManageException(Constants.not_implemented)
+
+    def demand_reservation(self, *, reservation: ReservationMng) -> bool:
+        raise ManageException(Constants.not_implemented)
+
+    def demand_reservation_rid(self, *, rid: ID) -> bool:
+        raise ManageException(Constants.not_implemented)
+
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
+                           new_resource_type: ResourceType = None, request_properties: dict = None,
+                           config_properties: dict = None) -> bool:
+        raise ManageException(Constants.not_implemented)
+
+    def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
+        raise ManageException(Constants.not_implemented)
+
+    def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime,
+                                            request_properties: dict) -> bool:
+        raise ManageException(Constants.not_implemented)
+
+    def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
+                                                   request_properties: dict, config_properties: dict) -> bool:
+        raise ManageException(Constants.not_implemented)
+
+    def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:
+        raise ManageException(Constants.not_implemented)

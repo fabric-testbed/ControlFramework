@@ -28,6 +28,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
+from fabric.actor.core.apis.i_reservation import ReservationCategory
 from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.server_actor_management_object import ServerActorManagementObject
 from fabric.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
@@ -40,7 +41,6 @@ if TYPE_CHECKING:
     from fabric.actor.core.manage.management_object import ManagementObject
     from fabric.actor.security.auth_token import AuthToken
     from fabric.actor.core.manage.messages.client_mng import ClientMng
-    from fabric.actor.core.util.resource_type import ResourceType
     from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
     from fabric.message_bus.messages.slice_avro import SliceAvro
 
@@ -64,26 +64,13 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_clients(self, *, id_token: str = None) -> List[ClientMng]:
+    def get_clients(self, *, guid: ID = None, id_token: str = None) -> List[ClientMng]:
         self.clear_last()
         try:
-            result = self.manager.get_clients(caller=self.auth)
+            result = self.manager.get_clients(caller=self.auth, guid=guid, id_token=id_token)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
-        except Exception as e:
-            self.last_exception = e
-
-        return None
-
-    def get_client(self, *, guid: ID, id_token: str = None) -> ClientMng:
-        self.clear_last()
-        try:
-            result = self.manager.get_client(caller=self.auth, guid=guid)
-            self.last_status = result.status
-
-            if result.status.get_code() == 0:
-                return self.get_first(result_list=result.result)
         except Exception as e:
             self.last_exception = e
 
@@ -121,10 +108,13 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return False
 
-    def get_client_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
+    def get_client_reservations(self, *, slice_id: ID = None, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_client_reservations(caller=self.auth)
+            result = self.manager.get_reservations_by_category(caller=self.auth,
+                                                               category=ReservationCategory.Client,
+                                                               slice_id=slice_id,
+                                                               id_token=id_token)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -136,7 +126,9 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
     def get_broker_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_broker_reservations(caller=self.auth)
+            result = self.manager.get_reservations_by_category(caller=self.auth,
+                                                               category=ReservationCategory.Broker,
+                                                               id_token=id_token)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -157,22 +149,13 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
 
         return None
 
-    def get_inventory_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
+    def get_inventory_reservations(self, *, slice_id: ID = None, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_inventory_reservations(caller=self.auth)
-            self.last_status = result.status
-            if result.status.get_code() == 0:
-                return result.result
-        except Exception as e:
-            self.last_exception = e
-
-        return None
-
-    def get_inventory_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
-        self.clear_last()
-        try:
-            result = self.manager.get_inventory_reservations_by_slice_id(caller=self.auth, slice_id=slice_id)
+            result = self.manager.get_reservations_by_category(caller=self.auth,
+                                                               category=ReservationCategory.Inventory,
+                                                               slice_id=slice_id,
+                                                               id_token=id_token)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result
@@ -185,18 +168,6 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
         self.clear_last()
         try:
             result = self.manager.add_client_slice(caller=self.auth, slice_mng=slice_mng)
-            self.last_status = result.status
-            if result.status.get_code() == 0:
-                return result.result
-        except Exception as e:
-            self.last_exception = e
-
-        return None
-
-    def get_client_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
-        self.clear_last()
-        try:
-            result = self.manager.get_client_reservations_by_slice_id(caller=self.auth, slice_id=slice_id)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.result

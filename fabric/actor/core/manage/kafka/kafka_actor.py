@@ -631,5 +631,4 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                           producer=self.producer)
 
     def get_name(self) -> str:
-        # TODO
-        return self.get_guid()
+        raise ManageException(Constants.not_implemented)
