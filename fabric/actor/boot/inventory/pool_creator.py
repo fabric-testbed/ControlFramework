@@ -147,10 +147,10 @@ class PoolCreator:
             # load the graph from Neo4j database
             self.logger.debug("Reloading an existing graph for resource slice# {}".format(create_pool_result.slice))
             arm_graph = factory.get_arm_graph(graph_id=create_pool_result.slice.get_graph_id())
-            create_pool_result.slice.set_graph(arm_graph)
+            create_pool_result.slice.set_graph(graph=arm_graph)
         else:
             arm_graph = factory.get_arm_graph_from_file(filename=substrate_file)
-            create_pool_result.slice.set_graph(arm_graph)
+            create_pool_result.slice.set_graph(graph=arm_graph)
             self.substrate.get_pool_manager().update_pool(slice_obj=create_pool_result.slice)
             self.logger.debug("Created new graph for resource slice# {}".format(create_pool_result.slice))
 
