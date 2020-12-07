@@ -26,12 +26,11 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING, List
+from typing import List
 
 from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric.actor.core.common.exceptions import ManageException
-from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 from fabric.message_bus.messages.close_reservations_avro import CloseReservationsAvro
 from fabric.message_bus.messages.delegation_avro import DelegationAvro
@@ -52,17 +51,8 @@ from fabric.actor.core.util.id import ID
 from fabric.message_bus.messages.update_reservation_avro import UpdateReservationAvro
 from fabric.message_bus.messages.update_slice_avro import UpdateSliceAvro
 
-if TYPE_CHECKING:
-    from fabric.message_bus.messages.auth_avro import AuthAvro
-    from fabric.message_bus.producer import AvroProducerApi
-
 
 class KafkaActor(KafkaProxy, IMgmtActor):
-    def __init__(self, *, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
-                 message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
-        super().__init__(guid=guid, kafka_topic=kafka_topic, auth=auth, logger=logger,
-                         message_processor=message_processor, producer=producer)
-
     def get_guid(self) -> ID:
         return self.management_id
 
@@ -632,3 +622,14 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         self.last_status = status
 
         return None
+
+    def clone(self):
+        return KafkaActor(guid=self.management_id,
+                          kafka_topic=self.kafka_topic,
+                          auth=self.auth, logger=self.logger,
+                          message_processor=self.message_processor,
+                          producer=self.producer)
+
+    def get_name(self) -> str:
+        # TODO
+        return self.get_guid()

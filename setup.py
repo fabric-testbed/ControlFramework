@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 from fabric import actor
 
 NAME = "fabric-cf"
-VERSION = "0.3"
+VERSION = "0.5"
 # To install the library, run the following
 #
 # python setup.py install

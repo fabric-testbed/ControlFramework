@@ -31,21 +31,13 @@ from typing import List
 from fabric.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.manage.kafka.kafka_actor import KafkaActor
-from fabric.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric.actor.core.util.id import ID
-from fabric.message_bus.messages.auth_avro import AuthAvro
 from fabric.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
 from fabric.message_bus.messages.unit_avro import UnitAvro
-from fabric.message_bus.producer import AvroProducerApi
 
 
 class KafkaController(KafkaActor, IMgmtController):
-    def __init__(self, *, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
-                 message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
-        super().__init__(guid=guid, kafka_topic=kafka_topic, auth=auth, logger=logger,
-                         message_processor=message_processor, producer=producer)
-
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         self.clear_last()
         status = ResultAvro()
@@ -95,3 +87,10 @@ class KafkaController(KafkaActor, IMgmtController):
         self.last_status = status
 
         return rret_val
+
+    def clone(self):
+        return KafkaController(guid=self.management_id,
+                               kafka_topic=self.kafka_topic,
+                               auth=self.auth, logger=self.logger,
+                               message_processor=self.message_processor,
+                               producer=self.producer)
