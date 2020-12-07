@@ -65,21 +65,28 @@ class KafkaClientActorService(KafkaActorService):
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
-        if message.get_message_name() == IMessageAvro.ClaimResources:
+        if message.get_message_name() == IMessageAvro.claim_resources:
             result = self.claim(request=message)
-        elif message.get_message_name() == IMessageAvro.ReclaimResources:
+
+        elif message.get_message_name() == IMessageAvro.reclaim_resources:
             result = self.reclaim(request=message)
-        elif message.get_message_name() == IMessageAvro.AddReservation:
+
+        elif message.get_message_name() == IMessageAvro.add_reservation:
             result = self.add_reservation(request=message)
-        elif message.get_message_name() == IMessageAvro.AddReservations:
+
+        elif message.get_message_name() == IMessageAvro.add_reservations:
             result = self.add_reservations(request=message)
-        elif message.get_message_name() == IMessageAvro.DemandReservation:
+
+        elif message.get_message_name() == IMessageAvro.demand_reservation:
             result = self.demand_reservation(request=message)
-        elif message.get_message_name() == IMessageAvro.GetActorsRequest:
+
+        elif message.get_message_name() == IMessageAvro.get_actors_request:
             result = self.get_brokers(request=message)
-        elif message.get_message_name() == IMessageAvro.GetPoolInfoRequest:
+
+        elif message.get_message_name() == IMessageAvro.get_pool_info_request:
             result = self.get_pool_info(request=message)
-        elif message.get_message_name() == IMessageAvro.ExtendReservation:
+
+        elif message.get_message_name() == IMessageAvro.extend_reservation:
             result = self.extend_reservation(request=message)
         else:
             super().process(message=message)

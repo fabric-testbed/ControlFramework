@@ -48,14 +48,17 @@ class KafkaAuthorityService(KafkaServerActorService):
         callback_topic = message.get_callback_topic()
         result = None
 
-        if message.get_message_name() == IMessageAvro.GetReservationsRequest and \
+        if message.get_message_name() == IMessageAvro.get_reservations_request and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Authority.name:
-            result = self.get_authority_reservations(request=message)
-        elif message.get_message_name() == IMessageAvro.GetReservationUnitsRequest:
+            result = self.get_reservations_by_category(request=message, category=ReservationCategory.Authority)
+
+        elif message.get_message_name() == IMessageAvro.get_reservation_units_request:
             result = self.get_reservation_units(request=message)
-        elif message.get_message_name() == IMessageAvro.GetUnitRequest:
+
+        elif message.get_message_name() == IMessageAvro.get_unit_request:
             result = self.get_unit(request=message)
+
         else:
             super().process(message=message)
             return
@@ -67,28 +70,6 @@ class KafkaAuthorityService(KafkaServerActorService):
             self.logger.debug("Successfully send back response: {}".format(result.to_dict()))
         else:
             self.logger.debug("Failed to send back response: {}".format(result.to_dict()))
-
-    def get_authority_reservations(self, *, request: GetReservationsRequestAvro) -> ResultReservationAvro:
-        result = ResultReservationAvro()
-        result.status = ResultAvro()
-        try:
-            if request.guid is None:
-                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-                return result
-
-            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(uid=request.guid))
-
-            result = mo.get_authority_reservations(caller=auth, id_token=request.get_id_token())
-            result.message_id = request.message_id
-
-        except Exception as e:
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-        return result
 
     def get_reservation_units(self, *, request: GetReservationUnitsRequestAvro) -> ResultUnitsAvro:
         result = ResultUnitsAvro()

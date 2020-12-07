@@ -44,7 +44,7 @@ class KafkaControllerService(KafkaClientActorService):
         callback_topic = message.get_callback_topic()
         result = None
 
-        if message.get_message_name() == IMessageAvro.GetReservationUnitsRequest:
+        if message.get_message_name() == IMessageAvro.get_reservation_units_request:
             result = self.get_reservation_units(request=message)
         else:
             super().process(message=message)

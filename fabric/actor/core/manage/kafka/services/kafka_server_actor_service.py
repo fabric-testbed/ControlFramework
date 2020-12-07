@@ -52,27 +52,27 @@ class KafkaServerActorService(KafkaActorService):
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
-        if message.get_message_name() == IMessageAvro.GetReservationsRequest and \
+        if message.get_message_name() == IMessageAvro.get_reservations_request and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Broker.name:
             result = self.get_reservations_by_category(request=message, category=ReservationCategory.Broker)
 
-        elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
+        elif message.get_message_name() == IMessageAvro.get_slices_request and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.InventorySlice.name:
             result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.InventorySlice)
 
-        elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
+        elif message.get_message_name() == IMessageAvro.get_reservations_request and \
                 message.get_reservation_type() is not None and \
-                message.get_reservation_type() == ReservationCategory.Client.name:
+                message.get_reservation_type() == ReservationCategory.Inventory.name:
             result = self.get_reservations_by_category(request=message, category=ReservationCategory.Inventory)
 
-        elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
+        elif message.get_message_name() == IMessageAvro.get_slices_request and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.ClientSlice.name:
             result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.ClientSlice)
 
-        elif message.get_message_name() == IMessageAvro.AddSlice and message.slice_obj is not None and \
+        elif message.get_message_name() == IMessageAvro.add_slice and message.slice_obj is not None and \
                 (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
             result = self.add_client_slice(request=message)
         else:
@@ -86,6 +86,29 @@ class KafkaServerActorService(KafkaActorService):
             self.logger.debug("Successfully send back response: {}".format(result.to_dict()))
         else:
             self.logger.debug("Failed to send back response: {}".format(result.to_dict()))
+
+    def add_client_slice(self, *, request: AddSliceAvro) -> ResultStringAvro:
+        result = ResultStringAvro()
+        result.status = ResultAvro()
+
+        try:
+            if request.guid is None:
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                return result
+
+            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
+
+            result = mo.add_client_slice(caller=auth, slice_obj=request.slice_obj)
+            result.message_id = request.message_id
+
+        except Exception as e:
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
 
     def get_reservations_by_category(self, *, request: GetReservationsRequestAvro,
                                      category: ReservationCategory) -> ResultReservationAvro:
@@ -124,29 +147,6 @@ class KafkaServerActorService(KafkaActorService):
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.get_slices_by_slice_type(caller=auth, slice_type=slice_type, id_token=request.get_id_token())
-            result.message_id = request.message_id
-
-        except Exception as e:
-            result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
-            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
-
-        return result
-
-    def add_client_slice(self, *, request: AddSliceAvro) -> ResultStringAvro:
-        result = ResultStringAvro()
-        result.status = ResultAvro()
-
-        try:
-            if request.guid is None:
-                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
-                return result
-
-            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
-            mo = self.get_actor_mo(guid=ID(uid=request.guid))
-
-            result = mo.add_client_slice(caller=auth, slice_obj=request.slice_obj)
             result.message_id = request.message_id
 
         except Exception as e:
