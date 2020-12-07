@@ -67,29 +67,16 @@ class LocalController(LocalActor, IMgmtController):
 
         return False
 
-    def get_brokers(self, *, id_token: str = None) -> List[ProxyAvro]:
+    def get_brokers(self, *, broker: ID = None, id_token: str = None) -> List[ProxyAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_brokers(caller=self.auth)
+            result = self.manager.get_brokers(caller=self.auth, broker=broker)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.proxies
         except Exception as e:
             self.last_exception = e
             traceback.print_exc()
-
-        return None
-
-    def get_broker(self, *, broker: ID, id_token: str = None) -> ProxyAvro:
-        self.clear_last()
-        try:
-            result = self.manager.get_broker(broker=broker, caller=self.auth)
-            self.last_status = result.status
-
-            if result.get_status().get_code() == 0:
-                return self.get_first(result_list=result.proxies)
-        except Exception as e:
-            self.last_exception = e
 
         return None
 

@@ -61,22 +61,13 @@ class IMgmtServerActor(IMgmtActor):
         """
 
     @abstractmethod
-    def get_inventory_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
+    def get_inventory_reservations(self, *, slice_id: ID = None, id_token: str = None) -> List[ReservationMng]:
         """
         Returns all resources held by this actor that can be used for delegations
         to client actors.
+        @param slice_id slice id
         @param id_token id token
         @return list of reservations
-        """
-
-    @abstractmethod
-    def get_inventory_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
-        """
-        Returns all resources in the specified slice held by this actor that can
-        be used for delegations to client actors.
-        @param sliceID slice id
-        @param id_token id token
-        @return list of reservations for specific slice
         """
 
     @abstractmethod
@@ -96,20 +87,12 @@ class IMgmtServerActor(IMgmtActor):
         """
 
     @abstractmethod
-    def get_clients(self, *, id_token: str = None) -> List[ClientMng]:
+    def get_clients(self, *, guid: ID = None, id_token: str = None) -> List[ClientMng]:
         """
         Returns all registered clients of this server actor.
-        @param id_token id token
-        @return list of clients
-        """
-
-    @abstractmethod
-    def get_client(self, *, guid: ID, id_token: str = None) -> ClientMng:
-        """
-        Returns the specified client record.
         @param guid client guid
         @param id_token id token
-        @return specified client record
+        @return list of clients
         """
 
     @abstractmethod
@@ -130,20 +113,12 @@ class IMgmtServerActor(IMgmtActor):
         """
 
     @abstractmethod
-    def get_client_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
+    def get_client_reservations(self, *, slice_id: ID = None, id_token: str = None) -> List[ReservationMng]:
         """
         Obtains all client reservations.
-        @param id_token id token
-        @return list of client reservations
-        """
-
-    @abstractmethod
-    def get_client_reservations_by_slice_id(self, *, slice_id: ID, id_token: str = None) -> List[ReservationMng]:
-        """
-        Obtains all client reservations in the specified slice
         @param slice_id slice id
         @param id_token id token
-        @return list of reservations
+        @return list of client reservations
         """
 
     @abstractmethod

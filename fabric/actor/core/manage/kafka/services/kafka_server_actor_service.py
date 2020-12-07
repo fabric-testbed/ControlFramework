@@ -56,18 +56,22 @@ class KafkaServerActorService(KafkaActorService):
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Broker.name:
             result = self.get_reservations_by_category(request=message, category=ReservationCategory.Broker)
+
         elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.InventorySlice.name:
             result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.InventorySlice)
+
         elif message.get_message_name() == IMessageAvro.GetReservationsRequest and \
                 message.get_reservation_type() is not None and \
                 message.get_reservation_type() == ReservationCategory.Client.name:
             result = self.get_reservations_by_category(request=message, category=ReservationCategory.Inventory)
+
         elif message.get_message_name() == IMessageAvro.GetSlicesRequest and \
                 message.get_slice_type() is not None and \
                 message.get_slice_type() == SliceTypes.ClientSlice.name:
             result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.ClientSlice)
+
         elif message.get_message_name() == IMessageAvro.AddSlice and message.slice_obj is not None and \
                 (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
             result = self.add_client_slice(request=message)

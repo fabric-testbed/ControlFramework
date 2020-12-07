@@ -85,11 +85,8 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
             super().set_actor(actor=actor)
             self.client_helper = ClientActorManagementObjectHelper(client=actor)
 
-    def get_brokers(self, *, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
-        return self.client_helper.get_brokers(caller=caller, id_token=id_token)
-
-    def get_broker(self, *, broker_id: ID, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
-        return self.client_helper.get_broker(broker_id=broker_id, caller=caller, id_token=id_token)
+    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None, id_token: str = None) -> ResultProxyAvro:
+        return self.client_helper.get_brokers(caller=caller, id_token=id_token, broker_id=broker_id)
 
     def add_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
         return self.client_helper.add_broker(broker=broker, caller=caller)

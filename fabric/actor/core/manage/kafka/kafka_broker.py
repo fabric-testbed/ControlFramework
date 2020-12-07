@@ -33,6 +33,7 @@ import traceback
 from fabric.actor.core.apis.i_actor import ActorType
 from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.apis.i_mgmt_broker import IMgmtBroker
+from fabric.actor.core.common.exceptions import ManageException
 from fabric.actor.core.manage.kafka.kafka_server_actor import KafkaServerActor
 from fabric.actor.core.util.id import ID
 from fabric.actor.core.util.resource_type import ResourceType
@@ -243,7 +244,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return status.code == 0
 
-    def get_brokers(self, *, id_token: str = None) -> List[ProxyAvro]:
+    def get_brokers(self, *, broker: ID = None, id_token: str = None) -> List[ProxyAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -256,6 +257,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.callback_topic = self.callback_topic
             request.type = ActorType.Broker.name
             request.id_token = id_token
+            request.broker_id = broker
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -521,3 +523,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
                            auth=self.auth, logger=self.logger,
                            message_processor=self.message_processor,
                            producer=self.producer)
+
+    def add_broker(self, *, broker: ProxyAvro) -> bool:
+        raise ManageException(Constants.not_implemented)
+
