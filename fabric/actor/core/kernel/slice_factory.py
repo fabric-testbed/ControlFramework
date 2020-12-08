@@ -55,5 +55,5 @@ class SliceFactory(ISliceFactory):
         if deserialized_slice.get_graph_id() is not None:
             graph_id = str(deserialized_slice.get_graph_id())
             arm_graph = Neo4jResourcePoolFactory.get_arm_graph(graph_id=graph_id)
-            deserialized_slice.set_graph(arm_graph)
+            deserialized_slice.set_graph(graph=arm_graph)
         return deserialized_slice

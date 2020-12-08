@@ -479,6 +479,7 @@ class Actor(IActor):
             try:
                 self.recover_slice(properties=p)
             except Exception as e:
+                self.logger.error(traceback.format_exc())
                 self.logger.error("Error in recoverSlice for property list {}".format(e))
 
     def recover_slice(self, *, properties: dict):

@@ -168,14 +168,14 @@ class RemoteActorCache:
                                                                                                to_guid))
         try:
             if to_mgmt_actor is not None:
-                client = to_mgmt_actor.get_client(guid=from_guid)
-                if client is not None:
+                clients = to_mgmt_actor.get_clients(guid=from_guid)
+                if clients is not None:
                     self.logger.debug("Edge between {} and {} exists (client)".format(from_guid, to_guid))
                     return True
 
             elif from_mgmt_actor is not None:
-                broker = from_mgmt_actor.get_broker(broker=to_guid)
-                if broker is not None:
+                brokers = from_mgmt_actor.get_brokers(broker=to_guid)
+                if brokers is not None:
                     self.logger.debug("Edge between {} and {} exists (broker)".format(from_guid, to_guid))
                     return True
         except Exception as e:

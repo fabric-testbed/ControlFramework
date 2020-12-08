@@ -285,7 +285,7 @@ class Converter:
             identity = ActorIdentity(name=mng.get_name(), guid=ID(uid=mng.get_guid()))
             from fabric.actor.core.container.container import Container
             return Container.get_proxy(protocol=mng.get_protocol(), identity=identity, location=location,
-                                       type=mng.get_type())
+                                       proxy_type=mng.get_type())
         except Exception:
             traceback.print_exc()
             return None

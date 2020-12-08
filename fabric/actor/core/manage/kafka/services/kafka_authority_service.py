@@ -47,8 +47,8 @@ class KafkaAuthorityService(KafkaServerActorService):
         result = None
 
         if message.get_message_name() == IMessageAvro.get_reservations_request and \
-                message.get_reservation_type() is not None and \
-                message.get_reservation_type() == ReservationCategory.Authority.name:
+                message.get_type() is not None and \
+                message.get_type() == ReservationCategory.Authority.name:
             result = self.get_reservations_by_category(request=message, category=ReservationCategory.Authority)
 
         elif message.get_message_name() == IMessageAvro.get_reservation_units_request:

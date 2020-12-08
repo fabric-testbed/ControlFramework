@@ -121,7 +121,10 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            result = mo.get_slices(slice_id=ID(uid=request.slice_id), caller=auth, id_token=request.get_id_token())
+            slice_id = None
+            if request.slice_id is not None:
+                slice_id = ID(uid=request.slice_id)
+            result = mo.get_slices(slice_id=slice_id, caller=auth, id_token=request.get_id_token())
             result.message_id = request.message_id
 
         except Exception as e:
@@ -212,21 +215,28 @@ class KafkaActorService(KafkaService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            if request.get_reservation_id() is not None:
-                result = mo.get_reservations(caller=auth, rid=ID(uid=request.get_reservation_id()),
-                                             id_token=request.get_id_token())
+            slice_id = None
+            if request.slice_id is not None:
+                slice_id = ID(uid=request.slice_id)
 
-            elif request.get_slice_id() is not None:
+            rid = None
+            if request.get_reservation_id() is not None:
+                rid = ID(uid=request.get_reservation_id())
+
+            if rid is not None:
+                result = mo.get_reservations(caller=auth, rid=rid, id_token=request.get_id_token())
+
+            elif slice_id is not None:
 
                 if request.get_reservation_state() is not None and \
                         request.get_reservation_state() != Constants.all_reservation_states:
 
-                    result = mo.get_reservations(caller=auth, slice_id=ID(uid=request.get_slice_id()),
+                    result = mo.get_reservations(caller=auth, slice_id=slice_id,
                                                  state=request.get_reservation_state(),
                                                  id_token=request.get_id_token())
 
                 else:
-                    result = mo.get_reservations(caller=auth, slice_id=ID(uid=request.get_slice_id()),
+                    result = mo.get_reservations(caller=auth, slice_id=slice_id,
                                                  id_token=request.get_id_token())
 
             else:

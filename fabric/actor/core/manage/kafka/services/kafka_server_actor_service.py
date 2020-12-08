@@ -53,23 +53,23 @@ class KafkaServerActorService(KafkaActorService):
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
         if message.get_message_name() == IMessageAvro.get_reservations_request and \
-                message.get_reservation_type() is not None and \
-                message.get_reservation_type() == ReservationCategory.Broker.name:
+                message.get_type() is not None and \
+                message.get_type() == ReservationCategory.Broker.name:
             result = self.get_reservations_by_category(request=message, category=ReservationCategory.Broker)
 
         elif message.get_message_name() == IMessageAvro.get_slices_request and \
-                message.get_slice_type() is not None and \
-                message.get_slice_type() == SliceTypes.InventorySlice.name:
+                message.get_type() is not None and \
+                message.get_type() == SliceTypes.InventorySlice.name:
             result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.InventorySlice)
 
         elif message.get_message_name() == IMessageAvro.get_reservations_request and \
-                message.get_reservation_type() is not None and \
-                message.get_reservation_type() == ReservationCategory.Inventory.name:
+                message.get_type() is not None and \
+                message.get_type() == ReservationCategory.Inventory.name:
             result = self.get_reservations_by_category(request=message, category=ReservationCategory.Inventory)
 
         elif message.get_message_name() == IMessageAvro.get_slices_request and \
-                message.get_slice_type() is not None and \
-                message.get_slice_type() == SliceTypes.ClientSlice.name:
+                message.get_type() is not None and \
+                message.get_type() == SliceTypes.ClientSlice.name:
             result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.ClientSlice)
 
         elif message.get_message_name() == IMessageAvro.add_slice and message.slice_obj is not None and \
