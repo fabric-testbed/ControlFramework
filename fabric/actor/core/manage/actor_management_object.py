@@ -126,7 +126,13 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                                                token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
                                                resource_id=str(slice_id))
                 try:
-                    slice_list = self.db.get_slices(slice_id=slice_id)
+                    slice_list = None
+                    if slice_id is None:
+                        slice_list = self.db.get_slices()
+                    else:
+                        slice_obj = self.db.get_slice(slice_id=slice_id)
+                        if slice_obj is not None:
+                            slice_list = [slice_obj]
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)

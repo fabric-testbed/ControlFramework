@@ -77,6 +77,8 @@ class OrchestratorHandler:
     def get_broker(self, *, controller: IMgmtActor) -> ID:
         try:
             brokers = controller.get_brokers()
+            self.logger.debug("Brokers: {}".format(brokers))
+            self.logger.error("Last Error: {}".format(controller.get_last_error()))
             if brokers is not None:
                 return ID(uid=next(iter(brokers), None).get_guid())
 
