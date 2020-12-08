@@ -31,12 +31,10 @@ from fabric.actor.core.manage.kafka.services.kafka_server_actor_service import K
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.proxies.kafka.translate import Translate
 from fabric.actor.core.util.id import ID
-from fabric.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
 from fabric.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
 from fabric.message_bus.messages.get_unit_request_avro import GetUnitRequestAvro
 from fabric.message_bus.messages.message import IMessageAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
-from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.result_units_avro import ResultUnitsAvro
 
 

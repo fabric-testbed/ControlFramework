@@ -27,10 +27,8 @@ from __future__ import annotations
 
 import traceback
 
-from fabric.actor.core.apis.i_reservation import ReservationCategory
 from fabric.actor.core.common.constants import Constants, ErrorCodes
 from fabric.actor.core.common.exceptions import ManageException
-from fabric.actor.core.kernel.slice import SliceTypes
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.manage.kafka.services.kafka_service import KafkaService
 from fabric.actor.core.proxies.kafka.translate import Translate

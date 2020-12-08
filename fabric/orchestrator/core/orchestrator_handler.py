@@ -80,8 +80,8 @@ class OrchestratorHandler:
             if brokers is not None:
                 return ID(uid=next(iter(brokers), None).get_guid())
 
-        except Exception as e:
-            self.logger.debug(traceback.format_exc())
+        except Exception:
+            self.logger.error(traceback.format_exc())
 
         return None
 
