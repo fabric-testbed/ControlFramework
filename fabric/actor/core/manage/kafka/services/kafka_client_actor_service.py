@@ -26,11 +26,9 @@
 from __future__ import annotations
 
 import traceback
-from datetime import datetime
 
 from fabric.actor.core.apis.i_actor import ActorType
-from fabric.actor.core.common.constants import ErrorCodes, Constants
-from fabric.actor.core.common.exceptions import ManageException
+from fabric.actor.core.common.constants import ErrorCodes
 from fabric.actor.core.manage.kafka.services.kafka_actor_service import KafkaActorService
 from fabric.actor.core.manage.management_object import ManagementObject
 from fabric.actor.core.time.actor_clock import ActorClock
@@ -50,7 +48,6 @@ from fabric.message_bus.messages.claim_resources_avro import ClaimResourcesAvro
 from fabric.actor.core.util.id import ID
 from fabric.message_bus.messages.demand_reservation_avro import DemandReservationAvro
 from fabric.message_bus.messages.result_avro import ResultAvro
-from fabric.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric.message_bus.messages.result_strings_avro import ResultStringsAvro
 
@@ -190,7 +187,7 @@ class KafkaClientActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_brokers(caller=auth, id_token=request.get_id_token())
+            result = mo.get_brokers(caller=auth, id_token=request.get_id_token(), broker_id=request.broker_id)
             result.message_id = request.message_id
 
         except Exception as e:
