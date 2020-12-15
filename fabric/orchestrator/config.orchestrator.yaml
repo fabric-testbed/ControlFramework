@@ -66,8 +66,9 @@ logging:
   - log-size: 5000000
 
   - logger: orchestrator
+
 oauth:
-  - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
+  - jwks-url: https://dev-2.fabric-testbed.net/certs
 
 database:
   - db-user: fabric

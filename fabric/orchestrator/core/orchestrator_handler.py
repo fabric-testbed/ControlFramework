@@ -46,8 +46,8 @@ class OrchestratorHandler:
         self.controller_state = OrchestratorStateSingleton.get()
         from fabric.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
-        self.token_public_key = GlobalsSingleton.get().get_config().get_oauth_config().get(
-            Constants.property_conf_o_auth_token_public_key, None)
+        self.jwks_url = GlobalsSingleton.get().get_config().get_oauth_config().get(
+            Constants.property_conf_o_auth_jwks_url, None)
         self.pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
 
     def get_logger(self):
@@ -55,8 +55,8 @@ class OrchestratorHandler:
 
     def validate_credentials(self, *, token) -> dict:
         try:
-            fabric_token = FabricToken(token_public_key=self.token_public_key, logger=self.logger,
-                                            token=token)
+            fabric_token = FabricToken(jwks_url=self.jwks_url, logger=self.logger,
+                                       token=token)
 
             return fabric_token.validate()
         except Exception as e:
@@ -65,7 +65,7 @@ class OrchestratorHandler:
 
     def check_access(self, *, action_id: ActionId, resource_type: ResourceType, token: str,
                      resource_id: str = None) -> bool:
-        fabric_token = FabricToken(token_public_key=self.token_public_key, logger=self.logger,
+        fabric_token = FabricToken(jwks_url=self.jwks_url, logger=self.logger,
                                    token=token)
         fabric_token.validate()
         pdp_auth = PdpAuth(config=self.pdp_config, logger=self.logger)

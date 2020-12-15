@@ -80,7 +80,6 @@ services:
       - ../../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
       - ../../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
       - ../../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
-      - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
 networks:
   frontend:
   backend:

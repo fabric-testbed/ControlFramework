@@ -123,7 +123,7 @@ class Constants:
     property_conf_time_manual = "time.manual"
 
     config_section_o_auth = "oauth"
-    property_conf_o_auth_jwks_url = "oauth-jwks-url"
+    property_conf_o_auth_jwks_url = "jwks-url"
     property_conf_o_auth_token_public_key = "token-public-key"
 
     config_section_database = "database"
