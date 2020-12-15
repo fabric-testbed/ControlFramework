@@ -67,7 +67,7 @@ logging:
   - logger: site1-am
 
 oauth:
-  - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
+  - jwks-url: https://dev-2.fabric-testbed.net/certs
 
 database:
   - db-user: fabric
