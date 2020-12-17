@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 logs
 .idea
-fabric/message_bus
+fabric_cf/message_bus

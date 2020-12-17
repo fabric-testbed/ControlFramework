@@ -115,7 +115,7 @@ actor:
         - label: Network Vlan
         - description: Network Vlan
         - handler:
-          - module: fabric.actor.plugins.vlan
+          - module: fabric_cf.actor.plugins.vlan
           - class: Dummy
           - properties:
               - quantum-vlan.properties: config/quantum-vlan.properties
@@ -123,10 +123,10 @@ actor:
             - attribute:
                 - key: resource.class.invfortype
                 - type: Class
-                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
+                - value: fabric_cf.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
         - control:
           - type: site.vlan
-          - module: fabric.actor.core.policy.vlan_control
+          - module: fabric_cf.actor.core.policy.vlan_control
           - class: VlanControl
 peers:
   - peer:
