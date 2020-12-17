@@ -45,18 +45,7 @@ if TYPE_CHECKING:
 
 
 class ResourceControl(IResourceControl):
-    PropertySubstrateFile = "substrate.file"
     PropertyControlResourceTypes = "resource.types"
-
-    @staticmethod
-    def get_substrate_file(*, reservation: IClientReservation):
-        rset = reservation.get_resources()
-        substrate_file = None
-        if ResourceControl.PropertySubstrateFile in rset.get_resource_properties():
-            substrate_file = rset.get_resource_properties()[ResourceControl.PropertySubstrateFile]
-        if substrate_file is None:
-            raise PolicyException(Constants.not_specified_prefix.format("substrate file"))
-        return substrate_file
 
     def __init__(self):
         self.guid = ID()

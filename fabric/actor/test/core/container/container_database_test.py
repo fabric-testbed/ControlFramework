@@ -32,7 +32,7 @@ from fabric.actor.test.base_test_case import BaseTestCase
 
 class ContainerDatabaseTest(BaseTestCase, unittest.TestCase):
     from fabric.actor.core.container.globals import Globals
-    Globals.config_file = Constants.test_vm_am_configuration_file
+    Globals.config_file = "../../config/config.test.yaml"
 
     from fabric.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)

@@ -143,7 +143,7 @@ class Constants:
     configuration_file = "/etc/fabric/actor/config/config.yaml"
     state_file_location = '/tmp/fabric_actor.tmp'
 
-    test_directory = "/Users/komalthareja/renci/code/fabric/ControlFramework/fabric/actor/test/"
+    test_directory = "."
     test_broker_configuration_file = test_directory + "config/config.broker.yaml"
     test_net_am_configuration_file = test_directory + "config/config.net-am.yaml"
     test_vm_am_configuration_file = test_directory + "config/config.site.am.yaml"
