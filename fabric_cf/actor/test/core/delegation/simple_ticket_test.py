@@ -37,7 +37,7 @@ from fabric_cf.actor.test.base_test_case import BaseTestCase
 
 class SimpleTicketTest(BaseTestCase, unittest.TestCase):
     from fabric_cf.actor.core.container.globals import Globals
-    Globals.config_file = "../../config/config.test.yaml"
+    Globals.config_file = "./config/config.test.yaml"
     Constants.superblock_location = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton

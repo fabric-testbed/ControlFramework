@@ -31,11 +31,11 @@ runtime:
   - plugin-dir: ./plugins
   - kafka-server: localhost:19092
   - kafka-schema-registry-url: http://localhost:8081
-  - kafka-key-schema: ../../schema/key.avsc
-  - kafka-value-schema: ../../schema/message.avsc
-  - kafka-ssl-ca-location:  ../../../../../secrets/snakeoil-ca-1.crt
-  - kafka-ssl-certificate-location:  ../../../../../secrets//kafkacat1-ca1-signed.pem
-  - kafka-ssl-key-location:  ../../../../../secrets/kafkacat1.client.key
+  - kafka-key-schema: ./schema/key.avsc
+  - kafka-value-schema: ./schema/message.avsc
+  - kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
+  - kafka-ssl-certificate-location:  ../../../secrets//kafkacat1-ca1-signed.pem
+  - kafka-ssl-key-location:  ../../../secrets/kafkacat1.client.key
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
@@ -104,7 +104,7 @@ neo4j:
   url: bolt://localhost:7687
   user: neo4j
   pass: password
-  import_host_dir: ../../../../../neo4j/imports
+  import_host_dir: ../../../neo4j/imports
   import_dir: /imports
 
 actor:
@@ -113,7 +113,7 @@ actor:
   - guid: site1-am-guid
   - description: Site AM
   - kafka-topic: site1-am-topic
-  - substrate.file: ../../../../../config/neo4j/site-am-2broker-ad-enumerated.graphml
+  - substrate.file: ../../../config/neo4j/site-am-2broker-ad-enumerated.graphml
   - resources:
       - resource:
         - resource_module: fim.slivers.network_node

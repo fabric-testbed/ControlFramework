@@ -53,7 +53,7 @@ from fabric_cf.actor.test.core.policy.broker_policy_test import BrokerPolicyTest
 
 class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
     from fabric_cf.actor.core.container.globals import Globals
-    Globals.config_file = "../../config/config.broker.yaml"
+    Globals.config_file = "./config/config.broker.yaml"
     Constants.superblock_location = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton
