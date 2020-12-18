@@ -169,7 +169,6 @@ class Actor(IActor):
         del state['wrapper']
         del state['logger']
         del state['clock']
-        del state['monitor']
         del state['current_cycle']
         del state['first_tick']
         del state['stopped']

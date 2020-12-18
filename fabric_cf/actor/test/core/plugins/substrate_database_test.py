@@ -24,11 +24,9 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-import unittest
-from datetime import datetime, time
+from datetime import datetime
 
 from fabric_cf.actor.core.apis.i_database import IDatabase
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.unit import Unit
 from fabric_cf.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
@@ -37,7 +35,7 @@ from fabric_cf.actor.core.plugins.substrate.db.substrate_actor_database import S
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.test.core.plugins.db.actor_database_test import ActorDatabaseTest
+from fabric_cf.actor.test.core.plugins.actor_database_test import ActorDatabaseTest
 
 
 class SubstrateDatabaseTest(ActorDatabaseTest):
@@ -45,7 +43,7 @@ class SubstrateDatabaseTest(ActorDatabaseTest):
     logger = logging.getLogger('AuthorityPolicyTest')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
     logging.basicConfig(format=log_format, filename="actor.log")
-    Logger.setLevel(logging.INFO)
+    logger.setLevel(logging.INFO)
 
     def make_actor_database(self) -> IDatabase:
         db = SubstrateActorDatabase(user=self.db_user, password=self.db_pwd, database=self.db_name, db_host=self.db_host,

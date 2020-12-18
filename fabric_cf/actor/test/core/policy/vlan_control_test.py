@@ -53,7 +53,8 @@ class VlanControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
     VlanBW = 100
 
     from fabric_cf.actor.core.container.globals import Globals
-    Globals.config_file = Constants.test_vm_am_configuration_file
+    Globals.config_file = "../../config/config.test.yaml"
+    Constants.superblock_location = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)

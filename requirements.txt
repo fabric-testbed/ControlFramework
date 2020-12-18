@@ -7,7 +7,7 @@ cryptography
 psycopg2-binary
 sqlalchemy
 pyyaml
-fabric-message-bus
+fabric-message-bus == 0.6
 fabric-fim
 click
 pytest

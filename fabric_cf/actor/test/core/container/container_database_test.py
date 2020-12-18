@@ -33,6 +33,7 @@ from fabric_cf.actor.test.base_test_case import BaseTestCase
 class ContainerDatabaseTest(BaseTestCase, unittest.TestCase):
     from fabric_cf.actor.core.container.globals import Globals
     Globals.config_file = "../../config/config.test.yaml"
+    Constants.superblock_location = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -48,7 +49,7 @@ class ContainerDatabaseTest(BaseTestCase, unittest.TestCase):
     def test_a_create(self):
         db = self.get_clean_database()
         self.assertEqual(1, len(db.get_actors()), "No actors")
-        self.assertIsNone(db.get_container_properties())
+        self.assertIsNotNone(db.get_container_properties())
         self.assertIsNotNone(db.get_time())
 
     def test_b_add_remove_actor(self):
@@ -57,6 +58,7 @@ class ContainerDatabaseTest(BaseTestCase, unittest.TestCase):
         self.get_actor()
 
         result = db.get_actor(actor_name=self.actor_name)
+        print(result)
         self.assertIsNotNone(result)
 
         result = db.get_actors()

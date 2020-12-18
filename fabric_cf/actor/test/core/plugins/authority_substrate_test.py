@@ -28,7 +28,7 @@ from fabric_cf.actor.core.core.authority import Authority
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.test.base_test_case import BaseTestCase
-from fabric_cf.actor.test.core.plugins.substrate.substrate_test_base import SubstrateTestBase
+from fabric_cf.actor.test.core.plugins.substrate_test_base import SubstrateTestBase
 
 
 class AuthoritySubstrateTest(SubstrateTestBase):

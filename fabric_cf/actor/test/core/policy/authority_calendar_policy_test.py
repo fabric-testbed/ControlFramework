@@ -38,5 +38,3 @@ class AuthorityCalendarPolicyTest(AuthorityPolicyTest):
         if policy:
             return policy.controls_by_guid.values().__iter__().__next__()
         return None
-    
-
