@@ -26,6 +26,12 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric_mb.message_bus.messages.claim_delegation_avro import ClaimDelegationAvro
+from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.reclaim_delegation_avro import ReclaimDelegationAvro
+from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
+from fabric_mb.message_bus.messages.message import IMessageAvro
+
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric_cf.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
@@ -35,17 +41,12 @@ from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.proxies.kafka.services.actor_service import ActorService
 from fabric_cf.actor.core.util.id import ID
-from fabric_mb.message_bus.messages.claim_delegation_avro import ClaimDelegationAvro
-from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fabric_mb.message_bus.messages.reclaim_delegation_avro import ReclaimDelegationAvro
-from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
-from fabric_mb.message_bus.messages.message import IMessageAvro
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
     from fabric_mb.message_bus.messages.extend_ticket_avro import ExtendTicketAvro
     from fabric_mb.message_bus.messages.relinquish_avro import RelinquishAvro
     from fabric_mb.message_bus.messages.ticket_avro import TicketAvro
+    from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
 
 
 class BrokerService(ActorService):

@@ -26,20 +26,20 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
-from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 
+from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric_cf.actor.core.manage.local.local_proxy import LocalProxy
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.manage.management_object import ManagementObject
-    from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.util.id import ID
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
     from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
     from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+    from fabric_cf.actor.core.manage.management_object import ManagementObject
+    from fabric_cf.actor.security.auth_token import AuthToken
+    from fabric_cf.actor.core.util.id import ID
 
 
 class LocalActor(LocalProxy, IMgmtActor):
@@ -49,7 +49,7 @@ class LocalActor(LocalProxy, IMgmtActor):
         if not isinstance(manager, ActorManagementObject):
             raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
-    def get_slices(self, *, slice_id: ID = None, id_token: str = None) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None, slice_id: ID = None) -> List[SliceAvro]:
         self.clear_last()
         try:
             result = self.manager.get_slices(slice_id=slice_id, caller=self.auth)

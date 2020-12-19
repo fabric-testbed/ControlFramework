@@ -26,6 +26,12 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric_mb.message_bus.messages.close_avro import CloseAvro
+from fabric_mb.message_bus.messages.extend_lease_avro import ExtendLeaseAvro
+from fabric_mb.message_bus.messages.modify_lease_avro import ModifyLeaseAvro
+from fabric_mb.message_bus.messages.redeem_avro import RedeemAvro
+from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
+
 from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
@@ -33,11 +39,6 @@ from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.kafka_broker_proxy import KafkaBrokerProxy
 from fabric_cf.actor.core.proxies.kafka.kafka_proxy import KafkaProxyRequestState
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
-from fabric_mb.message_bus.messages.close_avro import CloseAvro
-from fabric_mb.message_bus.messages.extend_lease_avro import ExtendLeaseAvro
-from fabric_mb.message_bus.messages.modify_lease_avro import ModifyLeaseAvro
-from fabric_mb.message_bus.messages.redeem_avro import RedeemAvro
-from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 
 if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken

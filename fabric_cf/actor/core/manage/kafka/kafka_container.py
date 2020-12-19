@@ -27,11 +27,14 @@
 import traceback
 from typing import List
 
+from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
+from fabric_mb.message_bus.messages.actor_avro import ActorAvro
+from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+
 from fabric_cf.actor.core.apis.i_mgmt_authority import IMgmtAuthority
 from fabric_cf.actor.core.apis.i_mgmt_broker import IMgmtBroker
 from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
-from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
-
 from fabric_cf.actor.core.apis.i_actor import ActorType
 from fabric_cf.actor.core.apis.i_component import IComponent
 from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
@@ -40,9 +43,6 @@ from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 from fabric_cf.actor.core.util.id import ID
-from fabric_mb.message_bus.messages.actor_avro import ActorAvro
-from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 
 class KafkaContainer(KafkaProxy, IMgmtContainer):

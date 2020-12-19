@@ -25,38 +25,35 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING
+
+from fim.graph.abc_property_graph import ABCPropertyGraph
+
+from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
+from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 
 from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
-from fabric_cf.actor.core.core.authority_policy import AuthorityPolicy
-from fabric_cf.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric_cf.actor.core.kernel.reservation_factory import ReservationFactory
-from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric_cf.actor.core.manage.converter import Converter
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.messages.result_client_mng import ResultClientMng
-from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
-from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
-from fabric_cf.actor.core.time.term import Term
-from fabric_cf.actor.core.util.resource_data import ResourceData
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
-from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
-from fim.graph.abc_property_graph import ABCPropertyGraph
 
 if TYPE_CHECKING:
+    from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.apis.i_server_actor import IServerActor
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
-    from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 
 class ServerActorManagementObject(ActorManagementObject):
@@ -103,7 +100,7 @@ class ServerActorManagementObject(ActorManagementObject):
             if res_list is not None:
                 result.result = []
                 for r in res_list:
-                    slice_obj = self._get_slice_by_id(id=r['slc_id'])
+                    slice_obj = self._get_slice_by_id(slc_id=r['slc_id'])
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
                                                                  slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())

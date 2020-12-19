@@ -40,7 +40,7 @@ class ProxyProtocolDescriptor:
     def get_proxy_class(self) -> str:
         return self.proxy_class
 
-    def set_proxy_class(self, *, proxy_class:str):
+    def set_proxy_class(self, *, proxy_class: str):
         self.proxy_class = proxy_class
 
     def get_proxy_module(self) -> str:

@@ -28,15 +28,6 @@ from __future__ import annotations
 import traceback
 from typing import TYPE_CHECKING, List
 
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
-from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
-from fabric_cf.actor.core.core.actor_identity import ActorIdentity
-from fabric_cf.actor.core.core.ticket import Ticket
-from fabric_cf.actor.core.core.unit import Unit
-from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_mb.message_bus.messages.actor_avro import ActorAvro
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
@@ -46,6 +37,17 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
+from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+
+from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
+from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
+from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
+from fabric_cf.actor.core.core.actor_identity import ActorIdentity
+from fabric_cf.actor.core.core.ticket import Ticket
+from fabric_cf.actor.core.core.unit import Unit
+from fabric_cf.actor.core.kernel.resource_set import ResourceSet
+from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.proxies.actor_location import ActorLocation
 from fabric_cf.actor.core.proxies.kafka.kafka_proxy import KafkaProxy
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
@@ -55,7 +57,6 @@ from fabric_cf.actor.core.util.prop_list import PropList
 from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
-from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_reservation import IReservation

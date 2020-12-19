@@ -26,6 +26,8 @@
 import queue
 import threading
 
+from fim.graph.abc_property_graph import ABCPropertyGraph
+
 from fabric_cf.actor.core.apis.i_actor import ActorType
 from fabric_cf.actor.core.apis.i_authority import IAuthority
 from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
@@ -50,7 +52,6 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.security.auth_token import AuthToken
-from fim.graph.abc_property_graph import ABCPropertyGraph
 
 
 class Authority(Actor, IAuthority):

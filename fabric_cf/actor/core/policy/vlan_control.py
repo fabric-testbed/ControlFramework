@@ -143,7 +143,7 @@ class VlanControl(ResourceControl):
                 rd = ResourceData()
                 rd.resource_properties[Constants.unit_vlan_tag] = tag
                 gained = UnitSet(plugin=self.authority.get_plugin())
-                unit = Unit(id=ID())
+                unit = Unit(uid=ID())
                 unit.set_resource_type(rtype=rtype)
                 unit.set_property(name=Constants.unit_vlan_tag, value=str(tag))
 

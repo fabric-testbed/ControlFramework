@@ -83,7 +83,8 @@ class Globals:
 
         log_path = None
         if Constants.property_conf_log_directory in log_config and Constants.property_conf_log_file in log_config:
-            log_path = log_config[Constants.property_conf_log_directory] + '/' + log_config[Constants.property_conf_log_file]
+            log_path = log_config[Constants.property_conf_log_directory] + '/' + \
+                       log_config[Constants.property_conf_log_file]
 
         if log_path is None:
             raise RuntimeError('The log file path must be specified in config or passed as an argument')

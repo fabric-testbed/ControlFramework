@@ -28,10 +28,6 @@ from typing import List
 
 from fabric_cf.actor.core.common.constants import Constants
 
-"""
-Implements various classes for reading and loading the information from config file
-"""
-
 
 class GlobalConfig:
     """

@@ -30,7 +30,7 @@ class Plugin:
     Plugin class describes metadatata about an plugin supplied
     """
     def __init__(self):
-        self.id = None
+        self.pid = None
         self.plugin_type = None
         self.factory = False
         self.name = None
@@ -60,13 +60,13 @@ class Plugin:
         Returns the plugin identifier.
         @return the id
         """
-        return self.id
+        return self.pid
 
     def set_id(self, *, pid: str):
         """
         @param pid the id to set
         """
-        self.id = id
+        self.pid = id
 
     def get_plugin_type(self) -> int:
         """

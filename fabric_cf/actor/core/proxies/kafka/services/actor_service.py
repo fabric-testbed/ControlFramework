@@ -28,6 +28,11 @@ from __future__ import annotations
 import pickle
 from typing import TYPE_CHECKING
 
+from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
+from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
+
 from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.common.exceptions import ProxyException
@@ -43,19 +48,17 @@ from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.kafka_retun import KafkaReturn
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.util.id import ID
-from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
-from fabric_mb.message_bus.messages.message import IMessageAvro
-from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
+
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
     from fabric_mb.message_bus.messages.failed_rpc_avro import FailedRpcAvro
     from fabric_mb.message_bus.messages.query_avro import QueryAvro
     from fabric_mb.message_bus.messages.query_result_avro import QueryResultAvro
     from fabric_mb.message_bus.messages.update_lease_avro import UpdateLeaseAvro
     from fabric_mb.message_bus.messages.update_ticket_avro import UpdateTicketAvro
+
+    from fabric_cf.actor.security.auth_token import AuthToken
+    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
     from fabric_cf.actor.core.apis.i_actor import IActor
 
 

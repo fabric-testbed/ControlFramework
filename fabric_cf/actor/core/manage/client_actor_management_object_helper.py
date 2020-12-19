@@ -29,6 +29,16 @@ import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
+from fabric_mb.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
+from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
+from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
+from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
+from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+
+
 from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -43,30 +53,21 @@ from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.security.acess_checker import AccessChecker
 from fabric_cf.actor.security.pdp_auth import ActionId
-from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
-from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
-from fabric_mb.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
-from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
 from fabric_cf.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
-from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
-from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
-from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.prop_list import PropList
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_cf.actor.core.core.broker_policy import BrokerPolicy
 from fabric_cf.actor.security.pdp_auth import ResourceType as AuthResourceType
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_client_actor import IClientActor
-    from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
     from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
-    from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+    from fabric_cf.actor.core.apis.i_client_actor import IClientActor
+    from fabric_cf.actor.security.auth_token import AuthToken
+    from fabric_cf.actor.core.apis.i_actor import IActor
 
 
 class ClientActorManagementObjectHelper(IClientActorManagementObject):
@@ -361,9 +362,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                                                   format(r.get_reservation_id(), pr.get_reservation_id(), ff))
                                 r.add_redeem_predecessor(reservation=pr, filter=ff)
                             else:
-                                self.logger.debug(
-                                    "Setting redeem predecessor on reservation # {} pred={} filter=none".
-                                        format(r.get_reservation_id(), pr.get_reservation_id()))
+                                self.logger.debug("Setting redeem predecessor on reservation # {} pred={} filter=none".
+                                                  format(r.get_reservation_id(), pr.get_reservation_id()))
                                 r.add_redeem_predecessor(reservation=pr)
 
                     try:
@@ -486,7 +486,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
+                          id_token: str = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -532,7 +533,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken, id_token: str = None) -> ResultDelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
+                            id_token: str = None) -> ResultDelegationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 

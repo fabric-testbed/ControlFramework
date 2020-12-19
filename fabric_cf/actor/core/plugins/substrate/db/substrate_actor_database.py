@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
-import threading
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
@@ -35,10 +34,10 @@ from fabric_cf.actor.core.util.id import ID
 
 
 class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
-    def get_unit(self, *, unit_id: ID):
+    def get_unit(self, *, uid: ID):
         result = None
         try:
-            result = self.db.get_unit(act_id=self.actor_id, unt_uid=str(unit_id))
+            result = self.db.get_unit(act_id=self.actor_id, unt_uid=str(uid))
         except Exception as e:
             self.logger.error(e)
 
@@ -49,12 +48,12 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
             if u.get_resource_type() is None:
                 raise DatabaseException(Constants.invalid_argument)
             self.lock.acquire()
-            if self.get_unit(unit_id=u.get_id()) is not None:
+            if self.get_unit(uid=u.get_id()) is not None:
                 self.logger.info("unit {} is already present in database".format(u.get_id()))
                 return
 
             slice_id = str(u.get_slice_id())
-            parent = self.get_unit(unit_id=u.get_parent_id())
+            parent = self.get_unit(uid=u.get_parent_id())
             parent_id = None
             if parent is not None:
                 parent_id = parent['unt_id']

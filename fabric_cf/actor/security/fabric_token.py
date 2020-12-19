@@ -44,7 +44,7 @@ class JWTManager:
 
             return claims
         except Exception as ex:
-            raise ex
+            raise TokenException(ex)
 
 
 class FabricToken:

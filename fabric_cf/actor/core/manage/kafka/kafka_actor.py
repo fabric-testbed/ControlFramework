@@ -28,10 +28,7 @@ from __future__ import annotations
 import traceback
 from typing import List
 
-from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
-from fabric_cf.actor.core.common.exceptions import ManageException
-from fabric_cf.actor.core.manage.kafka.kafka_proxy import KafkaProxy
+
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
@@ -47,16 +44,21 @@ from fabric_mb.message_bus.messages.remove_slice_avro import RemoveSliceAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.update_reservation_avro import UpdateReservationAvro
 from fabric_mb.message_bus.messages.update_slice_avro import UpdateSliceAvro
+
+from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
+from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric_cf.actor.core.common.exceptions import ManageException
+from fabric_cf.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 
 
 class KafkaActor(KafkaProxy, IMgmtActor):
     def get_guid(self) -> ID:
         return self.management_id
 
-    def prepare(self, *, callback_topic:str):
+    def prepare(self, *, callback_topic: str):
         self.callback_topic = callback_topic
 
     def get_slices(self, *, id_token: str = None, slice_id: ID = None) -> List[SliceAvro]:

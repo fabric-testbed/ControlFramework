@@ -23,11 +23,12 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.boot.inventory.resource_pool_factory import ResourcePoolFactory
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
+
+from fabric_cf.actor.boot.inventory.resource_pool_factory import ResourcePoolFactory
 
 
 class Neo4jResourcePoolFactory(ResourcePoolFactory):

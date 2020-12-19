@@ -1200,14 +1200,14 @@ class ReservationClient(Reservation, IKernelControllerReservation):
     def set_request_property(self, *, key: str, value: str):
         self.resources.get_request_properties()[key] = value
 
-    def add_redeem_predecessor(self, *, reservation, filter: dict = None):
+    def add_redeem_predecessor(self, *, reservation, filters: dict = None):
         if reservation.get_reservation_id() not in self.redeem_predecessors:
-            state = PredecessorState(reservation=reservation, filter=filter)
+            state = PredecessorState(reservation=reservation, filters=filters)
             self.redeem_predecessors[reservation.get_reservation_id()] = state
 
-    def add_join_predecessor(self, *, predecessor, filter: dict = None):
+    def add_join_predecessor(self, *, predecessor, filters: dict = None):
         if predecessor.get_reservation_id() not in self.redeem_predecessors:
-            state = PredecessorState(reservation=predecessor, filter=filter)
+            state = PredecessorState(reservation=predecessor, filters=filters)
             self.join_predecessors[predecessor.get_reservation_id()] = state
 
     def get_redeem_predecessors(self) -> list:

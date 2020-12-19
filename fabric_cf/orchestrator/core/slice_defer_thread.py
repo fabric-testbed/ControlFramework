@@ -26,11 +26,13 @@
 import queue
 import threading
 import time
+import traceback
 from datetime import datetime
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.term import Term
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice import OrchestratorSlice
 
 
@@ -90,7 +92,7 @@ class SliceDeferThread:
             self.avail.wait(self.THREAD_SLEEP_TIME)
             if len(self.deferred_slices) > 0:
                 ret_val = self.deferred_slices[0]
-        except Exception as e:
+        except Exception:
             ret_val = None
         finally:
             self.queue_lock.release()
@@ -207,9 +209,10 @@ class SliceDeferThread:
                     continue
 
                 if not controller.demand(reservation):
-                    raise Exception("Could not demand resources: {}".format(controller.get_last_error()))
+                    raise OrchestratorException("Could not demand resources: {}".format(controller.get_last_error()))
         except Exception as e:
-            self.logger.error("Unable to get orchestrator or demand reservation")
+            self.logger.error(traceback.format_exc())
+            self.logger.error("Unable to get orchestrator or demand reservation: {}".format(e))
             return
 
     def check_computed_reservations(self, *, controller_slice: OrchestratorSlice) -> bool:
@@ -261,15 +264,14 @@ class SliceDeferThread:
             for reservation in all_reservations:
                 rtype = reservation.get_resource_type()
                 for drt in self.delay_resource_types:
-                    if drt == rtype:
-                        if reservation.get_state() != ReservationStates.Active and \
-                            reservation.get_state() != ReservationStates.Closed and \
-                            reservation.get_state() != ReservationStates.CloseWait and \
-                                reservation.get_state() != ReservationStates.Failed:
-                            self.logger.info("Slice: {}/{} has domain {} with reservation: {} that is not yet done".
-                                             format(controller_slice.get_slice_urn(), controller_slice.get_slice_id(),
-                                                    drt, reservation.get_reservation_id()))
-                            return True
+                    if drt == rtype and reservation.get_state() != ReservationStates.Active and \
+                        reservation.get_state() != ReservationStates.Closed and \
+                        reservation.get_state() != ReservationStates.CloseWait and \
+                            reservation.get_state() != ReservationStates.Failed:
+                        self.logger.info("Slice: {}/{} has domain {} with reservation: {} that is not yet done".
+                                         format(controller_slice.get_slice_urn(), controller_slice.get_slice_id(),
+                                                drt, reservation.get_reservation_id()))
+                        return True
             self.logger.info("Slice: {}/{} has no non-final reservations ({})".format(controller_slice.get_slice_urn(),
                                                                                       controller_slice.get_slice_id(),
                                                                                       len(all_reservations)))

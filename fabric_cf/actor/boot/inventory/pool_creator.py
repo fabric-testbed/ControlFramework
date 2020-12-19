@@ -133,7 +133,8 @@ class PoolCreator:
 
         rd = ResourceData()
         create_pool_result = self.substrate.get_pool_manager().create_pool(
-            slice_id=ID(), name=actor_name, rtype=ResourceType(resource_type=Constants.property_aggregate_resource_model),
+            slice_id=ID(), name=actor_name,
+            rtype=ResourceType(resource_type=Constants.property_aggregate_resource_model),
             resource_data=rd)
 
         if create_pool_result.code != PoolManagerError.ErrorNone:

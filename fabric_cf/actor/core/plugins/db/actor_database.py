@@ -121,10 +121,10 @@ class ActorDatabase(IDatabase):
             self.lock.release()
         return None
 
-    def get_slice_by_id(self, *, id: int) -> dict:
+    def get_slice_by_id(self, *, slc_id: int) -> dict:
         try:
             self.lock.acquire()
-            slice_obj = self.db.get_slice_by_id(act_id=self.actor_id, id=id)
+            slice_obj = self.db.get_slice_by_id(act_id=self.actor_id, slc_id=slc_id)
             return slice_obj
         except Exception as e:
             self.logger.error(e)

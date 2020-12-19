@@ -26,9 +26,10 @@
 import threading
 import traceback
 
-from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_mb.message_bus.consumer import AvroConsumerApi
 from fabric_mb.message_bus.messages.message import IMessageAvro
+
+from fabric_cf.actor.core.common.exceptions import ManageException
 
 
 class MessageWrapper:
@@ -81,7 +82,7 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
             if self.thread_lock is not None and self.thread_lock.locked():
                 self.thread_lock.release()
 
-    def handle_message(self, *, message: IMessageAvro):
+    def handle_message(self, message: IMessageAvro):
         try:
             message_id = message.get_message_id()
 

@@ -25,8 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING, List
+
+from fim.graph.abc_property_graph import ABCPropertyGraph
+
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
 from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
 from fabric_cf.actor.core.common.exceptions import ManageException
@@ -34,15 +37,14 @@ from fabric_cf.actor.core.manage.server_actor_management_object import ServerAct
 from fabric_cf.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
 from fabric_cf.actor.core.manage.local.local_actor import LocalActor
 from fabric_cf.actor.core.util.id import ID
-from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-from fim.graph.abc_property_graph import ABCPropertyGraph
 
 if TYPE_CHECKING:
+    from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+
     from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
     from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
-    from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 
 class LocalServerActor(LocalActor, IMgmtServerActor):

@@ -46,7 +46,7 @@ class ClaimTimeout(ITimerTask):
         """
         self.req.actor.get_logger().debug("Claim timeout. Delegation= {}".format(self.req.delegation))
         self.req.actor.get_logger().error("Failing delegation {} due to expired claim timeout".format(
-                self.req.delegation))
+            self.req.delegation))
         self.req.actor.fail(rid=self.req.get_delegation().get_delegation_id(),
                             message="Timeout during claim. Please remove the delegation and retry later")
 

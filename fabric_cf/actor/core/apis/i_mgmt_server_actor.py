@@ -28,15 +28,15 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fim.graph.abc_property_graph import ABCPropertyGraph
+from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
 
 if TYPE_CHECKING:
+    from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+    from fabric_mb.message_bus.messages.slice_avro import SliceAvro
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-    from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 
 class IMgmtServerActor(IMgmtActor):

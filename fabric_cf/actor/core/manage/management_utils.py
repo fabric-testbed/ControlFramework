@@ -28,6 +28,8 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
+from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+
 from fabric_cf.actor.core.apis.i_query_response_handler import IQueryResponseHandler
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.apis.i_mgmt_container import IMgmtContainer
@@ -35,13 +37,13 @@ from fabric_cf.actor.core.manage.local.local_container import LocalContainer
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.rpc_exception import RPCException, RPCError
-from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
 
 if TYPE_CHECKING:
+    from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+
     from fabric_cf.actor.core.apis.i_slice import ISlice
     from fabric_cf.actor.core.apis.i_reservation import IReservation
-    from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.apis.i_actor_proxy import IActorProxy
     from fabric_cf.actor.security.auth_token import AuthToken
@@ -110,4 +112,3 @@ class ManagementUtils:
     @staticmethod
     def connect(*, caller: AuthToken) -> IMgmtContainer():
         return ManagementUtils.get_local_container(caller=caller)
-

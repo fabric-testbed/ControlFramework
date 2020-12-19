@@ -25,15 +25,16 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+from fabric_mb.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
+from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
+
 from fabric_cf.actor.core.common.constants import ErrorCodes
 from fabric_cf.actor.core.manage.kafka.services.kafka_client_actor_service import KafkaClientActorService
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.util.id import ID
-from fabric_mb.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
-from fabric_mb.message_bus.messages.message import IMessageAvro
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
-from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
 
 
 class KafkaControllerService(KafkaClientActorService):

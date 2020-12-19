@@ -35,15 +35,15 @@ from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
-    from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
-    from fabric_cf.actor.core.util.resource_type import ResourceType
-    from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-    from fabric_cf.actor.core.util.id import ID
-    from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
     from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
     from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
     from fabric_mb.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
+    from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
+    from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+
+    from fabric_cf.actor.security.auth_token import AuthToken
+    from fabric_cf.actor.core.util.resource_type import ResourceType
+    from fabric_cf.actor.core.util.id import ID
 
 
 class IClientActorManagementObject:

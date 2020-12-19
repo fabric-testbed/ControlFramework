@@ -164,7 +164,7 @@ class ContainerManagementObject(ManagementObject):
         return GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(key=key)
 
     def do_get_proxies(self, *, atype: ActorType, protocol: str, caller: AuthToken,
-                              id_token: str = None) -> ResultProxyAvro:
+                       id_token: str = None) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 

@@ -517,21 +517,21 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slice_by_id(self, *, act_id: int, id: int) -> dict:
+    def get_slice_by_id(self, *, act_id: int, slc_id: int) -> dict:
         """
         Get slice by id for an actor
         @param act_id actor id
-        @param id slice id
+        @param slc_id slice id
         @return slice dictionary
         """
         result = {}
         try:
             with session_scope(self.db_engine) as session:
-                slc_obj = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(Slices.slc_id == id).first()
+                slc_obj = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(Slices.slc_id == slc_id).first()
                 if slc_obj is not None:
                     result = self.generate_slice_dict_from_row(slc_obj)
                 else:
-                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", id))
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_id))
         except Exception as e:
             self.logger.error(Constants.exception_occurred.format(e))
             raise e

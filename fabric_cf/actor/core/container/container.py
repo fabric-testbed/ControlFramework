@@ -36,6 +36,8 @@ from enum import Enum
 
 from yapsy.PluginManager import PluginManagerSingleton
 
+from fim.graph.neo4j_property_graph import Neo4jGraphImporter
+
 from fabric_cf.actor.core.common.exceptions import ContainerException
 from fabric_cf.actor.core.container.remote_actor_cache import RemoteActorCacheSingleton
 from fabric_cf.actor.core.container.db.container_database import ContainerDatabase
@@ -50,7 +52,6 @@ from fabric_cf.actor.core.container.protocol_descriptor import ProtocolDescripto
 from fabric_cf.actor.core.extensions.plugin_manager import PluginManager
 from fabric_cf.actor.core.kernel.kernel_tick import KernelTick
 from fabric_cf.actor.core.manage.management_object_manager import ManagementObjectManager
-from fim.graph.neo4j_property_graph import Neo4jGraphImporter
 from fabric_cf.actor.core.util.id import ID
 
 
@@ -60,7 +61,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity
     from fabric_cf.actor.core.apis.i_container_database import IContainerDatabase
     from fabric_cf.actor.boot.configuration import Configuration
-    
+
 
 class ContainerState(Enum):
     """
@@ -256,7 +257,8 @@ class Container(IActorContainer):
         """
         Perform basic boot actions
         """
-        self.guid = self.get_config().get_global_config().get_container().get(Constants.property_conf_container_guid, None)
+        self.guid = self.get_config().get_global_config().get_container().get(Constants.property_conf_container_guid,
+                                                                              None)
         self.logger.debug("Container guid is {}".format(self.guid))
         self.set_time()
         self.persist_basic()
@@ -294,7 +296,8 @@ class Container(IActorContainer):
         if start_time == -1:
             start_time = ActorClock.get_current_milliseconds()
 
-        cycle_millis = int(self.config.get_global_config().get_time().get(Constants.property_conf_time_cycle_millis, None))
+        cycle_millis = int(self.config.get_global_config().get_time().get(Constants.property_conf_time_cycle_millis,
+                                                                          None))
 
         manual = False
         if self.config.get_global_config().get_time().get(Constants.property_conf_time_manual, None):

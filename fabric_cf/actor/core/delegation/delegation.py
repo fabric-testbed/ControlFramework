@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fim.graph.abc_property_graph import ABCPropertyGraph
+
 from fabric_cf.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
 from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
@@ -35,7 +37,6 @@ from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleto
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
-from fim.graph.abc_property_graph import ABCPropertyGraph
 
 
 class Delegation(IDelegation):
@@ -213,7 +214,8 @@ class Delegation(IDelegation):
             self.must_send_update = True
             self.transition(prefix="reclaimed", state=DelegationState.Reclaimed)
         else:
-            self.logger.error(self.error_string_prefix.format(self, self.invalid_state_prefix.format('reclaim', 'reclaim')))
+            self.logger.error(self.error_string_prefix.format(self, self.invalid_state_prefix.format('reclaim',
+                                                                                                     'reclaim')))
             raise DelegationException(self.invalid_state_prefix.format('reclaim', 'reclaim'))
 
     def close(self):

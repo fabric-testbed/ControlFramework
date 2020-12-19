@@ -45,9 +45,8 @@ class Term:
     This number will be returned when calling getLength(). To obtain the
     number of milliseconds in the closed interval [start, end], use getFullLength().
     """
-    '''
-    Flag that controls, whether cycle numbers should be calculated.
-    '''
+
+    # Flag that controls, whether cycle numbers should be calculated.
     set_cycles: bool = True
     clock: ActorClock = None
 

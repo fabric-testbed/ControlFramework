@@ -123,7 +123,7 @@ class VMControlTest(AuthorityCalendarPolicyTest, unittest.TestCase):
         uset = UnitSet(plugin=authority.get_plugin())
 
         for i in range(self.DonateUnits):
-            host = Unit(id=ID())
+            host = Unit(uid=ID())
             host.set_property(name=Constants.unit_host_name, value="Host" + str(i))
             host.set_property(name=Constants.unit_management_ip, value="192.168.123." + str(i + 1))
             host.set_property(name=Constants.unit_control, value="192.168.123." + str(i + 1))

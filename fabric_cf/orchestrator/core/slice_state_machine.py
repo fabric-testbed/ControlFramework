@@ -31,6 +31,8 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, Re
 from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
+
 
 class SliceState(Enum):
     Nascent = 1
@@ -117,7 +119,7 @@ class SliceStateMachine:
             # TODO
             # orchestrator = fetch from Controller state
             return controller.get_reservations(slice_id=self.slice_guid)
-        except Exception as e:
+        except Exception:
             return None
 
     def all_failed(self) -> bool:
@@ -133,7 +135,7 @@ class SliceStateMachine:
 
     def transition_slice(self, *, operation: SliceOperation) -> SliceState:
         if self.state not in operation.valid_from_states:
-            raise Exception("Operation: {} cannot transition from state {}".format(operation, self.state))
+            raise OrchestratorException("Operation: {} cannot transition from state {}".format(operation, self.state))
 
         if operation.command == SliceCommand.Create:
             self.state = SliceState.Configuring

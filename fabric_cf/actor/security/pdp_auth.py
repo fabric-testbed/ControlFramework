@@ -28,7 +28,6 @@ import os
 from enum import Enum
 from typing import List
 
-import re
 import requests
 
 from fabric_cf.actor.core.apis.i_actor import ActorType
@@ -134,7 +133,6 @@ class PdpAuth:
         @param fabric_token fabric token
         @return list of the roles
         """
-        ret_val = []
         roles = fabric_token.get('roles', None)
         if roles is None:
             raise PdpAuthException(self.missing_parameter.format("roles"))

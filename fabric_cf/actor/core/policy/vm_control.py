@@ -303,7 +303,7 @@ class VMControl(ResourceControl):
             if available > 0:
                 to_allocate = min(available, needed - allocated)
                 for i in range(to_allocate):
-                    vm = Unit(id=ID())
+                    vm = Unit(uid=ID())
                     vm.set_resource_type(rtype=pool.get_type())
                     vm.set_parent_id(parent_id=vmm.get_host().get_id())
                     vm.set_property(name=Constants.unit_parent_host_name,

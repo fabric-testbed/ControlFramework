@@ -31,7 +31,7 @@ import six
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
 from fabric_cf.orchestrator.swagger_server import util, received_counter, success_counter, failure_counter
-from fabric_cf.orchestrator.swagger_server.response.constants import GetMethod, ResourcesPath
+from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, RESOURCES_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
@@ -45,16 +45,16 @@ def resources_get():  # noqa: E501
     """
     handler = OrchestratorHandler()
     logger = handler.get_logger()
-    received_counter.labels(GetMethod, ResourcesPath).inc()
+    received_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
     try:
         token = get_token()
         value = handler.list_resources(token=token)
         response = Success()
         response.value = value
-        success_counter.labels(GetMethod, ResourcesPath).inc()
+        success_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
         return response
     except Exception as e:
         logger.exception(e)
-        failure_counter.labels(GetMethod, ResourcesPath).inc()
+        failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
         return str(e), 500
 

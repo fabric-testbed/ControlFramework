@@ -675,7 +675,7 @@ class ResourceSet:
             return
         if self.resources.get_units() != self.units:
             raise ResourcesException("size mismatch on incoming ticket {} != {}".format(self.resources.get_units(),
-                                                                               self.units))
+                                                                                        self.units))
         self.resources.validate_concrete(rtype=self.type, units=self.units, term=term)
 
     def validate_outgoing(self):

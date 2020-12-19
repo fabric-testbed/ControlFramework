@@ -155,9 +155,9 @@ class Substrate(BasePlugin, ISubstrate):
         try:
             unit.fail(message=message, exception=e)
             self.db.update_unit(u=unit)
-        except Exception as e:
+        except Exception as ex:
             self.logger.error("could not update unit in database")
-            self.logger.error(e)
+            self.logger.error(ex)
 
     def fail_no_update(self, *, unit: Unit, message: str, e: Exception = None):
         self.logger.error(message)

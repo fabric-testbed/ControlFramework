@@ -32,8 +32,8 @@ from fabric_cf.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.unit_avro import UnitAvro
-    from fabric_cf.actor.core.util.id import ID
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+    from fabric_cf.actor.core.util.id import ID
 
 
 class IMgmtAuthority(IMgmtServerActor):

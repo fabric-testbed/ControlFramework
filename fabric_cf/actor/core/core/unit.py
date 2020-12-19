@@ -47,10 +47,10 @@ class UnitState(Enum):
 
 
 class Unit(ConfigToken):
-    def __init__(self, *, id: ID, rid: ID = None, slice_id: ID = None, actor_id: ID = None,
+    def __init__(self, *, uid: ID, rid: ID = None, slice_id: ID = None, actor_id: ID = None,
                  properties: dict = None, state: UnitState = None):
         # Unique identifier.
-        self.id = id
+        self.uid = uid
         # Resource type.
         self.rtype = None
         # Unique identifier of parent unit (optional).
@@ -174,7 +174,7 @@ class Unit(ConfigToken):
         Get unit id
         @return unit id
         """
-        return self.id
+        return self.uid
 
     def get_properties(self) -> dict:
         """
@@ -214,7 +214,7 @@ class Unit(ConfigToken):
         Clone a unit
         @return copy of the object
         """
-        ret_val = Unit(id=self.id, properties=self.properties, state=self.state)
+        ret_val = Unit(uid=self.uid, properties=self.properties, state=self.state)
         return ret_val
 
     def get_sequence(self) -> int:
@@ -384,7 +384,7 @@ class Unit(ConfigToken):
         if not isinstance(other, Unit):
             return NotImplemented
 
-        return self.id == other.id
+        return self.uid == other.uid
 
     def get_notices(self) -> Notice:
         """
@@ -402,10 +402,10 @@ class Unit(ConfigToken):
         self.notices.add(msg=notice)
 
     def __str__(self):
-        return "[unit: {} reservation: {} actor: {} state: {}]".format(self.id, self.reservation_id, self.actor_id, self.state)
+        return "[unit: {} reservation: {} actor: {} state: {}]".format(self.uid, self.reservation_id, self.actor_id, self.state)
 
     def __hash__(self):
-        return self.id.__hash__()
+        return self.uid.__hash__()
 
     @staticmethod
     def create_instance(properties: dict):

@@ -30,6 +30,13 @@ from typing import TYPE_CHECKING, List
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
 
+from fabric_mb.message_bus.messages.add_slice_avro import AddSliceAvro
+from fabric_mb.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
+from fabric_mb.message_bus.messages.get_slices_request_avro import GetSlicesRequestAvro
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+
 from fabric_cf.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
 from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -38,12 +45,7 @@ from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
 from fabric_cf.actor.security.auth_token import AuthToken
-from fabric_mb.message_bus.messages.add_slice_avro import AddSliceAvro
-from fabric_mb.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
-from fabric_mb.message_bus.messages.get_slices_request_avro import GetSlicesRequestAvro
-from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
-from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID

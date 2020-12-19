@@ -24,5 +24,5 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-GetMethod = 'get'
-ResourcesPath = '/resources'
+GET_METHOD = 'get'
+RESOURCES_PATH = '/resources'

@@ -23,9 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-"""
-Main Entry Module for Broker
-"""
 import time
 import traceback
 

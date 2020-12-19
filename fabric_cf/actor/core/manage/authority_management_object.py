@@ -27,6 +27,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
+
 from fabric_cf.actor.core.apis.i_authority import IAuthority
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException
@@ -37,9 +41,6 @@ from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolD
 from fabric_cf.actor.core.manage.server_actor_management_object import ServerActorManagementObject
 from fabric_cf.actor.security.acess_checker import AccessChecker
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
-from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
-from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
 
 if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
@@ -96,7 +97,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_obj = self._get_slice_by_id(id=r['slc_id'])
+                    slice_obj = self._get_slice_by_id(slc_id=r['slc_id'])
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
                                                                  slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())

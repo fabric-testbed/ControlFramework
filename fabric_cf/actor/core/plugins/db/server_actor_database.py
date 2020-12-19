@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
-import threading
 
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.plugins.db.client_database import ClientDatabase

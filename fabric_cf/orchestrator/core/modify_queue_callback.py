@@ -59,8 +59,8 @@ class ModifyQueueCallback(IStatusUpdateCallback):
                 raise OrchestratorException("no modify operation found at top of the queue, proceeding")
 
             if mop.get() != ok_or_failed:
-                raise OrchestratorException("dequeued reservation {} which doesn't match expected {}".format(mop.get(),
-                                                                                                 ok_or_failed))
+                raise OrchestratorException("dequeued reservation {} which doesn't match expected {}".
+                                            format(mop.get(),ok_or_failed))
 
             if len(res_queue) > 0:
                 mop = res_queue.pop(0)

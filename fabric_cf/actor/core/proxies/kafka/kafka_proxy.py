@@ -28,12 +28,13 @@ from __future__ import annotations
 import traceback
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.common.exceptions import ProxyException
-from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_mb.message_bus.messages.failed_rpc_avro import FailedRpcAvro
 from fabric_mb.message_bus.messages.query_avro import QueryAvro
 from fabric_mb.message_bus.messages.query_result_avro import QueryResultAvro
 from fabric_mb.message_bus.producer import AvroProducerApi
+
+from fabric_cf.actor.core.common.exceptions import ProxyException
+from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.rpc_request_state import RPCRequestState

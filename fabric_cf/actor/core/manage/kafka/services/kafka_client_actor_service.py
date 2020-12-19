@@ -27,12 +27,6 @@ from __future__ import annotations
 
 import traceback
 
-from fabric_cf.actor.core.apis.i_actor import ActorType
-from fabric_cf.actor.core.common.constants import ErrorCodes
-from fabric_cf.actor.core.manage.kafka.services.kafka_actor_service import KafkaActorService
-from fabric_cf.actor.core.manage.management_object import ManagementObject
-from fabric_cf.actor.core.time.actor_clock import ActorClock
-from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_mb.message_bus.messages.extend_reservation_avro import ExtendReservationAvro
 from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
 from fabric_mb.message_bus.messages.get_pool_info_request_avro import GetPoolInfoRequestAvro
@@ -41,15 +35,22 @@ from fabric_mb.message_bus.messages.reclaim_resources_avro import ReclaimResourc
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
 from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
-from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_mb.message_bus.messages.add_reservation_avro import AddReservationAvro
 from fabric_mb.message_bus.messages.add_reservations_avro import AddReservationsAvro
 from fabric_mb.message_bus.messages.claim_resources_avro import ClaimResourcesAvro
-from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.demand_reservation_avro import DemandReservationAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
+
+from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.common.constants import ErrorCodes
+from fabric_cf.actor.core.manage.kafka.services.kafka_actor_service import KafkaActorService
+from fabric_cf.actor.core.manage.management_object import ManagementObject
+from fabric_cf.actor.core.time.actor_clock import ActorClock
+from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.core.proxies.kafka.translate import Translate
+from fabric_cf.actor.core.util.id import ID
 
 
 class KafkaClientActorService(KafkaActorService):

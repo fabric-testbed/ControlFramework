@@ -162,7 +162,8 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
 
                 if not reservation.is_failed():
                     if PropList.is_elastic_time(rset=reservation.get_requested_resources()):
-                        self.logger.debug("Adding reservation + {} to the queue".format(reservation.get_reservation_id()))
+                        self.logger.debug("Adding reservation + {} to the queue".format(
+                            reservation.get_reservation_id()))
                         self.queue.add(reservation=reservation)
                     else:
                         reservation.fail("Insufficient resources for specified start time, Failing reservation: {}".
@@ -359,5 +360,3 @@ class BrokerSimplerUnitsPolicy(BrokerPriorityPolicy):
             raise BrokerException("cannot free resources: no inventory")
 
         inv.allocate_revisit(count=rset.get_units(), resource=rset.get_resource_properties())
-
-

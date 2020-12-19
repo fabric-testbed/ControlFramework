@@ -279,7 +279,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     def map_for_cycle(self, *, requests: ReservationSet, cycle: int):
         """
         Orders mapper request processing for this cycle.
-        
+
         @params requests The requests for this cycle
         @params cycle The cycle
         @raises Exception in case of error
@@ -297,7 +297,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         """
         Maps reservations that are shrinking or staying the same (extending with
         no flex) in this cycle, and removes them from the bid set.
-        
+
         @param bids set of deferred operations for this cycle (non-null)
         @raises Exception in case of error
         """
@@ -322,7 +322,6 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         """
         Maps reservations that are growing in this cycle (redeems or expanding
         extends), and removes them from the bid set.
-        
         @param bids set of deferred operations for this cycle (non-null)
         @throws Exception in case of error
         """
@@ -351,7 +350,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         result in a retry of the mapper request through bind or
         <code>extend</code> above, which will release the request to the
         associated mapper.
-        
+
         @param reservation: the reservation
         @throws Exception in case of error
         """
@@ -369,9 +368,8 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     def assign_reservation(self, *, reservation: IAuthorityReservation):
         """
         Assign resources for the given reservation
-        
-        @params reservation
-                   the request
+
+        @params reservation the request
         @returns a set of resources for the request
         @raises Exception in case of error
         """
@@ -397,7 +395,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     def is_expired(self, *, reservation: IReservation) -> bool:
         """
         See if a reservation has expired
-        
+
         @params reservation: reservation
         @return true if the reservation expired; otherwise, return false
         @raises Exception in case of error
@@ -410,7 +408,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     def reschedule(self, *, reservation: IAuthorityReservation):
         """
         Reschedule a reservation into the calendar
-        
+
         @param reservation the reservation
         """
         self.calendar.remove(reservation=reservation)
@@ -419,7 +417,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     def get_close(self, *, term: Term) -> int:
         """
         Return the cycle when a term closes
-        
+
         @params term: the term
         @returns the cycle of the end of a term
         """
@@ -445,7 +443,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         Returns a reverse map of resource control to resource types. The table is
         indexed by the resource control object and each entry is a linked list of
         resource types.
-        
+
         @returns a table of all of the different control types
         """
         result = {}
@@ -460,7 +458,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         Registers the given control for the specified resource type. If the
         policy plugin has already been initialized, the control should be
         initialized.
-        
+
         @param control: the control
         @raises ConfigurationException in case of error
         """
@@ -479,7 +477,8 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         try:
             for rtype in types:
                 if rtype in self.controls_by_resource_type:
-                    raise AuthorityException("There is already a control associated with resource type {}".format(rtype))
+                    raise AuthorityException("There is already a control associated with resource type {}".format(
+                        rtype))
                 self.controls_by_resource_type[rtype] = control
                 index += 1
         except Exception as e:

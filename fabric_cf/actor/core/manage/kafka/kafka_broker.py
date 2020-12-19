@@ -30,13 +30,6 @@ from typing import List
 
 import traceback
 
-from fabric_cf.actor.core.apis.i_actor import ActorType
-from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
-from fabric_cf.actor.core.apis.i_mgmt_broker import IMgmtBroker
-from fabric_cf.actor.core.common.exceptions import ManageException
-from fabric_cf.actor.core.manage.kafka.kafka_server_actor import KafkaServerActor
-from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_mb.message_bus.messages.add_reservation_avro import AddReservationAvro
 from fabric_mb.message_bus.messages.add_reservations_avro import AddReservationsAvro
 from fabric_mb.message_bus.messages.claim_resources_avro import ClaimResourcesAvro
@@ -51,6 +44,14 @@ from fabric_mb.message_bus.messages.reclaim_resources_avro import ReclaimResourc
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
+
+from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
+from fabric_cf.actor.core.apis.i_mgmt_broker import IMgmtBroker
+from fabric_cf.actor.core.common.exceptions import ManageException
+from fabric_cf.actor.core.manage.kafka.kafka_server_actor import KafkaServerActor
+from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
 class KafkaBroker(KafkaServerActor, IMgmtBroker):
@@ -526,4 +527,3 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
     def add_broker(self, *, broker: ProxyAvro) -> bool:
         raise ManageException(Constants.not_implemented)
-

@@ -28,6 +28,9 @@ from __future__ import annotations
 import traceback
 from typing import List
 
+from fabric_mb.message_bus.messages.actor_avro import ActorAvro
+from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
+
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.container_management_object import ContainerManagementObject
@@ -41,8 +44,6 @@ from fabric_cf.actor.core.manage.local.local_proxy import LocalProxy
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.security.auth_token import AuthToken
-from fabric_mb.message_bus.messages.actor_avro import ActorAvro
-from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 
 
 class LocalContainer(LocalProxy, IMgmtContainer):

@@ -23,12 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import json
 import traceback
-
-import jwt
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
 
 from fabric_cf.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
 from fabric_cf.actor.core.apis.i_actor import ActorType
@@ -37,8 +32,8 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.fabric_token import FabricToken
 from fabric_cf.actor.security.pdp_auth import PdpAuth, ActionId, ResourceType
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
-from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
 
 
 class OrchestratorHandler:
@@ -90,14 +85,14 @@ class OrchestratorHandler:
     def discover_types(self, *, controller: IMgmtActor, token: str) -> dict:
         broker = self.get_broker(controller=controller)
         if broker is None:
-            raise Exception("Unable to determine broker proxy for this controller. "
-                            "Please check Orchestrator container configuration and logs.")
+            raise OrchestratorException("Unable to determine broker proxy for this controller. "
+                                        "Please check Orchestrator container configuration and logs.")
 
         self.controller_state.set_broker(broker=str(broker))
 
         my_pools = controller.get_pool_info(broker=broker, id_token=token)
         if my_pools is None:
-            raise Exception("Could not discover types: {}".format(controller.get_last_error()))
+            raise OrchestratorException("Could not discover types: {}".format(controller.get_last_error()))
 
         response = None
         for p in my_pools:
@@ -128,7 +123,7 @@ class OrchestratorHandler:
                 raise e
 
             if abstract_models is None:
-                raise Exception("Failed to populate abstract models")
+                raise OrchestratorException("Failed to populate abstract models")
 
             return abstract_models
 

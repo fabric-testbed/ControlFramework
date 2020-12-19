@@ -206,7 +206,7 @@ class SimpleVMControl(ResourceControl):
             self.logger.debug("Allocated {} units".format(available))
 
             for i in range(available):
-                vm = Unit(id=ID())
+                vm = Unit(uid=ID())
                 vm.set_resource_type(rtype=pool.get_type())
 
                 if self.use_ip_set:

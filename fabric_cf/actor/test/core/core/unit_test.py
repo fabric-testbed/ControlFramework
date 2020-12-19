@@ -52,7 +52,7 @@ class UnitTest(BaseTestCase, unittest.TestCase):
 
     def test_unit(self):
         uid = ID()
-        u1 = Unit(id=uid)
+        u1 = Unit(uid=uid)
         self.assertIsNotNone(u1.get_id())
         self.assertEqual(UnitState.DEFAULT, u1.get_state())
         self.assertIsNone(u1.get_property(name="foo"))
@@ -95,4 +95,4 @@ class UnitTest(BaseTestCase, unittest.TestCase):
 
         db.add_unit(u=u1)
 
-        self.assertIsNotNone(db.get_unit(unit_id=uid))
+        self.assertIsNotNone(db.get_unit(uid=uid))

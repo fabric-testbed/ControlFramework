@@ -28,14 +28,16 @@ import threading
 from datetime import datetime
 from typing import List
 
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+
 from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice import OrchestratorSlice
 from fabric_cf.orchestrator.core.reservation_status_update_thread import ReservationStatusUpdateThread
 from fabric_cf.orchestrator.core.slice_defer_thread import SliceDeferThread
-from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
 
 class OrchestratorState:
@@ -204,7 +206,7 @@ class OrchestratorStateSingleton:
 
     def __init__(self):
         if self.__instance is not None:
-            raise Exception("Singleton can't be created twice !")
+            raise OrchestratorException("Singleton can't be created twice !")
 
     def get(self):
         """

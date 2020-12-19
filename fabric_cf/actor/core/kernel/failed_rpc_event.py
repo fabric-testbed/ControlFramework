@@ -28,12 +28,11 @@ from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.util.rpc_exception import RPCException
+from fabric_cf.actor.core.apis.i_actor_event import IActorEvent
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-
-from fabric_cf.actor.core.apis.i_actor_event import IActorEvent
 
 
 class FailedRPCEvent(IActorEvent):

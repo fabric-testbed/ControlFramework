@@ -29,10 +29,11 @@ from abc import abstractmethod, ABC
 from enum import Enum
 from typing import TYPE_CHECKING
 
+from fim.graph.abc_property_graph import ABCPropertyGraph
+
 from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric_cf.actor.core.apis.i_policy import IPolicy
 from fabric_cf.actor.core.util.update_data import UpdateData
-from fim.graph.abc_property_graph import ABCPropertyGraph
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor

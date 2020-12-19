@@ -26,17 +26,19 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.authority_management_object import AuthorityManagementObject
 from fabric_cf.actor.core.apis.i_mgmt_authority import IMgmtAuthority
 from fabric_cf.actor.core.manage.local.local_server_actor import LocalServerActor
-from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
 if TYPE_CHECKING:
+    from fabric_mb.message_bus.messages.unit_avro import UnitAvro
+
     from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.id import ID
-    from fabric_mb.message_bus.messages.unit_avro import UnitAvro
     from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
 
 

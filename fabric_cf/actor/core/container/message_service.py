@@ -30,9 +30,10 @@ from typing import TYPE_CHECKING
 
 import threading
 
-from fabric_cf.actor.core.common.exceptions import KafkaServiceException
 from fabric_mb.message_bus.consumer import AvroConsumerApi
 from fabric_mb.message_bus.messages.message import IMessageAvro
+
+from fabric_cf.actor.core.common.exceptions import KafkaServiceException
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.proxies.kafka.services.actor_service import ActorService

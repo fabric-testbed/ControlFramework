@@ -81,7 +81,7 @@ class IResourceTicketFactory:
         """
 
     @abstractmethod
-    def make_ticket(self, *, source: ResourceTicket, delegation: ResourceDelegation) -> ResourceTicket:
+    def make_ticket(self, *, delegation: ResourceDelegation = None, source: ResourceTicket = None) -> ResourceTicket:
         """
         Creates a new ticket from the specified source tickets.
         Note: all sources must share the same root delegation.

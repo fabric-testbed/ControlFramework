@@ -27,15 +27,15 @@ import threading
 from datetime import datetime
 from typing import List
 
-from fabric_cf.orchestrator.core.slice_state_machine import SliceStateMachine, SliceState
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
+from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
+from fabric_cf.orchestrator.core.slice_state_machine import SliceStateMachine, SliceState
 from fabric_cf.orchestrator.core.request_workflow import RequestWorkflow
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
 from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.util.id import ID
-from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 
 class OrchestratorSlice:
@@ -54,15 +54,12 @@ class OrchestratorSlice:
         self.close_executed = False
         self.global_assignment_cleared = False
 
-        try:
-            cloud_handler = None
-            # TODO
-            # initialize the cloud handler
-            self.workflow = RequestWorkflow(cloud_handler=cloud_handler)
-            self.reservation_converter = ReservationConverter(ssh_credentials=self.ssh_credentials,
-                                                              controller=controller, controller_slice=self)
-        except Exception as e:
-            raise e
+        cloud_handler = None
+        # TODO
+        # initialize the cloud handler
+        self.workflow = RequestWorkflow(cloud_handler=cloud_handler)
+        self.reservation_converter = ReservationConverter(ssh_credentials=self.ssh_credentials,
+                                                          controller=controller, controller_slice=self)
 
     def lock(self):
         self.slice_lock.acquire()
@@ -98,18 +95,12 @@ class OrchestratorSlice:
         return controller.get_reservations()
 
     def get_units(self, *, controller: IMgmtController, rid: ID):
-        try:
-            controller.get_reservation_units(rid=rid)
-        except Exception as e:
-            raise e
+        controller.get_reservation_units(rid=rid)
 
     def get_reservation_states(self, *, controller: IMgmtController, rids: List[ID]):
-        try:
-            if rids is None:
-                return None
-            return controller.get_reservation_state_for_reservations(reservation_list=rids)
-        except Exception as e:
-            raise e
+        if rids is None:
+            return None
+        return controller.get_reservation_state_for_reservations(reservation_list=rids)
 
     def get_workflow(self) -> RequestWorkflow:
         return self.workflow

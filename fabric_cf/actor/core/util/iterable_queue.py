@@ -27,7 +27,7 @@ from queue import Queue, Empty
 
 
 class IterableQueue:
-    def __init__(self, *,source_queue: Queue):
+    def __init__(self, *, source_queue: Queue):
         self.source_queue = source_queue
 
     def __iter__(self):

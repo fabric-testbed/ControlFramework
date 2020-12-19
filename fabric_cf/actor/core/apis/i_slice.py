@@ -30,11 +30,12 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
+    from fim.graph.abc_property_graph import ABCPropertyGraph
+
     from fabric_cf.actor.core.kernel.slice import SliceTypes
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.util.id import ID
-    from fim.graph.abc_property_graph import ABCPropertyGraph
     from fabric_cf.actor.core.util.resource_data import ResourceData
 
 

@@ -184,7 +184,7 @@ class RemoteActorCache:
         self.logger.debug("Edge between {} and {} does not exist".format(from_guid, to_guid))
         return False
 
-    def establish_peer_private(self, *, from_mgmt_actor: IMgmtActor, from_guid: ID, to_mgmt_actor:IMgmtActor,
+    def establish_peer_private(self, *, from_mgmt_actor: IMgmtActor, from_guid: ID, to_mgmt_actor: IMgmtActor,
                                to_guid: ID) -> ClientMng:
         """
         Establish connection i.e. create either proxies or clients between peer
@@ -212,8 +212,8 @@ class RemoteActorCache:
 
             if self.actor_location in to_map:
                 if self.actor_protocol not in to_map:
-                    raise RemoteActorCacheException("Actor {} does not specify communications protocol (local/kafka)".format(
-                        to_map[self.actor_name]))
+                    raise RemoteActorCacheException("Actor {} does not specify communications protocol (local/kafka)".
+                                                    format(to_map[self.actor_name]))
 
                 protocol = to_map.get(self.actor_protocol, None)
                 kafka_topic = to_map[self.actor_location]
@@ -232,7 +232,8 @@ class RemoteActorCache:
 
                 try:
                     if not from_mgmt_actor.add_broker(broker=proxy):
-                        raise RemoteActorCacheException("Could not register broker {}".format(from_mgmt_actor.get_last_error()))
+                        raise RemoteActorCacheException("Could not register broker {}".
+                                                        format(from_mgmt_actor.get_last_error()))
                 except Exception as e:
                     traceback.print_exc()
             else:
@@ -247,8 +248,8 @@ class RemoteActorCache:
                 try:
                     to_mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
                 except Exception as e:
-                    raise RemoteActorCacheException("Could not register actor: {} as a client of actor: {} e= {}".format(
-                        client.get_name(), to_mgmt_actor.get_name(), e))
+                    raise RemoteActorCacheException("Could not register actor: {} as a client of actor: {} e= {}".
+                                                    format(client.get_name(), to_mgmt_actor.get_name(), e))
         else:
             # fromActor is remote: toActor must be local
             # no-need to create any proxies

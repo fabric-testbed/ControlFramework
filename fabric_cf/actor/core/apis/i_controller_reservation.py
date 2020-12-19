@@ -108,12 +108,12 @@ class IControllerReservation(IClientReservation):
         """
 
     @abstractmethod
-    def add_join_predecessor(self, *, predecessor, filter: dict = None):
+    def add_join_predecessor(self, *, predecessor, filters: dict = None):
         """
         Sets the join predecessor: the reservation, for which the kernel must
         issue a join before a join may be issued for the current reservation.
         @params predecessor predecessor reservation
-        @params filter: filter
+        @params filters: filters
         """
 
     @abstractmethod
@@ -131,12 +131,12 @@ class IControllerReservation(IClientReservation):
         """
 
     @abstractmethod
-    def add_redeem_predecessor(self, *, reservation, filter: dict = None):
+    def add_redeem_predecessor(self, *, reservation, filters: dict = None):
         """
         Adds a redeem predecessor to this reservation: the passed in reservation
         must be redeemed before this reservation.
         @params reservation: predecessor reservation
-        @params filter: filter
+        @params filters: filters
         """
 
     @abstractmethod

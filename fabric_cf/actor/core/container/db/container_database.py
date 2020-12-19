@@ -59,7 +59,8 @@ class ContainerDatabase(IContainerDatabase):
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        self.db = PsqlDatabase(user=self.user, password=self.password, database=self.database, db_host=self.db_host, logger=self.logger)
+        self.db = PsqlDatabase(user=self.user, password=self.password, database=self.database,
+                               db_host=self.db_host, logger=self.logger)
         del state['initialized']
         del state['reset_state']
         del state['logger']

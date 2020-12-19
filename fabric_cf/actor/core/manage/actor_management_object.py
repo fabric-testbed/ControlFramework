@@ -26,6 +26,16 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
 
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
+from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
+from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
+from fabric_mb.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
+from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
+from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+
 from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, SliceNotFoundException, \
@@ -41,21 +51,10 @@ from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolD
 from fabric_cf.actor.core.apis.i_actor_management_object import IActorManagementObject
 from fabric_cf.actor.security.acess_checker import AccessChecker
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
-from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
-from fabric_cf.actor.core.manage.messages.result_event_mng import ResultEventMng
-from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
-from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
-from fabric_mb.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
-from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
-from fabric_cf.actor.core.util.all_actor_events_filter import AllActorEventsFilter
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.auth_token import AuthToken
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
-from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
-from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
@@ -257,8 +256,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def _get_slice_by_id(self, *, id: int) -> ISlice:
-        ss = self.db.get_slice_by_id(id=id)
+    def _get_slice_by_id(self, *, slc_id: int) -> ISlice:
+        ss = self.db.get_slice_by_id(slc_id=slc_id)
         slice_obj = SliceFactory.create_instance(properties=ss)
         return slice_obj
 
@@ -313,7 +312,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self._get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(slc_id=slice_id)
                     rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                  logger=self.actor.get_logger())
                     if rsv_obj is not None:
@@ -506,12 +505,15 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 return result
 
             if len(res_list) == len(rids):
-                result.reservation_states = Converter.fill_reservation_state(res=res_list)
+                result.reservation_states = []
+                for r in res_list:
+                    result.reservation_states.append(Converter.fill_reservation_state(res=res_list))
             elif len(res_list) > len(rids):
                 raise ManageException("The database provided too many records")
             else:
                 i = 0
                 j = 0
+                result.reservation_states = []
                 while i < len(rids):
                     properties = res_list[j]
                     if rids[i] == ReservationFactory.get_reservation_id(properties=properties):
@@ -578,7 +580,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self._get_slice_by_id(id=slice_id)
+                        slice_obj = self._get_slice_by_id(slc_id=slice_id)
                     dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
                                                                 logger=self.actor.get_logger())
                     if dlg_obj is not None:

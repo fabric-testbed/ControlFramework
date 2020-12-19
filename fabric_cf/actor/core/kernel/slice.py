@@ -26,6 +26,8 @@
 from enum import Enum
 from typing import Dict
 
+from fim.graph.abc_property_graph import ABCPropertyGraph
+
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.apis.i_slice import ISlice
 from fabric_cf.actor.core.apis.i_kernel_reservation import IKernelReservation
@@ -36,7 +38,6 @@ from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.security.auth_token import AuthToken
-from fim.graph.abc_property_graph import ABCPropertyGraph
 
 
 class SliceTypes(Enum):

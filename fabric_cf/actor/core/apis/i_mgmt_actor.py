@@ -28,15 +28,15 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
-from fabric_cf.actor.core.apis.i_component import IComponent
-from fabric_cf.actor.core.manage.messages.event_mng import EventMng
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_cf.actor.core.apis.i_component import IComponent
+
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.util.id import ID
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
     from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
     from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+    from fabric_cf.actor.core.util.id import ID
 
 
 class IMgmtActor(IComponent):

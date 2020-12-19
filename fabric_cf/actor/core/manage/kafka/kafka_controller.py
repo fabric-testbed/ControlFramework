@@ -29,27 +29,23 @@ import traceback
 from datetime import datetime
 from typing import List
 
-from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
-
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-
 from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
-
-from fabric_cf.actor.core.apis.i_actor import ActorType
-from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
+from fabric_mb.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 
+from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.util.id import ID
-from fabric_mb.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
-from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 
 
 class KafkaController(KafkaActor, IMgmtController):

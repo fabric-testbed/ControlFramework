@@ -27,11 +27,6 @@ from __future__ import annotations
 
 import traceback
 
-from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
-from fabric_cf.actor.core.common.exceptions import ManageException
-from fabric_cf.actor.core.manage.management_object import ManagementObject
-from fabric_cf.actor.core.manage.kafka.services.kafka_service import KafkaService
-from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_mb.message_bus.messages.add_slice_avro import AddSliceAvro
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
@@ -41,7 +36,6 @@ from fabric_mb.message_bus.messages.get_slices_request_avro import GetSlicesRequ
 from fabric_mb.message_bus.messages.remove_reservation_avro import RemoveReservationAvro
 from fabric_mb.message_bus.messages.remove_slice_avro import RemoveSliceAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
-from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric_mb.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
@@ -49,6 +43,13 @@ from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.update_reservation_avro import UpdateReservationAvro
 from fabric_mb.message_bus.messages.message import IMessageAvro
+
+from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
+from fabric_cf.actor.core.common.exceptions import ManageException
+from fabric_cf.actor.core.manage.management_object import ManagementObject
+from fabric_cf.actor.core.manage.kafka.services.kafka_service import KafkaService
+from fabric_cf.actor.core.proxies.kafka.translate import Translate
+from fabric_cf.actor.core.util.id import ID
 
 
 class KafkaActorService(KafkaService):
@@ -135,7 +136,7 @@ class KafkaActorService(KafkaService):
 
         return result
 
-    def add_slice(self, *, request:AddSliceAvro) -> ResultStringAvro:
+    def add_slice(self, *, request: AddSliceAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
 
@@ -157,7 +158,7 @@ class KafkaActorService(KafkaService):
 
         return result
 
-    def update_slice(self, *, request:AddSliceAvro) -> ResultStringAvro:
+    def update_slice(self, *, request: AddSliceAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
 
@@ -180,7 +181,7 @@ class KafkaActorService(KafkaService):
 
         return result
 
-    def remove_slice(self, *, request:RemoveSliceAvro) -> ResultStringAvro:
+    def remove_slice(self, *, request: RemoveSliceAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
 
@@ -258,7 +259,7 @@ class KafkaActorService(KafkaService):
 
         return result
 
-    def update_reservation(self, *, request:UpdateReservationAvro) -> ResultStringAvro:
+    def update_reservation(self, *, request: UpdateReservationAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
         try:

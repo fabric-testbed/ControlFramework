@@ -125,7 +125,7 @@ class LUNControl(ResourceControl):
                 rd = ResourceData()
                 rd.resource_properties[Constants.unit_lun_tag] = tag
                 gained = UnitSet(plugin=self.authority.get_plugin())
-                u = Unit(id=ID())
+                u = Unit(uid=ID())
                 u.set_resource_type(rtype=rtype)
                 u.set_property(name=Constants.unit_lun_tag, value=str(tag))
                 if Constants.resource_storage_capacity in ticket_properties:

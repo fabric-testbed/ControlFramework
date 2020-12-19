@@ -26,9 +26,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric_mb.message_bus.messages.result_avro import ResultAvro
+
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.apis.i_component import IComponent
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.manage.management_object import ManagementObject

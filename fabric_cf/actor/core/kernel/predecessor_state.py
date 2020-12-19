@@ -30,11 +30,11 @@ from fabric_cf.actor.core.common.exceptions import ReservationException
 
 class PredecessorState:
 
-    def __init__(self, *, reservation: IKernelControllerReservation, filter: dict = None):
+    def __init__(self, *, reservation: IKernelControllerReservation, filters: dict = None):
         if reservation is None:
             raise ReservationException(Constants.invalid_argument)
         self.reservation = reservation
-        self.filter = filter
+        self.filters = filters
 
     def get_reservation(self) -> IKernelControllerReservation:
         return self.reservation

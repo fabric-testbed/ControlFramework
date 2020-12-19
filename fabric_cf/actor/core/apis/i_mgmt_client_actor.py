@@ -29,16 +29,17 @@ from abc import abstractmethod
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
-from fabric_cf.actor.core.apis.i_component import IComponent
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
+from fabric_cf.actor.core.apis.i_component import IComponent
+
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
-    from fabric_cf.actor.core.util.id import ID
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
     from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
     from fabric_cf.actor.core.util.resource_type import ResourceType
+    from fabric_cf.actor.core.util.id import ID
 
 
 class IMgmtClientActor(IComponent):
