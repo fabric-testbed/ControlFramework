@@ -1,0 +1,592 @@
+openapi: 3.0.3
+info:
+  title: Fabric Orchestrator API
+  description: This is Fabric Orchestrator API
+  termsOfService: None
+  contact:
+    name: Komal Thareja
+    email: kthare10@unc.edu
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  version: 1.0.0
+servers:
+- url: http://127.0.0.1:8700/
+  description: local development
+- url: https://virtserver.swaggerhub.com/kthare10/orchestrator/1.0.0
+  description: SwaggerHub API Auto Mocking
+security:
+- bearerAuth: []
+tags:
+- name: slices
+  description: Slices in FABRIC
+- name: slivers
+  description: Slivers in FABRIC slices
+- name: resources
+  description: Resources in FABRIC
+- name: default
+  description: Default information
+paths:
+  /version:
+    get:
+      tags:
+      - default
+      summary: version
+      description: Version
+      operationId: version_get
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Version'
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.default_controller
+  /resources:
+    get:
+      tags:
+      - resources
+      summary: Retrieve a listing and description of available resources
+      description: Retrieve a listing and description of available resources
+      operationId: resources_get
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: Resource(s) not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.resources_controller
+  /slices:
+    get:
+      tags:
+      - slices
+      summary: Retrieve a listing of user slices
+      description: Retrieve a listing of user slices
+      operationId: slices_get
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: Slice(s) not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slices/{sliceID}:
+    get:
+      tags:
+      - slices
+      summary: slice properties
+      description: Retrieve Slice properties
+      operationId: slices_slice_idget
+      parameters:
+      - name: sliceID
+        in: path
+        description: Slice identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request. Slice ID must be in uuid-4 format
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slices/status/{sliceID}:
+    get:
+      tags:
+      - slices
+      summary: slice status
+      description: |
+        Retrieve the status of a slice. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.
+      operationId: slices_status_slice_idget
+      parameters:
+      - name: sliceID
+        in: path
+        description: Slice identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request. Slice ID must be in uuid-4 format
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slices/create:
+    post:
+      tags:
+      - slices
+      summary: Create slice
+      description: "Request to create slice as described in the request. Request would\
+        \ be a graph ML describing the requested resources. Resources may be requested\
+        \ to be created now or in future. On success, one or more slivers are allocated,\
+        \ containing resources satisfying the request, and assigned to the given slice.\
+        \ This API returns list and description of the resources reserved for the\
+        \ slice in the form of Graph ML. Orchestrator would also trigger provisioning\
+        \ of these resources asynchronously on the appropriate sites either now or\
+        \ in the future as requested. Experimenter can invoke get slice API to get\
+        \ the latest state of the requested resources. \n"
+      operationId: slices_create_post
+      parameters:
+      - name: sliceName
+        in: query
+        description: Slice Name
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/Request'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slices/redeem/{sliceID}:
+    post:
+      tags:
+      - slices
+      summary: Redeem resources reserved via Create API
+      description: |
+        Request that the reserved resources be made provisioned, instantiating or otherwise realizing the resources, such that they have a valid operational status and may possibly be made ready for experimenter use. This operation is synchronous, but may start a longer process, such as creating and imaging a virtual machine.
+      operationId: slices_redeem_slice_idpost
+      parameters:
+      - name: sliceID
+        in: path
+        description: Slice identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slices/renew/{sliceID}:
+    post:
+      tags:
+      - slices
+      summary: Renew slice
+      description: |
+        Request to extend slice be renewed with their expiration extended. If possible, the orchestrator should extend the slivers to the requested expiration time, or to a sooner time if policy limits apply.
+      operationId: slices_renew_slice_idpost
+      parameters:
+      - name: sliceID
+        in: path
+        description: Slice identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: newLeaseEndTime
+        in: query
+        description: New Lease End Time for the Slice
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slices/modify/{sliceID}:
+    put:
+      tags:
+      - slices
+      summary: Modify slice
+      description: |
+        Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice.
+      operationId: slices_modify_slice_idput
+      parameters:
+      - name: sliceID
+        in: path
+        description: Slice identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/Request'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slices/delete/{sliceID}:
+    delete:
+      tags:
+      - slices
+      summary: Delete slice.
+      description: |
+        Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary, de-provisioned and un-allocated at the respective sites.
+      operationId: slices_delete_slice_iddelete
+      parameters:
+      - name: sliceID
+        in: path
+        description: Slice identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
+  /slivers:
+    get:
+      tags:
+      - slivers
+      summary: Retrieve a listing of user slivers
+      description: Retrieve a listing of user slivers
+      operationId: slivers_get
+      parameters:
+      - name: sliceID
+        in: query
+        description: Slice identifier as UUID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: Sliver(s) not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+  /slivers/{sliverID}:
+    get:
+      tags:
+      - slivers
+      summary: slivers properties
+      description: Retrieve Sliver properties
+      operationId: slivers_sliver_idget
+      parameters:
+      - name: sliceID
+        in: query
+        description: Slice identifier as UUID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: sliverID
+        in: path
+        description: Sliver identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request. Slice ID must be in uuid-4 format
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+  /slivers/status/{sliverID}:
+    get:
+      tags:
+      - slivers
+      summary: slivers status
+      description: |
+        Retrieve the status of a sliver. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.
+      operationId: slivers_status_sliver_idget
+      parameters:
+      - name: sliceID
+        in: query
+        description: Slice identifier as UUID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: sliverID
+        in: path
+        description: Sliver identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request. Sliver/Slice ID must be in uuid-4 format
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Sliver/Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+  /slivers/poa/{sliverID}:
+    post:
+      tags:
+      - slivers
+      summary: Perform Operational Action
+      description: "Perform the named operational action on the named resources, possibly\
+        \ changing the operational status of the named resources. E.G. 'reboot' a\
+        \ VM. \n"
+      operationId: slivers_poa_sliver_idpost
+      parameters:
+      - name: sliverID
+        in: path
+        description: Sliver identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/Request'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request. Sliver/Slice ID must be in uuid-4 format
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Sliver/Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+  /slivers/modify/{sliverID}:
+    put:
+      tags:
+      - slivers
+      summary: Modify sliver
+      description: |
+        Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice.
+      operationId: slivers_modify_sliver_idput
+      parameters:
+      - name: sliverID
+        in: path
+        description: Sliver identifier as UUID
+        required: true
+        style: simple
+        explode: false
+        schema:
+          type: string
+      - name: sliceID
+        in: query
+        description: Slice identifier as UUID
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      requestBody:
+        $ref: '#/components/requestBodies/Request'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Success'
+        "400":
+          description: Bad request
+        "401":
+          description: Authorization information is missing or invalid
+        "404":
+          description: A Slice with the specified ID was not found
+        "5XX":
+          description: Unexpected error
+      x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
+components:
+  schemas:
+    Success:
+      type: object
+      properties:
+        value:
+          type: object
+          description: JSON object
+      example:
+        value: {}
+    Version:
+      properties:
+        version:
+          type: string
+        gitsha1:
+          type: string
+      example:
+        gitsha1: gitsha1
+        version: version
+  parameters:
+    sliceID:
+      name: sliceID
+      in: query
+      description: Slice identifier as UUID
+      required: true
+      style: form
+      explode: true
+      schema:
+        type: string
+    sliceName:
+      name: sliceName
+      in: query
+      description: Slice Name
+      required: true
+      style: form
+      explode: true
+      schema:
+        type: string
+    newLeaseEndTime:
+      name: newLeaseEndTime
+      in: query
+      description: New Lease End Time for the Slice
+      required: true
+      style: form
+      explode: true
+      schema:
+        type: string
+  requestBodies:
+    Request:
+      content:
+        text/plain:
+          schema:
+            type: string
+      required: true
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: fabric_cf.orchestrator.swagger_server.controllers.authorization_controller.check_bearerAuth
+

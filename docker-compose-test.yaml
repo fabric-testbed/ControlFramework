@@ -1,0 +1,119 @@
+---
+version: "2.3"
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    restart: always
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_INIT_LIMIT: 5
+      ZOOKEEPER_SYNC_LIMIT: 2
+
+  broker1:
+    image: confluentinc/cp-kafka:latest
+    restart: always
+    hostname: broker1
+    container_name: broker1
+    depends_on:
+      - zookeeper
+    volumes:
+      - ${KAFKA_SSL_SECRETS_DIR}:/etc/kafka/secrets
+    ports:
+      - 9092:9092
+      - 19092:19092
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: SSL:SSL,SSL_HOST:SSL
+      KAFKA_ADVERTISED_LISTENERS: SSL://broker1:9092,SSL_HOST://localhost:19092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_CONFLUENT_LICENSE_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+
+
+      KAFKA_SSL_KEYSTORE_FILENAME: kafka.broker1.keystore.jks
+      KAFKA_SSL_KEYSTORE_CREDENTIALS: broker1_keystore_creds
+      KAFKA_SSL_KEY_CREDENTIALS: broker1_sslkey_creds
+      KAFKA_SSL_TRUSTSTORE_FILENAME: kafka.broker1.truststore.jks
+      KAFKA_SSL_TRUSTSTORE_CREDENTIALS: broker1_truststore_creds
+      KAFKA_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+      KAFKA_SSL_CLIENT_AUTH: requested
+      KAFKA_SECURITY_INTER_BROKER_PROTOCOL: SSL
+
+  schemaregistry:
+    image: confluentinc/cp-schema-registry:latest
+    container_name: schemaregistry
+    restart: always
+    depends_on:
+      - zookeeper
+      - broker1
+    volumes:
+      - ${KAFKA_SSL_SECRETS_DIR}:/etc/kafka/secrets
+    ports:
+      - 8081:8081
+    environment:
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: broker1:9092
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
+      SCHEMA_REGISTRY_HOST_NAME: schemaregistry
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      SCHEMA_REGISTRY_KAFKASTORE_SECURITY_PROTOCOL: SSL
+
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_LOCATION: /etc/kafka/secrets/kafka.schemaregistry.truststore.jks
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_TRUSTSTORE_PASSWORD: fabric
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.schemaregistry.keystore.jks
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEYSTORE_PASSWORD: fabric
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_KEY_PASSWORD: fabric
+      SCHEMA_REGISTRY_KAFKASTORE_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM: " "
+
+      SCHEMA_REGISTRY_SSL_KEYSTORE_LOCATION: /etc/kafka/secrets/kafka.schemaregistry.keystore.jks
+      SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD: fabric
+      SCHEMA_REGISTRY_SSL_KEY_PASSWORD: fabric
+      SCHEMA_REGISTRY_DEBUG: 'true'
+
+  neo4j:
+    image: fabrictestbed/neo4j-apoc:4.0.3
+    container_name: test-neo4j
+    user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
+    restart: always
+    ports:
+      - 7474:7474  # for HTTP
+      - 7473:7473  # for HTTPS
+      - 7687:7687  # for Bolt
+    volumes:
+      - ${NEO4J_DATA_PATH_HOST:-$(pwd)/neo4j/data}:${NEO4J_DATA_PATH_DOCKER:-/data}
+      - ${NEO4J_IMPORTS_PATH_HOST:-$(pwd)/neo4j/imports}:${NEO4J_IMPORTS_PATH_DOCKER:-/imports}
+      - ${NEO4J_LOGS_PATH_HOST:-$(pwd)/neo4j/logs}:${NEO4J_LOGS_PATH_DOCKER:-/logs}
+      - ${NGINX_SSL_CERTS_DIR:-./ssl}/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ${NGINX_SSL_CERTS_DIR:-./ssl}/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
+      - NEO4J_dbms_connector_bolt_advertised__address=${NEO4J_dbms_connector_bolt_advertised__address:-0.0.0.0:7687}
+      - NEO4J_dbms_connector_bolt_listen__address=${NEO4J_dbms_connector_bolt_advertised__address:-0.0.0.0:7687}
+      - NEO4J_dbms_connector_http_advertised__address=${NEO4J_dbms_connector_http_advertised__address:-0.0.0.0:7474}
+      - NEO4J_dbms_connector_http_listen__address=${NEO4J_dbms_connector_http_advertised__address:-0.0.0.0:7474}
+      - NEO4J_dbms_connector_https_advertised__address=${NEO4J_dbms_connector_https_advertised__address:-0.0.0.0:7473}
+      - NEO4J_dbms_connector_https_listen__address=${NEO4J_dbms_connector_https_advertised__address:-0.0.0.0:7473}
+  database:
+    image: fabrictestbed/postgres:12.3
+    container_name: test-db
+    restart: always
+    ports:
+      - 5432:5432
+    volumes:
+      - ${PGDATA_HOST:-.}/pg_data/data:${PGDATA:-/var/lib/postgresql/data}
+      - ${PGDATA_HOST:-.}/pg_data/logs:${POSTGRES_INITDB_WALDIR:-/var/log/postgresql}
+    environment:
+       - POSTGRES_HOST=${POSTGRES_HOST:-database}
+       - POSTGRES_PORT=5432
+       - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_DB:-postgres}
+       - POSTGRES_USER=${POSTGRES_USER:-postgres}
+       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-fabric}
+       - PGDATA=${PGDATA:-/var/lib/postgresql/data}

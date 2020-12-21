@@ -2,7 +2,7 @@
 
 from setuptools import setup, find_packages
 
-from fabric import actor
+from fabric_cf import actor
 
 NAME = "fabric-cf"
 VERSION = "0.7"

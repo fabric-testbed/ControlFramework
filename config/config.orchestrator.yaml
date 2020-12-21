@@ -112,7 +112,7 @@ actor:
   - description: orchestrator
   - kafka-topic: orchestrator-topic
   - policy:
-      - module: fabric.actor.core.policy.controller_ticket_review_policy
+      - module: fabric_cf.actor.core.policy.controller_ticket_review_policy
       - class: ControllerTicketReviewPolicy
 
 peers:

@@ -1,0 +1,1122 @@
+[{
+		"namespace": "fabric.cf.model",
+		"type": "record",
+		"name": "AuthRecord",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "guid",
+				"type": "string"
+			}
+		]
+	},
+	{
+		"namespace": "fabric.cf.model",
+		"type": "record",
+		"name": "ResultRecord",
+		"fields": [{
+				"name": "code",
+				"type": "int"
+			},
+			{
+				"name": "message",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "details",
+				"type": ["null", "string"],
+				"default": null
+			}
+		]
+	},
+	{
+		"namespace": "fabric.cf.model",
+		"type": "record",
+		"name": "ReservationStateRecord",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+		    {
+				"name": "state",
+				"type": "int"
+			},
+			{
+				"name": "pending_state",
+				"type": "int"
+			},
+			{
+				"name": "joining",
+				"type": ["null", "int"],
+				"default": null
+			}
+		]
+	},
+	{
+	    "namespace": "fabric.cf.model",
+        "name": "ProxyRecord",
+        "type": "record",
+        "fields": [
+			{
+                "name": "protocol",
+                "type": "string"
+            },
+            {
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "guid",
+                "type": "string"
+            },
+            {
+                "name": "type",
+                "type": "string"
+            },
+            {
+                "name": "kafka_topic",
+                "type": "string"
+            }
+        ]
+    },
+	{
+	    "namespace": "fabric.cf.model",
+        "name": "UnitRecord",
+        "type": "record",
+        "fields": [
+			{
+                "name": "properties",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            }
+        ]
+    },
+    {
+	    "namespace": "fabric.cf.model",
+        "name": "ActorRecord",
+        "type": "record",
+        "fields": [{
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "type",
+                "type": ["null", "int"],
+                "default": null
+            },
+            {
+				"name": "owner",
+				"type": "fabric.cf.model.AuthRecord"
+			},
+			{
+                "name": "description",
+                "type": "string"
+            },
+            {
+                "name": "policy_module",
+                "type": "string"
+            },
+            {
+                "name": "policy_class",
+                "type": "string"
+            },
+            {
+                "name": "actor_module",
+                "type": "string"
+            },
+            {
+                "name": "actor_class",
+                "type": "string"
+            },
+            {
+                "name": "online",
+                "type": ["null", "boolean"],
+                "default": null
+            },
+            {
+                "name": "management_module",
+                "type": ["null", "string"],
+                "default": null
+            },
+            {
+                "name": "management_class",
+                "type": ["null", "string"],
+                "default": null
+            },
+            {
+                "name": "id",
+                "type": "string"
+            },
+            {
+                "name": "policy_guid",
+                "type": "string"
+            }
+        ]
+    },
+    {
+	    "namespace": "fabric.cf.model",
+        "name": "PoolRecord",
+        "type": "record",
+        "fields": [{
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "type",
+                "type": "string"
+            },
+			{
+                "name": "properties",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            }
+        ]
+    },
+	{
+	    "namespace": "fabric.cf.model",
+        "name": "SliceRecord",
+        "type": "record",
+        "fields": [{
+                "name": "slice_name",
+                "type": "string"
+            },
+            {
+                "name": "guid",
+                "type": "string"
+            },
+            {
+				"name": "owner",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			},
+			{
+				"name": "description",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+                "name": "local_properties",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+                "name": "request_properties",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+                "name": "config_properties",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+                "name": "resource_properties",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+				"name": "resource_type",
+				"type": ["null", "string"],
+				"default": null
+			},
+            {
+				"name": "graph_id",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "client_slice",
+				"type": ["null", "boolean"],
+				"default": null
+			},
+			{
+				"name": "broker_client_slice",
+				"type": ["null", "boolean"],
+				"default": null
+			}
+        ]
+    },
+    {
+        "namespace": "fabric.cf.model",
+        "name": "ReservationPredecessorMngRecord",
+        "type": "record",
+        "fields": [{
+				"name": "reservation_id",
+				"type": "string"
+			},
+			{
+                "name": "filter",
+                "type": {
+                    "type": "map",
+                    "values": "string"
+                }
+            }
+        ]
+    },
+    {
+        "namespace": "fabric.cf.model",
+        "name": "ReservationMngRecord",
+        "type": "record",
+        "fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "authority",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "join_state",
+				"type": ["null", "int"],
+				"default": null
+			},
+			{
+				"name": "leased_units",
+				"type": ["null", "int"],
+				"default": null
+			},
+			{
+			    "name": "redeem_processors",
+			    "type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.ReservationPredecessorMngRecord"
+				}],
+				"default": null
+			},
+			{
+				"name": "broker",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+                "name": "ticket",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+				"name": "renewable",
+				"type": ["null", "boolean"],
+				"default": null
+			},
+			{
+				"name": "renew_time",
+				"type": ["null", "int"],
+				"default": null
+			},
+			{
+				"name": "reservation_id",
+				"type": "string"
+			},
+			{
+				"name": "slice_id",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "start",
+				"type": ["null", "long"],
+				"default": null
+			},
+			{
+				"name": "end",
+				"type": ["null", "long"],
+				"default": null
+			},
+			{
+				"name": "requested_end",
+				"type": ["null", "long"],
+				"default": null
+			},
+			{
+				"name": "rtype",
+				"type": "string"
+			},
+			{
+				"name": "units",
+				"type": ["null", "int"],
+				"default": null
+			},
+			{
+				"name": "state",
+				"type": ["null", "int"],
+				"default": null
+			},
+			{
+				"name": "pending_state",
+				"type": ["null", "int"],
+				"default": null
+			},
+			{
+                "name": "local",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+                "name": "config",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+                "name": "request",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+                "name": "resource",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+			{
+				"name": "notices",
+				"type": "string"
+			}
+        ]
+    },
+    {
+        "namespace": "fabric.cf.model",
+        "name": "ReservationRecord",
+        "type": "record",
+        "fields": [
+            {
+                "name": "reservation_id",
+                "type": "string"
+            },
+            {
+                "name": "sequence",
+                "type": ["null", "int"],
+                "default": null
+            },
+            {
+				"name": "slice",
+				"type": ["null", "fabric.cf.model.SliceRecord"],
+				"default": null
+			},
+            {
+                "name": "term",
+                "type": {
+                    "type": "record",
+                    "name": "term",
+                    "fields": [{
+                            "name": "start_time",
+                            "type": "long"
+                        },
+                        {
+                            "name": "end_time",
+                            "type": "long"
+                        },
+                        {
+                            "name": "ticket_time",
+                            "type": ["null", "long"],
+                            "default": null
+                        },
+                        {
+                            "name": "new_start_time",
+                            "type": ["null", "long"],
+                            "default": null
+                        }
+                    ]
+                }
+            },
+            {
+                "name": "resource_set",
+                "type": {
+                    "type": "record",
+                    "name": "resource_set_record",
+                    "fields": [{
+                            "name": "units",
+                            "type": "int"
+                        },
+                        {
+                            "name": "type",
+                            "type": "string"
+                        },
+                        {
+                            "name": "resource_data",
+                            "type": {
+                                "name": "resource_data",
+                                "type": "record",
+                                "fields": [{
+                                        "name": "request_properties",
+                                        "type": ["null", {
+                                            "type": "map",
+                                            "values": "string"
+                                        }],
+                                        "default": null
+                                    },
+                                    {
+                                        "name": "config_properties",
+                                        "type": ["null", {
+                                            "type": "map",
+                                            "values": "string"
+                                        }],
+                                        "default": null
+                                    },
+                                    {
+                                        "name": "resource_properties",
+                                        "type": ["null", {
+                                            "type": "map",
+                                            "values": "string"
+                                        }],
+                                        "default": null
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            "name": "concrete",
+                            "type": ["null", "bytes"],
+                            "default": null
+                        }
+                    ]
+                }
+            }
+        ]
+    },
+    {
+        "namespace": "fabric.cf.model",
+        "name": "DelegationRecord",
+        "type": "record",
+        "fields": [
+            {
+                "name": "delegation_id",
+                "type": "string"
+            },
+            {
+                "name": "sequence",
+                "type": ["null", "int"],
+                "default": null
+            },
+            {
+				"name": "slice",
+				"type": ["null", "fabric.cf.model.SliceRecord"],
+				"default": null
+			},
+			{
+				"name": "graph",
+				"type": ["null", "string"],
+				"default": null
+			}
+        ]
+    },
+	{
+		"namespace": "fabric.cf.model",
+		"type": "record",
+		"name": "Query",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "callback_topic",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "properties",
+				"type": {
+					"type": "map",
+					"values": "string"
+				}
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			},
+			{
+				"name": "id_token",
+				"type": ["null", "string"],
+				"default": null
+			}
+		]
+	},
+	{
+		"namespace": "fabric.cf.model",
+		"type": "record",
+		"name": "QueryResult",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "request_id",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "properties",
+				"type": {
+					"type": "map",
+					"values": "string"
+				}
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			}
+		]
+	},
+	{
+		"namespace": "fabric.cf.model",
+		"type": "record",
+		"name": "FailedRPC",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "request_id",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "reservation_id",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "request_type",
+				"type": "int"
+			},
+			{
+				"name": "error_details",
+				"type": "string"
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			}
+		]
+	},
+    {
+        "namespace": "fabric.cf.model",
+        "name": "ReservationOrDelegation",
+        "type": "record",
+        "fields": [{
+                "name": "name",
+                "type": "string"
+            },
+            {
+                "name": "callback_topic",
+                "type": "string"
+            },
+            {
+                "name": "message_id",
+                "type": "string"
+            },
+            {
+                "name": "update_data",
+                "type": ["null", {
+                    "type": "record",
+                    "name": "update_data",
+                    "fields": [{
+                            "name": "failed",
+                            "type": "boolean"
+                        },
+                        {
+                            "name": "message",
+                            "type": ["null","string"],
+                            "default":null
+                        }
+                    ]
+                }],
+                "default": null
+            },
+            {
+				"name": "id_token",
+				"type": ["null", "string"],
+				"default": null
+			},
+            {
+				"name": "reservation",
+				"type": ["null", "fabric.cf.model.ReservationRecord"],
+				"default": null
+			},
+			{
+				"name": "delegation",
+				"type": ["null", "fabric.cf.model.DelegationRecord"],
+				"default": null
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			}
+        ]
+    },
+	{
+	    "namespace": "fabric.cf.model",
+		"name": "ResultRecordList",
+		"type": "record",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "status",
+				"type": "fabric.cf.model.ResultRecord"
+			},
+			{
+				"name": "slices",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.SliceRecord"
+				}],
+				"default": null
+			},
+			{
+				"name": "reservations",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.ReservationMngRecord"
+				}],
+				"default": null
+			},
+			{
+				"name": "reservation_states",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.ReservationStateRecord"
+				}],
+				"default": null
+			},
+			{
+				"name": "units",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.UnitRecord"
+				}],
+				"default": null
+			},
+			{
+				"name": "proxies",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.ProxyRecord"
+				}],
+				"default": null
+			},
+			{
+				"name": "pools",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.PoolRecord"
+				}],
+				"default": null
+			},
+			{
+				"name": "delegations",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.DelegationRecord"
+				}],
+				"default": null
+			},
+			{
+				"name": "actors",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.ActorRecord"
+				}],
+				"default": null
+			}
+		]
+	},
+		{
+	    "namespace": "fabric.cf.model",
+		"name": "ExtendReservationAvro",
+		"type": "record",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "guid",
+				"type": "string"
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			},
+			{
+				"name": "reservation_id",
+				"type": "string"
+			},
+			{
+                "name": "end_time",
+                "type": "long"
+            },
+            {
+                "name": "new_units",
+                "type": "int"
+            },
+            {
+                "name": "new_resource_type",
+                "type": "string"
+            },
+			{
+                "name": "request_properties",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+                "name": "config_properties",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+			{
+				"name": "callback_topic",
+				"type": "string"
+			},
+			{
+				"name": "id_token",
+				"type": ["null", "string"],
+				"default": null
+			}
+		]
+	},
+	{
+	    "namespace": "fabric.cf.model",
+		"name": "RequestById",
+		"type": "record",
+		"fields": [
+		    {
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "callback_topic",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "guid",
+				"type": "string"
+			},
+			{
+				"name": "slice_id",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "reservation_id",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "delegation_id",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "type",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "unit_id",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "broker_id",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "reservation_state",
+				"type": ["null", "int"],
+				"default": null
+			},
+			{
+				"name": "delegation_state",
+				"type": ["null", "int"],
+				"default": null
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			},
+			{
+				"name": "id_token",
+				"type": ["null", "string"],
+				"default": null
+			}
+		]
+	},
+	{
+	    "namespace": "fabric.cf.model",
+		"name": "GetReservationsStateRequest",
+		"type": "record",
+		"fields": [
+		    {
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "callback_topic",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "guid",
+				"type": "string"
+			},
+			{
+				"name": "reservation_ids",
+				"type": {
+				    "type":"array",
+				    "items" : "string"
+				}
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			},
+			{
+				"name": "id_token",
+				"type": ["null", "string"],
+				"default": null
+			}
+		]
+	},
+	{
+	    "namespace": "fabric.cf.model",
+		"name": "ResultString",
+		"type": "record",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "result_str",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "status",
+				"type": "fabric.cf.model.ResultRecord"
+			}
+		]
+	},
+	{
+	    "namespace": "fabric.cf.model",
+		"name": "ResultStrings",
+		"type": "record",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "result",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "string"
+				}]
+			},
+			{
+				"name": "status",
+				"type": "fabric.cf.model.ResultRecord"
+			}
+		]
+	},
+    {
+	    "namespace": "fabric.cf.model",
+		"name": "AddUpdateSlice",
+		"type": "record",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "callback_topic",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "guid",
+				"type": "string"
+			},
+			{
+				"name": "slice_obj",
+				"type": ["null", "fabric.cf.model.SliceRecord"],
+				"default": null
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			},
+			{
+				"name": "id_token",
+				"type": ["null", "string"],
+				"default": null
+			}
+		]
+	},
+    {
+	    "namespace": "fabric.cf.model",
+		"name": "AddUpdateReservation",
+		"type": "record",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "callback_topic",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "guid",
+				"type": "string"
+			},
+			{
+				"name": "reservation_obj",
+				"type": ["null", "fabric.cf.model.ReservationMngRecord"],
+				"default": null
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			},
+			{
+				"name": "id_token",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "reservation_id",
+				"type": ["null", "string"],
+				"default": null
+			}
+		]
+	},
+	{
+	    "namespace": "fabric.cf.model",
+		"name": "AddReservations",
+		"type": "record",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "callback_topic",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "guid",
+				"type": "string"
+			},
+			{
+				"name": "reservation_list",
+				"type": ["null", {
+				    "type":"array",
+				    "items" : "fabric.cf.model.ReservationMngRecord"
+				}],
+				"default": null
+			},
+			{
+				"name": "auth",
+				"type": ["null", "fabric.cf.model.AuthRecord"],
+				"default": null
+			},
+			{
+				"name": "id_token",
+				"type": ["null", "string"],
+				"default": null
+			}
+		]
+	}
+]

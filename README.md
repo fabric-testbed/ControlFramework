@@ -10,13 +10,13 @@ Fabric Control Framework has 3 actors
 - Aggregate Manager
 
 ## Broker
-Broker is an agent of CF that collects resource availability information from multiple aggregate managers and can make resource promises on their behalf. More details can be found [here](./fabric/broker/Readme.md)
+Broker is an agent of CF that collects resource availability information from multiple aggregate managers and can make resource promises on their behalf. More details can be found [here](fabric_cf/broker/Readme.md)
 
 ## Aggregate Manager
-AM is a CF agent responsible for managing aggregate resources. Is under the control of the owner of the aggregate. Provides promises of resources to brokers and controllers/ orchestrators. More details can be found [here](./fabric/authority/Readme.md)
+AM is a CF agent responsible for managing aggregate resources. Is under the control of the owner of the aggregate. Provides promises of resources to brokers and controllers/ orchestrators. More details can be found [here](fabric_cf/authority/Readme.md)
 
 ## Orchestrator
-Orchestrator is an agent of CF that makes allocation decisions (embedding) of user requests into available resources. Communicates with user to collect slice requests, communicates with broker or aggregate managers to collect resource promises, communicates with aggregate managers to provision promised resources. Creates slices, configures resources, maintains their state, modifies slices and slivers. More details can be found [here](./fabric/orchestrator/Readme.md)  
+Orchestrator is an agent of CF that makes allocation decisions (embedding) of user requests into available resources. Communicates with user to collect slice requests, communicates with broker or aggregate managers to collect resource promises, communicates with aggregate managers to provision promised resources. Creates slices, configures resources, maintains their state, modifies slices and slivers. More details can be found [here](fabric_cf/orchestrator/Readme.md)  
 
 ## Requirements
 Python 3.7+
