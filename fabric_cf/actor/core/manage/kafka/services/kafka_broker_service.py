@@ -34,9 +34,6 @@ from fabric_cf.actor.core.manage.kafka.services.kafka_server_actor_service impor
 
 
 class KafkaBrokerService(KafkaClientActorService, KafkaServerActorService):
-    def __init__(self):
-        super().__init__()
-
     def process(self, *, message: IMessageAvro):
         callback_topic = message.get_callback_topic()
         result = None

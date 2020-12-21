@@ -38,9 +38,6 @@ from fabric_cf.actor.core.util.id import ID
 
 
 class KafkaControllerService(KafkaClientActorService):
-    def __init__(self):
-        super().__init__()
-
     def process(self, *, message: IMessageAvro):
         callback_topic = message.get_callback_topic()
         result = None
