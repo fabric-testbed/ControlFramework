@@ -1,3 +1,5 @@
+[![Requirements Status](https://requires.io/github/fabric-testbed/ControlFramework/requirements.svg?branch=cicd)](https://requires.io/github/fabric-testbed/ControlFramework/requirements/?branch=master)
+
 # Control Framework
 This repository contains Fabric Control Framework and Actor implementations.
 
