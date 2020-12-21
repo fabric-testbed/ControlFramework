@@ -36,6 +36,7 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, Re
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.time.calendar.controller_calendar import ControllerCalendar
+from fabric_cf.actor.core.util.bids import Bids
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 
 

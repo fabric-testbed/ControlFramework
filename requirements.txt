@@ -1,16 +1,14 @@
 yapsy
-python_dateutil
-setuptools >= 21.0.0
+setuptools
 requests
-PyJWT >=1.7.1
+PyJWT
 cryptography
 psycopg2-binary
 sqlalchemy
 pyyaml
-fabric-message-bus == 0.6
+fabric-message-bus
 fabric-fim
 click
-pytest
 confluent-kafka[avro]
 waitress
 prometheus_client

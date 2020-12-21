@@ -82,7 +82,7 @@ class MessageService(AvroConsumerApi):
             if self.thread_lock is not None and self.thread_lock.locked():
                 self.thread_lock.release()
 
-    def handle_message(self, *, message: IMessageAvro):
+    def handle_message(self, message: IMessageAvro):
         try:
             if message.get_message_name() == IMessageAvro.claim_resources or \
                     message.get_message_name() == IMessageAvro.reclaim_resources or \
