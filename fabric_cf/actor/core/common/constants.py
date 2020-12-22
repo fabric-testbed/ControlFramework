@@ -124,6 +124,7 @@ class Constants:
 
     config_section_o_auth = "oauth"
     property_conf_o_auth_jwks_url = "jwks-url"
+    property_conf_o_auth_key_refresh = "key-refresh"
     property_conf_o_auth_token_public_key = "token-public-key"
 
     config_section_database = "database"

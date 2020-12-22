@@ -30,6 +30,7 @@ from fabric_cf.actor.core.apis.i_actor import ActorType
 from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.security.acess_checker import AccessChecker
 from fabric_cf.actor.security.fabric_token import FabricToken
 from fabric_cf.actor.security.pdp_auth import PdpAuth, ActionId, ResourceType
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
@@ -50,24 +51,12 @@ class OrchestratorHandler:
 
     def validate_credentials(self, *, token) -> dict:
         try:
-            fabric_token = FabricToken(jwks_url=self.jwks_url, logger=self.logger,
-                                       token=token)
+            fabric_token = FabricToken(logger=self.logger, token=token)
 
             return fabric_token.validate()
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred while validating the token e: {}".format(e))
-
-    def check_access(self, *, action_id: ActionId, resource_type: ResourceType, token: str,
-                     resource_id: str = None) -> bool:
-        fabric_token = FabricToken(jwks_url=self.jwks_url, logger=self.logger,
-                                   token=token)
-        fabric_token.validate()
-        pdp_auth = PdpAuth(config=self.pdp_config, logger=self.logger)
-        return pdp_auth.check_access(fabric_token=fabric_token.get_decoded_token(),
-                                     actor_type=ActorType.Orchestrator,
-                                     action_id=action_id, resource_type=resource_type,
-                                     resource_id=resource_id)
 
     def get_broker(self, *, controller: IMgmtActor) -> ID:
         try:
@@ -111,7 +100,8 @@ class OrchestratorHandler:
 
     def list_resources(self, *, token: str):
         try:
-            self.check_access(action_id=ActionId.query, resource_type=ResourceType.resources, token=token)
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.resources, token=token,
+                                       actor_type=ActorType.Orchestrator)
             self.controller_state.close_dead_slices()
             controller = self.controller_state.get_management_actor()
             self.logger.debug("list resources invoked controller:{}".format(controller))

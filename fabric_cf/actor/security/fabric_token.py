@@ -2,9 +2,9 @@ import json
 import traceback
 
 import jwt
-import requests
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization
+from fss_utils.jwt_validate import ValidateCode
+
+from fabric_cf.actor.security import jwt_validator
 
 
 class TokenException(Exception):
@@ -13,49 +13,14 @@ class TokenException(Exception):
     """
 
 
-class JWTManager:
-    """
-    This class fetches keys retrieved from a specified endpoint
-    and uses them to validate provided JWTs
-    """
-    @staticmethod
-    def decode(*, id_token: str, jwks_url: str) -> dict:
-        """
-        Decode and validate a JWT
-        :raises Exception in case of failure
-        """
-        try:
-            response = requests.get(jwks_url)
-            if response.status_code != 200:
-                raise TokenException("Failed to get Json Web Keys")
-
-            jwks = response.json()
-            public_keys = {}
-            for jwk in jwks['keys']:
-                kid = jwk['kid']
-                public_keys[kid] = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(jwk))
-
-            kid = jwt.get_unverified_header(id_token)['kid']
-            alg = jwt.get_unverified_header(id_token)['alg']
-            key = public_keys[kid]
-
-            options = {'verify_aud': False}
-            claims = jwt.decode(id_token, key=key, verify=True, algorithms=[alg], options=options)
-
-            return claims
-        except Exception as ex:
-            raise TokenException(ex)
-
-
 class FabricToken:
     """
     Represents the Fabric Token issues by Credential Manager
     """
-    def __init__(self, *, jwks_url: str, token: str, logger):
-        if jwks_url is None or token is None:
-            raise TokenException('Either jwks_url: {} or token: {} is None'.format(jwks_url, token))
+    def __init__(self, *, token: str, logger):
+        if token is None:
+            raise TokenException('Token: {} is None'.format(token))
 
-        self.jwks_url = jwks_url
         self.logger = logger
         self.encoded_token = token
         self.decoded_token = None
@@ -80,7 +45,17 @@ class FabricToken:
         @raise Exception in case of error
         """
         try:
-            self.decoded_token = JWTManager.decode(id_token=self.encoded_token, jwks_url=self.jwks_url)
+            # validate the token
+            if jwt_validator is not None:
+                self.logger.info("Validating CI Logon token")
+                code, e = jwt_validator.validate_jwt(self.encoded_token)
+                if code is not ValidateCode.VALID:
+                    self.logger.error(f"Unable to validate provided token: {code}/{e}")
+                    raise e
+            else:
+                raise TokenException("JWT Token validator not initialized, skipping validation")
+
+            self.decoded_token = jwt.decode(self.encoded_token, verify=False)
             self.logger.debug(json.dumps(self.decoded_token))
 
             return self.decoded_token

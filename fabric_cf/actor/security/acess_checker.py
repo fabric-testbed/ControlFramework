@@ -46,12 +46,9 @@ class AccessChecker:
         @param actor_type actor type
         """
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        jwks_url = GlobalsSingleton.get().get_config().get_oauth_config().get(
-            Constants.property_conf_o_auth_jwks_url, None)
         pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
 
-        fabric_token = FabricToken(jwks_url=jwks_url, logger=logger,
-                                   token=token)
+        fabric_token = FabricToken(logger=logger, token=token)
         fabric_token.validate()
         pdp_auth = PdpAuth(config=pdp_config, logger=logger)
         return pdp_auth.check_access(fabric_token=fabric_token.get_decoded_token(),

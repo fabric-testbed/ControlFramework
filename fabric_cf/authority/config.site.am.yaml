@@ -68,6 +68,8 @@ logging:
 
 oauth:
   - jwks-url: https://dev-2.fabric-testbed.net/certs
+  # Uses HH:MM:SS (less than 24 hours)
+  - key-refresh: 00:10:00
 
 database:
   - db-user: fabric
