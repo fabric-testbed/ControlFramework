@@ -56,22 +56,6 @@ class Policy(IPolicy):
             self.guid = ID()
         self.guid = ID()
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['logger']
-        del state['actor']
-        del state['clock']
-        del state['initialized']
-
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.logger = None
-        self.actor = None
-        self.clock = None
-        self.initialized = False
-
     def close(self, *, reservation: IReservation):
         """
         Close a reservation

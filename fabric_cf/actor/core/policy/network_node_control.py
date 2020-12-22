@@ -23,28 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from enum import Enum
-from typing import List
-
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
-from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.policy.resource_control import ResourceControl
 
 
-class Status(Enum):
-    OK = 0
-    NOTOK = 1
-    NOTREADY = 3
-
-
-class StatusChecker:
-
-    def check(self, *, controller: IMgmtController, rid, ok: List[ID], not_ok: List[ID]) -> Status:
-        result = self.check_(controller=controller, rid=0)
-        if result == Status.OK:
-            ok.append(rid)
-        elif result == Status.NOTOK:
-            not_ok.append(rid)
-        return result
-
-    def check_(self, *, controller: IMgmtController, rid) -> Status:
-        raise NotImplementedError
+class NetworkNodeControl(ResourceControl):
+    """
+    Resource Control for Network Node
+    """

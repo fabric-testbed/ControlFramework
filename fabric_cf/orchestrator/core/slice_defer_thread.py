@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import queue
 import threading
 import time
 import traceback
@@ -38,7 +37,7 @@ from fabric_cf.orchestrator.core.orchestrator_slice import OrchestratorSlice
 
 class SliceDeferThread:
     """
-    This runs as a standalone thread started by ContreollerState and deals with slices that have to wait for other
+    This runs as a standalone thread started by OrchestratorState and deals with slices that have to wait for other
     slices to complete.
     """
     THREAD_SLEEP_TIME = 10000

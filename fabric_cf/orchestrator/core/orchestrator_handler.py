@@ -27,12 +27,12 @@ import traceback
 
 from fabric_cf.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
 from fabric_cf.actor.core.apis.i_actor import ActorType
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.acess_checker import AccessChecker
 from fabric_cf.actor.security.fabric_token import FabricToken
-from fabric_cf.actor.security.pdp_auth import PdpAuth, ActionId, ResourceType
+from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
 
@@ -58,7 +58,7 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred while validating the token e: {}".format(e))
 
-    def get_broker(self, *, controller: IMgmtActor) -> ID:
+    def get_broker(self, *, controller: IMgmtController) -> ID:
         try:
             brokers = controller.get_brokers()
             self.logger.debug("Brokers: {}".format(brokers))
@@ -71,7 +71,7 @@ class OrchestratorHandler:
 
         return None
 
-    def discover_types(self, *, controller: IMgmtActor, token: str) -> dict:
+    def discover_types(self, *, controller: IMgmtController, token: str) -> dict:
         broker = self.get_broker(controller=controller)
         if broker is None:
             raise OrchestratorException("Unable to determine broker proxy for this controller. "

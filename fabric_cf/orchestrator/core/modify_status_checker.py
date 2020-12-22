@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
@@ -37,14 +37,16 @@ class ModifyStatusChecker(StatusChecker):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def check_(self, *, controller: IMgmtActor, rid) -> Status:
+    def check_(self, *, controller: IMgmtController, rid) -> Status:
         if not isinstance(rid, ReservationIDWithModifyIndex):
             return Status.NOTREADY
 
         try:
-            reservation = controller.get_reservation(rid=rid.get_reservation_id())
-            if reservation is None:
-                raise OrchestratorException("Unable to obtain reservation information for {}".format(rid.get_reservation_id()))
+            reservations = controller.get_reservations(rid=rid.get_reservation_id())
+            if reservations is None or len(reservations) == 0:
+                raise OrchestratorException("Unable to obtain reservation information for {}".format(
+                    rid.get_reservation_id()))
+            reservation = next(iter(reservations))
 
             if reservation.get_state() != ReservationStates.Active or \
                     reservation.get_pending_state() != ReservationPendingStates.None_:
@@ -64,12 +66,10 @@ class ModifyStatusChecker(StatusChecker):
             unit = units_list.__iter__().__next__()
 
             properties = unit.get_properties()
-            code_property_name = Constants.unit_modify_prop_prefix + \
-                                 rid.get_modify_index() + \
+            code_property_name = Constants.unit_modify_prop_prefix + rid.get_modify_index() +\
                                  Constants.unit_modify_prop_code_suffix
 
-            message_property_name = Constants.unit_modify_prop_prefix + \
-                                    rid.get_modify_index() + \
+            message_property_name = Constants.unit_modify_prop_prefix + rid.get_modify_index() +\
                                     Constants.unit_modify_prop_message_suffix
             modify_failed = False
             modify_error_message = None

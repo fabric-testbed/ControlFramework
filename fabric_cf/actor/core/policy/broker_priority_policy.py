@@ -65,44 +65,6 @@ class BrokerPriorityPolicy(BrokerSimplePolicy):
         super().__init__(actor=actor)
         self.queue = None
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['logger']
-        del state['actor']
-        del state['clock']
-        del state['initialized']
-
-        del state['for_approval']
-        del state['lock']
-
-        del state['calendar']
-
-        del state['last_allocation']
-        del state['allocation_horizon']
-        del state['ready']
-        del state['queue']
-
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.logger = None
-        self.actor = None
-        self.clock = None
-        self.initialized = False
-
-        self.lock = threading.Lock()
-        self.calendar = None
-
-        if self.required_approval:
-            self.for_approval = ReservationSet()
-
-        self.last_allocation = -1
-        self.allocation_horizon = 0
-        self.ready = False
-
-        self.queue = None
-
     def configure(self, *, properties: dict):
         """
         Processes a list of configuration properties

@@ -69,27 +69,6 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
         self.lock = threading.Lock()
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['logger']
-        del state['actor']
-        del state['clock']
-        del state['initialized']
-
-        del state['for_approval']
-        del state['lock']
-
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.logger = None
-        self.actor = None
-        self.clock = None
-        self.initialized = False
-
-        self.lock = threading.Lock()
-
     def add_for_approval(self, *, reservation: IBrokerReservation):
         """
         Adds the reservation to the approval list.

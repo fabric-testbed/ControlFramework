@@ -114,7 +114,8 @@ class SliceStateMachine:
             self.state = SliceState.Nascent
 
     def get_slice_reservations(self) -> List[ReservationMng]:
-        controller = Controller()
+        from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
+        controller = OrchestratorStateSingleton.get().get_management_actor()
         try:
             # TODO
             # orchestrator = fetch from Controller state
