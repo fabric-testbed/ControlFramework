@@ -65,8 +65,11 @@ logging:
   - log-size: 5000000
 
   - logger: broker
+
 oauth:
-  - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
+  - jwks-url: https://dev-2.fabric-testbed.net/certs
+  # Uses HH:MM:SS (less than 24 hours)
+  - key-refresh: 00:10:00
 
 database:
   - db-user: fabric
@@ -96,6 +99,9 @@ time:
   # This property controls if time advances automatically (false) or
   # manually (true)
   - time.manual: false
+
+pdp:
+  url: http://broker-pdp:8080/services/pdp
 
 neo4j:
   url: bolt://broker-neo4j:8687

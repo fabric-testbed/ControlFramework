@@ -67,7 +67,9 @@ logging:
   - logger: site1-am
 
 oauth:
-  - token-public-key: /etc/fabric/message_bus/ssl/credmgr.pem
+  - jwks-url: https://dev-2.fabric-testbed.net/certs
+  # Uses HH:MM:SS (less than 24 hours)
+  - key-refresh: 00:10:00
 
 database:
   - db-user: fabric
@@ -90,13 +92,15 @@ time:
 
   # Internal tick length (in milliseconds)
   - time.cycleMillis: 1000
-
   # The number of the first tick
   - time.firstTick: 0
 
   # This property controls if time advances automatically (false) or
   # manually (true)
   - time.manual: false
+
+pdp:
+  url: http://site1-am-pdp:8080/services/pdp
 
 neo4j:
   url: bolt://site1-am-neo4j:7687
