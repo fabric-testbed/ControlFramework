@@ -29,11 +29,14 @@ import sched
 import sys
 import threading
 import traceback
+from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from typing import TYPE_CHECKING
 
 import logging
 import os
+
+from fss_utils.jwt_validate import JWTValidator
 
 from fabric_cf.actor.core.common.exceptions import InitializationException
 from fabric_cf.actor.core.container.event_manager import EventManager
@@ -61,6 +64,7 @@ class Globals:
         self.timer_thread = None
         self.timer_condition = threading.Condition()
         self.lock = threading.Lock()
+        self.jwt_validator = None
 
     def make_logger(self):
         """
@@ -143,10 +147,20 @@ class Globals:
                 admin_kafka_client = self.get_kafka_admin_client()
                 admin_kafka_client.list_topics()
                 self.log.info("Connection to Kafka broker established successfully")
+                self.load_jwt_validator()
                 self.log.info("Main initialization complete.")
                 self.initialized = True
         finally:
             self.lock.release()
+
+    def load_jwt_validator(self):
+        oauth_config = self.config.get_oauth_config()
+        CREDMGR_CERTS = oauth_config.get(Constants.property_conf_o_auth_jwks_url, None)
+        CREDMGR_KEY_REFRESH = oauth_config.get(Constants.property_conf_o_auth_key_refresh, None)
+        self.log.info(f'Initializing JWT Validator to use {CREDMGR_CERTS} endpoint, '
+                      f'refreshing keys every {CREDMGR_KEY_REFRESH} HH:MM:SS')
+        t = datetime.strptime(CREDMGR_KEY_REFRESH, "%H:%M:%S")
+        self.jwt_validator = JWTValidator(CREDMGR_CERTS, timedelta(hours=t.hour, minutes=t.minute, seconds=t.second))
 
     def load_config(self):
         """
@@ -158,6 +172,9 @@ class Globals:
             self.config = loader.read_configuration()
         except Exception as e:
             raise RuntimeError("Unable to parse configuration file {}".format(e))
+
+    def get_jwt_validator(self):
+        return self.jwt_validator
 
     def get_container(self) -> IActorContainer:
         """

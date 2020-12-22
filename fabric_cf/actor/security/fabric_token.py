@@ -4,8 +4,6 @@ import traceback
 import jwt
 from fss_utils.jwt_validate import ValidateCode
 
-from fabric_cf.actor.security import jwt_validator
-
 
 class TokenException(Exception):
     """
@@ -46,6 +44,8 @@ class FabricToken:
         """
         try:
             # validate the token
+            from fabric_cf.actor.core.container.globals import GlobalsSingleton
+            jwt_validator = GlobalsSingleton.get().get_jwt_validator()
             if jwt_validator is not None:
                 self.logger.info("Validating CI Logon token")
                 code, e = jwt_validator.validate_jwt(self.encoded_token)
