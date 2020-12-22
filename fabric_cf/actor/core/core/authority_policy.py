@@ -52,26 +52,6 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
         self.initialized = False
         self.delegations = None
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['logger']
-        del state['actor']
-        del state['clock']
-        del state['initialized']
-        del state['tickets']
-        del state['delegations']
-
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.logger = None
-        self.actor = None
-        self.clock = None
-        self.initialized = False
-        self.tickets = None
-        self.delegations = None
-
     def initialize(self):
         if not self.initialized:
             super().initialize()
@@ -88,7 +68,6 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
 
     def donate_delegation(self, *, delegation: IDelegation):
         self.delegations[delegation.get_delegation_id()] = delegation
-        # TODO need to determine how to populate controls and tickets
 
     def donate(self, *, resources: ResourceSet):
         return

@@ -30,7 +30,7 @@ from typing import List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtController
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
@@ -71,7 +71,7 @@ class OrchestratorState:
             self.logger = GlobalsSingleton.get().get_logger()
         return self.logger
 
-    def get_management_actor(self) -> IMgmtActor:
+    def get_management_actor(self) -> IMgmtController:
         if self.controller is None:
             self.controller = ManagementUtils.get_local_actor()
         return self.controller
@@ -195,7 +195,7 @@ class OrchestratorState:
         # TODO
         return
 
-    def recover_slice(self, *, controller: IMgmtActor, slice_id: str, slice_name: str, user_dn: str,
+    def recover_slice(self, *, controller: IMgmtController, slice_id: str, slice_name: str, user_dn: str,
                       ssh_credentials: list):
         # TODO
         return

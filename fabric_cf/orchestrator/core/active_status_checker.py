@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
@@ -36,16 +36,17 @@ class ActiveStatusChecker(StatusChecker):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def check_(self, *, controller: IMgmtActor, rid) -> Status:
+    def check_(self, *, controller: IMgmtController, rid) -> Status:
         if not isinstance(rid, ID):
             return Status.NOTREADY
 
         try:
-            reservation = controller.get_reservation(rid=rid)
+            reservations = controller.get_reservations(rid=rid)
             units = controller.get_reservation_units(rid=rid)
 
-            if reservation is None:
+            if reservations is None or len(reservations) == 0:
                 raise OrchestratorException("Unable to obtain reservation information for {}".format(rid))
+            reservation = next(iter(reservations))
 
             if reservation.get_state() == ReservationStates.Active:
                 if units is None or len(units) == 0:

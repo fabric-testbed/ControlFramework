@@ -78,46 +78,6 @@ class BrokerSimplePolicy(BrokerCalendarPolicy):
         self.combined_broker_model = None
         self.combined_broker_model_graph_id = None
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        del state['logger']
-        del state['actor']
-        del state['clock']
-        del state['initialized']
-
-        del state['delegations']
-        del state['combined_broker_model']
-        del state['for_approval']
-        del state['lock']
-
-        del state['calendar']
-
-        del state['last_allocation']
-        del state['allocation_horizon']
-        del state['ready']
-
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-        self.logger = None
-        self.actor = None
-        self.clock = None
-        self.initialized = False
-
-        self.delegations = {}
-        self.combined_broker_model = None
-        self.load_combined_broker_model()
-        self.lock = threading.Lock()
-        self.calendar = None
-
-        if self.required_approval:
-            self.for_approval = ReservationSet()
-
-        self.last_allocation = -1
-        self.allocation_horizon = 0
-        self.ready = False
-
     def load_combined_broker_model(self):
         if self.combined_broker_model_graph_id is None:
             self.logger.debug("Creating an empty Combined Broker Model Graph")
