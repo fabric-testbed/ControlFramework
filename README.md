@@ -91,6 +91,5 @@ This should bring up following containers:
      NAMES
 df0e3be0b641        confluentinc/cp-schema-registry:latest   "/etc/confluent/dock…"   7 minutes ago       Up 7 minutes        0.0.0.0:8081->8081/tcp                             schemaregistry
 82a0a59c117b        confluentinc/cp-kafka:latest             "/etc/confluent/dock…"   7 minutes ago       Up 7 minutes        0.0.0.0:9092->9092/tcp, 0.0.0.0:19092->19092/tcp   broker1
-1fea39fedf6a        fabrictestbed/postgres:12.3              "docker-entrypoint.s…"   7 minutes ago       Up 7 minutes        0.0.0.0:8432->5432/tcp                             actordb
 c6b824b7d3c6        confluentinc/cp-zookeeper:latest         "/etc/confluent/dock…"   7 minutes ago       Up 7 minutes        2888/tcp, 0.0.0.0:2181->2181/tcp, 3888/tcp         zookeeper
 ```
