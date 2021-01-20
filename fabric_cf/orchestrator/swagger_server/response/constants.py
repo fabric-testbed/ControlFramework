@@ -25,4 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 GET_METHOD = 'get'
+POST_METHOD = 'post'
+PUT_METHOD = 'put'
+DELETE_METHOD = 'delete'
+
 RESOURCES_PATH = '/resources'
+
+SLICES_CREATE_PATH = '/slices/create'

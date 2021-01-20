@@ -14,4 +14,4 @@ waitress
 prometheus_client
 connexion
 swagger-ui-bundle
-fabric_fss_utils==0.3
+fabric_fss_utils==0.4

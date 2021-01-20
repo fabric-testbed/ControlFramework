@@ -23,16 +23,25 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import enum
 
 
-class ProtocolDescriptor:
-    def __init__(self, *, protocol: str, location: str = None):
-        self.protocol = protocol
-        # location carries kafka topic
-        self.location = location
+@enum.unique
+class ValidateCode(enum.Enum):
+    SUCCESS = 1
 
-    def get_location(self) -> str:
-        return self.location
-
-    def get_protocol(self) -> str:
-        return self.protocol
+    def interpret(self, exception=None):
+        interpretations = {
+            1: "Token is valid",
+            2: "Token does not specify algorithm",
+            3: "Token signature is invalid",
+            4: "Unable to load key from file",
+            5: "Unable to parse token",
+            6: "Unable to compress the encoded token",
+            7: "Unable to decompress the encoded token",
+            8: "Identity Token or Identity Claims not specified"
+          }
+        if exception is None:
+            return interpretations[self.value]
+        else:
+            return str(exception) + ". " + interpretations[self.value]

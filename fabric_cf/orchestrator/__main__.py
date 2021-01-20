@@ -55,7 +55,7 @@ def main():
 
             from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
             OrchestratorStateSingleton.get()
-            #OrchestratorStateSingleton.get().start_threads()
+            OrchestratorStateSingleton.get().start_threads()
 
             runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
 

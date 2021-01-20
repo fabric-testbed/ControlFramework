@@ -31,8 +31,8 @@ runtime:
   - plugin-dir: ./plugins
   - kafka-server: localhost:19092
   - kafka-schema-registry-url: http://localhost:8081
-  - kafka-key-schema: ../message_bus/schema/key.avsc
-  - kafka-value-schema: ../message_bus/schema/message.avsc
+  - kafka-key-schema: ../../schema/key.avsc
+  - kafka-value-schema: ../../schema/message.avsc
   - kafka-ssl-ca-location:  ../../secrets/snakeoil-ca-1.crt
   - kafka-ssl-certificate-location:  ../../secrets/kafkacat1-ca1-signed.pem
   - kafka-ssl-key-location:  ../../secrets/kafkacat1.client.key
@@ -70,12 +70,13 @@ oauth:
   - jwks-url: https://dev-2.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
   - key-refresh: 00:10:00
+  - verify-exp: False
 
 database:
   - db-user: fabric
   - db-password: fabric
   - db-name: broker
-  - db-host: localhost:9432
+  - db-host: localhost:5432
 
 container:
   - container.guid: broker-conainer
@@ -101,13 +102,14 @@ time:
   - time.manual: false
 
 pdp:
-  url: http://localhost:8084/services/pdp
+  url: http://localhost:8082/services/pdp
+  enable: False
 
 neo4j:
   url: bolt://localhost:8687
   user: neo4j
   pass: password
-  import_host_dir: ./broker/neo4j/imports/
+  import_host_dir: ../../neo4j2/imports/
   import_dir: /imports
 
 actor:

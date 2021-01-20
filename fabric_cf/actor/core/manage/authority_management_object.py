@@ -39,7 +39,7 @@ from fabric_cf.actor.core.manage.converter import Converter
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric_cf.actor.core.manage.server_actor_management_object import ServerActorManagementObject
-from fabric_cf.actor.security.acess_checker import AccessChecker
+from fabric_cf.actor.security.access_checker import AccessChecker
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
 
 if TYPE_CHECKING:

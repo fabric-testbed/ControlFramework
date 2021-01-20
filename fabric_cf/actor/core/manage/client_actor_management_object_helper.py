@@ -51,7 +51,7 @@ from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.time.actor_clock import ActorClock
-from fabric_cf.actor.security.acess_checker import AccessChecker
+from fabric_cf.actor.security.access_checker import AccessChecker
 from fabric_cf.actor.security.pdp_auth import ActionId
 from fabric_cf.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
 from fabric_cf.actor.core.time.term import Term

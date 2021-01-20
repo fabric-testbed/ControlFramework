@@ -18,9 +18,7 @@ def slices_create_post(body, slice_name):  # noqa: E501
 
     :rtype: Success
     """
-    if connexion.request.is_json:
-        body = str.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    return rc.slices_create_post(body, slice_name)
 
 
 def slices_delete_slice_iddelete(slice_id):  # noqa: E501

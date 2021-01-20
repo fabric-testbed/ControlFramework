@@ -160,7 +160,8 @@ class Globals:
         self.log.info(f'Initializing JWT Validator to use {CREDMGR_CERTS} endpoint, '
                       f'refreshing keys every {CREDMGR_KEY_REFRESH} HH:MM:SS')
         t = datetime.strptime(CREDMGR_KEY_REFRESH, "%H:%M:%S")
-        self.jwt_validator = JWTValidator(CREDMGR_CERTS, timedelta(hours=t.hour, minutes=t.minute, seconds=t.second))
+        self.jwt_validator = JWTValidator(url=CREDMGR_CERTS,
+                                          refresh_period=timedelta(hours=t.hour, minutes=t.minute, seconds=t.second))
 
     def load_config(self):
         """

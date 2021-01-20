@@ -42,9 +42,7 @@ if TYPE_CHECKING:
 class IResourceControl:
     """
     Interface for authority policy resource control implementations. An authority
-    policy organizes the authorities inventory into a number of resource pools.
-    Each resource pool is associated with a resource control object responsible
-    for servicing requests for resources for the resource pool.
+    policy organizes the authorities inventory into ARM - Aggregate Resource Model.
     """
 
     @abstractmethod

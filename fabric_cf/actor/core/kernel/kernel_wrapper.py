@@ -55,7 +55,7 @@ from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.update_data import UpdateData
-from fabric_cf.actor.security.acess_checker import AccessChecker
+from fabric_cf.actor.security.access_checker import AccessChecker
 from fabric_cf.actor.security.auth_token import AuthToken
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
 

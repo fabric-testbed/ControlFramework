@@ -163,8 +163,6 @@ class PoolCreator:
             pool = factory.get_descriptor()
 
             self.register_handler(pool=pool)
-            # TODO populate inventory and register controls
-            # NEO4J: Discuss with Ilya
 
         return arm_graph.generate_adms()
 

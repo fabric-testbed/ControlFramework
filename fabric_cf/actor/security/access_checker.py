@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from fabric_cf.actor.core.apis.i_actor import ActorType
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.security.fabric_token import FabricToken
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType, PdpAuth
 
@@ -35,23 +34,28 @@ class AccessChecker:
     """
     @staticmethod
     def check_access(*, action_id: ActionId, resource_type: ResourceType, token: str,
-                     resource_id: str = None, logger=None, actor_type: ActorType) -> bool:
+                     resource_id: str = None, logger=None, actor_type: ActorType) -> FabricToken:
         """
         Check access for Incoming operation against Policy Decision Point PDP
-        @param action_id action id
-        @param resource_type resource type
-        @param token fabric token
-        @param resource_id resource id
-        @param logger logger
-        @param actor_type actor type
+        :param action_id action id
+        :param resource_type resource type
+        :param token fabric token
+        :param resource_id resource id
+        :param logger logger
+        :param actor_type actor type
+
+        :returns decoded fabric token on success; throws exception in case of failure
         """
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
 
         fabric_token = FabricToken(logger=logger, token=token)
         fabric_token.validate()
+
         pdp_auth = PdpAuth(config=pdp_config, logger=logger)
-        return pdp_auth.check_access(fabric_token=fabric_token.get_decoded_token(),
-                                     actor_type=actor_type,
-                                     action_id=action_id, resource_type=resource_type,
-                                     resource_id=resource_id)
+        pdp_auth.check_access(fabric_token=fabric_token.get_decoded_token(),
+                              actor_type=actor_type,
+                              action_id=action_id, resource_type=resource_type,
+                              resource_id=resource_id)
+
+        return fabric_token

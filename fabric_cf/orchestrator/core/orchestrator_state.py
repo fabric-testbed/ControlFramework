@@ -30,7 +30,7 @@ from typing import List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtController
+from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
@@ -53,10 +53,10 @@ class OrchestratorState:
         self.logger = None
         self.controller = None
 
-    def set_broker(self, *, broker: str):
+    def set_broker(self, *, broker: ID):
         self.broker = broker
 
-    def get_broker(self) -> str:
+    def get_broker(self) -> ID:
         return self.broker
 
     def get_sut(self) -> ReservationStatusUpdateThread:

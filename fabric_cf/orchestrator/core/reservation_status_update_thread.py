@@ -23,12 +23,15 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import queue
 import threading
 from typing import List
 
 from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.iterable_queue import IterableQueue
 from fabric_cf.orchestrator.core.active_status_checker import ActiveStatusChecker
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.i_status_update_callback import IStatusUpdateCallback
 from fabric_cf.orchestrator.core.modify_status_checker import ModifyStatusChecker
 from fabric_cf.orchestrator.core.status_checker import StatusChecker, Status
@@ -51,28 +54,56 @@ class ReservationStatusUpdateThread:
     MODIFY_CHECK_PERIOD = 5 # seconds
 
     def __init__(self):
-        self.lock = threading.Lock()
-        self.active_watch = []
-        self.modify_watch = []
+        self.thread_lock = threading.Lock()
+        self.reservation_lock = threading.Lock()
+        self.active_watch = queue.Queue()
+        self.modify_watch = queue.Queue()
+        self.stopped_worker = threading.Event()
+
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
         self.thread = None
-        self.stopped_worker = threading.Event()
+        self.stopped = False
 
     def start(self):
-        self.thread = threading.Thread(target=self.periodic())
-        self.thread.setName('ReservationStatusUpdateThread')
-        self.thread.setDaemon(True)
-        self.thread.start()
+        try:
+            self.thread_lock.acquire()
+            if self.thread is not None:
+                raise OrchestratorException("This ReservationStatusUpdateThread has already been started")
+
+            self.thread = threading.Thread(target=self.periodic)
+            self.thread.setName(self.__class__.__name__)
+            self.thread.setDaemon(True)
+            self.thread.start()
+
+        finally:
+            self.thread_lock.release()
 
     def stop(self):
+        self.stopped = True
         self.stopped_worker.set()
-        self.thread.join()
+        try:
+            self.thread_lock.acquire()
+            temp = self.thread
+            self.thread = None
+            if temp is not None:
+                self.logger.warning("It seems that the ReservationStatusUpdateThread is running. Interrupting it")
+                try:
+                    temp.join()
+                except Exception as e:
+                    self.logger.error("Could not join ReservationStatusUpdateThread thread {}".format(e))
+                finally:
+                    self.thread_lock.release()
+        finally:
+            if self.thread_lock is not None and self.thread_lock.locked():
+                self.thread_lock.release()
 
     def periodic(self):
+        self.logger.debug("Reservation Status Update Thread started")
         while not self.stopped_worker.wait(timeout=self.get_period()):
             self.run()
+        self.logger.debug("Reservation Status Update Thread exited")
 
     def add_active_status_watch(self, *, watch: List[ID], act: List[ID], callback: IStatusUpdateCallback):
         """
@@ -89,10 +120,10 @@ class ReservationStatusUpdateThread:
             return
 
         try:
-            self.lock.acquire()
-            self.active_watch.append(WatchEntry(watch=watch, rids=act, callback=callback))
+            self.reservation_lock.acquire()
+            self.active_watch.put_nowait(WatchEntry(watch=watch, rids=act, callback=callback))
         finally:
-            self.lock.release()
+            self.reservation_lock.release()
 
     def add_modify_status_watch(self, *, watch, act, callback: IStatusUpdateCallback):
         """
@@ -109,10 +140,10 @@ class ReservationStatusUpdateThread:
             return
 
         try:
-            self.lock.acquire()
-            self.modify_watch.append(WatchEntry(watch=watch, rids=act, callback=callback))
+            self.reservation_lock.acquire()
+            self.modify_watch.put_nowait(WatchEntry(watch=watch, rids=act, callback=callback))
         finally:
-            self.lock.release()
+            self.reservation_lock.release()
 
     def check_watch_entry(self, *, controller: IMgmtController, watch_entry: WatchEntry,
                           status_checker: StatusChecker) -> TriggeredWatchEntry:
@@ -145,29 +176,26 @@ class ReservationStatusUpdateThread:
                            status_checker: StatusChecker):
         to_remove = []
         self.logger.debug("Scanning {} watch list".format(watch_type))
+
         to_process = []
-        try:
-            self.lock.acquire()
-            for watch_entry in watch_list:
-                twe = self.check_watch_entry(controller=controller, watch_entry=watch_entry,
-                                             status_checker=status_checker)
-                if twe is not None:
-                    to_process.append(twe)
-                    to_remove.append(twe)
-            self.logger.debug("Removing {} entries from watch {}".format(watch_type, len(to_remove)))
+        for watch_entry in watch_list:
+            twe = self.check_watch_entry(controller=controller, watch_entry=watch_entry,
+                                         status_checker=status_checker)
+            if twe is not None:
+                to_process.append(twe)
+                to_remove.append(twe)
+        self.logger.debug(f"Removing {watch_type} entries from watch {len(to_remove)}")
 
-            for we in to_remove:
-                watch_list.remove(we)
-        finally:
-            self.lock.release()
+        for we in to_remove:
+            watch_list.remove(we)
 
-        self.logger.debug("Processing {} triggered {} callbacks".format(len(to_process), watch_type))
+        self.logger.debug(f"Processing {len(to_process)} triggered {watch_type} callbacks")
         for we in to_process:
             try:
                 self.process_callback(watch_entry=we)
             except Exception as e:
-                self.logger.error("Triggered {} watch entry for reservations {} returned with callback exception e: {}".
-                                  format(watch_type, we.watch, e))
+                self.logger.error(f"Triggered {watch_type} watch entry for reservations {we.watch} "
+                                  f"returned with callback exception e: {e}")
 
     def run(self):
         # wake up periodically and check the status of reservations (state or unit modify properties)
@@ -183,12 +211,27 @@ class ReservationStatusUpdateThread:
         try:
             from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
             controller = OrchestratorStateSingleton.get().get_management_actor()
-            self.process_watch_list(controller=controller, watch_list=self.active_watch, watch_type="active",
+            active_watch_list = []
+            modify_watch_list = []
+
+            try:
+                self.reservation_lock.acquire()
+                if not self.active_watch.empty():
+                    for a in IterableQueue(source_queue=self.active_watch):
+                        active_watch_list.append(a)
+
+                if not self.modify_watch.empty():
+                    for m in IterableQueue(source_queue=self.modify_watch):
+                        modify_watch_list.append(m)
+            finally:
+                self.reservation_lock.release()
+
+            self.process_watch_list(controller=controller, watch_list=active_watch_list, watch_type="active",
                                     status_checker=ActiveStatusChecker())
-            self.process_watch_list(controller=controller, watch_list=self.modify_watch, watch_type="modify",
+            self.process_watch_list(controller=controller, watch_list=modify_watch_list, watch_type="modify",
                                     status_checker=ModifyStatusChecker())
         except Exception as e:
-            self.logger.error("RuntimeException: {} continuing".format(e))
+            self.logger.error(f"RuntimeException: {e} continuing")
 
     @staticmethod
     def get_period() -> int:

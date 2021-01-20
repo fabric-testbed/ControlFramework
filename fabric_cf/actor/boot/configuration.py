@@ -676,3 +676,12 @@ class Configuration:
         Return Peer Config
         """
         return self.peers
+
+    def get_neo4j_config(self) -> dict:
+        """
+        Return Neo4j config
+        """
+        if self.global_config is not None:
+            return self.global_config.get_neo4j_config()
+
+        return None

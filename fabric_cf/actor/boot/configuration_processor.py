@@ -244,10 +244,6 @@ class ConfigurationProcessor:
         @param config actor config
         @raises ConfigurationException in case of error
         """
-        # TODO KOMAL
-        #if config.get_controls() is None or len(config.get_controls()) == 0:
-        #    raise ConfigurationException("Missing authority policy but no control has been specified")
-
         policy = AuthorityCalendarPolicy()
         for c in config.get_controls():
             try:

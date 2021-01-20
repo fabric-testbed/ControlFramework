@@ -242,7 +242,7 @@ class Container(IActorContainer):
         Define Protocols i.e. Kafka and Local
         """
         self.logger.debug("Defining container protocols")
-        desc = ProtocolDescriptor(protocol=Constants.protocol_local, location=None)
+        desc = ProtocolDescriptor(protocol=Constants.protocol_local)
         self.logger.debug("Registering protocol {}".format(Constants.protocol_local))
         self.register_protocol(protocol=desc)
 

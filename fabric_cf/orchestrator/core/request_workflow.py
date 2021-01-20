@@ -23,16 +23,35 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import List
+
+from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
+from fim.slivers.base_sliver import BaseElement
+from fim.slivers.network_node import Node
 
 
 class RequestWorkflow:
-    def __init__(self, *, cloud_handler):
-        self.cloud_handler = cloud_handler
-
+    """
+    This object implements the generic workflow of turning a ASM into reservations.
+    """
     def close(self):
-        # TODO
-        return
+        """ Close any open graph models """
 
-    def run(self):
+    def run(self, *, bqm: Neo4jPropertyGraph, slice_graph: str) -> List[BaseElement]:
+        """
+        Run the workflow
+        """
+        # Translate Slice Graph (ASM) into individual slivers
         # TODO
-        return
+        # HACK for now to create a compute Sliver
+        slivers = []
+        compute_node = Node()
+        compute_node.set_resource_type(resource_type="VM")
+        compute_node.set_cpu_cores(cpu_cores=4)
+        compute_node.set_ram_size(ram_size=256)
+        compute_node.set_disk_size(disk_size=1)
+        compute_node.set_image_type(image_type="QCOW2")
+        compute_node.set_image_ref(image_ref="centos7")
+
+        slivers.append(compute_node)
+        return slivers

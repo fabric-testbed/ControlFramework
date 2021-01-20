@@ -23,23 +23,41 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
+from typing import List
 
-from typing import TYPE_CHECKING
+from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
+from fim.slivers.base_sliver import BaseElement
 
-if TYPE_CHECKING:
-    from fabric_cf.orchestrator.core.orchestrator_slice import OrchestratorSlice
-    from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.util.id import ID
 
 
 class ReservationConverter:
-    def __init__(self, *, ssh_credentials: list = None, controller: IMgmtController = None,
-                 controller_slice: OrchestratorSlice = None):
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.logger = GlobalsSingleton.get().get_logger()
-        self.ssh_credentials = ssh_credentials
+    """
+    Class responsible for computing reservations from slivers
+    """
+    def __init__(self, *, controller: IMgmtController, broker: ID):
         self.controller = controller
-        self.controller_slice = controller_slice
-        self.lease_start = None
-        self.lease_end = None
+        self.broker = broker
 
+    def get_tickets(self, *, slivers: List[BaseElement], slice_id: str) -> List[TicketReservationAvro]:
+        """
+        Responsible to generate reservations from the slivers; Adds the reservation Orchestrator
+        :param slivers list of slivers computed from the ASM (Slice graph)
+        :param slice_id Slice Id
+
+        :returns list of tickets
+        """
+        reservation_list = []
+        for sliver in slivers:
+            ticket = TicketReservationAvro()
+            ticket.set_slice_id(slice_id)
+            ticket.broker = str(self.broker)
+            ticket.units = 1
+            ticket.set_resource_type(sliver.get_resource_type())
+
+            # Add reservation to Orchestrator
+            reservation_id = self.controller.add_reservation(reservation=ticket)
+            ticket.reservation_id = str(reservation_id)
+            reservation_list.append(ticket)
+        return reservation_list

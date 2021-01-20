@@ -29,6 +29,8 @@ import threading
 import traceback
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.core.apis.i_mgmt_client_actor import IMgmtClientActor
+from fabric_cf.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.actor_identity import ActorIdentity
 from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
@@ -67,15 +69,14 @@ class RemoteActorCache:
         """
         Returns list of know GUIDs
         """
-        result = None
         try:
             self.lock.acquire()
             result = set()
             for k in self.cache.keys():
                 result.add(k)
+            return result
         finally:
             self.lock.release()
-        return result
 
     def check_to_remove_entry(self, *, guid: ID):
         """
@@ -152,7 +153,6 @@ class RemoteActorCache:
                 return ret_val
         finally:
             self.lock.release()
-        return None
 
     def check_peer(self, *, from_mgmt_actor: IMgmtActor, from_guid: ID, to_mgmt_actor: IMgmtActor, to_guid: ID):
         """
@@ -167,13 +167,15 @@ class RemoteActorCache:
                                                                                                type(to_mgmt_actor),
                                                                                                to_guid))
         try:
-            if to_mgmt_actor is not None:
+            # For Broker/AM
+            if to_mgmt_actor is not None and isinstance(to_mgmt_actor, IMgmtServerActor):
                 clients = to_mgmt_actor.get_clients(guid=from_guid)
                 if clients is not None:
                     self.logger.debug("Edge between {} and {} exists (client)".format(from_guid, to_guid))
                     return True
 
-            elif from_mgmt_actor is not None:
+            # For Orchestrator/Broker
+            elif from_mgmt_actor is not None and isinstance(from_mgmt_actor, IMgmtClientActor):
                 brokers = from_mgmt_actor.get_brokers(broker=to_guid)
                 if brokers is not None:
                     self.logger.debug("Edge between {} and {} exists (broker)".format(from_guid, to_guid))
@@ -221,7 +223,7 @@ class RemoteActorCache:
 
             identity = ActorIdentity(name=to_map[self.actor_name], guid=to_guid)
 
-            if kafka_topic is not None:
+            if kafka_topic is not None and isinstance(from_mgmt_actor, IMgmtClientActor):
                 self.logger.debug("Kafka Topic is available, registering broker proxy")
                 proxy = ProxyAvro()
                 proxy.set_protocol(protocol)
@@ -235,12 +237,13 @@ class RemoteActorCache:
                         raise RemoteActorCacheException("Could not register broker {}".
                                                         format(from_mgmt_actor.get_last_error()))
                 except Exception as e:
-                    traceback.print_exc()
+                    self.logger.error(e)
+                    self.logger.error(traceback.format_exc())
             else:
                 self.logger.debug("Not adding broker to actor at this time because the remote actor actor "
                                   "kafka topic is not available")
 
-            if to_mgmt_actor is not None:
+            if to_mgmt_actor is not None and isinstance(to_mgmt_actor, IMgmtServerActor):
                 self.logger.debug("Creating a client for local to actor")
                 client = ClientMng()
                 client.set_name(name=from_mgmt_actor.get_name())
@@ -262,7 +265,7 @@ class RemoteActorCache:
                 raise RemoteActorCacheException("Missing guid for remote actor: {}".format(from_map[self.actor_name]))
 
             self.logger.debug("From actor was remote, to actor {} is local".format(to_mgmt_actor.get_name()))
-            if self.actor_location in from_map:
+            if self.actor_location in from_map and isinstance(to_mgmt_actor, IMgmtServerActor):
                 kafka_topic = from_map[self.actor_location]
                 self.logger.debug("From actor has kafka topic")
                 self.logger.debug("Creating client for from actor {}".format(from_map[self.actor_name]))
@@ -334,7 +337,7 @@ class RemoteActorCache:
             self.add_cache_entry(guid=act_guid, entry=entry)
             # TODO start liveness thread
         except Exception as e:
-            self.logger.debug("Could not register actor {} with lcoal registry e: {}".format(actor.get_name(), e))
+            self.logger.debug("Could not register actor {} with local registry e: {}".format(actor.get_name(), e))
 
 
 class RemoteActorCacheSingleton:
