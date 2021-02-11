@@ -91,8 +91,125 @@ PDP_UID=1000
 #### config.yaml
 The parameters depicted below must be checked/updated before bring any of the containers up.
 ```
+runtime:
+  - plugin-dir: ./plugins
+  - kafka-server: broker1:9092
+  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
+  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
+  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
+  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  - kafka-ssl-key-password:  fabric
+  - kafka-security-protocol: SSL
+  - kafka-group-id: fabric-cf
+  - kafka-sasl-mechanism:
+  - kafka-sasl-producer-username:
+  - kafka-sasl-producer-password:
+  - kafka-sasl-consumer-username:
+  - kafka-sasl-consumer-password:
+  - prometheus.port: 11000
 
+logging:
+  ## The directory in which actor should create log files.
+  ## This directory will be automatically created if it does not exist.
+  - log-directory: /var/log/actor
 
+  ## The filename to be used for actor's log file.
+  - log-file: actor.log
+
+  ## The default log level for actor.
+  - log-level: DEBUG
+
+  ## actor rotates log files. You may specify how many archived log files to keep here.
+  - log-retain: 5
+
+  ## actor rotates log files after they exceed a certain size.
+  ## You may specify the file size that results in a log file being rotated here.
+  - log-size: 5000000
+
+  - logger: site1-am
+
+oauth:
+  - jwks-url: https://dev-2.fabric-testbed.net/certs
+  # Uses HH:MM:SS (less than 24 hours)
+  - key-refresh: 00:10:00
+  - verify-exp: True
+
+database:
+  - db-user: fabric
+  - db-password: fabric
+  - db-name: am
+  - db-host: site1-am-db:5432
+
+container:
+  - container.guid: site1-am-conainer
+
+time:
+  # This section controls settings, which are generally useful
+  # when running under emulation. These settings allow you to
+  # control notion of time.
+
+  # Beginning of time (in unix time).
+  # The default is -1, which translates into using the current time as
+  # the beginning of time for the container's internal clock.
+  - time.startTime: -1
+
+  # Internal tick length (in milliseconds)
+  - time.cycleMillis: 1000
+  # The number of the first tick
+  - time.firstTick: 0
+
+  # This property controls if time advances automatically (false) or
+  # manually (true)
+  - time.manual: false
+
+pdp:
+  url: http://site1-am-pdp:8080/services/pdp
+  enable: True
+
+neo4j:
+  url: bolt://site1-am-neo4j:7687
+  user: neo4j
+  pass: password
+  import_host_dir: /usr/src/app/neo4j/imports/
+  import_dir: /imports
+
+actor:
+  - type: authority
+  - name: site1-am
+  - guid: site1-am-guid
+  - description: Site AM
+  - kafka-topic: site1-am-topic
+  - substrate.file: /etc/fabric/actor/config/neo4j/arm.graphml
+  - resources:
+      - resource:
+        - type: VM
+        - label: VM AM
+        - description: VM AM
+        - handler:
+          - module: fabric_cf.actor.handlers.no_op_handler
+          - class: NoOpHandler
+          - properties:
+              - playbooks: /usr/src/app/ansible/vm/
+              - playbook_mapping: /usr/src/app/ansible/vm/vm.properties
+  - controls:
+      - control:
+          - type: VM, Container, Baremetal
+          - module: fabric_cf.actor.core.policy.network_node_control
+          - class: NetworkNodeControl
+peers:
+  - peer:
+    - name: orchestrator
+    - type: orchestrator
+    - guid: orchestrator-guid
+    - kafka-topic: orchestrator-topic
+  - peer:
+    - name: broker
+    - type: broker
+    - guid: broker-guid
+    - kafka-topic: broker-topic
+    - delegation: del1
 ```
 #### am
 Update `docker-compose.yml` to point to correct volumes for the AM.
