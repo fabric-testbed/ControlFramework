@@ -131,7 +131,7 @@ class ConfigurationProcessor:
     def do_common(self, *, actor_config: ActorConfig):
         """
         Perform the common operations for actor creation
-        @param actor_config actor handlers
+        @param actor_config actor config
         @raises ConfigurationException in case of error
         """
         actor = self.make_actor_instance(actor_config=actor_config)
@@ -143,7 +143,7 @@ class ConfigurationProcessor:
     def make_actor_instance(*, actor_config: ActorConfig) -> IActor:
         """
         Creates Actor instance
-        @param actor_config actor handlers
+        @param actor_config actor config
         @raises ConfigurationException in case of error
         """
         actor_type = ActorType.get_actor_type_from_string(actor_type=actor_config.get_type())
@@ -174,7 +174,7 @@ class ConfigurationProcessor:
         """
         Creates Plugin instance for the Actor
         @param actor actor
-        @param actor_config actor handlers
+        @param actor_config actor config
         @raises ConfigurationException in case of error
         """
         plugin = None
@@ -216,7 +216,7 @@ class ConfigurationProcessor:
         """
         Creates Actor Policy instance
         @param actor actor
-        @param actor_config actor handlers
+        @param actor_config actor config
         @raises ConfigurationException in case of error
         """
         policy = None
@@ -237,7 +237,7 @@ class ConfigurationProcessor:
     def make_broker_policy(self, *, config: ActorConfig):
         """
         Creates AM Policy instance and set up controls
-        @param config actor handlers
+        @param config actor config
         @raises ConfigurationException in case of error
         """
         policy = BrokerSimplerUnitsPolicy()
@@ -262,7 +262,7 @@ class ConfigurationProcessor:
     def make_site_policy(self, *, config: ActorConfig):
         """
         Creates AM Policy instance and set up controls
-        @param config actor handlers
+        @param config actor config
         @raises ConfigurationException in case of error
         """
         policy = AuthorityCalendarPolicy()
@@ -290,7 +290,7 @@ class ConfigurationProcessor:
     def make_policy(*, policy: PolicyConfig):
         """
         Creates Policy Instance
-        @param policy policy handlers
+        @param policy policy config
         @raises ConfigurationException in case of error
         """
         if policy.get_class_name() is None or policy.get_module_name() is None:
@@ -303,7 +303,7 @@ class ConfigurationProcessor:
         """
         Do Actor specify initialization
         @param actor actor
-        @param config actor handlers
+        @param config actor config
         @raises ConfigurationException in case of error
         """
         if isinstance(actor, IAuthority):
@@ -311,8 +311,8 @@ class ConfigurationProcessor:
 
     def read_resource_pools(self, *, config: ActorConfig) -> dict:
         """
-        Read resource pool handlers and create pools
-        @param config actor handlers
+        Read resource pool config and create pools
+        @param config actor config
         @raises ConfigurationException in case of error
         """
         result = {}
@@ -425,7 +425,7 @@ class ConfigurationProcessor:
     def create_proxies(self, *, peers: List[Peer]):
         """
         Set up proxies
-        @param peers List of the Peer handlers
+        @param peers List of the Peer config
         @raises ConfigurationException in case of error
         """
         for e in peers:
@@ -434,7 +434,7 @@ class ConfigurationProcessor:
     def vertex_to_registry_cache(self, *, peer: Peer):
         """
         Add peer to Registry Cache
-        @param peer peer handlers
+        @param peer peer config
         @raises ConfigurationException in case of error
         """
         self.logger.debug("Adding vertex for {}".format(peer.get_name()))
@@ -523,7 +523,7 @@ class ConfigurationProcessor:
     def parse_exports(self, *, peer: Peer, client: ClientMng, mgmt_actor: IMgmtActor):
         """
         Identify all the delegations to be advertised
-        @param peer peer handlers
+        @param peer peer config
         @param client client
         @param mgmt_actor management actor
         """

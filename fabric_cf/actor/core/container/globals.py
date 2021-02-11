@@ -68,9 +68,9 @@ class Globals:
 
     def make_logger(self):
         """
-        Detects the path and level for the log file from the actor handlers and sets
+        Detects the path and level for the log file from the actor config and sets
         up a logger. Instead of detecting the path and/or level from the
-        handlers, a custom path and/or level for the log file can be passed as
+        config, a custom path and/or level for the log file can be passed as
         optional arguments.
 
        :param log_path: Path to custom log file
@@ -80,10 +80,10 @@ class Globals:
 
         # Get the log path
         if self.config is None:
-            raise RuntimeError('No handlers information available')
+            raise RuntimeError('No config information available')
         log_config = self.config.get_global_config().get_logging()
         if log_config is None:
-            raise RuntimeError('No logging  handlers information available')
+            raise RuntimeError('No logging  config information available')
 
         log_path = None
         if Constants.PROPERTY_CONF_LOG_DIRECTORY in log_config and Constants.PROPERTY_CONF_LOG_FILE in log_config:
@@ -91,7 +91,7 @@ class Globals:
                        log_config[Constants.PROPERTY_CONF_LOG_FILE]
 
         if log_path is None:
-            raise RuntimeError('The log file path must be specified in handlers or passed as an argument')
+            raise RuntimeError('The log file path must be specified in config or passed as an argument')
 
         # Get the log level
         log_level = None
@@ -189,7 +189,7 @@ class Globals:
     def get_config(self) -> Configuration:
         """
         Get the configuration
-        @return handlers
+        @return config
         """
         if not self.initialized:
             raise InitializationException(Constants.UNINITIALIZED_STATE)
@@ -198,7 +198,7 @@ class Globals:
     def get_kafka_config_admin_client(self) -> dict:
         """
         Get Kafka Config Admin Client
-        @retun admin client handlers
+        @retun admin client config
         """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
@@ -232,7 +232,7 @@ class Globals:
     def get_kafka_config_producer(self) -> dict:
         """
         Get Producer Config
-        @return producer handlers
+        @return producer config
         """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
@@ -268,8 +268,8 @@ class Globals:
 
     def get_kafka_config_consumer(self) -> dict:
         """
-        Get Consumer handlers
-        @return consumer handlers
+        Get Consumer config
+        @return consumer config
         """
         if self.config is None or self.config.get_runtime_config() is None:
             return None

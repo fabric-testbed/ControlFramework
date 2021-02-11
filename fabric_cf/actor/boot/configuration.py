@@ -75,49 +75,49 @@ class GlobalConfig:
 
     def get_runtime(self) -> dict:
         """
-        Return runtime handlers
+        Return runtime config
         """
         return self.runtime
 
     def get_logging(self) -> dict:
         """
-        Return logging handlers
+        Return logging config
         """
         return self.logging
 
     def get_oauth(self) -> dict:
         """
-        Return oauth handlers
+        Return oauth config
         """
         return self.oauth
 
     def get_database(self) -> dict:
         """
-        Return database handlers
+        Return database config
         """
         return self.database
 
     def get_container(self) -> dict:
         """
-        Return container handlers
+        Return container config
         """
         return self.container
 
     def get_time(self) -> dict:
         """
-        Return time handlers
+        Return time config
         """
         return self.time
 
     def get_neo4j_config(self) -> dict:
         """
-        Return neo4j handlers
+        Return neo4j config
         """
         return self.neo4j
 
     def get_pdp_config(self) -> dict:
         """
-        Return PDP handlers
+        Return PDP config
         """
         return self.pdp
 
@@ -162,7 +162,7 @@ class HandlerConfig:
 
 class ControlConfig:
     """
-    Represents Control or Inventory handlers
+    Represents Control or Inventory config
     """
     def __init__(self, *, config: list):
         self.type = []
@@ -200,7 +200,7 @@ class ControlConfig:
 
 class ResourceConfig:
     """
-    Represents resource handlers
+    Represents resource config
     """
     def __init__(self, *, config: list):
         self.description = None
@@ -243,7 +243,7 @@ class ResourceConfig:
 
     def get_handler(self) -> HandlerConfig:
         """
-        Return handler handlers
+        Return handler config
         """
         return self.handler
 
@@ -256,7 +256,7 @@ class ResourceConfig:
 
 class PolicyConfig:
     """
-    Represents Policy handlers
+    Represents Policy config
     """
     def __init__(self, *, config: list):
         self.module_name = None
@@ -488,7 +488,7 @@ class Configuration:
 
     def get_neo4j_config(self) -> dict:
         """
-        Return Neo4j handlers
+        Return Neo4j config
         """
         if self.global_config is not None:
             return self.global_config.get_neo4j_config()
