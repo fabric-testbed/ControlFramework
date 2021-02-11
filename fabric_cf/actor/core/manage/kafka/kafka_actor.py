@@ -308,7 +308,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
         return response.reservations
 
     def get_delegations(self, *, slice_id: ID = None, state: int = None,
-                        delegation_id: ID = None, id_token: str = None) -> List[DelegationAvro]:
+                        delegation_id: str = None, id_token: str = None) -> List[DelegationAvro]:
         self.clear_last()
         response = ResultDelegationAvro()
         response.status = ResultAvro()
@@ -325,7 +325,7 @@ class KafkaActor(KafkaProxy, IMgmtActor):
                 request.slice_id = str(slice_id)
 
             if delegation_id is not None:
-                request.delegation_id = str(delegation_id)
+                request.delegation_id = delegation_id
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 

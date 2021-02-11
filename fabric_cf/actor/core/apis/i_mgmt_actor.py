@@ -162,7 +162,7 @@ class IMgmtActor(IComponent):
 
     @abstractmethod
     def get_delegations(self, *, slice_id: ID = None, state: int = None,
-                        delegation_id: ID = None, id_token: str = None) -> List[DelegationAvro]:
+                        delegation_id: str = None, id_token: str = None) -> List[DelegationAvro]:
         """
         Get Delegations
         @param slice_id slice id

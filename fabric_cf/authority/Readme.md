@@ -25,11 +25,11 @@ Run the `setup.sh` script to set up an Aggregate Manager. User is expected to sp
 
 #### Production
 ```
-./setup.sh site1-am password ./config.site.am.yaml ../../config/neo4j/site-am-2broker-ad-enumerated.graphml
+./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/site-am-2broker-ad-enumerated.graphml
 ```
 #### Development
 ```
-./setup.sh site1-am password ./config.site.am.yaml ../../config/neo4j/site-am-2broker-ad-enumerated.graphml dev
+./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/site-am-2broker-ad-enumerated.graphml dev
 ```
 
 ### Environment and Configuration
@@ -91,125 +91,7 @@ PDP_UID=1000
 #### config.yaml
 The parameters depicted below must be checked/updated before bring any of the containers up.
 ```
-runtime:
-  - plugin-dir: ./plugins
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
-  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
-  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
-  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
-  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
-  - kafka-ssl-key-password:  fabric
-  - kafka-security-protocol: SSL
-  - kafka-group-id: fabric-cf
-  - kafka-sasl-producer-username:
-  - kafka-sasl-producer-password:
-  - kafka-sasl-consumer-username:
-  - kafka-sasl-consumer-password:
-  - prometheus.port: 11000
-neo4j:
-  url: bolt://site1-am-neo4j:7687
-  user: neo4j
-  pass: password
-  import_host_dir: /usr/src/app/neo4j/imports/
-  import_dir: /imports
-actor:
-  - type: authority
-  - name: site1-am
-  - guid: site1-am-guid
-  - description: Site AM
-  - kafka-topic: site1-am-topic
-  - substrate.file: /etc/fabric/actor/config/neo4j/arm.graphml
-  - resources:
-      - resource:
-        - resource_module: fim.slivers.network_node
-        - resource_class: Node
-        - type: site.vm
-        - label: VM AM
-        - description: VM AM
-        - handler:
-          - module: fabric.actor.plugins.vm
-          - class: Dummy
-          - properties:
-              - ec2.keys: config/ec2
-              - ec2.site.properties: config/ec2.site.properties
-        - control:
-            - type: site.vm
-            - module: fabric.actor.core.policy.simple_vm_control
-            - class: SimpleVMControl
-        - attributes:
-            - attribute:
-                - key: resource.class.invfortype
-                - type: Class
-                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-      - resource:
-        - resource_module: fim.slivers.network_node
-        - resource_class: Node
-        - type: site.baremetal
-        - label: Baremetal AM
-        - description: Baremetal AM
-        - handler:
-          - module: fabric.actor.plugins.baremetal
-          - class: Dummy
-          - properties:
-              - xcat.site.properties: config/xcat.site.properties
-        - control:
-          - type: site.vm
-          - module: fabric.actor.core.policy.simple_vm_control
-          - class: SimpleVMControl
-      - resource:
-        - resource_module: fim.slivers.attached_pci_devices
-        - resource_class: AttachedPCIDevices
-        - type: site.vlan
-        - label: Network Vlan
-        - description: Network Vlan
-        - handler:
-          - module: fabric.actor.plugins.vlan
-          - class: Dummy
-          - properties:
-              - quantum-vlan.properties: config/quantum-vlan.properties
-        - attributes:
-            - attribute:
-                - key: resource.class.invfortype
-                - type: Class
-                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-        - control:
-          - type: site.vlan
-          - module: fabric.actor.core.policy.vlan_control
-          - class: VlanControl
-      - resource:
-        - resource_module: fim.slivers.network_attached_storage
-        - resource_class: NetworkAttachedStorage
-        - type: site.lun
-        - label: OS internal lun
-        - description: OS internal lun
-        - handler:
-          - module: fabric.actor.plugins.storage
-          - class: Dummy
-          - properties:
-              - storage_service.site.properties: config/storage_service.site.properties
-        - attributes:
-            - attribute:
-                - key: resource.class.invfortype
-                - type: Class
-                - value: fabric.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-        - control:
-            - type: site.lun
-            - module: fabric.actor.core.policy.lun_control
-            - class: LUNControl
-peers:
-  - peer:
-    - name: orchestrator
-    - type: orchestrator
-    - guid: orchestrator-guid
-    - kafka-topic: orchestrator-topic
-  - peer:
-    - name: broker
-    - type: broker
-    - guid: broker-guid
-    - kafka-topic: broker-topic
-    - delegation: del1
+
 
 ```
 #### am

@@ -50,7 +50,7 @@ from fabric_cf.actor.core.plugins.substrate.substrate import Substrate
 from fabric_cf.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
 from fabric_cf.actor.core.policy.authority_calendar_policy import AuthorityCalendarPolicy
 from fabric_cf.actor.core.policy.broker_simpler_units_policy import BrokerSimplerUnitsPolicy
-from fabric_cf.actor.core.policy.controller_simple_policy import ControllerSimplePolicy
+from fabric_cf.actor.core.policy.controller_ticket_review_policy import ControllerTicketReviewPolicy
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -226,7 +226,7 @@ class ConfigurationProcessor:
             elif actor.get_type() == ActorType.Broker:
                 policy = self.make_broker_policy(config=config)
             elif actor.get_type() == ActorType.Orchestrator:
-                policy = ControllerSimplePolicy()
+                policy = ControllerTicketReviewPolicy()
         else:
             policy = self.make_policy(policy=config.get_policy())
 

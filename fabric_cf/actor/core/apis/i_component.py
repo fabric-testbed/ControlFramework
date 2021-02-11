@@ -26,6 +26,7 @@
 from abc import abstractmethod, ABC
 from typing import List
 
+from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.manage.messages.protocol_proxy_mng import ProtocolProxyMng
 
 
@@ -45,7 +46,7 @@ class IComponent(ABC):
         """
 
     @abstractmethod
-    def get_last_error(self):
+    def get_last_error(self) -> Error:
         """
         Returns the last error/success for this component.
         @return returns last error/success

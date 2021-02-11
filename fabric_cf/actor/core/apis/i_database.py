@@ -391,14 +391,14 @@ class IDatabase:
         """
 
     @abstractmethod
-    def remove_delegation(self, *, dlg_graph_id: ID):
+    def remove_delegation(self, *, dlg_graph_id: str):
         """
         Remove delegation
         @params dlg_graph_id: dlg_graph_id
         """
 
     @abstractmethod
-    def get_delegation(self, *, dlg_graph_id: ID) -> IDelegation:
+    def get_delegation(self, *, dlg_graph_id: str) -> IDelegation:
         """
         Get Delegation
         @params dlg_graph_id: dlg_graph_id

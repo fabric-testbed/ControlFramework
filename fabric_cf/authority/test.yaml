@@ -117,7 +117,7 @@ actor:
   - guid: site1-am-guid
   - description: Site AM
   - kafka-topic: site1-am-topic
-  - substrate.file: ../../config/neo4j/site-am-2broker-ad-enumerated.graphml
+  - substrate.file: ../../neo4j/site-am-2broker-ad-enumerated.graphml
   - resources:
       - resource:
         - type: VM
