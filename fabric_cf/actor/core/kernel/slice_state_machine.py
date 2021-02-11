@@ -26,7 +26,6 @@
 from enum import Enum
 from typing import List
 
-from fabric_cf.actor.core.core.controller import Controller
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.util.id import ID
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -117,8 +116,6 @@ class SliceStateMachine:
         from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
         controller = OrchestratorStateSingleton.get().get_management_actor()
         try:
-            # TODO
-            # orchestrator = fetch from Controller state
             return controller.get_reservations(slice_id=self.slice_guid)
         except Exception:
             return None

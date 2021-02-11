@@ -23,25 +23,55 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import enum
+from abc import abstractmethod, ABC
+
+from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-@enum.unique
-class ValidateCode(enum.Enum):
-    SUCCESS = 1
+class ConfigToken(ABC):
+    @abstractmethod
+    def get_reservation_id(self) -> ID:
+        """
+        Return reservation id
+        @return reservation
+        """
 
-    def interpret(self, exception=None):
-        interpretations = {
-            1: "Token is valid",
-            2: "Token does not specify algorithm",
-            3: "Token signature is invalid",
-            4: "Unable to load key from file",
-            5: "Unable to parse token",
-            6: "Unable to compress the encoded token",
-            7: "Unable to decompress the encoded token",
-            8: "Identity Token or Identity Claims not specified"
-          }
-        if exception is None:
-            return interpretations[self.value]
-        else:
-            return str(exception) + ". " + interpretations[self.value]
+    @abstractmethod
+    def get_resource_type(self) -> ResourceType:
+        """
+        return resource type
+        @return resource type
+        """
+
+    @abstractmethod
+    def complete_modify(self):
+        """
+        Complete the modify operation
+        """
+
+    @abstractmethod
+    def get_sequence(self) -> int:
+        """
+        Get Sequence number
+        @return sequence number
+        """
+
+    @abstractmethod
+    def get_id(self) -> ID:
+        """
+        Get unit id
+        @return unit id
+        """
+
+    @abstractmethod
+    def close(self):
+        """
+        Mark the unit as closed
+        """
+
+    @abstractmethod
+    def activate(self):
+        """
+        Mark the unit as active
+        """

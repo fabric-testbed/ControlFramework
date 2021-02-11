@@ -29,9 +29,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.common.resource_vector import ResourceVector
     from fabric_cf.actor.core.delegation.resource_delegation import ResourceDelegation
-    from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicket
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -63,54 +61,15 @@ class IResourceTicketFactory:
         """
 
     @abstractmethod
-    def make_delegation(self, *, units: int, vector: ResourceVector, term: Term, rtype: ResourceType,
-                        sources: list = None, bins: list = None, properties: dict = None,
+    def make_delegation(self, *, units: int, term: Term, rtype: ResourceType, properties: dict = None,
                         holder: ID = None) -> ResourceDelegation:
         """
         Creates a new ResourceDelegation
         @param units number of units
-        @param vector resource vector
         @param term term
         @param rtype resource type
-        @param sources source bins used for the delegation
-        @param bins bins references by the delegation
         @param properties properties list
         @param holder identifier of the holder of the delegation
         @return ResourceDelegation
         @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def make_ticket(self, *, delegation: ResourceDelegation = None, source: ResourceTicket = None) -> ResourceTicket:
-        """
-        Creates a new ticket from the specified source tickets.
-        Note: all sources must share the same root delegation.
-        @param source source
-        @param delegation delegation
-        @return ResourceTicket
-        @throws TicketException in case of error
-        """
-
-    @abstractmethod
-    def clone(self, *, original: ResourceTicket) -> ResourceTicket:
-        """
-        Makes a deep clone of the specified resource ticket.
-        @param original original
-        @return ResourceTicket
-        """
-
-    @abstractmethod
-    def to_json(self, *, ticket: ResourceTicket) -> str:
-        """
-        Converts the resource ticket to JSON.
-        @param ticket ticket to convert
-        @return JSON string representation
-        """
-
-    @abstractmethod
-    def from_json(self, *, incoming: dict) -> ResourceTicket:
-        """
-        Obtains a resource ticket from JSON.
-        @param incoming JSON string representation
-        @return resource ticket
         """

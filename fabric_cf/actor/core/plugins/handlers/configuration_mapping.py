@@ -26,10 +26,6 @@
 
 
 class ConfigurationMapping:
-    property_type = "mapping.type"
-    property_file = "mapping.file"
-    property_properties = "mapping.properties"
-
     def __init__(self):
         self.type = None
         self.class_name = None

@@ -23,23 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from abc import abstractmethod
-
-from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.core.plugins.config.handler_processor import HandlerProcessor
 
 
-class ConfigToken:
-    @abstractmethod
-    def get_reservation_id(self) -> ID:
-        """
-        Return reservation id
-        @return reservation
-        """
-
-    @abstractmethod
-    def get_resource_type(self) -> ResourceType:
-        """
-        return resource type
-        @return resource type
-        """
+class AnsibleHandlerProcessor(HandlerProcessor):
+    pass
