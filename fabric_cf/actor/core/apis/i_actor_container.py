@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.boot.configuration import Configuration
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.container.protocol_descriptor import ProtocolDescriptor
-    from fabric_cf.actor.core.extensions.plugin_manager import PluginManager
     from fabric_cf.actor.core.manage.management_object_manager import ManagementObjectManager
     from fabric_cf.actor.core.util.id import ID
 
@@ -103,13 +102,6 @@ class IActorContainer(IContainerClock):
         applies only for internal communication among actors; this is not a
         protocol used for managing the container.
         @param protocol protocol to register
-        """
-
-    @abstractmethod
-    def get_plugin_manager(self) -> PluginManager:
-        """
-        Return PluginManager
-        @returns PluginManager
         """
 
     @abstractmethod

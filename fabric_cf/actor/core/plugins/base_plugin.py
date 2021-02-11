@@ -33,9 +33,9 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.apis.i_actor import ActorType
 from fabric_cf.actor.core.apis.i_actor_event import IActorEvent
 from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
-from fabric_cf.actor.core.delegation.simple_resource_ticket_factory import SimpleResourceTicketFactory
+from fabric_cf.actor.core.delegation.simple_resource_delegation_factory import SimpleResourceDelegationFactory
 from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
-from fabric_cf.actor.core.plugins.config.config import Config
+from fabric_cf.actor.core.plugins.handlers.handler_processor import HandlerProcessor
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
@@ -43,8 +43,8 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_reservation import IReservation
     from fabric_cf.actor.core.apis.i_slice import ISlice
     from fabric_cf.actor.core.core.actor import Actor
-    from fabric_cf.actor.core.apis.i_resource_ticket_factory import IResourceTicketFactory
-    from fabric_cf.actor.core.plugins.config.config_token import ConfigToken
+    from fabric_cf.actor.core.apis.i_resource_delegation_factory import IResourceDelegationFactory
+    from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
     from fabric_cf.actor.core.util.resource_data import ResourceData
     from fabric_cf.actor.security.auth_token import AuthToken
 
@@ -53,25 +53,22 @@ class BasePlugin(IBasePlugin):
     """
     The base implementation for actor-specific extensions.
     """
-    PropertyConfig = "PluginConfig"
-    PropertyConfigProperties = "PluginConfigProperties"
-    PropertyActorName = "PluginActorName"
 
-    def __init__(self, *, actor: Actor, db: IDatabase, config: Config):
+    def __init__(self, *, actor: Actor, db: IDatabase, handler_processor: HandlerProcessor):
         super().__init__()
         self.db = db
-        self.config = config
+        self.handler_processor = handler_processor
         self.config_properties = None
         self.actor = actor
         self.logger = None
         self.from_config = False
-        self.ticket_factory = None
+        self.resource_delegation_factory = None
         self.initialized = False
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['logger']
-        del state['ticket_factory']
+        del state['resource_delegation_factory']
         del state['actor']
         del state['initialized']
 
@@ -81,17 +78,17 @@ class BasePlugin(IBasePlugin):
         self.__dict__.update(state)
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
-        self.ticket_factory = None
+        self.resource_delegation_factory = None
         self.actor = None
         self.initialized = False
 
     def initialize(self):
         if not self.initialized:
             if self.actor is None:
-                raise PluginException(Constants.not_specified_prefix.format("actor"))
+                raise PluginException(Constants.NOT_SPECIFIED_PREFIX.format("actor"))
 
-            if self.ticket_factory is None:
-                self.ticket_factory = self.make_ticket_factory()
+            if self.resource_delegation_factory is None:
+                self.resource_delegation_factory = self.make_resource_delegation_factory()
 
             if self.db is not None:
                 self.db.set_logger(logger=self.logger)
@@ -101,7 +98,7 @@ class BasePlugin(IBasePlugin):
                 self.db.set_reset_state(state=is_fresh)
                 self.db.initialize()
 
-            self.ticket_factory.initialize()
+            self.resource_delegation_factory.initialize()
             self.initialized = True
 
     def configure(self, *, properties):
@@ -112,9 +109,9 @@ class BasePlugin(IBasePlugin):
         if self.db is not None:
             self.db.actor_added()
 
-        if self.config is not None:
-            self.config.set_slices_plugin(plugin=self)
-            self.config.initialize()
+        if self.handler_processor is not None:
+            self.handler_processor.set_plugin(plugin=self)
+            self.handler_processor.initialize()
 
     def recovery_starting(self):
         return
@@ -138,22 +135,22 @@ class BasePlugin(IBasePlugin):
     def validate_incoming(self, *, reservation: IReservation, auth: AuthToken):
         return True
 
-    def process_configuration_complete(self, *, token: ConfigToken, properties: dict):
-        target = properties[Config.property_target_name]
+    def process_configuration_complete(self, *, unit: ConfigToken, properties: dict):
+        target = properties[Constants.PROPERTY_TARGET_NAME]
         unsupported = False
 
-        if target == Config.target_create:
-            self.process_create_complete(token=token, properties=properties)
-        elif target == Config.target_delete:
-            self.process_delete_complete(token=token, properties=properties)
-        elif target == Config.target_modify:
-            self.process_modify_complete(token=token, properties=properties)
+        if target == Constants.TARGET_CREATE:
+            self.process_create_complete(unit=unit, properties=properties)
+        elif target == Constants.TARGET_DELETE:
+            self.process_delete_complete(unit=unit, properties=properties)
+        elif target == Constants.TARGET_MODIFY:
+            self.process_modify_complete(unit=unit, properties=properties)
         else:
             unsupported = True
             self.logger.warning("Unsupported target in configurationComplete(): {}".format(target))
 
         if not unsupported:
-            self.actor.get_policy().configuration_complete(action=target, token=token, out_properties=properties)
+            self.actor.get_policy().configuration_complete(action=target, token=unit, out_properties=properties)
 
     class ConfigurationCompleteEvent(IActorEvent):
         def __init__(self, *, token: ConfigToken, properties: dict, outer_class):
@@ -162,7 +159,7 @@ class BasePlugin(IBasePlugin):
             self.outer_class = outer_class
 
         def process(self):
-            self.outer_class.process_configuration_complete(token=self.token, properties=self.properties)
+            self.outer_class.process_configuration_complete(unit=self.token, properties=self.properties)
 
     def configuration_complete(self, *, token: ConfigToken, properties: dict):
         self.actor.queue_event(incoming=BasePlugin.ConfigurationCompleteEvent(token=token, properties=properties,
@@ -171,8 +168,8 @@ class BasePlugin(IBasePlugin):
     def get_actor(self):
         return self.actor
 
-    def get_config(self):
-        return self.config
+    def get_handler_processor(self) -> HandlerProcessor:
+        return self.handler_processor
 
     def get_database(self) -> IDatabase:
         return self.db
@@ -180,25 +177,25 @@ class BasePlugin(IBasePlugin):
     def get_logger(self):
         return self.logger
 
-    def make_ticket_factory(self) -> IResourceTicketFactory:
-        ticket_factory = SimpleResourceTicketFactory()
-        ticket_factory.set_actor(actor=self.actor)
-        return ticket_factory
+    def make_resource_delegation_factory(self) -> IResourceDelegationFactory:
+        resource_delegation_factory = SimpleResourceDelegationFactory()
+        resource_delegation_factory.set_actor(actor=self.actor)
+        return resource_delegation_factory
 
-    def process_create_complete(self, *, token: ConfigToken, properties: dict):
+    def process_create_complete(self, *, unit: ConfigToken, properties: dict):
         return
 
-    def process_delete_complete(self, *, token: ConfigToken, properties: dict):
+    def process_delete_complete(self, *, unit: ConfigToken, properties: dict):
         return
 
-    def process_modify_complete(self, *, token: ConfigToken, properties: dict):
+    def process_modify_complete(self, *, unit: ConfigToken, properties: dict):
         return
 
     def set_actor(self, *, actor: IActor):
         self.actor = actor
 
-    def set_config(self, *, config: Config):
-        self.config = config
+    def set_handler_processor(self, *, config: HandlerProcessor):
+        self.handler_processor = config
 
     def set_database(self, *, db: IDatabase):
         self.db = db
@@ -206,11 +203,11 @@ class BasePlugin(IBasePlugin):
     def set_logger(self, *, logger):
         self.logger = logger
 
-    def get_ticket_factory(self) -> IResourceTicketFactory:
-        return self.ticket_factory
+    def get_resource_delegation_factory(self) -> IResourceDelegationFactory:
+        return self.resource_delegation_factory
 
-    def set_ticket_factory(self, *, ticket_factory):
-        self.ticket_factory = ticket_factory
+    def set_resource_delegation_factory(self, *, resource_delegation_factory):
+        self.resource_delegation_factory = resource_delegation_factory
 
     def get_config_properties(self) -> dict:
         return self.config_properties

@@ -54,8 +54,8 @@ class PropList:
     @staticmethod
     def is_elastic_time(*, rset: ResourceSet):
         properties = rset.get_request_properties()
-        if properties is not None and Constants.elastic_time in properties:
-            value = properties[Constants.elastic_time]
+        if properties is not None and Constants.ELASTIC_TIME in properties:
+            value = properties[Constants.ELASTIC_TIME]
             if value.lower() == 'true':
                 return True
 
@@ -64,8 +64,8 @@ class PropList:
     @staticmethod
     def is_elastic_size(*, rset: ResourceSet):
         properties = rset.get_request_properties()
-        if properties is not None and Constants.elastic_size in properties:
-            value = properties[Constants.elastic_size]
+        if properties is not None and Constants.ELASTIC_SIZE in properties:
+            value = properties[Constants.ELASTIC_SIZE]
             if value.lower() == 'true':
                 return True
 

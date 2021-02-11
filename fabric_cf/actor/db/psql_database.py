@@ -89,7 +89,7 @@ class PsqlDatabase:
                 session.query(Actors).delete()
 
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def add_actor(self, *, name: str, guid: str, act_type: int, properties):
@@ -107,7 +107,7 @@ class PsqlDatabase:
                 session.add(actor_obj)
 
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def update_actor(self, *, name: str, properties):
@@ -123,7 +123,7 @@ class PsqlDatabase:
                     actor.properties = properties
 
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_actor(self, *, name: str):
@@ -137,7 +137,7 @@ class PsqlDatabase:
                 session.query(Actors).filter(Actors.act_name == name).delete()
 
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def get_actors(self) -> list:
@@ -154,7 +154,7 @@ class PsqlDatabase:
                     result.append(actor.copy())
                     actor.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -175,7 +175,7 @@ class PsqlDatabase:
                     result.append(actor.copy())
                     actor.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -194,7 +194,7 @@ class PsqlDatabase:
                     result.append(actor.copy())
                     actor.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -217,7 +217,7 @@ class PsqlDatabase:
                     result = None
                     self.logger.error("Actor: {} not found!".format(name))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -234,7 +234,7 @@ class PsqlDatabase:
                 session.add(msc_obj)
 
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def get_miscellaneous(self, *, name: str) -> dict:
@@ -252,7 +252,7 @@ class PsqlDatabase:
                 else:
                     return None
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -272,7 +272,7 @@ class PsqlDatabase:
                 session.add(mng_obj)
 
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_manager_object(self, *, manager_key: str):
@@ -284,7 +284,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(ManagerObjects).filter(ManagerObjects.mo_key == manager_key).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_manager_object_by_actor(self, *, act_id: int):
@@ -296,7 +296,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(ManagerObjects).filter(ManagerObjects.mo_act_id == act_id).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def get_manager_objects(self, *, act_id: int = None) -> list:
@@ -322,7 +322,7 @@ class PsqlDatabase:
                         mo.clear()
 
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -338,7 +338,7 @@ class PsqlDatabase:
             act_id = act_obj['act_id']
             result = self.get_manager_objects(act_id=act_id)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -361,7 +361,7 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Manager Object", mo_key))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -378,7 +378,7 @@ class PsqlDatabase:
                     result.append(mo.copy())
                     mo.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -402,7 +402,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(slc_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def update_slice(self, *, act_id: int, slc_guid: str, slc_name: str, slc_type: int,
@@ -431,7 +431,7 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_slice(self, *, slc_guid: str):
@@ -443,7 +443,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Slices).filter(Slices.slc_guid == slc_guid).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     @staticmethod
@@ -476,7 +476,7 @@ class PsqlDatabase:
                     result.append(slice_obj.copy())
                     slice_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -492,7 +492,7 @@ class PsqlDatabase:
                 for row in session.query(Slices).filter(Slices.slc_act_id == act_id):
                     result.append(row.slc_id)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -513,7 +513,28 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slice_guid))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_slice_by_name(self, *, act_id: int, slice_name: str) -> dict:
+        """
+        Get slice for an actor
+        @param act_id actor id
+        @param slice_name slice name
+        @return slice dictionary
+        """
+        result = {}
+        try:
+            with session_scope(self.db_engine) as session:
+                slc_obj = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
+                    Slices.slc_name == slice_name).first()
+                if slc_obj is not None:
+                    result = self.generate_slice_dict_from_row(slc_obj)
+                else:
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slice_name))
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -533,7 +554,7 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_id))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -553,7 +574,7 @@ class PsqlDatabase:
                     result.append(slice_obj.copy())
                     slice_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -574,7 +595,7 @@ class PsqlDatabase:
                         result.append(slice_obj.copy())
                         slice_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -594,12 +615,12 @@ class PsqlDatabase:
                     result.append(slice_obj.copy())
                     slice_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
     def add_reservation(self, *, act_id: int, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
-                        rsv_pending: int, rsv_joining: int, properties, rsv_graph_id: int = None):
+                        rsv_pending: int, rsv_joining: int, properties, rsv_graph_node_id: str = None):
         """
         Add a reservation
         @param act_id actor id
@@ -610,23 +631,23 @@ class PsqlDatabase:
         @param rsv_pending pending state
         @param rsv_joining join state
         @param properties pickled instance
-        @param rsv_graph_id graph id
+        @param rsv_graph_node_id graph id
         """
         try:
             slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             rsv_obj = Reservations(rsv_slc_id=slc_obj['slc_id'], rsv_resid=rsv_resid, rsv_category=rsv_category,
                                    rsv_state=rsv_state, rsv_pending=rsv_pending, rsv_joining=rsv_joining,
                                    properties=properties)
-            if rsv_graph_id is not None:
-                rsv_obj.rsv_graph_id = rsv_graph_id
+            if rsv_graph_node_id is not None:
+                rsv_obj.rsv_graph_node_id = rsv_graph_node_id
             with session_scope(self.db_engine) as session:
                 session.add(rsv_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def update_reservation(self, *, act_id: int, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
-                           rsv_pending: int, rsv_joining: int, properties, rsv_graph_id: int = None):
+                           rsv_pending: int, rsv_joining: int, properties, rsv_graph_node_id: str = None):
         """
         Update a reservation
         @param act_id actor id
@@ -637,7 +658,7 @@ class PsqlDatabase:
         @param rsv_pending pending state
         @param rsv_joining join state
         @param properties pickled instance
-        @param rsv_graph_id graph id
+        @param rsv_graph_node_id graph id
         """
         try:
             slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
@@ -650,13 +671,13 @@ class PsqlDatabase:
                     rsv_obj.rsv_pending = rsv_pending
                     rsv_obj.rsv_joining = rsv_joining
                     rsv_obj.properties = properties
-                    if rsv_graph_id is not None:
-                        rsv_obj.rsv_graph_id = rsv_graph_id
+                    if rsv_graph_node_id is not None:
+                        rsv_obj.rsv_graph_node_id = rsv_graph_node_id
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
         except Exception as e:
             print("Exception occurred while updating reservation {}".format(self.get_slices(act_id=act_id)))
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_reservation(self, *, rsv_resid: str):
@@ -668,7 +689,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Reservations).filter(Reservations.rsv_resid == rsv_resid).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     @staticmethod
@@ -682,7 +703,7 @@ class PsqlDatabase:
         rsv_obj = {'rsv_id': row.rsv_id, 'rsv_slc_id': row.rsv_slc_id, 'rsv_resid': row.rsv_resid,
                    'rsv_category': row.rsv_category, 'rsv_state': row.rsv_state,
                    'rsv_pending': row.rsv_pending, 'rsv_joining': row.rsv_joining,
-                   'properties': row.properties, 'rsv_graph_id': row.rsv_graph_id}
+                   'properties': row.properties, 'rsv_graph_node_id': row.rsv_graph_node_id}
 
         return rsv_obj
 
@@ -703,7 +724,25 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_reservations_by_graph_node_id(self, *, graph_node_id: str) -> list:
+        """
+        Get Reservations by graph_node_id
+        @param graph_node_id graph node id
+        @return list of reservations
+        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Reservations).filter(Reservations.rsv_graph_node_id == graph_node_id):
+                    rsv_obj = self.generate_reservation_dict_from_row(row)
+                    result.append(rsv_obj.copy())
+                    rsv_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -725,7 +764,7 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -748,7 +787,7 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -772,7 +811,7 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -797,7 +836,7 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -821,7 +860,7 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -848,7 +887,7 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -872,7 +911,7 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -897,7 +936,7 @@ class PsqlDatabase:
                 if rsv_obj.rsv_joining is not None:
                     result['rsv_joining'] = rsv_obj.rsv_joining
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -920,7 +959,7 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -936,7 +975,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(prx_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def update_proxy(self, *, act_id: int, prx_name: str, properties):
@@ -955,7 +994,7 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Proxy", prx_name))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_proxy(self, *, act_id: int, prx_name: str):
@@ -969,7 +1008,7 @@ class PsqlDatabase:
                 session.query(Proxies).filter(Proxies.prx_act_id == act_id).filter(
                     Proxies.prx_name == prx_name).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     @staticmethod
@@ -998,16 +1037,16 @@ class PsqlDatabase:
                     result.append(prx_obj.copy())
                     prx_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
     def add_config_mapping(self, *, act_id: int, cfgm_type: str, cfgm_path: str, properties: dict):
         """
-        Add config mapping
+        Add handlers mapping
         @param act_id actor id
         @param cfgm_type type
-        @param cfgm_path location for the config
+        @param cfgm_path location for the handlers
         @param properties properties
         """
         try:
@@ -1016,15 +1055,15 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(cfg_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def update_config_mapping(self, *, act_id: int, cfgm_type: str, cfgm_path: str, properties: dict):
         """
-        Update config mapping
+        Update handlers mapping
         @param act_id actor id
         @param cfgm_type type
-        @param cfgm_path location for the config
+        @param cfgm_path location for the handlers
         @param properties properties
         """
         try:
@@ -1037,25 +1076,25 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Config Mapping", cfgm_type))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_config_mapping(self, *, cfgm_type: str):
         """
-        Remove config mapping
-        @param cfgm_type config mapping type
+        Remove handlers mapping
+        @param cfgm_type handlers mapping type
         """
         try:
             with session_scope(self.db_engine) as session:
                 session.query(ConfigMappings).filter(ConfigMappings.cfgm_type == cfgm_type).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     @staticmethod
     def generate_config_mapping_dict_from_row(row) -> dict:
         """
-        Generate dictionary representing a config mapping row read from database
+        Generate dictionary representing a handlers mapping row read from database
         """
         if row is None:
             return None
@@ -1079,7 +1118,7 @@ class PsqlDatabase:
                     result.append(cfg_obj.copy())
                     cfg_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1087,7 +1126,7 @@ class PsqlDatabase:
         """
         Get Config Mappings
         @param act_id actor id
-        @param cfgm_type config type
+        @param cfgm_type handlers type
         @retur list of mappings
         """
         result = []
@@ -1099,7 +1138,7 @@ class PsqlDatabase:
                     result.append(cfg_obj.copy())
                     cfg_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1116,7 +1155,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(clt_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def update_client(self, *, act_id: int, clt_name: str, properties):
@@ -1135,7 +1174,7 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Client", clt_name))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_client_by_name(self, *, act_id: int, clt_name: str):
@@ -1149,7 +1188,7 @@ class PsqlDatabase:
                 session.query(Clients).filter(Clients.clt_act_id == act_id).filter(
                     Clients.clt_name == clt_name).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_client_by_guid(self, *, act_id: int, clt_guid: str):
@@ -1163,7 +1202,7 @@ class PsqlDatabase:
                 session.query(Clients).filter(Clients.clt_act_id == act_id).filter(
                     Clients.clt_guid == clt_guid).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     @staticmethod
@@ -1195,7 +1234,7 @@ class PsqlDatabase:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Client", clt_name))
                 result = self.generate_client_dict_from_row(clt_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1215,7 +1254,7 @@ class PsqlDatabase:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Client", clt_guid))
                 result = self.generate_client_dict_from_row(clt_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1233,11 +1272,11 @@ class PsqlDatabase:
                     result.append(clt_obj.copy())
                     clt_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
-    def add_unit(self, *, act_id: int, slc_guid: str, rsv_resid: str, unt_uid: str, unt_unt_id: int, unt_type: int,
+    def add_unit(self, *, act_id: int, slc_guid: str, rsv_resid: str, unt_uid: str, unt_unt_id: int,
                  unt_state: int, properties):
         """
         Add Unit
@@ -1246,7 +1285,6 @@ class PsqlDatabase:
         @param rsv_resid reservation id
         @param unt_uid unit id
         @param unt_unt_id parent unit id
-        @param unt_type unit type
         @param unt_state unit state
         @param properties properties
         """
@@ -1263,14 +1301,14 @@ class PsqlDatabase:
 
             unt_obj = Units(unt_uid=unt_uid, unt_act_id=slc_obj['slc_act_id'],
                             unt_slc_id=rsv_obj['rsv_slc_id'],
-                            unt_rsv_id=rsv_obj['rsv_id'], unt_type=unt_type,
+                            unt_rsv_id=rsv_obj['rsv_id'],
                             unt_state=unt_state, properties=properties)
             if unt_unt_id is not None:
                 unt_obj.unt_unt_id = unt_unt_id
             with session_scope(self.db_engine) as session:
                 session.add(unt_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     @staticmethod
@@ -1283,8 +1321,7 @@ class PsqlDatabase:
 
         result = {'unt_id': row.unt_id, 'unt_uid': row.unt_uid, 'unt_unt_id': row.unt_unt_id,
                   'unt_act_id': row.unt_act_id, 'unt_slc_id': row.unt_slc_id,
-                  'unt_rsv_id': row.unt_rsv_id, 'unt_type': row.unt_type,
-                  'unt_state': row.unt_state, 'properties': row.properties}
+                  'unt_rsv_id': row.unt_rsv_id, 'unt_state': row.unt_state, 'properties': row.properties}
 
         return result
 
@@ -1305,7 +1342,7 @@ class PsqlDatabase:
                     return result
                 result = self.generate_unit_dict_from_row(unt_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1328,7 +1365,7 @@ class PsqlDatabase:
                     result.append(unt_obj.copy())
                     unt_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1341,7 +1378,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Units).filter(Units.unt_uid == unt_uid).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def update_unit(self, *, act_id: int, unt_uid: str, properties):
@@ -1360,7 +1397,7 @@ class PsqlDatabase:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Unit", unt_uid))
                 unt_obj.properties = properties
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1378,7 +1415,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(plg_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_plugin(self, *, plugin_id: str):
@@ -1391,7 +1428,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Plugins).filter(Plugins.plg_local_id == plugin_id).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     @staticmethod
@@ -1423,7 +1460,7 @@ class PsqlDatabase:
                     result.append(plg_obj.copy())
                     plg_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1441,7 +1478,7 @@ class PsqlDatabase:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Plugin", plugin_id))
                 result = self.generate_plugin_dict_from_row(plg_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1460,7 +1497,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(dlg_obj)
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def update_delegation(self, *, dlg_act_id: int, dlg_graph_id: str, dlg_state: int, properties):
@@ -1481,7 +1518,7 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Delegation", dlg_graph_id))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     def remove_delegation(self, *, dlg_graph_id: str):
@@ -1493,7 +1530,7 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.query(Delegations).filter(Delegations.dlg_graph_id == dlg_graph_id).delete()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
     @staticmethod
@@ -1523,7 +1560,7 @@ class PsqlDatabase:
                     result.append(dlg_obj.copy())
                     dlg_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1544,7 +1581,7 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Delegation", dlg_graph_id))
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1566,7 +1603,7 @@ class PsqlDatabase:
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
         except Exception as e:
-            self.logger.error(Constants.exception_occurred.format(e))
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
@@ -1679,7 +1716,7 @@ def test():
     db.add_reservation(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
                        rsv_pending=3, rsv_joining=4, properties=pickle.dumps(prop))
 
-    db.add_unit(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", unt_uid="unt_123", unt_unt_id=None, unt_type=1,
+    db.add_unit(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", unt_uid="unt_123", unt_unt_id=None,
                 unt_state=2, properties=pickle.dumps(prop))
     print("Unit after add {}".format(db.get_units(act_id=actor_id, rsv_resid="rsv_567")))
     prop['update_unit'] = 'done'

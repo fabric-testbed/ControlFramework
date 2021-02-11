@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.common.resource_vector import ResourceVector
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -36,9 +35,8 @@ class ResourceDelegation:
     stored in one or more resource bins and covers a fixed time interval (term). Individual units
     in a delegation are indistinguishable from each other.
     """
-    def __init__(self, *, units: int = None, vector: ResourceVector = None, term: Term = None,
-                 rtype: ResourceType = None, sources: list = None, bins: list = None, properties: dict = None,
-                 issuer: ID = None, holder: ID = None):
+    def __init__(self, *, units: int = None, term: Term = None, rtype: ResourceType = None,
+                 properties: dict = None, issuer: ID = None, holder: ID = None):
         # The delegation's unique identifier.
         self.guid = ID()
         # Lease interval.
@@ -47,8 +45,6 @@ class ResourceDelegation:
         # units represented by the delegation and can be different
         # from the number of physical units
         self.units = units
-        # Resource vector for each delegated unit.
-        self.vector = vector
         # Resource type.
         self.type = rtype
         # Resource properties (optional).
@@ -57,30 +53,21 @@ class ResourceDelegation:
         self.issuer = issuer
         # Holder identifier.
         self.holder = holder
-        # Source bins used for this delegation.
-        self.sources = sources
-        # Actor-local resource bins referenced by the delegation.
-        self.bins = bins
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self.vector = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        del state['vector']
         return state
 
     def __str__(self):
-        result = "delegation=[guid={},units={},vector={},type={},issuer={},holder={}]".format(self.guid, self.units,
-                                                                                              self.vector, self.type,
-                                                                                              self.issuer, self.holder)
+        result = f"delegation=[guid={self.guid},units={self.units},type={self.type},issuer={self.issuer}," \
+                 f"holder={self.holder}]"
         return result
 
     def is_valid(self) -> bool:
-        if self.guid is None or self.term is None or self.units <= 0 or self.vector is None or \
-                not self.vector.is_positive() or self.type is None or self.sources is None \
-                or len(self.sources) == 0 or self.bins is None or len(self.bins) == 0:
+        if self.guid is None or self.term is None or self.units <= 0 or self.type is None:
             return False
         return True
 
@@ -90,13 +77,6 @@ class ResourceDelegation:
         @return guid
         """
         return self.guid
-
-    def get_resource_vector(self) -> ResourceVector:
-        """
-        Get Resource Vector
-        @return resource vector
-        """
-        return self.vector
 
     def get_resource_type(self) -> ResourceType:
         """
@@ -161,13 +141,12 @@ class ResourceDelegation:
         """
         self.units = units
 
-    def get_map(self):
-        """
-        Returns a hash map of all actor-local bins referenced by this delegation.
-        The map indexes bins by guid.
-        @return hash map
-        """
-        result = {}
-        for i in range(len(self.bins)):
-            result[self.bins[i].guid] = self.bins[i]
-        return result
+    def clone(self):
+        properties = None
+        if self.properties is not None:
+            properties = self.properties.copy()
+        obj = ResourceDelegation(units=self.units, term=self.term, rtype=self.type, properties=properties,
+                                 holder=self.holder, issuer=self.issuer)
+        obj.guid = self.guid
+
+        return obj

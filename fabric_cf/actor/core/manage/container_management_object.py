@@ -46,16 +46,16 @@ if TYPE_CHECKING:
 class ContainerManagementObject(ManagementObject):
     def __init__(self):
         super().__init__()
-        self.id = ID(uid=Constants.container_managment_object_id)
+        self.id = ID(uid=Constants.CONTAINER_MANAGMENT_OBJECT_ID)
 
     def register_protocols(self):
         from fabric_cf.actor.core.manage.local.local_container import LocalContainer
-        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local,
+        local = ProxyProtocolDescriptor(protocol=Constants.PROTOCOL_LOCAL,
                                         proxy_class=LocalContainer.__name__,
                                         proxy_module=LocalContainer.__module__)
 
         from fabric_cf.actor.core.manage.kafka.kafka_container import KafkaContainer
-        kakfa = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka,
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.PROTOCOL_KAFKA,
                                         proxy_class=KafkaContainer.__name__,
                                         proxy_module=KafkaContainer.__module__)
 
@@ -65,8 +65,8 @@ class ContainerManagementObject(ManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.property_class_name] = ContainerManagementObject.__name__
-        properties[Constants.property_module_name] = ContainerManagementObject.__module__
+        properties[Constants.PROPERTY_CLASS_NAME] = ContainerManagementObject.__name__
+        properties[Constants.PROPERTY_MODULE_NAME] = ContainerManagementObject.__module__
 
         return properties
 
@@ -96,11 +96,11 @@ class ContainerManagementObject(ManagementObject):
 
         try:
             act_list = self.get_actors_from_registry(atype=atype, caller=caller)
-            result.result = Converter.fill_actors(act_list=act_list)
+            result.actors = Converter.fill_actors(act_list=act_list)
         except Exception as e:
             self.logger.error("get_actors {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
@@ -125,20 +125,20 @@ class ContainerManagementObject(ManagementObject):
             except Exception as e:
                 self.logger.error("get_actors_from_database {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if act_list is not None:
                 if status is None:
-                    result.result = Converter.fill_actors_from_db(act_list=act_list)
+                    result.actors = Converter.fill_actors_from_db(act_list=act_list)
                 else:
-                    result.result = Converter.fill_actors_from_db_status(act_list=act_list, status=status)
+                    result.actors = Converter.fill_actors_from_db_status(act_list=act_list, status=status)
 
         except Exception as e:
             self.logger.error("get_actors_from_database {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
@@ -182,11 +182,11 @@ class ContainerManagementObject(ManagementObject):
             else:
                 proxies = ActorRegistrySingleton.get().get_proxies(protocol=protocol)
 
-            result.result = Converter.fill_proxies(proxies=proxies)
+            result.proxies = Converter.fill_proxies(proxies=proxies)
         except Exception as e:
             self.logger.error("get_broker_proxies {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result

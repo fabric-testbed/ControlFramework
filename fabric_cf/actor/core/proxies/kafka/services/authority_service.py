@@ -59,7 +59,8 @@ class AuthorityService(BrokerService):
         resource_set.set_resources(cset=cset)
         rid = ID(uid=reservation.reservation_id)
 
-        result = AuthorityReservationFactory.create(resources=resource_set, term=term, slice_obj=slice_obj, rid=rid)
+        result = AuthorityReservationFactory.create(resources=resource_set, term=term, slice_obj=slice_obj, rid=rid,
+                                                    actor=self.actor)
         result.set_owner(owner=self.actor.get_identity())
         result.set_sequence_in(sequence=reservation.sequence)
 

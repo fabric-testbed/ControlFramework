@@ -25,13 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import pickle
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.apis.i_slice_factory import ISliceFactory
-from fabric_cf.actor.core.common.exceptions import SliceException
 from fabric_cf.actor.core.kernel.slice import Slice
 from fabric_cf.actor.core.util.id import ID
 
@@ -44,16 +40,3 @@ class SliceFactory(ISliceFactory):
     @staticmethod
     def create(*, slice_id: ID, name: str = None, data: ResourceData = None) -> ISlice:
         return Slice(slice_id=slice_id, name=name, data=data)
-
-    @staticmethod
-    def create_instance(*, properties: dict) -> ISlice:
-        if Constants.property_pickle_properties not in properties:
-            raise SliceException(Constants.invalid_argument)
-
-        serialized_slice = properties[Constants.property_pickle_properties]
-        deserialized_slice = pickle.loads(serialized_slice)
-        if deserialized_slice.get_graph_id() is not None:
-            graph_id = str(deserialized_slice.get_graph_id())
-            arm_graph = Neo4jResourcePoolFactory.get_arm_graph(graph_id=graph_id)
-            deserialized_slice.set_graph(graph=arm_graph)
-        return deserialized_slice

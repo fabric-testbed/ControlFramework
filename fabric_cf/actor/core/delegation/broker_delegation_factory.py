@@ -35,7 +35,7 @@ class BrokerDelegationFactory:
     Factory class to create broker delegation instances
     """
     @staticmethod
-    def create(did: ID, slice_id: ID, broker: IBrokerProxy) -> IDelegation:
+    def create(did: str, slice_id: ID, broker: IBrokerProxy) -> IDelegation:
         """
         Create a broker delegation
         @param did delegation id

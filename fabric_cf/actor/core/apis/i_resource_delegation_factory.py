@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class IResourceTicketFactory:
+class IResourceDelegationFactory:
     """
     Interface for Factory class for Resource Tickets
     """

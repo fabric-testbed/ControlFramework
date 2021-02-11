@@ -79,7 +79,7 @@ services:
       SCHEMA_REGISTRY_DEBUG: 'true'
   database:
     image: fabrictestbed/postgres:12.3
-    container_name: test-db
+    container_name: database
     restart: always
     ports:
       - 5432:5432

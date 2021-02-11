@@ -65,7 +65,7 @@ class KafkaProxy(IComponent):
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             self.producer = GlobalsSingleton.get().get_kafka_producer()
         except Exception as e:
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
             self.logger.eror("Exception occurred while loading schemas {}".format(e))
             raise e
 
@@ -81,7 +81,7 @@ class KafkaProxy(IComponent):
 
     def get_protocols(self) -> List[ProtocolProxyMng]:
         proto = ProtocolProxyMng()
-        proto.set_protocol(protocol=Constants.protocol_kafka)
+        proto.set_protocol(protocol=Constants.PROTOCOL_KAFKA)
         proto.set_proxy_class(proxy_class=KafkaProxy.__class__.__name__)
         proto.set_proxy_module(proxy_module=KafkaProxy.__module__)
         result = [proto]

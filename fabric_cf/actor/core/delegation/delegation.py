@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from fim.graph.abc_property_graph import ABCPropertyGraph
 
-from fabric_cf.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric_cf.actor.core.apis.i_delegation import IDelegation, DelegationState
@@ -43,7 +43,7 @@ class Delegation(IDelegation):
     error_string_prefix = 'error for delegation: {} : {}'
     invalid_state_prefix = "Invalid state for {}. Did you already {} this Delegation?"
 
-    def __init__(self, dlg_graph_id: ID, slice_id: ID):
+    def __init__(self, dlg_graph_id: str, slice_id: ID, delegation_name: str):
         self.dlg_graph_id = dlg_graph_id
         self.slice_id = slice_id
         self.state = DelegationState.Nascent
@@ -62,6 +62,7 @@ class Delegation(IDelegation):
         self.callback = None
         self.error_message = None
         self.owner = None
+        self.delegation_name = delegation_name
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -82,11 +83,12 @@ class Delegation(IDelegation):
         self.policy = None
         self.callback = None
 
-    def restore(self, actor: IActor, slice_obj: ISlice, logger):
+    def restore(self, actor: IActor, slice_obj: ISlice):
         self.actor = actor
         self.slice_object = slice_obj
-        self.logger = logger
-        self.graph = Neo4jResourcePoolFactory.get_arm_graph(graph_id=str(self.dlg_graph_id))
+        if actor is not None:
+            self.logger = actor.get_logger()
+        self.graph = Neo4jHelper.get_arm_graph(graph_id=str(self.dlg_graph_id))
 
     def set_graph(self, graph: ABCPropertyGraph):
         self.graph = graph
@@ -97,11 +99,15 @@ class Delegation(IDelegation):
     def get_actor(self) -> IActor:
         return self.actor
 
-    def get_delegation_id(self) -> ID:
+    def get_delegation_id(self) -> str:
         return self.dlg_graph_id
 
     def get_slice_id(self) -> ID:
-        return self.slice_id
+        if self.slice_id is not None:
+            return self.slice_id
+        elif self.slice_object is not None:
+            return self.slice_object.get_slice_id()
+        return None
 
     def get_slice_object(self) -> ISlice:
         return self.slice_object
@@ -177,8 +183,8 @@ class Delegation(IDelegation):
         # a client-specified delegation id.
 
         if self.callback is not None and self.dlg_graph_id is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
-            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("graph id")))
+            raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("graph id"))
 
         self.set_dirty()
 
@@ -345,9 +351,9 @@ class Delegation(IDelegation):
             msg += "#{} ".format(self.dlg_graph_id)
 
         if self.slice_object is not None:
-            msg += "slice: [{}] ".format(self.slice_object.get_name())
+            msg += "slice: [{}] ".format(self.slice_object)
         elif self.slice_id is not None:
-            msg += "slice_id: [{}] ".format(self.slice_id)
+            msg += "slice_id: [{}] ".format(self.get_slice_id())
 
         msg += "state:[{}] ".format(self.get_state_name())
 
@@ -384,16 +390,16 @@ class Delegation(IDelegation):
 
     def validate(self):
         if self.slice_object is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("slice")))
-            raise DelegationException(Constants.not_specified_prefix.format("slice"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("slice")))
+            raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("slice"))
 
         if self.dlg_graph_id is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
-            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("graph id")))
+            raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("graph id"))
 
         if self.graph is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph")))
-            raise DelegationException(Constants.not_specified_prefix.format("graph"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("graph")))
+            raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("graph"))
 
     def validate_incoming(self):
         self.validate()
@@ -409,4 +415,7 @@ class Delegation(IDelegation):
         self.owner = owner
 
     def load_graph(self, *, graph_str: str):
-        self.graph = Neo4jResourcePoolFactory.get_graph_from_string(graph_str=graph_str)
+        self.graph = Neo4jHelper.get_graph_from_string(graph_str=graph_str)
+
+    def get_delegation_name(self) -> str:
+        return self.delegation_name

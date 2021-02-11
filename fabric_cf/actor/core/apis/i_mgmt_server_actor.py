@@ -122,10 +122,11 @@ class IMgmtServerActor(IMgmtActor):
         """
 
     @abstractmethod
-    def advertise_resources(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+    def advertise_resources(self, *, delegation: ABCPropertyGraph, delegation_name: str, client: AuthToken) -> ID:
         """
         Advertise resources to the broker
         @param delegation: delegation
+        @param delegation_name delegation name
         @param client: client
         @return return the reservation id
         """

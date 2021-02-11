@@ -65,7 +65,7 @@ class IContainerDatabase:
         """
 
     @abstractmethod
-    def get_actors(self, *, name: str = None, actor_type: int = None) -> list:
+    def get_actors(self, *, name: str = None, actor_type: int = None) -> List[IActor]:
         """
         Retrieves the actors defined in this container
         @return vector of properties
@@ -73,7 +73,7 @@ class IContainerDatabase:
         """
 
     @abstractmethod
-    def get_actor(self, *, actor_name: str) -> dict:
+    def get_actor(self, *, actor_name: str) -> IActor:
         """
         Retrieves the actors defined in this container
         @param actor_name actor name

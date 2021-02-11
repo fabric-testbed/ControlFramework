@@ -33,7 +33,7 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, Re
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 
 
-class OrchestratorResponse:
+class ResponseBuilder:
     RESPONSE_STATUS = "status"
     SUCCESS_STATUS = "success"
     FAILURE_STATUS = "fail"
@@ -46,7 +46,7 @@ class OrchestratorResponse:
     @staticmethod
     def get_reservation_summary(*, res_list: List[ReservationMng]) -> dict:
         reservations = []
-        status = OrchestratorResponse.SUCCESS_STATUS
+        status = ResponseBuilder.SUCCESS_STATUS
         message = ""
 
         if res_list is not None:
@@ -62,45 +62,48 @@ class OrchestratorResponse:
                     res_dict['join_state'] = JoinState(reservation.get_join_state()).name
                 reservations.append(res_dict)
         else:
-            status = OrchestratorResponse.FAILURE_STATUS
+            status = ResponseBuilder.FAILURE_STATUS
             message = "No reservations were found/computed"
 
-        response = {OrchestratorResponse.RESPONSE_STATUS: status, OrchestratorResponse.RESPONSE_MESSAGE: message,
-                    OrchestratorResponse.RESPONSE_RESERVATIONS: reservations}
+        response = {ResponseBuilder.RESPONSE_STATUS: status, ResponseBuilder.RESPONSE_MESSAGE: message,
+                    ResponseBuilder.RESPONSE_RESERVATIONS: reservations}
 
         return response
 
     @staticmethod
-    def get_slice_summary(*, slice_list: List[SliceAvro]) -> dict:
+    def get_slice_summary(*, slice_list: List[SliceAvro], slice_id: str = None) -> dict:
         slices = []
-        status = OrchestratorResponse.SUCCESS_STATUS
+        status = ResponseBuilder.SUCCESS_STATUS
         message = ""
 
         if slice_list is not None:
             for s in slice_list:
+                slice_state = SliceState(s.get_state())
+                if slice_id is None and (slice_state == SliceState.Dead or slice_state == SliceState.Closing):
+                    continue
                 s_dict = {'slice_id': s.get_slice_id(), 'slice_name': s.get_slice_name(),
                           'resource_type': s.get_resource_type(), 'graph_id': s.get_graph_id(),
-                          'slice_state': SliceState(s.get_state()).name}
+                          'slice_state': slice_state.name}
                 slices.append(s_dict)
         else:
-            status = OrchestratorResponse.FAILURE_STATUS
+            status = ResponseBuilder.FAILURE_STATUS
             message = "No slices were found"
 
-        response = {OrchestratorResponse.RESPONSE_STATUS: status, OrchestratorResponse.RESPONSE_MESSAGE: message,
-                    OrchestratorResponse.RESPONSE_SLICES: slices}
+        response = {ResponseBuilder.RESPONSE_STATUS: status, ResponseBuilder.RESPONSE_MESSAGE: message,
+                    ResponseBuilder.RESPONSE_SLICES: slices}
 
         return response
 
     @staticmethod
     def get_broker_query_model_summary(*, bqm: dict):
-        status = OrchestratorResponse.SUCCESS_STATUS
+        status = ResponseBuilder.SUCCESS_STATUS
         message = ""
 
         if bqm is None:
             message = "No broker query model found"
-            status = OrchestratorResponse.FAILURE_STATUS
+            status = ResponseBuilder.FAILURE_STATUS
 
-        response = {OrchestratorResponse.RESPONSE_STATUS: status, OrchestratorResponse.RESPONSE_MESSAGE: message,
-                    OrchestratorResponse.RESPONSE_BQM: bqm}
+        response = {ResponseBuilder.RESPONSE_STATUS: status, ResponseBuilder.RESPONSE_MESSAGE: message,
+                    ResponseBuilder.RESPONSE_BQM: bqm}
 
         return response

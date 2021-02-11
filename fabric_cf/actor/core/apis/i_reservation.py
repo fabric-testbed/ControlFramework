@@ -246,3 +246,10 @@ class IReservation(IReservationResources, IReservationStatus):
         Returns the error message associated with this reservation.
         @return error message associated with this reservation
         """
+
+    @abstractmethod
+    def get_graph_node_id(self) -> str:
+        """
+        Returns the graph node id which represents the sliver for this reservation in the graph model
+        @return graph node id
+        """

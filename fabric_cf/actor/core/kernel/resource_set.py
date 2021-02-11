@@ -26,6 +26,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from datetime import datetime
+
+from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
 from fabric_cf.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ResourcesException
@@ -36,7 +38,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.notice import Notice
     from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
-    from fabric_cf.actor.core.util import resource_type
+    from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.core.ticket import Ticket
 
 
@@ -91,7 +93,7 @@ class ResourceSet:
     """
     def __init__(self, *, concrete: IConcreteSet = None, gained: IConcreteSet = None,
                  lost: IConcreteSet = None, modified: IConcreteSet = None,
-                 rtype: resource_type = None, rdata: ResourceData = None, units: int = None):
+                 rtype: ResourceType = None, rdata: ResourceData = None, units: int = None):
         # What type of resources does this set contain. The meaning/assignment of
         # type values is an externally defined convention of interacting actors.
         self.type = rtype
@@ -156,12 +158,17 @@ class ResourceSet:
         self.rid = None
         self.is_closing = False
 
-    def restore(self, *, rid: ID):
+    def restore(self, *, plugin: IBasePlugin, reservation: IReservation):
         """
         Restore post stateful restart
-        @param rid reservation id
+        @param plugin plugin
+        @param reservation reservation
         """
-        self.rid = rid
+        if reservation is not None:
+            self.rid = reservation.get_reservation_id()
+
+        if self.resources is not None:
+            self.resources.restore(plugin=plugin, reservation=reservation)
 
     def abstract_clone(self):
         """
@@ -182,10 +189,11 @@ class ResourceSet:
         @returns a ResourceSet
         @raises Exception in case of error
         """
-        rset = None
+        result = None
         if self.released is not None:
-            rset = ResourceSet(concrete=self.released, rtype=self.type, rdata=ResourceData())
-        return rset
+            result = ResourceSet(concrete=self.released, rtype=self.type, rdata=ResourceData())
+            self.released = None
+        return result
 
     def merge_properties(self, *, reservation: IReservation, resource_set):
         """
@@ -194,7 +202,7 @@ class ResourceSet:
         @param resource_set resource set
         """
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.invalid_argument)
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         if self.properties is None:
             self.properties = ResourceData()
@@ -240,7 +248,7 @@ class ResourceSet:
 
     def delta_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.invalid_argument)
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         if self.resources is None:
             # in case of close for a canceled reservation.
@@ -290,7 +298,7 @@ class ResourceSet:
 
     def full_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.invalid_argument)
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         # take the units and the type
         self.units = resource_set.units
@@ -367,7 +375,7 @@ class ResourceSet:
         @returns request properties list. Can be null.
         """
         if self.properties is not None:
-            self.properties.get_request_properties()
+            return self.properties.get_request_properties()
         return None
 
     def get_reservation_id(self) -> ID:
@@ -411,7 +419,7 @@ class ResourceSet:
             return self.resources.get_site_proxy()
         return None
 
-    def get_type(self) -> resource_type:
+    def get_type(self) -> ResourceType:
         """
         Returns the resource type of the set.
         @returns resource type
@@ -554,7 +562,8 @@ class ResourceSet:
         """
         if self.properties is None:
             self.properties = ResourceData()
-        self.properties.merge_properties(from_props=p, to_props=self.properties.get_configuration_properties())
+        self.properties.configuration_properties = self.properties.merge_properties(from_props=p,
+                                                                                    to_props=self.properties.configuration_properties)
 
     def set_local_properties(self, *, p: dict):
         """
@@ -563,7 +572,8 @@ class ResourceSet:
         """
         if self.properties is None:
             self.properties = ResourceData()
-        self.properties.merge_properties(from_props=p, to_props=self.properties.get_local_properties())
+        self.properties.local_properties = self.properties.merge_properties(from_props=p,
+                                                                            to_props=self.properties.local_properties)
 
     def set_request_properties(self, *, p: dict):
         """
@@ -572,7 +582,8 @@ class ResourceSet:
         """
         if self.properties is None:
             self.properties = ResourceData()
-        self.properties.merge_properties(from_props=p, to_props=self.properties.get_request_properties())
+        self.properties.request_properties = self.properties.merge_properties(from_props=p,
+                                                                              to_props=self.properties.request_properties)
 
     def set_reservation_id(self, *, rid: ID):
         """
@@ -588,7 +599,8 @@ class ResourceSet:
         """
         if self.properties is None:
             self.properties = ResourceData()
-        self.properties.merge_properties(from_props=p, to_props=self.properties.get_resource_properties())
+        self.properties.resource_properties = self.properties.merge_properties(from_props=p,
+                                                                               to_props=self.properties.resource_properties)
 
     def set_resources(self, *, cset: IConcreteSet):
         """
@@ -597,7 +609,7 @@ class ResourceSet:
         """
         self.resources = cset
 
-    def set_type(self, *, rtype: resource_type):
+    def set_type(self, *, rtype: ResourceType):
         """
         Sets the resource type for the set.
         @params rtype : resource type
@@ -629,7 +641,7 @@ class ResourceSet:
 
     def update(self, *, reservation: IReservation, resource_set: ResourceSet):
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.invalid_argument)
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         if resource_set.resources is not None:
             self.full_update(reservation=reservation, resource_set=resource_set)
@@ -638,7 +650,7 @@ class ResourceSet:
 
     def update_properties(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
-            raise ResourcesException(Constants.invalid_argument)
+            raise ResourcesException(Constants.INVALID_ARGUMENT)
 
         self.merge_properties(reservation=reservation, resource_set=resource_set)
 

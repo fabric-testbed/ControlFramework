@@ -27,6 +27,7 @@ import queue
 import threading
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
+from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 
 from fabric_cf.actor.core.apis.i_actor import ActorType
 from fabric_cf.actor.core.apis.i_authority import IAuthority
@@ -123,9 +124,6 @@ class Authority(Actor, IAuthority):
     def register_client_slice(self, *, slice_obj: ISlice):
         self.wrapper.register_slice(slice_object=slice_obj)
 
-    def available(self, *, resources: ResourceSet):
-        self.policy.available(resources=resources)
-
     def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
                          id_token: str = None):
         slice_obj = delegation.get_slice_object()
@@ -147,7 +145,7 @@ class Authority(Actor, IAuthority):
 
     def close_by_caller(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise AuthorityException(Constants.invalid_actor_state)
+            raise AuthorityException(Constants.INVALID_ACTOR_STATE)
 
         self.wrapper.close_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
@@ -166,21 +164,16 @@ class Authority(Actor, IAuthority):
     def donate_delegation(self, *, delegation: IDelegation):
         self.policy.donate_delegation(delegation=delegation)
 
-    def donate(self, *, resources: ResourceSet):
-        self.policy.donate(resources=resources)
-
-    def donate_reservation(self, *, reservation: IClientReservation):
-        self.policy.donate_reservation(reservation=reservation)
-
     def eject(self, *, resources: ResourceSet):
         self.policy.eject(resources=resources)
 
-    def advertise(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+    def advertise(self, *, delegation: ABCPropertyGraph, delegation_name: str, client: AuthToken) -> str:
         slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
         slice_obj.set_owner(owner=client)
         slice_obj.set_broker_client()
 
-        dlg_obj = DelegationFactory.create(did=delegation.get_graph_id(), slice_id=slice_obj.get_slice_id())
+        dlg_obj = DelegationFactory.create(did=delegation.get_graph_id(), slice_id=slice_obj.get_slice_id(),
+                                           delegation_name=delegation_name)
         dlg_obj.set_slice_object(slice_object=slice_obj)
         dlg_obj.set_graph(graph=delegation)
         self.wrapper.advertise(delegation=dlg_obj, client=client)
@@ -195,7 +188,7 @@ class Authority(Actor, IAuthority):
                                                   compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.is_stopped():
-                raise AuthorityException(Constants.invalid_actor_state)
+                raise AuthorityException(Constants.INVALID_ACTOR_STATE)
             self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
     def modify_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken):
@@ -207,7 +200,7 @@ class Authority(Actor, IAuthority):
                                                   compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.stopped:
-                raise AuthorityException(Constants.invalid_actor_state)
+                raise AuthorityException(Constants.INVALID_ACTOR_STATE)
             self.wrapper.modify_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
     def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
@@ -219,7 +212,7 @@ class Authority(Actor, IAuthority):
 
     def relinquish(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.stopped:
-            raise AuthorityException(Constants.invalid_actor_state)
+            raise AuthorityException(Constants.INVALID_ACTOR_STATE)
         self.wrapper.relinquish_request(reservation=reservation, caller=caller)
 
     def freed(self, *, resources: ResourceSet):
@@ -234,7 +227,7 @@ class Authority(Actor, IAuthority):
                                             callback=reservation.get_callback(), compare_sequence_numbers=False)
         else:
             if not self.is_recovered() or self.is_stopped():
-                raise AuthorityException(Constants.invalid_actor_state)
+                raise AuthorityException(Constants.INVALID_ACTOR_STATE)
 
             if self.plugin.validate_incoming(reservation=reservation, auth=caller):
                 self.wrapper.redeem_request(reservation=reservation, caller=caller, callback=callback,
@@ -255,9 +248,6 @@ class Authority(Actor, IAuthority):
         self.close_expiring(cycle=self.current_cycle)
         # process all requests for the current cycle
         self.policy.assign(cycle=self.current_cycle)
-
-    def unavailable(self, *, resources: ResourceSet) -> int:
-        return self.policy.unavailable(resources=resources)
 
     def register_client(self, *, client: Client):
         db = self.plugin.get_database()
@@ -333,3 +323,6 @@ class Authority(Actor, IAuthority):
     @staticmethod
     def get_mgmt_kafka_service_module() -> str:
         return KafkaAuthorityService.__module__
+
+    def set_aggregate_resource_model(self, aggregate_resource_model: Neo4jARMGraph):
+        self.policy.set_aggregate_resource_model(aggregate_resource_model=aggregate_resource_model)

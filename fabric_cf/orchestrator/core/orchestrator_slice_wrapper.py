@@ -23,8 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import threading
-from datetime import datetime
 from typing import List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -38,30 +36,20 @@ from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.util.id import ID
 
 
-class OrchestratorSlice:
+class OrchestratorSliceWrapper:
     """
-    Orchestrator Wrapper Around Slice to h
+    Orchestrator Wrapper Around Slice to hold the computed reservations for processing by Slice Deferred Thread
     """
     def __init__(self, *, controller: IMgmtController, broker: ID, slice_obj: SliceAvro, logger):
         self.controller = controller
         self.broker = broker
-        self.slice_lock = threading.Lock()
         self.slice_obj = slice_obj
         self.logger = logger
-        self.close_executed = False
-        self.global_assignment_cleared = False
-
         self.reservation_converter = ReservationConverter(controller=controller, broker=broker)
         self.workflow = RequestWorkflow()
 
         self.computed_reservations = None
         self.first_delete_attempt = None
-
-    def lock(self):
-        self.slice_lock.acquire()
-
-    def unlock(self):
-        self.slice_lock.release()
 
     def remove_computed_reservation(self, *, rid: str):
         if self.computed_reservations is not None:
@@ -89,35 +77,11 @@ class OrchestratorSlice:
             return None
         return self.controller.get_reservations()
 
-    def get_units(self, *, rid: ID):
-        return self.controller.get_reservation_units(rid=rid)
-
-    def get_reservation_states(self, *, rids: List[ID]):
-        if rids is None:
-            return None
-        return self.controller.get_reservation_state_for_reservations(reservation_list=rids)
-
-    def get_workflow(self) -> RequestWorkflow:
-        return self.workflow
-
-    def get_reservation_converter(self) -> ReservationConverter:
-        return self.reservation_converter
-
     def get_slice_name(self) -> str:
         return self.slice_obj.get_slice_name()
 
     def get_slice_id(self) -> ID:
         return ID(uid=self.slice_obj.get_slice_id())
-
-    def get_user_dn(self) -> str:
-        return self.slice_obj.get_owner().get_oidc_sub_claim()
-
-    def mark_delete_attempt(self):
-        if self.first_delete_attempt is None:
-            self.first_delete_attempt = datetime.utcnow()
-
-    def get_delete_attempt(self) -> datetime:
-        return self.first_delete_attempt
 
     def get_requested_entities(self) -> dict:
         ticketed_requested_entities = {}
@@ -126,22 +90,6 @@ class OrchestratorSlice:
                 ticketed_requested_entities[reservation.get_reservation_id()] = reservation
 
         return ticketed_requested_entities
-
-    def get_computed_reservation_summary(self) -> str:
-        result = ""
-
-        if self.get_computed_reservations() is not None:
-            for reservation in self.get_computed_reservations():
-                result += "[ Slice UID: {} | Reservation UID: {} | Resource Type: {} | Resource Units: {} ]\n".format(
-                    reservation.get_slice_id(), reservation.get_reservation_id(), reservation.get_resource_type(),
-                    reservation.get_units())
-        else:
-            result += "No new reservations were computed\n"
-
-        if len(result) == 0:
-            result += "No result available"
-
-        return result
 
     def create(self, *, bqm_graph: Neo4jPropertyGraph, slice_graph: str) -> List[TicketReservationAvro]:
         try:

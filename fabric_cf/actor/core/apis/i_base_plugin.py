@@ -36,7 +36,7 @@ from fabric_cf.actor.core.util.id import ID
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.apis.i_database import IDatabase
-    from fabric_cf.actor.core.apis.i_resource_ticket_factory import IResourceTicketFactory
+    from fabric_cf.actor.core.apis.i_resource_delegation_factory import IResourceDelegationFactory
     from fabric_cf.actor.core.util.resource_data import ResourceData
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.apis.i_reservation import IReservation
@@ -199,21 +199,21 @@ class IBasePlugin(IPlugin):
         """
 
     @abstractmethod
-    def set_ticket_factory(self, *, ticket_factory):
+    def set_resource_delegation_factory(self, *, resource_delegation_factory):
         """
-        Sets the ticket factory
+        Sets the resource_delegation factory
 
         Args:
-            ticket_factory: ticket factory
+            resource_delegation_factory: resource_delegation_factory
         """
 
     @abstractmethod
-    def get_ticket_factory(self) -> IResourceTicketFactory:
+    def get_resource_delegation_factory(self) -> IResourceDelegationFactory:
         """
-        Returns the ticket factory.
+        Returns the resource_delegation_factory
 
         Returns:
-             ticket factory
+             resource_delegation_factory
         """
 
     @abstractmethod

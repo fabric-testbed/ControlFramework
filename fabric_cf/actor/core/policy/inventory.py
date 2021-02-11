@@ -28,12 +28,6 @@ from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import PolicyException
-from fabric_cf.actor.core.common.resource_pool_attribute_descriptor import ResourcePoolAttributeDescriptor, \
-    ResourcePoolAttributeType
-from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
-from fabric_cf.actor.core.policy.simpler_units_inventory import SimplerUnitsInventory
-from fabric_cf.actor.core.util.prop_list import PropList
-from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
@@ -47,7 +41,7 @@ class Inventory:
 
     def contains_type(self, *, resource_type: ResourceType):
         if resource_type is None:
-            raise PolicyException(Constants.invalid_argument)
+            raise PolicyException(Constants.INVALID_ARGUMENT)
 
         if resource_type in self.map:
             return True
@@ -56,7 +50,7 @@ class Inventory:
 
     def get(self, *, resource_type: ResourceType) -> InventoryForType:
         if resource_type is None:
-            raise PolicyException(Constants.invalid_argument)
+            raise PolicyException(Constants.INVALID_ARGUMENT)
 
         return self.map.get(resource_type, None)
 
@@ -76,56 +70,13 @@ class Inventory:
 
         return False
 
-    def get_new(self, *, reservation: IClientReservation):
-        if reservation is None:
-            raise PolicyException(Constants.invalid_argument)
-
-        rtype = reservation.get_type()
-
-        if rtype in self.map:
-            raise PolicyException("There is already inventory for type: {}".format(rtype))
-
-        properties = {}
-
-        rset = reservation.get_resources()
-        cset = rset.get_resources()
-        ticket = cset.get_ticket()
-
-        properties = ticket.get_properties()
-        properties = PropList.merge_properties(incoming=rset.get_resource_properties(), outgoing=properties)
-        rpd = ResourcePoolDescriptor()
-        rpd.reset(properties=properties)
-
-        desc_attr = rpd.get_attribute(key=Constants.resource_class_inventory_for_type)
-        inv = None
-        if desc_attr is not None:
-            module_name, class_name = desc_attr.get_value().rsplit(".", 1)
-            inv = ReflectionUtils.create_instance(module_name=module_name, class_name=class_name)
-        else:
-            inv = SimplerUnitsInventory()
-
-        inv.set_type(rtype=rtype)
-        inv.set_descriptor(rpd=rpd)
-        inv.donate(source=reservation)
-
-        self.map[rtype] = inv
-        return inv
-
     def get_inventory(self) -> dict:
         return self.map
 
-    def get_resource_pools(self) -> dict:
-        result = {}
-        count = 0
-        for inv in self.map.values():
-            rpd = inv.get_descriptor().clone()
-            attr = ResourcePoolAttributeDescriptor()
-            attr.set_type(rtype=ResourcePoolAttributeType.INTEGER)
-            attr.set_key(value=Constants.resource_available_units)
-            attr.set_value(value=str(inv.get_free()))
-            rpd.add_attribute(attribute=attr)
-            result = rpd.save(properties=result, prefix=Constants.pool_prefix + str(count) + ".")
-            count += 1
+    def remove_inventory_by_type(self, *, rtype: ResourceType):
+        if rtype in self.map:
+            self.map.pop(rtype)
 
-        result[Constants.pools_count] = str(len(self.map))
-        return result
+    def add_inventory_by_type(self, *, inventory: InventoryForType, rtype: ResourceType):
+        if rtype not in self.map:
+            self.map[rtype] = inventory

@@ -41,27 +41,30 @@ if TYPE_CHECKING:
 
 class IMgmtActor(IComponent):
     @abstractmethod
-    def get_slices(self, *, id_token: str = None, slice_id: ID = None) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None) -> List[SliceAvro]:
         """
         Obtains all slices.
         @param id_token id token
         @param slice_id slice id
+        @param slice_name slice name
         @return returns list of all the slices
         """
 
     @abstractmethod
-    def add_slice(self, *, slice_obj: SliceAvro) -> ID:
+    def add_slice(self, *, slice_obj: SliceAvro, id_token: str) -> ID:
         """
         Adds a new slice
         @param slice_obj slice
+        @param id_token id token
         @return returns slice id
         """
 
     @abstractmethod
-    def remove_slice(self, *, slice_id: ID) -> bool:
+    def remove_slice(self, *, slice_id: ID, id_token: str = None) -> bool:
         """
         Removes the specified slice
         @param slice_id slice id
+        @param id_token id token
         @return true for success; false otherwise
         """
 

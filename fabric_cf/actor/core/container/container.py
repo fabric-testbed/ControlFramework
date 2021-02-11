@@ -26,7 +26,6 @@
 
 from __future__ import annotations
 
-import pickle
 import threading
 import traceback
 from typing import TYPE_CHECKING
@@ -49,7 +48,6 @@ from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.apis.i_actor_container import IActorContainer
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.protocol_descriptor import ProtocolDescriptor
-from fabric_cf.actor.core.extensions.plugin_manager import PluginManager
 from fabric_cf.actor.core.kernel.kernel_tick import KernelTick
 from fabric_cf.actor.core.manage.management_object_manager import ManagementObjectManager
 from fabric_cf.actor.core.util.id import ID
@@ -96,7 +94,6 @@ class Container(IActorContainer):
         self.protocols = {}
         self.fresh = True
         self.recovered = False
-        self.plugin_manager = PluginManager()
         self.management_object_manager = ManagementObjectManager()
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
@@ -128,7 +125,7 @@ class Container(IActorContainer):
         """
         Determine boot mode is clean restart or stateful restart
         """
-        filename = Constants.superblock_location
+        filename = Constants.SUPERBLOCK_LOCATION
         self.logger.debug("Checking if this container is recovering. Looking for: {}".format(filename))
         if os.path.isfile(filename):
             self.logger.debug("Found super block file. This container is recovering")
@@ -144,9 +141,9 @@ class Container(IActorContainer):
         self.logger.debug("Creating superblock")
         file = None
         try:
-            file = open(Constants.superblock_location, 'r')
+            file = open(Constants.SUPERBLOCK_LOCATION, 'r')
         except IOError:
-            file = open(Constants.superblock_location, 'w')
+            file = open(Constants.SUPERBLOCK_LOCATION, 'w')
         finally:
             if file is not None:
                 file.close()
@@ -172,10 +169,10 @@ class Container(IActorContainer):
         """
         Create Database
         """
-        user = self.config.get_global_config().get_database().get(Constants.property_conf_db_user, None)
-        password = self.config.get_global_config().get_database().get(Constants.property_conf_db_password, None)
-        dbname = self.config.get_global_config().get_database().get(Constants.property_conf_db_name, None)
-        dbhost = self.config.get_global_config().get_database().get(Constants.property_conf_db_host, None)
+        user = self.config.get_global_config().get_database().get(Constants.PROPERTY_CONF_DB_USER, None)
+        password = self.config.get_global_config().get_database().get(Constants.PROPERTY_CONF_DB_PASSWORD, None)
+        dbname = self.config.get_global_config().get_database().get(Constants.PROPERTY_CONF_DB_NAME, None)
+        dbhost = self.config.get_global_config().get_database().get(Constants.PROPERTY_CONF_DB_HOST, None)
         self.db = ContainerDatabase(user=user, password=password, database=dbname, db_host=dbhost, logger=self.logger)
         if self.is_fresh():
             self.db.set_reset_state(value=True)
@@ -188,7 +185,7 @@ class Container(IActorContainer):
         Initialize container and actor
         """
         if config is None:
-            raise ContainerException("config cannot be null")
+            raise ContainerException("handlers cannot be null")
 
         with self.container_lock:
             if self.state != ContainerState.Unknown:
@@ -211,7 +208,7 @@ class Container(IActorContainer):
                     loader = ConfigurationLoader()
                     loader.process(config=self.config)
                 except Exception as e:
-                    traceback.print_exc()
+                    self.logger.error(traceback.format_exc())
                     self.logger.error("Failed to instantiate actors {}".format(e))
                     self.logger.error("This container may need to be restored to a clean state")
                     raise e
@@ -232,7 +229,6 @@ class Container(IActorContainer):
         """
         self.logger.debug("Performing common boot tasks")
         self.define_protocols()
-        self.plugin_manager.initialize(db=self.db)
         self.management_object_manager.initialize(db=self.db)
         from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
         RPCManagerSingleton.get().start()
@@ -242,22 +238,22 @@ class Container(IActorContainer):
         Define Protocols i.e. Kafka and Local
         """
         self.logger.debug("Defining container protocols")
-        desc = ProtocolDescriptor(protocol=Constants.protocol_local)
-        self.logger.debug("Registering protocol {}".format(Constants.protocol_local))
+        desc = ProtocolDescriptor(protocol=Constants.PROTOCOL_LOCAL)
+        self.logger.debug("Registering protocol {}".format(Constants.PROTOCOL_LOCAL))
         self.register_protocol(protocol=desc)
 
         kafka_topic_name = self.get_config().get_actor().get_kafka_topic()
         self.logger.debug("Kafka Topic {}".format(kafka_topic_name))
         if kafka_topic_name is not None:
-            desc = ProtocolDescriptor(protocol=Constants.protocol_kafka, location=kafka_topic_name)
-            self.logger.debug("Registering protocol {}".format(Constants.protocol_kafka))
+            desc = ProtocolDescriptor(protocol=Constants.PROTOCOL_KAFKA, location=kafka_topic_name)
+            self.logger.debug("Registering protocol {}".format(Constants.PROTOCOL_KAFKA))
             self.register_protocol(protocol=desc)
 
     def boot_basic(self):
         """
         Perform basic boot actions
         """
-        self.guid = self.get_config().get_global_config().get_container().get(Constants.property_conf_container_guid,
+        self.guid = self.get_config().get_global_config().get_container().get(Constants.PROPERTY_CONF_CONTAINER_GUID,
                                                                               None)
         self.logger.debug("Container guid is {}".format(self.guid))
         self.set_time()
@@ -275,7 +271,7 @@ class Container(IActorContainer):
         """
         Save container information in database
         """
-        properties = {Constants.property_conf_container_guid: self.guid}
+        properties = {Constants.PROPERTY_CONF_CONTAINER_GUID: self.guid}
         self.db.add_container_properties(properties=properties)
 
     def persist_time(self):
@@ -292,15 +288,15 @@ class Container(IActorContainer):
         """
         Set the Actor clock and time
         """
-        start_time = int(self.config.get_global_config().get_time().get(Constants.property_conf_time_start_time, None))
+        start_time = int(self.config.get_global_config().get_time().get(Constants.PROPERTY_CONF_TIME_START_TIME, None))
         if start_time == -1:
             start_time = ActorClock.get_current_milliseconds()
 
-        cycle_millis = int(self.config.get_global_config().get_time().get(Constants.property_conf_time_cycle_millis,
+        cycle_millis = int(self.config.get_global_config().get_time().get(Constants.PROPERTY_CONF_TIME_CYCLE_MILLIS,
                                                                           None))
 
         manual = False
-        if self.config.get_global_config().get_time().get(Constants.property_conf_time_manual, None):
+        if self.config.get_global_config().get_time().get(Constants.PROPERTY_CONF_TIME_MANUAL, None):
             manual = True
 
         self.create_and_start_tick(start_time=start_time, cycle_millis=cycle_millis, manual=manual)
@@ -349,7 +345,7 @@ class Container(IActorContainer):
         """
         self.logger.info("Instantiating extensions...")
         # Load the core from the plugin directory.
-        plugin_dir = self.config.get_global_config().get_runtime().get(Constants.property_conf_plugin_dir, None)
+        plugin_dir = self.config.get_global_config().get_runtime().get(Constants.PROPERTY_CONF_PLUGIN_DIR, None)
         manager = PluginManagerSingleton().get()
         manager.setPluginPlaces([plugin_dir])
         manager.collectPlugins()
@@ -381,7 +377,7 @@ class Container(IActorContainer):
         """
         self.logger.debug("Recovering container GUID")
         properties = self.db.get_container_properties()
-        stored_guid = properties.get(Constants.property_conf_container_guid, None)
+        stored_guid = properties.get(Constants.PROPERTY_CONF_CONTAINER_GUID, None)
         if stored_guid is None:
             raise ContainerException("Could not obtain saved container GUID from database")
         self.guid = ID(uid=stored_guid)
@@ -410,24 +406,17 @@ class Container(IActorContainer):
         actor_list = self.db.get_actors()
         for a in actor_list:
             try:
-                self.recover_actor(properties=a)
+                self.recover_actor(actor=a)
             except Exception as e:
                 self.logger.error(traceback.format_exc())
                 self.logger.error("Could not recover actor {}, exception: {}".format(a.get('act_name', None), e))
 
-    def recover_actor(self, *, properties: dict):
+    def recover_actor(self, *, actor: IActor):
         """
         Recover actor
         """
-        actor_name = properties.get('act_name', None)
-        if actor_name is None:
-            raise ContainerException("Cannot recover actor: no name")
+        actor_name = actor.get_name()
         self.logger.info("Recover actor: {}".format(actor_name))
-        self.logger.debug("Restoring actor from saved state")
-        pickled_actor = properties.get(Constants.property_pickle_properties, None)
-        if pickled_actor is None:
-            raise ContainerException("Pickled Actor read from Data is None")
-        actor = pickle.loads(pickled_actor)
         self.logger.debug("Initializing the actor object")
         actor.initialize()
         # By now we have a valid actor object. We need to register it with
@@ -603,20 +592,20 @@ class Container(IActorContainer):
             self.logger.info("Container is no longer active")
         except Exception as e:
             self.logger.error("Exception occurred while shutting down e: %s", e)
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
 
     @staticmethod
     def write_state_file():
         try:
-            file = open(Constants.state_file_location, 'r')
+            file = open(Constants.STATE_FILE_LOCATION, 'r')
         except IOError:
-            file = open(Constants.state_file_location, 'w')
+            file = open(Constants.STATE_FILE_LOCATION, 'w')
         finally:
             file.close()
 
     @staticmethod
     def remove_state_file():
-        os.remove(Constants.state_file_location)
+        os.remove(Constants.STATE_FILE_LOCATION)
 
     def get_actor_clock(self) -> ActorClock:
         if self.ticker is None:
@@ -657,9 +646,6 @@ class Container(IActorContainer):
         if key is None:
             raise ContainerException("key cannot be null")
         return self.management_object_manager.get_management_object(key=key)
-
-    def get_plugin_manager(self) -> PluginManager:
-        return self.plugin_manager
 
     def get_protocol_descriptor(self, *, protocol: str) -> ProtocolDescriptor:
         return self.protocols.get(protocol, None)

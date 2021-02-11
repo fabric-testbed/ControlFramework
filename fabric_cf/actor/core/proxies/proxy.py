@@ -56,7 +56,7 @@ class Proxy(IProxy):
         @return ICallbackProxy
         """
         if actor is None:
-            raise ProxyException(Constants.not_specified_prefix.format("actor"))
+            raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("actor"))
 
         callback = ActorRegistrySingleton.get().get_callback(protocol=protocol, actor_name=actor.get_name())
         if callback is None:
@@ -64,18 +64,17 @@ class Proxy(IProxy):
         return callback
 
     @staticmethod
-    def get_proxy(*, properties: dict) -> IProxy:
+    def get_proxy(*, proxy_reload_from_db) -> IProxy:
         """
         Obtains a proxy object from the specified properties list. If a suitable
         proxy object has already been created and registered with the
         ActorRegistry, the already existing object is returned and
         no new object is created. Otherwise, the method creates the proxy object
         and registers it with the ActorRegistry
-        @param properties Properties list representing the proxy
+        @param proxy_reload_from_db proxy_reload_from_db
         @return IProxy
         @throws Exception in case of error
         """
-        proxy_reload_from_db = pickle.loads(properties.get(Constants.property_pickle_properties))
         proxy_type = proxy_reload_from_db.get_type()
         name = proxy_reload_from_db.get_name()
 

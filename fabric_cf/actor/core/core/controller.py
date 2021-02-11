@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import queue
 import threading
+import traceback
 from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.apis.i_actor import ActorType
@@ -41,6 +42,7 @@ from fabric_cf.actor.core.apis.i_controller import IController
 from fabric_cf.actor.core.core.actor import Actor
 from fabric_cf.actor.core.registry.peer_registry import PeerRegistry
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
+from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -49,7 +51,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
     from fabric_cf.actor.core.apis.i_slice import ISlice
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
 
 
 class Controller(Actor, IController):
@@ -289,6 +290,7 @@ class Controller(Actor, IController):
                 else:
                     self.logger.warning("Reservation #{} cannot be redeemed".format(reservation.get_reservation_id()))
             except Exception as e:
+                self.logger.error(traceback.format_exc())
                 self.logger.error("Could not redeem for #{} {}".format(reservation.get_reservation_id(), e))
 
     def ticket_client(self, *, reservation: IClientReservation):

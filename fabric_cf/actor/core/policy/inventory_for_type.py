@@ -26,57 +26,14 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
-
-from fabric_cf.actor.core.common.exceptions import PolicyException
+from typing import TYPE_CHECKING, List, Tuple
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.util.resource_type import ResourceType
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-    from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
+    from fabric_cf.actor.core.apis.i_actor import IActor
+    from fabric_cf.actor.core.apis.i_reservation import IReservation
 
 
 class InventoryForType:
-    def __init__(self):
-        self.resource_type = None
-        self.properties = {}
-        self.source = None
-        self.resource_pool_descriptor = None
-
-    def get_type(self) -> ResourceType:
-        return self.resource_type
-
-    def set_type(self, *, rtype: ResourceType):
-        self.resource_type = rtype
-
-    def donate(self, *, source: IClientReservation):
-        if self.source is not None:
-            raise PolicyException("This inventory pool already has a source.")
-        self.source = source
-
-    def get_source(self) -> IClientReservation:
-        return self.source
-
-    def set_descriptor(self, *, rpd: ResourcePoolDescriptor):
-        self.resource_pool_descriptor = rpd
-
-    def get_descriptor(self) -> ResourcePoolDescriptor:
-        return self.resource_pool_descriptor
-
-    def get_properties(self) -> dict:
-        return self.properties
-
-    @abstractmethod
-    def allocate(self, *, count: int, request: dict, resource: dict = None) -> dict:
-        """
-        Allocates the specified number of units given the client request
-        properties. This method is called for new ticketing/extending reservations.
-        @param count how many units to allocate
-        @param request request properties
-        @param resource what is currently allocated
-        @return the resource properties to be passed back to the client
-        """
-
     @abstractmethod
     def allocate_revisit(self, *, count: int, resource: dict):
         """
@@ -97,15 +54,18 @@ class InventoryForType:
         """
 
     @abstractmethod
-    def get_free(self) -> int:
+    def allocate(self, *, needed: int, request: dict, actor: IActor, capacities: dict = None,
+                 labels: dict = None, reservation_info: List[IReservation] = None,
+                 resource: dict = None) -> Tuple[str, dict]:
         """
-        Returns the number of free units in the inventory pool.
-        @return number of free units
-        """
-
-    @abstractmethod
-    def get_allocated(self) -> int:
-        """
-        Returns the number of allocated units from this invento
-        @return number of allocated units
+        Allocates the specified number of units given the client request
+        properties. This method is called for new ticketing/extending reservations.
+        @param needed how many units to allocate
+        @param request request properties
+        @param resource what is currently allocated
+        @param actor actor
+        @param capacities capacities
+        @param labels labels
+        @param reservation_info reservation_info
+        @return the resource properties to be passed back to the client
         """

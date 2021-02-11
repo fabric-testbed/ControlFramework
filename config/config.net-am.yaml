@@ -106,7 +106,7 @@ actor:
   - guid: fabric-net-am-guid
   - description: Site AM
   - kafka-topic: fabric-net-am-topic
-  - substrate.file: /etc/fabric/actor/config/neo4j/net-am-2broker-ad-enumerated.graphml
+  - substrate.file: /etc/fabric/actor/handlers/neo4j/net-am-2broker-ad-enumerated.graphml
   - resources:
        - resource:
         - resource_module: fim.slivers.attached_pci_devices
@@ -118,7 +118,7 @@ actor:
           - module: fabric_cf.actor.plugins.vlan
           - class: Dummy
           - properties:
-              - quantum-vlan.properties: config/quantum-vlan.properties
+              - quantum-vlan.properties: handlers/quantum-vlan.properties
         - attributes:
             - attribute:
                 - key: resource.class.invfortype

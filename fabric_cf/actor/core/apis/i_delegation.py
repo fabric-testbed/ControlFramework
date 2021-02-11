@@ -82,7 +82,7 @@ class IDelegation(ABC):
         """
 
     @abstractmethod
-    def get_delegation_id(self) -> ID:
+    def get_delegation_id(self) -> str:
         """
         Returns the delegation id.
 
@@ -292,12 +292,11 @@ class IDelegation(ABC):
         """
 
     @abstractmethod
-    def restore(self, actor: IActor, slice_obj: ISlice, logger):
+    def restore(self, actor: IActor, slice_obj: ISlice):
         """
         Restore a reservation after reading from database
         @param actor: actor
         @param slice_obj: slice object
-        @param logger: logger
         """
 
     @abstractmethod
@@ -344,4 +343,10 @@ class IDelegation(ABC):
         """
         Load Neo4j graph from string
         @param graph_str: graph_str
+        """
+
+    @abstractmethod
+    def get_delegation_name(self) -> str:
+        """
+        Get the delegation name by which it is advertised in Aggregate Resource Model
         """

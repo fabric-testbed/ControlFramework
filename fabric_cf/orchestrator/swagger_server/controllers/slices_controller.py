@@ -31,7 +31,7 @@ def slices_delete_slice_iddelete(slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    return rc.slices_delete_slice_iddelete(slice_id)
 
 
 def slices_get():  # noqa: E501
@@ -42,7 +42,7 @@ def slices_get():  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    return rc.slices_get()
 
 
 def slices_modify_slice_idput(body, slice_id):  # noqa: E501
@@ -59,7 +59,7 @@ def slices_modify_slice_idput(body, slice_id):  # noqa: E501
     """
     if connexion.request.is_json:
         body = str.from_dict(connexion.request.get_json())  # noqa: E501
-    return 'do some magic!'
+    return rc.slices_modify_slice_idput(body, slice_id)
 
 
 def slices_redeem_slice_idpost(slice_id):  # noqa: E501
@@ -72,7 +72,7 @@ def slices_redeem_slice_idpost(slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    return rc.slices_redeem_slice_idpost(slice_id)
 
 
 def slices_renew_slice_idpost(slice_id, new_lease_end_time):  # noqa: E501
@@ -87,7 +87,7 @@ def slices_renew_slice_idpost(slice_id, new_lease_end_time):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    return rc.slices_renew_slice_idpost(slice_id, new_lease_end_time)
 
 
 def slices_slice_idget(slice_id):  # noqa: E501
@@ -100,7 +100,7 @@ def slices_slice_idget(slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    return rc.slices_slice_idget(slice_id)
 
 
 def slices_status_slice_idget(slice_id):  # noqa: E501
@@ -113,4 +113,4 @@ def slices_status_slice_idget(slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    return rc.slices_status_slice_idget(slice_id)

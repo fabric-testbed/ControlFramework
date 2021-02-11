@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+import concurrent.futures
+import traceback
 
 from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.apis.i_actor_proxy import IActorProxy
@@ -66,6 +68,7 @@ class RPCManager:
     """
     CLAIM_TIMEOUT_SECONDS = 120
     QUERY_TIMEOUT_SECONDS = 120
+    MAX_THREADS = 5
 
     def __init__(self):
         # Table of pending RPC requests.
@@ -74,46 +77,48 @@ class RPCManager:
         self.num_queued = 0
         self.pending_lock = threading.Lock()
         self.stats_lock = threading.Condition()
+        self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_THREADS,
+                                                                 thread_name_prefix=self.__class__.__name__)
 
     @staticmethod
     def validate_delegation(*, delegation: IDelegation, check_requested: bool = False):
         if delegation is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("delegation"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("delegation"))
 
         if delegation.get_slice_object() is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("slice"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("slice"))
 
         if check_requested and delegation.get_graph() is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("graph"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("graph"))
 
     @staticmethod
     def validate(*, reservation: IReservation, check_requested: bool = False):
         if reservation is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("reservation"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("reservation"))
 
         if reservation.get_slice() is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("slice"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("slice"))
 
         if check_requested:
             if reservation.get_requested_resources() is None:
-                raise RPCException(message=Constants.not_specified_prefix.format("requested resources"))
+                raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("requested resources"))
 
             if reservation.get_requested_term() is None:
-                raise RPCException(message=Constants.not_specified_prefix.format("requested term"))
+                raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("requested term"))
 
         if isinstance(reservation, IClientReservation):
             if reservation.get_broker() is None:
-                raise RPCException(message=Constants.not_specified_prefix.format("broker proxy"))
+                raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("broker proxy"))
 
             if reservation.get_client_callback_proxy() is None:
-                raise RPCException(message=Constants.not_specified_prefix.format("client callback proxy"))
+                raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("client callback proxy"))
 
         elif isinstance(reservation, IControllerReservation):
             if reservation.get_authority() is None:
-                raise RPCException(message=Constants.not_specified_prefix.format("authority proxy"))
+                raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("authority proxy"))
 
             if reservation.get_client_callback_proxy() is None:
-                raise RPCException(message=Constants.not_specified_prefix.format("client callback proxy"))
+                raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("client callback proxy"))
 
     def start(self):
         self.do_start()
@@ -123,18 +128,18 @@ class RPCManager:
 
     def retry(self, *, request: RPCRequest):
         if request is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("request"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("request"))
         self.do_retry(rpc=request)
 
     def failed_rpc(self, *, actor: IActor, rpc: IncomingRPC, e: Exception):
         if actor is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("actor"))
 
         if rpc is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("rpc"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("rpc"))
 
         if rpc.get_callback() is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("callback"))
 
         if isinstance(rpc, IncomingFailedRPC):
             raise RPCException(message="Cannot reply to a FailedRPC with a FailedRPC")
@@ -201,7 +206,7 @@ class RPCManager:
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
         if callback is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("callback"))
         self.do_update_ticket(actor=reservation.get_actor(), proxy=reservation.get_callback(),
                               reservation=reservation, update_data=reservation.get_update_data(),
                               callback=callback, caller=reservation.get_actor().get_identity())
@@ -212,7 +217,7 @@ class RPCManager:
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=delegation.get_actor(), protocol=delegation.get_callback().get_type())
         if callback is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("callback"))
         self.do_update_delegation(actor=delegation.get_actor(), proxy=delegation.get_callback(),
                                   delegation=delegation, update_data=delegation.get_update_data(),
                                   callback=callback, caller=delegation.get_actor().get_identity())
@@ -223,7 +228,7 @@ class RPCManager:
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
         if callback is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("callback"))
         self.do_update_lease(actor=reservation.get_actor(), proxy=reservation.get_callback(),
                              reservation=reservation, update_data=reservation.get_update_data(),
                              callback=callback, caller=reservation.get_actor().get_identity())
@@ -231,38 +236,38 @@ class RPCManager:
     def query(self, *, actor: IActor, remote_actor: IActorProxy, callback: ICallbackProxy,
               query: dict, handler: IQueryResponseHandler, id_token: str):
         if actor is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("actor"))
         if remote_actor is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("remote actor"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("remote actor"))
         if callback is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("callback"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("callback"))
         if query is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("query"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("query"))
         if handler is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("handler"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("handler"))
         self.do_query(actor=actor, remote_actor=remote_actor, local_actor=callback, query=query,
                       handler=handler, caller=callback.get_identity(), id_token=id_token)
 
     def query_result(self, *, actor: IActor, remote_actor: ICallbackProxy, request_id: str, response: dict,
                      caller: AuthToken):
         if actor is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("actor"))
         if remote_actor is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("remote actor"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("remote actor"))
         if request_id is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("request id"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("request id"))
         if response is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("response"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("response"))
         if caller is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("caller"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("caller"))
         self.do_query_result(actor=actor, remote_actor=remote_actor, request_id=request_id, response=response,
                              caller=caller)
 
     def dispatch_incoming(self, *, actor: IActor, rpc: IncomingRPC):
         if actor is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("actor"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("actor"))
         if rpc is None:
-            raise RPCException(message=Constants.not_specified_prefix.format("rpc"))
+            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("rpc"))
         self.do_dispatch_incoming_rpc(actor=actor, rpc=rpc)
 
     def await_nothing_pending(self):
@@ -288,6 +293,8 @@ class RPCManager:
             self.pending.clear()
         finally:
             self.pending_lock.release()
+
+        self.thread_pool.shutdown(wait=True)
 
     def do_failed_rpc(self, *, actor: IActor, proxy: ICallbackProxy, rpc: IncomingRPC, e: Exception, caller: AuthToken):
         proxy.get_logger().info("Outbound failedRPC request from <{}>: requestID={}".format(caller.get_name(),
@@ -374,7 +381,7 @@ class RPCManager:
 
     def do_redeem(self, *, actor: IActor, proxy: IAuthorityProxy, reservation: IControllerReservation,
                   callback: IControllerCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound relinquish redeem from <{}>: {}".format(caller.get_name(), reservation))
+        proxy.get_logger().info("Outbound redeem request from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_redeem(reservation=reservation, callback=callback, caller=caller)
         state.set_caller(caller=caller)
@@ -622,24 +629,22 @@ class RPCManager:
                 self.stats_lock.notify_all()
 
     def enqueue(self, *, rpc: RPCRequest):
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        logger = GlobalsSingleton.get().get_logger()
         if not self.started:
-            print("Ignoring RPC request: container is shutting down")
+            logger.warning("Ignoring RPC request: container is shutting down")
             return
         if rpc.handler is not None:
             self.add_pending_request(guid=rpc.request.get_message_id(), request=rpc)
 
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
         GlobalsSingleton.get().event_manager.dispatch_event(event=OutboundRPCEvent(request=rpc))
 
         try:
             self.queued()
-            rpc_executor = RPCExecutor(request=rpc)
-            # TODO Thread Pool
-            thread = threading.Thread(target=rpc_executor.run())
-            thread.setName("RPCExecutor {}".format(rpc.request.get_message_id()))
-            thread.start()
+            self.thread_pool.submit(RPCExecutor.run, rpc)
         except Exception as e:
-            print("Exception occurred while starting RPC Executor {}".format(e))
+            logger.error(traceback.format_exc())
+            logger.error("Exception occurred while starting RPC Executor {}".format(e))
             self.de_queued()
             if rpc.handler is not None:
                 self.remove_pending_request(guid=rpc.request.get_message_id())

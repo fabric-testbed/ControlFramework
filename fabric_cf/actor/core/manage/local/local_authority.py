@@ -55,7 +55,7 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
             result = self.manager.get_authority_reservations(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.result
+                return result.reservations
         except Exception as e:
             self.last_exception = e
 
@@ -67,7 +67,7 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
             result = self.manager.get_reservation_units(caller=self.auth, rid=rid)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.result
+                return result.units
         except Exception as e:
             self.last_exception = e
 
@@ -79,7 +79,7 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
             result = self.manager.get_reservation_unit(caller=self.auth, uid=uid)
             self.last_status = result.status
             if result.get_status().get_code() == 0:
-                return self.get_first(result_list=result.result)
+                return self.get_first(result_list=result.units)
         except Exception as e:
             self.last_exception = e
 

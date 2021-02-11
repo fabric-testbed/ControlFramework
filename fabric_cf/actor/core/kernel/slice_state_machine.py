@@ -23,21 +23,22 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import traceback
 from enum import Enum
-from typing import List
+from typing import Tuple
 
+from fabric_cf.actor.core.common.exceptions import SliceException
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.util.id import ID
-from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
-from fabric_cf.orchestrator.core.exceptions import OrchestratorException
+from fabric_cf.actor.core.util.reservation_set import ReservationSet
 
 
 class SliceState(Enum):
     Nascent = 1
     Configuring = 2
     StableError = 3
-    StableOk = 4
+    StableOK = 4
     Closing = 5
     Dead = 6
 
@@ -97,43 +98,47 @@ class StateBins:
 class SliceStateMachine:
     CREATE = SliceOperation(SliceCommand.Create, SliceState.Nascent)
 
-    MODIFY = SliceOperation(SliceCommand.Modify, SliceState.StableOk, SliceState.StableError, SliceState.Configuring)
+    MODIFY = SliceOperation(SliceCommand.Modify, SliceState.StableOK, SliceState.StableError, SliceState.Configuring)
 
-    DELETE = SliceOperation(SliceCommand.Delete, SliceState.Nascent, SliceState.StableOk, SliceState.StableError,
+    DELETE = SliceOperation(SliceCommand.Delete, SliceState.Nascent, SliceState.StableOK, SliceState.StableError,
                             SliceState.Configuring, SliceState.Dead)
 
-    REEVALUATE = SliceOperation(SliceCommand.Reevaluate, SliceState.Nascent, SliceState.StableOk,
+    REEVALUATE = SliceOperation(SliceCommand.Reevaluate, SliceState.Nascent, SliceState.StableOK,
                                 SliceState.StableError, SliceState.Configuring, SliceState.Dead, SliceState.Closing)
 
-    def __init__(self, *, slice_id: ID, recover: bool):
+    def __init__(self, *, slice_id: ID):
         self.slice_guid = slice_id
-        if recover:
-            self.state = SliceState.Configuring
-        else:
-            self.state = SliceState.Nascent
+        self.state = SliceState.Nascent
 
-    def get_slice_reservations(self) -> List[ReservationMng]:
-        from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
-        controller = OrchestratorStateSingleton.get().get_management_actor()
-        try:
-            return controller.get_reservations(slice_id=self.slice_guid)
-        except Exception:
-            return None
+    @staticmethod
+    def all_failed(*, reservations: ReservationSet) -> bool:
+        """
+        We don't introduce a special state to flag when a slice is ALL FAILED, however this helper function helps decide
+        when to GC a slice
 
-    def all_failed(self) -> bool:
-        all_res = self.get_slice_reservations()
+        @return true or false
+        """
         bins = StateBins()
-        for r in all_res:
-            bins.add(s=ReservationStates(r.get_state()))
+        for r in reservations.values():
+            bins.add(s=r.get_state())
 
         if not bins.has_state_other_than(ReservationStates.Failed):
             return True
 
         return False
 
-    def transition_slice(self, *, operation: SliceOperation) -> SliceState:
+    def transition_slice(self, *, operation: SliceOperation, reservations: ReservationSet) -> Tuple[bool, SliceState]:
+        """
+        Attempt to transition a slice to a new state
+        @param operation slice operation
+        @param reservations reservations
+        @return Slice State
+        @throws Exception in case of error
+        """
+        state_changed = False
+        prev_state = self.state
         if self.state not in operation.valid_from_states:
-            raise OrchestratorException("Operation: {} cannot transition from state {}".format(operation, self.state))
+            raise SliceException(f"Operation: {operation} cannot transition from state {self.state}")
 
         if operation.command == SliceCommand.Create:
             self.state = SliceState.Configuring
@@ -146,29 +151,27 @@ class SliceStateMachine:
                 self.state = SliceState.Closing
 
         elif operation.command == SliceCommand.Reevaluate:
-            all_res = self.get_slice_reservations()
-            if all_res is None or len(all_res) == 0:
-                return self.state
+            if reservations is None or reservations.size() == 0:
+                return state_changed, self.state
 
             bins = StateBins()
-            for r in all_res:
-                bins.add(s=ReservationStates(r.get_state()))
+            for r in reservations.values():
+                bins.add(s=r.get_state())
 
             if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
-
-                if not bins.has_state_other_than(ReservationStates.Active.value, ReservationStates.Closed.value):
-                    self.state = SliceState.StableOk
+                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
+                    self.state = SliceState.StableOK
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
                                                   ReservationStates.Closed)) and \
-                        bins.has_state_other_than(ReservationStates.Failed):
+                        bins.has_state(s=ReservationStates.Failed):
                     self.state = SliceState.StableError
 
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
                                                  ReservationStates.Failed):
                     self.state = SliceState.Closing
 
-            elif self.state == SliceState.StableError or self.state == SliceState.StableOk:
+            elif self.state == SliceState.StableError or self.state == SliceState.StableOK:
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
                                                  ReservationStates.Failed):
                     self.state = SliceState.Dead
@@ -181,8 +184,10 @@ class SliceStateMachine:
                 if not bins.has_state_other_than(ReservationStates.CloseWait, ReservationStates.Closed,
                                                  ReservationStates.Failed):
                     self.state = SliceState.Dead
+        if prev_state != self.state:
+            state_changed = True
 
-        return self.state
+        return state_changed, self.state
 
     def get_state(self) -> SliceState:
         return self.state

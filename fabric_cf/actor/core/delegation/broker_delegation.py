@@ -29,6 +29,7 @@ from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
 from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
 from fabric_cf.actor.core.apis.i_delegation import DelegationState, IDelegation
 from fabric_cf.actor.core.apis.i_policy import IPolicy
+from fabric_cf.actor.core.apis.i_proxy import IProxy
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DelegationException
 from fabric_cf.actor.core.delegation.delegation import Delegation
@@ -38,8 +39,8 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 
 
 class BrokerDelegation(Delegation):
-    def __init__(self, dlg_graph_id: ID, slice_id: ID, broker: IBrokerProxy = None):
-        super().__init__(dlg_graph_id=dlg_graph_id, slice_id=slice_id)
+    def __init__(self, dlg_graph_id: str, slice_id: ID, broker: IBrokerProxy = None):
+        super().__init__(dlg_graph_id=dlg_graph_id, slice_id=slice_id, delegation_name=None)
         self.exported = False
         self.broker = broker
         self.authority = None
@@ -154,12 +155,12 @@ class BrokerDelegation(Delegation):
         Validate outgoing delegation
         """
         if self.slice_object is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("slice")))
-            raise DelegationException(Constants.not_specified_prefix.format("slice"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("slice")))
+            raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("slice"))
 
         if self.dlg_graph_id is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.not_specified_prefix.format("graph id")))
-            raise DelegationException(Constants.not_specified_prefix.format("graph id"))
+            self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("graph id")))
+            raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("graph id"))
 
     def do_relinquish(self):
         """
@@ -219,6 +220,9 @@ class BrokerDelegation(Delegation):
         @throws Exception
         """
         self.logger.debug("absorb_update: {}".format(incoming))
+        if self.authority is None and incoming.get_site_proxy() is not None:
+            self.authority = incoming.get_site_proxy()
+
         self.graph = incoming.get_graph()
         self.policy.update_delegation_complete(delegation=self)
         self.graph.delete_graph()
@@ -289,3 +293,15 @@ class BrokerDelegation(Delegation):
         """
         Service delegate
         """
+
+    def set_site_proxy(self, *, site_proxy: IProxy):
+        """
+        Set Authority Proxy
+        """
+        self.authority = site_proxy
+
+    def get_site_proxy(self) -> IProxy:
+        """
+        get Authority Proxy
+        """
+        return self.authority

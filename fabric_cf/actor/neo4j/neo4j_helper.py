@@ -23,15 +23,16 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import threading
+from typing import Any
+
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
 
-from fabric_cf.actor.boot.inventory.resource_pool_factory import ResourcePoolFactory
 
-
-class Neo4jResourcePoolFactory(ResourcePoolFactory):
+class Neo4jHelper:
     """
     Provides methods to load Graph Models and perform various operations on them
     """
@@ -58,7 +59,7 @@ class Neo4jResourcePoolFactory(ResourcePoolFactory):
         :param filename:
         :return:
         """
-        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
         neo4_graph = neo4j_graph_importer.import_graph_from_file(graph_file=filename)
         neo4_graph.validate_graph()
 
@@ -73,7 +74,7 @@ class Neo4jResourcePoolFactory(ResourcePoolFactory):
         :param graph_id: graph_id
         :return: Neo4jARMGraph
         """
-        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
         arm_graph = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer))
 
         return arm_graph
@@ -84,7 +85,7 @@ class Neo4jResourcePoolFactory(ResourcePoolFactory):
         Load cmb empty graph
         :return: Neo4jCBMGraph
         """
-        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
         combined_broker_model = Neo4jCBMGraph(importer=neo4j_graph_importer, logger=neo4j_graph_importer.log)
         return combined_broker_model
 
@@ -95,7 +96,7 @@ class Neo4jResourcePoolFactory(ResourcePoolFactory):
         :param combined_broker_model_graph_id: combined_broker_model_graph_id
         :return: Neo4jCBMGraph
         """
-        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
         combined_broker_model = Neo4jCBMGraph(graph_id=combined_broker_model_graph_id,
                                               importer=neo4j_graph_importer,
                                               logger=neo4j_graph_importer.log)
@@ -109,7 +110,7 @@ class Neo4jResourcePoolFactory(ResourcePoolFactory):
         :param graph_str: graph_str
         :return: Neo4jPropertyGraph
         """
-        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
         graph = neo4j_graph_importer.import_graph_from_string_direct(graph_string=graph_str)
 
         return graph
@@ -120,5 +121,5 @@ class Neo4jResourcePoolFactory(ResourcePoolFactory):
         Delete a graph
         @param graph_id graph id
         """
-        neo4j_graph_importer = Neo4jResourcePoolFactory.get_neo4j_importer()
+        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
         neo4j_graph_importer.delete_graph(graph_id=graph_id)

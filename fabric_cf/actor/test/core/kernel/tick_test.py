@@ -31,8 +31,8 @@ from fabric_cf.actor.core.kernel.kernel_tick import KernelTick
 
 class TickTest(unittest.TestCase):
     from fabric_cf.actor.core.container.globals import Globals
-    Globals.config_file = "./config/config.test.yaml"
-    Constants.superblock_location = './state_recovery.lock'
+    Globals.config_file = "./handlers/handlers.test.yaml"
+    Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().initialize()

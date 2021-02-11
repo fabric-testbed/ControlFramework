@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 
@@ -154,7 +154,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_reservations(self) -> list:
+    def get_reservations(self) -> List[IReservation]:
         """
         Retrieves the reservations.
 
@@ -164,7 +164,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_reservation(self, *, rid: ID) -> dict:
+    def get_reservation(self, *, rid: ID) -> IReservation:
         """
         Retrieves the specified reservation record.
 
@@ -176,7 +176,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_reservations_by_slice_id(self, *, slice_id: ID) -> list:
+    def get_reservations_by_slice_id(self, *, slice_id: ID) -> List[IReservation]:
         """
         Retrieves the specified reservations for a slice
 
@@ -188,7 +188,19 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: int) -> list:
+    def get_reservations_by_graph_node_id(self, *, graph_node_id: str) -> List[IReservation]:
+        """
+        Retrieves the specified reservations which correspond to a specific graph node
+
+        @param graph_node_id graph_node_id
+
+        @return list of properties for reservations
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: int) -> List[IReservation]:
         """
         Retrieves the specified reservations for a slice in a specific state
 
@@ -201,7 +213,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_client_reservations(self) -> list:
+    def get_client_reservations(self) -> List[IReservation]:
         """
         Retrieves the client reservations
 
@@ -211,7 +223,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> list:
+    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> List[IReservation]:
         """
         Retrieves the client reservations
 
@@ -222,7 +234,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_slice(self, *, slice_id: ID) -> dict:
+    def get_slice(self, *, slice_id: ID) -> ISlice:
         """
         Retrieves the specified slice record.
 
@@ -234,7 +246,19 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_slice_by_resource_type(self, *, rtype: ResourceType) -> dict:
+    def get_slice_by_name(self, *, slice_name: str) -> ISlice:
+        """
+        Retrieves the specified slice record.
+
+        @param slice_name slice name
+
+        @return dict of properties
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_slice_by_resource_type(self, *, rtype: ResourceType) -> ISlice:
         """
         Retrieves the specified slice record.
 
@@ -246,7 +270,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_slices(self) -> list:
+    def get_slices(self) -> List[ISlice]:
         """
         Retrieves all slice records.
 
@@ -257,7 +281,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_inventory_slices(self) -> list:
+    def get_inventory_slices(self) -> List[ISlice]:
         """
         Retrieves all inventory slice records.
 
@@ -268,7 +292,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_client_slices(self) -> list:
+    def get_client_slices(self) -> List[ISlice]:
         """
         Retrieves all client slice records.
 
@@ -287,7 +311,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_holdings(self) -> list:
+    def get_holdings(self) -> List[IReservation]:
         """
         Retrieves all reservations representing resources held by this
         actor Broker/Controller.
@@ -298,7 +322,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_holdings_by_slice_id(self, *, slice_id: ID) -> list:
+    def get_holdings_by_slice_id(self, *, slice_id: ID) -> List[IReservation]:
         """
         Retrieves all reservations representing resources held by this
         actor Broker/Controller.
@@ -310,7 +334,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_broker_reservations(self) -> list:
+    def get_broker_reservations(self) -> List[IReservation]:
         """
         Retrieves all reservations for which this actor acts as a
         broker.
@@ -321,7 +345,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_authority_reservations(self) -> list:
+    def get_authority_reservations(self) -> List[IReservation]:
         """
         Retrieves all reservations for which this actor acts as a site.
 
@@ -331,7 +355,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_reservations_by_state(self, *, state: int) -> list:
+    def get_reservations_by_state(self, *, state: int) -> List[IReservation]:
         """
         Retrieves the reservations in a specific state
 
@@ -343,11 +367,11 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_reservations_by_rids(self, *, rid: list):
+    def get_reservations_by_rids(self, *, rid: List[str]):
         """
         Retrieves the specified reservation records.
         The order in the return vector is the same order as @rids
-        @param rids rids
+        @param rid rids
         @return list of properties
         @throws Exception in case of error
         """
@@ -374,13 +398,13 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_delegation(self, *, dlg_graph_id: ID) -> dict:
+    def get_delegation(self, *, dlg_graph_id: ID) -> IDelegation:
         """
         Get Delegation
         @params dlg_graph_id: dlg_graph_id
         """
 
-    def get_delegations(self) -> list:
+    def get_delegations(self) -> List[IDelegation]:
         """
         Get delegations
         """

@@ -33,25 +33,12 @@ from fabric_cf.actor.core.common.exceptions import PluginException
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.plugins.base_plugin import BasePlugin
-    from fabric_cf.actor.core.plugins.config.config_token import ConfigToken
-    from fabric_cf.actor.core.plugins.config.configuration_mapping import ConfigurationMapping
+    from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
+    from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 
 
 class HandlerProcessor:
-    PROPERTY_EXCEPTION_MESSAGE = "exception.message"
-    PROPERTY_TARGET_NAME = "target.name"
-    PROPERTY_TARGET_RESULT_CODE = "target.code"
-    PROPERTY_TARGET_RESULT_CODE_MESSAGE = "target.code.message"
-    PROPERTY_ACTION_SEQUENCE_NUMBER = "action.sequence"
-
-    RESULT_CODE_EXCEPTION = -1
-    RESULT_CODE_OK = 0
-    TARGET_CREATE = "create"
-    TARGET_DELETE = "delete"
-    TARGET_MODIFY = "modify"
-
     def __init__(self):
-        self.is_sync = False
         self.plugin = None
         self.logger = None
         self.initialized = False
@@ -88,40 +75,40 @@ class HandlerProcessor:
         finally:
             self.lock.release()
 
-    def create(self, token: ConfigToken, properties: dict):
+    def create(self, unit: ConfigToken, properties: dict):
         self.logger.info("Executing Create")
 
-        result = {self.PROPERTY_TARGET_NAME: self.TARGET_CREATE,
-                  self.PROPERTY_TARGET_RESULT_CODE: self.RESULT_CODE_OK,
-                  self.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
+        result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
+                  Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
+                  Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
 
-        self.plugin.configuration_complete(token=token, properties=result)
+        self.plugin.configuration_complete(token=unit, properties=result)
         self.logger.info("Executing Create completed")
 
-    def delete(self, token: ConfigToken, properties: dict):
+    def delete(self, unit: ConfigToken, properties: dict):
         self.logger.info("Executing Delete")
 
-        result = {self.PROPERTY_TARGET_NAME: self.TARGET_DELETE,
-                  self.PROPERTY_TARGET_RESULT_CODE: self.RESULT_CODE_OK,
-                  self.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
+        result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_DELETE,
+                  Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
+                  Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
 
-        self.plugin.configuration_complete(token=token, properties=result)
+        self.plugin.configuration_complete(token=unit, properties=result)
         self.logger.info("Executing Delete completed")
 
-    def modify(self, token: ConfigToken, properties: dict):
+    def modify(self, unit: ConfigToken, properties: dict):
         self.logger.info("Executing Modify")
 
-        result = {self.PROPERTY_TARGET_NAME: self.TARGET_MODIFY,
-                  self.PROPERTY_TARGET_RESULT_CODE: self.RESULT_CODE_OK,
-                  self.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
+        result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_MODIFY,
+                  Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
+                  Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
 
-        self.plugin.configuration_complete(token=token, properties=result)
+        self.plugin.configuration_complete(token=unit, properties=result)
         self.logger.info("Executing Modify completed")
 
     def set_logger(self, *, logger):
         self.logger = logger
 
-    def set_slices_plugin(self, *, plugin: BasePlugin):
+    def set_plugin(self, *, plugin: BasePlugin):
         self.plugin = plugin
 
     @staticmethod
@@ -129,8 +116,8 @@ class HandlerProcessor:
         if properties is None:
             raise PluginException(Constants.INVALID_ARGUMENT)
 
-        if HandlerProcessor.PROPERTY_ACTION_SEQUENCE_NUMBER in properties:
-            return int(properties[HandlerProcessor.PROPERTY_ACTION_SEQUENCE_NUMBER])
+        if Constants.PROPERTY_ACTION_SEQUENCE_NUMBER in properties:
+            return int(properties[Constants.PROPERTY_ACTION_SEQUENCE_NUMBER])
 
         raise PluginException("Action Sequence Number not found")
 
@@ -139,8 +126,8 @@ class HandlerProcessor:
         if properties is None:
             raise PluginException(Constants.INVALID_ARGUMENT)
 
-        if HandlerProcessor.PROPERTY_TARGET_RESULT_CODE in properties:
-            return int(properties[HandlerProcessor.PROPERTY_TARGET_RESULT_CODE])
+        if Constants.PROPERTY_TARGET_RESULT_CODE in properties:
+            return int(properties[Constants.PROPERTY_TARGET_RESULT_CODE])
 
         raise PluginException("Target Result code not found")
 
@@ -149,8 +136,8 @@ class HandlerProcessor:
         if properties is None:
             raise PluginException(Constants.INVALID_ARGUMENT)
 
-        if HandlerProcessor.PROPERTY_TARGET_RESULT_CODE_MESSAGE in properties:
-            return properties[HandlerProcessor.PROPERTY_TARGET_RESULT_CODE_MESSAGE]
+        if Constants.PROPERTY_TARGET_RESULT_CODE_MESSAGE in properties:
+            return properties[Constants.PROPERTY_TARGET_RESULT_CODE_MESSAGE]
 
         return None
 
@@ -159,7 +146,10 @@ class HandlerProcessor:
         if properties is None:
             raise PluginException(Constants.INVALID_ARGUMENT)
 
-        if HandlerProcessor.PROPERTY_EXCEPTION_MESSAGE in properties:
-            return properties[HandlerProcessor.PROPERTY_EXCEPTION_MESSAGE]
+        if Constants.PROPERTY_EXCEPTION_MESSAGE in properties:
+            return properties[Constants.PROPERTY_EXCEPTION_MESSAGE]
 
         return None
+
+    def shutdown(self):
+        return

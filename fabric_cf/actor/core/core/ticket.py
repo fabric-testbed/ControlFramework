@@ -22,7 +22,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import pickle
 from datetime import datetime
 
 from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
@@ -31,7 +30,7 @@ from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import TicketException
-from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicket
+from fabric_cf.actor.core.delegation.resource_delegation import ResourceDelegation
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.notice import Notice
 from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -39,21 +38,27 @@ from fabric_cf.actor.core.util.resource_type import ResourceType
 
 class Ticket(IConcreteSet):
     """
-    Ticket is an IConcreteSet implementation that wraps a ResourceTicket for use inside of a ResourceSet
+    Ticket is an IConcreteSet implementation that wraps a ResourceDelegation for use inside of a ResourceSet
     """
-    PropertyTicketAuthorityProxy = "ticket.authority.proxy"
-    PropertyTicketResourceTicket = "ticket.resourceTicket"
 
-    def __init__(self, *, ticket: ResourceTicket = None, plugin: IBasePlugin = None, authority: IAuthorityProxy = None):
-        # The plugin object
-        self.plugin = plugin
-        self.logger = plugin.get_logger()
-        # The authority who owns the resources described in this concrete set
-        self.authority = authority
+    def __init__(self, *, delegation: ResourceDelegation = None, plugin: IBasePlugin = None,
+                 authority: IAuthorityProxy = None, delegation_id: str = None):
+        # Persistent fields
         # The encapsulated resource ticket.
-        self.resource_ticket = ticket
+        self.resource_delegation = delegation
         # Units we used to have before the current extend
         self.old_units = 0
+        # The delegation from which this ticket was issued
+        self.delegation_id = delegation_id
+
+        # Non persistent fields
+        # The plugin object
+        self.plugin = plugin
+        self.logger = None
+        if plugin is not None:
+            self.logger = plugin.get_logger()
+        # The authority who owns the resources described in this concrete set
+        self.authority = authority
         # The reservation this ticket belongs to
         self.reservation = None
 
@@ -62,6 +67,7 @@ class Ticket(IConcreteSet):
         del state['plugin']
         del state['logger']
         del state['reservation']
+        del state['authority']
 
         return state
 
@@ -70,16 +76,16 @@ class Ticket(IConcreteSet):
         self.plugin = None
         self.logger = None
         self.reservation = None
+        self.authority = None
 
     def __str__(self):
-        result = "Ticket [units = {} oldUnits = {} ".format(self.get_units(), self.old_units)
+        result = f"Ticket [delegation_id= {self.delegation_id} units = {self.get_units()} oldUnits = {self.old_units} "
         if self.reservation is not None:
             slice_obj = self.reservation.get_slice()
             if slice is None:
                 self.logger.error("reservation inside ticket has no slice")
             else:
-                result += " Slice="
-                result += slice_obj.get_name()
+                result += f" Slice={slice_obj.get_name()}"
         result += "]"
         return result
 
@@ -93,39 +99,21 @@ class Ticket(IConcreteSet):
         self.logger = self.plugin.get_logger()
         self.reservation = reservation
 
-    def encode(self, *, protocol: str):
-        try:
-            encoded_ticket = pickle.dumps(self)
-            return encoded_ticket
-        except Exception as e:
-            self.logger.error("Exception occurred while encoding {}".format(e))
-        return None
-
-    def decode(self, *, encoded, plugin: IBasePlugin):
-        try:
-            ticket = pickle.loads(encoded)
-            ticket.plugin = plugin
-            ticket.logger = plugin.get_logger()
-            return ticket
-        except Exception as e:
-            self.logger.error("Exception occurred while decoding {}".format(e))
-        return None
-
     def get_type(self) -> ResourceType:
         """
         Return resource type
         @return resource type
         """
-        if self.resource_ticket is None:
+        if self.resource_delegation is None:
             return None
-        return self.resource_ticket.get_type()
+        return self.resource_delegation.get_type()
 
-    def get_ticket(self) -> ResourceTicket:
+    def get_delegation(self) -> ResourceDelegation:
         """
-        Return resource ticket
-        @return resource ticket
+        Return resource delegation
+        @return resource delegation
         """
-        return self.resource_ticket
+        return self.resource_delegation
 
     def add(self, *, concrete_set, configure: bool):
         raise TicketException("add() is not supported by Ticket")
@@ -134,14 +122,15 @@ class Ticket(IConcreteSet):
         self.old_units = self.get_units()
 
         if not isinstance(concrete_set, Ticket):
-            raise TicketException(Constants.invalid_argument)
+            raise TicketException(Constants.INVALID_ARGUMENT)
 
-        assert concrete_set.resource_ticket is not None
+        assert concrete_set.resource_delegation is not None
 
-        self.resource_ticket = self.plugin.get_ticket_factory().clone(original=concrete_set.resource_ticket)
+        self.resource_delegation = concrete_set.resource_delegation.clone()
 
     def _clone(self):
-        result = Ticket(ticket=self.resource_ticket, plugin=self.plugin, authority=self.authority)
+        result = Ticket(delegation=self.resource_delegation, plugin=self.plugin, authority=self.authority,
+                        delegation_id=self.delegation_id)
         result.old_units = self.old_units
         return result
 
@@ -165,16 +154,9 @@ class Ticket(IConcreteSet):
         Returns the ticket properties.
         @returns ticket properties
         """
-        if self.resource_ticket is None:
+        if self.resource_delegation is None:
             return None
-        return self.resource_ticket.get_properties()
-
-    def get_authority(self) -> IAuthorityProxy:
-        """
-        Return corresponding Authority
-        @return authority
-        """
-        return self.authority
+        return self.resource_delegation.get_properties()
 
     def get_plugin(self) -> IBasePlugin:
         """
@@ -191,13 +173,13 @@ class Ticket(IConcreteSet):
         return self.authority
 
     def get_term(self) -> Term:
-        if self.resource_ticket is None:
+        if self.resource_delegation is None:
             return None
-        return self.resource_ticket.get_term()
+        return self.resource_delegation.get_term()
 
     def holding(self, *, when: datetime) -> int:
         if when is None:
-            raise TicketException(Constants.invalid_argument)
+            raise TicketException(Constants.INVALID_ARGUMENT)
 
         term = self.get_term()
         if term is None:
@@ -255,6 +237,12 @@ class Ticket(IConcreteSet):
         return
 
     def get_units(self) -> int:
-        if self.resource_ticket is None:
+        if self.resource_delegation is None:
             return 0
-        return self.resource_ticket.get_units()
+        return self.resource_delegation.get_units()
+
+    def get_delegation_id(self) -> str:
+        return self.delegation_id
+
+    def set_delegation_id(self, *, delegation_id: str):
+        self.delegation_id = delegation_id

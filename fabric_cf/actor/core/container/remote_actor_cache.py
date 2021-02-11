@@ -209,7 +209,7 @@ class RemoteActorCache:
         if from_mgmt_actor is not None:
             self.logger.debug("From actor {} is local".format(from_mgmt_actor.get_name()))
 
-            protocol = Constants.protocol_local
+            protocol = Constants.PROTOCOL_LOCAL
             kafka_topic = None
 
             if self.actor_location in to_map:
@@ -331,7 +331,7 @@ class RemoteActorCache:
             entry = {self.actor_name: act_name,
                      self.actor_guid: act_guid,
                      self.actor_type: act_type.name,
-                     self.actor_protocol: Constants.protocol_kafka,
+                     self.actor_protocol: Constants.PROTOCOL_KAFKA,
                      self.actor_location: kafka_topic}
 
             self.add_cache_entry(guid=act_guid, entry=entry)

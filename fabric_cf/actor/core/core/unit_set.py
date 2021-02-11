@@ -25,7 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import pickle
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -145,7 +144,7 @@ class UnitSet(IConcreteSet):
         gained = concrete_set.missing(units=self.units)
 
         for u in gained.values():
-            u.set_state(UnitState.DEFAULT)
+            u.set_state(state=UnitState.DEFAULT)
 
         if len(gained) == 0 and len(lost) == 0:
             self.logger.debug("Updating properties on Controller side for modify or extend")
@@ -162,9 +161,9 @@ class UnitSet(IConcreteSet):
         @param units units to be updated
         """
         for u in units.values():
-            u.set_reservation(self.reservation)
-            u.set_slice_id(self.reservation.get_slice_id())
-            u.set_actor_id(self.plugin.get_actor().get_guid())
+            u.set_reservation(reservation=self.reservation)
+            u.set_slice_id(slice_id=self.reservation.get_slice_id())
+            u.set_actor_id(actor_id=self.plugin.get_actor().get_guid())
             self.plugin.update_props(reservation=self.reservation, u=u)
 
     def clone(self):
@@ -273,8 +272,10 @@ class UnitSet(IConcreteSet):
                 self.released = rel
             else:
                 for u in rel.values():
-                    self.released[u.get_id()] = u
                     self.units.pop(u.get_id())
+
+            for u in rel.values():
+                self.units.pop(u.get_id())
 
     def remove(self, *, concrete_set: IConcreteSet, configure: bool):
         self.ensure_type(cset=concrete_set)
@@ -415,21 +416,3 @@ class UnitSet(IConcreteSet):
         Get a copy of the units
         """
         return self.units.copy()
-
-    def encode(self, *, protocol: str):
-        try:
-            encoded_unit = pickle.dumps(self)
-            return encoded_unit
-        except Exception as e:
-            self.logger.error("Exception occurred while encoding {}".format(e))
-        return None
-
-    def decode(self, *, encoded, plugin: IBasePlugin):
-        try:
-            unit_set = pickle.loads(encoded)
-            unit_set.plugin = plugin
-            unit_set.logger = plugin.get_logger()
-            return unit_set
-        except Exception as e:
-            self.logger.error("Exception occurred while decoding {}".format(e))
-        return None

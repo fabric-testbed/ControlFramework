@@ -27,7 +27,8 @@ import traceback
 
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
 from fabric_cf.actor.core.core.properties_manager import PropertiesManager
-from fabric_cf.actor.core.policy.broker_simple_policy import BrokerSimplePolicy
+
+from fabric_cf.actor.core.policy.broker_simpler_units_policy import BrokerSimplerUnitsPolicy
 from fabric_cf.actor.core.policy.controller_calendar_policy import ControllerCalendarPolicy
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.bids import Bids
@@ -123,7 +124,7 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
         Call up to the agent to receive the advanceTime. Do time based on new_start so that requests are aligned.
         """
         new_start_cycle = self.actor.get_actor_clock().cycle(when=reservation.get_term().get_end_time()) + 1
-        return new_start_cycle - BrokerSimplePolicy.ADVANCE_TIME - self.CLOCK_SKEW
+        return new_start_cycle - BrokerSimplerUnitsPolicy.ADVANCE_TIME - self.CLOCK_SKEW
 
     def prepare(self, *, cycle: int):
         try:
@@ -192,8 +193,8 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
 
                     approved_term = self.get_extend_term(suggested_term=suggested_term, current_term=current_term)
                     if suggested_resources is not None:
-                        approved_resources.set_units(suggested_resources.get_units())
-                        approved_resources.set_type(suggested_resources.get_type())
+                        approved_resources.set_units(units=suggested_resources.get_units())
+                        approved_resources.set_type(rtype=suggested_resources.get_type())
                         approved_resources.get_resource_data().merge(other=suggested_resources.get_resource_data())
                         approved_resources = PropertiesManager.set_elastic_time(rset=approved_resources, value=False)
 

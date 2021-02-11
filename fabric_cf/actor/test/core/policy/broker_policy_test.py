@@ -66,13 +66,13 @@ class BrokerPolicyTest(BaseTestCase):
         return broker
 
     def get_source(self, units: int, rtype: ResourceType, broker: IBroker, slice_obj: ISlice):
-        raise BrokerException(Constants.not_implemented)
+        raise BrokerException(Constants.NOT_IMPLEMENTED)
 
     def get_request(self, units: int, rtype: ResourceType, start: datetime, end: datetime):
-        raise BrokerException(Constants.not_implemented)
+        raise BrokerException(Constants.NOT_IMPLEMENTED)
 
     def get_request_from_request(self, request: IBrokerReservation, units: int, rtype: ResourceType, start: datetime, end: datetime):
-        raise BrokerException(Constants.not_implemented)
+        raise BrokerException(Constants.NOT_IMPLEMENTED)
 
     def assert_ticketed(self, r: IReservation, units: int, rtype: ResourceType, start: datetime, end: datetime):
         self.assertIsNotNone(r)
@@ -88,7 +88,7 @@ class BrokerPolicyTest(BaseTestCase):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         proxy = KafkaAuthorityProxy(kafka_topic="test-topic", identity=auth, logger=GlobalsSingleton.get().get_logger())
 
-        if ActorRegistrySingleton.get().get_proxy(Constants.protocol_local, "mysite") is None:
+        if ActorRegistrySingleton.get().get_proxy(Constants.PROTOCOL_LOCAL, "mysite") is None:
             dummy = DummyAuthorityProxy(auth=auth)
             ActorRegistrySingleton.get().register_proxy(dummy)
         return proxy

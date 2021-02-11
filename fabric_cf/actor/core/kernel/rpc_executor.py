@@ -37,36 +37,35 @@ class RPCExecutor:
     """
     Execute an RPC
     """
-    def __init__(self, *, request: RPCRequest):
-        self.request = request
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.logger = GlobalsSingleton.get().get_logger()
-
-    def post_exception(self, *, e: RPCException):
+    @staticmethod
+    def post_exception(request: RPCRequest, e: RPCException):
         """
         Handle any exception raised during processing
         """
+        logger = request.actor.get_logger()
         try:
-            self.logger.error("An error occurred while performing RPC. Error type={} {}".format(e.get_error_type(), e))
+            logger.error("An error occurred while performing RPC. Error type={} {}".format(e.get_error_type(), e))
             from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-            RPCManagerSingleton.get().remove_pending_request(self.request.request.get_message_id())
-            failed = FailedRPC(e=e, request=self.request)
-            self.request.actor.queue_event(FailedRPCEvent(actor=self.request.actor, failed=failed))
+            RPCManagerSingleton.get().remove_pending_request(request.request.get_message_id())
+            failed = FailedRPC(e=e, request=request)
+            request.actor.queue_event(FailedRPCEvent(actor=request.actor, failed=failed))
         except Exception as e:
-            self.logger.error("postException failed = {}".format(e))
+            logger.error("postException failed = {}".format(e))
 
-    def run(self):
+    @staticmethod
+    def run(request: RPCRequest):
         """
         Execute RPC
         """
-        self.logger.debug("Performing RPC: type={} to:{}".format(self.request.request.get_type(),
-                                                                 self.request.proxy.get_name()))
+        logger = request.actor.get_logger()
+        logger.debug("Performing RPC: type={} to:{}".format(request.request.get_type(),
+                                                            request.proxy.get_name()))
         try:
-            self.request.proxy.execute(request=self.request.request)
+            request.proxy.execute(request=request.request)
         except RPCException as e:
-            self.post_exception(e=e)
+            RPCExecutor.post_exception(request=request, e=e)
         finally:
-            self.logger.debug("Completed RPC: type= {} to: {}".format(self.request.request.get_type(),
-                                                                      self.request.proxy.get_name()))
+            logger.debug("Completed RPC: type= {} to: {}".format(request.request.get_type(),
+                                                                 request.proxy.get_name()))
             from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
             RPCManagerSingleton.get().de_queued()

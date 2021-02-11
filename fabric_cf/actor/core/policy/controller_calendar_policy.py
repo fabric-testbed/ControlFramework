@@ -148,7 +148,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                                                   cycle=self.get_close(reservation=reservation,
                                                                        term=reservation.get_lease_term()))
                         if reservation.get_renew_time() == 0:
-                            reservation.set_renew_time(self.actor.get_current_cycle() + 1)
+                            reservation.set_renew_time(time=(self.actor.get_current_cycle() + 1))
                             reservation.set_dirty()
                             self.calendar.add_renewing(reservation=reservation, cycle=reservation.get_renew_time())
 
@@ -317,7 +317,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                     self.calendar.add_renewing(reservation=reservation, cycle=reservation.get_renew_time())
 
             elif reservation.get_pending_state() == ReservationPendingStates.Redeeming:
-                raise ControllerException(Constants.invalid_recovery_state)
+                raise ControllerException(Constants.INVALID_RECOVERY_STATE)
 
         elif reservation.get_state() == ReservationStates.Active:
             if reservation.get_pending_state() == ReservationPendingStates.None_:
@@ -336,7 +336,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                                                                term=reservation.get_lease_term()))
 
             elif reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket:
-                raise ControllerException(Constants.invalid_recovery_state)
+                raise ControllerException(Constants.INVALID_RECOVERY_STATE)
 
         elif reservation.get_state() == ReservationStates.ActiveTicketed:
 
@@ -360,7 +360,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                     self.calendar.add_renewing(reservation=reservation, cycle=reservation.get_renew_time())
 
             elif reservation.get_pending_state() == ReservationPendingStates.ExtendingLease:
-                raise ControllerException(Constants.invalid_recovery_state)
+                raise ControllerException(Constants.INVALID_RECOVERY_STATE)
 
     def ticket_satisfies(self, *, requested_resources: ResourceSet, actual_resources: ResourceSet,
                          requested_term: Term, actual_term: Term):

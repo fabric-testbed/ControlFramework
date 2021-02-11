@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 import threading
 
@@ -57,7 +57,7 @@ class SliceTable:
         @throws Exception if the slice is already present in the table
         """
         if slice_object.get_slice_id() is None or slice_object.get_name() is None:
-            raise SliceException(Constants.invalid_argument)
+            raise SliceException(Constants.INVALID_ARGUMENT)
 
         try:
             self.lock.acquire()
@@ -67,10 +67,13 @@ class SliceTable:
 
             if slice_object.is_inventory():
                 self.inventory_slices[slice_object.get_slice_id()] = slice_object
+
             elif slice_object.is_broker_client():
                 self.broker_client_slices[slice_object.get_slice_id()] = slice_object
+
             elif slice_object.is_client():
                 self.client_slices[slice_object.get_slice_id()] = slice_object
+
             else:
                 raise SliceException("Unsupported slice type")
 
@@ -164,7 +167,7 @@ class SliceTable:
 
         return ret_val
 
-    def get_client_slices(self) -> list:
+    def get_client_slices(self) -> List[IKernelSlice]:
         """
         Returns all client slices in the table.
 
@@ -182,7 +185,7 @@ class SliceTable:
             self.lock.release()
         return ret_val
 
-    def get_inventory_slices(self) -> list:
+    def get_inventory_slices(self) -> List[IKernelSlice]:
         """
         Returns all inventory slices in the table.
 
@@ -198,7 +201,7 @@ class SliceTable:
             self.lock.release()
         return ret_val
 
-    def get_slices(self) -> list:
+    def get_slices(self) -> List[IKernelSlice]:
         """
         Returns all slices in the table.
 

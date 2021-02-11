@@ -15,3 +15,4 @@ prometheus_client
 connexion
 swagger-ui-bundle
 fabric_fss_utils==0.4
+ansible

@@ -53,8 +53,8 @@ from fabric_cf.actor.test.core.policy.broker_policy_test import BrokerPolicyTest
 
 class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
     from fabric_cf.actor.core.container.globals import Globals
-    Globals.config_file = "./config/config.broker.yaml"
-    Constants.superblock_location = './state_recovery.lock'
+    Globals.config_file = "./handlers/handlers.broker.yaml"
+    Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -88,7 +88,7 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
         rd.set_resource_type(rtype=rtype)
         rd.set_resource_type_label(rtype_label="Pool label: {}".format(rtype))
         ad = ResourcePoolAttributeDescriptor()
-        ad.set_key(value=Constants.resource_memory)
+        ad.set_key(value=Constants.RESOURCE_MEMORY)
         ad.set_label(label="Memory")
         ad.set_unit(unit="MB")
         ad.set_type(rtype=ResourcePoolAttributeType.INTEGER)
@@ -107,9 +107,9 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
         rd = self.get_pool_descriptor(rtype)
         resources.set_resource_properties(p=rd.save(properties=properties, prefix=None))
 
-        delegation = broker.get_plugin().get_ticket_factory().make_delegation(units=units, term=term, rtype=rtype,
-                                                                              vector=None)
-        ticket = broker.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
+        delegation = broker.get_plugin().get_resource_delegation_factory().make_delegation(units=units, term=term, rtype=rtype,
+                                                                                           vector=None)
+        ticket = broker.get_plugin().get_resource_delegation_factory().make_ticket(delegation=delegation, source=None)
         cs = Ticket(ticket=ticket, plugin=broker.get_plugin())
         resources.set_resources(cset=cs)
 
@@ -118,10 +118,10 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
         return source
 
     def check_query_response(self, response: dict, count: int):
-        temp = response.get(Constants.query_response, None)
+        temp = response.get(Constants.QUERY_RESPONSE, None)
         self.assertIsNotNone(temp)
-        self.assertEqual(temp, Constants.query_action_discover_pools)
-        temp = response.get(Constants.pools_count, None)
+        self.assertEqual(temp, Constants.QUERY_ACTION_DISCOVER_POOLS)
+        temp = response.get(Constants.POOLS_COUNT, None)
         self.assertIsNotNone(temp)
         self.assertEqual(count, int(temp), count)
         result = BrokerPolicy.get_resource_pools(response)
@@ -150,7 +150,7 @@ class BrokerSimplerUnitsPolicyTest(BrokerPolicyTest, unittest.TestCase):
         broker = self.get_broker()
         policy = broker.get_policy()
 
-        request = {Constants.query_action:Constants.query_action_discover_pools}
+        request = {Constants.QUERY_ACTION:Constants.QUERY_ACTION_DISCOVER_POOLS}
         response = policy.query(p=request)
 
         print(response)

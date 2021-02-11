@@ -49,29 +49,12 @@ class BrokerCalendarPolicy(BrokerPolicy):
     BrokerCalendarPolicy specifies and implements some of the
     broker's base resource allocation and upstream bidding policy.
     """
-    PropertyTypeNamePrefix = "type.name."
-    PropertyTypeDescriptionPrefix = "type.description."
-    PropertyTypeUnitsPrefix = "type.units."
-    PropertyTypeCount = "type.count"
-    PropertyDiscoverTypes = "query.discovertypes"
-
     def __init__(self, *, actor: IBroker):
         super().__init__(actor=actor)
         # The broker calendar: list of client requests, source reservations, and allocated reservations.
         self.calendar = None
         # Indicates if this actor is initialized
         self.initialized = False
-
-    def add_for_approval_calendar(self, *, reservation: IBrokerReservation):
-        """
-        Adds the reservation to the approval list and removes the
-        reservation from the closing calendar (if it belongs to it).
-
-        @param reservation reservation to add
-        @throws Exception in case of error
-        """
-        if reservation.get_term() is not None:
-            self.add_for_approval(reservation=reservation)
 
     def add_to_calendar(self, *, reservation: IBrokerReservation):
         """
@@ -96,17 +79,6 @@ class BrokerCalendarPolicy(BrokerPolicy):
         else:
             reservation.fail(message="Either there are no resources on the source or the reservation failed",
                              exception=None)
-
-    def approve(self, *, reservation: IBrokerReservation):
-        # Our current policy is to allow the allocation code to issue a ticket
-        # but to prevent the ticket from being sent to the client until the
-        # administrator approves the allocation.
-
-        self.remove_for_approval(reservation=reservation)
-
-        self.add_to_calendar(reservation=reservation)
-
-        reservation.set_bid_pending(value=False)
 
     def check_pending(self):
         """
@@ -157,25 +129,6 @@ class BrokerCalendarPolicy(BrokerPolicy):
         rvset.count(rc=rc, when=when)
         return rc
 
-    def donate_reservation(self, *, reservation: IClientReservation):
-        term = reservation.get_term()
-        term.validate()
-
-        self.logger.debug("Donated ticket {} term {}".format(reservation, term))
-
-        term = reservation.get_previous_term()
-
-        if term is not None:
-            self.calendar.remove_closing(reservation=reservation)
-
-        self.calendar.add_source(source=reservation)
-        term = reservation.get_term()
-        self.calendar.add_closing(reservation=reservation,
-                                  cycle=self.clock.cycle(when=term.get_end_time()))
-
-        if reservation.is_renewable():
-            self.calendar.add_renewing(reservation=reservation, cycle=reservation.get_renew_time())
-
     def finish(self, *, cycle: int):
         self.calendar.tick(cycle=cycle)
 
@@ -198,10 +151,6 @@ class BrokerCalendarPolicy(BrokerPolicy):
         if not self.initialized:
             super().initialize()
             self.calendar = BrokerCalendar(clock=self.clock)
-
-            if self.required_approval:
-                self.for_approval = ReservationSet()
-
             self.initialized = True
 
     def release(self, *, reservation):
@@ -215,9 +164,6 @@ class BrokerCalendarPolicy(BrokerPolicy):
         elif isinstance(reservation, IClientReservation):
             self.logger.debug("Client reservation; removing source calendar")
             self.calendar.remove_source_calendar(source=reservation)
-
-    def release_not_approved(self, *, reservation: IBrokerReservation):
-        self.release(reservation=reservation)
 
     def remove(self, *, reservation: IReservation):
         self.calendar.remove(reservation=reservation)
@@ -257,7 +203,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
                     reservation.get_pending_state() == ReservationPendingStates.Priming):
             source = reservation.get_source()
             if source is None:
-                raise BrokerException(Constants.not_specified_prefix.format("source reservation"))
+                raise BrokerException(Constants.NOT_SPECIFIED_PREFIX.format("source reservation"))
 
             self.calendar.add_outlay(source=source,
                                      client=reservation,
@@ -266,28 +212,3 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
             self.calendar.add_closing(reservation=reservation,
                                       cycle=self.clock.cycle(when=reservation.get_term().get_end_time()))
-
-    def query(self, *, p):
-        self.logger.debug("Processing Query with properties: {}".format(p))
-        result = {}
-        if p is not None and self.PropertyDiscoverTypes in p:
-            holdings = self.calendar.get_holdings()
-            count = 0
-            for reservation in holdings.values():
-                try:
-                    ticket = reservation.get_resources()
-                    if ticket is not None:
-                        rdata = ticket.get_resource_data()
-                        if rdata is not None:
-                            resource_properties = rdata.get_resource_properties()
-                            if resource_properties is not None:
-                                result[self.PropertyTypeNamePrefix + str(count)] = ticket.get_type().get_type()
-                                result[self.PropertyTypeDescriptionPrefix + str(count)] = p
-                                count += 1
-                except Exception as e:
-                    self.logger.error("query", e)
-
-                result[self.PropertyTypeCount] = count
-        self.logger.debug("Returning Query Result: {}".format(result))
-        return result
-

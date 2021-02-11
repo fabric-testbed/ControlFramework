@@ -35,8 +35,8 @@ from fabric_cf.actor.test.base_test_case import BaseTestCase
 
 class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
     from fabric_cf.actor.core.container.globals import Globals
-    Globals.config_file = "./config/config.test.yaml"
-    Constants.superblock_location = './state_recovery.lock'
+    Globals.config_file = "./handlers/handlers.test.yaml"
+    Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -73,8 +73,6 @@ class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
         slice_obj = SliceFactory.create(slice_id=ID(), name="slice_to_add")
         self.assertEqual("slice_to_add", slice_obj.get_name())
         db.add_slice(slice_object=slice_obj)
-        result = db.get_slice(slice_id=slice_obj.get_slice_id())
-        self.assertIsNotNone(result)
-        slice2 = SliceFactory.create_instance(properties=result)
+        slice2 = db.get_slice(slice_id=slice_obj.get_slice_id())
         self.assertIsNotNone(slice2)
         db.remove_slice(slice_id=slice_obj.get_slice_id())

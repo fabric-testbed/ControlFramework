@@ -32,7 +32,7 @@ from fabric_cf.actor.core.apis.i_server_reservation import IServerReservation
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
+    from fabric_cf.actor.core.apis.i_delegation import IDelegation
 
 
 class IBrokerReservation(IServerReservation):
@@ -48,13 +48,13 @@ class IBrokerReservation(IServerReservation):
         """
 
     @abstractmethod
-    def get_source(self) -> IClientReservation:
+    def get_source(self) -> IDelegation:
         """
         Returns source for this reservation. For optional use by policy
         to track where it filled this reservation from, e.g., for use on
         extends.
 
-        @returns the source reservation
+        @returns the source delegation
         """
 
     @abstractmethod
@@ -74,11 +74,11 @@ class IBrokerReservation(IServerReservation):
         """
 
     @abstractmethod
-    def set_source(self, *, source: IClientReservation):
+    def set_source(self, *, source: IDelegation):
         """
         Sets the source for this reservation. For optional use by policy
         to track where it filled this reservation from, e.g., for use on
         extends.
 
-        @params source : the source reservation.
+        @params source : the source delegation.
         """

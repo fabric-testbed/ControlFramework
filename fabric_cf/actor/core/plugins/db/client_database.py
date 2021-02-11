@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from abc import abstractmethod
+from typing import List
 
 from fabric_cf.actor.core.util.client import Client
 from fabric_cf.actor.core.util.id import ID
@@ -59,7 +60,7 @@ class ClientDatabase:
         """
 
     @abstractmethod
-    def get_client(self, *, guid: ID) -> dict:
+    def get_client(self, *, guid: ID) -> Client:
         """
         Retrieves the specified client record
         @param guid client guid
@@ -68,7 +69,7 @@ class ClientDatabase:
         """
 
     @abstractmethod
-    def get_clients(self) -> list:
+    def get_clients(self) -> List[Client]:
         """
         Retrieves all client records
         @return vector of properties

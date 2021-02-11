@@ -25,28 +25,21 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 
-from datetime import datetime
-from typing import List
-
-from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-
 from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
-from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
-from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
 from fabric_cf.orchestrator.core.reservation_status_update_thread import ReservationStatusUpdateThread
 from fabric_cf.orchestrator.core.slice_defer_thread import SliceDeferThread
 
 
-class OrchestratorState:
-    DELETE_TIMEOUT = 24 * 3600 * 1000
+class OrchestratorKernel:
+    """
+    Class responsible for starting Orchestrator Threads; also holds Management Actor and Broker information
+    """
 
     def __init__(self):
         self.lock = threading.Lock()
-        self.used_mac = set()
-        self.slices = {}
         self.sdt = None
         self.sut = None
         self.broker = None
@@ -93,7 +86,7 @@ class OrchestratorState:
         self.sut.start()
 
 
-class OrchestratorStateSingleton:
+class OrchestratorKernelSingleton:
     __instance = None
 
     def __init__(self):
@@ -105,7 +98,7 @@ class OrchestratorStateSingleton:
         Actually create an instance
         """
         if self.__instance is None:
-            self.__instance = OrchestratorState()
+            self.__instance = OrchestratorKernel()
         return self.__instance
 
     get = classmethod(get)

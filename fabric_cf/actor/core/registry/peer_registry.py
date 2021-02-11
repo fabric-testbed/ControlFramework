@@ -99,7 +99,7 @@ class PeerRegistry:
     def initialize(self):
         if not self.initialized:
             if self.plugin is None:
-                raise RegistryException(Constants.not_specified_prefix.format("plugin"))
+                raise RegistryException(Constants.NOT_SPECIFIED_PREFIX.format("plugin"))
 
             self.logger = self.plugin.get_logger()
 
@@ -107,7 +107,7 @@ class PeerRegistry:
         brokers = self.plugin.get_database().get_brokers()
         count = 0
         for b in brokers:
-            agent = Proxy.get_proxy(properties=b)
+            agent = Proxy.get_proxy(proxy_reload_from_db=b)
             self.brokers[agent.get_identity().get_guid()] = agent
             if count == 0:
                 self.default_broker = agent

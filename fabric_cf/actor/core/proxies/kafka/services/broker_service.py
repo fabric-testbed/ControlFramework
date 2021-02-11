@@ -56,7 +56,8 @@ class BrokerService(ActorService):
         resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)
         rid = ID(uid=reservation.reservation_id)
 
-        result = BrokerReservationFactory.create(rid=rid, resources=resource_set, term=term, slice_obj=slice_obj)
+        result = BrokerReservationFactory.create(rid=rid, resources=resource_set, term=term, slice_obj=slice_obj,
+                                                 actor=self.actor)
         result.set_owner(owner=self.actor.get_identity())
         result.set_sequence_in(sequence=reservation.sequence)
 

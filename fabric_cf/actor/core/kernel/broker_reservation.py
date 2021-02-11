@@ -26,6 +26,7 @@
 
 from __future__ import annotations
 
+import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -45,7 +46,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
     from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
+    from fabric_cf.actor.core.apis.i_delegation import IDelegation
     from fabric_cf.actor.core.apis.i_policy import IPolicy
     from fabric_cf.actor.core.apis.i_slice import ISlice
     from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
@@ -128,11 +129,11 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         self.notified_failed = False
         self.closed_in_priming = False
 
-    def restore(self, *, actor: IActor, slice_obj: ISlice, logger):
+    def restore(self, *, actor: IActor, slice_obj: ISlice):
         """
         Must be invoked after creating reservation from unpickling
         """
-        super().restore(actor=actor, slice_obj=slice_obj, logger=logger)
+        super().restore(actor=actor, slice_obj=slice_obj)
         self.source = None
         self.notified_failed = False
         self.closed_in_priming = False
@@ -297,7 +298,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.closed_in_priming = True
 
             self.transition(prefix="closed", state=ReservationStates.Closed, pending=ReservationPendingStates.None_)
-            self.policy.close(reservation=self)
+            self.policy.closed(reservation=self)
 
         if send_notification:
             self.update_data.error(message="Closed while allocating ticket")
@@ -346,6 +347,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                 self.generate_update()
 
         except Exception as e:
+            self.logger.error(traceback.format_exc())
             self.logger.error("failed while servicing probe e:{}".format(e))
             self.fail_notify(message=str(e))
 
@@ -383,6 +385,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             self.sequence_out += 1
             RPCManagerSingleton.get().update_ticket(reservation=self)
         except Exception as e:
+            self.logger.error(traceback.format_exc())
             # Note that this may result in a "stuck" reservation... not much we
             # can do if the receiver has failed or rejects our update. We will
             # regenerate on any user-initiated probe.
@@ -495,7 +498,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     def get_authority(self) -> IAuthorityProxy:
         return self.authority
 
-    def get_source(self) -> IClientReservation:
+    def get_source(self) -> IDelegation:
         return self.source
 
     def get_units(self, *, when: datetime = None) -> int:
@@ -514,7 +517,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     def set_exporting(self):
         self.exporting = True
 
-    def set_source(self, *, source: IClientReservation):
+    def set_source(self, *, source: IDelegation):
         """
         Set source
         @param source source

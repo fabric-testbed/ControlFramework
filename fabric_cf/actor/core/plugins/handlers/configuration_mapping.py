@@ -55,10 +55,14 @@ class ConfigurationMapping:
         self.class_name = class_name
 
     def set_module_name(self, *, module_name: str):
-        self.class_name = module_name
+        self.module_name = module_name
 
     def set_key(self, *, key: str):
         self.type = key
 
     def set_properties(self, *, properties: dict):
         self.properties = properties
+
+    def __str__(self):
+        return f"resource_type: {self.type} class_name: {self.class_name} module: {self.module_name} " \
+               f"properties: {self.properties}"

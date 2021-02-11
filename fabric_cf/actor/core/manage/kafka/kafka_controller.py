@@ -57,7 +57,7 @@ class KafkaController(KafkaActor, IMgmtController):
                                producer=self.producer)
 
     def add_broker(self, *, broker: ProxyAvro) -> bool:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_brokers(self, *, broker: ID = None, id_token: str = None) -> List[ProxyAvro]:
         self.clear_last()
@@ -76,34 +76,34 @@ class KafkaController(KafkaActor, IMgmtController):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
+                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
 
                 if not message_wrapper.done:
-                    self.logger.debug(Constants.management_api_timeout_occurred)
+                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.name
+                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
                 else:
-                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
+                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = message_wrapper.response.proxies
             else:
-                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
                     request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.name
+                status.message = ErrorCodes.ErrorTransportFailure.interpret()
 
         except Exception as e:
             self.last_exception = e
             status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.name
+            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
             status.details = traceback.format_exc()
 
         self.last_status = status
@@ -111,13 +111,13 @@ class KafkaController(KafkaActor, IMgmtController):
         return rret_val
 
     def get_pool_info(self, *, broker: ID, id_token: str) -> List[PoolInfoAvro]:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def reclaim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         self.clear_last()
@@ -135,34 +135,34 @@ class KafkaController(KafkaActor, IMgmtController):
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
-            self.logger.debug(Constants.management_inter_actor_outbound_message.format(request.name, self.kafka_topic))
+            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
 
             if ret_val:
                 message_wrapper = self.message_processor.add_message(message=request)
 
                 with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.management_api_timeout_in_seconds)
+                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
 
                 if not message_wrapper.done:
-                    self.logger.debug(Constants.management_api_timeout_occurred)
+                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
                     self.message_processor.remove_message(msg_id=request.get_message_id())
                     status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.name
+                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
                 else:
-                    self.logger.debug(Constants.management_inter_actor_inbound_message.format(message_wrapper.response))
+                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
                         rret_val = message_wrapper.response.units
             else:
-                self.logger.debug(Constants.management_inter_actor_message_failed.format(
+                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
                     request.name, self.kafka_topic))
                 status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.name
+                status.message = ErrorCodes.ErrorTransportFailure.interpret()
 
         except Exception as e:
             self.last_exception = e
             status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.name
+            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
             status.details = traceback.format_exc()
 
         self.last_status = status
@@ -170,32 +170,32 @@ class KafkaController(KafkaActor, IMgmtController):
         return rret_val
 
     def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def add_reservations(self, *, reservations: List[ReservationMng]) ->list:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def demand_reservation(self, *, reservation: ReservationMng) -> bool:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def demand_reservation_rid(self, *, rid: ID) -> bool:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType = None, request_properties: dict = None,
                            config_properties: dict = None) -> bool:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime,
                                             request_properties: dict) -> bool:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:
-        raise ManageException(Constants.not_implemented)
+        raise ManageException(Constants.NOT_IMPLEMENTED)

@@ -26,15 +26,14 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
     from fabric_cf.actor.core.apis.i_reservation import IReservation
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-    from fabric_cf.actor.core.plugins.config.config_token import ConfigToken
+    from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
@@ -44,25 +43,6 @@ class IResourceControl:
     Interface for authority policy resource control implementations. An authority
     policy organizes the authorities inventory into ARM - Aggregate Resource Model.
     """
-
-    @abstractmethod
-    def donate_reservation(self, *, reservation: IClientReservation):
-        """
-        Informs the control about a source ticket. Depending on the control
-        implementation, the control may choose to treat each source ticket as
-        inventory.
-        @params reservation reservation
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
-    def donate(self, *, resource_set: ResourceSet):
-        """
-        Informs the control about physical inventory.
-        @params resource_set set of inventory resources (inventory units)
-        @raises Exception in case of error
-        """
-
     @abstractmethod
     def eject(self, *, resource_set: ResourceSet):
         """
@@ -128,10 +108,19 @@ class IResourceControl:
         """
 
     @abstractmethod
-    def assign(self, *, reservation: IAuthorityReservation) -> ResourceSet:
+    def assign(self, *, reservation: IAuthorityReservation, delegation_name: str,
+               capacities: dict, capacity_del: list,
+               labels: dict, label_del: list,
+               reservation_info: List[IReservation]) -> ResourceSet:
         """
         Assigns resources to the reservation.
-        @params reservation reservation
+        @param reservation reservation
+        @param delegation_name delegation_name
+        @param capacities capacities
+        @param capacity_del capacity_del
+        @param labels labels
+        @param label_del label_del
+        @param reservation_info reservation_info
         @returns resources assigned to the reservation (allocated units)
         @raises Exception in case of error
         """

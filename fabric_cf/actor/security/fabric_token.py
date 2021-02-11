@@ -50,7 +50,7 @@ class FabricToken:
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             jwt_validator = GlobalsSingleton.get().get_jwt_validator()
             verify_exp = GlobalsSingleton.get().get_config().get_oauth_config().get(
-                Constants.property_conf_o_auth_verify_exp, True)
+                Constants.PROPERTY_CONF_O_AUTH_VERIFY_EXP, True)
 
             if jwt_validator is not None:
                 self.logger.info("Validating CI Logon token")

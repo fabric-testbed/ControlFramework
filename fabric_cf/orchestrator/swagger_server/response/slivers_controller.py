@@ -1,9 +1,12 @@
 import connexion
 import six
 
+from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
-from fabric_cf.orchestrator.swagger_server import util
-from fabric_cf.orchestrator.swagger_server.response import slivers_controller as rc
+from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
+from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, SLIVERS_GET_PATH, \
+    SLIVERS_GET_SLIVER_ID_PATH
+from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
 def slivers_get(slice_id):  # noqa: E501
@@ -16,7 +19,20 @@ def slivers_get(slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
+    try:
+        token = get_token()
+        value = handler.get_slivers(slice_id=slice_id, token=token)
+        response = Success()
+        response.value = value
+        success_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
+        return response
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
+        return str(e), 500
 
 
 def slivers_modify_sliver_idput(body, sliver_id, slice_id):  # noqa: E501
@@ -67,7 +83,20 @@ def slivers_sliver_idget(slice_id, sliver_id):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
+    try:
+        token = get_token()
+        value = handler.get_slivers(slice_id=slice_id, token=token, sliver_id=sliver_id)
+        response = Success()
+        response.value = value
+        success_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
+        return response
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
+        return str(e), 500
 
 
 def slivers_status_sliver_idget(slice_id, sliver_id):  # noqa: E501

@@ -26,14 +26,14 @@
 
 from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.common.exceptions import ResourcesException
-from fabric_cf.actor.core.apis.i_resource_ticket_factory import IResourceTicketFactory
+from fabric_cf.actor.core.apis.i_resource_delegation_factory import IResourceDelegationFactory
 from fabric_cf.actor.core.delegation.resource_delegation import ResourceDelegation
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class SimpleResourceTicketFactory(IResourceTicketFactory):
+class SimpleResourceDelegationFactory(IResourceDelegationFactory):
     """
     Factory class to create Resource Tickets
     """

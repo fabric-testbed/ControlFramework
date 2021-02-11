@@ -39,7 +39,7 @@ fi
 
 name=$1
 neo4jpwd=$2
-config=$3
+handlers=$3
 arm=$4
 
 
@@ -47,7 +47,7 @@ mkdir -p $name/pg_data/data $name/pg_data/logs $name/neo4j/data $name/neo4j/impo
 echo $neo4jpwd > $name/neo4j/password
 cp am-yes.xml $name/pdp/policies
 cp env.template $name/.env
-cp $config $name/config.yaml
+cp $config $name/handlers.yaml
 cp $arm $name/arm.graphml
 
 if [ -z $5 ]; then
@@ -57,7 +57,7 @@ else
 fi
 
 sed -i "s/site1-am/$name/g" $name/docker-compose.yml
-sed -i "s/site1-am/$name/g" $name/config.yaml
+sed -i "s/site1-am/$name/g" $name/handlers.yaml
 echo ""
 echo ""
 echo "Update $name/.env file and volumes SSL certs details for $name container in docker-compose.yml as needed"

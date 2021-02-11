@@ -32,7 +32,7 @@ from fabric_cf.actor.boot.configuration_processor import ConfigurationProcessor
 
 class ConfigurationLoader:
     """
-    Loads config read from a file
+    Loads handlers read from a file
     """
     def __init__(self, *, path: str = None):
         self.path = path
@@ -40,8 +40,8 @@ class ConfigurationLoader:
 
     def process(self, *, config: Configuration = None):
         """
-        Read config and parse it
-        @param config config
+        Read handlers and parse it
+        @param config handlers
         """
         if config is None:
             self.read_configuration()
@@ -52,11 +52,11 @@ class ConfigurationLoader:
 
     def read_configuration(self) -> Configuration:
         """
-        Read config file
+        Read handlers file
         """
         if self.path is None:
             raise ConfigurationException("No data source has been specified")
-        print("Reading config file: {}".format(self.path))
+        print("Reading handlers file: {}".format(self.path))
         config_dict = None
         with open(self.path) as f:
             config_dict = yaml.safe_load(f)

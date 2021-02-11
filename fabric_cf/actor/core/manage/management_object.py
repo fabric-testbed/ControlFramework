@@ -96,53 +96,53 @@ class ManagementObject(IManagementObject):
 
     def save(self) -> dict:
         properties = {
-                        Constants.property_class_name: ManagementObject.__name__,
-                        Constants.property_module_name: ManagementObject.__module__,
-                        Constants.property_id: str(self.id)
+                        Constants.PROPERTY_CLASS_NAME: ManagementObject.__name__,
+                        Constants.PROPERTY_MODULE_NAME: ManagementObject.__module__,
+                        Constants.PROPERTY_ID: str(self.id)
                      }
 
         if self.type_id is not None:
-            properties[Constants.property_type_id] = str(self.type_id)
+            properties[Constants.PROPERTY_TYPE_ID] = str(self.type_id)
 
         self.save_protocols(properties=properties)
 
         if self.get_actor_name() is not None:
-            properties[Constants.property_actor_name] = self.get_actor_name()
+            properties[Constants.PROPERTY_ACTOR_NAME] = self.get_actor_name()
 
         return properties
 
     def save_protocols(self, *, properties: dict) -> dict:
         if self.proxies is not None:
-            properties[Constants.property_proxies_length] = len(self.proxies)
+            properties[Constants.PROPERTY_PROXIES_LENGTH] = len(self.proxies)
             i = 0
             for p in self.proxies:
                 properties[
-                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_protocol] = p.get_protocol()
+                    Constants.PROPERTY_PROXIES_PREFIX + str(i) + Constants.PROPERTY_PROXIES_PROTOCOL] = p.get_protocol()
                 properties[
-                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_class] = p.get_proxy_class()
+                    Constants.PROPERTY_PROXIES_PREFIX + str(i) + Constants.PROPERTY_PROXIES_CLASS] = p.get_proxy_class()
                 properties[
-                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_module] = p.get_proxy_module()
+                    Constants.PROPERTY_PROXIES_PREFIX + str(i) + Constants.PROPERTY_PROXIES_MODULE] = p.get_proxy_module()
                 i += 1
         return properties
 
     def load_protocols(self, *, properties: dict):
-        if Constants.property_proxies_length in properties:
-            count = int(properties[Constants.property_proxies_length])
+        if Constants.PROPERTY_PROXIES_LENGTH in properties:
+            count = int(properties[Constants.PROPERTY_PROXIES_LENGTH])
             self.proxies = []
             for i in range(count):
                 proxy = ProxyProtocolDescriptor()
                 proxy.set_protocol(protocol=properties[
-                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_protocol])
+                    Constants.PROPERTY_PROXIES_PREFIX + str(i) + Constants.PROPERTY_PROXIES_PROTOCOL])
                 proxy.set_proxy_class(proxy_class=properties[
-                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_class])
+                    Constants.PROPERTY_PROXIES_PREFIX + str(i) + Constants.PROPERTY_PROXIES_CLASS])
                 proxy.set_proxy_module(proxy_module=properties[
-                    Constants.property_proxies_prefix + str(i) + Constants.property_proxies_module])
+                    Constants.PROPERTY_PROXIES_PREFIX + str(i) + Constants.PROPERTY_PROXIES_MODULE])
 
     def reset(self, *, properties: dict):
-        self.id = ID(uid=properties[Constants.property_id])
+        self.id = ID(uid=properties[Constants.PROPERTY_ID])
 
-        if Constants.property_type_id in properties:
-            self.type_id = ID(uid=properties[Constants.property_type_id])
+        if Constants.PROPERTY_TYPE_ID in properties:
+            self.type_id = ID(uid=properties[Constants.PROPERTY_TYPE_ID])
 
         self.load_protocols(properties=properties)
 

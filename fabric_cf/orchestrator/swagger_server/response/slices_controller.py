@@ -4,7 +4,8 @@ import six
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
-from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, SLICES_CREATE_PATH
+from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, SLICES_CREATE_PATH, \
+    SLICES_GET_SLICE_ID_PATH, GET_METHOD, SLICES_GET_PATH, DELETE_METHOD, SLICES_DELETE_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
@@ -47,7 +48,19 @@ def slices_delete_slice_iddelete(slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+    try:
+        token = get_token()
+        handler.delete_slice(token=token, slice_id=slice_id)
+        response = Success()
+        success_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        return response
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        return str(e), 500
 
 
 def slices_get():  # noqa: E501
@@ -58,7 +71,20 @@ def slices_get():  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
+    try:
+        token = get_token()
+        value = handler.get_slices(token=token)
+        response = Success()
+        response.value = value
+        success_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
+        return response
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
+        return str(e), 500
 
 
 def slices_modify_slice_idput(body, slice_id):  # noqa: E501
@@ -116,7 +142,20 @@ def slices_slice_idget(slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
+    try:
+        token = get_token()
+        value = handler.get_slices(token=token, slice_id=slice_id)
+        response = Success()
+        response.value = value
+        success_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
+        return response
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
+        return str(e), 500
 
 
 def slices_status_slice_idget(slice_id):  # noqa: E501

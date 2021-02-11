@@ -209,8 +209,8 @@ class ReservationStatusUpdateThread:
         # and only then call the callbacks
 
         try:
-            from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
-            controller = OrchestratorStateSingleton.get().get_management_actor()
+            from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
+            controller = OrchestratorKernelSingleton.get().get_management_actor()
             active_watch_list = []
             modify_watch_list = []
 
