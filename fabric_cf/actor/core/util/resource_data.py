@@ -44,9 +44,8 @@ class ResourceData:
         self.__dict__.update(state)
 
     def __str__(self):
-        return "local: {}, request: {}, resource: {}, config: {}".format(self.local_properties, self.request_properties,
-                                                                         self.resource_properties,
-                                                                         self.configuration_properties)
+        return f"local: {self.local_properties}, request: {self.request_properties}, " \
+               f"resource: {self.resource_properties}, config: {self.configuration_properties} "
 
     def clone(self):
         """
@@ -82,8 +81,8 @@ class ResourceData:
 
     def get_configuration_properties(self) -> dict:
         """
-        Get config properties
-        @return config properties
+        Get handlers properties
+        @return handlers properties
         """
         return self.configuration_properties
 
@@ -116,10 +115,10 @@ class ResourceData:
         @params to_props : to list
         """
         if from_props is None:
-            return to_props
+            from_props = {}
 
         if to_props is None:
-            return from_props
+            to_props = {}
 
         if from_props == to_props:
             return from_props

@@ -98,22 +98,6 @@ class IServerPolicy(IPolicy):
         """
 
     @abstractmethod
-    def donate_reservation(self, *, reservation: IClientReservation):
-        """
-        Accepts ticketed resources to be used for allocation of client requests.
-        The policy should add the resources represented by this reservation to
-        its inventory.
-        Note: This method will be invoked only for resources not directly
-        requested by the policy. For example, exported resources claimed manually
-        by an administrator. The policy is itself responsible to "donate"
-        resources to its inventory when resources it requests become available.
-
-        @param reservation : reservation representing resources to be used for allocation
-
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
     def donate_delegation(self, *, delegation: IDelegation):
         """
         Accepts ticketed resources to be used for allocation of client requests.

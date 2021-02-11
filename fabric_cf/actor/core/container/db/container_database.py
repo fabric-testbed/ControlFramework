@@ -26,11 +26,10 @@
 from __future__ import annotations
 
 import pickle
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
-from fabric_cf.actor.core.extensions.plugin import Plugin
 from fabric_cf.actor.core.apis.i_actor import IActor, ActorType
 from fabric_cf.actor.core.apis.i_container_database import IContainerDatabase
 from fabric_cf.actor.db.psql_database import PsqlDatabase
@@ -115,7 +114,7 @@ class ContainerDatabase(IContainerDatabase):
         """
         self.db.remove_actor(name=actor_name)
 
-    def get_actors(self, *, name: str = None, actor_type: int = None) -> list:
+    def get_actors(self, *, name: str = None, actor_type: int = None) -> List[IActor]:
         """
         Get Actors
         @param name actor name
@@ -128,10 +127,17 @@ class ContainerDatabase(IContainerDatabase):
                 result = self.db.get_actors()
             elif name is not None and actor_type is not None:
                 name = "%{}%".format(name)
+                act_dict_list = None
                 if actor_type != ActorType.All.value:
-                    result = self.db.get_actors_by_name_and_type(actor_name=name, act_type=actor_type)
+                    act_dict_list = self.db.get_actors_by_name_and_type(actor_name=name, act_type=actor_type)
                 else:
-                    result = self.db.get_actors_by_name(act_name=name)
+                    act_dict_list = self.db.get_actors_by_name(act_name=name)
+                result = []
+                for a in act_dict_list:
+                    pickled_actor = a.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+                    act_obj = pickle.loads(result)
+                    result.append(act_obj)
+                return result
         except Exception as e:
             self.logger(e)
         return result
@@ -144,7 +150,9 @@ class ContainerDatabase(IContainerDatabase):
         """
         result = None
         try:
-            result = self.db.get_actor(name=actor_name)
+            act_dict = self.db.get_actor(name=actor_name)
+            pickled_actor = act_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+            return pickle.loads(pickled_actor)
         except Exception as e:
             self.logger(e)
         return result
@@ -186,64 +194,6 @@ class ContainerDatabase(IContainerDatabase):
         except Exception as e:
             self.logger(e)
         return result
-
-    def _get_plugin_from_dict(self, *, plug_obj: dict) -> Plugin:
-        """
-        Get Plugin from database row
-        @param plug_obj plugin object read from database
-        """
-        if Constants.property_pickle_properties not in plug_obj:
-            raise DatabaseException(Constants.invalid_argument)
-
-        serialized_plugin = plug_obj[Constants.property_pickle_properties]
-        deserialized_plugin = pickle.loads(serialized_plugin)
-        return deserialized_plugin
-
-    def get_plugin(self, *, plugin_id: str) -> Plugin:
-        """
-        Returns the specified plugin.
-        @param plugin_id plugin identifier
-        @return returns the specified plugin
-        """
-        result = None
-        try:
-            plug_obj = self.db.get_plugin(plugin_id=plugin_id)
-            result = self._get_plugin_from_dict(plug_obj=plug_obj)
-        except Exception as e:
-            self.logger.error(e)
-        return result
-
-    def get_plugins(self, *, plugin_type: int, actor_type: int) -> list:
-        """
-        Returns an array of installed plugins.
-        @param plugin_type plugin type
-        @param actor_type plugin actor type
-        @return returns the list of installed plugins
-        """
-        result = []
-        try:
-            for p in self.db.get_plugins(plg_type=plugin_type, plg_actor_type=actor_type):
-                plugin = self._get_plugin_from_dict(plug_obj=p)
-                result.append(plugin)
-        except Exception as e:
-            self.logger.error(e)
-        return result
-
-    def add_plugin(self, *, plugin: Plugin):
-        """
-        Add plugin
-        @param plugin plugin
-        """
-        properties = pickle.dumps(plugin)
-        self.db.add_plugin(plugin_id=plugin.get_id(), plg_type=plugin.get_plugin_type(),
-                           plg_actor_type=plugin.get_actor_type(), properties=properties)
-
-    def remove_plugin(self, *, plugin_id: str):
-        """
-        Remove plugin
-        @param plugin_id plugin id
-        """
-        self.db.remove_plugin(plugin_id=plugin_id)
 
     def get_manager_objects_by_actor_name(self, *, actor_name: str) -> list:
         """

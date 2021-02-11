@@ -179,17 +179,17 @@ class Term:
         @returns true if the term contains the given date or term; false otherwise
         """
         if date is None and term is None:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
 
         if self.start_time is None or self.end_time is None:
-            raise TimeException(Constants.invalid_state)
+            raise TimeException(Constants.INVALID_STATE)
 
         if date is not None:
             return (not self.start_time > date) and (not self.end_time < date)
 
         if term is not None:
             if not isinstance(term, Term):
-                raise TimeException(Constants.invalid_argument)
+                raise TimeException(Constants.INVALID_ARGUMENT)
             return (not self.start_time > term.start_time) and (not self.end_time < term.end_time)
 
         return False
@@ -201,10 +201,10 @@ class Term:
         @returns true if the term ends after the given date
         """
         if date is None:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
 
         if self.end_time is None:
-            raise TimeException(Constants.invalid_state)
+            raise TimeException(Constants.INVALID_STATE)
 
         return date < self.end_time
 
@@ -215,10 +215,10 @@ class Term:
         @returns true if the term ends before the given date
         """
         if date is None:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
 
         if self.end_time is None:
-            raise TimeException(Constants.invalid_state)
+            raise TimeException(Constants.INVALID_STATE)
 
         return date > self.end_time
 
@@ -265,10 +265,10 @@ class Term:
         @returns true if the term expires before the specified time
         """
         if date is None:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
 
         if self.end_time is None:
-            raise TimeException(Constants.invalid_state)
+            raise TimeException(Constants.INVALID_STATE)
 
         return date > self.end_time
 
@@ -280,7 +280,7 @@ class Term:
         @returns term extended with the current term length
         """
         if self.start_time is None or self.end_time is None:
-            raise TimeException(Constants.invalid_state)
+            raise TimeException(Constants.INVALID_STATE)
         length_to_use = self.get_length()
         if length != 0:
             length_to_use = length
@@ -298,10 +298,10 @@ class Term:
         @returns true if this term extends the old one, false if not
         """
         if old_term is None or old_term.start_time is None or old_term.end_time is None:
-            raise TimeException(Constants.invalid_state)
+            raise TimeException(Constants.INVALID_STATE)
 
         if self.start_time is None or self.end_time is None or self.new_start_time is None:
-            raise TimeException(Constants.invalid_state)
+            raise TimeException(Constants.INVALID_STATE)
 
         return self.start_time == old_term.start_time and self.end_time > self.new_start_time
 
@@ -319,7 +319,7 @@ class Term:
         @returns term length
         """
         if self.start_time is None or self.end_time is None:
-            raise TimeException(Constants.invalid_state)
+            raise TimeException(Constants.INVALID_STATE)
 
         start_ms = ActorClock.to_milliseconds(when=self.start_time)
         end_ms = ActorClock.to_milliseconds(when=self.end_time)
@@ -333,7 +333,7 @@ class Term:
         @returns term length
         """
         if self.new_start_time is None or self.end_time is None:
-            raise TimeException(Constants.invalid_state)
+            raise TimeException(Constants.INVALID_STATE)
 
         new_start_ms = ActorClock.to_milliseconds(when=self.new_start_time)
         end_ms = ActorClock.to_milliseconds(when=self.end_time)

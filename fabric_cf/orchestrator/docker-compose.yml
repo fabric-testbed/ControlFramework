@@ -75,7 +75,7 @@ services:
     - 11002:11000
     volumes:
       - ./neo4j:/usr/src/app/neo4j
-      - ./config.yaml:/etc/fabric/actor/config/config.yaml
+      - ./handlers.yaml:/etc/fabric/actor/handlers/handlers.yaml
       - ./logs/:/var/log/actor
       - ../../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
       - ../../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key

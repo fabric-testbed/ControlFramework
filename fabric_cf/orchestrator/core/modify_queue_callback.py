@@ -28,7 +28,7 @@ from typing import List
 
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
-from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
+from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
 from fabric_cf.orchestrator.core.i_status_update_callback import IStatusUpdateCallback
 from fabric_cf.orchestrator.core.modify_operation import ModifyOperation
 from fabric_cf.orchestrator.core.reservation_id_with_modify_index import ReservationIDWithModifyIndex
@@ -73,8 +73,8 @@ class ModifyQueueCallback(IStatusUpdateCallback):
                                                properties=mop.get_properties())
                 mop.override_index(mop_index)
                 watch_list = [mop.get()]
-                OrchestratorStateSingleton.get().get_sut().add_modify_status_watch(watch=watch_list, act=None,
-                                                                                   callback=self)
+                OrchestratorKernelSingleton.get().get_sut().add_modify_status_watch(watch=watch_list, act=None,
+                                                                                    callback=self)
             else:
                 self.modify_queue.pop(ok_or_failed.get_reservation_id())
         finally:
@@ -99,14 +99,14 @@ class ModifyQueueCallback(IStatusUpdateCallback):
                 mod_index = self.modify_sliver(rid=rid, modify_sub_command=modify_sub_command, properties=properties)
                 mop.override_index(index=mod_index)
                 watch_list = [mop.get()]
-                OrchestratorStateSingleton.get().get_sut().add_modify_status_watch(watch=watch_list, act=None,
-                                                                                   callback=self)
+                OrchestratorKernelSingleton.get().get_sut().add_modify_status_watch(watch=watch_list, act=None,
+                                                                                    callback=self)
         finally:
             self.lock.release()
 
     def modify_sliver(self, *, rid: ID, modify_sub_command: str, properties: dict) -> int:
         try:
-            controller = OrchestratorStateSingleton.get().get_management_actor()
+            controller = OrchestratorKernelSingleton.get().get_management_actor()
             reservation = controller.get_reservation(rid=rid)
             if reservation is None:
                 raise OrchestratorException("Unable to find reservation {}".format(rid))

@@ -32,7 +32,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.apis.i_reservation import IReservation
-    from fabric_cf.actor.core.plugins.config.config_token import ConfigToken
+    from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.reservation_set import ReservationSet
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet

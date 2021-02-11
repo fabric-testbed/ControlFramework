@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.reservation_holdings import ReservationHoldings
 from fabric_cf.actor.core.util.reservation_list import ReservationList
@@ -31,22 +31,22 @@ from fabric_cf.actor.core.util.reservation_list import ReservationList
 
 class SourceCalendar:
     """
-    SourceCalendar organizes state for a reservation used as a
+    SourceCalendar organizes state for a delegation used as a
     source for client reservations. A source calendar maintains a list of
     "outlays", client reservations that have been allocated from the source
-    reservation. The outlay calendar is organized by real time.
+    delegation. The outlay calendar is organized by real time.
     The calendar also maintains a list of incoming extension requests for
-    reservations that have been satisfied from the underlying source reservations.
+    reservations that have been satisfied from the underlying source delegations.
     """
-    def __init__(self, *, clock: ActorClock, source: IReservation):
+    def __init__(self, *, clock: ActorClock, source: IDelegation):
         """
         Constructor
         @params clock: clock
-        @params source: source reservation
+        @params source: source delegation
         """
         # Clock.
         self.clock = clock
-        # The source reservation.
+        # The source delegation.
         self.source = source
         # Allocated reservations.
         self.outlays = ReservationHoldings()

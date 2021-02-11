@@ -34,12 +34,11 @@ from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
 from fabric_cf.actor.core.apis.i_authority import IAuthority
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException
-from fabric_cf.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric_cf.actor.core.manage.converter import Converter
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric_cf.actor.core.manage.server_actor_management_object import ServerActorManagementObject
-from fabric_cf.actor.security.acess_checker import AccessChecker
+from fabric_cf.actor.security.access_checker import AccessChecker
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
 
 if TYPE_CHECKING:
@@ -54,12 +53,12 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
     def register_protocols(self):
         from fabric_cf.actor.core.manage.local.local_authority import LocalAuthority
-        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local,
+        local = ProxyProtocolDescriptor(protocol=Constants.PROTOCOL_LOCAL,
                                         proxy_class=LocalAuthority.__name__,
                                         proxy_module=LocalAuthority.__module__)
 
         from fabric_cf.actor.core.manage.kafka.kafka_authority import KafkaAuthority
-        kakfa = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka, proxy_class=KafkaAuthority.__name__,
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.PROTOCOL_KAFKA, proxy_class=KafkaAuthority.__name__,
                                         proxy_module=KafkaAuthority.__module__)
 
         self.proxies = []
@@ -68,8 +67,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.property_class_name] = AuthorityManagementObject.__name__
-        properties[Constants.property_module_name] = AuthorityManagementObject.__module__
+        properties[Constants.PROPERTY_CLASS_NAME] = AuthorityManagementObject.__name__
+        properties[Constants.PROPERTY_MODULE_NAME] = AuthorityManagementObject.__module__
 
         return properties
 
@@ -79,7 +78,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
             AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
@@ -90,20 +89,17 @@ class AuthorityManagementObject(ServerActorManagementObject):
             except Exception as e:
                 self.logger.error("get_authority_reservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_obj = self._get_slice_by_id(slc_id=r['slc_id'])
-                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
-                                                                 slice_obj=slice_obj,
-                                                                 logger=self.actor.get_logger())
-                    if rsv_obj is not None:
-                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
-                        result.reservations.append(rr)
+                    slice_obj = self.get_slice_by_guid(guid=r.get_slice_id())
+                    r.restore(actor=self.actor, slice_obj=slice_obj, logger=self.logger)
+                    rr = Converter.fill_reservation(reservation=r, full=False)
+                    result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("get_authority_reservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
@@ -111,7 +107,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
         except Exception as e:
             self.logger.error("get_authority_reservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
@@ -125,7 +121,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
             AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
@@ -136,16 +132,16 @@ class AuthorityManagementObject(ServerActorManagementObject):
             except Exception as e:
                 self.logger.error("get_reservation_units:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if units_list is not None:
-                result.result = Converter.fill_units(unit_list=units_list)
+                result.units = Converter.fill_units(unit_list=units_list)
         except Exception as e:
             self.logger.error("get_reservation_units: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
@@ -156,7 +152,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
             AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
@@ -168,16 +164,16 @@ class AuthorityManagementObject(ServerActorManagementObject):
             except Exception as e:
                 self.logger.error("get_reservation_unit:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if units_list is not None:
-                result.result = Converter.fill_units(unit_list=units_list)
+                result.units = Converter.fill_units(unit_list=units_list)
         except Exception as e:
             self.logger.error("get_reservation_unit: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result

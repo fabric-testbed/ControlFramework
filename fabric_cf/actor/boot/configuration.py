@@ -35,43 +35,43 @@ class GlobalConfig:
     """
     def __init__(self, *, config: dict):
         self.runtime = {}
-        if Constants.config_section_runtime in config:
-            for prop in config[Constants.config_section_runtime]:
+        if Constants.CONFIG_SECTION_RUNTIME in config:
+            for prop in config[Constants.CONFIG_SECTION_RUNTIME]:
                 for key, value in prop.items():
                     self.runtime[key] = value
         self.logging = {}
-        if Constants.config_logging_section in config:
-            for prop in config[Constants.config_logging_section]:
+        if Constants.CONFIG_LOGGING_SECTION in config:
+            for prop in config[Constants.CONFIG_LOGGING_SECTION]:
                 for key, value in prop.items():
                     self.logging[key] = value
         self.oauth = {}
-        if Constants.config_section_o_auth in config:
-            for prop in config[Constants.config_section_o_auth]:
+        if Constants.CONFIG_SECTION_O_AUTH in config:
+            for prop in config[Constants.CONFIG_SECTION_O_AUTH]:
                 for key, value in prop.items():
                     self.oauth[key] = value
         self.database = {}
-        if Constants.config_section_database in config:
-            for prop in config[Constants.config_section_database]:
+        if Constants.CONFIG_SECTION_DATABASE in config:
+            for prop in config[Constants.CONFIG_SECTION_DATABASE]:
                 for key, value in prop.items():
                     self.database[key] = value
         self.container = {}
-        if Constants.config_section_container in config:
-            for prop in config[Constants.config_section_container]:
+        if Constants.CONFIG_SECTION_CONTAINER in config:
+            for prop in config[Constants.CONFIG_SECTION_CONTAINER]:
                 for key, value in prop.items():
                     self.container[key] = value
         self.time = {}
-        if Constants.config_section_time in config:
-            for prop in config[Constants.config_section_time]:
+        if Constants.CONFIG_SECTION_TIME in config:
+            for prop in config[Constants.CONFIG_SECTION_TIME]:
                 for key, value in prop.items():
                     self.time[key] = value
 
         self.neo4j = {}
-        if Constants.config_section_neo4j in config:
-            self.neo4j = config[Constants.config_section_neo4j]
+        if Constants.CONFIG_SECTION_NEO4J in config:
+            self.neo4j = config[Constants.CONFIG_SECTION_NEO4J]
 
         self.pdp = {}
-        if Constants.config_section_pdp in config:
-            self.pdp = config[Constants.config_section_pdp]
+        if Constants.CONFIG_SECTION_PDP in config:
+            self.pdp = config[Constants.CONFIG_SECTION_PDP]
 
     def get_runtime(self) -> dict:
         """
@@ -134,7 +134,7 @@ class HandlerConfig:
             for key, value in prop.items():
                 if key == 'module':
                     self.module_name = value
-                elif key == 'class_name':
+                elif key == 'class':
                     self.class_name = value
                 elif key == 'properties':
                     for p in value:
@@ -160,172 +160,26 @@ class HandlerConfig:
         return self.properties
 
 
-class Attribute:
-    """
-    Represents Attributes
-    """
-    def __init__(self, *, config: list):
-        self.key = None
-        self.type = None
-        self.value = None
-        for prop in config:
-            for key, value in prop.items():
-                if key == 'key':
-                    self.key = value
-                elif key == 'type':
-                    self.type = value
-                elif key == 'value':
-                    self.value = value
-
-    def get_type(self) -> str:
-        """
-        Return Attribute Type
-        """
-        return self.type
-
-    def get_key(self) -> str:
-        """
-        Return Attribute Key
-        """
-        return self.key
-
-    def get_value(self) -> str:
-        """
-        Return Attribute Value
-        """
-        return self.value
-
-
-class PoolConfig:
-    """
-    Represents Pool Config
-    """
-    def __init__(self, *, config: list):
-        self.description = None
-        self.attributes = []
-        self.type = None
-        self.label = None
-        self.units = None
-        now = datetime.utcnow()
-        self.start = now
-        self.end = now.replace(year=now.year + 20)
-        self.properties = {}
-        self.factory_module = None
-        self.factory_class = None
-        self.handler = None
-        for prop in config:
-            for key, value in prop.items():
-                if key == 'type':
-                    self.type = value
-                elif key == 'label':
-                    self.label = value
-                elif key == 'description':
-                    self.description = value
-                elif key == 'units':
-                    self.units = int(value)
-                elif key == 'start':
-                    self.start = value
-                elif key == 'end':
-                    self.end = value
-                elif key == 'properties':
-                    for p in value:
-                        for k, v in p.items():
-                            self.properties[k] = str(v)
-                elif key == 'factory.class':
-                    self.factory_class = value
-                elif key == 'factory.module':
-                    self.factory_module = value
-                elif key == 'handler':
-                    self.handler = HandlerConfig(config=value)
-                elif key == 'attributes':
-                    for a in value:
-                        self.attributes.append(Attribute(config=a['attribute']))
-
-    def get_type(self) -> str:
-        """
-        Return Pool Type
-        """
-        return self.type
-
-    def get_label(self) -> str:
-        """
-        Return Pool Label
-        """
-        return self.label
-
-    def get_description(self) -> str:
-        """
-        Return Pool Description
-        """
-        return self.description
-
-    def get_units(self) -> int:
-        """
-        Return Pool Units
-        """
-        return self.units
-
-    def get_start(self) -> datetime:
-        """
-        Return Start lease time
-        """
-        return self.start
-
-    def get_end(self) -> datetime:
-        """
-        Return End lease time
-        """
-        return self.end
-
-    def get_handler(self) -> HandlerConfig:
-        """
-        Return Handler Config
-        """
-        return self.handler
-
-    def get_properties(self) -> dict:
-        """
-        Return Properties
-        """
-        return self.properties
-
-    def get_factory_class(self) -> str:
-        """
-        Return Factory class
-        """
-        return self.factory_class
-
-    def get_factory_module(self) -> str:
-        """
-        Return Factory Module
-        """
-        return self.factory_module
-
-    def get_attributes(self) -> List[Attribute]:
-        """
-        Return Attributes
-        """
-        return self.attributes
-
-
 class ControlConfig:
     """
-    Represents Control config
+    Represents Control or Inventory config
     """
     def __init__(self, *, config: list):
-        self.type = None
+        self.type = []
         self.module_name = None
         self.class_name = None
         for prop in config:
             for key, value in prop.items():
                 if key == 'type':
-                    self.type = value
+                    values = value.split(',')
+                    for v in values:
+                        self.type.append(v.strip())
                 elif key == 'module':
                     self.module_name = value
                 elif key == 'class':
                     self.class_name = value
 
-    def get_type(self) -> str:
+    def get_type(self) -> List[str]:
         """
         Return type
         """
@@ -350,12 +204,9 @@ class ResourceConfig:
     """
     def __init__(self, *, config: list):
         self.description = None
-        self.attributes = []
         self.type = None
         self.label = None
         self.properties = {}
-        self.resource_module = None
-        self.resource_class = None
         self.handler = None
         for prop in config:
             for key, value in prop.items():
@@ -369,17 +220,8 @@ class ResourceConfig:
                     for p in value:
                         for k, v in p.items():
                             self.properties[k] = str(v)
-                elif key == 'resource_class':
-                    self.resource_class = value
-                elif key == 'resource_module':
-                    self.factory_module = value
                 elif key == 'handler':
                     self.handler = HandlerConfig(config=value)
-                elif key == 'control':
-                    self.control = ControlConfig(config=value)
-                elif key == 'attributes':
-                    for a in value:
-                        self.attributes.append(Attribute(config=a['attribute']))
 
     def get_type(self) -> str:
         """
@@ -405,35 +247,11 @@ class ResourceConfig:
         """
         return self.handler
 
-    def get_control(self) -> ControlConfig:
-        """
-        Return control config
-        """
-        return self.control
-
     def get_properties(self) -> dict:
         """
         Return properties
         """
         return self.properties
-
-    def get_resource_class(self) -> str:
-        """
-        Return resource class
-        """
-        return self.resource_class
-
-    def get_resource_module(self) -> str:
-        """
-        Return resource module
-        """
-        return self.resource_module
-
-    def get_attributes(self) -> List[Attribute]:
-        """
-        Return resource attributes
-        """
-        return self.attributes
 
 
 class PolicyConfig:
@@ -504,9 +322,6 @@ class ActorConfig:
                     self.kafka_topic = value
                 elif key == 'substrate.file':
                     self.substrate_file = value
-                elif key == 'pools':
-                    for p in value:
-                        self.pools.append(PoolConfig(config=p['pool']))
                 elif key == 'controls':
                     for c in value:
                         self.controls.append(ControlConfig(config=c['control']))
@@ -545,12 +360,6 @@ class ActorConfig:
         Return Kafka topic
         """
         return self.kafka_topic
-
-    def get_pools(self) -> List[PoolConfig]:
-        """
-        Return Pools
-        """
-        return self.pools
 
     def get_controls(self) -> List[ControlConfig]:
         """
@@ -676,3 +485,12 @@ class Configuration:
         Return Peer Config
         """
         return self.peers
+
+    def get_neo4j_config(self) -> dict:
+        """
+        Return Neo4j config
+        """
+        if self.global_config is not None:
+            return self.global_config.get_neo4j_config()
+
+        return None

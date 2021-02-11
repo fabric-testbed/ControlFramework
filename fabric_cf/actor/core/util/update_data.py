@@ -46,7 +46,7 @@ class UpdateData:
         the status message from the absorbed UpdateData.
         """
         if not isinstance(other, UpdateData):
-            raise FrameworkException(Constants.invalid_argument)
+            raise FrameworkException(Constants.INVALID_ARGUMENT)
 
         self.post(event=other.events)
         if self.message is not None:
@@ -125,3 +125,6 @@ class UpdateData:
         @return true if the operation has succeeded 
         """
         return not self.failed
+
+    def __str__(self):
+        return f"message: {self.message} events: {self.events} failed: {self.failed}"

@@ -52,12 +52,12 @@ class ControllerTestWrapper(Controller):
                             self.fail_ticket(r)
                             continue
 
-                    delegation = self.get_plugin().get_ticket_factory().make_delegation(
+                    delegation = self.get_plugin().get_resource_delegation_factory().make_delegation(
                         units=r.get_approved_resources().get_units(),
                         term=r.get_approved_term(),
                         rtype=r.get_approved_type(),
                         vector= None)
-                    ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
+                    ticket = self.get_plugin().get_resource_delegation_factory().make_ticket(delegation=delegation, source=None)
                     cs = Ticket(ticket=ticket, plugin=self.get_plugin())
                     self.update_ticket_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs,
                                                r.get_approved_term())
@@ -66,11 +66,11 @@ class ControllerTestWrapper(Controller):
             if extending is not None:
                 for r in extending.values():
                     print("cycle: {} Extend Ticket request for: {}".format(self.current_cycle, r))
-                    delegation = self.get_plugin().get_ticket_factory().make_delegation(
+                    delegation = self.get_plugin().get_resource_delegation_factory().make_delegation(
                         units=r.get_approved_resources().get_units(),
                         term=r.get_approved_term(),
                         rtype=r.get_approved_type(), vector=None)
-                    ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
+                    ticket = self.get_plugin().get_resource_delegation_factory().make_ticket(delegation=delegation, source=None)
                     cs = Ticket(ticket=ticket, plugin=self.get_plugin())
                     self.update_ticket_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs,
                                                r.get_approved_term())
@@ -91,10 +91,10 @@ class ControllerTestWrapper(Controller):
                 else:
                     print("cycle: {} extending lease for reservation r: {}".format(self.current_cycle, r))
 
-                delegation = self.get_plugin().get_ticket_factory().make_delegation(units=r.resources.get_units(),
-                                                                                    term=r.term,
-                                                                                    rtype=r.resources.get_type(), vector=None)
-                ticket = self.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=None)
+                delegation = self.get_plugin().get_resource_delegation_factory().make_delegation(units=r.resources.get_units(),
+                                                                                                 term=r.term,
+                                                                                                 rtype=r.resources.get_type(), vector=None)
+                ticket = self.get_plugin().get_resource_delegation_factory().make_ticket(delegation=delegation, source=None)
                 cs = Ticket(ticket=ticket, plugin=self.get_plugin())
                 self.update_lease_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs, r.get_approved_term())
 

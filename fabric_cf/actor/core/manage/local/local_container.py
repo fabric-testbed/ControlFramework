@@ -65,7 +65,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
                 raise ManageException("Management object did not specify any proxies")
             desc = None
             for d in desc_list:
-                if d.get_protocol() == Constants.protocol_local:
+                if d.get_protocol() == Constants.PROTOCOL_LOCAL:
                     desc = d
                     break
 
@@ -92,7 +92,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
                 if isinstance(component, IMgmtActor):
                     return component
                 else:
-                    self.last_exception = Exception(Constants.invalid_management_object_type.format(type(component)))
+                    self.last_exception = Exception(Constants.INVALID_MANAGEMENT_OBJECT_TYPE.format(type(component)))
 
             return None
         except Exception as e:
@@ -106,7 +106,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.actors
 
         except Exception as e:
             self.last_exception = e
@@ -121,7 +121,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.actors
 
         except Exception as e:
             self.last_exception = e
@@ -137,7 +137,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.actors
 
         except Exception as e:
             self.last_exception = e
@@ -152,7 +152,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.actors
 
         except Exception as e:
             self.last_exception = e
@@ -167,7 +167,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.actors
 
         except Exception as e:
             self.last_exception = e
@@ -182,7 +182,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.actors
 
         except Exception as e:
             self.last_exception = e
@@ -197,7 +197,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.proxies
 
         except Exception as e:
             self.last_exception = e
@@ -212,7 +212,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.proxies
 
         except Exception as e:
             self.last_exception = e
@@ -227,7 +227,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.proxies
 
         except Exception as e:
             self.last_exception = e
@@ -257,7 +257,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             if isinstance(component, IMgmtBroker):
                 return component
             else:
-                self.last_exception = Exception(Constants.invalid_management_object_type.format(type(component)))
+                self.last_exception = Exception(Constants.INVALID_MANAGEMENT_OBJECT_TYPE.format(type(component)))
 
         return None
 
@@ -268,6 +268,6 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             if isinstance(component, IMgmtAuthority):
                 return component
             else:
-                self.last_exception = Exception(Constants.invalid_management_object_type.format(type(component)))
+                self.last_exception = Exception(Constants.INVALID_MANAGEMENT_OBJECT_TYPE.format(type(component)))
 
         return None

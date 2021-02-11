@@ -72,7 +72,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.proxies
         except Exception as e:
             self.last_exception = e
 
@@ -85,7 +85,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.result
+                return result.pools
         except Exception as e:
             self.last_exception = e
 
@@ -98,7 +98,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return self.get_first(result_list=result.result)
+                return self.get_first(result_list=result.delegations)
         except Exception as e:
             self.last_exception = e
 
@@ -111,7 +111,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return self.get_first(result_list=result.result)
+                return self.get_first(result_list=result.delegations)
         except Exception as e:
             self.last_exception = e
 
@@ -124,7 +124,7 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return ID(uid=result.result)
+                return ID(uid=result.get_result())
         except Exception as e:
             self.last_exception = e
 
@@ -190,17 +190,17 @@ class LocalBroker(LocalServerActor, IMgmtBroker):
 
     def extend_reservation_end_time(self, *, reservation: id, new_end_time: datetime) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.extend_same_units)
+                                       new_units=Constants.EXTEND_SAME_UNITS)
 
     def extend_reservation_end_time_request(self, *, reservation: id, new_end_time: datetime,
                                             request_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.extend_same_units,
+                                       new_units=Constants.EXTEND_SAME_UNITS,
                                        request_properties=request_properties)
 
     def extend_reservation_end_time_request_config(self, *, reservation: id, new_end_time: datetime,
                                                    request_properties: dict, config_properties: dict) -> bool:
         return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.extend_same_units,
+                                       new_units=Constants.EXTEND_SAME_UNITS,
                                        request_properties=request_properties,
                                        config_properties=config_properties)

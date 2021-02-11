@@ -37,7 +37,6 @@ from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
-from fabric_cf.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
@@ -62,8 +61,8 @@ class ServerActorManagementObject(ActorManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.property_class_name] = ServerActorManagementObject.__name__
-        properties[Constants.property_module_name] = ServerActorManagementObject.__module__
+        properties[Constants.PROPERTY_CLASS_NAME] = ServerActorManagementObject.__name__
+        properties[Constants.PROPERTY_MODULE_NAME] = ServerActorManagementObject.__module__
         return properties
 
     def get_reservations_by_category(self, *, caller: AuthToken, category: ReservationCategory, slice_id: ID = None,
@@ -73,7 +72,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
             res_list = None
@@ -93,24 +92,21 @@ class ServerActorManagementObject(ActorManagementObject):
             except Exception as e:
                 self.logger.error("do_get_reservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
             if res_list is not None:
                 result.result = []
                 for r in res_list:
-                    slice_obj = self._get_slice_by_id(slc_id=r['slc_id'])
-                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor,
-                                                                 slice_obj=slice_obj,
-                                                                 logger=self.actor.get_logger())
-                    if rsv_obj is not None:
-                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
-                        result.result.append(rr)
+                    slice_obj = self.get_slice_by_guid(guid=r.get_slice_id())
+                    r.restore(actor=self.actor, slice_obj=slice_obj, logger=self.logger)
+                    rr = Converter.fill_reservation(reservation=r, full=False)
+                    result.result.append(rr)
         except Exception as e:
             self.logger.error("do_get_reservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
@@ -122,7 +118,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -137,7 +133,7 @@ class ServerActorManagementObject(ActorManagementObject):
             except Exception as e:
                 self.logger.error("get_slices_by_slice_type:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
@@ -147,7 +143,7 @@ class ServerActorManagementObject(ActorManagementObject):
         except Exception as e:
             self.logger.error("get_slices_by_slice_type: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
@@ -158,7 +154,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         if caller is None or slice_mng is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -173,7 +169,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
             if not owner_is_ok:
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 return result
 
             slice_obj = SliceFactory.create(slice_id=ID(), name=slice_mng.get_slice_name(),
@@ -204,7 +200,7 @@ class ServerActorManagementObject(ActorManagementObject):
         except Exception as e:
             self.logger.error("addClientSlice: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
@@ -214,7 +210,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         if client is None or kafka_topic is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -234,7 +230,7 @@ class ServerActorManagementObject(ActorManagementObject):
         except Exception as e:
             self.logger.error("register_client: {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
-            result.set_message(ErrorCodes.ErrorInternalError.name)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
@@ -245,7 +241,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -258,14 +254,14 @@ class ServerActorManagementObject(ActorManagementObject):
                     cl_list = [cl]
                 else:
                     result.status.set_code(ErrorCodes.ErrorNoSuchActor.value)
-                    result.status.set_message(ErrorCodes.ErrorNoSuchActor.name)
+                    result.status.set_message(ErrorCodes.ErrorNoSuchActor.interpret())
 
             if cl_list is not None:
                 result.result = Converter.fill_clients(client_list=cl_list)
         except Exception as e:
             self.logger.error("get_clients: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
     def unregister_client(self, *, guid: ID, caller: AuthToken) -> ResultAvro:
@@ -273,7 +269,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         if guid is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -290,18 +286,19 @@ class ServerActorManagementObject(ActorManagementObject):
         except Exception as e:
             self.logger.error("unregister_client: {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
-            result.set_message(ErrorCodes.ErrorInternalError.name)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
 
-    def advertise_resources(self, *, delegation: ABCPropertyGraph, client: AuthToken, caller: AuthToken) -> ResultStringAvro:
+    def advertise_resources(self, *, delegation: ABCPropertyGraph, delegation_name: str,
+                            client: AuthToken, caller: AuthToken) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
 
         if client is None or delegation is None or caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -310,18 +307,18 @@ class ServerActorManagementObject(ActorManagementObject):
                     self.actor = actor
 
                 def run(self):
-                    return self.actor.advertise(delegation=delegation, client=client)
+                    return self.actor.advertise(delegation=delegation, delegation_name=delegation_name, client=client)
 
             self.logger.debug("Executing advertise on actor {} {} ({})".format(self.actor.get_name(),
                                                                                self.actor.get_name(),
                                                                                self.actor.__class__.__name__))
 
             advertised = self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
-            result.result = str(advertised)
+            result.set_result(str(advertised))
         except Exception as e:
             self.logger.error("advertise_resources: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result

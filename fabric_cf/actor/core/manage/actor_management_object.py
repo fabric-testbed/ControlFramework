@@ -40,8 +40,6 @@ from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, SliceNotFoundException, \
     DelegationNotFoundException, ManageException
-from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
-from fabric_cf.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
 from fabric_cf.actor.core.manage.converter import Converter
@@ -49,7 +47,7 @@ from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric_cf.actor.core.apis.i_actor_management_object import IActorManagementObject
-from fabric_cf.actor.security.acess_checker import AccessChecker
+from fabric_cf.actor.security.access_checker import AccessChecker
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
@@ -71,11 +69,11 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def register_protocols(self):
         from fabric_cf.actor.core.manage.local.local_actor import LocalActor
-        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local, proxy_class=LocalActor.__name__,
+        local = ProxyProtocolDescriptor(protocol=Constants.PROTOCOL_LOCAL, proxy_class=LocalActor.__name__,
                                         proxy_module=LocalActor.__module__)
 
         from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
-        kafka = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka, proxy_class=KafkaActor.__name__,
+        kafka = ProxyProtocolDescriptor(protocol=Constants.PROTOCOL_KAFKA, proxy_class=KafkaActor.__name__,
                                         proxy_module=KafkaActor.__module__)
 
         self.proxies = []
@@ -84,22 +82,22 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.property_class_name] = ActorManagementObject.__name__
-        properties[Constants.property_module_name] = ActorManagementObject.__module__
+        properties[Constants.PROPERTY_CLASS_NAME] = ActorManagementObject.__name__
+        properties[Constants.PROPERTY_MODULE_NAME] = ActorManagementObject.__module__
 
         return properties
 
     def recover(self):
         actor_name = None
-        if Constants.property_actor_name in self.serial:
-            actor_name = self.serial[Constants.property_actor_name]
+        if Constants.PROPERTY_ACTOR_NAME in self.serial:
+            actor_name = self.serial[Constants.PROPERTY_ACTOR_NAME]
         else:
-            raise ManageException(Constants.not_specified_prefix.format("actor name"))
+            raise ManageException(Constants.NOT_SPECIFIED_PREFIX.format("actor name"))
 
         actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=actor_name)
 
         if actor is None:
-            raise ManageException(Constants.object_not_found.format("Managed Object", actor_name))
+            raise ManageException(Constants.OBJECT_NOT_FOUND.format("Managed Object", actor_name))
 
         self.set_actor(actor=actor)
 
@@ -110,61 +108,101 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             self.logger = actor.get_logger()
             self.id = actor.get_guid()
 
-    def get_slices(self, *, slice_id: ID, caller: AuthToken, id_token: str = None) -> ResultSliceAvro:
+    def get_slices(self, *, slice_id: ID, caller: AuthToken, id_token: str = None,
+                   slice_name: str = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
         else:
             slice_list = None
+            user_dn = None
             try:
                 if id_token is not None:
-                    AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.slice,
-                                               token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
-                                               resource_id=str(slice_id))
+                    fabric_token = AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.slice,
+                                                              token=id_token, logger=self.logger,
+                                                              actor_type=self.actor.get_type(),
+                                                              resource_id=str(slice_id))
+                    user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
+
+                    if user_dn is None:
+                        result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
+                        result.status.set_message(ErrorCodes.ErrorInvalidToken.interpret())
+                        return result
+
                 try:
                     slice_list = None
-                    if slice_id is None:
-                        slice_list = self.db.get_slices()
-                    else:
+                    if slice_id is not None:
                         slice_obj = self.db.get_slice(slice_id=slice_id)
                         if slice_obj is not None:
                             slice_list = [slice_obj]
+
+                    elif slice_name is not None:
+                        slice_obj = self.db.get_slice_by_name(slice_name=slice_name)
+                        if slice_obj is not None:
+                            slice_list = [slice_obj]
+
+                    else:
+                        slice_list = self.db.get_slices()
+
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                    result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                    result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                     result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 if slice_list is not None:
-                    result.slices = Translate.fill_slices(slice_list=slice_list, full=True)
+                    result.slices = Translate.fill_slices(slice_list=slice_list, full=True, user_dn=user_dn)
                 else:
                     result.status.set_code(ErrorCodes.ErrorNoSuchSlice.value)
-                    result.status.set_message(ErrorCodes.ErrorNoSuchSlice.name)
+                    result.status.set_message(ErrorCodes.ErrorNoSuchSlice.interpret())
             except Exception as e:
                 self.logger.error("getSlices {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorInternalError.value)
-                result.status.set_message(ErrorCodes.ErrorInternalError.name)
+                result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
         return result
 
-    def add_slice(self, *, slice_mng: SliceAvro, caller: AuthToken) -> ResultStringAvro:
+    def add_slice(self, *, slice_obj: SliceAvro, caller: AuthToken, id_token: str = None) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
 
-        if slice_mng is None or caller is None:
+        if slice_obj is None or caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
 
         else:
             try:
-                data = Converter.get_resource_data(slice_mng=slice_mng)
-                slice_obj = SliceFactory.create(slice_id=ID(), name=slice_mng.get_slice_name(), data=data)
+                user_dn = None
+                if id_token is not None:
+                    fabric_token = AccessChecker.check_access(action_id=ActionId.query,
+                                                              resource_type=ResourceType.slice,
+                                                              token=id_token, logger=self.logger,
+                                                              actor_type=self.actor.get_type(),
+                                                              resource_id=str(slice_obj.slice_name))
+                    user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
 
-                slice_obj.set_description(description=slice_mng.get_description())
-                slice_obj.set_owner(owner=self.actor.get_identity())
-                slice_obj.set_inventory(value=True)
+                    if user_dn is None:
+                        result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
+                        result.status.set_message(ErrorCodes.ErrorInvalidToken.interpret())
+                        return result
+
+                data = Converter.get_resource_data(slice_mng=slice_obj)
+                slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name(), data=data)
+
+                slice_obj_new.set_description(description=slice_obj.get_description())
+                slice_obj_new.set_owner(owner=self.actor.get_identity())
+                slice_obj_new.get_owner().set_oidc_sub_claim(oidc_sub_claim=user_dn)
+
+                if slice_obj.get_inventory():
+                    slice_obj_new.set_inventory(value=True)
+
+                elif slice_obj.is_broker_client_slice():
+                    slice_obj.set_broker_client_slice(value=True)
+
+                elif slice_obj.is_client_slice():
+                    slice_obj.set_client_slice(value=True)
 
                 class Runner(IActorRunnable):
                     def __init__(self, *, actor: IActor):
@@ -172,32 +210,39 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
                     def run(self):
                         try:
-                            self.actor.register_slice(slice_object=slice_obj)
+                            self.actor.register_slice(slice_object=slice_obj_new)
                         except Exception as e:
-                            self.actor.get_plugin().release_slice(slice_obj=slice_obj)
+                            self.actor.get_plugin().release_slice(slice_obj=slice_obj_new)
                             raise e
 
                         return None
 
                 self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
 
-                result.set_result(str(slice_obj.get_slice_id()))
+                result.set_result(str(slice_obj_new.get_slice_id()))
             except Exception as e:
-                self.logger.error("addslice: {}".format(e))
+                self.logger.error("add_slice: {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorInternalError.value)
-                result.status.set_message(ErrorCodes.ErrorInternalError.name)
+                result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
 
-    def remove_slice(self, *, slice_id: ID, caller: AuthToken) -> ResultAvro:
+    def remove_slice(self, *, slice_id: ID, caller: AuthToken, id_token: str = None) -> ResultAvro:
         result = ResultAvro()
         if slice_id is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.delete,
+                                           resource_type=ResourceType.slice,
+                                           token=id_token, logger=self.logger,
+                                           actor_type=self.actor.get_type(),
+                                           resource_id=str(slice_id))
+
             class Runner(IActorRunnable):
                 def __init__(self, *, actor: IActor):
                     self.actor = actor
@@ -210,7 +255,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         except Exception as e:
             self.logger.error("remove_slice: {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
-            result.set_message(ErrorCodes.ErrorInternalError.name)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
         return result
 
@@ -218,7 +263,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result = ResultAvro()
         if slice_mng is None or slice_mng.get_slice_id() is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -233,16 +278,17 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     slice_obj = self.actor.get_slice(slice_id=slice_id)
                     if slice_obj is None:
                         result.set_code(ErrorCodes.ErrorNoSuchSlice.value)
-                        result.set_message(ErrorCodes.ErrorNoSuchSlice.name)
+                        result.set_message(ErrorCodes.ErrorNoSuchSlice.interpret())
                         return result
                     slice_obj = ManagementUtils.update_slice(slice_obj=slice_obj, slice_mng=slice_mng)
+                    slice_obj.set_dirty()
 
                     try:
                         self.actor.get_plugin().get_database().update_slice(slice_object=slice_obj)
                     except Exception as e:
                         print("Could not commit slice update {}".format(e))
                         result.set_code(ErrorCodes.ErrorDatabaseError.value)
-                        result.set_message(ErrorCodes.ErrorDatabaseError.name)
+                        result.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                         result = ManagementObject.set_exception_details(result=result, e=e)
 
                     return result
@@ -251,20 +297,13 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         except Exception as e:
             self.logger.error("update_slice: {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
-            result.set_message(ErrorCodes.ErrorInternalError.name)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
 
-    def _get_slice_by_id(self, *, slc_id: int) -> ISlice:
-        ss = self.db.get_slice_by_id(slc_id=slc_id)
-        slice_obj = SliceFactory.create_instance(properties=ss)
-        return slice_obj
-
     def get_slice_by_guid(self, *, guid: str, id_token: str = None) -> ISlice:
-        ss = self.db.get_slice(slice_guid=guid)
-        slice_obj = SliceFactory.create_instance(properties=ss)
-        return slice_obj
+        return self.db.get_slice(slice_id=guid)
 
     def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: int = None,
                          slice_id: ID = None, rid: ID = None) -> ResultReservationAvro:
@@ -273,13 +312,14 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
-            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
-                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
-                                       resource_id=str(rid))
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                           token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
+                                           resource_id=str(rid))
             res_list = None
             try:
                 if rid is not None:
@@ -288,36 +328,29 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                         res_list = [res]
                     else:
                         result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
-                        result.status.set_message(ErrorCodes.ErrorNoSuchReservation.name)
+                        result.status.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
                 elif slice_id is not None and state is not None:
-                    res_list = self.db.get_reservations_by_slice_id_state(slc_guid=slice_id, rsv_state=state)
+                    res_list = self.db.get_reservations_by_slice_id_state(slice_id=slice_id, state=state)
                 elif slice_id is not None:
-                    res_list = self.db.get_reservations_by_slice_id(slc_guid=slice_id)
+                    res_list = self.db.get_reservations_by_slice_id(slice_id=slice_id)
                 elif state is not None:
-                    res_list = self.db.get_reservations_by_state(rsv_state=state)
+                    res_list = self.db.get_reservations_by_state(state=state)
                 else:
                     res_list = self.db.get_reservations()
             except Exception as e:
                 self.logger.error("getReservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
             if res_list is not None:
                 result.reservations = []
                 for r in res_list:
-                    slice_id = ReservationFactory.get_slice_id(properties=r)
-                    if slice_id is None:
-                        self.logger.error("Inconsistent state reservation does not belong to a slice: {}".format(r))
-
-                    slice_obj = None
-                    if slice_id is not None:
-                        slice_obj = self._get_slice_by_id(slc_id=slice_id)
-                    rsv_obj = ReservationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
-                                                                 logger=self.actor.get_logger())
-                    if rsv_obj is not None:
-                        rr = Converter.fill_reservation(reservation=rsv_obj, full=False)
-                        result.reservations.append(rr)
+                    slice_id = r.get_slice_id()
+                    slice_obj = self.get_slice_by_guid(guid=slice_id)
+                    r.restore(actor=self.actor, slice_obj=slice_obj)
+                    rr = Converter.fill_reservation(reservation=r, full=False)
+                    result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("getReservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
@@ -325,7 +358,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         except Exception as e:
             self.logger.error("getReservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
@@ -335,7 +368,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         if rid is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -355,7 +388,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         except Exception as e:
             self.logger.error("remove_reservation: {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
-            result.set_message(ErrorCodes.ErrorInternalError.name)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
@@ -365,7 +398,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         if rid is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -385,7 +418,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         except Exception as e:
             self.logger.error("close_reservation: {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
-            result.set_message(ErrorCodes.ErrorInternalError.name)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
@@ -395,7 +428,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         if slice_id is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -416,7 +449,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         except Exception as e:
             self.logger.error("close_slice_reservations: {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
-            result.set_message(ErrorCodes.ErrorInternalError.name)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
         return result
 
@@ -433,7 +466,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         result = ResultAvro()
         if reservation is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
@@ -448,7 +481,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     r = self.actor.get_reservation(rid=rid)
                     if r is None:
                         result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
-                        result.set_message(ErrorCodes.ErrorNoSuchReservation.name)
+                        result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
                         return result
                     r = ManagementUtils.update_reservation(res_obj=r, rsv_mng=reservation)
                     r.set_dirty()
@@ -458,7 +491,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     except Exception as e:
                         print("Could not commit slice update {}".format(e))
                         result.set_code(ErrorCodes.ErrorDatabaseError.value)
-                        result.set_message(ErrorCodes.ErrorDatabaseError.name)
+                        result.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                         result = ManagementObject.set_exception_details(result=result, e=e)
                     return result
 
@@ -470,7 +503,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         except Exception as e:
             self.logger.error("update_reservation: {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
-            result.set_message(ErrorCodes.ErrorInternalError.name)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
 
         return result
@@ -482,13 +515,13 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         if rids is None or len(rids) == 0 or caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         for rid in rids:
             if rid is None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
 
         try:
@@ -498,9 +531,9 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             try:
                 res_list = self.db.get_reservations_by_rids(rid=rids)
             except Exception as e:
-                self.logger.error("get_reservation_state_for_reservations:db access {}".format(e))
+                self.logger.error("get_reservation_state_for_reservations db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
@@ -515,11 +548,10 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 j = 0
                 result.reservation_states = []
                 while i < len(rids):
-                    properties = res_list[j]
-                    if rids[i] == ReservationFactory.get_reservation_id(properties=properties):
-                        result.reservation_states.append(Converter.fill_reservation_state(res=res_list))
+                    reservation = res_list[j]
+                    if rids[i] == reservation.get_reservation_id():
+                        result.reservation_states.append(Converter.fill_reservation_state(res=reservation))
                         j += 1
-
                     else:
                         state = ReservationStateAvro()
                         state.set_state(ReservationStates.Unknown.value)
@@ -533,7 +565,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         except Exception as e:
             self.logger.error("get_reservation_state_for_reservations {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
@@ -545,55 +577,50 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
         try:
             if id_token is not None:
                 AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.delegation,
                                            token=id_token, logger=self.logger, actor_type=self.actor.get_type())
-            res_list = None
+            dlg_list = None
             try:
                 if did is not None:
-                    res = self.db.get_delegation(dlg_graph_id=did)
-                    if res is not None:
-                        res_list = [res]
+                    dlg = self.db.get_delegation(dlg_graph_id=did)
+                    if dlg is not None:
+                        dlg_list = [dlg]
                     else:
                         result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
-                        result.status.set_message(ErrorCodes.ErrorNoSuchDelegation.name)
+                        result.status.set_message(ErrorCodes.ErrorNoSuchDelegation.interpret())
                 elif slice_id is not None:
-                    res_list = self.db.get_delegations_by_slice_id(slice_id=slice_id)
+                    dlg_list = self.db.get_delegations_by_slice_id(slice_id=slice_id)
                 else:
-                    res_list = self.db.get_delegations()
+                    dlg_list = self.db.get_delegations()
             except Exception as e:
-                self.logger.error("getDelegations:db access {}".format(e))
+                self.logger.error("get_delegations db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret())
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
-            if res_list is not None:
+            if dlg_list is not None:
                 result.delegations = []
-                for r in res_list:
-                    slice_id = ReservationFactory.get_delegation_slice_id(properties=r)
-                    if slice_id is None:
-                        self.logger.error("Inconsistent state delegation does not belong to a slice: {}".format(r))
-
+                for d in dlg_list:
+                    slice_id = d.get_slice_id()
                     slice_obj = None
                     if slice_id is not None:
-                        slice_obj = self._get_slice_by_id(slc_id=slice_id)
-                    dlg_obj = DelegationFactory.create_instance(properties=r, actor=self.actor, slice_obj=slice_obj,
-                                                                logger=self.actor.get_logger())
-                    if dlg_obj is not None:
-                        rr = Translate.translate_delegation_to_avro(delegation=dlg_obj)
-                        result.delegations.append(rr)
+                        slice_obj = self.get_slice_by_guid(guid=slice_id)
+                    d.restore(actor=self.actor, slice_obj=slice_obj)
+                    dd = Translate.translate_delegation_to_avro(delegation=d)
+                    result.delegations.append(dd)
         except DelegationNotFoundException as e:
-            self.logger.error("getDelegations: {}".format(e))
+            self.logger.error("get_delegations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
             result.status.set_message(e.text)
         except Exception as e:
             self.logger.error("getDelegations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result

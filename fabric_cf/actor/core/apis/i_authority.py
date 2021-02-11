@@ -45,29 +45,6 @@ class IAuthority(IServerActor, IAuthorityPublic):
     IAuthority defines the interface for an actor acting in the authority role.
     """
     @abstractmethod
-    def available(self, *, resources: ResourceSet):
-        """
-        Informs the actor that the following resources are available for
-        allocation.
-
-        @param resources resources
-
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
-    def donate(self, *, resources: ResourceSet):
-        """
-        Accepts concrete resources to be used for allocation of client
-        requests.
-
-        @param resources resource set representing resources to be used for
-               allocation
-
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
     def donate_delegation(self, *, delegation: IDelegation):
         """
         Accepts delegations to be merged to Model.
@@ -131,18 +108,5 @@ class IAuthority(IServerActor, IAuthorityPublic):
         @param reservation reservation representing a request for a new lease
         @param callback callback
         @param caller caller
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
-    def unavailable(self, *, resources: ResourceSet) -> int:
-        """
-        Informs the actor that previously donated resources are no
-        longer available for allocation.
-
-        @param resources resources
-
-        @return number of unavailable units
-
         @raises Exception in case of error
         """

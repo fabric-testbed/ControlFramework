@@ -99,16 +99,7 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
             concrete = reservation.get_resources().get_resources()
 
             if concrete is not None:
-                cset = None
-                try:
-                    encoded = concrete.encode(protocol=Constants.protocol_local)
-                    cset = Proxy.decode(encoded=encoded, plugin=plugin)
-                except Exception as e:
-                    raise ProxyException("Error while encoding concrete set {}".format(e))
-
-                if cset is None:
-                    raise ProxyException("Unsupported ConcreteSet type: {}".format(type(concrete)))
-
+                cset = concrete.clone()
                 rset.set_resources(cset=cset)
 
         if isinstance(reservation, IBrokerReservation):

@@ -23,14 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import pickle
 from enum import Enum
 
 
 from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.exceptions import UnitException
-from fabric_cf.actor.core.plugins.config.config_token import ConfigToken
+from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.notice import Notice
 from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -48,11 +45,11 @@ class UnitState(Enum):
 
 class Unit(ConfigToken):
     def __init__(self, *, uid: ID, rid: ID = None, slice_id: ID = None, actor_id: ID = None,
-                 properties: dict = None, state: UnitState = None):
+                 properties: dict = None, state: UnitState = None, rtype: ResourceType = None):
         # Unique identifier.
         self.uid = uid
         # Resource type.
-        self.rtype = None
+        self.rtype = rtype
         # Unique identifier of parent unit (optional).
         self.parent_id = None
         # Properties list.
@@ -406,15 +403,3 @@ class Unit(ConfigToken):
 
     def __hash__(self):
         return self.uid.__hash__()
-
-    @staticmethod
-    def create_instance(properties: dict):
-        """
-        Create an Unit instance using the pickled instance read from the database
-        @param properties properties
-        """
-        if Constants.property_pickle_properties not in properties:
-            raise UnitException(Constants.invalid_argument)
-        serialized_unit = properties[Constants.property_pickle_properties]
-        deserialized_unit = pickle.loads(serialized_unit)
-        return deserialized_unit

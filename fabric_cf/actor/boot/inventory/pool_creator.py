@@ -26,102 +26,42 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict
 
-from fabric_cf.actor.boot.inventory.neo4j_resource_pool_factory import Neo4jResourcePoolFactory
+from fim.graph.resources.neo4j_arm import Neo4jARMGraph
+
 from fabric_cf.actor.boot.inventory.resource_pool_factory import ResourcePoolFactory
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.pool_manager import PoolManagerError
-from fabric_cf.actor.core.plugins.config.configuration_mapping import ConfigurationMapping
+from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
-    from fabric_cf.actor.boot.inventory.i_resource_pool_factory import IResourcePoolFactory
     from fabric_cf.actor.core.plugins.substrate.authority_substrate import AuthoritySubstrate
 
 
 class PoolCreator:
     """
-    Responsible for setting up inventory pools on startup
+    Responsible for setting up inventory slices on startup
     """
-    def __init__(self, *, substrate: AuthoritySubstrate = None, pools: dict = None, neo4j_config: dict = None):
+    def __init__(self, *, substrate: AuthoritySubstrate = None, resources: dict = None, neo4j_config: dict = None):
         self.substrate = substrate
-        self.pools = pools
+        self.resources = resources
         self.neo4j_config = neo4j_config
         self.container = None
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
+        self.arm_graph = None
 
-    def get_factory2(self):
-        """
-        Create Neo4j ResourcePool Factory instance
-        """
-        factory = Neo4jResourcePoolFactory()
-        factory.set_substrate(substrate=self.substrate)
-        return factory
-
-    def get_factory(self, *, rd: ResourcePoolDescriptor) -> IResourcePoolFactory:
+    def get_factory(self):
         """
         Create ResourcePool Factory instance
-        @param rd resource pool descriptor
         """
-        factory = None
-        if rd.get_pool_factory_module() is None or rd.get_pool_factory_class() is None:
-            factory = ResourcePoolFactory()
-        else:
-            try:
-                factory = ReflectionUtils.create_instance_with_params(
-                    module_name=rd.get_pool_factory_module(), class_name=rd.get_pool_factory_class())(self.neo4j_config)
-            except Exception as e:
-                raise PoolCreatorException("Could not instantiate class= {}.{} {}".format(
-                    rd.get_pool_factory_module(), rd.get_pool_factory_class(), e))
-
+        factory = ResourcePoolFactory()
         factory.set_substrate(substrate=self.substrate)
-        factory.set_descriptor(descriptor=rd)
         return factory
-
-    def process(self):
-        """
-        Create Pools
-        """
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.container = GlobalsSingleton.get().get_container()
-        for pool in self.pools.values():
-            self.logger.debug("Creating resource pool {} of Actor {}".format(
-                pool.get_resource_type_label(), self.substrate.get_actor().get_name()))
-
-            factory = self.get_factory(rd=pool)
-            pool = factory.get_descriptor()
-            rd = ResourceData()
-            rd.resource_properties = pool.save(properties=rd.resource_properties, prefix=None)
-
-            rd.local_properties = ResourceData.merge_properties(from_props=pool.pool_properties,
-                                                                to_props=rd.local_properties)
-
-            create_pool_result = self.substrate.get_pool_manager().create_pool(slice_id=ID(),
-                                                                               name=pool.get_resource_type_label(),
-                                                                               rtype=pool.get_resource_type(),
-                                                                               resource_data=rd)
-
-            if create_pool_result.code != PoolManagerError.ErrorNone:
-                raise PoolCreatorException("Could not create resource pool: {}. error={}".format(
-                    pool.get_resource_type_label(), create_pool_result.code))
-
-            self.register_handler(pool=pool)
-            source = factory.create_source_reservation(slice_obj=create_pool_result.slice)
-
-            try:
-                self.logger.debug("Adding source reservation to database {}".format(source))
-                self.logger.debug("Source reservation has resources of type {}"
-                                  .format(source.get_resources().get_resources().__class__.__name__))
-                self.logger.debug("Source reservation has delegation of type {}".format(
-                    source.get_resources().get_resources().get_ticket().get_delegation().__class__.__name__))
-
-                self.substrate.get_database().add_reservation(reservation=source)
-            except Exception as e:
-                raise PoolCreatorException("Could not add source reservation to database {}".format(e))
 
     def process_neo4j(self, substrate_file: str, actor_name: str) -> Dict:
         """
@@ -129,64 +69,58 @@ class PoolCreator:
         """
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.container = GlobalsSingleton.get().get_container()
-        factory = self.get_factory2()
+        factory = self.get_factory()
 
         rd = ResourceData()
         create_pool_result = self.substrate.get_pool_manager().create_pool(
             slice_id=ID(), name=actor_name,
-            rtype=ResourceType(resource_type=Constants.property_aggregate_resource_model),
+            rtype=ResourceType(resource_type=Constants.PROPERTY_AGGREGATE_RESOURCE_MODEL),
             resource_data=rd)
 
         if create_pool_result.code != PoolManagerError.ErrorNone:
-            raise PoolCreatorException("Could not create resource pool: {}. error={}".format(
-                actor_name, create_pool_result.code))
+            raise PoolCreatorException(f"Could not create resource pool: {actor_name}. error={create_pool_result.code}")
 
-        self.logger.debug("Created aggregate manager resource slice# {}".format(create_pool_result.slice))
+        self.logger.debug(f"Created aggregate manager resource slice# {create_pool_result.slice}")
 
-        arm_graph = None
         if create_pool_result.slice.get_graph_id() is not None:
             # load the graph from Neo4j database
-            self.logger.debug("Reloading an existing graph for resource slice# {}".format(create_pool_result.slice))
-            arm_graph = factory.get_arm_graph(graph_id=create_pool_result.slice.get_graph_id())
-            create_pool_result.slice.set_graph(graph=arm_graph)
+            self.logger.debug(f"Reloading an existing graph for resource slice# {create_pool_result.slice}")
+            self.arm_graph = Neo4jHelper.get_arm_graph(graph_id=create_pool_result.slice.get_graph_id())
+            create_pool_result.slice.set_graph(graph=self.arm_graph)
         else:
-            arm_graph = factory.get_arm_graph_from_file(filename=substrate_file)
-            create_pool_result.slice.set_graph(graph=arm_graph)
+            self.arm_graph = Neo4jHelper.get_arm_graph_from_file(filename=substrate_file)
+            create_pool_result.slice.set_graph(graph=self.arm_graph)
             self.substrate.get_pool_manager().update_pool(slice_obj=create_pool_result.slice)
-            self.logger.debug("Created new graph for resource slice# {}".format(create_pool_result.slice))
+            self.logger.debug(f"Created new graph for resource slice# {create_pool_result.slice}")
 
-        for pool in self.pools.values():
-            self.logger.debug("Creating resource pool {} of Actor {}".format(
-                pool.get_resource_type_label(), self.substrate.get_actor().get_name()))
+        for r in self.resources.values():
+            self.logger.debug(f"Registering resource_handler for resource_type: {r.get_resource_type_label()} "
+                              f"for Actor {actor_name}")
+            self.register_handler(rpd=r)
 
-            factory.set_descriptor(descriptor=pool)
-            pool = factory.get_descriptor()
+        return self.arm_graph.generate_adms()
 
-            self.register_handler(pool=pool)
-            # TODO populate inventory and register controls
-            # NEO4J: Discuss with Ilya
-
-        return arm_graph.generate_adms()
-
-    def register_handler(self, *, pool: ResourcePoolDescriptor):
+    def register_handler(self, *, rpd: ResourcePoolDescriptor):
         """
-        Register Handlers
-        @param pool Resource pool descriptor
+        Register Handlers for each Resource Type and Save it Plugin
+        @param rpd Resource pool descriptor
         """
-        handler_module = pool.get_handler_module()
-        handler_class = pool.get_handler_class()
+        handler_module = rpd.get_handler_module()
+        handler_class = rpd.get_handler_class()
 
         if handler_class is None or handler_module is None:
             return
 
-        config = self.substrate.get_config()
         config_map = ConfigurationMapping()
-        config_map.set_key(key=str(pool.get_resource_type()))
+        config_map.set_key(key=str(rpd.get_resource_type()))
         config_map.set_class_name(class_name=handler_class)
         config_map.set_module_name(module_name=handler_module)
-        config_map.set_properties(properties=pool.get_handler_properties())
+        config_map.set_properties(properties=rpd.get_handler_properties())
 
-        config.add_config_mapping(mapping=config_map)
+        self.substrate.handler_processor.add_config_mapping(mapping=config_map)
+
+    def get_arm_graph(self) -> Neo4jARMGraph:
+        return self.arm_graph
 
 
 class PoolCreatorException(Exception):

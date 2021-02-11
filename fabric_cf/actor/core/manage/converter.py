@@ -30,7 +30,6 @@ from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.actor_avro import ActorAvro
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
-from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.lease_reservation_state_avro import LeaseReservationStateAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -38,11 +37,9 @@ from fabric_mb.message_bus.messages.reservation_state_avro import ReservationSta
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
 from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric_cf.actor.core.core.actor_identity import ActorIdentity
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.core.unit import Unit
@@ -241,17 +238,16 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_unit_mng(*, properties: dict) -> UnitAvro:
+    def fill_unit_mng(*, unit: Unit) -> UnitAvro:
         result = UnitAvro()
-        unit = Unit.create_instance(properties)
         result.properties = unit.properties
         return result
 
     @staticmethod
-    def fill_units(*, unit_list: list) -> List[UnitAvro]:
+    def fill_units(*, unit_list: List[Unit]) -> List[UnitAvro]:
         result = []
         for u in unit_list:
-            mng = Converter.fill_unit_mng(properties=u)
+            mng = Converter.fill_unit_mng(unit=u)
             result.append(mng)
 
         return result
@@ -263,9 +259,9 @@ class Converter:
         result.set_guid(str(proxy.get_guid()))
 
         if isinstance(proxy, LocalProxy):
-            result.set_protocol(Constants.protocol_local)
+            result.set_protocol(Constants.PROTOCOL_LOCAL)
         elif isinstance(proxy, KafkaProxy):
-            result.set_protocol(Constants.protocol_kafka)
+            result.set_protocol(Constants.PROTOCOL_KAFKA)
             result.set_kafka_topic(proxy.get_kafka_topic())
 
         return result
@@ -288,7 +284,7 @@ class Converter:
             return Container.get_proxy(protocol=mng.get_protocol(), identity=identity, location=location,
                                        proxy_type=mng.get_type())
         except Exception:
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
             return None
 
     @staticmethod
@@ -305,7 +301,8 @@ class Converter:
     def get_resource_set(*, res_mng: ReservationMng) -> ResourceSet:
         rd = Converter.get_resource_data_from_res(res_mng=res_mng)
 
-        return ResourceSet(units=res_mng.get_units(), rtype=ResourceType(resource_type=res_mng.get_resource_type()), rdata=rd)
+        return ResourceSet(units=res_mng.get_units(), rtype=ResourceType(resource_type=res_mng.get_resource_type()),
+                           rdata=rd)
 
     @staticmethod
     def fill_actor(*, actor: IActor) -> ActorAvro:
@@ -328,9 +325,7 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_actor_from_db(*, properties: dict) -> ActorAvro:
-        from fabric_cf.actor.core.core.actor import Actor
-        actor = Actor.create_instance(properties=properties)
+    def fill_actor_from_db(*, actor: IActor) -> ActorAvro:
         result = ActorAvro()
         result.set_description(actor.get_description())
         result.set_name(actor.get_name())
@@ -343,28 +338,21 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_actors_from_db(*, act_list: list) -> List[ActorAvro]:
+    def fill_actors_from_db(*, act_list: List[IActor]) -> List[ActorAvro]:
         result = []
         for a in act_list:
-            act_mng = Converter.fill_actor_from_db(properties=a)
+            act_mng = Converter.fill_actor_from_db(actor=a)
             result.append(act_mng)
 
         return result
 
     @staticmethod
-    def fill_actors_from_db_status(*, act_list: list, status: int) -> List[ActorAvro]:
+    def fill_actors_from_db_status(*, act_list: List[IActor], status: int) -> List[ActorAvro]:
         result = []
         for a in act_list:
-            act_mng = Converter.fill_actor_from_db(properties=a)
+            act_mng = Converter.fill_actor_from_db(actor=a)
 
             if status == 0 or (status == 1 and act_mng.get_online()) or (status == 2 and not act_mng.get_online()):
                 result.append(act_mng)
 
         return result
-
-    @staticmethod
-    def fill_resource_pool_descriptor(*, pool: PoolInfoAvro) -> ResourcePoolDescriptor:
-        rpd = ResourcePoolDescriptor()
-        properties = pool.get_properties()
-        rpd.reset(properties=properties)
-        return rpd

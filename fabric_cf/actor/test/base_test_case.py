@@ -39,7 +39,7 @@ from fabric_cf.actor.core.apis.i_policy import IPolicy
 from fabric_cf.actor.core.core.authority_policy import AuthorityPolicy
 from fabric_cf.actor.core.core.broker_policy import BrokerPolicy
 from fabric_cf.actor.core.core.policy import Policy
-from fabric_cf.actor.core.delegation.simple_resource_ticket_factory import SimpleResourceTicketFactory
+from fabric_cf.actor.core.delegation.simple_resource_delegation_factory import SimpleResourceDelegationFactory
 from fabric_cf.actor.core.plugins.base_plugin import BasePlugin
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.policy.controller_calendar_policy import ControllerCalendarPolicy
@@ -126,7 +126,7 @@ class BaseTestCase:
         return db
 
     def make_plugin(self) -> IBasePlugin:
-        return BasePlugin(actor=None, db=None, config=None)
+        return BasePlugin(actor=None, db=None, handler_processor=None)
 
     def get_plugin(self, *, name: str = None) -> IBasePlugin:
         if name is None:
@@ -187,9 +187,9 @@ class BaseTestCase:
         actor.set_actor_clock(clock=self.get_actor_clock())
         actor.set_policy(policy=self.get_policy())
         actor.set_plugin(plugin=self.get_plugin(name=name))
-        tf = SimpleResourceTicketFactory()
+        tf = SimpleResourceDelegationFactory()
         tf.set_actor(actor=actor)
-        actor.get_plugin().set_ticket_factory(ticket_factory=tf)
+        actor.get_plugin().set_resource_delegation_factory(resource_delegation_factory=tf)
         return actor
 
     def get_uninitialized_controller(self, *, name: str, guid: ID) -> IController:
@@ -199,9 +199,9 @@ class BaseTestCase:
         actor.set_actor_clock(clock=self.get_actor_clock())
         actor.set_policy(policy=self.get_controller_policy())
         actor.set_plugin(plugin=self.get_plugin(name=name))
-        tf = SimpleResourceTicketFactory()
+        tf = SimpleResourceDelegationFactory()
         tf.set_actor(actor=actor)
-        actor.get_plugin().set_ticket_factory(ticket_factory=tf)
+        actor.get_plugin().set_resource_delegation_factory(resource_delegation_factory=tf)
         return actor
 
     def get_uninitialized_broker(self, *, name: str, guid: ID) -> IBroker:
@@ -211,9 +211,9 @@ class BaseTestCase:
         actor.set_actor_clock(clock=self.get_actor_clock())
         actor.set_policy(policy=self.get_broker_policy())
         actor.set_plugin(plugin=self.get_plugin(name=name))
-        tf = SimpleResourceTicketFactory()
+        tf = SimpleResourceDelegationFactory()
         tf.set_actor(actor=actor)
-        actor.get_plugin().set_ticket_factory(ticket_factory=tf)
+        actor.get_plugin().set_resource_delegation_factory(resource_delegation_factory=tf)
         return actor
 
     def get_uninitialized_authority(self, *, name: str, guid: ID) -> IAuthority:
@@ -223,9 +223,9 @@ class BaseTestCase:
         actor.set_actor_clock(clock=self.get_actor_clock())
         actor.set_policy(policy=self.get_authority_policy())
         actor.set_plugin(plugin=self.get_plugin(name=name))
-        tf = SimpleResourceTicketFactory()
+        tf = SimpleResourceDelegationFactory()
         tf.set_actor(actor=actor)
-        actor.get_plugin().set_ticket_factory(ticket_factory=tf)
+        actor.get_plugin().set_resource_delegation_factory(resource_delegation_factory=tf)
         return actor
 
     def get_actor(self, *, name: str = actor_name, guid: ID = actor_guid) -> IActor:

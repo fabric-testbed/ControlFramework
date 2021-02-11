@@ -36,17 +36,14 @@ from fabric_cf.actor.core.apis.i_resource_control import IResourceControl
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-    from fabric_cf.actor.core.plugins.config.config_token import ConfigToken
+    from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
     from fabric_cf.actor.core.apis.i_reservation import IReservation
     from fabric_cf.actor.core.core.unit import Unit
 
 
 class ResourceControl(IResourceControl):
-    PropertyControlResourceTypes = "resource.types"
-
     def __init__(self):
         self.guid = ID()
         self.types = set()
@@ -71,7 +68,7 @@ class ResourceControl(IResourceControl):
     def initialize(self):
         if not self.initialized:
             if self.authority is None:
-                raise PolicyException(Constants.not_specified_prefix.format("authority"))
+                raise PolicyException(Constants.NOT_SPECIFIED_PREFIX.format("authority"))
             self.logger = self.authority.get_logger()
             self.initialized = True
 
@@ -80,12 +77,6 @@ class ResourceControl(IResourceControl):
 
     def remove_type(self, *, rtype: ResourceControl):
         self.types.remove(rtype)
-
-    def donate_reservation(self, *, reservation: IClientReservation):
-        return
-
-    def donate(self, *, resource_set: ResourceSet):
-        return
 
     def available(self, *, resource_set: ResourceSet):
         return
@@ -105,7 +96,7 @@ class ResourceControl(IResourceControl):
     def _free_resources(self, *, resource_set: ResourceSet):
         group = resource_set.get_resources()
         if group is None:
-            raise PolicyException(Constants.not_specified_prefix.format("concrete set"))
+            raise PolicyException(Constants.NOT_SPECIFIED_PREFIX.format("concrete set"))
         self.free(uset=group.get_set())
 
     def freed(self, *, resource_set: ResourceSet):
@@ -143,12 +134,6 @@ class ResourceControl(IResourceControl):
             self.logger.error(message)
         u.fail(message=message, exception=e)
 
-    def configure(self, *, properties: dict):
-        if self.PropertyControlResourceTypes in properties:
-            temp = properties[self.PropertyControlResourceTypes]
-            for name in temp.split(","):
-                self.add_type(rtype=ResourceType(resource_type=name))
-
     def get_types(self) -> set:
         return self.types.copy()
 
@@ -160,3 +145,11 @@ class ResourceControl(IResourceControl):
 
     def get_guid(self) -> ID:
         return self.guid
+
+    def get_delegated_capacity_or_label(self, delegation_name:str, capacity_or_label_delegations: list) -> dict:
+        for d in capacity_or_label_delegations:
+            name = d.get("delegation", None)
+            if name == delegation_name:
+                return d
+
+        return None

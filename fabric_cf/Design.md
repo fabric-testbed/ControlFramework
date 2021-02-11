@@ -27,6 +27,14 @@ Complete Flow for all messages and processing at Broker is described below:
     - Reserve the reservation by invoking BrokerSimplerUnitsPolicy::allocate which is responsible for annotating 
     the reservation by querying CBM and Relational Database and updating the reservation
     - Send Updated Reservation back to Orchestrator  
+#### Policy (Only doing compute; work for PCI devices in progress)
+- Lookup graph node in CBM using the graph_node_id received in the reservation
+- Fetch Capacity Delegations, Label Delegations from the graph Node
+- Fetch all the Ticketed Reservations from Database with the graph_node_id
+- Compute the available RAM, Disk and Cores by using the values in Capacity Delegations and excluding any values assigned to active Reservations
+- Verify that the requested RAM, Disk and Cores can be satisfied by the computed available RAM, Disk and Cores
+- Grant a ticket by Sending Update Ticket Message to Orchestrator
+- Update ReservationInfo in the CBM for the Graph Node to include Reservation Id and Slice Id
 ### Aggregate Manager
 Complete Flow for all messages and processing at AM is described below:
 - Incoming Add Slice Message results in invocation of core.Actor::register_slice method which creates a slice and 
@@ -47,4 +55,12 @@ following action for each redeeming reservation:
 - Assign method for each ResourceControl Looks up ARM and verifies the availability of the assigned resource
   for the specific resource type; Updates the Reservation in database
 - Invokes the Handler via Plugin to provision the resource on the Substrate
-- Handler on completion; updates the status of the reservation which in turn is passed to the Broker and Orchestrator  
+- Handler on completion; updates the status of the reservation which in turn is passed to the Broker and Orchestrator
+#### Policy (Only doing compute; work for PCI devices in progress)
+- Lookup graph node in ARM using the graph_node_id received in the reservation
+- Fetch Capacities, Capacity Delegations, Labels, Label Delegations and Reservation Info from the graph Node
+- Verify that the Requested RAM, Disk and Cores can be satisfied by the Delegated RAM, Disk and Cores
+- Fetch all the Active Reservations from Database with the graph_node_id
+- Compute the available RAM, Disk and Cores by using the values in Capacities and excluding any values assigned to active reservations
+- Verify that the requested RAM, Disk and Cores can be satisfied by the computed available RAM, Disk and Cores
+- Redeem the reservation

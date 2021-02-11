@@ -26,8 +26,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING
-
+from typing import TYPE_CHECKING, Tuple
 
 if TYPE_CHECKING:
     from fim.graph.abc_property_graph import ABCPropertyGraph
@@ -37,6 +36,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.resource_data import ResourceData
+    from fabric_cf.actor.core.kernel.slice_state_machine import SliceState, SliceOperation
 
 
 class ISlice:
@@ -251,7 +251,7 @@ class ISlice:
     @abstractmethod
     def set_config_properties(self, *, value: dict):
         """
-        Set config properties
+        Set handlers properties
         @param value: value
         """
 
@@ -308,4 +308,72 @@ class ISlice:
         """
         Sets the slice properties.
         @param properties slice properties
+        """
+
+    @abstractmethod
+    def get_state(self) -> SliceState:
+        """
+        Return Slice State
+        @return slice state
+        """
+
+    @abstractmethod
+    def transition_slice(self, *, operation: SliceOperation) -> Tuple[bool, SliceState]:
+        """
+        Attempt to transition a slice to a new state
+        @param operation slice operation
+        @return Slice State
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def is_dirty(self) -> bool:
+        """
+        Checks if the slice has uncommitted updates.
+
+        Returns:
+            true if the slice has an uncommitted updates
+        """
+
+    @abstractmethod
+    def set_dirty(self):
+        """
+        Marks the slice as containing uncommitted updates.
+        """
+
+    @abstractmethod
+    def clear_dirty(self):
+        """
+        Marks that the slice has no uncommitted updates or state transitions.
+        """
+
+    @abstractmethod
+    def is_stable_ok(self) -> bool:
+        """
+        Is Slice in state Stable OK
+        @return True if Slice state is Stable OK, false otherwise
+        """
+
+    def is_stable_error(self) -> bool:
+        """
+        Is Slice in state Stable Error
+        @return True if Slice state is Stable Error, false otherwise
+        """
+
+    def is_stable(self) -> bool:
+        """
+        Is Slice in state StableOK/StableError
+        @return True if Slice state is StableOK/StableError, false otherwise
+        """
+
+    def is_dead_or_closing(self) -> bool:
+        """
+        Is Slice in state Dead/Closing
+        @return True if Slice state is Dead/Closing, false otherwise
+        """
+
+    def is_dead(self) -> bool:
+        """
+        Is Slice in state Dead
+        @return True if Slice state is Dead, false otherwise
         """

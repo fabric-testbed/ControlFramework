@@ -98,61 +98,66 @@ class KafkaClientActorService(KafkaActorService):
     def add_reservation(self, *, request: AddReservationAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
+        result.message_id = request.message_id
+
         try:
             if request.guid is None or request.get_reservation() is None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result.status = mo.add_reservation(reservation=request.reservation_obj, caller=auth)
-            result.message_id = request.message_id
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
+        result.message_id = request.message_id
         return result
 
     def add_reservations(self, *, request: AddReservationsAvro) -> ResultStringsAvro:
         result = ResultStringsAvro()
         result.status = ResultAvro()
+        result.message_id = request.message_id
+
         try:
             if request.guid is None or request.get_reservation() is None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result.status = mo.add_reservations(reservations=request.reservation_list, caller=auth)
-            result.message_id = request.message_id
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
+        result.message_id = request.message_id
         return result
 
     def demand_reservation(self, *, request: DemandReservationAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
+        result.message_id = request.message_id
 
         try:
             if request.guid is None or (request.reservation_id is None and request.reservation_obj is None):
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
 
                 return result
 
             if request.reservation_obj is not None and request.reservation_id is not None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
 
                 return result
 
@@ -164,65 +169,70 @@ class KafkaClientActorService(KafkaActorService):
             else:
                 result.status = mo.demand_reservation(reservation=request.reservation_obj, caller=auth)
 
-            result.message_id = request.message_id
-
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
+        result.message_id = request.message_id
         return result
 
     def get_brokers(self, *, request: GetActorsRequestAvro) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
+        result.message_id = request.message_id
+
         try:
             if request.guid is None or request.type != ActorType.Broker.name:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.get_brokers(caller=auth, id_token=request.get_id_token(), broker_id=request.broker_id)
-            result.message_id = request.message_id
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
+        result.message_id = request.message_id
         return result
 
     def get_pool_info(self, *, request: GetPoolInfoRequestAvro) -> ResultPoolInfoAvro:
         result = ResultPoolInfoAvro()
         result.status = ResultAvro()
+        result.message_id = request.message_id
+
         try:
             if request.guid is None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             result = mo.get_pool_info(broker=ID(uid=request.broker_id), caller=auth, id_token=request.get_id_token())
-            result.message_id = request.message_id
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
+        result.message_id = request.message_id
         return result
 
     def extend_reservation(self, *, request: ExtendReservationAvro) -> ResultStringAvro:
         result = ResultStringAvro()
+        result.message_id = request.message_id
+
         try:
             if request.guid is None or request.reservation_id is None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
 
                 return result
 
@@ -238,22 +248,24 @@ class KafkaClientActorService(KafkaActorService):
                                                   new_units=request.new_units, new_resource_type=rtype,
                                                   request_properties=request.request_properties,
                                                   config_properties=request.config_properties, caller=auth)
-            result.message_id = request.message_id
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
+        result.message_id = request.message_id
         return result
 
     def claim(self, *, request: ClaimResourcesAvro):
         result = ResultDelegationAvro()
         result.status = ResultAvro()
+        result.message_id = request.message_id
+
         try:
             if request.guid is None or request.broker_id is None or request.delegation_id is None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
@@ -262,29 +274,30 @@ class KafkaClientActorService(KafkaActorService):
             if mo is None:
                 self.logger.debug("Management object could not be found: guid: {} auth: {}".format(request.guid, auth))
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
-                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
+                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.interpret())
                 return result
 
             result = mo.claim_delegations(broker=ID(uid=request.broker_id), did=request.delegation_id, caller=auth,
                                           id_token=request.id_token)
 
-            result.message_id = request.message_id
-
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             result.status.set_message(str(e))
             result.status.set_details(traceback.format_exc())
 
+        result.message_id = request.message_id
         return result
 
     def reclaim(self, *, request: ReclaimResourcesAvro):
         result = ResultDelegationAvro()
         result.status = ResultAvro()
+        result.message_id = request.message_id
+
         try:
             if request.guid is None or request.broker_id is None or request.delegation_id is None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-                result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
@@ -293,18 +306,17 @@ class KafkaClientActorService(KafkaActorService):
             if mo is None:
                 self.logger.debug("Management object could not be found: guid: {} auth: {}".format(request.guid, auth))
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
-                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.name)
+                result.status.set_message(ErrorCodes.ErrorNoSuchBroker.interpret())
                 return result
 
             result = mo.reclaim_delegations(broker=ID(uid=request.broker_id), did=request.delegation_id, caller=auth,
                                             id_token=request.id_token)
 
-            result.message_id = request.message_id
-
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             result.status.set_message(str(e))
             result.status.set_details(traceback.format_exc())
 
+        result.message_id = request.message_id
         return result

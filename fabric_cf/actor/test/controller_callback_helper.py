@@ -111,11 +111,11 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
         return self.reservation
 
     def get_type(self):
-        return Constants.protocol_local
+        return Constants.PROTOCOL_LOCAL
 
     def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
-        raise TestException(Constants.not_implemented)
+        raise TestException(Constants.NOT_IMPLEMENTED)
 
     def prepare_failed_request(self, *, request_id: str, failed_request_type,
                                failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
-        raise TestException(Constants.not_implemented)
+        raise TestException(Constants.NOT_IMPLEMENTED)

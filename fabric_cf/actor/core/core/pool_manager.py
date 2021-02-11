@@ -94,10 +94,9 @@ class PoolManager:
                 result.code = PoolManagerError.ErrorPoolExists
                 return result
 
-            temp = self.db.get_inventory_slices()
-            if temp is not None and len(temp) > 0:
-                for properties in temp:
-                    slice_obj = SliceFactory.create_instance(properties=properties)
+            slice_list = self.db.get_inventory_slices()
+            if slice_list is not None and len(slice_list) > 0:
+                for slice_obj in slice_list:
                     rt = slice_obj.get_resource_type()
                     if rt == rtype:
                         result.slice = slice_obj
@@ -113,10 +112,10 @@ class PoolManager:
                 self.db.add_slice(slice_object=slice_obj)
                 result.slice = slice_obj
             except Exception:
-                traceback.print_exc()
+                self.logger.error(traceback.format_exc())
                 result.code = PoolManagerError.ErrorDatabaseError
         except Exception:
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
             result.code = PoolManagerError.ErrorInternalError
         return result
 
@@ -126,6 +125,7 @@ class PoolManager:
         @param slice_obj slice object
         """
         try:
+            slice_obj.set_dirty()
             self.db.update_slice(slice_object=slice_obj)
         except Exception as e:
             raise ResourcesException("Could not update slice {}".format(e))
@@ -136,11 +136,10 @@ class PoolManager:
         @param pool_id pool id
         @param rtype resource type
         """
-        temp = self.db.get_slice(slice_id=pool_id)
+        slice_obj = self.db.get_slice(slice_id=pool_id)
 
-        if temp is not None and len(temp) > 0:
-            slice_obj = SliceFactory.create_instance(properties=temp)
+        if slice_obj is not None:
             if not slice_obj.is_inventory() or rtype != slice_obj.get_resource_type():
-                raise ResourcesException(Constants.invalid_argument)
+                raise ResourcesException(Constants.INVALID_ARGUMENT)
 
             self.db.remove_slice(slice_id=pool_id)

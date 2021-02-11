@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.apis.i_broker_reservation_factory import IBrokerReservationFactory
 from fabric_cf.actor.core.apis.i_slice import ISlice
 from fabric_cf.actor.core.kernel.broker_reservation import BrokerReservation
@@ -33,5 +34,7 @@ from fabric_cf.actor.core.util.id import ID
 
 class BrokerReservationFactory(IBrokerReservationFactory):
     @staticmethod
-    def create(*, rid: ID, resources: ResourceSet, term: Term, slice_obj: ISlice):
-        return BrokerReservation(rid=rid, resources=resources, term=term, slice_obj=slice_obj)
+    def create(*, rid: ID, resources: ResourceSet, term: Term, slice_obj: ISlice, actor: IActor = None):
+        reservation = BrokerReservation(rid=rid, resources=resources, term=term, slice_obj=slice_obj)
+        reservation.restore(actor=actor, slice_obj=slice_obj)
+        return reservation

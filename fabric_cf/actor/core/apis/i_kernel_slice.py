@@ -146,7 +146,7 @@ class IKernelSlice(ISlice):
         """
 
     @abstractmethod
-    def soft_lookup_delegation(self, *, did: ID) -> IDelegation:
+    def soft_lookup_delegation(self, *, did: str) -> IDelegation:
         """
         Looks up a delegation by ID but does not throw error if the
         delegation is not present in the slice.

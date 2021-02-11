@@ -63,12 +63,12 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
     def register_protocols(self):
         from fabric_cf.actor.core.manage.local.local_controller import LocalController
-        local = ProxyProtocolDescriptor(protocol=Constants.protocol_local,
+        local = ProxyProtocolDescriptor(protocol=Constants.PROTOCOL_LOCAL,
                                         proxy_class=LocalController.__name__,
                                         proxy_module=LocalController.__module__)
 
         from fabric_cf.actor.core.manage.kafka.kafka_controller import KafkaController
-        kakfa = ProxyProtocolDescriptor(protocol=Constants.protocol_kafka,
+        kakfa = ProxyProtocolDescriptor(protocol=Constants.PROTOCOL_KAFKA,
                                         proxy_class=KafkaController.__name__,
                                         proxy_module=KafkaController.__module__)
 
@@ -78,8 +78,8 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
     def save(self) -> dict:
         properties = super().save()
-        properties[Constants.property_class_name] = ControllerManagementObject.__name__
-        properties[Constants.property_module_name] = ControllerManagementObject.__module__
+        properties[Constants.PROPERTY_CLASS_NAME] = ControllerManagementObject.__name__
+        properties[Constants.PROPERTY_MODULE_NAME] = ControllerManagementObject.__module__
 
         return properties
 
@@ -126,7 +126,7 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
         if caller is None:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
-            result.status.set_message(ErrorCodes.ErrorInvalidArguments.name)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
             units_list = None
@@ -135,7 +135,7 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
             except Exception as e:
                 self.logger.error("get_reservation_units:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.name)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
@@ -144,7 +144,7 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
         except Exception as e:
             self.logger.error("get_reservation_units: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
-            result.status.set_message(ErrorCodes.ErrorInternalError.name)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result

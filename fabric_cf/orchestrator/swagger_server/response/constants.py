@@ -25,4 +25,17 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 GET_METHOD = 'get'
+POST_METHOD = 'post'
+PUT_METHOD = 'put'
+DELETE_METHOD = 'delete'
+
 RESOURCES_PATH = '/resources'
+
+SLICES_CREATE_PATH = '/slices/create'
+SLICES_DELETE_PATH = '/slices/delete'
+SLICES_GET_PATH = '/slices'
+SLICES_GET_SLICE_ID_PATH = '/slices/{sliceID}'
+
+
+SLIVERS_GET_PATH = '/slivers'
+SLIVERS_GET_SLIVER_ID_PATH = '/slivers/{sliverID}'

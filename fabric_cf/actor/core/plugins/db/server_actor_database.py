@@ -24,7 +24,9 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
+from typing import List
 
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.plugins.db.client_database import ClientDatabase
 from fabric_cf.actor.core.util.client import Client
@@ -56,22 +58,30 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
         finally:
             self.lock.release()
 
-    def get_client(self, *, guid: ID) -> dict:
+    def get_client(self, *, guid: ID) -> Client:
         result = None
         try:
             self.lock.acquire()
-            result = self.db.get_client_by_guid(act_id=self.actor_id, clt_guid=str(guid))
+            client_dict = self.db.get_client_by_guid(act_id=self.actor_id, clt_guid=str(guid))
+            pickled_client = client_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+            return pickle.loads(pickled_client)
         except Exception as e:
             self.logger.error(e)
         finally:
             self.lock.release()
         return result
 
-    def get_clients(self) -> list:
+    def get_clients(self) -> List[Client]:
         result = None
         try:
             self.lock.acquire()
-            result = self.db.get_clients(act_id=self.actor_id)
+            result = []
+            client_dict_list = self.db.get_clients(act_id=self.actor_id)
+            for c in client_dict_list:
+                pickled_client = c.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+                client_obj = pickle.loads(pickled_client)
+                result.append(client_obj)
+            return result
         except Exception as e:
             self.logger.error(e)
         finally:

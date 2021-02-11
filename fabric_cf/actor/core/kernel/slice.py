@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from enum import Enum
-from typing import Dict
+from typing import Dict, Tuple
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
 
@@ -33,6 +33,7 @@ from fabric_cf.actor.core.apis.i_slice import ISlice
 from fabric_cf.actor.core.apis.i_kernel_reservation import IKernelReservation
 from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
 from fabric_cf.actor.core.common.exceptions import SliceException
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, SliceState, SliceOperation
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_data import ResourceData
@@ -80,6 +81,8 @@ class Slice(IKernelSlice):
         # Neo4jGraph Id
         self.graph_id = None
         self.graph = None
+        self.state_machine = SliceStateMachine(slice_id=slice_id)
+        self.dirty = False
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -174,6 +177,8 @@ class Slice(IKernelSlice):
 
     def prepare(self):
         self.reservations.clear()
+        self.delegations.clear()
+        self.transition_slice(operation=SliceStateMachine.CREATE)
 
     def register(self, *, reservation: IKernelReservation):
         if self.reservations.contains(rid=reservation.get_reservation_id()):
@@ -220,7 +225,7 @@ class Slice(IKernelSlice):
     def soft_lookup(self, *, rid: ID) -> IKernelReservation:
         return self.reservations.get(rid=rid)
 
-    def soft_lookup_delegation(self, *, did: ID) -> IDelegation:
+    def soft_lookup_delegation(self, *, did: str) -> IDelegation:
         return self.delegations.get(did, None)
 
     def __str__(self):
@@ -251,3 +256,59 @@ class Slice(IKernelSlice):
     def set_resource_properties(self, *, value: dict):
         if self.rsrcdata is not None:
             self.rsrcdata.resource_properties = value
+
+    def get_state(self) -> SliceState:
+        return self.state_machine.get_state()
+
+    def set_dirty(self):
+        self.dirty = True
+
+    def clear_dirty(self):
+        self.dirty = False
+
+    def is_dirty(self) -> bool:
+        return self.dirty
+
+    def transition_slice(self, *, operation: SliceOperation) -> Tuple[bool, SliceState]:
+        a, b = self.state_machine.transition_slice(operation=operation, reservations=self.reservations)
+        return a, b
+
+    def is_stable_ok(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.StableOk:
+            return True
+
+        return False
+
+    def is_stable_error(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.StableError:
+            return True
+
+        return False
+
+    def is_stable(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.StableError or slice_state == SliceState.StableOk:
+            return True
+
+        return False
+
+    def is_dead_or_closing(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
+            return True
+
+        return False
+
+    def is_dead(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.Dead:
+            return True
+
+        return False

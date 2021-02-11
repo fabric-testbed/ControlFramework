@@ -28,12 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.core.apis.i_slice import ISlice
-
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_substrate import ISubstrate
-    from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 
 
 class ResourcePoolException(Exception):
@@ -41,36 +37,12 @@ class ResourcePoolException(Exception):
     Resource Pool Exception
     """
 
+
 class IResourcePoolFactory:
     @abstractmethod
     def set_substrate(self, *, substrate: ISubstrate):
         """
         Sets the substrate.
         @param substrate substrate
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def set_descriptor(self, *, descriptor: ResourcePoolDescriptor):
-        """
-        Sets the initial resource pools descriptor. The factory can modify the descriptor as needed.
-        @param descriptor descriptor
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_descriptor(self) -> ResourcePoolDescriptor:
-        """
-        Returns the final pool descriptor.
-        @return ResourcePoolDescriptor
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def create_source_reservation(self, *, slice_obj: ISlice) -> IClientReservation:
-        """
-        Returns the source reservation for this resource pool.
-        @param slice_obj slice
-        @return IClientReservation
         @throws Exception in case of error
         """

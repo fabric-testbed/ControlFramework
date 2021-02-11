@@ -26,7 +26,7 @@
 
 
 class ProtocolDescriptor:
-    def __init__(self, *, protocol: str, location: str):
+    def __init__(self, *, protocol: str, location: str = None):
         self.protocol = protocol
         # location carries kafka topic
         self.location = location

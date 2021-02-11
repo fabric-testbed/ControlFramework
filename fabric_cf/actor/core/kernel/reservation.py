@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from fabric_cf.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric_cf.actor.core.apis.i_kernel_reservation import IKernelReservation
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.reservation_state_transition_event import ReservationStateTransitionEvent
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
@@ -178,13 +179,14 @@ class Reservation(IKernelReservation):
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
 
-    def restore(self, *, actor: IActor, slice_obj: ISlice, logger):
+    def restore(self, *, actor: IActor, slice_obj: ISlice):
         """
         Must be invoked after creating reservation from unpickling
         """
         self.actor = actor
         self.slice = slice_obj
-        self.logger = logger
+        if actor is not None:
+            self.logger = self.actor.get_logger()
         self.approved = False
         self.previous_resources = None
         self.bid_pending = False
@@ -194,7 +196,7 @@ class Reservation(IKernelReservation):
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
         if self.resources is not None and self.resources.get_resources() is not None:
-            self.resources.resources.plugin = actor.get_plugin()
+            self.resources.restore(plugin=actor.get_plugin(), reservation=self)
 
     def can_redeem(self) ->bool:
         return True
@@ -206,18 +208,18 @@ class Reservation(IKernelReservation):
         """
         Internal error log and raise exception
         """
-        self.logger.error("internal error for reservation: {} : {}".format(self, err))
-        raise ReservationException("internal error: {}".format(err))
+        self.logger.error(f"internal error for reservation: {self} : {err}")
+        raise ReservationException(f"internal error: {err}")
 
     def error(self, *, err: str):
         """
         Error log and raise exception
         """
         if self.logger is not None:
-            self.logger.error("error for reservation: {} : {}".format(self, err))
+            self.logger.error(f"error for reservation: {self} : {err}")
         else:
-            print("error for reservation: {} : {}".format(self, err))
-        raise ReservationException("error: {}".format(err))
+            print(f"error for reservation: {self} : {err}")
+        raise ReservationException(f"error: {err}")
 
     def clear_dirty(self):
         """
@@ -259,7 +261,7 @@ class Reservation(IKernelReservation):
         self.error_message = message
         self.bid_pending = False
         self.transition(prefix=message, state=ReservationStates.Failed, pending=ReservationPendingStates.None_)
-        self.logger.error(message + " e: {}".format(exception))
+        self.logger.error(f"{message}  e: {exception}")
 
     def fail_warn(self, *, message: str):
         """
@@ -267,7 +269,7 @@ class Reservation(IKernelReservation):
         """
         self.error_message = message
         self.transition(prefix=message, state=ReservationStates.Failed, pending=ReservationPendingStates.None_)
-        message = "reservation has failed: {} : [{}]".format(message, self)
+        message = f"reservation has failed: {message} : [{self}]"
         self.logger.warning(message)
 
     def get_actor(self):
@@ -307,11 +309,11 @@ class Reservation(IKernelReservation):
 
         @return notices string
         """
-        msg = "Reservation {} (Slice {} ) is in state [{},{}]".format(self.rid, self.get_slice_name(),
-                                                                      ReservationStates(self.state).name,
-                                                                      ReservationPendingStates(self.pending_state).name)
+        msg = f"Reservation {self.rid} (Slice {self.slice} ) is in state [{self.get_state_name()}," \
+              f"{self.get_pending_state_name()}]"
+
         if self.error_message is not None and self.error_message != "":
-            msg += ", err={}".format(self.error_message)
+            msg += f", err={self.error_message}"
         return msg
 
     def get_pending_state(self) -> ReservationPendingStates:
@@ -583,18 +585,18 @@ class Reservation(IKernelReservation):
     def __str__(self):
         msg = "res: "
         if self.rid is not None:
-            msg += "#{} ".format(self.rid)
+            msg += f"#{self.rid} "
 
         if self.slice is not None:
-            msg += "slice: [{}] ".format(self.slice.get_name())
+            msg += f"slice: [{self.slice}] "
 
-        msg += "state:[{},{}] ".format(self.get_state_name(), self.get_pending_state_name())
+        msg += f"state:[{self.get_state_name()},{self.get_pending_state_name()}] "
 
         if self.resources is not None:
-            msg += "resources: [{}] ".format(self.resources)
+            msg += f"resources: [{self.resources}] "
 
         if self.term is not None:
-            msg += "term: [{}]".format(self.term)
+            msg += f"term: [{self.term}]"
 
         return msg
 
@@ -603,11 +605,8 @@ class Reservation(IKernelReservation):
                 self.logger.debug("failed")
 
         if self.logger is not None:
-            self.logger.debug("Reservation #{} {} transition: {} -> {}, {} -> {}".format(self.rid, prefix,
-                                                                                         self.get_state_name(),
-                                                                                         state.name,
-                                                                                         self.get_pending_state_name(),
-                                                                                         pending.name))
+            self.logger.debug(f"Reservation #{self.rid} {prefix} transition: {self.get_state_name()} -> {state.name}, "
+                              f"{self.get_pending_state_name()} -> {pending.name}")
 
         self.state = state
         self.pending_state = pending
@@ -683,3 +682,9 @@ class Reservation(IKernelReservation):
             self.pending = 0
             self.active = 0
             self.type = None
+
+    def get_graph_node_id(self) -> str:
+        if self.requested_resources is not None:
+            request = self.requested_resources.get_request_properties()
+            return request.get(Constants.SLIVER_PROPERTY_GRAPH_NODE_ID, None)
+        return None

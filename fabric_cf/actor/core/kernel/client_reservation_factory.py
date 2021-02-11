@@ -29,14 +29,13 @@ from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
 from fabric_cf.actor.core.apis.i_client_reservation_factory import IClientReservationFactory
 from fabric_cf.actor.core.apis.i_slice import ISlice
 from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
-from fabric_cf.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 
 
-class ClientReservationFactory(ReservationFactory, IClientReservationFactory):
+class ClientReservationFactory(IClientReservationFactory):
     """
     Factory class for creating client reservations
     """
@@ -54,7 +53,7 @@ class ClientReservationFactory(ReservationFactory, IClientReservationFactory):
         """
         result = ReservationClient(rid=rid, resources=resources, term=term, slice_object=slice_object, broker=broker)
         if actor is not None:
-            result.restore(actor=actor, slice_obj=slice_object, logger=actor.get_logger())
+            result.restore(actor=actor, slice_obj=slice_object)
         return result
 
     @staticmethod

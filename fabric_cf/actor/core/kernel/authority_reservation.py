@@ -102,11 +102,11 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
 
         self.notified_about_failure = False
 
-    def restore(self, *, actor: IActor, slice_obj: ISlice, logger):
+    def restore(self, *, actor: IActor, slice_obj: ISlice):
         """
         Must be invoked after creating reservation from unpickling
         """
-        super().restore(actor=actor, slice_obj=slice_obj, logger=logger)
+        super().restore(actor=actor, slice_obj=slice_obj)
         self.notified_about_failure = False
 
     def prepare(self, *, callback: ICallbackProxy, logger):

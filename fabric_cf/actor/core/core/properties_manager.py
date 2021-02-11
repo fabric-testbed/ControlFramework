@@ -51,7 +51,7 @@ class PropertiesManager:
         @param value value
         """
         properties = PropertiesManager.get_request_properties(rset=rset, create=True)
-        properties[Constants.elastic_size] = value
+        properties[Constants.ELASTIC_SIZE] = value
         return properties
 
     @staticmethod
@@ -63,8 +63,8 @@ class PropertiesManager:
         """
         result = False
         properties = rset.get_request_properties()
-        if properties is not None and Constants.elastic_size in properties:
-            result = properties[Constants.elastic_size]
+        if properties is not None and Constants.ELASTIC_SIZE in properties:
+            result = properties[Constants.ELASTIC_SIZE]
         return result
 
     @staticmethod
@@ -76,7 +76,7 @@ class PropertiesManager:
         @param value value
         """
         properties = PropertiesManager.get_request_properties(rset=rset, create=True)
-        properties[Constants.elastic_time] = value
+        properties[Constants.ELASTIC_TIME] = value
         rset.set_request_properties(p=properties)
         return rset
 
@@ -89,6 +89,6 @@ class PropertiesManager:
         """
         result = False
         properties = rset.get_request_properties()
-        if properties is not None and Constants.elastic_time in properties:
-            result = properties[Constants.elastic_time]
+        if properties is not None and Constants.ELASTIC_TIME in properties:
+            result = properties[Constants.ELASTIC_TIME]
         return result

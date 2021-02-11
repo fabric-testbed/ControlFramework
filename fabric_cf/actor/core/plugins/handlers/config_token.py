@@ -23,57 +23,55 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.common.resource_vector import ResourceVector
-from fabric_cf.actor.core.time.term import Term
+from abc import abstractmethod, ABC
+
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class ResourceBin:
-    """
-    ResourceBin represents a grouping of resources with identical properties.
-    Each resource bin consists of one or more physical units with a given resource vector.
-    Each resource bin has a unique identifier and a unique parent resource bin.
-    """
-    def __init__(self, *, parent_guid: ID = None, physical_units: int = None, vector: ResourceVector = None,
-                 term: Term = None):
-        self.guid = ID()
-        self.parent_guid = parent_guid
-        self.physical_units = physical_units
-        self.vector = vector
-        self.term = term
-
-    def get_guid(self) -> ID:
+class ConfigToken(ABC):
+    @abstractmethod
+    def get_reservation_id(self) -> ID:
         """
-        Get Guid
-        @return guid
-        """
-        return self.guid
-
-    def get_parent_guid(self) -> ID:
-        """
-        Get Parent Guid
-        @return parent guid
-        """
-        return self.parent_guid
-
-    def get_physical_units(self) -> int:
-        """
-        Get Physical Unit count
-        @return physical unit count
-        """
-        return self.physical_units
-
-    def get_vector(self) -> ResourceVector:
-        """
-        Get resource vector
-        @return resource vector
-        """
-        return self.vector
-
-    def get_term(self) -> Term:
-        """
-        Return Term
-        @return term
+        Return reservation id
+        @return reservation
         """
 
-        return self.term
+    @abstractmethod
+    def get_resource_type(self) -> ResourceType:
+        """
+        return resource type
+        @return resource type
+        """
+
+    @abstractmethod
+    def complete_modify(self):
+        """
+        Complete the modify operation
+        """
+
+    @abstractmethod
+    def get_sequence(self) -> int:
+        """
+        Get Sequence number
+        @return sequence number
+        """
+
+    @abstractmethod
+    def get_id(self) -> ID:
+        """
+        Get unit id
+        @return unit id
+        """
+
+    @abstractmethod
+    def close(self):
+        """
+        Mark the unit as closed
+        """
+
+    @abstractmethod
+    def activate(self):
+        """
+        Mark the unit as active
+        """

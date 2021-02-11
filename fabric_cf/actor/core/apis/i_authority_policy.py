@@ -40,18 +40,6 @@ class IAuthorityPolicy(IServerPolicy):
     IAuthorityPolicy defines the policy interface for an actor acting in the authority role.
     """
     @abstractmethod
-    def donate(self, *, resources: ResourceSet):
-        """
-        Accepts inventory resources to be used for allocation of client requests.
-        The policy should add the resources represented by this resource set to
-        its inventory.
-
-        @params resources: resource set representing resources to be used for allocation
-
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
     def eject(self, *, resources: ResourceSet):
         """
         Ejects resources from the inventory. Resource ejection is unconditional:
@@ -190,37 +178,6 @@ class IAuthorityPolicy(IServerPolicy):
         @params resources: resources
 
         @raises Exception in case of error
-        """
-
-    @abstractmethod
-    def unavailable(self, *, resources: ResourceSet) -> int:
-        """
-        Informs the policy that inventory resources are about to become
-        unavailable. The policy should stop using the concrete resources but
-        should not remove them from its inventory. If the policy currently has
-        active allocations on at least one unit from the concrete resources it
-        should return -1 to indicate that at least one resource cannot be marked
-        unavailable. If the caller still wants to mark a host with hosted nodes
-        as unavailable, the caller may use some administrative interface to move
-        hosts away from the problematic host and then it can retry the operation.
-        Alternatively, the caller may use eject to force the removal of the
-        concrete resources from the policy inventory.
-
-        @params resources : set of unavailable inventory resources
-
-        @returns 0 success, -1, at least one resource has hosted units on it and
-                cannot be marked unavailable
-
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
-    def available(self, *, resources: ResourceSet):
-        """
-        Informs the policy that inventory resources have failed. This is a new
-        method, which may change in the future.
-
-        @params resources: set of failed inventory resources
         """
 
     @abstractmethod

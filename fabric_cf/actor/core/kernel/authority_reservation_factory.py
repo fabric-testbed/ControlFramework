@@ -33,6 +33,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_slice import ISlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
+    from fabric_cf.actor.core.apis.i_actor import IActor
 
 
 class AuthorityReservationFactory(IAuthorityReservationFactory):
@@ -40,7 +41,7 @@ class AuthorityReservationFactory(IAuthorityReservationFactory):
     Factory class for creating authority reservations
     """
     @staticmethod
-    def create(*, resources: ResourceSet, term: Term, slice_obj: ISlice, rid: ID):
+    def create(*, resources: ResourceSet, term: Term, slice_obj: ISlice, rid: ID, actor: IActor = None):
         """
         Create authority reservation
         @param resources resources
@@ -51,4 +52,5 @@ class AuthorityReservationFactory(IAuthorityReservationFactory):
         """
         from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
         res = AuthorityReservation(rid=rid, resources=resources, term=term, slice_object=slice_obj)
+        res.restore(actor=actor, slice_obj=slice_obj)
         return res

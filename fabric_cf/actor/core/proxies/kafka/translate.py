@@ -25,22 +25,29 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
 from fabric_mb.message_bus.messages.resource_data_avro import ResourceDataAvro
+from fabric_mb.message_bus.messages.resource_delegation_avro import ResourceDelegationAvro
 from fabric_mb.message_bus.messages.resource_set_avro import ResourceSetAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fabric_mb.message_bus.messages.term_avro import TermAvro
+from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fabric_mb.message_bus.messages.update_data_avro import UpdateDataAvro
-
+from fabric_mb.message_bus.messages.ticket import Ticket as AvroTicket
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
+from fabric_cf.actor.core.core.ticket import Ticket
+from fabric_cf.actor.core.core.unit import Unit, UnitState
+from fabric_cf.actor.core.core.unit_set import UnitSet
+from fabric_cf.actor.core.delegation.resource_delegation import ResourceDelegation
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
@@ -48,6 +55,7 @@ from fabric_cf.actor.core.util.prop_list import PropList
 from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.util.update_data import UpdateData
+from fabric_cf.actor.db import Units
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
@@ -71,10 +79,10 @@ class Translate:
 
     @staticmethod
     def translate_udd_from_avro(*, udd: UpdateDataAvro) -> UpdateData:
-        if udd.failed:
-            return UpdateData(message=udd.message)
-        else:
-            return UpdateData()
+        result = UpdateData()
+        result.message = udd.message
+        result.failed = udd.failed
+        return result
 
     @staticmethod
     def translate_slice(*, slice_id: ID, slice_name: str) -> ISlice:
@@ -82,7 +90,7 @@ class Translate:
             return None
 
         if slice_id is None:
-            raise ProxyException(Constants.not_specified_prefix.format("Slice id"))
+            raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("Slice id"))
 
         slice_obj = SliceFactory.create(slice_id=slice_id, name=slice_name)
         return slice_obj
@@ -94,6 +102,7 @@ class Translate:
         avro_slice.guid = str(slice_obj.get_slice_id())
         avro_slice.description = slice_obj.get_description()
         avro_slice.owner = Translate.translate_auth_to_avro(auth=slice_obj.get_owner())
+        avro_slice.state = slice_obj.get_state().value
 
         if slice_obj.get_resource_type() is not None:
             avro_slice.set_resource_type(str(slice_obj.get_resource_type()))
@@ -108,9 +117,8 @@ class Translate:
     @staticmethod
     def translate_auth_to_avro(*, auth: AuthToken) -> AuthAvro:
         result = AuthAvro()
-        result.name = auth.name
-        result.guid = str(auth.guid)
-        result.id_token = auth.id_token
+        result.name = auth.get_name()
+        result.guid = str(auth.get_guid())
         return result
 
     @staticmethod
@@ -120,7 +128,7 @@ class Translate:
         result = AuthToken()
         result.name = auth_avro.name
         result.guid = auth_avro.guid
-        result.id_token = auth_avro.id_token
+        result.oidc_sub_claim = auth_avro.oidc_sub_claim
         return result
 
     @staticmethod
@@ -147,20 +155,89 @@ class Translate:
 
         avro_rdata = ResourceDataAvro()
         if direction == Translate.direction_agent:
-            properties = resource_data.get_request_properties()
-            avro_rdata.request_properties = properties
+            avro_rdata.request_properties = resource_data.request_properties
 
         elif direction == Translate.direction_authority:
-            properties = resource_data.get_configuration_properties()
-            avro_rdata.config_properties = properties
+            avro_rdata.config_properties = resource_data.configuration_properties
 
         elif direction == Translate.direction_return:
-            properties = resource_data.get_resource_properties()
-            avro_rdata.resource_properties = properties
+            avro_rdata.resource_properties = resource_data.resource_properties
 
         else:
             return None
         return avro_rdata
+
+    @staticmethod
+    def translate_resource_delegation(*, resource_delegation: ResourceDelegation) -> ResourceDelegationAvro:
+        rd = ResourceDelegationAvro()
+        rd.units = resource_delegation.units
+        if resource_delegation.term is not None:
+            rd.term = Translate.translate_term(term=resource_delegation.term)
+
+        if resource_delegation.type is not None:
+            rd.type = str(resource_delegation.type)
+
+        if resource_delegation.guid is not None:
+            rd.guid = str(resource_delegation.guid)
+
+        if resource_delegation.properties is not None:
+            rd.properties = resource_delegation.properties
+
+        if resource_delegation.issuer is not None:
+            rd.issuer = str(resource_delegation.issuer)
+
+        if resource_delegation.holder is not None:
+            rd.holder = str(resource_delegation.holder)
+
+        return rd
+
+    @staticmethod
+    def translate_resource_delegation_from_avro(*, resource_delegation: ResourceDelegationAvro) -> ResourceDelegation:
+        rd = ResourceDelegation()
+        rd.units = resource_delegation.units
+        if resource_delegation.term is not None:
+            rd.term = Translate.translate_term_from_avro(term=resource_delegation.term)
+
+        if resource_delegation.type is not None:
+            rd.type = ResourceType(resource_type=resource_delegation.type)
+
+        if resource_delegation.guid is not None:
+            rd.guid = ID(uid=resource_delegation.guid)
+
+        if resource_delegation.properties is not None:
+            rd.properties = resource_delegation.properties
+
+        if resource_delegation.issuer is not None:
+            rd.issuer = ID(uid=resource_delegation.issuer)
+
+        if resource_delegation.holder is not None:
+            rd.holder = ID(uid=resource_delegation.holder)
+
+        return rd
+
+    @staticmethod
+    def translate_ticket(*, ticket: Ticket) -> AvroTicket:
+        avro_ticket = AvroTicket()
+        avro_ticket.authority = Translate.translate_auth_to_avro(auth=ticket.authority.get_identity())
+        avro_ticket.old_units = ticket.old_units
+        avro_ticket.delegation_id = ticket.delegation_id
+        avro_ticket.resource_delegation = Translate.translate_resource_delegation(
+            resource_delegation=ticket.resource_delegation)
+        return avro_ticket
+
+    @staticmethod
+    def translate_ticket_from_avro(*, avro_ticket: AvroTicket) -> Ticket:
+        ticket = Ticket()
+        ticket.delegation_id = avro_ticket.delegation_id
+        auth_identity = Translate.translate_auth_from_avro(auth_avro=avro_ticket.authority)
+        ticket.authority = ActorRegistrySingleton.get().get_proxy(protocol=Constants.PROTOCOL_KAFKA,
+                                                                  actor_name=auth_identity.get_name())
+        ticket.old_units = avro_ticket.old_units
+        if avro_ticket.resource_delegation is not None:
+            ticket.resource_delegation = Translate.translate_resource_delegation_from_avro(
+                resource_delegation=avro_ticket.resource_delegation)
+
+        return ticket
 
     @staticmethod
     def translate_resource_set(*, resource_set: ResourceSet, direction: int) -> ResourceSetAvro:
@@ -174,17 +251,15 @@ class Translate:
     @staticmethod
     def translate_resource_data_from_avro(*, rdata: ResourceDataAvro) -> ResourceData:
         result = ResourceData()
-        properties = rdata.config_properties
-        if properties is not None:
-            result.configuration_properties = properties
 
-        properties = rdata.request_properties
-        if properties is not None:
-            result.request_properties = properties
+        if rdata.config_properties is not None:
+            result.configuration_properties = rdata.config_properties
 
-        properties = rdata.resource_properties
-        if properties is not None:
-            result.resource_properties = properties
+        if rdata.request_properties is not None:
+            result.request_properties = rdata.request_properties
+
+        if rdata.resource_properties is not None:
+            result.resource_properties = rdata.resource_properties
 
         return result
 
@@ -227,11 +302,10 @@ class Translate:
         return slice_mng
 
     @staticmethod
-    def fill_slices(*, slice_list: list, full: bool) -> list:
+    def fill_slices(*, slice_list: List[ISlice], full: bool, user_dn: str) -> List[SliceAvro]:
         result = []
-        for s in slice_list:
-            slice_obj = SliceFactory.create_instance(properties=s)
-            if slice_obj is not None:
+        for slice_obj in slice_list:
+            if slice_obj is not None and (user_dn is None or user_dn == slice_obj.get_owner().get_oidc_sub_claim()):
                 ss = Translate.translate_slice_to_avro(slice_obj=slice_obj)
                 if full:
                     ss = Translate.attach_properties(slice_mng=ss, slice_obj=slice_obj)
@@ -265,10 +339,78 @@ class Translate:
 
     @staticmethod
     def translate_to_pool_info(*, query_response: dict) -> PoolInfoAvro:
-        bqm = query_response.get(Constants.broker_query_model, None)
         pool_info = PoolInfoAvro()
-        pool_info.type = Constants.pool_type
-        pool_info.name = Constants.broker_query_model
-        if bqm is not None:
-            pool_info.properties = {Constants.broker_query_model: bqm}
+        pool_info.type = Constants.POOL_TYPE
+        pool_info.name = Constants.BROKER_QUERY_MODEL
+        pool_info.properties = query_response
         return pool_info
+
+    @staticmethod
+    def translate_unit_set(*, unit_set: UnitSet) -> List[Units]:
+        result = None
+        if unit_set.units is not None:
+            result = []
+            for u in unit_set.units.values():
+                result.append(Translate.translate_unit(unit=u))
+        return result
+
+    @staticmethod
+    def translate_unit_from_avro(*, unit_avro: UnitAvro) -> Unit:
+        unit = Unit(uid=ID(uid=unit_avro.uid))
+
+        if unit_avro.properties is not None:
+            unit.properties = unit_avro.properties
+
+        if unit_avro.rtype is not None:
+            unit.rtype = ResourceType(resource_type=unit.rtype)
+
+        if unit_avro.parent_id is not None:
+            unit.parent_id = ID(uid=unit_avro.parent_id)
+
+        if unit_avro.reservation_id is not None:
+            unit.reservation_id = ID(uid=unit_avro.reservation_id)
+
+        if unit_avro.slice_id is not None:
+            unit.slice_id = ID(uid=unit_avro.slice_id)
+
+        if unit_avro.actor_id is not None:
+            unit.actor_id = ID(uid=unit_avro.actor_id)
+
+        if unit_avro.state is not None:
+            unit.state = UnitState(unit_avro.state)
+        return unit
+
+    @staticmethod
+    def translate_unit(*, unit: Unit) -> UnitAvro:
+        result = UnitAvro()
+        result.properties = unit.properties
+        if unit.uid is not None:
+            result.uid = str(unit.uid)
+
+        if unit.rtype is not None:
+            result.rtype = str(unit.rtype)
+
+        if unit.parent_id is not None:
+            result.parent_id = str(unit.parent_id)
+
+        if unit.reservation_id is not None:
+            result.reservation_id = str(unit.reservation_id)
+
+        if unit.slice_id is not None:
+            result.slice_id = str(unit.slice_id)
+
+        if unit.actor_id is not None:
+            result.actor_id = str(unit.actor_id)
+
+        if unit.state is not None:
+            result.state = unit.state.value
+        return result
+
+    @staticmethod
+    def translate_unit_set_from_avro(*, unit_list: List[UnitAvro]) -> UnitSet:
+        unit_set = UnitSet(plugin=None)
+        unit_set.units = {}
+        for u in unit_list:
+           obj = Translate.translate_unit_from_avro(unit_avro=u)
+           unit_set.units[obj.get_id()] = obj
+        return unit_set

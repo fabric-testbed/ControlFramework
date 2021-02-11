@@ -32,6 +32,7 @@ from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
 from fabric_cf.actor.core.manage.local.local_proxy import LocalProxy
+from fabric_cf.actor.core.util.id import ID
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -39,7 +40,6 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.slice_avro import SliceAvro
     from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.util.id import ID
 
 
 class LocalActor(LocalProxy, IMgmtActor):
@@ -49,10 +49,11 @@ class LocalActor(LocalProxy, IMgmtActor):
         if not isinstance(manager, ActorManagementObject):
             raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
-    def get_slices(self, *, id_token: str = None, slice_id: ID = None) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None) -> List[SliceAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth)
+            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, id_token=id_token,
+                                             slice_name=slice_name)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -62,13 +63,13 @@ class LocalActor(LocalProxy, IMgmtActor):
 
         return None
 
-    def remove_slice(self, *, slice_id: ID) -> bool:
+    def remove_slice(self, *, slice_id: ID, id_token: str = None) -> bool:
         self.clear_last()
         try:
-            result = self.manager.remove_slice(slice_id=slice_id, caller=self.auth)
+            result = self.manager.remove_slice(slice_id=slice_id, caller=self.auth, id_token=id_token)
             self.last_status = result
 
-            return result.code() == 0
+            return result.get_code() == 0
         except Exception as e:
             self.last_exception = e
 
@@ -96,7 +97,7 @@ class LocalActor(LocalProxy, IMgmtActor):
             result = self.manager.remove_reservation(caller=self.auth, rid=rid)
             self.last_status = result
 
-            return result.code() == 0
+            return result.get_code() == 0
 
         except Exception as e:
             self.last_exception = e
@@ -109,7 +110,7 @@ class LocalActor(LocalProxy, IMgmtActor):
             result = self.manager.close_reservation(caller=self.auth, rid=rid)
             self.last_status = result
 
-            return result.code() == 0
+            return result.get_code() == 0
 
         except Exception as e:
             self.last_exception = e
@@ -122,14 +123,14 @@ class LocalActor(LocalProxy, IMgmtActor):
     def get_guid(self) -> ID:
         return self.manager.get_actor().get_guid()
 
-    def add_slice(self, *, slice_obj: SliceAvro) -> ID:
+    def add_slice(self, *, slice_obj: SliceAvro, id_token: str) -> ID:
         self.clear_last()
         try:
-            result = self.manager.add_slice(slice_obj=slice_obj, caller=self.auth)
+            result = self.manager.add_slice(slice_obj=slice_obj, caller=self.auth, id_token=id_token)
             self.last_status = result.status
 
-            if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(uid=result.result)
+            if self.last_status.get_code() == 0 and result.get_result() is not None:
+                return ID(uid=result.get_result())
 
         except Exception as e:
             self.last_exception = e

@@ -28,7 +28,7 @@ from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.apis.i_policy import IPolicy
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.common.exceptions import ActorException
-from fabric_cf.actor.core.plugins.config.config_token import ConfigToken
+from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet

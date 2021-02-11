@@ -23,46 +23,27 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from abc import ABC, abstractmethod
+from typing import Tuple
+
+from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 
 
-class ConfigurationMapping:
-    property_type = "mapping.type"
-    property_file = "mapping.file"
-    property_properties = "mapping.properties"
+class HandlerBase(ABC):
+    @abstractmethod
+    def create(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+        """
+        Create
+        """
 
-    def __init__(self):
-        self.type = None
-        self.class_name = None
-        self.properties = None
-        self.module_name = None
+    @abstractmethod
+    def modify(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+        """
+        Create
+        """
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-
-    def get_module_name(self) -> str:
-        return self.module_name
-
-    def get_class_name(self) -> str:
-        return self.class_name
-
-    def get_key(self) -> str:
-        return self.type
-
-    def get_properties(self) -> dict:
-        return self.properties
-
-    def set_class_name(self, *, class_name: str):
-        self.class_name = class_name
-
-    def set_module_name(self, *, module_name: str):
-        self.class_name = module_name
-
-    def set_key(self, *, key: str):
-        self.type = key
-
-    def set_properties(self, *, properties: dict):
-        self.properties = properties
+    @abstractmethod
+    def delete(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+        """
+        Create
+        """

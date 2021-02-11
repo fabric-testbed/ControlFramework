@@ -25,7 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import pickle
 from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
@@ -35,6 +34,7 @@ from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegati
 
 from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
 from fabric_cf.actor.core.kernel.client_reservation_factory import ClientReservationFactory
@@ -47,6 +47,7 @@ from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleto
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.kafka_retun import KafkaReturn
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
+from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.util.id import ID
 
 
@@ -71,12 +72,14 @@ class ActorService:
         return KafkaReturn(kafka_topic=kafka_topic, identity=auth, logger=self.actor.get_logger())
 
     def get_concrete(self, *, reservation: ReservationAvro) -> IConcreteSet:
-        encoded = reservation.resource_set.concrete
-        try:
-            decoded = pickle.loads(encoded)
-            return decoded
-        except Exception as e:
-            self.logger.error("Exception occurred while decoding {}".format(e))
+        ticket = reservation.resource_set.ticket
+        if reservation.resource_set.ticket is not None:
+            return Translate.translate_ticket_from_avro(avro_ticket=ticket)
+
+        unit_set = reservation.resource_set.unit_set
+        if unit_set is not None:
+            return Translate.translate_unit_set_from_avro(unit_list=unit_set)
+
         return None
 
     def pass_client(self, *, reservation: ReservationAvro) -> IClientReservation:
@@ -86,16 +89,23 @@ class ActorService:
         resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)
         resource_set.set_resources(cset=self.get_concrete(reservation=reservation))
 
-        return ClientReservationFactory.create(rid=ID(uid=reservation.reservation_id), resources=resource_set, term=term,
-                                               slice_object=slice_obj, actor=self.actor)
+        return ClientReservationFactory.create(rid=ID(uid=reservation.reservation_id), resources=resource_set,
+                                               term=term, slice_object=slice_obj, actor=self.actor)
 
-    def pass_client_delegation(self, *, delegation: DelegationAvro) -> IDelegation:
+    def pass_client_delegation(self, *, delegation: DelegationAvro, caller: AuthToken) -> IDelegation:
         slice_obj = Translate.translate_slice(slice_id=delegation.slice.guid, slice_name=delegation.slice.slice_name)
 
-        dlg = BrokerDelegationFactory.create(did=delegation.get_delegation_id(), slice_id=slice_obj.get_slice_id(),
+        dlg = BrokerDelegationFactory.create(did=delegation.get_delegation_id(),
+                                             slice_id=slice_obj.get_slice_id(),
                                              broker=None)
-        dlg.restore(actor=self.actor, slice_obj=slice_obj, logger=self.logger)
-        dlg.load_graph(graph_str=delegation.graph)
+        dlg.restore(actor=self.actor, slice_obj=slice_obj)
+
+        site_proxy = ActorRegistrySingleton.get().get_proxy(protocol=Constants.PROTOCOL_KAFKA,
+                                                            actor_name=caller.get_name())
+        dlg.set_site_proxy(site_proxy=site_proxy)
+
+        if delegation.graph is not None:
+            dlg.load_graph(graph_str=delegation.graph)
         return dlg
 
     def do_dispatch(self, *, rpc: IncomingRPC):
@@ -162,7 +172,7 @@ class ActorService:
         rpc = None
         auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
-            dlg = self.pass_client_delegation(delegation=request.delegation)
+            dlg = self.pass_client_delegation(delegation=request.delegation, caller=auth_token)
             udd = Translate.translate_udd_from_avro(udd=request.update_data)
             rpc = IncomingDelegationRPC(message_id=ID(uid=request.message_id),
                                         request_type=RPCRequestType.UpdateDelegation, delegation=dlg, update_data=udd,

@@ -45,7 +45,7 @@ def main():
         from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
         # Uncomment when testing as app running
         #Globals.config_file = './test.yaml'
-        #Constants.superblock_location = './state_recovery.lock'
+        #Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
 
             GlobalsSingleton.get().start(force_fresh=True)
@@ -53,17 +53,17 @@ def main():
             while not GlobalsSingleton.get().start_completed:
                 time.sleep(0.001)
 
-            from fabric_cf.orchestrator.core.orchestrator_state import OrchestratorStateSingleton
-            OrchestratorStateSingleton.get()
-            #OrchestratorStateSingleton.get().start_threads()
+            from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
+            OrchestratorKernelSingleton.get()
+            OrchestratorKernelSingleton.get().start_threads()
 
             runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
 
             # prometheus server
-            prometheus_port = int(runtime_config.get(Constants.property_conf_prometheus_rest_port, None))
+            prometheus_port = int(runtime_config.get(Constants.PROPERTY_CONF_PROMETHEUS_REST_PORT, None))
             prometheus_client.start_http_server(prometheus_port)
 
-            rest_port_str = runtime_config.get(Constants.property_conf_controller_rest_port, None)
+            rest_port_str = runtime_config.get(Constants.PROPERTY_CONF_CONTROLLER_REST_PORT, None)
 
             if rest_port_str is None:
                 raise OrchestratorException("Invalid configuration rest port not specified")
@@ -80,14 +80,9 @@ def main():
                 time.sleep(0.0001)
                 if h.interrupted:
                     GlobalsSingleton.get().stop()
-                    OrchestratorStateSingleton.get().stop_threads()
+                    OrchestratorKernelSingleton.get().stop_threads()
     except Exception:
         traceback.print_exc()
-
-    @app.route('/stopServer', methods=['GET'])
-    def stopServer():
-        os.kill(os.getpid(), signal.SIGINT)
-        return jsonify({"success": True, "message": "Server is shutting down..."})
 
 
 if __name__ == '__main__':

@@ -25,7 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import pickle
 import queue
 import threading
 from typing import TYPE_CHECKING
@@ -165,7 +164,7 @@ class Broker(Actor, IBroker):
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
                                 broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         if delegation_id is None:
-            raise BrokerException(Constants.invalid_argument)
+            raise BrokerException(Constants.INVALID_ARGUMENT)
 
         if broker is None:
             broker = self.get_default_broker()
@@ -188,7 +187,7 @@ class Broker(Actor, IBroker):
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
                                   broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         if delegation_id is None:
-            raise BrokerException(Constants.invalid_argument)
+            raise BrokerException(Constants.INVALID_ARGUMENT)
 
         if broker is None:
             broker = self.get_default_broker()
@@ -205,7 +204,7 @@ class Broker(Actor, IBroker):
         delegation.set_slice_object(slice_object=slice_object)
         delegation.set_exported(value=True)
 
-        callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.protocol_kafka,
+        callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.PROTOCOL_KAFKA,
                                                              actor_name=self.get_name())
         if callback is None:
             raise BrokerException("Unsupported")
@@ -221,14 +220,14 @@ class Broker(Actor, IBroker):
     def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
                          id_token: str = None):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_actor_state)
+            raise BrokerException(Constants.INVALID_ACTOR_STATE)
         self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback,
                                               id_token=id_token)
 
     def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
                            id_token: str = None):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_actor_state)
+            raise BrokerException(Constants.INVALID_ACTOR_STATE)
         self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback,
                                                 id_token=id_token)
 
@@ -244,7 +243,7 @@ class Broker(Actor, IBroker):
 
     def demand(self, *, rid: ID):
         if rid is None:
-            raise BrokerException(Constants.invalid_argument)
+            raise BrokerException(Constants.INVALID_ARGUMENT)
         reservation = self.get_reservation(rid=rid)
         if reservation is None:
             raise BrokerException("unknown reservation #{}".format(rid))
@@ -252,15 +251,13 @@ class Broker(Actor, IBroker):
         self.policy.demand(reservation=reservation)
         reservation.set_policy(policy=self.policy)
 
-    def donate_reservation(self, *, reservation: IClientReservation):
-        self.policy.donate_reservation(reservation=reservation)
-
-    def advertise(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+    def advertise(self, *, delegation: ABCPropertyGraph, delegation_name: str, client: AuthToken) -> ID:
         slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
         slice_obj.set_owner(owner=client)
         slice_obj.set_broker_client()
 
-        dlg_obj = DelegationFactory.create(did=delegation.get_graph_id(), slice_id=slice_obj.get_slice_id())
+        dlg_obj = DelegationFactory.create(did=delegation.get_graph_id(), slice_id=slice_obj.get_slice_id(),
+                                           delegation_name=delegation_name)
         dlg_obj.set_slice_object(slice_object=slice_obj)
         dlg_obj.set_graph(graph=delegation)
         self.wrapper.advertise(delegation=dlg_obj, client=client)
@@ -293,7 +290,7 @@ class Broker(Actor, IBroker):
 
     def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
         if not self.recovered or self.is_stopped():
-            raise BrokerException(Constants.invalid_actor_state)
+            raise BrokerException(Constants.INVALID_ACTOR_STATE)
         self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
     def get_broker(self, *, guid: ID) -> IBrokerProxy:
@@ -358,13 +355,13 @@ class Broker(Actor, IBroker):
 
     def ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_actor_state)
+            raise BrokerException(Constants.INVALID_ACTOR_STATE)
 
         self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback, compare_seq_numbers=True)
 
     def relinquish(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_actor_state)
+            raise BrokerException(Constants.INVALID_ACTOR_STATE)
         self.wrapper.relinquish_request(reservation=reservation, caller=caller)
 
     def tick_handler(self):
@@ -374,12 +371,12 @@ class Broker(Actor, IBroker):
 
     def update_ticket(self, *, reservation: IReservation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_actor_state)
+            raise BrokerException(Constants.INVALID_ACTOR_STATE)
         self.wrapper.update_ticket(reservation=reservation, update_data=update_data, caller=caller)
 
     def update_delegation(self, *, delegation: IDelegation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.invalid_actor_state)
+            raise BrokerException(Constants.INVALID_ACTOR_STATE)
         self.wrapper.update_delegation(delegation=delegation, update_data=update_data, caller=caller)
 
     def register_client(self, *, client: Client):
@@ -388,12 +385,12 @@ class Broker(Actor, IBroker):
         try:
             database.get_client(guid=client.get_guid())
         except Exception as e:
-            raise BrokerException(Constants.object_not_found.format(client.get_guid(), e))
+            raise BrokerException(Constants.OBJECT_NOT_FOUND.format(client.get_guid(), e))
 
         try:
             database.add_client(client=client)
         except Exception as e:
-            raise BrokerException(Constants.failed_to_add.format(client, e))
+            raise BrokerException(Constants.FAILED_TO_ADD.format(client, e))
 
     def unregister_client(self, *, guid: ID):
         database = self.plugin.get_database()
@@ -401,21 +398,20 @@ class Broker(Actor, IBroker):
         try:
             database.get_client(guid=guid)
         except Exception as e:
-            raise BrokerException(Constants.object_not_found.format(guid, e))
+            raise BrokerException(Constants.OBJECT_NOT_FOUND.format(guid, e))
 
         try:
             database.remove_client(guid=guid)
         except Exception as e:
-            raise BrokerException(Constants.failed_to_remove.format(guid, e))
+            raise BrokerException(Constants.FAILED_TO_REMOVE.format(guid, e))
 
     def get_client(self, *, guid: ID) -> Client:
         database = self.plugin.get_database()
         ret_val = None
         try:
-            client_obj = database.get_client(guid=guid)
-            ret_val = pickle.loads(client_obj.get(Constants.property_pickle_properties))
+            ret_val = database.get_client(guid=guid)
         except Exception as e:
-            raise BrokerException(Constants.object_not_found.format(guid, e))
+            raise BrokerException(Constants.OBJECT_NOT_FOUND.format(guid, e))
 
         return ret_val
 

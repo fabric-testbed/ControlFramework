@@ -23,16 +23,46 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import List
+
+from fim.graph.abc_property_graph import ABCPropertyGraph
+from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
+from fim.slivers.base_sliver import BaseElement
+from fim.slivers.network_node import Node
 
 
 class RequestWorkflow:
-    def __init__(self, *, cloud_handler):
-        self.cloud_handler = cloud_handler
+    """
+    This object implements the generic workflow of turning a ASM into reservations.
+    """
+    # Only used for testing
+    WORKER_NODE_ID = "2046922a-a8ed-4b60-8190-b6ce614c514d"
 
     def close(self):
-        # TODO
-        return
+        """ Close any open graph models """
 
-    def run(self):
+    def run(self, *, bqm: Neo4jPropertyGraph, slice_graph: str) -> List[BaseElement]:
+        """
+        Run the workflow
+        """
+        # Translate Slice Graph (ASM) into individual slivers
         # TODO
-        return
+        # HACK for now to create a compute Sliver
+        slivers = []
+        compute_node = Node()
+        compute_node.set_graph_node_id(graph_node_id=self.WORKER_NODE_ID)
+        compute_node.set_image_type(image_type="QCOW2")
+        compute_node.set_image_ref(image_ref="centos7")
+        compute_node.set_resource_type("VM")
+
+        capacity_delegations = bqm.get_node_json_property_as_object(node_id=self.WORKER_NODE_ID,
+                                                                    prop_name=ABCPropertyGraph.PROP_CAPACITY_DELEGATIONS)
+
+        capacity_values = next(iter(capacity_delegations.values()))
+        if capacity_values is not None and len(capacity_values) > 0:
+            compute_node.set_cpu_cores(cpu_cores=int(capacity_values[0].get('core')))
+            compute_node.set_ram_size(ram_size=int(capacity_values[0].get('ram')))
+            compute_node.set_disk_size(disk_size=int(capacity_values[0].get('disk')))
+
+        slivers.append(compute_node)
+        return slivers

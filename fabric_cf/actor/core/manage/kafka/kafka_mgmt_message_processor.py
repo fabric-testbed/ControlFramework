@@ -97,7 +97,7 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
                 request.condition.notify_all()
 
         except Exception as e:
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
             self.logger.error(e)
             self.logger.error("Discarding the incoming message {}".format(message))
 

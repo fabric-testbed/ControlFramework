@@ -50,18 +50,6 @@ class IServerActor(IActor, IServerPublic):
     acting as servers for other actors (brokers and site authorities).
     """
     @abstractmethod
-    def donate_reservation(self, *, reservation: IClientReservation):
-        """
-        Accepts ticketed resources to be used for allocation of client
-        requests.
-
-        @params reservation: reservation representing resources to be used for
-               allocation
-
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
     def register_client_slice(self, *, slice_obj: ISlice):
         """
         Registers a new client slice.
@@ -147,10 +135,11 @@ class IServerActor(IActor, IServerPublic):
         """
 
     @abstractmethod
-    def advertise(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+    def advertise(self, *, delegation: ABCPropertyGraph, delegation_name: str, client: AuthToken) -> str:
         """
         Exports the resources described by the delegation to the client.
         @param delegation delegation describing resources to export
+        @param delegation_name delegation_name
         @param client identity of the client resources will be exported to
         @raises Exception in case of error
         """

@@ -23,23 +23,46 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from abc import abstractmethod
-
-from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class ConfigToken:
-    @abstractmethod
-    def get_reservation_id(self) -> ID:
-        """
-        Return reservation id
-        @return reservation
-        """
+class ConfigurationMapping:
+    def __init__(self):
+        self.type = None
+        self.class_name = None
+        self.properties = None
+        self.module_name = None
 
-    @abstractmethod
-    def get_resource_type(self) -> ResourceType:
-        """
-        return resource type
-        @return resource type
-        """
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+
+    def get_module_name(self) -> str:
+        return self.module_name
+
+    def get_class_name(self) -> str:
+        return self.class_name
+
+    def get_key(self) -> str:
+        return self.type
+
+    def get_properties(self) -> dict:
+        return self.properties
+
+    def set_class_name(self, *, class_name: str):
+        self.class_name = class_name
+
+    def set_module_name(self, *, module_name: str):
+        self.module_name = module_name
+
+    def set_key(self, *, key: str):
+        self.type = key
+
+    def set_properties(self, *, properties: dict):
+        self.properties = properties
+
+    def __str__(self):
+        return f"resource_type: {self.type} class_name: {self.class_name} module: {self.module_name} " \
+               f"properties: {self.properties}"

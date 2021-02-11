@@ -32,7 +32,7 @@ class PredecessorState:
 
     def __init__(self, *, reservation: IKernelControllerReservation, filters: dict = None):
         if reservation is None:
-            raise ReservationException(Constants.invalid_argument)
+            raise ReservationException(Constants.INVALID_ARGUMENT)
         self.reservation = reservation
         self.filters = filters
 

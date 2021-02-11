@@ -96,7 +96,7 @@ class ReservationList:
         @params cycle: the cycle with which to associate the reservation
         """
         if reservation is None or cycle < 0 or reservation.get_reservation_id() is None:
-            raise FrameworkException(Constants.invalid_argument)
+            raise FrameworkException(Constants.INVALID_ARGUMENT)
 
         if reservation.get_reservation_id() in self.reservation_id_to_cycle:
             existing_cycle = self.reservation_id_to_cycle[reservation.get_reservation_id()]

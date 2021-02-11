@@ -23,23 +23,62 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from __future__ import annotations
+import pickle
+from datetime import datetime, timedelta
+from typing import List
 
-from typing import TYPE_CHECKING
+from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
+from fim.slivers.base_sliver import BaseElement
+from fim.slivers.network_node import Node
 
-if TYPE_CHECKING:
-    from fabric_cf.orchestrator.core.orchestrator_slice import OrchestratorSlice
-    from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
+from fabric_cf.actor.core.time.actor_clock import ActorClock
+from fabric_cf.actor.core.util.id import ID
 
 
 class ReservationConverter:
-    def __init__(self, *, ssh_credentials: list = None, controller: IMgmtController = None,
-                 controller_slice: OrchestratorSlice = None):
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.logger = GlobalsSingleton.get().get_logger()
-        self.ssh_credentials = ssh_credentials
+    """
+    Class responsible for computing reservations from slivers
+    """
+    def __init__(self, *, controller: IMgmtController, broker: ID):
         self.controller = controller
-        self.controller_slice = controller_slice
-        self.lease_start = None
-        self.lease_end = None
+        self.broker = broker
 
+    def get_tickets(self, *, slivers: List[BaseElement], slice_id: str) -> List[TicketReservationAvro]:
+        """
+        Responsible to generate reservations from the slivers; Adds the reservation Orchestrator
+        :param slivers list of slivers computed from the ASM (Slice graph)
+        :param slice_id Slice Id
+
+        :returns list of tickets
+        """
+        reservation_list = []
+        for sliver in slivers:
+            ticket = TicketReservationAvro()
+            ticket.set_slice_id(slice_id)
+            ticket.set_broker(str(self.broker))
+            ticket.set_units(1)
+            ticket.set_resource_type(sliver.get_resource_type())
+            start = datetime.utcnow()
+            end = start + timedelta(hours=24)
+            ticket.set_start(ActorClock.to_milliseconds(when=start))
+            ticket.set_end(ActorClock.to_milliseconds(when=end))
+            ticket.set_state(ReservationStates.Unknown.value)
+            ticket.set_pending_state(ReservationPendingStates.None_.value)
+            if isinstance(sliver, Node):
+                request_properties = {Constants.SLIVER_PROPERTY_CORE: str(sliver.get_cpu_cores()),
+                                      Constants.SLIVER_PROPERTY_RAM: str(sliver.get_ram_size()),
+                                      Constants.SLIVER_PROPERTY_DISK: str(sliver.get_disk_size()),
+                                      Constants.SLIVER_PROPERTY_GRAPH_NODE_ID: str(sliver.get_graph_node_id()),
+                                      Constants.ELASTIC_SIZE: 'False',
+                                      Constants.ELASTIC_TIME: 'True'}
+                ticket.set_request_properties(request_properties)
+                ticket.set_config_properties(request_properties)
+
+            # Add reservation to Orchestrator
+            reservation_id = self.controller.add_reservation(reservation=ticket)
+            ticket.set_reservation_id(str(reservation_id))
+            reservation_list.append(ticket)
+        return reservation_list

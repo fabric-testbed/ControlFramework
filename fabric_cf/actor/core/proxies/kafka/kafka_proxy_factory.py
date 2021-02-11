@@ -74,7 +74,7 @@ class KafkaProxyFactory(IProxyFactory):
                 else:
                     raise ProxyException("Unsupported proxy type: {}".format(proxy_type))
             else:
-                raise ProxyException(Constants.not_specified_prefix.format("proxy type"))
+                raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("proxy type"))
         return result
 
     def new_callback(self, *, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:

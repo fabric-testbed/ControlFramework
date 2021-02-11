@@ -34,7 +34,7 @@ class DelegationNotFoundException(Exception):
         if text is not None:
             self.text = str(text)
         else:
-            self.text = "Delegation# {} not found".format(did)
+            self.text = f"Delegation# {did} not found"
         self.did = did
 
     def __str__(self):
@@ -45,13 +45,17 @@ class ReservationNotFoundException(Exception):
     """
     Reservation not found exception
     """
-    def __init__(self, *, text: str = None, rid=None):
+    def __init__(self, *, text: str = None, rid=None, slice_id=None):
         super(ReservationNotFoundException, self).__init__()
         if text is not None:
             self.text = str(text)
         else:
-            self.text = "Reservation# {} not found".format(rid)
+            if slice_id is not None:
+                self.text = f"Reservation# {rid} not found"
+            else:
+                self.text = f"Reservation# {rid} not found for slice# {slice_id}"
         self.rid = rid
+        self.slice_id = slice_id
 
     def __str__(self):
         return self.text
@@ -66,7 +70,7 @@ class SliceNotFoundException(Exception):
         if text is not None:
             self.text = str(text)
         else:
-            self.text = "Slice# {} not found".format(slice_id)
+            self.text = f"Slice# {slice_id} not found"
         self.slice_id = slice_id
 
     def __str__(self):

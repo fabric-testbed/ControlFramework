@@ -27,6 +27,7 @@ from datetime import datetime
 
 from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
+from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.calendar.client_calendar import ClientCalendar
@@ -103,7 +104,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def add_request(self, *, reservation: IReservation, cycle: int, source: IReservation = None):
+    def add_request(self, *, reservation: IReservation, cycle: int, source: IDelegation = None):
         """
         Adds a client request.
 
@@ -121,7 +122,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def get_request(self, *, source: IReservation, cycle: int) -> ReservationSet:
+    def get_request(self, *, source: IDelegation, cycle: int) -> ReservationSet:
         """
         Returns the extending requests for the given source reservation.
 
@@ -138,7 +139,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def remove_request(self, *, reservation: IReservation, source: IReservation = None):
+    def remove_request(self, *, reservation: IReservation, source: IDelegation = None):
         """
         Removes the specified reservation from the requests list.
         @params reservation:  reservation to remove
@@ -154,7 +155,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def add_outlay(self, *, source: IReservation, client: IReservation, start: datetime, end: datetime):
+    def add_outlay(self, *, source: IDelegation, client: IReservation, start: datetime, end: datetime):
         """
          Adds an outlay reservation.
 
@@ -171,7 +172,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def remove_outlay(self, *, source: IReservation, client: IReservation):
+    def remove_outlay(self, *, source: IDelegation, client: IReservation):
         """
         Removes an outlay reservation.
 
@@ -185,7 +186,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def add_source(self, *, source: IClientReservation):
+    def add_source(self, *, source: IDelegation):
         """
         Adds a source reservation. Creates a placeholder if necessary
         and adds the reservation to the holdings list.
@@ -201,7 +202,7 @@ class BrokerCalendar(ClientCalendar):
             self.lock.release()
         self.add_holdings(reservation=source, start=term.get_new_start_time(), end=term.get_end_time())
 
-    def get_source_calendar(self, *, source: IReservation) -> SourceCalendar:
+    def get_source_calendar(self, *, source: IDelegation) -> SourceCalendar:
         """
         Returns the outlay calendar for the given source reservation.
 
@@ -209,13 +210,13 @@ class BrokerCalendar(ClientCalendar):
 
         @returns source calendar
         """
-        calendar = self.sources.get(source.get_reservation_id())
+        calendar = self.sources.get(source.get_delegation_id())
         if calendar is None:
             calendar = SourceCalendar(clock=self.clock, source=source)
-            self.sources[source.get_reservation_id()] = calendar
+            self.sources[source.get_delegation_id()] = calendar
         return calendar
 
-    def remove_source_calendar(self, *, source: IReservation):
+    def remove_source_calendar(self, *, source: IDelegation):
         """
         Removes any data structures associated with a source
         reservation.
@@ -224,12 +225,12 @@ class BrokerCalendar(ClientCalendar):
         """
         try:
             self.lock.acquire()
-            if source.get_reservation_id() in self.sources:
-                self.sources.pop(source.get_reservation_id())
+            if source.get_delegation_id() in self.sources:
+                self.sources.pop(source.get_delegation_id())
         finally:
             self.lock.release()
 
-    def get_outlays(self, *, source: IReservation, time: datetime = None) -> ReservationSet:
+    def get_outlays(self, *, source: IDelegation, time: datetime = None) -> ReservationSet:
         """
         Returns the client reservations satisfied from the given source
         reservation at the specified time.

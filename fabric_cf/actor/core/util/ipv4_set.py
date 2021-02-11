@@ -144,7 +144,7 @@ class IPv4Set:
     def to_ip4(self, *, ip: str):
         tokens = ip.split(".")
         if len(tokens) != 4:
-            raise FrameworkException(Constants.invalid_ip.format(ip))
+            raise FrameworkException(Constants.INVALID_IP.format(ip))
 
         result = int(ipaddress.ip_address(ip))
 

@@ -28,7 +28,7 @@ from datetime import datetime
 import time
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.delegation.resource_bin import ResourceBin
-from fabric_cf.actor.core.delegation.simple_resource_ticket_factory import SimpleResourceTicketFactory
+from fabric_cf.actor.core.delegation.simple_resource_delegation_factory import SimpleResourceDelegationFactory
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -37,8 +37,8 @@ from fabric_cf.actor.test.base_test_case import BaseTestCase
 
 class SimpleTicketTest(BaseTestCase, unittest.TestCase):
     from fabric_cf.actor.core.container.globals import Globals
-    Globals.config_file = "./config/config.test.yaml"
-    Constants.superblock_location = './state_recovery.lock'
+    Globals.config_file = "./handlers/handlers.test.yaml"
+    Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton
     GlobalsSingleton.get().start(force_fresh=True)
@@ -54,8 +54,8 @@ class SimpleTicketTest(BaseTestCase, unittest.TestCase):
         self.units = 100
         self.create_factories()
 
-    def make_ticket_factory(self) -> SimpleResourceTicketFactory:
-        return SimpleResourceTicketFactory()
+    def make_ticket_factory(self) -> SimpleResourceDelegationFactory:
+        return SimpleResourceDelegationFactory()
 
     def create_factories(self):
         actor = self.get_actor(name="site0", guid=ID())

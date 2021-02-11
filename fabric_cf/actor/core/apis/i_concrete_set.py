@@ -81,26 +81,6 @@ class IConcreteSet:
         """
 
     @abstractmethod
-    def encode(self, *, protocol: str):
-        """
-        Encodes the concrete set into a properties list so that it can
-        be passed to another actor.
-        @param protocol protocol
-        @returns a encoded concrete set
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
-    def decode(self, *, encoded, plugin: IBasePlugin):
-        """
-        Initializes the concrete set with information derived from the
-        passed in properties list.
-        @param encoded encoded concrete set
-        @param plugin of containing actor
-        @raises Exception in case of error
-        """
-
-    @abstractmethod
     def collect_released(self):
         """
         Collects any released (closed) and/or failed resources.
@@ -262,3 +242,11 @@ class IConcreteSet:
         @return number of units
         """
         return 0
+
+    @abstractmethod
+    def restore(self, *, plugin: IBasePlugin, reservation: IReservation):
+        """
+        Restore the Concrete set
+        @param plugin plugin
+        @param reservation reservation
+        """

@@ -35,6 +35,8 @@ from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
+from fabric_cf.actor.core.core.ticket import Ticket
+from fabric_cf.actor.core.core.unit_set import UnitSet
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.kafka_broker_proxy import KafkaBrokerProxy
 from fabric_cf.actor.core.proxies.kafka.kafka_proxy import KafkaProxyRequestState
@@ -124,7 +126,7 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
     def pass_authority_reservation(reservation: IReservation, caller: AuthToken) -> ReservationAvro:
         cs = reservation.get_resources().get_resources()
         if cs is None:
-            raise ProxyException(Constants.not_specified_prefix.format("ticket"))
+            raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("ticket"))
 
         avro_reservation = ReservationAvro()
         avro_reservation.slice = Translate.translate_slice_to_avro(slice_obj=reservation.get_slice())
@@ -134,15 +136,15 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
 
         rset = Translate.translate_resource_set(resource_set=reservation.get_resources(),
                                                 direction=Translate.direction_authority)
-        cset = reservation.get_requested_resources().get_resources()
 
-        encoded = None
-        if cset is not None:
-            encoded = cset.encode(protocol=Constants.protocol_kafka)
-            if encoded is None:
-                raise ProxyException("Unsupported IConcreteSet: {}".format(type(cset)))
+        if reservation.get_requested_resources() is not None:
+            cset = reservation.get_requested_resources().get_resources()
 
-        rset.concrete = encoded
+            if cset is not None and isinstance(cset, Ticket):
+                rset.ticket = Translate.translate_ticket(ticket=cset)
+
+            if cset is not None and isinstance(cset, UnitSet):
+                rset.units = Translate.translate_unit_set(unit_set=cset)
 
         avro_reservation.resource_set = rset
 

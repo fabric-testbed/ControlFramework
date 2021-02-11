@@ -60,7 +60,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
             result = self.manager.get_client_slices(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.result
+                return result.slices
         except Exception as e:
             self.last_exception = e
 
@@ -72,7 +72,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
             result = self.manager.get_clients(caller=self.auth, guid=guid, id_token=id_token)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.result
+                return result.clients
         except Exception as e:
             self.last_exception = e
 
@@ -119,7 +119,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
                                                                id_token=id_token)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.result
+                return result.reservations
         except Exception as e:
             self.last_exception = e
 
@@ -133,7 +133,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
                                                                id_token=id_token)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.result
+                return result.reservations
         except Exception as e:
             self.last_exception = e
 
@@ -145,7 +145,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
             result = self.manager.get_inventory_slices(caller=self.auth)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.result
+                return result.slices
         except Exception as e:
             self.last_exception = e
 
@@ -160,7 +160,7 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
                                                                id_token=id_token)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.result
+                return result.reservations
         except Exception as e:
             self.last_exception = e
 
@@ -172,18 +172,19 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
             result = self.manager.add_client_slice(caller=self.auth, slice_mng=slice_mng)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.result
+                return result.get_result()
         except Exception as e:
             self.last_exception = e
 
         return None
 
-    def advertise_resources(self, *, delegation: ABCPropertyGraph, client: AuthToken) -> ID:
+    def advertise_resources(self, *, delegation: ABCPropertyGraph, delegation_name: str, client: AuthToken) -> ID:
         try:
-            result = self.manager.advertise_resources(delegation=delegation, client=client, caller=self.auth)
+            result = self.manager.advertise_resources(delegation=delegation, delegation_name=delegation_name,
+                                                      client=client, caller=self.auth)
             self.last_status = result.status
-            if self.last_status.get_code() == 0 and result.result is not None:
-                return ID(uid=result.result)
+            if self.last_status.get_code() == 0 and result.get_result() is not None:
+                return ID(uid=result.get_result())
         except Exception as e:
             self.last_exception = e
 

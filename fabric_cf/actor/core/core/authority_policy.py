@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import traceback
+
 from fabric_cf.actor.core.apis.i_authority import IAuthority
 from fabric_cf.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
@@ -40,28 +42,19 @@ from fabric_cf.actor.core.util.resource_data import ResourceData
 
 
 class AuthorityPolicy(Policy, IAuthorityPolicy):
-    PropertySourceTicket = "sourceTicket"
-
-    """
-    Base class for all authority policy implementations.
-    """
     def __init__(self, *, actor: IAuthority = None):
         super().__init__(actor=actor)
-
-        self.tickets = None
         self.initialized = False
         self.delegations = None
 
     def initialize(self):
         if not self.initialized:
             super().initialize()
-            self.tickets = {}
             self.initialized = True
             self.delegations = {}
 
     def revisit(self, *, reservation: IReservation):
-        if isinstance(reservation, IClientReservation):
-            self.donate_reservation(reservation=reservation)
+        return
 
     def revisit_delegation(self, *, delegation: IDelegation):
         self.donate_delegation(delegation=delegation)
@@ -69,35 +62,10 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
     def donate_delegation(self, *, delegation: IDelegation):
         self.delegations[delegation.get_delegation_id()] = delegation
 
-    def donate(self, *, resources: ResourceSet):
-        return
-
-    def donate_reservation(self, *, reservation: IClientReservation):
-        rset = reservation.get_resources()
-        rset.set_reservation_id(rid=reservation.get_reservation_id())
-
-        self.logger.info("AuthorityPolicy donateTicket {}".format(rset))
-
-        ticket_set = self.tickets.get(rset.get_type(), None)
-
-        if ticket_set is None:
-            ticket_set = set()
-
-        ticket_set.add(rset)
-
-        self.logger.debug("Adding tickets {} for type: {}".format(len(ticket_set), rset.get_type()))
-        self.tickets[rset.get_type()] = ticket_set
-
     def eject(self, *, resources: ResourceSet):
         return
 
     def failed(self, *, resources: ResourceSet):
-        return
-
-    def unavailable(self, *, resources: ResourceSet) -> int:
-        return 0
-
-    def available(self, *, resources: ResourceSet):
         return
 
     def freed(self, *, resources: ResourceSet):
@@ -117,61 +85,6 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
             result = True
 
         return result
-
-    def bind(self, *, reservation: IBrokerReservation) -> bool:
-        requested = reservation.get_requested_resources()
-        ticket_set = self.tickets.get(requested.get_type(), None)
-        if ticket_set is None or len(ticket_set) == 0:
-            self.error(message="bindTicket: no tickets available for the requested resource type {}".format(
-                requested.get_type()))
-
-        #  We need a calendar to tell us what we have exported from each source
-        #  ticket. For now, just take the first element from the set and export
-        #  from it
-        #  Also: it should be possible to specify a source ticket to use for a
-        #  given export. This can be a property on the AgentReservation (say:
-        #  slice and reservation id to use). Have to make sure that the resource set has
-        #  the slice and the reservation id.
-        rid = None
-        if reservation.get_requested_resources().get_request_properties() is not None:
-            temp = reservation.get_requested_resources().get_request_properties().get(self.PropertySourceTicket, None)
-
-            if temp is not None:
-                rid = ID(uid=temp)
-
-        ticket_found = None
-        if rid is not None:
-            for ticket in ticket_set:
-                if ticket.get_reservation_id() is not None and ticket.get_reservation_id() == rid:
-                    ticket_found = ticket
-
-        else:
-            if ticket_set is not None:
-                ticket_found = ticket_set.__iter__().__next__()
-
-        if ticket_found is None:
-            self.error(message="bindticket: no tickets available")
-
-        # If this is an elastic export, whittle it down to size if necessary.
-        # Signal obvious export errors. This code is fragile/temporary: it
-        # assumes that the request is for "now", and that there is just one
-        # export per resource type. Other errors involving multiple exports per
-        # type will be caught in the extract below, but we won't have a chance
-        # to adjust if the request is elastic.
-        units = ticket_found.get_resources().get_units()
-        needed = requested.get_units()
-
-        if needed > units:
-            self.logger.error("insufficient units available to export to agent")
-            needed = units
-
-        delegation = self.actor.get_plugin().get_ticket_factory().make_delegation(
-            units=needed, term=reservation.get_requested_term(), rtype=requested.get_type(),
-            holder=reservation.get_client_auth_token().get_guid())
-
-        mine = self.extract(source=ticket_found, delegation=delegation)
-        reservation.set_approved(term=reservation.get_requested_term(), approved_resources=mine)
-        return True
 
     def allocate(self, *, cycle: int):
         return
@@ -213,29 +126,3 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
 
     def extend(self, *, reservation: IReservation, resources: ResourceSet, term: Term):
         return False
-
-    def extract(self, *, source: ResourceSet, delegation: ResourceDelegation):
-        """
-        Creates a new resource set using the source and the specified delegation.
-        @param source source
-        @param delegation delegation
-        @return created resource set
-        @raises Exception in case of error
-        """
-        if source is None or delegation is None:
-            self.error(message="Invalid Argument")
-
-        self.logger.debug("extracting delegation: {}".format(delegation))
-
-        rd = ResourceData()
-        rd.resource_properties = source.get_resource_properties()
-        extracted = ResourceSet(units=delegation.get_units(), rtype=delegation.get_resource_type(), rdata=rd)
-        source_ticket = source.get_resources().get_ticket()
-
-        new_ticket = self.actor.get_plugin().get_ticket_factory().make_ticket(delegation=delegation,
-                                                                              source=source_ticket)
-
-        cset = Ticket(ticket=new_ticket, plugin=source.get_resources().plugin,
-                      authority=source.get_resources().authority)
-        extracted.set_resources(cset=cset)
-        return extracted

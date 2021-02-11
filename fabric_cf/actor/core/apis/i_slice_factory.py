@@ -49,11 +49,3 @@ class ISliceFactory:
         @return slice object
         """
         raise NotImplementedError("Should have implemented this")
-
-    @staticmethod
-    def create_instance(*, properties: dict) -> ISlice:
-        """
-        Creates a new slice object by restoring it from the pickled instance read from the database
-        @param properties dictionary containing the pickled instance read from the database
-        """
-        raise NotImplementedError("Should have implemented this")

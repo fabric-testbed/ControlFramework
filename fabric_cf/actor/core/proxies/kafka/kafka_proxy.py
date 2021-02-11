@@ -70,7 +70,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
         super().__init__(auth=identity)
         self.kafka_topic = kafka_topic
         self.logger = logger
-        self.proxy_type = Constants.protocol_kafka
+        self.proxy_type = Constants.PROTOCOL_KAFKA
         self.type = self.TypeDefault
         self.producer = self.create_kafka_producer()
 
@@ -90,7 +90,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             return GlobalsSingleton.get().get_kafka_producer()
         except Exception as e:
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
             self.logger.error("Failed to create kafka producer {}".format(e))
 
     def execute(self, *, request: IRPCRequestState):

@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import pickle
 import queue
 import threading
 import traceback
@@ -40,17 +39,13 @@ from fabric_cf.actor.core.apis.i_query_response_handler import IQueryResponseHan
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.apis.i_reservation_tracker import IReservationTracker
 from fabric_cf.actor.core.apis.i_slice import ISlice
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ActorException
 from fabric_cf.actor.core.container.message_service import MessageService
 from fabric_cf.actor.core.core.reservation_tracker import ReservationTracker
-from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-from fabric_cf.actor.core.kernel.reservation_factory import ReservationFactory
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
 from fabric_cf.actor.core.proxies.proxy import Proxy
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
@@ -346,6 +341,9 @@ class Actor(IActor):
     def get_policy(self) -> IPolicy:
         return self.policy
 
+    def get_delegation(self, *, did: str) -> IDelegation:
+        return self.wrapper.get_delegation(did=did)
+
     def get_reservation(self, *, rid: ID) -> IReservation:
         return self.wrapper.get_reservation(rid=rid)
 
@@ -441,13 +439,13 @@ class Actor(IActor):
 
         inventory_slices = self.plugin.get_database().get_inventory_slices()
         self.logger.debug("Found {} inventory slices".format(len(inventory_slices)))
-        self.recover_slices(properties=inventory_slices)
+        self.recover_slices(slices=inventory_slices)
         self.logger.debug("Recovery of inventory slices complete")
 
         self.logger.debug("Recovering client slices")
         client_slices = self.plugin.get_database().get_client_slices()
         self.logger.debug("Found {} client slices".format(len(client_slices)))
-        self.recover_slices(properties=client_slices)
+        self.recover_slices(slices=client_slices)
         self.logger.debug("Recovery of client slices complete")
 
         self.recovered = True
@@ -469,36 +467,29 @@ class Actor(IActor):
         self.plugin.recovery_ended()
         self.policy.recovery_ended()
 
-    def recover_slices(self, *, properties: list):
+    def recover_slices(self, *, slices: List[ISlice]):
         """
         Recover slices
-        @param properties properties
+        @param slices slices
         """
-        for p in properties:
+        for s in slices:
             try:
-                self.recover_slice(properties=p)
+                self.recover_slice(slice_obj=s)
             except Exception as e:
                 self.logger.error(traceback.format_exc())
                 self.logger.error("Error in recoverSlice for property list {}".format(e))
 
-    def recover_slice(self, *, properties: dict):
+    def recover_slice(self, *, slice_obj: ISlice):
         """
         Recover slice
-        @param properties properties
+        @param slice_obj slice_obj
         """
-        if properties.get('slc_guid', None) is None:
-            raise ActorException("Missing slice guid")
+        slice_id = slice_obj.get_slice_id()
 
-        slice_id = ID(uid=properties['slc_guid'])
-
-        slice_obj = self.get_slice(slice_id=slice_id)
-        self.logger.debug("Found slice_id: {} slice:{}".format(slice_id, slice_obj))
-
-        if slice_obj is None:
+        if self.get_slice(slice_id=slice_id) is not None:
+            self.logger.debug("Found slice_id: {} slice:{}".format(slice_id, slice_obj))
+        else:
             self.logger.info("Recovering slice: {}".format(slice_id))
-
-            self.logger.debug("Instantiating slice object and recovering it")
-            slice_obj = SliceFactory.create_instance(properties=properties)
 
             self.logger.debug("Informing the plugin about the slice")
             self.plugin.revisit(slice_obj=slice_obj)
@@ -532,24 +523,22 @@ class Actor(IActor):
 
         self.logger.debug("There are {} reservations(s) in slice".format(len(reservations)))
 
-        for properties in reservations:
+        for r in reservations:
             try:
-                self.logger.info("Reservation has properties: {}".format(properties))
-                self.recover_reservation(properties=properties, slice_obj=slice_obj)
+                self.recover_reservation(r=r, slice_obj=slice_obj)
             except Exception as e:
                 self.logger.error("Unexpected error while recovering reservation {}".format(e))
 
         self.logger.info("Recovery for reservations in slice {} completed".format(slice_obj))
 
-    def recover_reservation(self, *, properties: dict, slice_obj: ISlice):
+    def recover_reservation(self, *, r: IReservation, slice_obj: ISlice):
         """
         Recover reservation
-        @param properties properties
+        @param r reservation
         @param slice_obj slice object
         """
         try:
-            r = ReservationFactory.create_instance(properties=properties, actor=self, slice_obj=slice_obj,
-                                                   logger=self.logger)
+            r.restore(actor=self, slice_obj=slice_obj, logger=self.logger)
 
             self.logger.info(
                 "Found reservation # {} in state {}".format(r.get_reservation_id(), r.get_reservation_state()))
@@ -576,9 +565,9 @@ class Actor(IActor):
 
             self.logger.info("Recovered reservation #{}".format(r.get_reservation_id()))
         except Exception as e:
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred in recovering reservation e={}".format(e))
-            raise ActorException("Could not recover Reservation #{}".format(properties))
+            raise ActorException("Could not recover Reservation #{}".format(r))
 
     def recover_delegations(self, *, slice_obj: ISlice):
         """
@@ -598,24 +587,24 @@ class Actor(IActor):
 
         self.logger.debug("There are {} delegations(s) in slice".format(len(delegations)))
 
-        for properties in delegations:
+        for d in delegations:
             try:
-                self.logger.info("Delegation has properties: {}".format(properties))
-                self.recover_delegation(properties=properties, slice_obj=slice_obj)
+                self.logger.info("Delegation has properties: {}".format(d))
+                self.recover_delegation(d=d, slice_obj=slice_obj)
             except Exception as e:
                 self.logger.error("Unexpected error while recovering delegation {}".format(e))
 
         self.logger.info("Recovery for delegations in slice {} completed".format(slice_obj))
 
-    def recover_delegation(self, *, properties: dict, slice_obj: ISlice):
+    def recover_delegation(self, *, d: IDelegation, slice_obj: ISlice):
         """
         Recover delegation
-        @param properties properties
+        @param d delegation
         @param slice_obj slice object
         """
         try:
-            d = DelegationFactory.create_instance(properties=properties, actor=self, slice_obj=slice_obj,
-                                                  logger=self.logger)
+
+            d.restore(actor=self, slice_obj=slice_obj, logger=self.logger)
 
             self.logger.info(
                 "Found delegation # {} in state {}".format(d.get_delegation_id(), d.get_state_name()))
@@ -642,9 +631,9 @@ class Actor(IActor):
 
             self.logger.info("Recovered delegation #{}".format(d.get_delegation_id()))
         except Exception as e:
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred in recovering delegation e={}".format(e))
-            raise ActorException("Could not recover delegation #{}".format(properties))
+            raise ActorException("Could not recover delegation #{}".format(d))
 
     def register(self, *, reservation: IReservation):
         self.wrapper.register_reservation(reservation=reservation)
@@ -828,6 +817,9 @@ class Actor(IActor):
             if self.thread_lock is not None and self.thread_lock.locked():
                 self.thread_lock.release()
 
+        if self.plugin.get_handler_processor() is not None:
+            self.plugin.get_handler_processor().shutdown()
+
     def tick_handler(self):
         """
         Tick handler
@@ -938,7 +930,7 @@ class Actor(IActor):
                     try:
                         e.process()
                     except Exception as e:
-                        traceback.print_exc()
+                        self.logger.error(traceback.format_exc())
                         self.logger.error("Error while processing event {} {}".format(type(e), e))
 
             if len(timers) > 0:
@@ -977,18 +969,6 @@ class Actor(IActor):
                                                   conf=consumer_conf, key_schema=key_schema, record_schema=val_schema,
                                                   topics=topics, logger=self.logger)
         except Exception as e:
-            traceback.print_exc()
+            self.logger.error(traceback.format_exc())
             self.logger.error("Failed to setup message service e={}".format(e))
             raise e
-
-    @staticmethod
-    def create_instance(properties: dict) -> IActor:
-        """
-        Create an Actor instance using the pickled instance read from the database
-        @param properties properties
-        """
-        if Constants.property_pickle_properties not in properties:
-            raise ActorException("Invalid arguments")
-        serialized_actor = properties[Constants.property_pickle_properties]
-        deserialized_actor = pickle.loads(serialized_actor)
-        return deserialized_actor

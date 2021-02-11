@@ -45,7 +45,7 @@ class EventManager:
 
     def create_subscription(self, *, token: AuthToken, filters: list, handler: IEventHandler) -> ID:
         if token is None:
-            raise EventException(Constants.invalid_argument)
+            raise EventException(Constants.INVALID_ARGUMENT)
 
         subscription = None
         if handler is None:

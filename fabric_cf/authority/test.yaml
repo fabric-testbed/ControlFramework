@@ -29,10 +29,10 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: localhost:19092
-  - kafka-schema-registry-url: http://localhost:8081
-  - kafka-key-schema: ../message_bus/schema/key.avsc
-  - kafka-value-schema: ../message_bus/schema/message.avsc
+  - kafka-server: 152.54.14.213:29092
+  - kafka-schema-registry-url: http://152.54.14.213:8081
+  - kafka-key-schema: ../../schema/key.avsc
+  - kafka-value-schema: ../../schema/message.avsc
   - kafka-ssl-ca-location:  ../../secrets/snakeoil-ca-1.crt
   - kafka-ssl-certificate-location:  ../../secrets/kafkacat1-ca1-signed.pem
   - kafka-ssl-key-location:  ../../secrets/kafkacat1.client.key
@@ -70,12 +70,13 @@ oauth:
   - jwks-url: https://dev-2.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
   - key-refresh: 00:10:00
+  - verify-exp: False
 
 database:
   - db-user: fabric
   - db-password: fabric
   - db-name: am
-  - db-host: localhost:8432
+  - db-host: localhost:5432
 
 container:
   - container.guid: site1-am-conainer
@@ -100,13 +101,14 @@ time:
   - time.manual: false
 
 pdp:
-  url: http://localhost:8080/services/pdp
+  url: http://localhost:8082/services/pdp
+  enable: False
 
 neo4j:
   url: bolt://localhost:7687
   user: neo4j
   pass: password
-  import_host_dir: ./site1-am/neo4j/imports/
+  import_host_dir: ../../neo4j1/imports/
   import_dir: /imports
 
 actor:
@@ -118,81 +120,21 @@ actor:
   - substrate.file: ../../config/neo4j/site-am-2broker-ad-enumerated.graphml
   - resources:
       - resource:
-        - resource_module: fim.slivers.network_node
-        - resource_class: Node
-        - type: site.vm
+        - type: VM
         - label: VM AM
         - description: VM AM
         - handler:
-          - module: fabric_cf.actor.plugins.vm
-          - class: Dummy
+          - module: fabric_cf.actor.handlers.no_op_handler
+          - class: NoOpHandler
           - properties:
-              - ec2.keys: config/ec2
-              - ec2.site.properties: config/ec2.site.properties
-        - control:
-            - type: site.vm
-            - module: fabric_cf.actor.core.policy.simple_vm_control
-            - class: SimpleVMControl
-        - attributes:
-            - attribute:
-                - key: resource.class.invfortype
-                - type: Class
-                - value: fabric_cf.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-      - resource:
-        - resource_module: fim.slivers.network_node
-        - resource_class: Node
-        - type: site.baremetal
-        - label: Baremetal AM
-        - description: Baremetal AM
-        - handler:
-          - module: fabric_cf.actor.plugins.baremetal
-          - class: Dummy
-          - properties:
-              - xcat.site.properties: config/xcat.site.properties
-        - control:
-          - type: site.vm
-          - module: fabric_cf.actor.core.policy.simple_vm_control
-          - class: SimpleVMControl
-      - resource:
-        - resource_module: fim.slivers.attached_pci_devices
-        - resource_class: AttachedPCIDevices
-        - type: site.vlan
-        - label: Network Vlan
-        - description: Network Vlan
-        - handler:
-          - module: fabric_cf.actor.plugins.vlan
-          - class: Dummy
-          - properties:
-              - quantum-vlan.properties: config/quantum-vlan.properties
-        - attributes:
-            - attribute:
-                - key: resource.class.invfortype
-                - type: Class
-                - value: fabric_cf.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-        - control:
-          - type: site.vlan
-          - module: fabric_cf.actor.core.policy.vlan_control
-          - class: VlanControl
-      - resource:
-        - resource_module: fim.slivers.network_attached_storage
-        - resource_class: NetworkAttachedStorage
-        - type: site.lun
-        - label: OS internal lun
-        - description: OS internal lun
-        - handler:
-          - module: fabric_cf.actor.plugins.storage
-          - class: Dummy
-          - properties:
-              - storage_service.site.properties: config/storage_service.site.properties
-        - attributes:
-            - attribute:
-                - key: resource.class.invfortype
-                - type: Class
-                - value: fabric_cf.actor.core.policy.simpler_units_inventory.SimplerUnitsInventory
-        - control:
-            - type: site.lun
-            - module: fabric_cf.actor.core.policy.lun_control
-            - class: LUNControl
+              - playbooks: ../../ansible/vm/
+              - playbook_mapping: ../../ansible/vm/vm.properties
+  - controls:
+      - control:
+          - type: VM, Container, Baremetal
+          - module: fabric_cf.actor.core.policy.network_node_control
+          - class: NetworkNodeControl
+
 peers:
   - peer:
     - name: orchestrator

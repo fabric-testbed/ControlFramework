@@ -288,6 +288,9 @@ class PdpAuth:
         @return true for success and failure otherwise
         @raises PdpAuthException in case of denied access or failure
         """
+        if not self.config['enable']:
+            self.logger.debug("Skipping PDP Authorization check as configured")
+            return True
 
         pdp_request = self.build_pdp_request(fabric_token=fabric_token, actor_type=actor_type,
                                              action_id=action_id, resource_type=resource_type, resource_id=resource_id)

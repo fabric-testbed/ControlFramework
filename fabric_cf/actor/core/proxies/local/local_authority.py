@@ -63,7 +63,7 @@ class LocalAuthority(LocalBroker, IAuthorityProxy):
 
     def pass_reservation_authority(self, *, reservation: IControllerReservation, auth: AuthToken) -> IReservation:
         if reservation.get_resources().get_resources() is None:
-            raise ProxyException(Constants.not_specified_prefix.format("concrete set"))
+            raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("concrete set"))
 
         slice_obj = reservation.get_slice().clone_request()
         term = reservation.get_term().clone()
@@ -74,10 +74,7 @@ class LocalAuthority(LocalBroker, IAuthorityProxy):
             to_props=rset.get_resource_data().get_configuration_properties())
 
         original_ticket = reservation.get_resources().get_resources()
-        encoded_ticket = original_ticket.encode(protocol=Constants.protocol_local)
-        from fabric_cf.actor.core.proxies.proxy import Proxy
-        decoded_ticket = Proxy.decode(encoded=encoded_ticket, plugin=self.get_actor().get_plugin())
-        rset.set_resources(cset=decoded_ticket)
+        rset.set_resources(cset=original_ticket.clone())
 
         authority_reservation = AuthorityReservationFactory.create(resources=rset, term=term, slice_obj=slice_obj,
                                                                    rid=reservation.get_reservation_id())

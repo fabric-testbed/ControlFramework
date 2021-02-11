@@ -77,33 +77,9 @@ services:
       SCHEMA_REGISTRY_SSL_KEYSTORE_PASSWORD: fabric
       SCHEMA_REGISTRY_SSL_KEY_PASSWORD: fabric
       SCHEMA_REGISTRY_DEBUG: 'true'
-
-  neo4j:
-    image: fabrictestbed/neo4j-apoc:4.0.3
-    container_name: test-neo4j
-    user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
-    restart: always
-    ports:
-      - 7474:7474  # for HTTP
-      - 7473:7473  # for HTTPS
-      - 7687:7687  # for Bolt
-    volumes:
-      - ${NEO4J_DATA_PATH_HOST:-$(pwd)/neo4j/data}:${NEO4J_DATA_PATH_DOCKER:-/data}
-      - ${NEO4J_IMPORTS_PATH_HOST:-$(pwd)/neo4j/imports}:${NEO4J_IMPORTS_PATH_DOCKER:-/imports}
-      - ${NEO4J_LOGS_PATH_HOST:-$(pwd)/neo4j/logs}:${NEO4J_LOGS_PATH_DOCKER:-/logs}
-      - ${NGINX_SSL_CERTS_DIR:-./ssl}/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
-      - ${NGINX_SSL_CERTS_DIR:-./ssl}/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
-    environment:
-      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
-      - NEO4J_dbms_connector_bolt_advertised__address=${NEO4J_dbms_connector_bolt_advertised__address:-0.0.0.0:7687}
-      - NEO4J_dbms_connector_bolt_listen__address=${NEO4J_dbms_connector_bolt_advertised__address:-0.0.0.0:7687}
-      - NEO4J_dbms_connector_http_advertised__address=${NEO4J_dbms_connector_http_advertised__address:-0.0.0.0:7474}
-      - NEO4J_dbms_connector_http_listen__address=${NEO4J_dbms_connector_http_advertised__address:-0.0.0.0:7474}
-      - NEO4J_dbms_connector_https_advertised__address=${NEO4J_dbms_connector_https_advertised__address:-0.0.0.0:7473}
-      - NEO4J_dbms_connector_https_listen__address=${NEO4J_dbms_connector_https_advertised__address:-0.0.0.0:7473}
   database:
     image: fabrictestbed/postgres:12.3
-    container_name: test-db
+    container_name: database
     restart: always
     ports:
       - 5432:5432
@@ -117,3 +93,72 @@ services:
        - POSTGRES_USER=${POSTGRES_USER:-postgres}
        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-fabric}
        - PGDATA=${PGDATA:-/var/lib/postgresql/data}
+  neo4j1:
+    image: fabrictestbed/neo4j-apoc:4.0.3
+    container_name: neo4j1
+    user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
+    restart: always
+    ports:
+      - 7474:7474  # for HTTP
+      - 7473:7473  # for HTTPS
+      - 7687:7687  # for Bolt
+    volumes:
+      - ./neo4j1/data:/data
+      - ./neo4j1/imports:/imports
+      - ./neo4j1/logs:/logs
+      - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
+      - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:7687
+      - NEO4J_dbms_connector_bolt_listen__address=0.0.0.0:7687
+      - NEO4J_dbms_connector_http_advertised__address=0.0.0.0:7474
+      - NEO4J_dbms_connector_http_listen__address=0.0.0.0:7474
+      - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:7473
+      - NEO4J_dbms_connector_https_listen__address=0.0.0.0:7473
+  neo4j2:
+    image: fabrictestbed/neo4j-apoc:4.0.3
+    container_name: neo4j2
+    user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
+    restart: always
+    ports:
+      - 8474:8474  # for HTTP
+      - 8473:8473  # for HTTPS
+      - 8687:8687  # for Bolt
+    volumes:
+      - ./neo4j2/data:/data
+      - ./neo4j2/imports:/imports
+      - ./neo4j2/logs:/logs
+      - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
+      - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:8687
+      - NEO4J_dbms_connector_bolt_listen__address=0.0.0.0:8687
+      - NEO4J_dbms_connector_http_advertised__address=0.0.0.0:8474
+      - NEO4J_dbms_connector_http_listen__address=0.0.0.0:8474
+      - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:8473
+      - NEO4J_dbms_connector_https_listen__address=0.0.0.0:8473
+  neo4j3:
+    image: fabrictestbed/neo4j-apoc:4.0.3
+    container_name: neo4j3
+    user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
+    restart: always
+    ports:
+      - 9474:9474  # for HTTP
+      - 9473:9473  # for HTTPS
+      - 9687:9687  # for Bolt
+    volumes:
+      - ./neo4j3/data:/data
+      - ./neo4j3/imports:/imports
+      - ./neo4j3/logs:/logs
+      - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
+      - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:9687
+      - NEO4J_dbms_connector_bolt_listen__address=0.0.0.0:9687
+      - NEO4J_dbms_connector_http_advertised__address=0.0.0.0:9474
+      - NEO4J_dbms_connector_http_listen__address=0.0.0.0:9474
+      - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:9473
+      - NEO4J_dbms_connector_https_listen__address=0.0.0.0:9473

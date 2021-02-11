@@ -37,7 +37,7 @@ class DummyProxy(Proxy):
 
     def __init__(self, *, auth: AuthToken = None):
         super().__init__(auth=auth)
-        self.proxy_type = Constants.protocol_local
+        self.proxy_type = Constants.PROTOCOL_LOCAL
 
     def execute(self, *, request: IRPCRequestState):
         raise NotImplementedError

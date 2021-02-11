@@ -43,7 +43,7 @@ from fabric_cf.actor.core.kernel.authority_reservation_factory import AuthorityR
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
-from fabric_cf.actor.core.plugins.config.config import Config
+from fabric_cf.actor.core.plugins.handlers.handler_processor import HandlerProcessor
 from fabric_cf.actor.core.plugins.substrate.substrate import Substrate
 from fabric_cf.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
@@ -82,7 +82,7 @@ class AuthorityPolicyTest(BaseTestCase):
         return db
 
     def make_plugin(self):
-        config = Config()
+        config = HandlerProcessor()
         plugin = Substrate(actor=None, db=None, config=config)
         return plugin
 
@@ -101,8 +101,8 @@ class AuthorityPolicyTest(BaseTestCase):
         src_ticket = source.get_resources().get_resources().get_ticket()
         properties = src_ticket.get_delegation().get_properties()
 
-        delegation = actor.get_plugin().get_ticket_factory().make_delegation(units=units, term=term, rtype=rtype, properties=properties, holder=holder)
-        ticket = actor.get_plugin().get_ticket_factory().make_ticket(delegation=delegation, source=src_ticket)
+        delegation = actor.get_plugin().get_resource_delegation_factory().make_delegation(units=units, term=term, rtype=rtype, properties=properties, holder=holder)
+        ticket = actor.get_plugin().get_resource_delegation_factory().make_ticket(delegation=delegation, source=src_ticket)
         cs = Ticket(ticket=ticket, plugin=actor.get_plugin(), authority=None)
         return cs
 
@@ -256,7 +256,7 @@ class AuthorityPolicyTest(BaseTestCase):
                     self.parent.check_incoming_close_lease(site, request, reservation, update_data)
                     self.waiting_for_close = False
                 else:
-                    raise AuthorityException(Constants.invalid_state)
+                    raise AuthorityException(Constants.INVALID_STATE)
 
             def check_termination(self):
                 self.parent.assertFalse(self.waiting_for_lease)
@@ -307,7 +307,7 @@ class AuthorityPolicyTest(BaseTestCase):
                     self.parent.check_incoming_close_lease(site, request, reservation, update_data)
                     self.waiting_for_close = False
                 else:
-                    raise AuthorityException(Constants.invalid_state)
+                    raise AuthorityException(Constants.INVALID_STATE)
 
             def check_termination(self):
                 self.parent.assertFalse(self.waiting_for_lease)
@@ -363,7 +363,7 @@ class AuthorityPolicyTest(BaseTestCase):
                                                            udd=update_data)
                     self.waiting_for_close = False
                 else:
-                    raise AuthorityException(Constants.invalid_state)
+                    raise AuthorityException(Constants.INVALID_STATE)
 
             def check_termination(self):
                 self.parent.assertFalse(self.waiting_for_lease)

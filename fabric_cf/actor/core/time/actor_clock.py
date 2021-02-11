@@ -60,7 +60,7 @@ class ActorClock:
         @raise TimeException for invalid arguments
         """
         if millis < 0:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
 
         return int(millis / self.cycle_millis)
 
@@ -71,7 +71,7 @@ class ActorClock:
         @return cycles
         """
         if when is None:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
 
         millis = self.to_milliseconds(when=when)
 
@@ -88,7 +88,7 @@ class ActorClock:
         @return last millisecond of the cycle
         """
         if cycle < 0:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
 
         millis = (self.beginning_of_time + ((cycle + 1) * self.cycle_millis)) - 1
 
@@ -109,7 +109,7 @@ class ActorClock:
         @returns first millisecond of the cycle
         """
         if cycle < 0:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
 
         return self.date(cycle=cycle)
 
@@ -129,7 +129,7 @@ class ActorClock:
         @raises Exception in case of invalid arguments
         """
         if cycle < 0:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
 
         millis = self.beginning_of_time + (cycle * self.cycle_millis)
         return self.from_milliseconds(milli_seconds=millis)
@@ -158,7 +158,7 @@ class ActorClock:
         @raises Exception in case of invalid arguments
         """
         if cycle < 0:
-            raise TimeException(Constants.invalid_argument)
+            raise TimeException(Constants.INVALID_ARGUMENT)
         return cycle * self.cycle_millis
 
     @staticmethod
