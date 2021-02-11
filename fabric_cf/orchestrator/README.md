@@ -208,27 +208,87 @@ runtime:
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
+  - kafka-sasl-mechanism:
   - kafka-sasl-producer-username:
   - kafka-sasl-producer-password:
   - kafka-sasl-consumer-username:
   - kafka-sasl-consumer-password:
   - orchestrator.rest.port: 8700
   - prometheus.port: 11000
+
+logging:
+  ## The directory in which actor should create log files.
+  ## This directory will be automatically created if it does not exist.
+  - log-directory: /var/log/actor
+
+  ## The filename to be used for actor's log file.
+  - log-file: actor.log
+
+  ## The default log level for actor.
+  - log-level: DEBUG
+
+  ## actor rotates log files. You may specify how many archived log files to keep here.
+  - log-retain: 5
+
+  ## actor rotates log files after they exceed a certain size.
+  ## You may specify the file size that results in a log file being rotated here.
+  - log-size: 5000000
+
+  - logger: orchestrator
+
+oauth:
+  - jwks-url: https://dev-2.fabric-testbed.net/certs
+  # Uses HH:MM:SS (less than 24 hours)
+  - key-refresh: 00:10:00
+  - verify-exp: True
+
+database:
+  - db-user: fabric
+  - db-password: fabric
+  - db-name: orchestrator
+  - db-host: orchestrator-db:5432
+
+pdp:
+  url: http://orchestrator-pdp:8080/services/pdp
+  enable: True
+
 neo4j:
   url: bolt://orchestrator-neo4j:9687
   user: neo4j
   pass: password
   import_host_dir: /usr/src/app/neo4j/imports/
   import_dir: /imports
+
+container:
+  - container.guid: orchestrator-conainer
+
+time:
+  # This section controls settings, which are generally useful
+  # when running under emulation. These settings allow you to
+  # control notion of time.
+
+  # Beginning of time (in unix time).
+  # The default is -1, which translates into using the current time as
+  # the beginning of time for the container's internal clock.
+  - time.startTime: -1
+
+  # Internal tick length (in milliseconds)
+  - time.cycleMillis: 1000
+
+  # The number of the first tick
+  - time.firstTick: 0
+
+  # This property controls if time advances automatically (false) or
+  # manually (true)
+  - time.manual: false
+
 actor:
   - type: orchestrator
   - name: orchestrator
   - guid: orchestrator-guid
   - description: orchestrator
   - kafka-topic: orchestrator-topic
-  - policy:
-      - module: fabric.actor.core.policy.controller_ticket_review_policy
-      - class: ControllerTicketReviewPolicy
+
 peers:
   - peer:
     - name: broker
