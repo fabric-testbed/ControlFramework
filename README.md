@@ -23,17 +23,6 @@ Orchestrator is an agent of CF that makes allocation decisions (embedding) of us
 ## Requirements
 Python 3.7+
 
-## Configuration
-Example configuration files for Network AM, VM AM and Broker can be found under config directory:
-```
-$ ls -ltr config
-total 40
--rw-r--r--  1 komalthareja  staff  4312 Jul 14 14:38 config.net-am.yaml
--rw-r--r--  1 komalthareja  staff  7277 Jul 14 14:38 config.vm-am.yaml
--rw-r--r--  1 komalthareja  staff  3746 Jul 14 14:38 config.broker.yaml
--rw-r--r--  1 komalthareja  staff  3746 Jul 14 14:38 config.orchestrator.yaml
-```
-
 ## Build Docker Images
 
 ### Authority Docker Image
