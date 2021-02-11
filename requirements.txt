@@ -1,7 +1,7 @@
 yapsy
 requests==2.25.1
 PyJWT==1.7.1
-cryptography==3.3.1
+cryptography==3.3.2
 psycopg2-binary
 sqlalchemy
 pyyaml==5.3.1
