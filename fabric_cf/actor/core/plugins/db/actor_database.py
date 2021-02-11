@@ -602,7 +602,7 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def remove_delegation(self, *, dlg_graph_id: ID):
+    def remove_delegation(self, *, dlg_graph_id: str):
         try:
             self.lock.acquire()
             self.logger.debug("Removing delegation {}".format(dlg_graph_id))
@@ -610,7 +610,7 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def get_delegation(self, *, dlg_graph_id: ID) -> IDelegation:
+    def get_delegation(self, *, dlg_graph_id: str) -> IDelegation:
         try:
             self.lock.acquire()
             dlg_dict = self.db.get_delegation(dlg_act_id=self.actor_id, dlg_graph_id=str(dlg_graph_id))

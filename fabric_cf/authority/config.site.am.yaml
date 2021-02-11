@@ -120,19 +120,20 @@ actor:
   - substrate.file: /etc/fabric/actor/config/neo4j/arm.graphml
   - resources:
       - resource:
-        - type: site.vm
+        - type: VM
         - label: VM AM
         - description: VM AM
         - handler:
-          - module: fabric_cf.actor.handlers.simple_vm_handler
-          - class: SimpleVmHandler
+          - module: fabric_cf.actor.handlers.no_op_handler
+          - class: NoOpHandler
           - properties:
-              - ec2.keys: /etc/fabric/actor/handlers/ec2/novarc
-              - ec2.site.properties: /etc/fabric/actor/handlers/ec2.site.properties
-        - control:
-            - type: site.vm
-            - module: fabric_cf.actor.core.policy.simple_vm_control
-            - class: SimpleVMControl
+              - playbooks: /usr/src/app/ansible/vm/
+              - playbook_mapping: /usr/src/app/ansible/vm/vm.properties
+  - controls:
+      - control:
+          - type: VM, Container, Baremetal
+          - module: fabric_cf.actor.core.policy.network_node_control
+          - class: NetworkNodeControl
 peers:
   - peer:
     - name: orchestrator

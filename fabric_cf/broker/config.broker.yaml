@@ -118,11 +118,11 @@ actor:
   - guid: broker-guid
   - description: Broker
   - kafka-topic: broker-topic
-  - policy:
-      - module: fabric_cf.actor.core.policy.broker_simpler_units_policy
-      - class: BrokerSimplerUnitsPolicy
-      - properties:
-        - queue.type: fifo
+  - controls:
+      - control:
+          - type: VM, Container, Baremetal
+          - class: NetworkNodeInventory
+          - module: fabric_cf.actor.core.policy.network_node_inventory
 
 peers:
   - peer:

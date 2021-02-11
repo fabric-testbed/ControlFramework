@@ -571,7 +571,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         return result
 
     def get_delegations(self, *, caller: AuthToken, id_token: str = None, slice_id: ID = None,
-                        did: ID = None) -> ResultDelegationAvro:
+                        did: str = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 

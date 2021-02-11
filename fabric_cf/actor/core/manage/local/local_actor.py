@@ -198,7 +198,7 @@ class LocalActor(LocalProxy, IMgmtActor):
         return None
 
     def get_delegations(self, *, slice_id: ID = None, state: int = None,
-                        delegation_id: ID = None, id_token: str = None) -> List[DelegationAvro]:
+                        delegation_id: str = None, id_token: str = None) -> List[DelegationAvro]:
         self.clear_last()
         try:
             result = self.manager.get_delegations(caller=self.auth, slice_id=slice_id, did=delegation_id,
