@@ -132,11 +132,12 @@ class ContainerDatabase(IContainerDatabase):
                     act_dict_list = self.db.get_actors_by_name_and_type(actor_name=name, act_type=actor_type)
                 else:
                     act_dict_list = self.db.get_actors_by_name(act_name=name)
-                result = []
-                for a in act_dict_list:
-                    pickled_actor = a.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    act_obj = pickle.loads(result)
-                    result.append(act_obj)
+                if act_dict_list is not None:
+                    result = []
+                    for a in act_dict_list:
+                        pickled_actor = a.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+                        act_obj = pickle.loads(pickled_actor)
+                        result.append(act_obj)
                 return result
         except Exception as e:
             self.logger(e)
@@ -151,8 +152,9 @@ class ContainerDatabase(IContainerDatabase):
         result = None
         try:
             act_dict = self.db.get_actor(name=actor_name)
-            pickled_actor = act_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-            return pickle.loads(pickled_actor)
+            if act_dict is not None:
+                pickled_actor = act_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+                return pickle.loads(pickled_actor)
         except Exception as e:
             self.logger(e)
         return result

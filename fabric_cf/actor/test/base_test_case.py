@@ -43,6 +43,7 @@ from fabric_cf.actor.core.delegation.simple_resource_delegation_factory import S
 from fabric_cf.actor.core.plugins.base_plugin import BasePlugin
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.policy.controller_calendar_policy import ControllerCalendarPolicy
+from fabric_cf.actor.core.policy.controller_ticket_review_policy import ControllerTicketReviewPolicy
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
@@ -160,7 +161,7 @@ class BaseTestCase:
         return BrokerPolicy(actor=None)
 
     def get_controller_policy(self) -> IControllerPolicy:
-        return ControllerCalendarPolicy()
+        return ControllerTicketReviewPolicy()
 
     def get_actor_instance(self) -> IActor:
         from fabric_cf.actor.test.test_actor import TestActor

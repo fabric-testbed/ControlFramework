@@ -178,6 +178,7 @@ class Slice(IKernelSlice):
     def prepare(self):
         self.reservations.clear()
         self.delegations.clear()
+        self.state_machine.clear()
         self.transition_slice(operation=SliceStateMachine.CREATE)
 
     def register(self, *, reservation: IKernelReservation):
@@ -270,8 +271,7 @@ class Slice(IKernelSlice):
         return self.dirty
 
     def transition_slice(self, *, operation: SliceOperation) -> Tuple[bool, SliceState]:
-        a, b = self.state_machine.transition_slice(operation=operation, reservations=self.reservations)
-        return a, b
+        return self.state_machine.transition_slice(operation=operation, reservations=self.reservations)
 
     def is_stable_ok(self) -> bool:
         state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)

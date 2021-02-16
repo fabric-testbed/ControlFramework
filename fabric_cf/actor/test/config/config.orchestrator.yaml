@@ -29,8 +29,8 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: localhost:19092
-  - kafka-schema-registry-url: http://localhost:8081
+  - kafka-server: 152.54.14.213:29092
+  - kafka-schema-registry-url: http://152.54.14.213:8081
   - kafka-key-schema: ../../schema/key.avsc
   - kafka-value-schema: ../../schema/message.avsc
   - kafka-ssl-ca-location:  ../../../../../secrets/snakeoil-ca-1.crt
@@ -106,7 +106,7 @@ neo4j:
   url: bolt://localhost:7687
   user: neo4j
   pass: password
-  import_host_dir: ../../../../../neo4j/imports
+  import_host_dir: ../../../neo4j1/imports/
   import_dir: /imports
 
 actor:
@@ -115,9 +115,6 @@ actor:
   - guid: orchestrator-guid
   - description: orchestrator
   - kafka-topic: orchestrator-topic
-  - policy:
-      - module: fabric_cf.actor.core.policy.controller_ticket_review_policy
-      - class: ControllerTicketReviewPolicy
 
 peers:
   - peer:
