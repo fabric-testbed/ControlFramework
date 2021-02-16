@@ -29,8 +29,8 @@
 
 runtime:
   - plugin-dir: ./plugins
-  - kafka-server: localhost:19092
-  - kafka-schema-registry-url: http://localhost:8081
+  - kafka-server: 152.54.14.213:29092
+  - kafka-schema-registry-url: http://152.54.14.213:8081
   - kafka-key-schema: ../../schema/key.avsc
   - kafka-value-schema: ../../schema/message.avsc
   - kafka-ssl-ca-location:  ../../../../../secrets/snakeoil-ca-1.crt
@@ -106,7 +106,7 @@ neo4j:
   url: bolt://localhost:7687
   user: neo4j
   pass: password
-  import_host_dir: ../../../../../neo4j/imports
+  import_host_dir: ../../../neo4j1/imports/
   import_dir: /imports
 
 actor:
@@ -115,11 +115,11 @@ actor:
   - guid: broker-guid
   - description: Broker
   - kafka-topic: broker-topic
-  - policy:
-      - module: fabric_cf.actor.core.policy.broker_simpler_units_policy
-      - class: BrokerSimplerUnitsPolicy
-      - properties:
-        - queue.type: fifo
+  - controls:
+      - control:
+          - type: VM, Container, Baremetal
+          - class: NetworkNodeInventory
+          - module: fabric_cf.actor.core.policy.network_node_inventory
 
 peers:
   - peer:

@@ -686,5 +686,6 @@ class Reservation(IKernelReservation):
     def get_graph_node_id(self) -> str:
         if self.requested_resources is not None:
             request = self.requested_resources.get_request_properties()
-            return request.get(Constants.SLIVER_PROPERTY_GRAPH_NODE_ID, None)
+            if request is not None:
+                return request.get(Constants.SLIVER_PROPERTY_GRAPH_NODE_ID, None)
         return None

@@ -78,10 +78,11 @@ class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
             self.lock.acquire()
             result = []
             unit_dict_list = self.db.get_units(act_id=self.actor_id, rsv_resid=str(rid))
-            for u in unit_dict_list:
-                pickled_unit = u.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                unit_obj = pickle.loads(pickled_unit)
-                result.append(unit_obj)
+            if unit_dict_list is not None:
+                for u in unit_dict_list:
+                    pickled_unit = u.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+                    unit_obj = pickle.loads(pickled_unit)
+                    result.append(unit_obj)
             return result
         except Exception as e:
             self.logger.error(e)

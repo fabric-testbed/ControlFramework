@@ -191,3 +191,6 @@ class SliceStateMachine:
 
     def get_state(self) -> SliceState:
         return self.state
+
+    def clear(self):
+        self.state = SliceState.Nascent
