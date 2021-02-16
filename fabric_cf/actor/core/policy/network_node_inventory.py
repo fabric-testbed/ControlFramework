@@ -37,7 +37,7 @@ class NetworkNodeInventory(InventoryForType):
                  labels: dict = None, reservation_info: List[IReservation] = None,
                  resource: dict = None) -> Tuple[str, dict]:
 
-        if capacities is None or capacities is None or len(capacities) < 1:
+        if capacities is None or len(capacities) < 1:
             raise BrokerException(Constants.INVALID_ARGUMENT)
 
         properties = None
@@ -49,25 +49,21 @@ class NetworkNodeInventory(InventoryForType):
 
         # For each delegation; check if it satisfies the incoming request
         for capacity_delegation_id, capacity_delegation_value_list in capacities.items():
-            available_unit = 0
             available_core = 0
             available_ram = 0
             available_disk = 0
 
             # Accumulate all the Available Capacities
             for capacity_delegation in capacity_delegation_value_list:
-                available_unit += capacity_delegation.get(Constants.SLIVER_PROPERTY_UNIT, 0)
                 available_core += capacity_delegation.get(Constants.SLIVER_PROPERTY_CORE, 0)
                 available_ram += capacity_delegation.get(Constants.SLIVER_PROPERTY_RAM, 0)
                 available_disk += capacity_delegation.get(Constants.SLIVER_PROPERTY_DISK, 0)
 
             # Remove allocated capacities to the reservations
             if reservation_info is not None:
-                db = actor.get_plugin().get_database()
                 for reservation in reservation_info:
                     # For Active or Ticketed reservations; reduce the counts from available
                     if reservation.is_active() or reservation.is_ticketed():
-                        available_unit -= reservation.get_resources().get_units()
                         resource_properties = reservation.get_resources().get_resource_properties()
                         available_core -= int(resource_properties.get(Constants.SLIVER_PROPERTY_CORE))
                         available_ram -= int(resource_properties.get(Constants.SLIVER_PROPERTY_RAM))
@@ -86,6 +82,7 @@ class NetworkNodeInventory(InventoryForType):
                           Constants.SLIVER_PROPERTY_GRAPH_NODE_ID:
                               request.get(Constants.SLIVER_PROPERTY_GRAPH_NODE_ID)}
             return capacity_delegation_id, properties
+        return delegation_id, properties
 
     def allocate_revisit(self, *, count: int, resource: dict):
         return

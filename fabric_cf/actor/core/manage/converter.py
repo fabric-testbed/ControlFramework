@@ -284,7 +284,7 @@ class Converter:
             return Container.get_proxy(protocol=mng.get_protocol(), identity=identity, location=location,
                                        proxy_type=mng.get_type())
         except Exception:
-            self.logger.error(traceback.format_exc())
+            traceback.format_exc()
             return None
 
     @staticmethod

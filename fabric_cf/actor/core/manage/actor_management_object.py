@@ -540,7 +540,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             if len(res_list) == len(rids):
                 result.reservation_states = []
                 for r in res_list:
-                    result.reservation_states.append(Converter.fill_reservation_state(res=res_list))
+                    result.reservation_states.append(Converter.fill_reservation_state(res=r))
             elif len(res_list) > len(rids):
                 raise ManageException("The database provided too many records")
             else:

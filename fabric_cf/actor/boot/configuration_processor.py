@@ -498,13 +498,11 @@ class ConfigurationProcessor:
         container = ManagementUtils.connect(caller=self.actor.get_identity())
         to_mgmt_actor = container.get_actor(guid=to_guid)
         self.logger.debug(f"to_mgmt_actor={to_mgmt_actor} to_guid={to_guid}")
-        if to_mgmt_actor is None:
-            if container.get_last_error() is not None:
-                self.logger.error(container.get_last_error())
+        if to_mgmt_actor is None and container.get_last_error() is not None:
+            self.logger.error(container.get_last_error())
         from_mgmt_actor = container.get_actor(guid=from_guid)
         self.logger.debug(f"from_mgmt_actor={from_mgmt_actor} from_guid={from_guid}")
-        if from_mgmt_actor is None:
-            if container.get_last_error() is not None:
+        if from_mgmt_actor is None and container.get_last_error() is not None:
                 self.logger.error(container.get_last_error())
 
         self.vertex_to_registry_cache(peer=peer)

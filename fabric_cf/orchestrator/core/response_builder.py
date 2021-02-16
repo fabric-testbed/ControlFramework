@@ -42,9 +42,10 @@ class ResponseBuilder:
     RESPONSE_SLICES = "slices"
     RESPONSE_MESSAGE = "message"
     RESPONSE_BQM = "bqm"
+    RESPONSE_SLICE_MODEL = "slice_model"
 
     @staticmethod
-    def get_reservation_summary(*, res_list: List[ReservationMng]) -> dict:
+    def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = False) -> dict:
         reservations = []
         status = ResponseBuilder.SUCCESS_STATUS
         message = ""
@@ -60,6 +61,10 @@ class ResponseBuilder:
 
                 if isinstance(reservation, LeaseReservationAvro) and reservation.get_join_state() is not None:
                     res_dict['join_state'] = JoinState(reservation.get_join_state()).name
+
+                if include_notices:
+                    res_dict['notices'] = reservation.get_notices()
+
                 reservations.append(res_dict)
         else:
             status = ResponseBuilder.FAILURE_STATUS
@@ -105,5 +110,19 @@ class ResponseBuilder:
 
         response = {ResponseBuilder.RESPONSE_STATUS: status, ResponseBuilder.RESPONSE_MESSAGE: message,
                     ResponseBuilder.RESPONSE_BQM: bqm}
+
+        return response
+
+    @staticmethod
+    def get_slice_model_summary(*, slice_model: str):
+        status = ResponseBuilder.SUCCESS_STATUS
+        message = ""
+
+        if slice_model is None:
+            message = "No slice model found"
+            status = ResponseBuilder.FAILURE_STATUS
+
+        response = {ResponseBuilder.RESPONSE_STATUS: status, ResponseBuilder.RESPONSE_MESSAGE: message,
+                    ResponseBuilder.RESPONSE_SLICE_MODEL: slice_model}
 
         return response

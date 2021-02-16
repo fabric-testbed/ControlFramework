@@ -69,7 +69,6 @@ class PoolCreator:
         """
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.container = GlobalsSingleton.get().get_container()
-        factory = self.get_factory()
 
         rd = ResourceData()
         create_pool_result = self.substrate.get_pool_manager().create_pool(
