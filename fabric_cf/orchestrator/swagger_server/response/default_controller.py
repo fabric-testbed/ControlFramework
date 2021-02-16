@@ -29,6 +29,7 @@ import six
 
 from fabric_cf.orchestrator.swagger_server.models.version import Version  # noqa: E501
 from fabric_cf.orchestrator.swagger_server import util, received_counter, success_counter, failure_counter
+from fabric_cf.orchestrator.swagger_server.response.constants import VERSIONS_PATH, GET_METHOD
 
 
 def version_get():  # noqa: E501
@@ -39,7 +40,7 @@ def version_get():  # noqa: E501
 
     :rtype: Version
     """
-    received_counter.labels('get', '/version').inc()
+    received_counter.labels(GET_METHOD, VERSIONS_PATH).inc()
     from fabric_cf.actor.core.container.globals import GlobalsSingleton
     logger = GlobalsSingleton.get().get_logger()
     try:
@@ -52,16 +53,15 @@ def version_get():  # noqa: E501
         response.gitsha1 = 'Not Available'
 
         result = requests.get(url)
-        if result.status_code == 200:
-            if result.json() is not None:
-                object_json = result.json().get("object", None)
-                if object_json is not None:
-                    sha = object_json.get("sha", None)
-                    if sha is not None:
-                        response.gitsha1 = sha
-        success_counter.labels('get', '/version').inc()
+        if result.status_code == 200 and result.json() is not None:
+            object_json = result.json().get("object", None)
+            if object_json is not None:
+                sha = object_json.get("sha", None)
+                if sha is not None:
+                    response.gitsha1 = sha
+        success_counter.labels(GET_METHOD, VERSIONS_PATH).inc()
     except Exception as e:
         logger.exception(e)
-        failure_counter.labels('get', '/version').inc()
+        failure_counter.labels(GET_METHOD, VERSIONS_PATH).inc()
         return str(e), 500
     return response

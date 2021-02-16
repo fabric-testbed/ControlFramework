@@ -180,10 +180,10 @@ class SliceStateMachine:
                                                  ReservationPendingStates.Closing, ReservationStates.Failed):
                     self.state = SliceState.Closing
 
-            elif self.state == SliceState.Closing:
-                if not bins.has_state_other_than(ReservationStates.CloseWait, ReservationStates.Closed,
-                                                 ReservationStates.Failed):
-                    self.state = SliceState.Dead
+            elif self.state == SliceState.Closing and not bins.has_state_other_than(ReservationStates.CloseWait,
+                                                                                    ReservationStates.Closed,
+                                                                                    ReservationStates.Failed):
+                self.state = SliceState.Dead
         if prev_state != self.state:
             state_changed = True
 

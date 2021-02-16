@@ -183,7 +183,7 @@ class Constants:
     BROKER_QUERY_MODEL = "bqm"
     POOL_TYPE = "neo4j"
 
-    QueueThreshold = "queueThreshold"
+    QUEUE_THRESHOLD = "queue.threshold"
 
     RESOURCE_MEMORY = "resource.memory"
     RESOURCE_CLASS_INVENTORY_FOR_TYPE = "resource.class.invfortype"

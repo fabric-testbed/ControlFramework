@@ -63,12 +63,10 @@ class NetworkNodeControl(ResourceControl):
         if delegated_capacity is None:
             raise AuthorityException(f"No delegated resources available {delegation_name}")
 
-        available_unit = capacities.get(Constants.SLIVER_PROPERTY_UNIT, 0)
         available_core = capacities.get(Constants.SLIVER_PROPERTY_CORE, 0)
         available_ram = capacities.get(Constants.SLIVER_PROPERTY_RAM, 0)
         available_disk = capacities.get(Constants.SLIVER_PROPERTY_DISK, 0)
 
-        available_unit_del = delegated_capacity.get(Constants.SLIVER_PROPERTY_UNIT, 0)
         available_core_del = delegated_capacity.get(Constants.SLIVER_PROPERTY_CORE, 0)
         available_ram_del = delegated_capacity.get(Constants.SLIVER_PROPERTY_RAM, 0)
         available_disk_del = delegated_capacity.get(Constants.SLIVER_PROPERTY_DISK, 0)
@@ -76,7 +74,6 @@ class NetworkNodeControl(ResourceControl):
         gained = None
         lost = None
         if current is None:
-            needed = ticket.get_units()
             config_properties = requested.get_config_properties()
 
             requested_core = int(config_properties.get(Constants.SLIVER_PROPERTY_CORE))
@@ -132,4 +129,4 @@ class NetworkNodeControl(ResourceControl):
     def free(self, *, uset: dict):
         if uset is not None:
             for u in uset.values():
-                self.logger.debug("Freeing 1 unit")
+                self.logger.debug(f"Freeing 1 unit {u}")

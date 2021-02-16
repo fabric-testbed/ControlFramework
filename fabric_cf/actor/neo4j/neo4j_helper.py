@@ -80,6 +80,18 @@ class Neo4jHelper:
         return arm_graph
 
     @staticmethod
+    def get_graph(*, graph_id: str) -> Neo4jPropertyGraph:
+        """
+        Load arm graph from neo4j
+        :param graph_id: graph_id
+        :return: Neo4jARMGraph
+        """
+        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
+        arm_graph = Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer)
+
+        return arm_graph
+
+    @staticmethod
     def get_neo4j_cbm_empty_graph() -> Neo4jCBMGraph:
         """
         Load cmb empty graph

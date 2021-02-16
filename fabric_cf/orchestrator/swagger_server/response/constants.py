@@ -39,3 +39,5 @@ SLICES_GET_SLICE_ID_PATH = '/slices/{sliceID}'
 
 SLIVERS_GET_PATH = '/slivers'
 SLIVERS_GET_SLIVER_ID_PATH = '/slivers/{sliverID}'
+
+VERSIONS_PATH = '/version'

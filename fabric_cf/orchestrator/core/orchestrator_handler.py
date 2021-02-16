@@ -166,7 +166,6 @@ class OrchestratorHandler:
                     if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
-            bqm_string = None
             bqm_graph = None
             try:
                 bqm_string, bqm_graph = self.discover_types(controller=controller, token=token, delete_graph=False)
@@ -216,7 +215,7 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
 
-    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None) -> dict:
+    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None, include_notices: bool = False) -> dict:
         """
         Get Slivers for a Slice
         @param token Fabric Identity Token
@@ -242,7 +241,7 @@ class OrchestratorHandler:
                     self.logger.error(controller.get_last_error())
                 raise OrchestratorException(f"Slice# {slice_id} has no reservations")
 
-            return ResponseBuilder.get_reservation_summary(res_list=reservations)
+            return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")
@@ -265,7 +264,7 @@ class OrchestratorHandler:
                 slice_guid = ID(uid=slice_id)
 
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
-            if slice_list is None:
+            if slice_list is None or len(slice_list) == 0:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
                 raise OrchestratorException(f"User# has no Slices")
@@ -312,4 +311,42 @@ class OrchestratorHandler:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing delete_slice e: {e}")
+            raise e
+
+    def get_slice_graph(self, *, token: str, slice_id: str) -> dict:
+        """
+        Get User Slice
+        @param token Fabric Identity Token
+        @param slice_id Slice Id
+=       @throws Raises an exception in case of failure
+        @returns Slice Graph on success
+        """
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"get_slice_graph invoked for Controller: {controller}")
+
+            slice_guid = None
+            if slice_id is not None:
+                slice_guid = ID(uid=slice_id)
+
+            slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
+            if slice_list is None or len(slice_list) == 0:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                raise OrchestratorException(f"User# has no Slices")
+
+            slice_obj = next(iter(slice_list))
+
+            if slice_obj.get_graph_id() is None:
+                raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
+
+            slice_model = Neo4jHelper.get_graph(graph_id=slice_obj.get_graph_id())
+
+            if slice_model is None:
+                raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
+
+            return ResponseBuilder.get_slice_model_summary(slice_model=slice_model.serialize_graph())
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
             raise e

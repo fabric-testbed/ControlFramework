@@ -360,7 +360,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         for reservation in self.queue.values():
             if not self.ticket(reservation=reservation, start_cycle=start_cycle):
                 request_properties = reservation.get_requested_resources().get_request_properties()
-                threshold = request_properties[Constants.QueueThreshold]
+                threshold = request_properties[Constants.QUEUE_THRESHOLD]
                 start = self.clock.cycle(when=reservation.get_requested_term().get_new_start_time())
 
                 if threshold != 0 and ((start_cycle - start) > threshold):
