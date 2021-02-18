@@ -261,3 +261,8 @@ class Constants:
 
     RSV_SLC_ID = 'rsv_slc_id'
     DLG_SLC_ID = 'dlg_slc_id'
+
+    VM_NAME = "vmname"
+    WORKER_NODE = "workernode"
+    HEAD_NODE = "headnode"
+    FLAVOR = "flavor"
