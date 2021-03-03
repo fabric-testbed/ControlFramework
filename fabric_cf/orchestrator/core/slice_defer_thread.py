@@ -42,7 +42,6 @@ class SliceDeferThread:
     """
     THREAD_SLEEP_TIME = 10000
     DEFAULT_MAX_CREATE_TIME = 600000
-    DEFAULT_DELAY_RESOURCE_TYPES = "nlr.vlan ion.vlan ben.vlan"
 
     def __init__(self):
         self.deferred_slices = queue.Queue()
@@ -55,7 +54,6 @@ class SliceDeferThread:
         self.last_slice = None
         self.last_slice_time = None
         self.max_create_wait_time = 0
-        self.delay_resource_types = None
         self.stopped = False
 
         wait_time = GlobalsSingleton.get().get_config().get_runtime_config().get(
@@ -65,14 +63,6 @@ class SliceDeferThread:
             self.max_create_wait_time = self.DEFAULT_MAX_CREATE_TIME
         else:
             self.max_create_wait_time = wait_time
-
-        delay_rtype = GlobalsSingleton.get().get_config().get_runtime_config().get(
-            Constants.PROPERTY_CONF_CONTROLLER_DELAY_RESOURCE_TYPES, None)
-
-        if delay_rtype is None:
-            self.delay_resource_types = self.DEFAULT_DELAY_RESOURCE_TYPES.split(" ")
-        else:
-            self.delay_resource_types = delay_rtype.split(" ")
 
     def queue_slice(self, *, controller_slice: OrchestratorSliceWrapper):
         with self.defer_slice_avail_condition:
@@ -235,17 +225,7 @@ class SliceDeferThread:
             self.logger.info("Empty slice or no computed reservations")
             return False
 
-        for reservation in controller_slice.get_computed_reservations():
-            for drt in self.delay_resource_types:
-                if drt == reservation.get_resource_type():
-                    self.logger.info(f"{controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} "
-                                     f"has delayed domain")
-                    return True
-
-        self.logger.info(f"{controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} has no "
-                         f"delayed domains")
-
-        return False
+        return True
 
     def delay_not_done(self, *, controller_slice: OrchestratorSliceWrapper) -> bool:
         if controller_slice is None:
@@ -274,17 +254,16 @@ class SliceDeferThread:
                 return self.check_computed_reservations(controller_slice=controller_slice)
 
             for reservation in all_reservations:
-                rtype = reservation.get_resource_type()
-                for drt in self.delay_resource_types:
-                    if drt == rtype and reservation.get_state() != ReservationStates.Active and \
+
+                if reservation.get_state() != ReservationStates.Active and \
                         reservation.get_state() != ReservationStates.Closed and \
                         reservation.get_state() != ReservationStates.CloseWait and \
-                            reservation.get_state() != ReservationStates.Failed:
-                        self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()}"
-                                         f" has domain {drt} with reservation: {reservation.get_reservation_id()} "
-                                         f"that is not yet done")
-
-                        return True
+                        reservation.get_state() != ReservationStates.Failed:
+                    self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()}"
+                                     f" has resource type: {reservation.get_resource_type()}"
+                                     f" with reservation: {reservation.get_reservation_id()} "
+                                     f"that is not yet done")
+                    return True
             self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} "
                              f"has no non-final reservations ({len(all_reservations)})")
 

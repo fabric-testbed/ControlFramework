@@ -23,13 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import json
 import threading
 import traceback
 from datetime import datetime
-from typing import Any
-
-from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 
 from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
@@ -45,6 +41,7 @@ from fabric_cf.actor.core.time.calendar.authority_calendar import AuthorityCalen
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.neo4j.neo4j_graph_node import Neo4jGraphNode
 from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 
 
@@ -144,17 +141,13 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             control.initialize()
 
     def eject(self, *, resources: ResourceSet):
-        code = super().unavailable(resources=resources)
-        if code == 0:
-            rc = self.get_control_by_type(rtype=resources.get_type())
-            if rc is not None:
-                code = rc.unavailable(resource_set=resources)
-            else:
-                raise AuthorityException(Constants.UNSUPPORTED_RESOURCE_TYPE.format(resources.get_type()))
-        return code
+        rc = self.get_control_by_type(rtype=resources.get_type())
+        if rc is not None:
+            return rc.unavailable(resource_set=resources)
+        else:
+            raise AuthorityException(Constants.UNSUPPORTED_RESOURCE_TYPE.format(resources.get_type()))
 
     def available(self, *, resources: ResourceSet):
-        super().available(resources=resources)
         rc = self.get_control_by_type(rtype=resources.get_type())
         if rc is not None:
             rc.available(resource_set=resources)
@@ -310,6 +303,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         """
         # self.logger.debug("Processing shrinking requests")
         rids_to_remove = []
+        node_id_to_reservations = {}
         for reservation in bids.values():
             adjust = reservation.get_deficit()
             if adjust > 0:
@@ -319,7 +313,8 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                     self.logger.debug(f"**Shrinking reservation by {adjust}:{reservation}")
                 else:
                     self.logger.debug(f"**Extending reservation (no flex): {reservation}")
-                self.map(reservation=reservation)
+                node_id_to_reservations = self.map(reservation=reservation,
+                                                   node_id_to_reservations=node_id_to_reservations)
                 rids_to_remove.append(reservation.get_reservation_id())
 
         for rid in rids_to_remove:
@@ -334,6 +329,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         """
         # self.logger.debug("Processing growing requests")
         rids_to_remove = []
+        node_id_to_reservations = {}
         for reservation in bids.values():
             if reservation.is_terminal():
                 continue
@@ -344,13 +340,13 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                     self.logger.debug(f"**Growing reservation by {adjust}:{reservation}")
                 else:
                     self.logger.debug(f"**Redeeming reservation by {adjust}:{reservation}")
-            self.map(reservation=reservation)
+            node_id_to_reservations = self.map(reservation=reservation, node_id_to_reservations=node_id_to_reservations)
             rids_to_remove.append(reservation.get_reservation_id())
 
         for rid in rids_to_remove:
             bids.remove_by_rid(rid=rid)
 
-    def map(self, *, reservation: IAuthorityReservation):
+    def map(self, *, reservation: IAuthorityReservation, node_id_to_reservations: dict) -> dict:
         """
         Maps a reservation. Indicates we will approve the request: update its
         expire time in the calendar, and issue a map probe. The map probe will
@@ -358,24 +354,33 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         above, which will release the request to the associated mapper.
 
         @param reservation: the reservation
+        @param node_id_to_reservations: node_id_to_reservations
         @throws Exception in case of error
         """
-        assigned = self.assign_reservation(reservation=reservation)
+        assigned = self.assign_reservation(reservation=reservation, node_id_to_reservations=node_id_to_reservations)
         if assigned is not None:
             approved = reservation.get_requested_term()
             reservation.set_approved(term=approved, approved_resources=assigned)
             reservation.set_bid_pending(value=False)
+            node_id = assigned.get_sliver().cbm_node_id
+
+            if node_id_to_reservations.get(node_id, None) is None:
+                node_id_to_reservations[node_id] = ReservationSet()
+            node_id_to_reservations[node_id].add(reservation=reservation)
         else:
             if not reservation.is_terminal():
                 self.logger.debug(f"Deferring reservation {reservation} for the next cycle: "
                                   f"{self.actor.get_current_cycle() + 1}")
                 self.reschedule(reservation=reservation)
 
-    def assign_reservation(self, *, reservation: IAuthorityReservation):
+        return node_id_to_reservations
+
+    def assign_reservation(self, *, reservation: IAuthorityReservation, node_id_to_reservations: dict):
         """
         Assign resources for the given reservation
 
         @params reservation the request
+        @params node_id_to_reservations node_id_to_reservations
         @returns a set of resources for the request
         @raises Exception in case of error
         """
@@ -384,30 +389,22 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         rc = self.get_control_by_type(rtype=rtype)
         if rc is not None:
             try:
-                config_properties = requested.get_config_properties()
-                node_id = config_properties.get(Constants.SLIVER_PROPERTY_GRAPH_NODE_ID, None)
+                ticketed_sliver = requested.get_sliver()
+                node_id = ticketed_sliver.cbm_node_id
                 if node_id is None:
                     raise AuthorityException(f"Unable to find node_id {node_id} for reservation# {reservation}")
 
-                capacities = self.get_node_json_property_as_object(node_id=node_id,
-                                                                   prop_name=ABCPropertyGraph.PROP_CAPACITIES)
-                capacity_del = self.get_node_json_property_as_object(node_id=node_id,
-                                                                   prop_name=ABCPropertyGraph.PROP_CAPACITY_DELEGATIONS)
-                labels = self.get_node_json_property_as_object(node_id=node_id,
-                                                               prop_name=ABCPropertyGraph.PROP_LABELS)
-                label_del = self.get_node_json_property_as_object(node_id=node_id,
-                                                               prop_name=ABCPropertyGraph.PROP_LABEL_DELEGATIONS)
+                graph_node = self.get_node_from_graph(node_id=node_id)
 
-                existing_reservations = self.actor.get_plugin().get_database().get_reservations_by_graph_node_id(
-                    graph_node_id=node_id)
+                existing_reservations = self.get_existing_reservations(node_id=node_id,
+                                                                       node_id_to_reservations=node_id_to_reservations)
 
                 delegation_name = self.get_delegation_name(delegation_id=requested.get_resources().get_delegation_id())
 
                 rset = rc.assign(reservation=reservation, delegation_name=delegation_name,
-                                 capacities=capacities, capacity_del=capacity_del,
-                                 labels=labels, label_del=label_del, reservation_info=existing_reservations)
+                                 graph_node=graph_node, reservation_info=existing_reservations)
 
-                if rset is None:
+                if rset is None or rset.get_sliver() is None or rset.get_sliver().cbm_node_id is None:
                     raise AuthorityException(f"Could not assign resources to reservation# {reservation}")
 
                 return rset
@@ -524,15 +521,35 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                     break
             raise e
 
-    def get_node_json_property_as_object(self, node_id: str, prop_name: str) -> dict:
+    def get_node_from_graph(self, *, node_id: str) -> Neo4jGraphNode:
         try:
             self.lock.acquire()
             if self.aggregate_resource_model is None:
                 return None
-            return self.aggregate_resource_model.get_node_json_property_as_object(node_id=node_id,
-                                                                                  prop_name=prop_name)
+            return Neo4jHelper.get_node_from_graph(graph=self.aggregate_resource_model, node_id=node_id)
         finally:
             self.lock.release()
+
+    def get_existing_reservations(self, node_id: str, node_id_to_reservations: dict):
+        existing_reservations = self.actor.get_plugin().get_database().get_reservations_by_graph_node_id(
+            graph_node_id=node_id)
+
+        reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
+
+        if reservations_allocated_in_cycle is None:
+            return existing_reservations
+
+        if existing_reservations is None:
+            return reservations_allocated_in_cycle.values()
+
+        for e in existing_reservations.copy():
+            if reservations_allocated_in_cycle.contains(rid=e.get_reservation_id()):
+                existing_reservations.remove(e)
+
+        for r in reservations_allocated_in_cycle.values():
+            existing_reservations.append(r)
+
+        return existing_reservations
 
     def get_delegation_name(self, *, delegation_id: str) -> str:
         try:

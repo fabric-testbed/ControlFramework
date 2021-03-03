@@ -52,7 +52,6 @@ from fabric_cf.actor.core.kernel.slice_table import SliceTable
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
 
@@ -223,7 +222,7 @@ class Kernel:
         @param err error message
         @param e exception
         """
-        self.logger.error("Error: {} Exception: {}".format(err, e))
+        self.logger.error(f"Error: {err} Exception: {e}")
         raise e
 
     def extend_lease(self, *, reservation: IKernelReservation):
@@ -241,8 +240,8 @@ class Kernel:
                 reservation.service_extend_lease()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during extend lease for reservation #{}".format(
-                reservation.get_reservation_id()), e=e)
+            self.error(err=f"An error occurred during extend lease for reservation #{reservation.get_reservation_id()}",
+                       e=e)
 
     def modify_lease(self, *, reservation: IKernelReservation):
         """
@@ -260,8 +259,8 @@ class Kernel:
                 reservation.service_modify_lease()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during modify lease for reservation #{}".format(
-                reservation.get_reservation_id()), e=e)
+            self.error(err=f"An error occurred during modify lease for reservation #{reservation.get_reservation_id()}",
+                       e=e)
 
     def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term) -> int:
         """
@@ -278,7 +277,7 @@ class Kernel:
         ticket = True
 
         if real is None:
-            raise KernelException("Unknown reservation rid: {}".format(rid))
+            raise KernelException(f"Unknown reservation rid: {rid}")
 
         # check for a pending operation: we cannot service the extend if there is another operation in progress.
         if real.get_pending_state() != ReservationPendingStates.None_:
@@ -316,7 +315,7 @@ class Kernel:
         @throws Exception
         """
         try:
-            self.logger.debug("Processing extend ticket for reservation={}".format(type(reservation)))
+            self.logger.debug(f"Processing extend ticket for reservation={type(reservation)}")
             if reservation.can_renew():
                 reservation.extend_ticket(actor=self.plugin.get_actor())
             else:
@@ -328,8 +327,8 @@ class Kernel:
                 reservation.service_extend_ticket()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during extend ticket for reservation #{}".format(
-                reservation.get_reservation_id()), e=e)
+            self.error(err=f"An error occurred during extend ticket for reservation #{reservation.get_reservation_id()}",
+                       e=e)
 
     def get_client_slices(self) -> List[IKernelSlice]:
         """
@@ -377,7 +376,7 @@ class Kernel:
         result = self.get_slice(slice_id=slice_id)
         if result is None:
             if create_new_slice:
-                result = self.plugin.create_slice(slice_id=slice_id, name=slice_name, properties=ResourceData())
+                result = self.plugin.create_slice(slice_id=slice_id, name=slice_name)
                 if reservation.get_slice().is_broker_client():
                     result.set_broker_client()
                 else:
@@ -485,8 +484,7 @@ class Kernel:
             self.plugin.get_database().update_slice(slice_object=slice_obj)
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during probe pending for slice_obj #{}".format(
-                slice_obj.get_slice_id()), e=e)
+            self.error(err=f"An error occurred during probe pending for slice_obj #{slice_obj.get_slice_id()}", e=e)
 
     def probe_pending(self, *, reservation: IKernelReservation):
         """
@@ -501,8 +499,8 @@ class Kernel:
             reservation.service_probe()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during probe pending for reservation #{}".format(
-                reservation.get_reservation_id()), e=e)
+            self.error(err=f"An error occurred during probe pending for reservation #{reservation.get_reservation_id()}",
+                       e=e)
 
     def probe_pending_delegation(self, *, delegation: IDelegation):
         """
@@ -517,8 +515,8 @@ class Kernel:
             delegation.service_probe()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during probe pending for delegation #{}".format(
-                delegation.get_delegation_id()), e=e)
+            self.error(err=f"An error occurred during probe pending for delegation #{delegation.get_delegation_id()}",
+                       e=e)
 
     def purge(self):
         """
@@ -530,8 +528,8 @@ class Kernel:
                 try:
                     reservation.get_kernel_slice().unregister(reservation=reservation)
                 except Exception as e:
-                    self.logger.error("An error occurred during purge for reservation #{}".format(
-                        reservation.get_reservation_id()), e)
+                    self.logger.error(f"An error occurred during purge for "
+                                      f"reservation #{reservation.get_reservation_id()} e: {e}")
                 finally:
                     GlobalsSingleton.get().event_manager.dispatch_event(event=ReservationPurgedEvent(
                         reservation=reservation))
@@ -545,8 +543,8 @@ class Kernel:
                     try:
                         delegation.get_slice_object().unregister_delegation(delegation=delegation)
                     except Exception as e:
-                        self.logger.error("An error occurred during purge for delegation #{}".format(
-                            delegation.get_delegation_id()), e)
+                        self.logger.error(f"An error occurred during purge for "
+                                          f"delegation #{delegation.get_delegation_id()} e:{e}")
                     finally:
                         delegations_to_be_removed.append(delegation.get_delegation_id())
 
@@ -579,8 +577,8 @@ class Kernel:
             if not reservation.is_failed():
                 reservation.service_reserve()
         except Exception as e:
-            self.logger.error(
-                "An error occurred during redeem for reservation #{}".format(reservation.get_reservation_id()), e)
+            self.logger.error(f"An error occurred during redeem for reservation #{reservation.get_reservation_id()} "
+                              f"e: {e}")
 
     def register(self, *, reservation: IKernelReservation, slice_object: IKernelSlice) -> bool:
         """
@@ -616,8 +614,7 @@ class Kernel:
             reservation.set_slice(slice_object=slice_object)
             add = True
         else:
-            self.logger.warning("Attempting to register a closed reservation #{}".format(
-                reservation.get_reservation_id()))
+            self.logger.warning(f"Attempting to register a closed reservation #{reservation.get_reservation_id()}")
 
         return add
 
@@ -636,17 +633,17 @@ class Kernel:
         if not delegation.is_closed():
             # Note: as of now slice.register must be the first operation in
             # this method. slice.register will throw an exception if the
-            # reservation is already present in the slice table.
+            # delegation is already present in the slice table.
 
             # register with the local slice
             slice_object.register_delegation(delegation=delegation)
 
             try:
                 self.lock.acquire()
-                # register with the reservations table
+                # register with the delegation table
                 if delegation.get_delegation_id() in self.delegations:
                     slice_object.unregister_delegation(delegation=delegation)
-                    raise KernelException("There is already a reservation with the given identifier")
+                    raise KernelException("There is already a delegation with the given identifier")
 
                 self.delegations[delegation.get_delegation_id()] = delegation
             finally:
@@ -658,8 +655,7 @@ class Kernel:
             delegation.set_slice_object(slice_object=slice_object)
             add = True
         else:
-            self.logger.warning("Attempting to register a closed reservation #{}".format(
-                delegation.get_delegation_id()))
+            self.logger.warning(f"Attempting to register a closed delegation #{delegation.get_delegation_id()}")
 
         return add
 
@@ -742,10 +738,10 @@ class Kernel:
             else:
                 raise KernelException("Only reservations in failed, closed, or closewait state can be removed.")
         else:
-            self.logger.debug("Reservation # {} not found".format(rid))
+            self.logger.debug(f"Reservation # {rid} not found")
 
         self.plugin.get_database().remove_reservation(rid=rid)
-        self.logger.debug("Reservation # {} removed from DB".format(rid))
+        self.logger.debug(f"Reservation # {rid} removed from DB")
 
     def remove_slice(self, *, slice_id: ID):
         """
@@ -791,12 +787,12 @@ class Kernel:
         if local_slice is None:
             raise KernelException("slice not registered with the kernel")
         else:
-            self.register_delegation(delegation=delegation)
+            self.register_delegation_with_slice(delegation=delegation, slice_object=local_slice)
 
         # Check if the delegation has a database record.
         temp = self.plugin.get_database().get_delegation(dlg_graph_id=delegation.get_delegation_id())
 
-        if temp is None or len(temp) == 0:
+        if temp is None:
             self.unregister_no_check_d(delegation=delegation, slice_object=local_slice)
             raise KernelException("The delegation has no database record")
 
@@ -861,8 +857,7 @@ class Kernel:
                 reservation.service_reserve()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during reserve for reservation #{}".format(
-                reservation.get_reservation_id()), e=e)
+            self.error(err=f"An error occurred during reserve for reservation #{reservation.get_reservation_id()}", e=e)
 
     def delegate(self, *, delegation: IDelegation, id_token: str = None):
         """
@@ -880,10 +875,9 @@ class Kernel:
                 delegation.service_delegate()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during delegate for delegation #{}".format(
-                delegation.get_delegation_id()), e=e)
+            self.error(err=f"An error occurred during delegate for delegation #{delegation.get_delegation_id()}", e=e)
 
-    def soft_validate_delegation(self, *, delegation: IDelegation = None, did: ID = None) -> IDelegation:
+    def soft_validate_delegation(self, *, delegation: IDelegation = None, did: str = None) -> IDelegation:
         """
         Retrieves the locally registered delegation that corresponds to the
         passed delegation. Obtains the reservation from the containing slice
@@ -1091,7 +1085,7 @@ class Kernel:
         @throws Exception
         """
         try:
-            self.logger.debug("updateLease: Incoming term {}".format(update.get_term()))
+            self.logger.debug(f"update_lease: Incoming term {update.get_term()}")
             reservation.update_lease(incoming=update, update_data=update_data)
 
             # NOTE: the database update has to happen BEFORE the service
@@ -1107,8 +1101,8 @@ class Kernel:
                 reservation.service_update_lease()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during update lease for reservation # {}".format(
-                reservation.get_reservation_id()), e=e)
+            self.error(err=f"An error occurred during update lease for reservation "
+                           f"# {reservation.get_reservation_id()}", e=e)
 
     def update_ticket(self, *, reservation: IKernelReservation, update: Reservation, update_data: UpdateData):
         """
@@ -1125,8 +1119,8 @@ class Kernel:
                 reservation.service_update_ticket()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during update ticket for reservation # {}".format(
-                reservation.get_reservation_id()), e=e)
+            self.error(err=f"An error occurred during update ticket for "
+                           f"reservation # {reservation.get_reservation_id()}", e=e)
 
     def update_delegation(self, *, delegation: IDelegation, update: IDelegation, update_data: UpdateData):
         """
@@ -1142,8 +1136,8 @@ class Kernel:
             delegation.service_update_delegation()
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.error(err="An error occurred during update delegation for delegation # {}".format(
-                delegation.get_delegation_id()), e=e)
+            self.error(err=f"An error occurred during update delegation for "
+                           f"delegation # {delegation.get_delegation_id()}", e=e)
 
     def validate(self, *, reservation: IKernelReservation = None, rid: ID = None):
         """

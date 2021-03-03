@@ -37,10 +37,10 @@ class NoOpHandler(HandlerBase):
         self.logger = logger
         self.properties = properties
 
-    def create(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+    def create(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None
         try:
-            self.logger.info(f"Create invoked for unit: {unit} properties: {properties}")
+            self.logger.info(f"Create invoked for unit: {unit}")
             time.sleep(5)
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
@@ -56,13 +56,13 @@ class NoOpHandler(HandlerBase):
             self.logger.info(f"Create completed")
         return result, unit
 
-    def delete(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+    def delete(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None
         try:
-            self.logger.info(f"Delete invoked for unit: {unit} properties: {properties}")
+            self.logger.info(f"Delete invoked for unit: {unit}")
             time.sleep(5)
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_DELETE,
-                      Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,
+                      Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
         except Exception as e:
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_DELETE,
@@ -75,10 +75,10 @@ class NoOpHandler(HandlerBase):
             self.logger.info(f"Delete completed")
         return result, unit
 
-    def modify(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+    def modify(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None
         try:
-            self.logger.info(f"Modify invoked for unit: {unit} properties: {properties}")
+            self.logger.info(f"Modify invoked for unit: {unit}")
             time.sleep(5)
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_MODIFY,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,

@@ -204,7 +204,6 @@ class Globals:
             return None
         bootstrap_server = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SERVER, None)
         security_protocol = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL, None)
-        group_id = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_GROUP_ID, None)
         ssl_ca_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_S_SL_CA_LOCATION, None)
         ssl_certificate_location = self.config.get_runtime_config().get(
             Constants.PROPERTY_CONF_KAFKA_SSL_CERTIFICATE_LOCATION, None)
@@ -216,7 +215,6 @@ class Globals:
 
         conf = {Constants.BOOTSTRAP_SERVERS: bootstrap_server,
                 Constants.SECURITY_PROTOCOL: security_protocol,
-                Constants.GROUP_ID: group_id,
                 Constants.SSL_CA_LOCATION: ssl_ca_location,
                 Constants.SSL_CERTIFICATE_LOCATION: ssl_certificate_location,
                 Constants.SSL_KEY_LOCATION: ssl_key_location,
@@ -239,7 +237,6 @@ class Globals:
         bootstrap_server = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SERVER, None)
         schema_registry = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SCHEMA_REGISTRY, None)
         security_protocol = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL, None)
-        group_id = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_GROUP_ID, None)
         ssl_ca_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_S_SL_CA_LOCATION, None)
         ssl_certificate_location = self.config.get_runtime_config().get(
             Constants.PROPERTY_CONF_KAFKA_SSL_CERTIFICATE_LOCATION, None)
@@ -252,7 +249,6 @@ class Globals:
 
         conf = {Constants.BOOTSTRAP_SERVERS: bootstrap_server,
                 Constants.SECURITY_PROTOCOL: security_protocol,
-                Constants.GROUP_ID: group_id,
                 Constants.SSL_CA_LOCATION: ssl_ca_location,
                 Constants.SSL_CERTIFICATE_LOCATION: ssl_certificate_location,
                 Constants.SSL_KEY_LOCATION: ssl_key_location,
@@ -275,6 +271,8 @@ class Globals:
             return None
         conf = self.get_kafka_config_producer()
 
+        group_id = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_GROUP_ID, None)
+
         conf['auto.offset.reset'] = 'earliest'
 
         sasl_username = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_USERNAME, None)
@@ -283,6 +281,7 @@ class Globals:
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf[Constants.SASL_USERNAME] = sasl_username
             conf[Constants.SASL_PASSWORD] = sasl_password
+        conf[Constants.GROUP_ID] = group_id
         return conf
 
     def get_kafka_schemas(self):

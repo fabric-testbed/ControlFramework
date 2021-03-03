@@ -188,8 +188,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                         result.status.set_message(ErrorCodes.ErrorInvalidToken.interpret())
                         return result
 
-                data = Converter.get_resource_data(slice_mng=slice_obj)
-                slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name(), data=data)
+                slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name())
 
                 slice_obj_new.set_description(description=slice_obj.get_description())
                 slice_obj_new.set_owner(owner=self.actor.get_identity())
@@ -349,7 +348,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                     slice_id = r.get_slice_id()
                     slice_obj = self.get_slice_by_guid(guid=slice_id)
                     r.restore(actor=self.actor, slice_obj=slice_obj)
-                    rr = Converter.fill_reservation(reservation=r, full=False)
+                    rr = Converter.fill_reservation(reservation=r, full=True)
                     result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("getReservations: {}".format(e))

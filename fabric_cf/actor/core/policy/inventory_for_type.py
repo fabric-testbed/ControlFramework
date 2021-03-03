@@ -26,7 +26,11 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List, Tuple, Dict
+
+from fim.slivers.base_sliver import BaseSliver
+
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jGraphNode
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
@@ -54,18 +58,13 @@ class InventoryForType:
         """
 
     @abstractmethod
-    def allocate(self, *, needed: int, request: dict, actor: IActor, capacities: dict = None,
-                 labels: dict = None, reservation_info: List[IReservation] = None,
-                 resource: dict = None) -> Tuple[str, dict]:
+    def allocate(self, *, reservation: IReservation, actor: IActor, graph_node: Neo4jGraphNode,
+                 reservation_info: List[IReservation]) -> Tuple[str, BaseSliver]:
         """
-        Allocates the specified number of units given the client request
-        properties. This method is called for new ticketing/extending reservations.
-        @param needed how many units to allocate
-        @param request request properties
-        @param resource what is currently allocated
+        Allocate the sliver. This method is called for new ticketing/extending reservations.
+        @param reservation reservation
         @param actor actor
-        @param capacities capacities
-        @param labels labels
+        @param graph_node graph_node
         @param reservation_info reservation_info
-        @return the resource properties to be passed back to the client
+        @return delegation id
         """

@@ -23,66 +23,169 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from typing import Tuple, List
+from typing import Tuple, List, Dict
+
+from fim.slivers.attached_components import AttachedComponentsInfo
+from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.capacities_labels import Capacities
+from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
+from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jGraphNode
 
 
 class NetworkNodeInventory(InventoryForType):
-    def allocate(self, *, needed: int, request: dict, actor: IActor, capacities: dict = None,
-                 labels: dict = None, reservation_info: List[IReservation] = None,
-                 resource: dict = None) -> Tuple[str, dict]:
+    def __init__(self):
+        self.logger = None
 
-        if capacities is None or len(capacities) < 1:
-            raise BrokerException(Constants.INVALID_ARGUMENT)
+    def set_logger(self, *, logger):
+        self.logger = logger
 
-        properties = None
-        delegation_id = None
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['logger']
+        return state
 
-        requested_core = int(request.get(Constants.SLIVER_PROPERTY_CORE))
-        requested_ram = int(request.get(Constants.SLIVER_PROPERTY_RAM))
-        requested_disk = int(request.get(Constants.SLIVER_PROPERTY_DISK))
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.logger = None
 
-        # For each delegation; check if it satisfies the incoming request
-        for capacity_delegation_id, capacity_delegation_value_list in capacities.items():
-            available_core = 0
-            available_ram = 0
-            available_disk = 0
-
-            # Accumulate all the Available Capacities
-            for capacity_delegation in capacity_delegation_value_list:
-                available_core += capacity_delegation.get(Constants.SLIVER_PROPERTY_CORE, 0)
-                available_ram += capacity_delegation.get(Constants.SLIVER_PROPERTY_RAM, 0)
-                available_disk += capacity_delegation.get(Constants.SLIVER_PROPERTY_DISK, 0)
+    def __check_capacities(self, *, rid: ID, requested_capacities: Capacities, capacity_dlg: Dict[str, Capacities],
+                           existing_reservations: List[IReservation]) -> str:
+        self.logger.debug(f"requested_capacities: {requested_capacities} for reservation# {rid}")
+        result = None
+        for dlg_id, capacities in capacity_dlg.items():
+            self.logger.debug(f"available_capacity_delegations: {capacities} for delegation# {dlg_id}")
+            available_core = capacities.core
+            available_ram = capacities.ram
+            available_disk = capacities.disk
 
             # Remove allocated capacities to the reservations
-            if reservation_info is not None:
-                for reservation in reservation_info:
-                    # For Active or Ticketed reservations; reduce the counts from available
-                    if reservation.is_active() or reservation.is_ticketed():
-                        resource_properties = reservation.get_resources().get_resource_properties()
-                        available_core -= int(resource_properties.get(Constants.SLIVER_PROPERTY_CORE))
-                        available_ram -= int(resource_properties.get(Constants.SLIVER_PROPERTY_RAM))
-                        available_disk -= int(resource_properties.get(Constants.SLIVER_PROPERTY_DISK))
+            if existing_reservations is not None:
+                for reservation in existing_reservations:
+                    if rid == reservation.get_reservation_id():
+                        continue
+                    # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+                    resource_sliver = None
+                    if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                        resource_sliver = reservation.get_approved_resources().get_sliver()
+
+                    if (reservation.is_active() or reservation.is_ticketed()) and \
+                            reservation.get_resources() is not None:
+                        resource_sliver = reservation.get_resources().get_sliver()
+
+                    if resource_sliver is not None:
+                        self.logger.debug(
+                            f"Excluding already assigned resources {resource_sliver.get_capacities()} to "
+                            f"reservation# {reservation.get_reservation_id()}")
+                        available_core -= resource_sliver.get_capacities().core
+                        available_ram -= resource_sliver.get_capacities().ram
+                        available_disk -= resource_sliver.get_capacities().disk
 
             # Compare the requested against available
-            if requested_core > available_core or requested_ram > available_ram or requested_disk > available_disk:
+            if requested_capacities.core > available_core or requested_capacities.ram > available_ram or \
+                    requested_capacities.disk > available_disk:
                 raise BrokerException(f"Insufficient resources "
-                                      f"Cores: [{requested_core}/{available_core}] "
-                                      f"RAM: [{requested_ram}/{available_ram}] "
-                                      f"Disk: [{requested_disk}/{available_disk}]")
+                                      f"Cores: [{requested_capacities.core}/{available_core}] "
+                                      f"RAM: [{requested_capacities.ram}/{available_ram}] "
+                                      f"Disk: [{requested_capacities.disk}/{available_disk}]")
 
-            properties = {Constants.SLIVER_PROPERTY_CORE: str(requested_core),
-                          Constants.SLIVER_PROPERTY_RAM: str(requested_ram),
-                          Constants.SLIVER_PROPERTY_DISK: str(requested_disk),
-                          Constants.SLIVER_PROPERTY_GRAPH_NODE_ID:
-                              request.get(Constants.SLIVER_PROPERTY_GRAPH_NODE_ID)}
-            return capacity_delegation_id, properties
-        return delegation_id, properties
+            result = dlg_id
+            break
+        return result
+
+    def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_node: Neo4jGraphNode,
+                           existing_reservations: List[IReservation]) -> AttachedComponentsInfo:
+
+        self.logger.debug(f"requested_components: {requested_components} for reservation# {rid}")
+        for name, c in requested_components.devices.items():
+            resource_type = str(c.get_resource_type())
+            available_components = graph_node.get_components_by_type(resource_type=resource_type)
+
+            self.logger.debug(f"Resource Type: {resource_type} available_components: {available_components}")
+
+            if available_components is None or len(available_components) == 0:
+                raise BrokerException(f"Insufficient resources Component of type: {resource_type} not available in "
+                                      f"graph node: {graph_node.get_node_id()}")
+
+            for reservation in existing_reservations:
+                if rid == reservation.get_reservation_id():
+                    continue
+                # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+                allocated_sliver = None
+                if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                    allocated_sliver = reservation.get_approved_resources().get_sliver()
+
+                if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
+                    allocated_sliver = reservation.get_resources().get_sliver()
+
+                if allocated_sliver is not None:
+                    allocated_components = allocated_sliver.attached_components_info.get_cbm_node_ids()
+                    self.logger.debug(f"Already allocated components {allocated_components} of resource_type "
+                                      f"{resource_type} to reservation# {reservation.get_reservation_id()}")
+                    for ac in allocated_components:
+                        if ac in available_components:
+                            self.logger.debug(f"Excluding component {ac} assigned to "
+                                              f"res# {reservation.get_reservation_id()}")
+                            available_components.remove(ac)
+
+            if available_components is None or len(available_components) == 0:
+                raise BrokerException(f"Insufficient resources Component of type: {resource_type} not available in "
+                                      f"graph node: {graph_node.get_node_id()}")
+
+            for ac in available_components:
+                component = graph_node.get_component(node_id=ac)
+                # check model matches the requested model
+                if c.get_resource_model() is not None and component.get_resource_model() == c.get_resource_model():
+                    self.logger.debug(f"Found a matching component with resource model {c.get_resource_model()}")
+                    self.logger.debug(f"Assigning {component.get_node_id()} to component# {c} in reservation# {rid} ")
+                    c.cbm_node_id = component.get_node_id()
+                    # Remove the component from available components as it is assigned
+                    graph_node.components_by_type[resource_type].remove(ac)
+                    break
+
+                if c.get_resource_model() is None:
+                    self.logger.debug(f"Found a matching component# {component.get_node_id()}")
+                    self.logger.debug(f"Assigning {component.get_node_id()} to component# {c} in reservation# {rid} ")
+                    c.cbm_node_id = component.get_node_id()
+                    # Remove the component from available components as it is assigned
+                    graph_node.components_by_type[resource_type].remove(ac)
+                    break
+
+            if c.cbm_node_id is None:
+                raise BrokerException(f"Component of type: {resource_type} model: {c.get_resource_model()} "
+                                      f"not available in graph node: {graph_node.get_node_id()}")
+
+        return requested_components
+
+    def allocate(self, *, reservation: IReservation, actor: IActor, graph_node: Neo4jGraphNode,
+                 reservation_info: List[IReservation]) -> Tuple[str, BaseSliver]:
+        if graph_node.capacity_delegations is None or len(graph_node.capacity_delegations) < 1 or reservation is None:
+            raise BrokerException(Constants.INVALID_ARGUMENT)
+
+        requested = reservation.get_requested_resources().get_sliver()
+        if not isinstance(requested, NodeSliver):
+            raise BrokerException(f"Invalid resource type {requested.get_resource_type()}")
+
+        # Check if Capacities can be satisfied
+        result = self.__check_capacities(rid=reservation.get_reservation_id(),
+                                         requested_capacities=requested.get_capacities(),
+                                         capacity_dlg=graph_node.get_capacity_delegations(),
+                                         existing_reservations=reservation_info)
+
+        # Check if Components can be allocated
+        requested.attached_components_info = self.__check_components(
+            rid=reservation.get_reservation_id(),
+            requested_components=requested.attached_components_info,
+            graph_node=graph_node,
+            existing_reservations=reservation_info)
+
+        return result, requested
 
     def allocate_revisit(self, *, count: int, resource: dict):
         return

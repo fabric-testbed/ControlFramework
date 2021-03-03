@@ -24,9 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-import pickle
 import time
-import unittest
 
 from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity

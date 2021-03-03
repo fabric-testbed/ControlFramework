@@ -23,13 +23,18 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import threading
-from typing import Any
+import json
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
+from fim.graph.slices.abc_asm import ABCASMPropertyGraph
+from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver
+from fim.slivers.capacities_labels import Capacities, Labels
+from fim.slivers.network_node import NodeSliver
+
+from fabric_cf.actor.neo4j.neo4j_graph_node import Neo4jGraphNode
 
 
 class Neo4jHelper:
@@ -112,7 +117,8 @@ class Neo4jHelper:
         combined_broker_model = Neo4jCBMGraph(graph_id=combined_broker_model_graph_id,
                                               importer=neo4j_graph_importer,
                                               logger=neo4j_graph_importer.log)
-        combined_broker_model.validate_graph()
+        if combined_broker_model.graph_exists():
+            combined_broker_model.validate_graph()
         return combined_broker_model
 
     @staticmethod
@@ -135,3 +141,74 @@ class Neo4jHelper:
         """
         neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
         neo4j_graph_importer.delete_graph(graph_id=graph_id)
+
+    @staticmethod
+    def get_node_from_graph(*, graph:Neo4jPropertyGraph, node_id: str) -> Neo4jGraphNode:
+        """
+        Build a deep NetworkNode or other similar (e.g.
+        network-attached storage) sliver from a graph node
+        :param graph:
+        :param node_id:
+        :return:
+        """
+        clazzes, props = graph.get_node_properties(node_id=node_id)
+
+        neo4j_node = Neo4jGraphNode(node_id=node_id)
+        resource_type = props.get(ABCPropertyGraph.PROP_TYPE, None)
+        resource_model = props.get(ABCPropertyGraph.PROP_MODEL, None)
+
+        neo4j_node.set_resource_type(resource_type=resource_type)
+        neo4j_node.set_resource_model(resource_model=resource_model)
+        labels = props.get(ABCPropertyGraph.PROP_LABELS, None)
+
+        if labels is not None and labels != 'None':
+            neo4j_node.set_labels(labels=Labels().from_json(labels))
+
+        capacities = props.get(ABCPropertyGraph.PROP_CAPACITIES, None)
+
+        if capacities is not None and capacities != 'None':
+            neo4j_node.set_capacities(capacities=Capacities().from_json(capacities))
+
+        capacity_del_json_list = graph.get_node_json_property_as_object(node_id=node_id,
+                                                                        prop_name=ABCPropertyGraph.PROP_CAPACITY_DELEGATIONS)
+
+        # Broker has dictionary of delegations
+        if capacity_del_json_list is not None and isinstance(capacity_del_json_list, dict):
+            # AM
+            key = capacity_del_json_list.get(ABCPropertyGraph.FIELD_DELEGATION, None)
+            if key is not None:
+                capacity_del_json_list.pop(ABCPropertyGraph.FIELD_DELEGATION)
+                neo4j_node.add_capacity_delegation(del_id=key,
+                                                   capacities=Capacities().from_json(json.dumps(capacity_del_json_list)))
+            #Broker
+            else:
+                for key, value in capacity_del_json_list.items():
+                    value_json = next(iter(value))
+                    neo4j_node.add_capacity_delegation(del_id=key,
+                                                       capacities=Capacities().from_json(json.dumps(value_json)))
+
+        # AM has list of delegations
+        if capacity_del_json_list is not None and isinstance(capacity_del_json_list, list):
+            for c_dict in capacity_del_json_list:
+                key = c_dict.get(ABCPropertyGraph.FIELD_DELEGATION, None)
+                c_dict.pop(ABCPropertyGraph.FIELD_DELEGATION)
+                neo4j_node.add_capacity_delegation(del_id=key,
+                                                   capacities=Capacities().from_json(json.dumps(c_dict)))
+
+        label_del_json_list = graph.get_node_json_property_as_object(node_id=node_id,
+                                                                     prop_name=ABCPropertyGraph.PROP_LABEL_DELEGATIONS)
+
+        if label_del_json_list is not None:
+            for key, value in label_del_json_list.items():
+                value_json = next(iter(value))
+                neo4j_node.add_label_delegation(del_id=key, labels=Labels().from_json(json.dumps(value_json)))
+
+        # find and build deep slivers of switch fabrics (if any) and components (if any)
+        comps = graph.get_first_neighbor(node_id=node_id, rel=ABCPropertyGraph.REL_HAS,
+                                         node_label=ABCPropertyGraph.CLASS_Component)
+        if comps is not None and len(comps) > 0:
+            for c in comps:
+                component_node = Neo4jHelper.get_node_from_graph(graph=graph, node_id=c)
+                neo4j_node.add_component(component=component_node)
+
+        return neo4j_node

@@ -70,6 +70,12 @@ class PsqlDatabase:
         """
         Base.metadata.create_all(self.db_engine)
 
+    def set_logger(self, logger):
+        """
+        Set the logger
+        """
+        self.logger = logger
+
     def reset_db(self):
         """
         Reset the database
@@ -1033,7 +1039,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Proxies).filter(Proxies.prx_act_id == act_id):
-                    prx_obj = self.generate_reservation_dict_from_row(row)
+                    prx_obj = self.generate_proxy_dict_from_row(row)
                     result.append(prx_obj.copy())
                     prx_obj.clear()
         except Exception as e:

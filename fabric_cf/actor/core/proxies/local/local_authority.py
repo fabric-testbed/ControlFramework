@@ -33,7 +33,6 @@ from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
 from fabric_cf.actor.core.proxies.local.local_broker import LocalBroker
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
@@ -69,9 +68,6 @@ class LocalAuthority(LocalBroker, IAuthorityProxy):
         term = reservation.get_term().clone()
 
         rset = self.abstract_clone_authority(rset=reservation.get_resources())
-        rset.get_resource_data().configuration_properties = ResourceData.merge_properties(
-            from_props=reservation.get_slice().get_config_properties(),
-            to_props=rset.get_resource_data().get_configuration_properties())
 
         original_ticket = reservation.get_resources().get_resources()
         rset.set_resources(cset=original_ticket.clone())

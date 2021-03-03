@@ -35,7 +35,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.util.resource_data import ResourceData
     from fabric_cf.actor.core.kernel.slice_state_machine import SliceState, SliceOperation
 
 
@@ -301,13 +300,6 @@ class ISlice:
         Returns the graph id
 
         @return graph id
-        """
-
-    @abstractmethod
-    def set_properties(self, *, rsrcdata: ResourceData):
-        """
-        Sets the slice properties.
-        @param properties slice properties
         """
 
     @abstractmethod

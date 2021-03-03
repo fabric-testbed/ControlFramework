@@ -36,7 +36,6 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
-from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
 from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
 from fabric_cf.actor.core.common.constants import Constants
@@ -51,7 +50,6 @@ from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
 from fabric_cf.actor.core.util.client import Client
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.prop_list import PropList
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
 
@@ -63,33 +61,8 @@ if TYPE_CHECKING:
 
 class Converter:
     @staticmethod
-    def get_resource_data(*, slice_mng: SliceAvro) -> ResourceData:
-        rd = ResourceData()
-
-        rd.request_properties = slice_mng.get_request_properties()
-        rd.resource_properties = slice_mng.get_resource_properties()
-        rd.config_properties = slice_mng.get_config_properties()
-        rd.local_properties = slice_mng.get_local_properties()
-        return rd
-
-    @staticmethod
     def absorb_res_properties(*, rsv_mng: ReservationMng, res_obj: IReservation):
-        res_obj.get_resources().set_local_properties(p=
-            PropList.merge_properties(incoming=rsv_mng.get_local_properties(),
-                                      outgoing=res_obj.get_resources().get_local_properties()))
-
-        res_obj.get_resources().set_config_properties(p=
-            PropList.merge_properties(incoming=rsv_mng.get_config_properties(),
-                                      outgoing=res_obj.get_resources().get_config_properties()))
-
-        res_obj.get_resources().set_request_properties(p=
-            PropList.merge_properties(incoming=rsv_mng.get_request_properties(),
-                                      outgoing=res_obj.get_resources().get_request_properties()))
-
-        res_obj.get_resources().set_resource_properties(p=
-            PropList.merge_properties(incoming=rsv_mng.get_resource_properties(),
-                                      outgoing=res_obj.get_resources().get_resource_properties()))
-
+        res_obj.get_resources().set_sliver(sliver=rsv_mng.get_sliver())
         return res_obj
 
     @staticmethod
@@ -148,28 +121,16 @@ class Converter:
 
     @staticmethod
     def attach_res_properties(*, mng: ReservationMng, reservation: IReservation):
-        resource = None
-        config = None
-        local = None
-        request = None
-
+        sliver = None
         if isinstance(reservation, IControllerReservation):
             if reservation.is_active():
-                resource = reservation.get_leased_resources().get_resource_properties()
-                config = reservation.get_leased_resources().get_config_properties()
-                request = reservation.get_leased_resources().get_request_properties()
+                sliver = reservation.get_leased_resources().get_sliver()
             else:
-                resource = reservation.get_resources().get_resource_properties()
-                config = reservation.get_resources().get_config_properties()
-                request = reservation.get_resources().get_request_properties()
-            local = reservation.get_resources().get_local_properties()
+                sliver = reservation.get_resources().get_sliver()
         else:
             rset = reservation.get_resources()
             if rset is not None:
-                resource = rset.get_resource_properties()
-                config = rset.get_config_properties()
-                local = rset.get_local_properties()
-                request = rset.get_request_properties()
+                sliver = rset.get_sliver()
 
         ticket = None
         rset = reservation.get_resources()
@@ -180,10 +141,7 @@ class Converter:
             if cs is not None and isinstance(cs, Ticket):
                 ticket = cs.get_properties()
 
-        mng.set_config_properties(config)
-        mng.set_request_properties(request)
-        mng.set_local_properties(local)
-        mng.set_resource_properties(resource)
+        mng.set_sliver(sliver=sliver)
 
         if isinstance(mng, TicketReservationAvro):
             mng.set_ticket_properties(ticket)
@@ -288,21 +246,9 @@ class Converter:
             return None
 
     @staticmethod
-    def get_resource_data_from_res(*, res_mng: ReservationMng) -> ResourceData:
-        rd = ResourceData()
-        rd.request_properties = res_mng.get_request_properties()
-        rd.resource_properties = res_mng.get_resource_properties()
-        rd.local_properties = res_mng.get_local_properties()
-        rd.configuration_properties = res_mng.get_config_properties()
-
-        return rd
-
-    @staticmethod
     def get_resource_set(*, res_mng: ReservationMng) -> ResourceSet:
-        rd = Converter.get_resource_data_from_res(res_mng=res_mng)
-
         return ResourceSet(units=res_mng.get_units(), rtype=ResourceType(resource_type=res_mng.get_resource_type()),
-                           rdata=rd)
+                           sliver=res_mng.get_sliver())
 
     @staticmethod
     def fill_actor(*, actor: IActor) -> ActorAvro:

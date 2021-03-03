@@ -23,6 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import Dict
+
+from fim.slivers.base_sliver import BaseSliver
+
 from fabric_cf.actor.core.common.exceptions import ResourcesException
 
 
@@ -36,6 +40,8 @@ class ResourceData:
         self.request_properties = {}
         self.resource_properties = {}
         self.configuration_properties = {}
+        self.sliver = None
+        self.comp_node_ids = {}
 
     def __getstate__(self):
         return self.__dict__.copy()
@@ -44,8 +50,12 @@ class ResourceData:
         self.__dict__.update(state)
 
     def __str__(self):
-        return f"local: {self.local_properties}, request: {self.request_properties}, " \
-               f"resource: {self.resource_properties}, config: {self.configuration_properties} "
+        result = f"local: {self.local_properties}, request: {self.request_properties}, " \
+                 f"resource: {self.resource_properties}, config: {self.configuration_properties} " \
+                 f"sliver: {self.sliver}"
+        if self.sliver is not None:
+            result += f" cbm_node_id: {self.sliver.cbm_node_id}"
+        return result
 
     def clone(self):
         """
@@ -56,6 +66,8 @@ class ResourceData:
         obj.request_properties = self.request_properties.copy()
         obj.resource_properties = self.resource_properties.copy()
         obj.configuration_properties = self.configuration_properties.copy()
+        obj.sliver = self.sliver
+        obj.comp_node_ids = self.comp_node_ids.copy()
         return obj
 
     def get_local_properties(self) -> dict:
@@ -85,6 +97,12 @@ class ResourceData:
         @return handlers properties
         """
         return self.configuration_properties
+
+    def get_sliver(self) -> BaseSliver:
+        return self.sliver
+
+    def get_components_node_ids(self) -> Dict[str, str]:
+        return self.comp_node_ids
 
     def merge(self, *, other):
         """
@@ -125,3 +143,18 @@ class ResourceData:
 
         result = {**from_props, **to_props}
         return result
+
+    def set_sliver(self, *, sliver: BaseSliver):
+        self.sliver = sliver
+
+    def set_sliver_node_id(self, *, node_id: str):
+        if self.sliver is not None:
+            self.sliver.cbm_node_id = node_id
+
+    def get_sliver_node_id(self) -> str:
+        if self.sliver is not None:
+            return self.sliver.cbm_node_id
+        return self.sliver
+
+    def set_components_node_ids(self, *, comp_node_ids: Dict[str, str]):
+        self.comp_node_ids = comp_node_ids

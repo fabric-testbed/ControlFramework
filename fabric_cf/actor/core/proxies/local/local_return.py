@@ -39,9 +39,7 @@ from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric_cf.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric_cf.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-from fabric_cf.actor.core.proxies.proxy import Proxy
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
 
@@ -92,7 +90,7 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
         rset = None
 
         if reservation.get_resources() is None:
-            rset = ResourceSet(units=0, rtype=reservation.get_requested_type(), rdata=ResourceData())
+            rset = ResourceSet(units=0, rtype=reservation.get_requested_type())
         else:
             rset = LocalReturn.abstract_clone_return(rset=reservation.get_resources())
 

@@ -53,7 +53,7 @@ class ResponseBuilder:
         if res_list is not None:
             for reservation in res_list:
                 res_dict = {"slice_id": reservation.get_slice_id(), "reservation_id": reservation.get_reservation_id(),
-                            "resource_type": reservation.get_resource_type(), "resource_units": reservation.get_units(),
+                            "resource_type": reservation.get_resource_type(),
                             'state': ReservationStates(reservation.get_state()).name}
 
                 if reservation.get_pending_state() is not None:

@@ -26,16 +26,16 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
+from fabric_cf.actor.core.manage.management_object import ManagementObject
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.apis.i_container_database import IContainerDatabase
-    from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.core.apis.i_management_object import IManagementObject
 
 
@@ -117,7 +117,7 @@ class ManagementObjectManager:
         @throws Exception in case of error
         """
         self.logger.info("Loading container-level management objects for actor: {}".format(actor_name))
-        manager_objects = self.db.get_manager_objects_by_actor_name(act_name=actor_name)
+        manager_objects = self.db.get_manager_objects_by_actor_name(actor_name=actor_name)
         self.load_objects(manager_objects=manager_objects)
         self.logger.info("Finished loading container-level management objects for actor: {}".format(actor_name))
 
@@ -127,11 +127,13 @@ class ManagementObjectManager:
         @throws Exception in case of error
         """
         self.logger.info("Loading container-level management objects")
-        manager_objects = self.db.get_manager_containers()
+        manager_objects = self.db.get_manager_container()
+        if manager_objects is None:
+            return
         self.load_objects(manager_objects=manager_objects)
         self.logger.info("Finished loading container-level management objects")
 
-    def load_objects(self, *, manager_objects: list):
+    def load_objects(self, *, manager_objects: List[dict]):
         """
         Loads the specified management objects
         @param manager_objects list of properties

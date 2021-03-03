@@ -281,8 +281,8 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                     self.previous_term = self.term
                     self.ticket = self.requested_resources
                     self.term = self.approved_term
-                    if self.requested_resources.get_config_properties() is not None:
-                        self.approved_resources.set_config_properties(self.requested_resources.get_config_properties())
+                    if self.requested_resources.get_sliver() is not None:
+                        self.approved_resources.set_sliver(sliver=self.requested_resources.get_sliver())
 
                     self.resources.update(self, self.approved_resources)
                     self.transition(prefix="extend lease", state=ReservationStates.Active,
@@ -313,20 +313,15 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                 if granted:
                     success = True
                     self.ticket = self.requested_resources
-                    self.logger.debug("requestedResources.getConfigurationProperties() = {}".format(
-                        self.requested_resources.get_config_properties()))
+                    self.logger.debug(f"requested_resources.get_sliver() = {self.requested_resources.get_sliver()}")
 
-                    self.logger.debug("approvedResources.getConfigurationProperties() = {}".format(
-                        self.approved_resources.get_config_properties()))
-                    if self.requested_resources.get_config_properties() is not None:
-                        if self.approved_resources.get_config_properties() is not None:
-                            self.approved_resources.set_config_properties(
-                                self.requested_resources.get_config_properties())
-                        else:
-                            # TODO merge
-                            self.logger.debug("merge properties")
-                    self.logger.debug("approvedResources.getConfigurationProperties() = {}".format(
-                        self.approved_resources.get_config_properties()))
+                    self.logger.debug(f"approved_resources.get_sliver() = {self.approved_resources.get_sliver()}")
+
+                    if self.requested_resources.get_sliver() is not None:
+                        self.approved_resources.set_sliver(sliver=self.requested_resources.get_sliver())
+
+                    self.logger.debug(f"approved_resources.get_sliver() = {self.approved_resources.get_sliver()}")
+
                     self.resources.update_properties(self, self.approved_resources)
                     self.transition(prefix="modify lease", state=ReservationStates.Active,
                                     pending=ReservationPendingStates.Priming)

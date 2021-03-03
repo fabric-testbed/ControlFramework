@@ -154,6 +154,9 @@ class OrchestratorHandler:
         @throws Raises an exception in case of failure
         @returns List of reservations created for the Slice on success
         """
+        slice_id = None
+        controller = None
+        orchestrator_slice = None
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -199,6 +202,8 @@ class OrchestratorHandler:
             orchestrator_slice = OrchestratorSliceWrapper(controller=controller, broker=broker,
                                                           slice_obj=slice_obj, logger=self.logger)
 
+            orchestrator_slice.lock()
+
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
             computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=slice_graph)
@@ -211,9 +216,14 @@ class OrchestratorHandler:
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
+            if slice_id is not None and controller is not None:
+                controller.remove_slice(slice_id=slice_id, id_token=token)
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
+        finally:
+            if orchestrator_slice is not None:
+                orchestrator_slice.unlock()
 
     def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None, include_notices: bool = False) -> dict:
         """
@@ -221,6 +231,7 @@ class OrchestratorHandler:
         @param token Fabric Identity Token
         @param slice_id Slice Id
         @param sliver_id Sliver Id
+        @param include_notices include notices
         @throws Raises an exception in case of failure
         @returns List of reservations created for the Slice on success
         """

@@ -170,6 +170,11 @@ class Policy(IPolicy):
 
     def set_actor(self, *, actor: IActor):
         self.actor = actor
+        if actor is not None:
+            self.logger = actor.get_logger()
 
     def closed_delegation(self, *, delegation: IDelegation):
         return
+
+    def set_logger(self, logger):
+        self.logger = logger

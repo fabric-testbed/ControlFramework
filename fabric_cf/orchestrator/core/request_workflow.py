@@ -25,44 +25,37 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from typing import List
 
-from fim.graph.abc_property_graph import ABCPropertyGraph
+import fim.graph.slices.networkx_asm as nx_asm
 from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
-from fim.slivers.base_sliver import BaseElement
-from fim.slivers.network_node import Node
+from fim.slivers.network_node import NodeSliver
 
 
 class RequestWorkflow:
     """
     This object implements the generic workflow of turning a ASM into reservations.
     """
-    # Only used for testing
-    WORKER_NODE_ID = "2046922a-a8ed-4b60-8190-b6ce614c514d"
+    def __init__(self, logger):
+        self.logger = logger
 
     def close(self):
         """ Close any open graph models """
 
-    def run(self, *, bqm: Neo4jPropertyGraph, slice_graph: str) -> List[BaseElement]:
+    def run(self, *, bqm: Neo4jPropertyGraph, slice_graph: str) -> List[NodeSliver]:
         """
-        Run the workflow
+        Run the workflow and Translate Slice Graph (ASM) into individual slivers
+        @param bqm: broker query model
+        @param slice_graph: slice graph
         """
-        # Translate Slice Graph (ASM) into individual slivers
-        # TODO
-        # HACK for now to create a compute Sliver
         slivers = []
-        compute_node = Node()
-        compute_node.set_graph_node_id(graph_node_id=self.WORKER_NODE_ID)
-        compute_node.set_image_type(image_type="QCOW2")
-        compute_node.set_image_ref(image_ref="centos7")
-        compute_node.set_resource_type("VM")
 
-        capacity_delegations = bqm.get_node_json_property_as_object(node_id=self.WORKER_NODE_ID,
-                                                                    prop_name=ABCPropertyGraph.PROP_CAPACITY_DELEGATIONS)
+        gi = nx_asm.NetworkXGraphImporter(logger=self.logger)
+        g = gi.import_graph_from_string_direct(graph_string=slice_graph)
+        asm = nx_asm.NetworkxASM(graph_id=g.graph_id, importer=g.importer, logger=g.importer.log)
 
-        capacity_values = next(iter(capacity_delegations.values()))
-        if capacity_values is not None and len(capacity_values) > 0:
-            compute_node.set_cpu_cores(cpu_cores=int(capacity_values[0].get('core')))
-            compute_node.set_ram_size(ram_size=int(capacity_values[0].get('ram')))
-            compute_node.set_disk_size(disk_size=int(capacity_values[0].get('disk')))
+        for nn_id in asm.get_all_network_nodes():
+            sliver = asm.build_deep_node_sliver(node_id=nn_id)
+            slivers.append(sliver)
 
-        slivers.append(compute_node)
+        # TODO match from BQM
+
         return slivers

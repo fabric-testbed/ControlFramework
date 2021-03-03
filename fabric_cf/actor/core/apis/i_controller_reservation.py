@@ -152,19 +152,3 @@ class IControllerReservation(IClientReservation):
         Returns the join predecessors list for the reservation.
         @returns join predecessors list for the reservation
         """
-
-    @abstractmethod
-    def set_config_property(self, *, key: str, value: str):
-        """
-        Sets a configuration property.
-        @params key: key
-        @params value: value
-        """
-
-    @abstractmethod
-    def set_request_property(self, *, key: str, value: str):
-        """
-        Sets a request property.
-        @params key: key
-        @params value: value
-        """

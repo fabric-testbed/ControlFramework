@@ -363,3 +363,10 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         """
         Get Management Kafka Service Class Module Name
         """
+
+    @abstractmethod
+    def set_logger(self, logger):
+        """
+        Set logger
+        @param logger logger
+        """

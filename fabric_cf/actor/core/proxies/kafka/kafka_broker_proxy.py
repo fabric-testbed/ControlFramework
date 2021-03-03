@@ -150,8 +150,7 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         avro_reservation.reservation_id = str(reservation.get_reservation_id())
         avro_reservation.sequence = reservation.get_ticket_sequence_out()
 
-        rset = Translate.translate_resource_set(resource_set=reservation.get_requested_resources(),
-                                                direction=Translate.direction_agent)
+        rset = Translate.translate_resource_set(resource_set=reservation.get_requested_resources())
 
         if reservation.get_requested_resources() is not None:
             cset = reservation.get_requested_resources().get_resources()

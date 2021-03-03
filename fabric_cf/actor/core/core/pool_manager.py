@@ -37,7 +37,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity
     from fabric_cf.actor.core.apis.i_database import IDatabase
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.util.resource_data import ResourceData
     from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.apis.i_slice import ISlice
 
@@ -74,14 +73,12 @@ class PoolManager:
         self.identity = identity
         self.logger = logger
 
-    def create_pool(self, *, slice_id: ID, name: str, rtype: ResourceType,
-                    resource_data: ResourceData) -> CreatePoolResult:
+    def create_pool(self, *, slice_id: ID, name: str, rtype: ResourceType) -> CreatePoolResult:
         """
         Create Inventory Pool at boot
         @param slice_id slice id
         @param name name
         @param rtype resource type
-        @param resource_data resource data
         """
         result = CreatePoolResult()
         if slice_id is None or name is None or rtype is None:
@@ -103,7 +100,7 @@ class PoolManager:
                         result.code = PoolManagerError.ErrorTypeExists
                         return result
 
-            slice_obj = SliceFactory.create(slice_id=slice_id, name=name, data=resource_data.clone())
+            slice_obj = SliceFactory.create(slice_id=slice_id, name=name)
             slice_obj.set_inventory(value=True)
             slice_obj.set_owner(owner=self.identity.get_identity())
             slice_obj.set_resource_type(resource_type=rtype)

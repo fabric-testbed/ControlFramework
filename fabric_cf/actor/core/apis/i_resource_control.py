@@ -28,6 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
+from fabric_cf.actor.neo4j.neo4j_graph_node import Neo4jGraphNode
+
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
@@ -109,17 +111,12 @@ class IResourceControl:
 
     @abstractmethod
     def assign(self, *, reservation: IAuthorityReservation, delegation_name: str,
-               capacities: dict, capacity_del: list,
-               labels: dict, label_del: list,
-               reservation_info: List[IReservation]) -> ResourceSet:
+               graph_node: Neo4jGraphNode, reservation_info: List[IReservation]) -> ResourceSet:
         """
         Assigns resources to the reservation.
         @param reservation reservation
         @param delegation_name delegation_name
-        @param capacities capacities
-        @param capacity_del capacity_del
-        @param labels labels
-        @param label_del label_del
+        @param graph_node graph_node
         @param reservation_info reservation_info
         @returns resources assigned to the reservation (allocated units)
         @raises Exception in case of error

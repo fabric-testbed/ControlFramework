@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from enum import Enum
 
+from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
@@ -44,7 +45,7 @@ class UnitState(Enum):
 
 
 class Unit(ConfigToken):
-    def __init__(self, *, uid: ID, rid: ID = None, slice_id: ID = None, actor_id: ID = None,
+    def __init__(self, *, uid: ID, sliver: BaseSliver = None, rid: ID = None, slice_id: ID = None, actor_id: ID = None,
                  properties: dict = None, state: UnitState = None, rtype: ResourceType = None):
         # Unique identifier.
         self.uid = uid
@@ -74,6 +75,7 @@ class Unit(ConfigToken):
         # The modified version of this unit.
         self.modified = None
         self.transfer_out_started = False
+        self.sliver = sliver
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -211,7 +213,7 @@ class Unit(ConfigToken):
         Clone a unit
         @return copy of the object
         """
-        ret_val = Unit(uid=self.uid, properties=self.properties, state=self.state)
+        ret_val = Unit(uid=self.uid, sliver=self.sliver, properties=self.properties, state=self.state)
         return ret_val
 
     def get_sequence(self) -> int:

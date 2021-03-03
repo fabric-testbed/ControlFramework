@@ -45,7 +45,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.core.actor import Actor
     from fabric_cf.actor.core.apis.i_resource_delegation_factory import IResourceDelegationFactory
     from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
-    from fabric_cf.actor.core.util.resource_data import ResourceData
     from fabric_cf.actor.security.auth_token import AuthToken
 
 
@@ -125,8 +124,8 @@ class BasePlugin(IBasePlugin):
     def recovery_ended(self):
         return
 
-    def create_slice(self, *, slice_id: ID, name: str, properties: ResourceData):
-        slice_obj = SliceFactory.create(slice_id=slice_id, name=name, data=properties)
+    def create_slice(self, *, slice_id: ID, name: str):
+        slice_obj = SliceFactory.create(slice_id=slice_id, name=name)
         return slice_obj
 
     def release_slice(self, *, slice_obj: ISlice):
@@ -202,6 +201,8 @@ class BasePlugin(IBasePlugin):
 
     def set_logger(self, *, logger):
         self.logger = logger
+        if self.db is not None:
+            self.db.set_logger(logger=self.logger)
 
     def get_resource_delegation_factory(self) -> IResourceDelegationFactory:
         return self.resource_delegation_factory

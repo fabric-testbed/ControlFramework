@@ -33,10 +33,9 @@ from fabric_cf.actor.core.util.id import ID
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_slice import ISlice
-    from fabric_cf.actor.core.util.resource_data import ResourceData
 
 
 class SliceFactory(ISliceFactory):
     @staticmethod
-    def create(*, slice_id: ID, name: str = None, data: ResourceData = None) -> ISlice:
-        return Slice(slice_id=slice_id, name=name, data=data)
+    def create(*, slice_id: ID, name: str = None) -> ISlice:
+        return Slice(slice_id=slice_id, name=name)

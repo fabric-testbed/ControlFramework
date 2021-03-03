@@ -27,11 +27,12 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from datetime import datetime
 
+from fim.slivers.base_sliver import BaseSliver
+
 from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
-from fabric_cf.actor.core.apis.i_reservation import IReservation, ReservationCategory
+from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ResourcesException
-from fabric_cf.actor.core.util.resource_data import ResourceData
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.time.term import Term
@@ -39,7 +40,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.notice import Notice
     from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
     from fabric_cf.actor.core.util.resource_type import ResourceType
-    from fabric_cf.actor.core.core.ticket import Ticket
 
 
 class ResourceSet:
@@ -93,7 +93,7 @@ class ResourceSet:
     """
     def __init__(self, *, concrete: IConcreteSet = None, gained: IConcreteSet = None,
                  lost: IConcreteSet = None, modified: IConcreteSet = None,
-                 rtype: ResourceType = None, rdata: ResourceData = None, units: int = None):
+                 rtype: ResourceType = None, sliver: BaseSliver = None, units: int = None):
         # What type of resources does this set contain. The meaning/assignment of
         # type values is an externally defined convention of interacting actors.
         self.type = rtype
@@ -111,12 +111,11 @@ class ResourceSet:
             self.units = concrete.get_units()
         else:
             self.units = units
-        # ResourceData is a property list for this ResourceSet. E.g., request
-        # attributes, node attributes, etc.
-        self.properties = rdata
-        # The previous value of the properties list. This is essential for
+        # Sliver
+        self.sliver = sliver
+        # The previous value of the sliver. This is essential for
         # supporting recovery on Authority.
-        self.previous_properties = None
+        self.previous_sliver = None
         # A set of resources recently ejected from the resource set, pending
         # processing, e.g., by a "probe" method.
         self.released = None
@@ -174,11 +173,10 @@ class ResourceSet:
         """
         Clones the set, but without any of the concrete sets. Used on Authority
         and Service Manager to create a ResourceSet to hold resources, given a
-        ResourceSet holding a ticket. All properties are preserved (cloned).
+        ResourceSet holding a ticket.
         @return a resources set that is a copy of the current but without any concrete sets.
         """
-        rd = self.properties.clone()
-        result = ResourceSet(units=self.units, rtype=self.type, rdata=rd)
+        result = ResourceSet(units=self.units, rtype=self.type, sliver=self.sliver)
         return result
 
     def collect_released(self) -> ResourceSet:
@@ -191,7 +189,7 @@ class ResourceSet:
         """
         result = None
         if self.released is not None:
-            result = ResourceSet(concrete=self.released, rtype=self.type, rdata=ResourceData())
+            result = ResourceSet(concrete=self.released, rtype=self.type)
             self.released = None
         return result
 
@@ -204,47 +202,7 @@ class ResourceSet:
         if reservation is None or resource_set is None:
             raise ResourcesException(Constants.INVALID_ARGUMENT)
 
-        if self.properties is None:
-            self.properties = ResourceData()
-
-        if reservation.get_category() == ReservationCategory.Client:
-            # On a orchestrator we only take resource properties from
-            # the broker when we receive the initial ticket update. The
-            # current assumption is that resource properties are constant
-            # over the lifetime of a reservation and are supplied by the
-            # broker.
-            from fabric_cf.actor.core.core.ticket import Ticket
-            if self.resources is None and isinstance(resource_set.get_resources(), Ticket):
-                self.properties.resource_properties = ResourceData.merge_properties(
-                    from_props=resource_set.get_resource_properties(),
-                    to_props=self.properties.resource_properties)
-
-        elif reservation.get_category() == ReservationCategory.Broker:
-            # On a broker we will store in the resulting resource set only
-            # the resource properties, so that when we generate the update
-            # those can be send back to the client. Since the assumption is
-            # that resource properties are constant over the lifetime of a
-            # reservation, we will do this only for the initial ticket
-            # allocation. Ticket extentions will not result in the addition
-            # of new properties.
-            if self.resources is None:
-                self.properties.resource_properties = ResourceData.merge_properties(
-                    from_props=resource_set.get_resource_properties(),
-                    to_props=self.properties.resource_properties)
-
-        elif reservation.get_category() == ReservationCategory.Authority:
-            # On an authority we will take the local (provided by the
-            # authority) and configuration, provided by the client,
-            # properties. Local and configuration properties need to be
-            # merged for each update, as they may contain additional
-            # information required by the configuration handlers.
-            self.properties.local_properties = ResourceData.merge_properties(
-                from_props=resource_set.get_local_properties(),
-                to_props=self.properties.local_properties)
-
-            self.properties.configuration_properties = ResourceData.merge_properties(
-                from_props=resource_set.get_config_properties(),
-                to_props=self.properties.configuration_properties)
+        self.sliver = resource_set.get_sliver()
 
     def delta_update(self, *, reservation: IReservation, resource_set):
         if reservation is None or resource_set is None:
@@ -284,7 +242,7 @@ class ResourceSet:
                 self.modified = resource_set.modified
 
             self.units += difference
-            self.previous_properties = self.properties
+            self.previous_sliver = self.sliver
             self.merge_properties(reservation=reservation, resource_set=resource_set)
 
     def fix_abstract_units(self):
@@ -303,8 +261,8 @@ class ResourceSet:
         # take the units and the type
         self.units = resource_set.units
         self.type = resource_set.type
-        # take in the properties
-        self.previous_properties = self.properties
+        # take in the sliver
+        self.previous_sliver = self.sliver
         self.merge_properties(reservation=reservation, resource_set=resource_set)
 
         # make a concrete set if the current concrete set is None
@@ -328,15 +286,6 @@ class ResourceSet:
         else:
             return self.resources.holding(when=when)
 
-    def get_config_properties(self) -> dict:
-        """
-        Returns the configuration properties list.
-        @returns configuration properties list. Can be null.
-        """
-        if self.properties is not None:
-            return self.properties.get_configuration_properties()
-        return None
-
     def get_deficit(self) -> int:
         """
         Returns the number of concrete units needed or in excess in this resource
@@ -349,15 +298,6 @@ class ResourceSet:
 
         return result
 
-    def get_local_properties(self) -> dict:
-        """
-        Returns the local properties list
-        @returns local properties list. Can be null.
-        """
-        if self.properties is not None:
-            return self.properties.get_local_properties()
-        return None
-
     def get_notices(self) -> Notice:
         """
         Returns a string of notices or events pertaining to the underlying
@@ -369,14 +309,17 @@ class ResourceSet:
             return None
         return self.resources.get_notices()
 
-    def get_request_properties(self):
+    def get_sliver(self) -> BaseSliver:
         """
-        Returns the request properties.
-        @returns request properties list. Can be null.
+        Return sliver
+        @param sliver
         """
-        if self.properties is not None:
-            return self.properties.get_request_properties()
-        return None
+        return self.sliver
+
+    def get_sliver_node_id(self) -> str:
+        if self.sliver is not None:
+            return self.sliver.cbm_node_id
+        return self.sliver
 
     def get_reservation_id(self) -> ID:
         """
@@ -384,22 +327,6 @@ class ResourceSet:
         @returns reservation identifier
         """
         return self.rid
-
-    def get_resource_data(self) -> ResourceData:
-        """
-        Returns the properties of this resource set.
-        @returns set properties
-        """
-        return self.properties
-
-    def get_resource_properties(self):
-        """
-        Returns the resource properties.
-        @returns resource properties list. Can be null.
-        """
-        if self.properties is not None:
-            return self.properties.get_resource_properties()
-        return None
 
     def get_resources(self) -> IConcreteSet:
         """
@@ -555,35 +482,16 @@ class ResourceSet:
         if cs is not None:
             self.resources.change(concrete_set=cs, configure=True)
 
-    def set_config_properties(self, *, p: dict):
+    def set_sliver(self, *, sliver: BaseSliver):
         """
-        Sets the configuration properties.
-        @params p : configuration properties list
+        Sets the request sliver.
+        @params sliver : request sliver
         """
-        if self.properties is None:
-            self.properties = ResourceData()
-        self.properties.configuration_properties = self.properties.merge_properties(from_props=p,
-                                                                                    to_props=self.properties.configuration_properties)
+        self.sliver = sliver
 
-    def set_local_properties(self, *, p: dict):
-        """
-        Sets the local properties.
-        @params p : local properties list
-        """
-        if self.properties is None:
-            self.properties = ResourceData()
-        self.properties.local_properties = self.properties.merge_properties(from_props=p,
-                                                                            to_props=self.properties.local_properties)
-
-    def set_request_properties(self, *, p: dict):
-        """
-        Sets the request properties.
-        @params p : request properties list
-        """
-        if self.properties is None:
-            self.properties = ResourceData()
-        self.properties.request_properties = self.properties.merge_properties(from_props=p,
-                                                                              to_props=self.properties.request_properties)
+    def set_sliver_node_id(self, *, node_id: str):
+        if self.sliver is None:
+            self.sliver.cbm_node_id = node_id
 
     def set_reservation_id(self, *, rid: ID):
         """
@@ -591,16 +499,6 @@ class ResourceSet:
         @params rid reservation identifier
         """
         self.rid = rid
-
-    def set_resource_properties(self, *, p: dict):
-        """
-        Sets the resource properties.
-        @params p : resource properties list
-        """
-        if self.properties is None:
-            self.properties = ResourceData()
-        self.properties.resource_properties = self.properties.merge_properties(from_props=p,
-                                                                               to_props=self.properties.resource_properties)
 
     def set_resources(self, *, cset: IConcreteSet):
         """
@@ -635,8 +533,8 @@ class ResourceSet:
         result = "rset: units=[{}] ".format(self.units)
         if self.resources is not None:
             result += " concrete:[{}]".format(self.resources)
-        if self.properties is not None:
-            result += " properties: [{}]".format(self.properties)
+        if self.sliver is not None:
+            result += " sliver: [{}]".format(self.sliver)
         return result
 
     def update(self, *, reservation: IReservation, resource_set: ResourceSet):
@@ -701,7 +599,6 @@ class ResourceSet:
             self.resources.validate_outgoing()
 
     def clone(self):
-        rd = self.properties.clone()
-        clone = ResourceSet(units=self.units, rtype=self.type, rdata=rd)
+        clone = ResourceSet(units=self.units, rtype=self.type, sliver=self.sliver)
         clone.resources = self.resources.clone()
         return clone

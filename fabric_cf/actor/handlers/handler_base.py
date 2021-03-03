@@ -50,19 +50,19 @@ class HandlerBase(ABC):
         return config_dict
 
     @abstractmethod
-    def create(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+    def create(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         """
         Create
         """
 
     @abstractmethod
-    def modify(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+    def modify(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         """
         Create
         """
 
     @abstractmethod
-    def delete(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+    def delete(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         """
         Create
         """

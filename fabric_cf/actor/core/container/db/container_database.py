@@ -74,8 +74,8 @@ class ContainerDatabase(IContainerDatabase):
         Initialize
         """
         if not self.initialized:
+            self.db.create_db()
             if self.reset_state:
-                self.db.create_db()
                 self.db.reset_db()
             self.initialized = True
 
@@ -123,24 +123,24 @@ class ContainerDatabase(IContainerDatabase):
         """
         result = None
         try:
+            act_dict_list = None
             if name is None and actor_type is None:
-                result = self.db.get_actors()
+                act_dict_list = self.db.get_actors()
             elif name is not None and actor_type is not None:
                 name = "%{}%".format(name)
-                act_dict_list = None
                 if actor_type != ActorType.All.value:
                     act_dict_list = self.db.get_actors_by_name_and_type(actor_name=name, act_type=actor_type)
                 else:
                     act_dict_list = self.db.get_actors_by_name(act_name=name)
-                if act_dict_list is not None:
-                    result = []
-                    for a in act_dict_list:
-                        pickled_actor = a.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                        act_obj = pickle.loads(pickled_actor)
-                        result.append(act_obj)
-                return result
+            if act_dict_list is not None:
+                result = []
+                for a in act_dict_list:
+                    pickled_actor = a.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+                    act_obj = pickle.loads(pickled_actor)
+                    result.append(act_obj)
+            return result
         except Exception as e:
-            self.logger(e)
+            self.logger.error(e)
         return result
 
     def get_actor(self, *, actor_name: str) -> dict:
@@ -156,7 +156,22 @@ class ContainerDatabase(IContainerDatabase):
                 pickled_actor = act_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
                 return pickle.loads(pickled_actor)
         except Exception as e:
-            self.logger(e)
+            self.logger.error(e)
+        return result
+
+    def get_actor_id(self, *, actor_name: str) -> dict:
+        """
+        Get Actor
+        @param name actor name
+        @return actor
+        """
+        result = None
+        try:
+            act_dict = self.db.get_actor(name=actor_name)
+            if act_dict is not None:
+                return act_dict['act_id']
+        except Exception as e:
+            self.logger.error(e)
         return result
 
     def add_time(self, *, properties: dict):
@@ -175,7 +190,7 @@ class ContainerDatabase(IContainerDatabase):
         try:
             result = self.db.get_miscellaneous(name=self.PropertyTime)
         except Exception as e:
-            self.logger(e)
+            self.logger.error(e)
         return result
 
     def add_container_properties(self, *, properties: dict):
@@ -194,7 +209,7 @@ class ContainerDatabase(IContainerDatabase):
         try:
             result = self.db.get_miscellaneous(name=self.PropertyContainer)
         except Exception as e:
-            self.logger(e)
+            self.logger.error(e)
         return result
 
     def get_manager_objects_by_actor_name(self, *, actor_name: str) -> list:
@@ -207,10 +222,10 @@ class ContainerDatabase(IContainerDatabase):
         try:
             result = self.db.get_manager_objects_by_actor_name(act_name=actor_name)
         except Exception as e:
-            self.logger(e)
+            self.logger.error(e)
         return result
 
-    def get_manager_containers(self) -> list:
+    def get_manager_container(self) -> List[dict]:
         """
         Get Management Container
         @return list of management objects for containers
@@ -219,7 +234,7 @@ class ContainerDatabase(IContainerDatabase):
         try:
             result = self.db.get_manager_containers()
         except Exception as e:
-            self.logger(e)
+            self.logger.error(e)
         return result
 
     def add_manager_object(self, *, manager: IManagementObject):
@@ -228,7 +243,11 @@ class ContainerDatabase(IContainerDatabase):
         @param manager management object
         """
         properties = manager.save()
-        self.db.add_manager_object(manager_key=str(manager.get_id()), properties=properties)
+        act_id = None
+        actor_name = manager.get_actor_name()
+        if actor_name is not None:
+            act_id = self.get_actor_id(actor_name=actor_name)
+        self.db.add_manager_object(manager_key=str(manager.get_id()), properties=properties, act_id=act_id)
 
     def remove_manager_object(self, *, mid: ID):
         """

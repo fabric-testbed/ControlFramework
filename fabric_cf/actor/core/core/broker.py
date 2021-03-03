@@ -41,7 +41,6 @@ from fabric_cf.actor.core.manage.broker_management_object import BrokerManagemen
 from fabric_cf.actor.core.manage.kafka.services.kafka_broker_service import KafkaBrokerService
 from fabric_cf.actor.core.proxies.kafka.services.broker_service import BrokerService
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric_cf.actor.core.apis.i_broker import IBroker
@@ -252,7 +251,7 @@ class Broker(Actor, IBroker):
         reservation.set_policy(policy=self.policy)
 
     def advertise(self, *, delegation: ABCPropertyGraph, delegation_name: str, client: AuthToken) -> ID:
-        slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
+        slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name())
         slice_obj.set_owner(owner=client)
         slice_obj.set_broker_client()
 

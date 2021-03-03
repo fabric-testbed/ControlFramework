@@ -410,14 +410,6 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
                         return result
 
-                    temp = PropList.merge_properties(incoming=r.get_resources().get_config_properties(),
-                                                     outgoing=config_properties)
-                    r.get_resources().set_config_properties(p=temp)
-
-                    temp = PropList.merge_properties(incoming=r.get_resources().get_request_properties(),
-                                                     outgoing=request_properties)
-                    r.get_resources().set_request_properties(p=temp)
-
                     rset = ResourceSet()
                     if new_units == Constants.EXTEND_SAME_UNITS:
                         rset.set_units(units=r.get_resources().get_units())
@@ -426,9 +418,6 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
                     if new_resource_type is None:
                         rset.set_type(rtype=r.get_resources().get_type())
-
-                    rset.set_config_properties(p=config_properties)
-                    rset.set_request_properties(p=request_properties)
 
                     tmp_start_time = r.get_term().get_start_time()
                     new_term = r.get_term().extend()

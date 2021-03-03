@@ -36,7 +36,6 @@ from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
@@ -107,7 +106,7 @@ class Proxy(IProxy):
         """
 
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        proxy_reload_from_db.set_logger(GlobalsSingleton.get().get_logger())
+        proxy_reload_from_db.set_logger(logger=GlobalsSingleton.get().get_logger())
 
         if register:
             if proxy_reload_from_db.callback:
@@ -176,18 +175,7 @@ class Proxy(IProxy):
         @return a resources set that is a copy of the current but without any
                 concrete sets.
         """
-        new_resource_data = ResourceData()
-        properties = rset.get_config_properties()
-
-        if properties is None:
-            properties = {}
-        else:
-            properties = properties.copy()
-
-        temp = ResourceData.merge_properties(from_props=properties,
-                                             to_props=new_resource_data.get_configuration_properties())
-        new_resource_data.configuration_properties = temp
-        return ResourceSet(units=rset.get_units(), rtype=rset.get_type(), rdata=new_resource_data)
+        return ResourceSet(units=rset.get_units(), rtype=rset.get_type(), sliver=rset.get_sliver())
 
     def abstract_clone_broker(self, *, rset: ResourceSet) -> ResourceSet:
         """
@@ -198,17 +186,7 @@ class Proxy(IProxy):
         @return a resources set that is a copy of the current but without any
                 concrete sets.
         """
-        new_resource_data = ResourceData()
-        properties = rset.get_request_properties()
-
-        if properties is None:
-            properties = {}
-        else:
-            properties = properties.copy()
-
-        temp = ResourceData.merge_properties(from_props=properties, to_props=new_resource_data.get_request_properties())
-        new_resource_data.request_properties = temp
-        return ResourceSet(units=rset.get_units(), rtype=rset.get_type(), rdata=new_resource_data)
+        return ResourceSet(units=rset.get_units(), rtype=rset.get_type(), sliver=rset.get_sliver())
 
     @staticmethod
     def abstract_clone_return(rset: ResourceSet) -> ResourceSet:
@@ -220,14 +198,4 @@ class Proxy(IProxy):
         @return a resources set that is a copy of the current but without any
                 concrete sets.
         """
-        new_resource_data = ResourceData()
-        properties = rset.get_resource_properties()
-
-        if properties is None:
-            properties = {}
-        else:
-            properties = properties.copy()
-
-        temp = ResourceData.merge_properties(from_props=properties, to_props=new_resource_data.get_resource_properties())
-        new_resource_data.resource_properties = temp
-        return ResourceSet(units=rset.get_units(), rtype=rset.get_type(), rdata=new_resource_data)
+        return ResourceSet(units=rset.get_units(), rtype=rset.get_type(), sliver=rset.get_sliver())

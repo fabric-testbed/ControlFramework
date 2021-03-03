@@ -195,7 +195,7 @@ class Reservation(IKernelReservation):
         self.pending_recover = False
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
-        if self.resources is not None and self.resources.get_resources() is not None:
+        if actor is not None and self.resources is not None and self.resources.get_resources() is not None:
             self.resources.restore(plugin=actor.get_plugin(), reservation=self)
 
     def can_redeem(self) ->bool:
@@ -652,21 +652,6 @@ class Reservation(IKernelReservation):
 
         self.term.validate()
 
-    def set_local_property(self, *, key: str, value: str):
-        """
-        Set local property
-        @param key key
-        @param value value
-        """
-        self.resources.get_local_properties()[key] = value
-
-    def get_local_property(self, *, key: str) -> str:
-        """
-        Get local property
-        @return local property
-        """
-        return self.resources.get_local_properties()[key]
-
     def get_join_state(self) -> JoinState:
         """
         Get Join State
@@ -685,7 +670,7 @@ class Reservation(IKernelReservation):
 
     def get_graph_node_id(self) -> str:
         if self.requested_resources is not None:
-            request = self.requested_resources.get_request_properties()
+            request = self.requested_resources.get_sliver()
             if request is not None:
-                return request.get(Constants.SLIVER_PROPERTY_GRAPH_NODE_ID, None)
+                return request.cbm_node_id
         return None

@@ -29,7 +29,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_slice import ISlice
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.util.resource_data import ResourceData
 
 
 class ISliceFactory:
@@ -37,14 +36,13 @@ class ISliceFactory:
     Factory for slice objects.
     """
     @staticmethod
-    def create(*, slice_id: ID, name: str = None, data: ResourceData = None) -> ISlice:
+    def create(*, slice_id: ID, name: str = None) -> ISlice:
         """
         Creates a new slice with the specified id, name, and resource
         properties.
 
         @param slice_id slice id
         @param name slice name
-        @param data slice properties
 
         @return slice object
         """

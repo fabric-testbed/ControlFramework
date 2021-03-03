@@ -101,7 +101,7 @@ class ServerActorManagementObject(ActorManagementObject):
                 for r in res_list:
                     slice_obj = self.get_slice_by_guid(guid=r.get_slice_id())
                     r.restore(actor=self.actor, slice_obj=slice_obj, logger=self.logger)
-                    rr = Converter.fill_reservation(reservation=r, full=False)
+                    rr = Converter.fill_reservation(reservation=r, full=True)
                     result.result.append(rr)
         except Exception as e:
             self.logger.error("do_get_reservations: {}".format(e))
@@ -169,11 +169,10 @@ class ServerActorManagementObject(ActorManagementObject):
 
             if not owner_is_ok:
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
-                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret())
                 return result
 
-            slice_obj = SliceFactory.create(slice_id=ID(), name=slice_mng.get_slice_name(),
-                                            data=Converter.get_resource_data(slice_mng=slice_mng))
+            slice_obj = SliceFactory.create(slice_id=ID(), name=slice_mng.get_slice_name())
             slice_obj.set_description(description=slice_mng.get_description())
             slice_obj.set_inventory(value=False)
 

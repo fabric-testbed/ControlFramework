@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import threading
 from typing import List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -46,10 +47,18 @@ class OrchestratorSliceWrapper:
         self.slice_obj = slice_obj
         self.logger = logger
         self.reservation_converter = ReservationConverter(controller=controller, broker=broker)
-        self.workflow = RequestWorkflow()
+        self.workflow = RequestWorkflow(logger=logger)
 
         self.computed_reservations = None
         self.first_delete_attempt = None
+        self.thread_lock = threading.Lock()
+
+    def lock(self):
+        self.thread_lock.acquire()
+
+    def unlock(self):
+        if self.thread_lock.locked():
+            self.thread_lock.release()
 
     def remove_computed_reservation(self, *, rid: str):
         if self.computed_reservations is not None:

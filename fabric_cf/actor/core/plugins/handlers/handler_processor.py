@@ -75,7 +75,7 @@ class HandlerProcessor:
         finally:
             self.lock.release()
 
-    def create(self, unit: ConfigToken, properties: dict):
+    def create(self, unit: ConfigToken):
         self.logger.info("Executing Create")
 
         result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
@@ -85,7 +85,7 @@ class HandlerProcessor:
         self.plugin.configuration_complete(token=unit, properties=result)
         self.logger.info("Executing Create completed")
 
-    def delete(self, unit: ConfigToken, properties: dict):
+    def delete(self, unit: ConfigToken):
         self.logger.info("Executing Delete")
 
         result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_DELETE,
@@ -95,7 +95,7 @@ class HandlerProcessor:
         self.plugin.configuration_complete(token=unit, properties=result)
         self.logger.info("Executing Delete completed")
 
-    def modify(self, unit: ConfigToken, properties: dict):
+    def modify(self, unit: ConfigToken):
         self.logger.info("Executing Modify")
 
         result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_MODIFY,

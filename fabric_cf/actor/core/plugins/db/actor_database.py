@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
 import threading
+import traceback
 from typing import List
 
 from fabric_cf.actor.core.apis.i_actor import IActor
@@ -80,6 +81,8 @@ class ActorDatabase(IDatabase):
 
     def set_logger(self, *, logger):
         self.logger = logger
+        if self.db is not None:
+            self.db.set_logger(logger=logger)
 
     def set_reset_state(self, *, state: bool):
         self.reset_state = state
@@ -298,7 +301,8 @@ class ActorDatabase(IDatabase):
                                        rsv_state=reservation.get_state().value,
                                        rsv_pending=reservation.get_pending_state().value,
                                        rsv_joining=reservation.get_join_state().value,
-                                       properties=properties)
+                                       properties=properties,
+                                       rsv_graph_node_id=reservation.get_graph_node_id())
 
         finally:
             self.lock.release()
@@ -319,6 +323,7 @@ class ActorDatabase(IDatabase):
             return result
         except Exception as e:
             self.logger.error(e)
+            self.logger.error(traceback.format_exc())
         return None
 
     def get_reservation(self, *, rid: ID) -> IReservation:
@@ -604,6 +609,7 @@ class ActorDatabase(IDatabase):
             return result
         except Exception as e:
             self.logger.error(e)
+            self.logger.error(traceback.format_exc())
         finally:
             self.lock.release()
         return None
@@ -658,7 +664,7 @@ class ActorDatabase(IDatabase):
     def _load_delegation_from_pickled_instance(self, pickled_del: str, slice_id: int) -> IDelegation:
         slice_obj = self.get_slice_by_id(slc_id=slice_id)
         delegation = pickle.loads(pickled_del)
-        delegation.restor(actor=None, slice_obj=slice_obj)
+        delegation.restore(actor=None, slice_obj=slice_obj)
         return delegation
 
     def get_delegation(self, *, dlg_graph_id: str) -> IDelegation:

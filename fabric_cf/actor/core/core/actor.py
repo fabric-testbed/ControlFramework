@@ -101,12 +101,6 @@ class Actor(IActor):
     """
     Actor is the base class for all actor implementations
     """
-    PropertyAuthToken = "ActorAuthToken"
-    PropertyDescription = "ActorDescription"
-    PropertyMapper = "ActorMapper"
-    PropertyMapperClass = "ActorMapperClass"
-    PropertyPlugin = "ActorPlugin"
-    PropertyPluginClass = "ActorPluginClass"
     DefaultDescription = "no description"
 
     actor_count = 0
@@ -198,6 +192,7 @@ class Actor(IActor):
         self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
+        self.policy.set_actor(actor=self)
 
     def actor_added(self):
         self.plugin.actor_added()
@@ -396,6 +391,7 @@ class Actor(IActor):
 
             self.policy.set_actor(actor=self)
             self.policy.initialize()
+            self.policy.set_logger(logger=self.logger)
 
             self.wrapper = KernelWrapper(actor=self, plugin=self.plugin, policy=self.policy)
 
@@ -538,7 +534,7 @@ class Actor(IActor):
         @param slice_obj slice object
         """
         try:
-            r.restore(actor=self, slice_obj=slice_obj, logger=self.logger)
+            r.restore(actor=self, slice_obj=slice_obj)
 
             self.logger.info(
                 "Found reservation # {} in state {}".format(r.get_reservation_id(), r.get_reservation_state()))
@@ -604,7 +600,7 @@ class Actor(IActor):
         """
         try:
 
-            d.restore(actor=self, slice_obj=slice_obj, logger=self.logger)
+            d.restore(actor=self, slice_obj=slice_obj)
 
             self.logger.info(
                 "Found delegation # {} in state {}".format(d.get_delegation_id(), d.get_state_name()))
@@ -972,3 +968,10 @@ class Actor(IActor):
             self.logger.error(traceback.format_exc())
             self.logger.error("Failed to setup message service e={}".format(e))
             raise e
+
+    def set_logger(self, logger):
+        self.logger = logger
+        if self.policy is not None:
+            self.policy.set_logger(logger=logger)
+        if self.plugin is not None:
+            self.plugin.set_logger(logger=logger)

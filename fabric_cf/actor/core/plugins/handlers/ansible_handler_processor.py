@@ -79,7 +79,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
     def set_logger(self, *, logger):
         self.logger = logger
 
-    def invoke_handler(self, unit: ConfigToken, properties: dict, operation: str):
+    def invoke_handler(self, unit: ConfigToken, operation: str):
         try:
             handler = self.config_mappings.get(str(unit.get_resource_type()), None)
             if handler is None:
@@ -92,11 +92,11 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             self.lock.acquire()
             future = None
             if operation == Constants.TARGET_CREATE:
-                future = self.executor.submit(handler_obj.create, unit, properties)
+                future = self.executor.submit(handler_obj.create, unit)
             elif operation == Constants.TARGET_DELETE:
-                future = self.executor.submit(handler_obj.delete, unit, properties)
+                future = self.executor.submit(handler_obj.delete, unit)
             elif operation == Constants.TARGET_MODIFY:
-                future = self.executor.submit(handler_obj.modify, unit, properties)
+                future = self.executor.submit(handler_obj.modify, unit)
             else:
                 raise AuthorityException("Invalid operation")
 
@@ -118,14 +118,14 @@ class AnsibleHandlerProcessor(HandlerProcessor):
                 self.lock.release()
             self.logger.info(f"Executing {operation} completed")
 
-    def create(self, unit: ConfigToken, properties: dict):
-        self.invoke_handler(unit=unit, properties=properties, operation=Constants.TARGET_CREATE)
+    def create(self, unit: ConfigToken):
+        self.invoke_handler(unit=unit, operation=Constants.TARGET_CREATE)
 
-    def modify(self, unit: ConfigToken, properties: dict):
-        self.invoke_handler(unit=unit, properties=properties, operation=Constants.TARGET_MODIFY)
+    def modify(self, unit: ConfigToken):
+        self.invoke_handler(unit=unit, operation=Constants.TARGET_MODIFY)
 
-    def delete(self, unit: ConfigToken, properties: dict):
-        self.invoke_handler(unit=unit, properties=properties, operation=Constants.TARGET_DELETE)
+    def delete(self, unit: ConfigToken):
+        self.invoke_handler(unit=unit, operation=Constants.TARGET_DELETE)
 
     def handler_complete(self, future):
         self.logger.debug(f"Handler Execution completed Result: {future.result()}")

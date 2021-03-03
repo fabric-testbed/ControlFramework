@@ -25,10 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from abc import abstractmethod
+from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING
 
-from yapsy.IPlugin import IPlugin
 
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.util.id import ID
@@ -37,13 +36,12 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.apis.i_database import IDatabase
     from fabric_cf.actor.core.apis.i_resource_delegation_factory import IResourceDelegationFactory
-    from fabric_cf.actor.core.util.resource_data import ResourceData
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.apis.i_reservation import IReservation
     from fabric_cf.actor.core.apis.i_slice import ISlice
 
 
-class IBasePlugin(IPlugin):
+class IBasePlugin(ABC):
     """
     IActorPlugin defines the interface for linking/injecting functionality to the leasing code.
     This interface can be used to link other systems to the core, for example to add support for leasing
@@ -53,25 +51,7 @@ class IBasePlugin(IPlugin):
     constructor that takes no arguments, and set methods for their attributes.
     """
     def __init__(self):
-        # Make sure to call the parent class (`IPlugin`) methods when
-        # overriding them.
-        super(IBasePlugin, self).__init__()
-
-    def activate(self):
-        """
-        Activate the plugin
-        """
-        # Make sure to call `activate()` on the parent class to ensure that the
-        # `is_activated` property gets set.
-        super(IBasePlugin, self).activate()
-
-    def deactivate(self):
-        """
-        Deactivate the plugin
-        """
-        # Make sure to call `deactivate()` on the parent class to ensure that
-        # the `is_activated` property gets set.
-        super(IBasePlugin, self).deactivate()
+        pass
 
     @abstractmethod
     def configure(self, *, properties):
@@ -141,14 +121,13 @@ class IBasePlugin(IPlugin):
         """
 
     @abstractmethod
-    def create_slice(self, *, slice_id: ID, name: str, properties: ResourceData):
+    def create_slice(self, *, slice_id: ID, name: str):
         """
         Creates a new slice.
 
         Args:
             slice_id: guid for the slice
             name: slice name
-            properties: properties for the slice
         Returns:
             a slice object
         Raises:

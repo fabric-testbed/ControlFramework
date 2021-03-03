@@ -31,7 +31,6 @@ from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.apis.i_broker_policy import IBrokerPolicy
 from fabric_cf.actor.core.core.policy import Policy
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
@@ -105,8 +104,7 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         @return returns ResourceSet
         @throws Exception in case of error
         """
-        rd = ResourceData()
-        extracted = ResourceSet(units=delegation.get_units(), rtype=delegation.get_resource_type(), rdata=rd)
+        extracted = ResourceSet(units=delegation.get_units(), rtype=delegation.get_resource_type())
 
         cset = Ticket(delegation=delegation, plugin=self.actor.get_plugin(), authority=source.get_site_proxy(),
                       delegation_id=source.get_delegation_id())

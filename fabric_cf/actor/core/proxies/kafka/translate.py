@@ -30,7 +30,6 @@ from typing import TYPE_CHECKING, List
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
-from fabric_mb.message_bus.messages.resource_data_avro import ResourceDataAvro
 from fabric_mb.message_bus.messages.resource_delegation_avro import ResourceDelegationAvro
 from fabric_mb.message_bus.messages.resource_set_avro import ResourceSetAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
@@ -52,7 +51,6 @@ from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.prop_list import PropList
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.db import Units
@@ -64,12 +62,6 @@ if TYPE_CHECKING:
 
 
 class Translate:
-    # The direction constants specify the direction of a request. They are used
-    # to determine what properties should pass from one actor to another.
-    direction_agent = 1
-    direction_authority = 2
-    direction_return = 3
-
     @staticmethod
     def translate_udd(*, udd: UpdateData) -> UpdateDataAvro:
         result = UpdateDataAvro()
@@ -149,25 +141,6 @@ class Translate:
         return avro_term
 
     @staticmethod
-    def translate_resource_data(*, resource_data: ResourceData, direction: int) -> ResourceDataAvro:
-        if resource_data is None:
-            return None
-
-        avro_rdata = ResourceDataAvro()
-        if direction == Translate.direction_agent:
-            avro_rdata.request_properties = resource_data.request_properties
-
-        elif direction == Translate.direction_authority:
-            avro_rdata.config_properties = resource_data.configuration_properties
-
-        elif direction == Translate.direction_return:
-            avro_rdata.resource_properties = resource_data.resource_properties
-
-        else:
-            return None
-        return avro_rdata
-
-    @staticmethod
     def translate_resource_delegation(*, resource_delegation: ResourceDelegation) -> ResourceDelegationAvro:
         rd = ResourceDelegationAvro()
         rd.units = resource_delegation.units
@@ -240,28 +213,12 @@ class Translate:
         return ticket
 
     @staticmethod
-    def translate_resource_set(*, resource_set: ResourceSet, direction: int) -> ResourceSetAvro:
+    def translate_resource_set(*, resource_set: ResourceSet) -> ResourceSetAvro:
         avro_rset = ResourceSetAvro()
         avro_rset.type = str(resource_set.get_type())
         avro_rset.units = resource_set.get_units()
-        avro_rset.resource_data = Translate.translate_resource_data(resource_data=resource_set.get_resource_data(),
-                                                                    direction=direction)
+        avro_rset.set_sliver(sliver=resource_set.get_sliver())
         return avro_rset
-
-    @staticmethod
-    def translate_resource_data_from_avro(*, rdata: ResourceDataAvro) -> ResourceData:
-        result = ResourceData()
-
-        if rdata.config_properties is not None:
-            result.configuration_properties = rdata.config_properties
-
-        if rdata.request_properties is not None:
-            result.request_properties = rdata.request_properties
-
-        if rdata.resource_properties is not None:
-            result.resource_properties = rdata.resource_properties
-
-        return result
 
     @staticmethod
     def translate_term_from_avro(*, term: TermAvro) -> Term:
@@ -281,8 +238,7 @@ class Translate:
 
     @staticmethod
     def translate_resource_set_from_avro(*, rset: ResourceSetAvro) -> ResourceSet:
-        rdata = Translate.translate_resource_data_from_avro(rdata=rset.resource_data)
-        result = ResourceSet(units=rset.units, rtype=ResourceType(resource_type=rset.type), rdata=rdata)
+        result = ResourceSet(units=rset.units, rtype=ResourceType(resource_type=rset.type), sliver=rset.get_sliver())
         return result
 
     @staticmethod

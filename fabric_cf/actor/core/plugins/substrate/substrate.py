@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import PluginException
+from fabric_cf.actor.core.core.actor import Actor
 from fabric_cf.actor.core.plugins.handlers.handler_processor import HandlerProcessor
 from fabric_cf.actor.core.apis.i_substrate_database import ISubstrateDatabase
 from fabric_cf.actor.core.plugins.base_plugin import BasePlugin
@@ -44,6 +45,26 @@ if TYPE_CHECKING:
 
 
 class Substrate(BasePlugin, ISubstrate):
+    def __init__(self, *, actor: Actor, db: ISubstrateDatabase, handler_processor: HandlerProcessor):
+        super().__init__(actor=actor, db=db, handler_processor=handler_processor)
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['logger']
+        del state['resource_delegation_factory']
+        del state['actor']
+        del state['initialized']
+
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        self.logger = GlobalsSingleton.get().get_logger()
+        self.resource_delegation_factory = None
+        self.actor = None
+        self.initialized = False
+
     def initialize(self):
         super().initialize()
         if not isinstance(self.db, ISubstrateDatabase):
@@ -119,38 +140,14 @@ class Substrate(BasePlugin, ISubstrate):
         @param unit unit to prepare
         @throws Exception in case of error
         """
-
-    def get_config_properties_from_reservation(self, *, reservation: IReservation, unit: Unit) -> dict:
-        temp = reservation.get_resources().get_local_properties()
-        temp = PropList.merge_properties(incoming=reservation.get_slice().get_local_properties(), outgoing=temp)
-
-        if self.is_site_authority():
-            temp = PropList.merge_properties(incoming=reservation.get_resources().get_config_properties(),
-                                             outgoing=temp)
-            temp = PropList.merge_properties(incoming=reservation.get_slice().get_config_properties(),
-                                             outgoing=temp)
-
-            if reservation.get_requested_resources() is not None:
-                ticket = reservation.get_requested_resources().get_resources()
-                temp = PropList.merge_properties(incoming=ticket.get_properties(), outgoing=temp)
-                resource_delegation = ticket.get_delegation()
-                temp = PropList.merge_properties(incoming=resource_delegation.get_properties(), outgoing=temp)
-
-        temp = PropList.merge_properties(incoming=unit.get_properties(), outgoing=temp)
-
-        return temp
-
     def do_transfer_in(self, *, reservation: IReservation, unit: Unit):
-        prop = self.get_config_properties_from_reservation(reservation=reservation, unit=unit)
-        self.handler_processor.create(unit=unit, properties=prop)
+        self.handler_processor.create(unit=unit)
 
     def do_transfer_out(self, *, reservation: IReservation, unit: Unit):
-        prop = self.get_config_properties_from_reservation(reservation=reservation, unit=unit)
-        self.handler_processor.delete(unit=unit, properties=prop)
+        self.handler_processor.delete(unit=unit)
 
     def do_modify(self, *, reservation: IReservation, unit: Unit):
-        prop = self.get_config_properties_from_reservation(reservation=reservation, unit=unit)
-        self.handler_processor.modify(unit=unit, properties=prop)
+        self.handler_processor.modify(unit=unit)
 
     def fail_and_update(self, *, unit: Unit, message: str, e: Exception):
         self.logger.error(message)
