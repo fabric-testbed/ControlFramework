@@ -30,9 +30,7 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from fabric_cf.actor.core.apis.i_reservation import IReservation, ReservationCategory
 from fabric_cf.actor.core.apis.i_kernel_reservation import IKernelReservation
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
-from fabric_cf.actor.core.kernel.reservation_state_transition_event import ReservationStateTransitionEvent
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
 from fabric_cf.actor.core.util.reservation_state import ReservationState
 
@@ -68,17 +66,6 @@ class Reservation(IKernelReservation):
     an abstract class and is intended as a building block of higher-level
     reservation classes.
     """
-    PropertyGuard = "ReservationGuard"
-    PropertyExtended = "ReservationExtended"
-    PropertySliceID = "ReservationSliceID"
-    PropertyPreviousTerm = "ReservationPreviousTerm"
-    PropertyRequestedTerm = "ReservationRequestedTerm"
-    PropertyApprovedTerm = "ReservationApprovedTerm"
-    PropertyRequestedResources = "ReservationRequestedResources"
-    PropertyApprovedResources = "ReservationApprovedResources"
-    PropertyRenewable = "ReservationRenewable"
-    PropertyProperties = "ReservationProperties"
-    PropertyError = "ReservationError"
 
     def __init__(self, *, rid: ID = None, resources: ResourceSet = None, term: Term = None,
                  slice_object: IKernelSlice = None):
@@ -195,8 +182,13 @@ class Reservation(IKernelReservation):
         self.pending_recover = False
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
-        if actor is not None and self.resources is not None and self.resources.get_resources() is not None:
-            self.resources.restore(plugin=actor.get_plugin(), reservation=self)
+        if actor is not None:
+            if self.resources is not None:
+                self.resources.restore(plugin=actor.get_plugin(), reservation=self)
+            if self.requested_resources is not None:
+                self.requested_resources.restore(plugin=actor.get_plugin(), reservation=self)
+            if self.approved_resources is not None:
+                self.approved_resources.restore(plugin=actor.get_plugin(), reservation=self)
 
     def can_redeem(self) ->bool:
         return True
@@ -602,7 +594,7 @@ class Reservation(IKernelReservation):
 
     def transition(self, *, prefix: str, state: ReservationStates, pending: ReservationPendingStates):
         if self.state == ReservationStates.Failed and self.logger is not None:
-                self.logger.debug("failed")
+            self.logger.debug("failed")
 
         if self.logger is not None:
             self.logger.debug(f"Reservation #{self.rid} {prefix} transition: {self.get_state_name()} -> {state.name}, "
@@ -610,11 +602,6 @@ class Reservation(IKernelReservation):
 
         self.state = state
         self.pending_state = pending
-
-        if self.actor is not None:
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            GlobalsSingleton.get().event_manager.dispatch_event(event=ReservationStateTransitionEvent(
-                reservation=self, state=self.get_reservation_state()))
 
         self.set_dirty()
         self.state_transition = True
@@ -672,5 +659,5 @@ class Reservation(IKernelReservation):
         if self.requested_resources is not None:
             request = self.requested_resources.get_sliver()
             if request is not None:
-                return request.cbm_node_id
+                return request.bqm_node_id
         return None

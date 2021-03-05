@@ -218,6 +218,19 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         Must be invoked after creating reservation from unpickling
         """
         super().restore(actor=actor, slice_obj=slice_obj)
+        if actor is not None:
+            if self.leased_resources is not None:
+                self.leased_resources.restore(plugin=actor.get_plugin(), reservation=self)
+            if self.suggested_resources is not None:
+                self.suggested_resources.restore(plugin=actor.get_plugin(), reservation=self)
+            if self.broker is not None:
+                self.broker.set_logger(logger=actor.get_logger())
+            if self.authority is not None:
+                self.authority.set_logger(logger=actor.get_logger())
+            if self.callback is not None:
+                self.callback.set_logger(logger=actor.get_logger())
+            self.policy = actor.get_policy()
+
         self.suggested = False
 
     def absorb_lease_update(self, *, incoming: IReservation, update_date: UpdateData):
@@ -463,6 +476,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                     RPCManagerSingleton.get().relinquish(reservation=self)
                 except Exception as e:
                     self.logger.error("broker reports relinquish error: e: {}".format(e))
+                    self.logger.error(traceback.format_exc())
             else:
                 self.logger.info("Reservation #{} has not requested any resource yet. Nothing to relinquish.".
                                  format(self.rid))
@@ -497,6 +511,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                         RPCManagerSingleton.get().close(reservation=self)
                     except Exception as e:
                         self.logger.error("authority reports close error: e: {}".format(e))
+                        self.logger.error(traceback.format_exc())
                         self.transition(prefix="close", state=ReservationStates.Closed,
                                         pending=ReservationPendingStates.None_)
                         self.do_relinquish()
@@ -825,6 +840,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 RPCManagerSingleton.get().close(reservation=self)
             except Exception as e:
                 self.logger.error("authority reports close error: {}".format(e))
+                self.logger.error(traceback.format_exc())
                 # If the authority is unreachable or rejects the request,
                 # then purge it. This is useful because the authority may
                 # close first and reject this request, which could lead to

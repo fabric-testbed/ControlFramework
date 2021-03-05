@@ -106,6 +106,7 @@ class ResourceControl(IResourceControl):
         self._free_resources(resource_set=resource_set)
 
     def correct_deficit(self, *, reservation: IAuthorityReservation) -> ResourceSet:
+        print("KOMAL correct_deficit")
         return self.assign(reservation=reservation)
 
     def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):

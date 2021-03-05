@@ -102,7 +102,7 @@ class Translate:
         avro_slice.set_client_slice(slice_obj.is_client())
 
         if slice_obj.get_graph_id() is not None:
-            avro_slice.graph_id = str(slice_obj.get_graph_id())
+            avro_slice.graph_id = slice_obj.get_graph_id()
 
         return avro_slice
 

@@ -29,12 +29,10 @@ from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
-from fim.graph.slices.abc_asm import ABCASMPropertyGraph
-from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver
-from fim.slivers.capacities_labels import Capacities, Labels
+from fim.slivers.capacities_labels import Capacities
 from fim.slivers.network_node import NodeSliver
 
-from fabric_cf.actor.neo4j.neo4j_graph_node import Neo4jGraphNode
+from fabric_cf.actor.core.common.constants import Constants
 
 
 class Neo4jHelper:
@@ -143,72 +141,28 @@ class Neo4jHelper:
         neo4j_graph_importer.delete_graph(graph_id=graph_id)
 
     @staticmethod
-    def get_node_from_graph(*, graph:Neo4jPropertyGraph, node_id: str) -> Neo4jGraphNode:
-        """
-        Build a deep NetworkNode or other similar (e.g.
-        network-attached storage) sliver from a graph node
-        :param graph:
-        :param node_id:
-        :return:
-        """
-        clazzes, props = graph.get_node_properties(node_id=node_id)
+    def get_delegation(delegated_capacities: list, delegation_name: str) -> Capacities:
+        for capacity_dict in delegated_capacities:
+            name = capacity_dict.get(ABCPropertyGraph.FIELD_DELEGATION, None)
+            if name == delegation_name:
+                capacity_dict.pop(ABCPropertyGraph.FIELD_DELEGATION)
+                return Capacities().from_json(json.dumps(capacity_dict))
+        return None
 
-        neo4j_node = Neo4jGraphNode(node_id=node_id)
-        resource_type = props.get(ABCPropertyGraph.PROP_TYPE, None)
-        resource_model = props.get(ABCPropertyGraph.PROP_MODEL, None)
-
-        neo4j_node.set_resource_type(resource_type=resource_type)
-        neo4j_node.set_resource_model(resource_model=resource_model)
-        labels = props.get(ABCPropertyGraph.PROP_LABELS, None)
-
-        if labels is not None and labels != 'None':
-            neo4j_node.set_labels(labels=Labels().from_json(labels))
-
-        capacities = props.get(ABCPropertyGraph.PROP_CAPACITIES, None)
-
-        if capacities is not None and capacities != 'None':
-            neo4j_node.set_capacities(capacities=Capacities().from_json(capacities))
-
-        capacity_del_json_list = graph.get_node_json_property_as_object(node_id=node_id,
-                                                                        prop_name=ABCPropertyGraph.PROP_CAPACITY_DELEGATIONS)
-
-        # Broker has dictionary of delegations
-        if capacity_del_json_list is not None and isinstance(capacity_del_json_list, dict):
-            # AM
-            key = capacity_del_json_list.get(ABCPropertyGraph.FIELD_DELEGATION, None)
-            if key is not None:
-                capacity_del_json_list.pop(ABCPropertyGraph.FIELD_DELEGATION)
-                neo4j_node.add_capacity_delegation(del_id=key,
-                                                   capacities=Capacities().from_json(json.dumps(capacity_del_json_list)))
-            #Broker
-            else:
-                for key, value in capacity_del_json_list.items():
-                    value_json = next(iter(value))
-                    neo4j_node.add_capacity_delegation(del_id=key,
-                                                       capacities=Capacities().from_json(json.dumps(value_json)))
-
-        # AM has list of delegations
-        if capacity_del_json_list is not None and isinstance(capacity_del_json_list, list):
-            for c_dict in capacity_del_json_list:
-                key = c_dict.get(ABCPropertyGraph.FIELD_DELEGATION, None)
-                c_dict.pop(ABCPropertyGraph.FIELD_DELEGATION)
-                neo4j_node.add_capacity_delegation(del_id=key,
-                                                   capacities=Capacities().from_json(json.dumps(c_dict)))
-
-        label_del_json_list = graph.get_node_json_property_as_object(node_id=node_id,
-                                                                     prop_name=ABCPropertyGraph.PROP_LABEL_DELEGATIONS)
-
-        if label_del_json_list is not None:
-            for key, value in label_del_json_list.items():
-                value_json = next(iter(value))
-                neo4j_node.add_label_delegation(del_id=key, labels=Labels().from_json(json.dumps(value_json)))
-
-        # find and build deep slivers of switch fabrics (if any) and components (if any)
-        comps = graph.get_first_neighbor(node_id=node_id, rel=ABCPropertyGraph.REL_HAS,
-                                         node_label=ABCPropertyGraph.CLASS_Component)
-        if comps is not None and len(comps) > 0:
-            for c in comps:
-                component_node = Neo4jHelper.get_node_from_graph(graph=graph, node_id=c)
-                neo4j_node.add_component(component=component_node)
-
-        return neo4j_node
+    @staticmethod
+    def get_node_sliver_props(*, sliver: NodeSliver) -> dict:
+        if sliver is not None:
+            result = {}
+            if sliver.management_ip is not None:
+                result[ABCPropertyGraph.PROP_MGMT_IP] = sliver.management_ip
+            if sliver.management_interface_mac_address is not None:
+                result[Constants.MANAGEMENT_INTERFACE_MAC_ADDRESS] = sliver.management_interface_mac_address
+            if sliver.instance_name is not None:
+                result[Constants.INSTANCE_NAME] = sliver.instance_name
+            if sliver.state is not None:
+                result[Constants.INSTANCE_STATE] = sliver.state
+            if sliver.worker_node_name is not None:
+                result[Constants.WORKER_NODE_NAME] = sliver.worker_node_name
+            if sliver.bqm_node_id is not None:
+                result[Constants.BQM_NODE_ID] = sliver.bqm_node_id
+            return result

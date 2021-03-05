@@ -108,7 +108,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
-            result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
+            result = {Constants.PROPERTY_TARGET_NAME: operation,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
 

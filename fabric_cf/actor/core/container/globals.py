@@ -39,7 +39,6 @@ import os
 from fss_utils.jwt_validate import JWTValidator
 
 from fabric_cf.actor.core.common.exceptions import InitializationException
-from fabric_cf.actor.core.container.event_manager import EventManager
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.container import Container
 
@@ -57,7 +56,6 @@ class Globals:
         self.initialized = False
         self.started = False
         self.start_completed = False
-        self.event_manager = EventManager()
         self.container = None
         self.properties = None
         self.timer_scheduler = sched.scheduler()

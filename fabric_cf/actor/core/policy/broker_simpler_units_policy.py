@@ -31,12 +31,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Tuple
 
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
 from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -46,7 +46,7 @@ from fabric_cf.actor.core.util.prop_list import PropList
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper, Neo4jGraphNode
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_broker import IBroker
@@ -107,7 +107,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         del state['allocation_horizon']
         del state['ready']
         del state['queue']
-        del state['inventory']
 
         return state
 
@@ -279,7 +278,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.debug("Expiring res: {}".format(reservation))
 
             if reservation.is_renewable():
-                self.logger.debug("This is a renewable expiring reservtion")
+                self.logger.debug("This is a renewable expiring reservation")
 
                 term = reservation.get_term()
 
@@ -290,7 +289,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 result.add(reservation=reservation)
                 self.calendar.add_pending(reservation=reservation)
             else:
-                self.logger.debug("This is not a renewable expiring res")
+                self.logger.debug("This is not a renewable expiring reservation")
 
         return result
 
@@ -330,7 +329,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     start = reservation.get_requested_term().get_new_start_time()
                     end = self.align_end(when=reservation.get_requested_term().get_end_time())
 
-                    resource_type = self.get_current_resource_type(reservation=reservation)
+                    resource_type = reservation.get_resources().get_type()
 
                     inv = self.inventory.get(resource_type=resource_type)
 
@@ -350,7 +349,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if not reservation.is_ticketing():
                     continue
 
-                status, node_id_to_reservations = self.ticket(reservation=reservation, start_cycle=start_cycle,
+                status, node_id_to_reservations = self.ticket(reservation=reservation,
                                                               node_id_to_reservations=node_id_to_reservations)
                 if status:
                     continue
@@ -360,15 +359,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     continue
 
                 if not reservation.is_failed():
-                    '''
-                    if PropList.is_elastic_time(rset=reservation.get_requested_resources()):
-                        self.logger.debug(f"Adding reservation# {reservation.get_reservation_id()} to the queue")
-                        self.queue.add(reservation=reservation)
-                    else:
-                        reservation.fail(f"Insufficient resources for specified start time, Failing reservation: "
-                                         f"{reservation.get_reservation_id()}")
-                    '''
-                    # TODO
                     reservation.fail(f"Insufficient resources for specified start time, Failing reservation: "
                                      f"{reservation.get_reservation_id()}")
 
@@ -381,11 +371,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         # as the reservations are not updated in the database yet
         node_id_to_reservations = {}
         for reservation in self.queue.values():
-            status, node_id_to_reservations = self.ticket(reservation=reservation, start_cycle=start_cycle,
+            status, node_id_to_reservations = self.ticket(reservation=reservation,
                                                           node_id_to_reservations=node_id_to_reservations)
             if not status:
-                request_properties = reservation.get_requested_resources().get_request_properties()
-                threshold = request_properties[Constants.QUEUE_THRESHOLD]
+                # TODO
+                threshold = 100
                 start = self.clock.cycle(when=reservation.get_requested_term().get_new_start_time())
 
                 if threshold != 0 and ((start_cycle - start) > threshold):
@@ -394,10 +384,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             else:
                 self.queue.remove(reservation=reservation)
 
-    def ticket(self, *, reservation: IBrokerReservation, start_cycle: int,
-               node_id_to_reservations: dict) -> Tuple[bool, dict]:
-        start_time = self.clock.date(cycle=start_cycle)
-
+    def ticket(self, *, reservation: IBrokerReservation, node_id_to_reservations: dict) -> Tuple[bool, dict]:
         self.logger.debug(f"cycle: {self.actor.get_current_cycle()} new ticket request: "
                           f"{reservation}/{type(reservation).__name__}")
 
@@ -405,16 +392,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         end = self.align_end(when=reservation.get_requested_term().get_end_time())
 
         term = None
-        # TODO
-        '''
-        if start < start_time and PropList.is_elastic_time(rset=reservation.get_requested_resources()):
-            length = ActorClock.to_milliseconds(when=end) - ActorClock.to_milliseconds(when=start)
-
-            start = self.clock.cycle_start_in_millis(cycle=start_cycle)
-            start_time = ActorClock.from_milliseconds(milli_seconds=start)
-            term = Term(start=start_time, length=length)
-        '''
-
         resource_type = reservation.get_requested_resources().get_type()
         if resource_type is None or not self.inventory.contains_type(resource_type=resource_type):
             resource_type = self.get_default_resource_type()
@@ -455,7 +432,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                  reservation_info=existing_reservations)
 
             if delegation_id is not None:
-                sliver.cbm_node_id = node_id
+                sliver.bqm_node_id = node_id
+                sliver.worker_node_name = graph_node.get_name()
                 delegation = self.actor.get_delegation(did=delegation_id)
                 reservation = self.issue_ticket(reservation=reservation, units=needed, rtype=rset.get_type(), term=term,
                                                 source=delegation, sliver=sliver)
@@ -530,7 +508,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.set_bid_pending(value=False)
         else:
             if mine is None:
-                raise BrokerException("There was an error extracting a ticket from the source ticket")
+                raise BrokerException("There was an error extracting a ticket from the source delegation")
         return reservation
 
     def release(self, *, reservation):
@@ -567,21 +545,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         except Exception as e:
             self.logger.error(f"release resources {e}")
 
-    def revisit_server(self, *, reservation: IBrokerReservation):
-        super().revisit_server(reservation=reservation)
-
-        if reservation.get_state() == ReservationStates.Ticketed:
-            self.revisit_ticketed(reservation=reservation)
-
-    def revisit_ticketed(self, *, reservation: IBrokerReservation):
-        rset = reservation.get_resources()
-        rtype = rset.get_type()
-        inv = self.inventory.get(resource_type=rtype)
-        if inv is None:
-            raise BrokerException("cannot free resources: no inventory")
-
-        inv.allocate_revisit(count=rset.get_units(), resource=rset.get_resource_properties())
-
     def align_end(self, *, when: datetime) -> datetime:
         """
         Aligns the specified date with the end of the closest cycle.
@@ -605,9 +568,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         cycle = self.clock.cycle(when=when)
         time = self.clock.cycle_start_in_millis(cycle=cycle)
         return ActorClock.from_milliseconds(milli_seconds=time)
-
-    def get_current_resource_type(self, *, reservation: IBrokerReservation) -> ResourceType:
-        return reservation.get_source().get_type()
 
     def query(self, *, p: dict) -> dict:
         """
@@ -663,12 +623,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug("Close Delegation")
         # TODO remove the delegation from the combined broker model
 
-    def get_node_from_graph(self, *, node_id: str) -> Neo4jGraphNode:
+    def get_node_from_graph(self, *, node_id: str) -> NodeSliver:
         try:
             self.lock.acquire()
             if self.combined_broker_model is None:
                 return None
-            return Neo4jHelper.get_node_from_graph(graph=self.combined_broker_model, node_id=node_id)
+            return self.combined_broker_model.build_deep_node_sliver(node_id=node_id)
         finally:
             self.lock.release()
 

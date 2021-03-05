@@ -64,7 +64,6 @@ class ReservationConverter:
             ticket.set_end(ActorClock.to_milliseconds(when=end))
             ticket.set_state(ReservationStates.Unknown.value)
             ticket.set_pending_state(ReservationPendingStates.None_.value)
-
             ticket.set_sliver(sliver)
 
             # Add reservation to Orchestrator

@@ -157,6 +157,7 @@ class OrchestratorHandler:
         slice_id = None
         controller = None
         orchestrator_slice = None
+        bqm_graph = None
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -169,7 +170,9 @@ class OrchestratorHandler:
                     if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
-            bqm_graph = None
+            asm = OrchestratorSliceWrapper.load_slice_in_memory(slice_name=slice_name, slice_graph=slice_graph,
+                                                                logger=self.logger)
+
             try:
                 bqm_string, bqm_graph = self.discover_types(controller=controller, token=token, delete_graph=False)
             except Exception as e:
@@ -189,6 +192,7 @@ class OrchestratorHandler:
             slice_obj.set_slice_name(slice_name)
             slice_obj.set_client_slice(True)
             slice_obj.set_description("Description")
+            slice_obj.graph_id = asm.get_graph_id()
 
             self.logger.debug(f"Adding Slice {slice_name}")
             slice_id = controller.add_slice(slice_obj=slice_obj, id_token=token)
@@ -206,13 +210,18 @@ class OrchestratorHandler:
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
-            computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=slice_graph)
+            computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=asm)
 
             # Process the Slice i.e. Demand the computed reservations i.e. Add them to the policy
             # Once added to the policy; Actor Tick Handler will do following asynchronously:
             # 1. Ticket message exchange with broker and
             # 2. Redeem message exchange with AM once ticket is granted by Broker
             self.controller_state.get_sdt().process_slice(controller_slice=orchestrator_slice)
+
+            # Slice, Slivers and Reservations hav been successfully created
+            # Load the slice in Neo4j
+            OrchestratorSliceWrapper.load_slice_in_neo4j(slice_name=slice_name, slice_graph=slice_graph,
+                                                         logger=self.logger)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -222,6 +231,8 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
         finally:
+            if bqm_graph is not None:
+                Neo4jHelper.delete_graph(graph_id=bqm_graph.get_graph_id())
             if orchestrator_slice is not None:
                 orchestrator_slice.unlock()
 

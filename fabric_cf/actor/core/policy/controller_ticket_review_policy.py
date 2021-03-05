@@ -41,7 +41,7 @@ class TicketReviewSliceState(Enum):
 
 class ControllerTicketReviewPolicy(ControllerSimplePolicy):
     """
-    This implementation of a Service Manager policy is almost identical to the parent ControllerSimplePolicy.
+    This implementation of a Controller policy is almost identical to the parent ControllerSimplePolicy.
     The only real difference is that it addresses that Tickets should not be redeemed if any reservations are
     currently Failed or Nascent.  This effectively acts as a "gate" between the Controller and AM.
     All reservations must be Ticketed, before any reservations are allowed to be redeemed.

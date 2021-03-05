@@ -24,15 +24,19 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+import traceback
 from typing import List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
+from fim.graph.networkx_property_graph import NetworkXGraphImporter
+from fim.graph.slices.networkx_asm import NetworkxASM
 
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
-from fabric_cf.orchestrator.core.request_workflow import RequestWorkflow
 from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.util.id import ID
 
@@ -47,7 +51,6 @@ class OrchestratorSliceWrapper:
         self.slice_obj = slice_obj
         self.logger = logger
         self.reservation_converter = ReservationConverter(controller=controller, broker=broker)
-        self.workflow = RequestWorkflow(logger=logger)
 
         self.computed_reservations = None
         self.first_delete_attempt = None
@@ -100,12 +103,39 @@ class OrchestratorSliceWrapper:
 
         return ticketed_requested_entities
 
-    def create(self, *, bqm_graph: Neo4jPropertyGraph, slice_graph: str) -> List[TicketReservationAvro]:
+    def create(self, *, bqm_graph: Neo4jPropertyGraph, slice_graph: NetworkxASM) -> List[TicketReservationAvro]:
         try:
-            slivers = self.workflow.run(bqm=bqm_graph, slice_graph=slice_graph)
+            slivers = []
+            for nn_id in slice_graph.get_all_network_nodes():
+                sliver = slice_graph.build_deep_node_sliver(node_id=nn_id)
+                slivers.append(sliver)
+
             self.computed_reservations = self.reservation_converter.get_tickets(slivers=slivers,
                                                                                 slice_id=self.slice_obj.get_slice_id())
+
             return self.computed_reservations
         except Exception as e:
-            self.logger.error("Exception occurred while running embedding e: {}".format(e))
+            self.logger.error("Exception occurred while generating reservations for slivers: {}".format(e))
             raise e
+
+    @staticmethod
+    def load_slice_in_memory(*, slice_name: str, slice_graph: str, logger) -> NetworkxASM:
+        try:
+            gi = NetworkXGraphImporter(logger=logger)
+            g = gi.import_graph_from_string_direct(graph_string=slice_graph)
+            asm = NetworkxASM(graph_id=g.graph_id, importer=g.importer, logger=g.importer.log)
+            asm.validate_graph()
+        except Exception as e:
+            logger.error(f"Exception occurred {e}")
+            logger.error(traceback.format_exc())
+            raise OrchestratorException(f"Failed to load the graph in Memory for slice: {slice_name}")
+        return asm
+
+    @staticmethod
+    def load_slice_in_neo4j(*, slice_name: str, slice_graph: str, logger) -> Neo4jPropertyGraph:
+        try:
+            return Neo4jHelper.get_graph_from_string(graph_str=slice_graph)
+        except Exception as e:
+            logger.error(f"Exception occurred {e}")
+            logger.error(traceback.format_exc())
+            raise OrchestratorException(f"Failed to load the graph in Neo4j for slice: {slice_name}")

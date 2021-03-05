@@ -106,7 +106,7 @@ class BasePlugin(IBasePlugin):
 
     def actor_added(self):
         if self.db is not None:
-            self.db.actor_added()
+            self.db.actor_added(actor=self.actor)
 
         if self.handler_processor is not None:
             self.handler_processor.set_plugin(plugin=self)
@@ -192,9 +192,6 @@ class BasePlugin(IBasePlugin):
 
     def set_actor(self, *, actor: IActor):
         self.actor = actor
-
-    def set_handler_processor(self, *, config: HandlerProcessor):
-        self.handler_processor = config
 
     def set_database(self, *, db: IDatabase):
         self.db = db

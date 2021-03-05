@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_slice import ISlice
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.resource_type import ResourceType
+    from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 
 
 class IDatabase:
@@ -45,7 +46,7 @@ class IDatabase:
     """
 
     @abstractmethod
-    def actor_added(self):
+    def actor_added(self, *, actor):
         """
         Performs initialization actions as a result of the actor being
         added to the container.
@@ -404,7 +405,22 @@ class IDatabase:
         @params dlg_graph_id: dlg_graph_id
         """
 
+    @abstractmethod
     def get_delegations(self) -> List[IDelegation]:
         """
         Get delegations
+        """
+
+    @abstractmethod
+    def add_config_mapping(self, key: str, config_mapping: ConfigurationMapping):
+        """
+        Add configuration Mapping
+        @param key key
+        @param config_mapping config mapping
+        """
+
+    @abstractmethod
+    def get_config_mappings(self) -> List[ConfigurationMapping]:
+        """
+        Return all config mappings
         """

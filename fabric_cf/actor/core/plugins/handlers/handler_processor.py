@@ -66,12 +66,23 @@ class HandlerProcessor:
             if self.plugin is None:
                 raise PluginException(Constants.NOT_SPECIFIED_PREFIX.format("plugin"))
             self.logger = self.plugin.get_logger()
+            self.load_config_mappings()
             self.initialized = True
+
+    def load_config_mappings(self):
+        try:
+            self.lock.acquire()
+            mappings = self.plugin.get_database().get_config_mappings()
+            for m in mappings:
+                self.config_mappings[m.get_key()] = m
+        finally:
+            self.lock.release()
 
     def add_config_mapping(self, *, mapping: ConfigurationMapping):
         try:
             self.lock.acquire()
             self.config_mappings[mapping.get_key()] = mapping
+            self.plugin.get_database().add_config_mapping(key=mapping.get_key(), config_mapping=mapping)
         finally:
             self.lock.release()
 

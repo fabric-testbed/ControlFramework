@@ -92,15 +92,15 @@ class Slice(IKernelSlice):
         self.graph = None
         self.delegations = {}
 
-    def set_graph_id(self, graph_id: ID):
+    def set_graph_id(self, graph_id: str):
         self.graph_id = graph_id
 
-    def get_graph_id(self) -> ID:
+    def get_graph_id(self) -> str:
         return self.graph_id
 
     def set_graph(self, *, graph: ABCPropertyGraph):
         self.graph = graph
-        self.set_graph_id(graph_id=ID(uid=self.graph.get_graph_id()))
+        self.set_graph_id(graph_id=self.graph.get_graph_id())
 
     def get_graph(self) -> ABCPropertyGraph:
         return self.graph

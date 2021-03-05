@@ -27,6 +27,7 @@ import threading
 import traceback
 from datetime import datetime
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
+from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric_cf.actor.core.apis.i_reservation import IReservation
@@ -41,7 +42,6 @@ from fabric_cf.actor.core.time.calendar.authority_calendar import AuthorityCalen
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.neo4j.neo4j_graph_node import Neo4jGraphNode
 from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 
 
@@ -362,7 +362,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             approved = reservation.get_requested_term()
             reservation.set_approved(term=approved, approved_resources=assigned)
             reservation.set_bid_pending(value=False)
-            node_id = assigned.get_sliver().cbm_node_id
+            node_id = assigned.get_sliver().bqm_node_id
 
             if node_id_to_reservations.get(node_id, None) is None:
                 node_id_to_reservations[node_id] = ReservationSet()
@@ -390,7 +390,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         if rc is not None:
             try:
                 ticketed_sliver = requested.get_sliver()
-                node_id = ticketed_sliver.cbm_node_id
+                node_id = ticketed_sliver.bqm_node_id
                 if node_id is None:
                     raise AuthorityException(f"Unable to find node_id {node_id} for reservation# {reservation}")
 
@@ -404,7 +404,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                 rset = rc.assign(reservation=reservation, delegation_name=delegation_name,
                                  graph_node=graph_node, reservation_info=existing_reservations)
 
-                if rset is None or rset.get_sliver() is None or rset.get_sliver().cbm_node_id is None:
+                if rset is None or rset.get_sliver() is None or rset.get_sliver().bqm_node_id is None:
                     raise AuthorityException(f"Could not assign resources to reservation# {reservation}")
 
                 return rset
@@ -521,12 +521,12 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                     break
             raise e
 
-    def get_node_from_graph(self, *, node_id: str) -> Neo4jGraphNode:
+    def get_node_from_graph(self, *, node_id: str) -> NodeSliver:
         try:
             self.lock.acquire()
             if self.aggregate_resource_model is None:
                 return None
-            return Neo4jHelper.get_node_from_graph(graph=self.aggregate_resource_model, node_id=node_id)
+            return self.aggregate_resource_model.build_deep_node_sliver(node_id=node_id)
         finally:
             self.lock.release()
 

@@ -261,9 +261,8 @@ class Constants:
     RSV_SLC_ID = 'rsv_slc_id'
     DLG_SLC_ID = 'dlg_slc_id'
 
-    VM_NAME = "vmname"
-    WORKER_NODE = "workernode"
-    HEAD_NODE = "headnode"
-    FLAVOR = "flavor"
-    IMAGE = "image"
-    PCI_DEVICES = "pci_devices"
+    BQM_NODE_ID = "bqm_node_id"
+    WORKER_NODE_NAME = 'worker_node_name'
+    INSTANCE_STATE = 'state'
+    INSTANCE_NAME = 'instance_name'
+    MANAGEMENT_INTERFACE_MAC_ADDRESS = 'management_interface_mac_address'

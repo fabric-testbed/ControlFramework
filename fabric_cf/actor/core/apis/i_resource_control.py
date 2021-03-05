@@ -28,7 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
-from fabric_cf.actor.neo4j.neo4j_graph_node import Neo4jGraphNode
+from fim.slivers.base_sliver import BaseSliver
+
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
@@ -111,7 +112,7 @@ class IResourceControl:
 
     @abstractmethod
     def assign(self, *, reservation: IAuthorityReservation, delegation_name: str,
-               graph_node: Neo4jGraphNode, reservation_info: List[IReservation]) -> ResourceSet:
+               graph_node: BaseSliver, reservation_info: List[IReservation]) -> ResourceSet:
         """
         Assigns resources to the reservation.
         @param reservation reservation

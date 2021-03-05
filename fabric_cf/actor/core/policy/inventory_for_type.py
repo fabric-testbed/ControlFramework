@@ -30,7 +30,6 @@ from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fim.slivers.base_sliver import BaseSliver
 
-from fabric_cf.actor.neo4j.neo4j_helper import Neo4jGraphNode
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_actor import IActor
@@ -38,15 +37,6 @@ if TYPE_CHECKING:
 
 
 class InventoryForType:
-    @abstractmethod
-    def allocate_revisit(self, *, count: int, resource: dict):
-        """
-        Called during revisit to indicate that a ticketed reservation is being
-        recovered.
-        @param count number of units
-        @param resource resource properties
-        """
-
     @abstractmethod
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
         """
@@ -58,7 +48,7 @@ class InventoryForType:
         """
 
     @abstractmethod
-    def allocate(self, *, reservation: IReservation, actor: IActor, graph_node: Neo4jGraphNode,
+    def allocate(self, *, reservation: IReservation, actor: IActor, graph_node: BaseSliver,
                  reservation_info: List[IReservation]) -> Tuple[str, BaseSliver]:
         """
         Allocate the sliver. This method is called for new ticketing/extending reservations.

@@ -212,6 +212,12 @@ class IDelegation(ABC):
         """
 
     @abstractmethod
+    def is_failed(self) -> bool:
+        """
+        Returns true if delegation is failed; false otherwise
+        """
+
+    @abstractmethod
     def delegate(self, policy: IPolicy, id_token: str = None):
         """
         Check if delegation can be delegated and state transition
@@ -349,4 +355,14 @@ class IDelegation(ABC):
     def get_delegation_name(self) -> str:
         """
         Get the delegation name by which it is advertised in Aggregate Resource Model
+        """
+
+    @abstractmethod
+    def fail(self, *, message: str, exception: Exception = None):
+        """
+        Marks an operation failure. Transitions the delegation to the failed state and logs the message as an error.
+
+        Args:
+              message: error message
+              exception: exception
         """

@@ -76,6 +76,7 @@ class Unit(ConfigToken):
         self.modified = None
         self.transfer_out_started = False
         self.sliver = sliver
+        self.worker_node_name = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -401,7 +402,14 @@ class Unit(ConfigToken):
         self.notices.add(msg=notice)
 
     def __str__(self):
-        return "[unit: {} reservation: {} actor: {} state: {}]".format(self.uid, self.reservation_id, self.actor_id, self.state)
+        return f"[unit: {self.uid} reservation: {self.reservation_id} actor: {self.actor_id} state: {self.state} " \
+               f"sliver: {self.sliver}]"
 
     def __hash__(self):
         return self.uid.__hash__()
+
+    def get_sliver(self) -> BaseSliver:
+        return self.sliver
+
+    def set_sliver(self, *, sliver: BaseSliver):
+        self.sliver = sliver

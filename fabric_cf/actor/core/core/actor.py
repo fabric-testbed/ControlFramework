@@ -37,11 +37,9 @@ from fabric_cf.actor.core.apis.i_actor_proxy import IActorProxy
 from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
 from fabric_cf.actor.core.apis.i_query_response_handler import IQueryResponseHandler
 from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.apis.i_reservation_tracker import IReservationTracker
 from fabric_cf.actor.core.apis.i_slice import ISlice
 from fabric_cf.actor.core.common.exceptions import ActorException
 from fabric_cf.actor.core.container.message_service import MessageService
-from fabric_cf.actor.core.core.reservation_tracker import ReservationTracker
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
@@ -49,7 +47,6 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.proxies.proxy import Proxy
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
-from fabric_cf.actor.core.util.all_actor_events_filter import AllActorEventsFilter
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.iterable_queue import IterableQueue
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
@@ -187,7 +184,6 @@ class Actor(IActor):
         self.thread_lock = threading.Lock()
         self.timer_queue = queue.Queue()
         self.event_queue = queue.Queue()
-        self.reservation_tracker = None
         self.subscription_id = None
         self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
@@ -196,22 +192,15 @@ class Actor(IActor):
 
     def actor_added(self):
         self.plugin.actor_added()
-        self.reservation_tracker = ReservationTracker()
-        filters = [AllActorEventsFilter(actor_guid=self.get_guid())]
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.subscription_id = GlobalsSingleton.get().event_manager.create_subscription(
-            token=self.identity, filters=filters, handler=self.reservation_tracker)
 
     def actor_removed(self):
-        if self.subscription_id is not None:
-            try:
-                from fabric_cf.actor.core.container.globals import GlobalsSingleton
-                GlobalsSingleton.get().event_manager.delete_subscription(sid=self.subscription_id, token=self.identity)
-            except Exception as e:
-                self.logger.error(e)
+        return
 
     def fail(self, *, rid: ID, message: str):
         self.wrapper.fail(rid=rid, message=message)
+
+    def fail_delegation(self, *, did: str, message: str):
+        self.wrapper.fail_delegation(did=did, message=message)
 
     def close_by_rid(self, *, rid: ID):
         self.wrapper.close(rid=rid)
@@ -879,13 +868,6 @@ class Actor(IActor):
         Await until no pending reservations
         """
         self.wrapper.await_nothing_pending()
-
-    def get_reservation_tracker(self) -> IReservationTracker:
-        """
-        Get Reservation Tracker
-        @return reservation tracker
-        """
-        return self.reservation_tracker
 
     def actor_main(self):
         """

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+import traceback
 from typing import TYPE_CHECKING
 from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
 from fabric_cf.actor.core.apis.i_kernel_authority_reservation import IKernelAuthorityReservation
@@ -489,6 +491,7 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                     self.policy.release(resources=released)
         except Exception as e:
             self.logger.error("exception in authority reap e: {}".format(e))
+            self.logger.error(traceback.format_exc())
 
     def recover(self):
         if self.state == ReservationStates.Ticketed:

@@ -87,8 +87,7 @@ class ResponseBuilder:
                 if slice_id is None and (slice_state == SliceState.Dead or slice_state == SliceState.Closing):
                     continue
                 s_dict = {'slice_id': s.get_slice_id(), 'slice_name': s.get_slice_name(),
-                          'resource_type': s.get_resource_type(), 'graph_id': s.get_graph_id(),
-                          'slice_state': slice_state.name}
+                          'graph_id': s.get_graph_id(), 'slice_state': slice_state.name}
                 slices.append(s_dict)
         else:
             status = ResponseBuilder.FAILURE_STATUS

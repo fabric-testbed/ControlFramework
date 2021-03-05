@@ -77,9 +77,10 @@ class UnitSet(IConcreteSet):
         self.released = None
 
     def __str__(self):
-        result = ""
+        result = "[UnitSet = "
         for unit in self.units:
-            result += "[{}]".format(unit)
+            result += f"[{unit}],"
+        result += "]"
         return result
 
     def restore(self, *, plugin: IBasePlugin, reservation: IReservation):
@@ -89,7 +90,8 @@ class UnitSet(IConcreteSet):
         @param reservation reservation
         """
         self.plugin = plugin
-        self.logger = plugin.get_logger()
+        if plugin is not None:
+            self.logger = plugin.get_logger()
         self.reservation = reservation
 
     def ensure_type(self, *, cset: IConcreteSet):

@@ -47,8 +47,8 @@ class ClaimTimeout(ITimerTask):
         self.req.actor.get_logger().debug("Claim timeout. Delegation= {}".format(self.req.delegation))
         self.req.actor.get_logger().error("Failing delegation {} due to expired claim timeout".format(
             self.req.delegation))
-        self.req.actor.fail(rid=self.req.get_delegation().get_delegation_id(),
-                            message="Timeout during claim. Please remove the delegation and retry later")
+        self.req.actor.fail_delegation(did=self.req.get_delegation().get_delegation_id(),
+                                       message="Timeout during claim. Please remove the delegation and retry later")
 
 
 class ReclaimTimeout(ITimerTask):
@@ -66,7 +66,7 @@ class ReclaimTimeout(ITimerTask):
         if self.req.delegation.get_state() == DelegationState.Delegated:
             self.req.actor.get_logger().error("Failing delegation {} due to expired reclaim timeout".format(
                 self.req.reservation))
-            self.req.actor.fail(rid=self.req.get_delegation().get_delegation_id(),
-                                message="Timeout during claim. Please remove the delegation and retry later")
+            self.req.actor.fail_delegation(did=self.req.get_delegation().get_delegation_id(),
+                                           message="Timeout during claim. Please remove the delegation and retry later")
         else:
             self.req.actor.get_logger().debug("Reclaim has already completed")

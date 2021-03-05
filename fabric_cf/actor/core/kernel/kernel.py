@@ -34,7 +34,6 @@ from fabric_cf.actor.core.apis.i_slice import ISlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException, \
     KernelException
-from fabric_cf.actor.core.container.globals import GlobalsSingleton
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
@@ -43,7 +42,6 @@ from fabric_cf.actor.core.apis.i_kernel_server_reservation import IKernelServerR
 from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation import Reservation
-from fabric_cf.actor.core.kernel.reservation_purged_event import ReservationPurgedEvent
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
@@ -145,6 +143,16 @@ class Kernel:
         if not reservation.is_failed() and not reservation.is_closed():
             reservation.fail(message=message, exception=None)
         self.plugin.get_database().update_reservation(reservation=reservation)
+
+    def fail_delegation(self, *, delegation: IDelegation, message: str):
+        """
+        Handle a failed delegation
+        @param delegation delegation
+        @param message message
+        """
+        if not delegation.is_failed() and not delegation.is_closed():
+            delegation.fail(message=message, exception=None)
+        self.plugin.get_database().update_delegation(delegation=delegation)
 
     def close(self, *, reservation: IKernelReservation):
         """
@@ -531,8 +539,6 @@ class Kernel:
                     self.logger.error(f"An error occurred during purge for "
                                       f"reservation #{reservation.get_reservation_id()} e: {e}")
                 finally:
-                    GlobalsSingleton.get().event_manager.dispatch_event(event=ReservationPurgedEvent(
-                        reservation=reservation))
                     self.reservations.remove(reservation=reservation)
 
         try:
@@ -818,7 +824,7 @@ class Kernel:
         temp = None
         temp = self.plugin.get_database().get_reservation(rid=reservation.get_reservation_id())
 
-        if temp is None or len(temp) == 0:
+        if temp is None:
             self.unregister_no_check(reservation=reservation, slice_object=local_slice)
             raise KernelException("The reservation has no database record")
 

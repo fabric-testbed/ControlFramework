@@ -191,6 +191,9 @@ class Delegation(IDelegation):
     def is_closed(self) -> bool:
         return self.state == DelegationState.Closed
 
+    def is_failed(self) -> bool:
+        return self.state == DelegationState.Failed
+
     def delegate(self, policy: IPolicy, id_token: str = None):
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
@@ -419,3 +422,12 @@ class Delegation(IDelegation):
 
     def get_delegation_name(self) -> str:
         return self.delegation_name
+
+    def fail(self, *, message: str, exception: Exception = None):
+        """
+        Fail a delegation
+        """
+        self.error_message = message
+        self.update_data.error(message=message)
+        self.transition(prefix=message, state=DelegationState.Failed)
+        self.logger.error(f"{message}  e: {exception}")

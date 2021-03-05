@@ -180,7 +180,6 @@ class ConfigurationProcessor:
         plugin = None
         if actor.get_plugin() is None:
             if actor.get_type() == ActorType.Authority:
-                # TODO replacement of ANSIBLE HANDLER
                 plugin = AuthoritySubstrate(actor=actor, db=None, handler_processor=AnsibleHandlerProcessor())
 
             elif actor.get_type() == ActorType.Orchestrator:

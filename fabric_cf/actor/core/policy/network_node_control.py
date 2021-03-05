@@ -23,9 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from typing import List, Dict
+from typing import List
 
 from fim.slivers.attached_components import AttachedComponentsInfo
+from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 from fim.user import Capacities
 
@@ -39,7 +40,7 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.policy.resource_control import ResourceControl
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.neo4j.neo4j_graph_node import Neo4jGraphNode
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 
 
 class NetworkNodeControl(ResourceControl):
@@ -82,24 +83,30 @@ class NetworkNodeControl(ResourceControl):
                                   f"RAM: [{requested_capacities.ram}/{available_ram}] "
                                   f"Disk: [{requested_capacities.disk}/{available_disk}]")
 
-    def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_node: Neo4jGraphNode,
+    def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_node: BaseSliver,
                            existing_reservations: List[IReservation]) -> AttachedComponentsInfo:
         self.logger.debug(f"requested_components: {requested_components} for reservation# {rid}")
         for name, c in requested_components.devices.items():
-            if c.cbm_node_id is None:
-                raise AuthorityException(f"Component of type: {c.cbm_node_id} does not have allocated CBM Node Id")
+            if c.bqm_node_id is None:
+                raise AuthorityException(f"Component of type: {c.bqm_node_id} does not have allocated BQM Node Id")
 
-            resource_type = str(c.get_resource_type())
-            available_components = graph_node.get_components_by_type(resource_type=resource_type)
+            resource_type = c.get_resource_type()
+            available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
             self.logger.debug(f"Resource Type: {resource_type} available_components: {available_components}")
 
             if available_components is None or len(available_components) == 0:
                 raise AuthorityException(f"Insufficient resources Component of type: {resource_type} not available "
-                                         f"in graph node: {graph_node.get_node_id()}")
+                                         f"in graph node: {graph_node.node_id}")
 
-            if c.cbm_node_id not in available_components:
-                raise AuthorityException(f"Component of type: {resource_type} is not available "
-                                         f"in graph node: {graph_node.get_node_id()}")
+            confirm_component = False
+
+            for av in available_components:
+                if c.bqm_node_id == av.node_id:
+                    confirm_component = True
+                    break
+
+            if not confirm_component:
+                raise AuthorityException(f"Graph node: {graph_node.node_id} has no component: {c.bqm_node_id}")
 
             for reservation in existing_reservations:
                 if reservation.get_reservation_id() == rid:
@@ -112,29 +119,29 @@ class NetworkNodeControl(ResourceControl):
                 if reservation.is_active() and reservation.get_resources() is not None:
                     allocated_sliver = reservation.get_resources().get_sliver()
 
-                if allocated_sliver is not None:
-                    allocated_components = allocated_sliver.attached_components_info.get_cbm_node_ids()
+                if allocated_sliver is not None and allocated_sliver.attached_components_info is not None:
+                    allocated_components = allocated_sliver.attached_components_info.get_devices_by_type(
+                        resource_type=resource_type)
+
                     self.logger.debug(f"Already allocated components {allocated_components} of resource_type "
                                       f"{resource_type} to reservation# {reservation.get_reservation_id()}")
+
                     for ac in allocated_components:
-                        if ac == c.cbm_node_id:
+                        if ac.bqm_node_id == c.bqm_node_id:
                             raise AuthorityException(
-                                f"Component of type: {resource_type} CBM Node Id: {c.cbm_node_id} "
-                                f"in graph {graph_node.get_node_id()}"
+                                f"Component of type: {resource_type} BQM Node Id: {c.bqm_node_id} "
+                                f"in graph {graph_node.node_id}"
                                 f"is already assigned to reservation# {reservation}")
 
-            component_node = graph_node.get_component(node_id=c.cbm_node_id)
-            c.labels.bdf = component_node.get_labels().bdf
-
-        return requested_components
-
     def assign(self, *, reservation: IAuthorityReservation, delegation_name: str,
-               graph_node: Neo4jGraphNode, reservation_info: List[IReservation]) -> ResourceSet:
+               graph_node: BaseSliver, reservation_info: List[IReservation]) -> ResourceSet:
 
         if graph_node.capacity_delegations is None or len(graph_node.capacity_delegations) < 1 or reservation is None:
             raise AuthorityException(Constants.INVALID_ARGUMENT)
 
-        available_delegated_capacity = graph_node.get_capacity_delegations().get(delegation_name, None)
+        delegated_capacities = graph_node.get_capacity_delegations()
+        available_delegated_capacity = Neo4jHelper.get_delegation(delegated_capacities=delegated_capacities,
+                                                                  delegation_name=delegation_name)
         if available_delegated_capacity is None:
             raise AuthorityException(f"Allocated node {graph_node.node_id} does not have delegation: {delegation_name}")
 
@@ -165,11 +172,10 @@ class NetworkNodeControl(ResourceControl):
 
             # Check components
             # Check if Components can be allocated
-            requested.attached_components_info = self.__check_components(
-                rid=reservation.get_reservation_id(),
-                requested_components=requested.attached_components_info,
-                graph_node=graph_node,
-                existing_reservations=reservation_info)
+            self.__check_components(rid=reservation.get_reservation_id(),
+                                    requested_components=requested.attached_components_info,
+                                    graph_node=graph_node,
+                                    existing_reservations=reservation_info)
 
             unit = Unit(uid=ID(), rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
                         actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type)

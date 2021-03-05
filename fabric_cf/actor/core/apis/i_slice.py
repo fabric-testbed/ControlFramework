@@ -288,14 +288,14 @@ class ISlice:
         """
 
     @abstractmethod
-    def set_graph_id(self, graph_id: ID):
+    def set_graph_id(self, graph_id: str):
         """
         Set graph id
         @param graph_id:  graph_id
         """
 
     @abstractmethod
-    def get_graph_id(self) -> ID:
+    def get_graph_id(self) -> str:
         """
         Returns the graph id
 
