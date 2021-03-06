@@ -210,6 +210,8 @@ class Container(IActorContainer):
                     self.logger.error(f"Failed to instantiate actors {e}")
                     self.logger.error("This container may need to be restored to a clean state")
                     raise e
+                # Create State file only after successful fresh boot
+                self.create_super_block()
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(e)
@@ -257,7 +259,6 @@ class Container(IActorContainer):
         self.logger.debug(f"Container guid is {self.guid}")
         self.set_time()
         self.persist_basic()
-        self.create_super_block()
 
     def persist_basic(self):
         """

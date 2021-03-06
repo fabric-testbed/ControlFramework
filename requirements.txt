@@ -1,5 +1,5 @@
 requests==2.25.1
-cryptography
+cryptography==3.3.2
 psycopg2-binary
 sqlalchemy
 fabric-message-bus

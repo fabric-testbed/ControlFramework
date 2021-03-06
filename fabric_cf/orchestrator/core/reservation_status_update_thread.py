@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import queue
 import threading
+import traceback
 from typing import List
 
 from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
@@ -232,6 +233,7 @@ class ReservationStatusUpdateThread:
                                     status_checker=ModifyStatusChecker())
         except Exception as e:
             self.logger.error(f"RuntimeException: {e} continuing")
+            self.logger.error(traceback.format_exc())
 
     @staticmethod
     def get_period() -> int:
