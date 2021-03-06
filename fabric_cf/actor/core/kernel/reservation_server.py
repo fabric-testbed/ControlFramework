@@ -26,8 +26,10 @@
 from abc import abstractmethod
 from datetime import datetime
 
+from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.i_slice import ISlice
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.apis.i_kernel_server_reservation import IKernelServerReservation
 from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
@@ -60,13 +62,6 @@ class ReservationServer(Reservation, IKernelServerReservation):
     side effects. Should update exception signatures on all reservation
     classes to reflect this convention.
     """
-    PropertyCallback = "ReservationServerCallback"
-    PropertyOwner = "ReservationServerOwner"
-    PropertyClient = "ReservationServerClient"
-    PropertyUpdateData = "ReservationServerUpdateData"
-    PropertyUpdateCount = "ReservationServerUpdateCount"
-    PropertySequenceNumberIn = "ReservationServerSequenceIn"
-    PropertySequenceNumberOut = "ReservationServerSequenceOut"
 
     def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_object: IKernelSlice):
         super().__init__(rid=rid, slice_object=slice_object)
@@ -123,6 +118,16 @@ class ReservationServer(Reservation, IKernelServerReservation):
         self.service_pending = ReservationPendingStates.None_
 
         self.policy = None
+
+    def restore(self, *, actor: IActor, slice_obj: ISlice):
+        """
+        Must be invoked after creating reservation from unpickling
+        """
+        super().restore(actor=actor, slice_obj=slice_obj)
+        if actor is not None:
+            if self.callback is not None:
+                self.callback.set_logger(logger=actor.get_logger())
+            self.policy = actor.get_policy()
 
     def prepare(self, *, callback: ICallbackProxy, logger):
         self.internal_error(err="abstract method")

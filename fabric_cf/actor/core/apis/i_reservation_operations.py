@@ -55,6 +55,18 @@ class IReservationOperations:
         """
 
     @abstractmethod
+    def fail_delegation(self, *, did: str, message: str):
+        """
+        Fails the specified delegation.
+
+        Args:
+            did: delegation id
+            message: message
+        Raises:
+            Exception in case of error
+        """
+
+    @abstractmethod
     def close_by_rid(self, *, rid: ID):
         """
         Closes the reservation. Note: the reservation must have already been registered with the actor.

@@ -122,7 +122,6 @@ class Constants:
     PROPERTY_CONF_PROMETHEUS_REST_PORT = "prometheus.port"
     PROPERTY_CONF_CONTROLLER_REST_PORT = "orchestrator.rest.port"
     PROPERTY_CONF_CONTROLLER_CREATE_WAIT_TIME_MS = "orchestrator.create.wait.time.ms"
-    PROPERTY_CONF_CONTROLLER_DELAY_RESOURCE_TYPES = "orchestrator.delay.resource.types"
 
     PROPERTY_SUBSTRATE_FILE = "substrate.file"
     PROPERTY_AGGREGATE_RESOURCE_MODEL = "AggregateResourceModel"
@@ -166,7 +165,7 @@ class Constants:
     HOME_DIRECTORY = '/usr/src/app/'
     SUPERBLOCK_LOCATION = HOME_DIRECTORY + "state_recovery.lock"
     CONTROLLER_LOCK_LOCATION = HOME_DIRECTORY + "controller_recovery.lock"
-    CONFIGURATION_FILE = "/etc/fabric/actor/handlers/handlers.yaml"
+    CONFIGURATION_FILE = "/etc/fabric/actor/config/config.yaml"
     STATE_FILE_LOCATION = '/tmp/fabric_actor.tmp'
 
     ELASTIC_TIME = "request.elasticTime"
@@ -261,3 +260,9 @@ class Constants:
 
     RSV_SLC_ID = 'rsv_slc_id'
     DLG_SLC_ID = 'dlg_slc_id'
+
+    BQM_NODE_ID = "bqm_node_id"
+    WORKER_NODE_NAME = 'worker_node_name'
+    INSTANCE_STATE = 'state'
+    INSTANCE_NAME = 'instance_name'
+    MANAGEMENT_INTERFACE_MAC_ADDRESS = 'management_interface_mac_address'

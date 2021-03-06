@@ -36,7 +36,6 @@ from fabric_cf.actor.core.common.exceptions import SliceException
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, SliceState, SliceOperation
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.security.auth_token import AuthToken
 
@@ -57,17 +56,13 @@ class Slice(IKernelSlice):
     reservations at many sites; and on the site Authority, where each slice may
     hold multiple reservations for resources at that site.
     """
-    def __init__(self, *, slice_id: ID = None, name: str = "unspecified", data: ResourceData = None):
+    def __init__(self, *, slice_id: ID = None, name: str = "unspecified"):
         # Globally unique identifier.
         self.guid = slice_id
         # Slice name. Not required to be globally or locally unique.
         self.name = name
         # Description string. Has only local meaning.
         self.description = "no description"
-        # A collection of property lists inherited by each reservation in this
-        # slice. Properties defined on the reservation level override properties
-        # defined here.
-        self.rsrcdata = data
         # The slice type: inventory or client.
         self.type = SliceTypes.ClientSlice
         # The owner of the slice.
@@ -97,15 +92,15 @@ class Slice(IKernelSlice):
         self.graph = None
         self.delegations = {}
 
-    def set_graph_id(self, graph_id: ID):
+    def set_graph_id(self, graph_id: str):
         self.graph_id = graph_id
 
-    def get_graph_id(self) -> ID:
+    def get_graph_id(self) -> str:
         return self.graph_id
 
     def set_graph(self, *, graph: ABCPropertyGraph):
         self.graph = graph
-        self.set_graph_id(graph_id=ID(uid=self.graph.get_graph_id()))
+        self.set_graph_id(graph_id=self.graph.get_graph_id())
 
     def get_graph(self) -> ABCPropertyGraph:
         return self.graph
@@ -116,32 +111,14 @@ class Slice(IKernelSlice):
         result.guid = self.guid
         return result
 
-    def get_config_properties(self):
-        if self.rsrcdata is not None:
-            return self.rsrcdata.get_configuration_properties()
-        return None
-
     def get_description(self):
         return self.description
-
-    def get_local_properties(self):
-        if self.rsrcdata is not None:
-            return self.rsrcdata.get_local_properties()
-        return None
 
     def get_name(self):
         return self.name
 
     def get_owner(self):
         return self.owner
-
-    def get_properties(self) -> ResourceData:
-        return self.rsrcdata
-
-    def get_request_properties(self):
-        if self.rsrcdata is not None:
-            return self.rsrcdata.get_request_properties()
-        return None
 
     def get_reservations(self) -> ReservationSet:
         return self.reservations
@@ -151,11 +128,6 @@ class Slice(IKernelSlice):
 
     def get_reservations_list(self) -> list:
         return self.reservations.values()
-
-    def get_resource_properties(self):
-        if self.rsrcdata is not None:
-            return self.rsrcdata.get_resource_properties()
-        return None
 
     def get_resource_type(self):
         return self.resource_type
@@ -217,9 +189,6 @@ class Slice(IKernelSlice):
     def set_owner(self, *, owner: AuthToken):
         self.owner = owner
 
-    def set_properties(self, *, rsrcdata: ResourceData):
-        self.rsrcdata = rsrcdata
-
     def set_resource_type(self, *, resource_type: ResourceType):
         self.resource_type = resource_type
 
@@ -241,22 +210,6 @@ class Slice(IKernelSlice):
     def unregister_delegation(self, *, delegation: IDelegation):
         if delegation.get_delegation_id() in self.delegations:
             self.delegations.pop(delegation.get_delegation_id())
-
-    def set_local_properties(self, *, value: dict):
-        if self.rsrcdata is not None:
-            self.rsrcdata.local_properties = value
-
-    def set_config_properties(self, *, value: dict):
-        if self.rsrcdata is not None:
-            self.rsrcdata.configuration_properties = value
-
-    def set_request_properties(self, *, value: dict):
-        if self.rsrcdata is not None:
-            self.rsrcdata.request_properties = value
-
-    def set_resource_properties(self, *, value: dict):
-        if self.rsrcdata is not None:
-            self.rsrcdata.resource_properties = value
 
     def get_state(self) -> SliceState:
         return self.state_machine.get_state()

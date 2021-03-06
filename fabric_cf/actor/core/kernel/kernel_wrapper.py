@@ -146,6 +146,19 @@ class KernelWrapper:
         target = self.kernel.validate(rid=rid)
         self.kernel.fail(reservation=target, message=message)
 
+    def fail_delegation(self, *, did: str, message: str):
+        """
+        Fails the specified fail_delegation.
+        @param did fail_delegation id
+        @param message message
+        @throws Exception in case of error
+        """
+        if did is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        target = self.kernel.validate_delegation(did=did)
+        self.kernel.fail_delegation(delegation=target, message=message)
+
     def close(self, *, rid: ID):
         """
         Closes the reservation, potentially initiating a close request to another
@@ -897,7 +910,8 @@ class KernelWrapper:
                 self.handle_reserve(reservation=reservation, identity=reservation.get_client_auth_token(),
                                     create_new_slice=True, verify_credentials=True)
         except Exception as e:
-            self.logger.error("ticketRequest{}".format(e))
+            self.logger.error(f"Exception occurred {e}")
+            self.logger.error(traceback.format_exc())
             reservation.fail_notify(message=str(e))
 
     def unregister_reservation(self, *, rid: ID):

@@ -67,7 +67,6 @@ class Ticket(IConcreteSet):
         del state['plugin']
         del state['logger']
         del state['reservation']
-        del state['authority']
 
         return state
 
@@ -76,7 +75,6 @@ class Ticket(IConcreteSet):
         self.plugin = None
         self.logger = None
         self.reservation = None
-        self.authority = None
 
     def __str__(self):
         result = f"Ticket [delegation_id= {self.delegation_id} units = {self.get_units()} oldUnits = {self.old_units} "

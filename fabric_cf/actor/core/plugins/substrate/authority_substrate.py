@@ -49,8 +49,6 @@ class AuthoritySubstrate(Substrate):
         del state['initialized']
         del state['pool_manager']
 
-        del state['db']
-
         return state
 
     def __setstate__(self, state):
@@ -58,7 +56,8 @@ class AuthoritySubstrate(Substrate):
         self.logger = None
         self.resource_delegation_factory = None
         self.actor = None
-        self.initialized = None
+
+        self.initialized = False
         self.pool_manager = None
 
     def initialize(self):

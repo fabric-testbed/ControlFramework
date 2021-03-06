@@ -63,8 +63,7 @@ class ConfigMappings(Base):
     cfgm_id = Column(Integer, Sequence('cfgm_id', start=1, increment=1), autoincrement=True, primary_key=True)
     cfgm_act_id = Column(Integer, ForeignKey('Actors.act_id'))
     cfgm_type = Column(String, nullable=False)
-    cfgm_path = Column(String, nullable=False)
-    properties = Column(JSON)
+    properties = Column(LargeBinary)
 
 
 class ManagerObjects(Base):

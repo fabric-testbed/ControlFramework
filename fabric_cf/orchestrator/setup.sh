@@ -39,7 +39,7 @@ fi
 
 name=$1
 neo4jpwd=$2
-handlers=$3
+config=$3
 arm=$4
 
 
@@ -47,7 +47,7 @@ mkdir -p $name/pg_data/data $name/pg_data/logs $name/neo4j/data $name/neo4j/impo
 echo $neo4jpwd > $name/neo4j/password
 cp orchestrator-yes.xml $name/pdp/policies
 cp env.template $name/.env
-cp $config $name/handlers.yaml
+cp $config $name/config.yaml
 
 if [ -z $4 ]; then
   cp docker-compose.yml $name/
@@ -56,7 +56,7 @@ else
 fi
 
 sed -i "s/orchestrator/$name/g" $name/docker-compose.yml
-sed -i "s/orchestrator/$name/g" $name/handlers.yaml
+sed -i "s/orchestrator/$name/g" $name/config.yaml
 echo ""
 echo ""
 echo "Update $name/.env file and volumes SSL certs details for $name container in docker-compose.yml as needed"

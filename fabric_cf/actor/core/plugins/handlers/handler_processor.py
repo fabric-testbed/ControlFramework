@@ -66,16 +66,27 @@ class HandlerProcessor:
             if self.plugin is None:
                 raise PluginException(Constants.NOT_SPECIFIED_PREFIX.format("plugin"))
             self.logger = self.plugin.get_logger()
+            self.load_config_mappings()
             self.initialized = True
+
+    def load_config_mappings(self):
+        try:
+            self.lock.acquire()
+            mappings = self.plugin.get_database().get_config_mappings()
+            for m in mappings:
+                self.config_mappings[m.get_key()] = m
+        finally:
+            self.lock.release()
 
     def add_config_mapping(self, *, mapping: ConfigurationMapping):
         try:
             self.lock.acquire()
             self.config_mappings[mapping.get_key()] = mapping
+            self.plugin.get_database().add_config_mapping(key=mapping.get_key(), config_mapping=mapping)
         finally:
             self.lock.release()
 
-    def create(self, unit: ConfigToken, properties: dict):
+    def create(self, unit: ConfigToken):
         self.logger.info("Executing Create")
 
         result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
@@ -85,7 +96,7 @@ class HandlerProcessor:
         self.plugin.configuration_complete(token=unit, properties=result)
         self.logger.info("Executing Create completed")
 
-    def delete(self, unit: ConfigToken, properties: dict):
+    def delete(self, unit: ConfigToken):
         self.logger.info("Executing Delete")
 
         result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_DELETE,
@@ -95,7 +106,7 @@ class HandlerProcessor:
         self.plugin.configuration_complete(token=unit, properties=result)
         self.logger.info("Executing Delete completed")
 
-    def modify(self, unit: ConfigToken, properties: dict):
+    def modify(self, unit: ConfigToken):
         self.logger.info("Executing Modify")
 
         result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_MODIFY,

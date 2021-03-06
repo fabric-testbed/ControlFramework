@@ -33,8 +33,6 @@ from typing import TYPE_CHECKING
 import os
 from enum import Enum
 
-from yapsy.PluginManager import PluginManagerSingleton
-
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter
 
 from fabric_cf.actor.core.common.exceptions import ContainerException
@@ -126,7 +124,7 @@ class Container(IActorContainer):
         Determine boot mode is clean restart or stateful restart
         """
         filename = Constants.SUPERBLOCK_LOCATION
-        self.logger.debug("Checking if this container is recovering. Looking for: {}".format(filename))
+        self.logger.debug(f"Checking if this container is recovering. Looking for: {filename}")
         if os.path.isfile(filename):
             self.logger.debug("Found super block file. This container is recovering")
             self.fresh = False
@@ -189,7 +187,7 @@ class Container(IActorContainer):
 
         with self.container_lock:
             if self.state != ContainerState.Unknown:
-                raise ContainerException("Cannot initialize container in state: {}".format(self.state))
+                raise ContainerException(f"Cannot initialize container in state: {self.state}")
 
             self.state = ContainerState.Starting
 
@@ -209,10 +207,13 @@ class Container(IActorContainer):
                     loader.process(config=self.config)
                 except Exception as e:
                     self.logger.error(traceback.format_exc())
-                    self.logger.error("Failed to instantiate actors {}".format(e))
+                    self.logger.error(f"Failed to instantiate actors {e}")
                     self.logger.error("This container may need to be restored to a clean state")
                     raise e
+                # Create State file only after successful fresh boot
+                self.create_super_block()
         except Exception as e:
+            self.logger.error(traceback.format_exc())
             self.logger.error(e)
             failed = True
             raise e
@@ -239,14 +240,14 @@ class Container(IActorContainer):
         """
         self.logger.debug("Defining container protocols")
         desc = ProtocolDescriptor(protocol=Constants.PROTOCOL_LOCAL)
-        self.logger.debug("Registering protocol {}".format(Constants.PROTOCOL_LOCAL))
+        self.logger.debug(f"Registering protocol {Constants.PROTOCOL_LOCAL}")
         self.register_protocol(protocol=desc)
 
         kafka_topic_name = self.get_config().get_actor().get_kafka_topic()
         self.logger.debug("Kafka Topic {}".format(kafka_topic_name))
         if kafka_topic_name is not None:
             desc = ProtocolDescriptor(protocol=Constants.PROTOCOL_KAFKA, location=kafka_topic_name)
-            self.logger.debug("Registering protocol {}".format(Constants.PROTOCOL_KAFKA))
+            self.logger.debug(f"Registering protocol {Constants.PROTOCOL_KAFKA}")
             self.register_protocol(protocol=desc)
 
     def boot_basic(self):
@@ -255,10 +256,9 @@ class Container(IActorContainer):
         """
         self.guid = self.get_config().get_global_config().get_container().get(Constants.PROPERTY_CONF_CONTAINER_GUID,
                                                                               None)
-        self.logger.debug("Container guid is {}".format(self.guid))
+        self.logger.debug(f"Container guid is {self.guid}")
         self.set_time()
         self.persist_basic()
-        self.create_super_block()
 
     def persist_basic(self):
         """
@@ -314,16 +314,15 @@ class Container(IActorContainer):
         self.ticker.start()
 
         if not self.ticker.is_manual():
-            self.logger.info("Using automatic ticks. Tick length={} ms".format(self.ticker.get_cycle_millis()))
+            self.logger.info(f"Using automatic ticks. Tick length={self.ticker.get_cycle_millis()} ms")
         else:
-            self.logger.info("Using manual ticks. Tick length={} ms".format(self.ticker.get_cycle_millis()))
+            self.logger.info(f"Using manual ticks. Tick length={self.ticker.get_cycle_millis()} ms")
 
     def finish_fresh_boot(self):
         """
         Complete fresh boot
         """
         self.create_container_manager_object()
-        self.load_extensions()
 
     def finish_recovery_boot(self):
         """
@@ -339,20 +338,6 @@ class Container(IActorContainer):
         management_object = ContainerManagementObject()
         self.management_object_manager.register_manager_object(manager=management_object)
 
-    def load_extensions(self):
-        """
-        Loads all container-level extensions specified in the container configuration
-        """
-        self.logger.info("Instantiating extensions...")
-        # Load the core from the plugin directory.
-        plugin_dir = self.config.get_global_config().get_runtime().get(Constants.PROPERTY_CONF_PLUGIN_DIR, None)
-        manager = PluginManagerSingleton().get()
-        manager.setPluginPlaces([plugin_dir])
-        manager.collectPlugins()
-
-        # Loop round the core and print their names.
-        for plugin in manager.getAllPlugins():
-            plugin.plugin_object.print_name()
 
     def recover_basic(self):
         """
@@ -363,7 +348,7 @@ class Container(IActorContainer):
         try:
             self.container_lock.acquire()
             if self.state != ContainerState.Starting:
-                raise ContainerException("Invalid state for recovery: {}".format(self.state))
+                raise ContainerException(f"Invalid state for recovery: {self.state}")
             self.state = ContainerState.Recovering
         finally:
             self.container_lock.release()
@@ -381,7 +366,7 @@ class Container(IActorContainer):
         if stored_guid is None:
             raise ContainerException("Could not obtain saved container GUID from database")
         self.guid = ID(uid=stored_guid)
-        self.logger.info("Recovered container guid: {}".format(self.guid))
+        self.logger.info(f"Recovered container guid: {self.guid}")
 
     def recover_time(self):
         """
@@ -391,10 +376,9 @@ class Container(IActorContainer):
         time_obj = self.db.get_time()
         if time_obj is None:
             raise ContainerException("Could not obtain container saved state from database")
-        properties = time_obj.get('properties', None)
-        beginning_of_time = properties.get(self.PropertyBeginningOfTime, None)
-        cycle_millis = properties.get(self.PropertyCycleMillis, None)
-        manual = properties.get(self.PropertyManualTicks, None)
+        beginning_of_time = time_obj.get(self.PropertyBeginningOfTime, None)
+        cycle_millis = time_obj.get(self.PropertyCycleMillis, None)
+        manual = time_obj.get(self.PropertyManualTicks, None)
 
         self.create_and_start_tick(start_time=beginning_of_time, cycle_millis=cycle_millis, manual=manual)
 
@@ -408,25 +392,26 @@ class Container(IActorContainer):
             try:
                 self.recover_actor(actor=a)
             except Exception as e:
-                self.logger.error(traceback.format_exc())
-                self.logger.error("Could not recover actor {}, exception: {}".format(a.get('act_name', None), e))
+                self.logger.error(f"Could not recover actor {a.get_name()}, exception: {e}")
+                raise e
 
     def recover_actor(self, *, actor: IActor):
         """
         Recover actor
         """
         actor_name = actor.get_name()
-        self.logger.info("Recover actor: {}".format(actor_name))
+        actor.set_logger(logger=self.logger)
+        self.logger.info(f"Recover actor: {actor_name}")
         self.logger.debug("Initializing the actor object")
         actor.initialize()
         # By now we have a valid actor object. We need to register it with
         # the container and call recovery for its reservations.
         self.register_recovered_actor(actor=actor)
-        self.logger.debug("Starting recovery from database for actor %s", actor_name)
+        self.logger.debug(f"Starting recovery from database for actor {actor_name}")
         actor.recover()
         self.register(tickable=actor)
 
-        self.logger.info("Actor %s recovered successfully", actor_name)
+        self.logger.info(f"Actor {actor_name} recovered successfully")
 
     def register(self, *, tickable: ITick):
         """
@@ -509,7 +494,7 @@ class Container(IActorContainer):
 
     def register_protocol(self, *, protocol: ProtocolDescriptor):
         self.protocols[protocol.get_protocol()] = protocol
-        self.logger.debug("Registered container protocol: {}".format(protocol.get_protocol()))
+        self.logger.debug(f"Registered container protocol: {protocol.get_protocol()}")
 
     def register_proxies(self, *, actor: IActor):
         """
@@ -517,25 +502,23 @@ class Container(IActorContainer):
         @param actor actor
         @raises Exception in case of error
         """
-        self.logger.debug("Registering proxies for actor: {}".format(actor.get_name()))
+        self.logger.debug(f"Registering proxies for actor: {actor.get_name()}")
 
         for protocol in self.protocols.values():
-            self.logger.debug("Processing protocol {}".format(protocol.get_protocol()))
+            self.logger.debug(f"Processing protocol {protocol.get_protocol()}")
             location = ActorLocation()
             location.set_descriptor(descriptor=protocol)
 
             proxy = ProxyFactorySingleton.get().new_proxy(protocol=protocol.get_protocol(),
                                                           identity=actor.get_identity(), location=location)
             if proxy is not None:
-                self.logger.debug(
-                    "Registering proxy {} for protocol {}".format(actor.get_name(), protocol.get_protocol()))
+                self.logger.debug(f"Registering proxy {actor.get_name()} for protocol {protocol.get_protocol()}")
                 ActorRegistrySingleton.get().register_proxy(proxy=proxy)
 
             callback = ProxyFactorySingleton.get().new_callback(protocol=protocol.get_protocol(),
                                                                 identity=actor.get_identity(), location=location)
             if callback is not None:
-                self.logger.debug(
-                    "Registering callback {} for protocol {}".format(actor.get_name(), protocol.get_protocol()))
+                self.logger.debug(f"Registering callback {actor.get_name()} for protocol {protocol.get_protocol()}")
                 ActorRegistrySingleton.get().register_callback(callback=callback)
 
     def register_recovered_actor(self, *, actor: IActor):
@@ -547,19 +530,9 @@ class Container(IActorContainer):
         self.logger.debug("Registering a recovered actor")
         actor.actor_added()
         self.register_common(actor=actor)
-        self.load_actor_management_objects(actor=actor)
+        self.management_object_manager.load_actor_manager_objects(actor_name=actor.get_name())
         self.actor = actor
         actor.start()
-
-    def load_actor_management_objects(self, *, actor: IActor):
-        """
-        Load Actor Management Objects
-        @param actor actor
-        """
-        try:
-            self.management_object_manager.load_actor_manager_objects(actor_name=actor.get_name())
-        except Exception as e:
-            self.logger.error("Error while loading manager objects for actor: {} {}".format(actor.get_name(), e))
 
     def stop(self):
         if self.ticker is not None:
@@ -584,14 +557,14 @@ class Container(IActorContainer):
             self.logger.info("Stopping actors")
             actors = ActorRegistrySingleton.get().get_actors()
             for actor in actors:
-                self.logger.info("Stopping actor: {}".format(actor.get_name()))
+                self.logger.info(f"Stopping actor: {actor.get_name()}")
                 actor.stop()
                 self.unregister_actor(actor=actor)
 
             ActorRegistrySingleton.get().clear()
             self.logger.info("Container is no longer active")
         except Exception as e:
-            self.logger.error("Exception occurred while shutting down e: %s", e)
+            self.logger.error(f"Exception occurred while shutting down e: {e}")
             self.logger.error(traceback.format_exc())
 
     @staticmethod

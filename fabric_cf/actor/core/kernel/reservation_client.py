@@ -87,27 +87,8 @@ class ReservationClient(Reservation, IKernelControllerReservation):
     primary purpose of joinstate is to implement reservation groups with
     sequenced priming or joining.
     """
-    PropertySuggestedResources = "ReservationClientSuggestedResources"
-    PropertySuggestedTerm = "ReservationClientTermSuggested"
-    PropertyBroker = "ReservationClientBroker"
-    PropertyAuthority = "ReservationClientAuthority"
-    PropertyTicketUpdate = "ReservationClientLastTicketUpdate"
-    PropertyLeaseUpdate = "ReservationClientLastLeaseUpdate"
-    PropertyJoinPredecessor = "ReservationClientJoinPredecessor"
-    PropertyClientCallback = "ReservationClientCallback"
-    PropertySequenceNumberTicketIn = "ReservationClientSequenceTicketIn"
-    PropertySequenceNumberTicketOut = "ReservationClientSequenceTicketOut"
-    PropertySequenceNumberLeaseIn = "ReservationClientSequenceLeaseIn"
-    PropertySequenceNumberLeaseOut = "ReservationClientSequenceLeaseOut"
-    PropertyTicketTerm = "ReservationClientTicketTerm"
-    PropertyPreviousTicketTerm = "ReservationClientPreviousTicketTerm"
-    PropertyPreviousLeasedTerm = "ReservationClientPreviousLeasedTerm"
-    PropertyRenewTime = "ReservationClientRenewTime"
-    PropertyExported = "ReservationClientExported"
-    PropertyRelinquished = "ReservationClientRelinquished"
-    PropertyClosedDuringRedeem = "ReservationClientClosedDuringRedeem"
 
-    close_complete = "close complete"
+    CLOSE_COMPLETE = "close complete"
 
     def __init__(self, *, rid: ID, resources: ResourceSet = None, term: Term = None,
                  slice_object: IKernelSlice = None, broker: IBrokerProxy = None):
@@ -237,6 +218,19 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         Must be invoked after creating reservation from unpickling
         """
         super().restore(actor=actor, slice_obj=slice_obj)
+        if actor is not None:
+            if self.leased_resources is not None:
+                self.leased_resources.restore(plugin=actor.get_plugin(), reservation=self)
+            if self.suggested_resources is not None:
+                self.suggested_resources.restore(plugin=actor.get_plugin(), reservation=self)
+            if self.broker is not None:
+                self.broker.set_logger(logger=actor.get_logger())
+            if self.authority is not None:
+                self.authority.set_logger(logger=actor.get_logger())
+            if self.callback is not None:
+                self.callback.set_logger(logger=actor.get_logger())
+            self.policy = actor.get_policy()
+
         self.suggested = False
 
     def absorb_lease_update(self, *, incoming: IReservation, update_date: UpdateData):
@@ -482,6 +476,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                     RPCManagerSingleton.get().relinquish(reservation=self)
                 except Exception as e:
                     self.logger.error("broker reports relinquish error: e: {}".format(e))
+                    self.logger.error(traceback.format_exc())
             else:
                 self.logger.info("Reservation #{} has not requested any resource yet. Nothing to relinquish.".
                                  format(self.rid))
@@ -516,6 +511,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                         RPCManagerSingleton.get().close(reservation=self)
                     except Exception as e:
                         self.logger.error("authority reports close error: e: {}".format(e))
+                        self.logger.error(traceback.format_exc())
                         self.transition(prefix="close", state=ReservationStates.Closed,
                                         pending=ReservationPendingStates.None_)
                         self.do_relinquish()
@@ -748,18 +744,14 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.callback = callback
 
     def prepare_join(self):
-        config = self.resources.get_local_properties()
-        for pred_state in self.join_predecessors.values():
-            pred_state.set_properties(config=config)
+        return
 
     def prepare_probe(self):
         if self.leased_resources is not None and self.get_join_state() != JoinState.BlockedJoin:
             self.leased_resources.prepare_probe()
 
     def prepare_redeem(self):
-        config = self.resources.get_config_properties()
-        for pred_state in self.redeem_predecessors.values():
-            pred_state.set_properties(config=config)
+        return
 
     def probe_join_state(self):
         """
@@ -848,13 +840,14 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 RPCManagerSingleton.get().close(reservation=self)
             except Exception as e:
                 self.logger.error("authority reports close error: {}".format(e))
+                self.logger.error(traceback.format_exc())
                 # If the authority is unreachable or rejects the request,
                 # then purge it. This is useful because the authority may
                 # close first and reject this request, which could lead to
                 # large numbers of stuck CloseWaits hanging around if we
                 # don't complete close here. But if the authority is merely
                 # unreachable, it might be better to retry.
-                self.transition(prefix=self.close_complete, state=ReservationStates.Closed,
+                self.transition(prefix=self.CLOSE_COMPLETE, state=ReservationStates.Closed,
                                 pending=ReservationPendingStates.None_)
                 # Note: the broker does not have information to ensure we
                 # are not cheating
@@ -1100,7 +1093,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
             self.pending_recover = False
 
-            self.transition(prefix=self.close_complete, state=ReservationStates.Closed,
+            self.transition(prefix=self.CLOSE_COMPLETE, state=ReservationStates.Closed,
                             pending=ReservationPendingStates.None_)
             self.do_relinquish()
 
@@ -1200,12 +1193,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         if self.term is None:
             self.error(err=Constants.NOT_SPECIFIED_PREFIX.format("term"))
 
-    def set_config_property(self, *, key: str, value: str):
-        self.resources.get_config_properties()[key] = value
-
-    def set_request_property(self, *, key: str, value: str):
-        self.resources.get_request_properties()[key] = value
-
     def add_redeem_predecessor(self, *, reservation, filters: dict = None):
         if reservation.get_reservation_id() not in self.redeem_predecessors:
             state = PredecessorState(reservation=reservation, filters=filters)
@@ -1258,7 +1245,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
             if self.is_closing():
                 if self.leased_resources is None or self.leased_resources.is_closed():
-                    self.transition(prefix=self.close_complete, state=ReservationStates.Closed,
+                    self.transition(prefix=self.CLOSE_COMPLETE, state=ReservationStates.Closed,
                                     pending=ReservationPendingStates.None_)
                     self.do_relinquish()
                 return

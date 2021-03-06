@@ -328,6 +328,7 @@ class RPCManager:
                          sequence=delegation.get_sequence_out())
         # Schedule a timeout
         rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
+        proxy.get_logger().info("Timer started: {} for Claim".format(rpc.timer))
         self.enqueue(rpc=rpc)
 
     def do_reclaim_delegation(self, *, actor: IActor, proxy: IBrokerProxy, delegation: IDelegation,
@@ -344,6 +345,7 @@ class RPCManager:
                          sequence=delegation.get_sequence_out())
         # Schedule a timeout
         rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
+        proxy.get_logger().info("Timer started: {} for Reclaim".format(rpc.timer))
         self.enqueue(rpc=rpc)
 
     def do_ticket(self, *, actor: IActor, proxy: IBrokerProxy, reservation: IClientReservation,
@@ -470,7 +472,7 @@ class RPCManager:
         rpc = RPCRequest(request=state, actor=actor, proxy=remote_actor, handler=handler)
         # Timer
         rpc.timer = KernelTimer.schedule(queue=actor, task=QueryTimeout(req=rpc), delay=self.QUERY_TIMEOUT_SECONDS)
-        remote_actor.get_logger().info("Timer started: {}".format(rpc.timer))
+        remote_actor.get_logger().info("Timer started: {} for Query".format(rpc.timer))
         self.enqueue(rpc=rpc)
 
     def do_query_result(self, *, actor: IActor, remote_actor: ICallbackProxy, request_id: str,
@@ -576,8 +578,6 @@ class RPCManager:
 
         else:
             actor.get_logger().debug("Added to actor queue to be processed")
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            GlobalsSingleton.get().event_manager.dispatch_event(event=InboundRPCEvent(request=rpc, actor=actor))
             actor.queue_event(incoming=IncomingRPCEvent(actor=actor, rpc=rpc))
 
     def do_retry(self, *, rpc: RPCRequest):
@@ -636,8 +636,6 @@ class RPCManager:
             return
         if rpc.handler is not None:
             self.add_pending_request(guid=rpc.request.get_message_id(), request=rpc)
-
-        GlobalsSingleton.get().event_manager.dispatch_event(event=OutboundRPCEvent(request=rpc))
 
         try:
             self.queued()

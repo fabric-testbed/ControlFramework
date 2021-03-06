@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+import traceback
 from typing import TYPE_CHECKING
 from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
 from fabric_cf.actor.core.apis.i_kernel_authority_reservation import IKernelAuthorityReservation
@@ -281,8 +283,8 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                     self.previous_term = self.term
                     self.ticket = self.requested_resources
                     self.term = self.approved_term
-                    if self.requested_resources.get_config_properties() is not None:
-                        self.approved_resources.set_config_properties(self.requested_resources.get_config_properties())
+                    if self.requested_resources.get_sliver() is not None:
+                        self.approved_resources.set_sliver(sliver=self.requested_resources.get_sliver())
 
                     self.resources.update(self, self.approved_resources)
                     self.transition(prefix="extend lease", state=ReservationStates.Active,
@@ -313,20 +315,15 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                 if granted:
                     success = True
                     self.ticket = self.requested_resources
-                    self.logger.debug("requestedResources.getConfigurationProperties() = {}".format(
-                        self.requested_resources.get_config_properties()))
+                    self.logger.debug(f"requested_resources.get_sliver() = {self.requested_resources.get_sliver()}")
 
-                    self.logger.debug("approvedResources.getConfigurationProperties() = {}".format(
-                        self.approved_resources.get_config_properties()))
-                    if self.requested_resources.get_config_properties() is not None:
-                        if self.approved_resources.get_config_properties() is not None:
-                            self.approved_resources.set_config_properties(
-                                self.requested_resources.get_config_properties())
-                        else:
-                            # TODO merge
-                            self.logger.debug("merge properties")
-                    self.logger.debug("approvedResources.getConfigurationProperties() = {}".format(
-                        self.approved_resources.get_config_properties()))
+                    self.logger.debug(f"approved_resources.get_sliver() = {self.approved_resources.get_sliver()}")
+
+                    if self.requested_resources.get_sliver() is not None:
+                        self.approved_resources.set_sliver(sliver=self.requested_resources.get_sliver())
+
+                    self.logger.debug(f"approved_resources.get_sliver() = {self.approved_resources.get_sliver()}")
+
                     self.resources.update_properties(self, self.approved_resources)
                     self.transition(prefix="modify lease", state=ReservationStates.Active,
                                     pending=ReservationPendingStates.Priming)
@@ -494,6 +491,7 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
                     self.policy.release(resources=released)
         except Exception as e:
             self.logger.error("exception in authority reap e: {}".format(e))
+            self.logger.error(traceback.format_exc())
 
     def recover(self):
         if self.state == ReservationStates.Ticketed:

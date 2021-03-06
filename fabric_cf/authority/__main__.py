@@ -42,7 +42,7 @@ def main():
         #Globals.config_file = './test.yaml'
         #Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
-            GlobalsSingleton.get().start(force_fresh=True)
+            GlobalsSingleton.get().start(force_fresh=False)
 
             runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
             # prometheus server

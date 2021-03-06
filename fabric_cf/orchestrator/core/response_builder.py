@@ -53,7 +53,7 @@ class ResponseBuilder:
         if res_list is not None:
             for reservation in res_list:
                 res_dict = {"slice_id": reservation.get_slice_id(), "reservation_id": reservation.get_reservation_id(),
-                            "resource_type": reservation.get_resource_type(), "resource_units": reservation.get_units(),
+                            "resource_type": reservation.get_resource_type(),
                             'state': ReservationStates(reservation.get_state()).name}
 
                 if reservation.get_pending_state() is not None:
@@ -87,8 +87,7 @@ class ResponseBuilder:
                 if slice_id is None and (slice_state == SliceState.Dead or slice_state == SliceState.Closing):
                     continue
                 s_dict = {'slice_id': s.get_slice_id(), 'slice_name': s.get_slice_name(),
-                          'resource_type': s.get_resource_type(), 'graph_id': s.get_graph_id(),
-                          'slice_state': slice_state.name}
+                          'graph_id': s.get_graph_id(), 'slice_state': slice_state.name}
                 slices.append(s_dict)
         else:
             status = ResponseBuilder.FAILURE_STATUS

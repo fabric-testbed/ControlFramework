@@ -118,17 +118,19 @@ actor:
   - description: Site AM
   - kafka-topic: site1-am-topic
   - substrate.file: /etc/fabric/actor/config/neo4j/arm.graphml
+  - policy:
+      - module: fabric_cf.actor.core.policy.authority_calendar_policy
+      - class: AuthorityCalendarPolicy
   - resources:
       - resource:
         - type: VM
         - label: VM AM
         - description: VM AM
         - handler:
-          - module: fabric_cf.actor.handlers.no_op_handler
-          - class: NoOpHandler
+          - module: fabric_am.handlers.vm_handler
+          - class: VMHandler
           - properties:
-              - playbooks: /usr/src/app/ansible/vm/
-              - playbook_mapping: /usr/src/app/ansible/vm/vm.properties
+              - config.properties.file: /etc/fabric/actor/config/vm_handler_config.yml
   - controls:
       - control:
           - type: VM, Container, Baremetal

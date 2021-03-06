@@ -25,6 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from typing import List
 
+from fim.slivers.attached_components import AttachedComponentsInfo
+from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_node import NodeSliver
+from fim.user import Capacities
+
 from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.common.constants import Constants
@@ -34,94 +39,153 @@ from fabric_cf.actor.core.core.unit_set import UnitSet
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.policy.resource_control import ResourceControl
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 
 
 class NetworkNodeControl(ResourceControl):
     """
     Resource Control for Network Node
     """
-    def assign(self, *, reservation: IAuthorityReservation, delegation_name: str,
-               capacities: dict, capacity_del: list,
-               labels: dict, label_del: list,
-               reservation_info: List[IReservation]) -> ResourceSet:
+    def __check_capacities(self, *, rid: ID, requested_capacities: Capacities, available_capacities: Capacities,
+                           existing_reservations: List[IReservation]):
+        self.logger.debug(f"available_capacities: {available_capacities}")
+        self.logger.debug(f"requested_capacities: {requested_capacities} for reservation# {rid}")
+        available_core = available_capacities.core
+        available_ram = available_capacities.ram
+        available_disk = available_capacities.disk
 
-        if capacity_del is None or capacities is None:
+        # Remove allocated capacities to the reservations
+        if existing_reservations is not None:
+            for reservation in existing_reservations:
+                if reservation.get_reservation_id() == rid:
+                    continue
+                # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+                resource_sliver = None
+                if reservation.is_redeeming() and reservation.get_approved_resources() is not None:
+                    resource_sliver = reservation.get_approved_resources().get_sliver()
+
+                if reservation.is_active() and reservation.get_resources() is not None:
+                    resource_sliver = reservation.get_resources().get_sliver()
+
+                if resource_sliver is not None:
+                    self.logger.debug(f"Excluding already allocated resources {resource_sliver.get_capacities()} to "
+                                      f"reservation# {reservation.get_reservation_id()}")
+                    available_core -= resource_sliver.get_capacities().core
+                    available_ram -= resource_sliver.get_capacities().ram
+                    available_disk -= resource_sliver.get_capacities().disk
+
+        # Compare the requested against available
+        if requested_capacities.core > available_core or requested_capacities.ram > available_ram or \
+                requested_capacities.disk > available_disk:
+            raise AuthorityException(f"Insufficient resources "
+                                  f"Cores: [{requested_capacities.core}/{available_core}] "
+                                  f"RAM: [{requested_capacities.ram}/{available_ram}] "
+                                  f"Disk: [{requested_capacities.disk}/{available_disk}]")
+
+    def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_node: BaseSliver,
+                           existing_reservations: List[IReservation]) -> AttachedComponentsInfo:
+        self.logger.debug(f"requested_components: {requested_components} for reservation# {rid}")
+        for name, c in requested_components.devices.items():
+            if c.bqm_node_id is None:
+                raise AuthorityException(f"Component of type: {c.bqm_node_id} does not have allocated BQM Node Id")
+
+            resource_type = c.get_resource_type()
+            available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
+            self.logger.debug(f"Resource Type: {resource_type} available_components: {available_components}")
+
+            if available_components is None or len(available_components) == 0:
+                raise AuthorityException(f"Insufficient resources Component of type: {resource_type} not available "
+                                         f"in graph node: {graph_node.node_id}")
+
+            confirm_component = False
+
+            for av in available_components:
+                if c.bqm_node_id == av.node_id:
+                    confirm_component = True
+                    break
+
+            if not confirm_component:
+                raise AuthorityException(f"Graph node: {graph_node.node_id} has no component: {c.bqm_node_id}")
+
+            for reservation in existing_reservations:
+                if reservation.get_reservation_id() == rid:
+                    continue
+                # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+                allocated_sliver = None
+                if reservation.is_redeeming() and reservation.get_approved_resources() is not None:
+                    allocated_sliver = reservation.get_approved_resources().get_sliver()
+
+                if reservation.is_active() and reservation.get_resources() is not None:
+                    allocated_sliver = reservation.get_resources().get_sliver()
+
+                if allocated_sliver is not None and allocated_sliver.attached_components_info is not None:
+                    allocated_components = allocated_sliver.attached_components_info.get_devices_by_type(
+                        resource_type=resource_type)
+
+                    self.logger.debug(f"Already allocated components {allocated_components} of resource_type "
+                                      f"{resource_type} to reservation# {reservation.get_reservation_id()}")
+
+                    for ac in allocated_components:
+                        if ac.bqm_node_id == c.bqm_node_id:
+                            raise AuthorityException(
+                                f"Component of type: {resource_type} BQM Node Id: {c.bqm_node_id} "
+                                f"in graph {graph_node.node_id}"
+                                f"is already assigned to reservation# {reservation}")
+
+    def assign(self, *, reservation: IAuthorityReservation, delegation_name: str,
+               graph_node: BaseSliver, reservation_info: List[IReservation]) -> ResourceSet:
+
+        if graph_node.capacity_delegations is None or len(graph_node.capacity_delegations) < 1 or reservation is None:
             raise AuthorityException(Constants.INVALID_ARGUMENT)
 
-        # Number of Available Units would always 1 for a worker node, so it is not validated
+        delegated_capacities = graph_node.get_capacity_delegations()
+        available_delegated_capacity = Neo4jHelper.get_delegation(delegated_capacities=delegated_capacities,
+                                                                  delegation_name=delegation_name)
+        if available_delegated_capacity is None:
+            raise AuthorityException(f"Allocated node {graph_node.node_id} does not have delegation: {delegation_name}")
 
         reservation.set_send_with_deficit(value=True)
 
-        requested = reservation.get_requested_resources()
-        rtype = requested.get_type()
+        requested = reservation.get_requested_resources().get_sliver()
+        if not isinstance(requested, NodeSliver):
+            raise AuthorityException(f"Invalid resource type {requested.get_resource_type()}")
+
         current = reservation.get_resources()
-        ticket = requested.get_resources()
 
-        delegated_capacity = self.get_delegated_capacity_or_label(delegation_name=delegation_name,
-                                                                  capacity_or_label_delegations=capacity_del)
-
-        if delegated_capacity is None:
-            raise AuthorityException(f"No delegated resources available {delegation_name}")
-
-        available_core = capacities.get(Constants.SLIVER_PROPERTY_CORE, 0)
-        available_ram = capacities.get(Constants.SLIVER_PROPERTY_RAM, 0)
-        available_disk = capacities.get(Constants.SLIVER_PROPERTY_DISK, 0)
-
-        available_core_del = delegated_capacity.get(Constants.SLIVER_PROPERTY_CORE, 0)
-        available_ram_del = delegated_capacity.get(Constants.SLIVER_PROPERTY_RAM, 0)
-        available_disk_del = delegated_capacity.get(Constants.SLIVER_PROPERTY_DISK, 0)
+        resource_type = ResourceType(resource_type=str(requested.get_resource_type()))
 
         gained = None
         lost = None
         if current is None:
-            config_properties = requested.get_config_properties()
+            # Check if Capacities can be satisfied by Delegated Capacities
+            self.__check_capacities(rid=reservation.get_reservation_id(),
+                                    requested_capacities=requested.get_capacities(),
+                                    available_capacities=available_delegated_capacity,
+                                    existing_reservations=reservation_info)
 
-            requested_core = int(config_properties.get(Constants.SLIVER_PROPERTY_CORE))
-            requested_ram = int(config_properties.get(Constants.SLIVER_PROPERTY_RAM))
-            requested_disk = int(config_properties.get(Constants.SLIVER_PROPERTY_DISK))
+            # Check if Capacities can be satisfied by Capacities
+            self.__check_capacities(rid=reservation.get_reservation_id(),
+                                    requested_capacities=requested.get_capacities(),
+                                    available_capacities=graph_node.get_capacities(),
+                                    existing_reservations=reservation_info)
 
-            # Remove allocated capacities to the reservations
-            if reservation_info is not None:
-                for reservation in reservation_info:
-                    # For Active or Ticketed reservations; reduce the counts from available
-                    if reservation.is_active() or reservation.is_ticketed():
-                        resource_properties = reservation.get_resources().get_resource_properties()
-                        available_core -= int(resource_properties.get(Constants.SLIVER_PROPERTY_CORE))
-                        available_ram -= int(resource_properties.get(Constants.SLIVER_PROPERTY_RAM))
-                        available_disk -= int(resource_properties.get(Constants.SLIVER_PROPERTY_DISK))
-
-                        available_core_del -= int(resource_properties.get(Constants.SLIVER_PROPERTY_CORE))
-                        available_ram_del -= int(resource_properties.get(Constants.SLIVER_PROPERTY_RAM))
-                        available_disk_del -= int(resource_properties.get(Constants.SLIVER_PROPERTY_DISK))
-
-            # Compare the requested against available delegated resources
-            if requested_core > available_core_del or requested_ram > available_ram_del or \
-                    requested_disk > available_disk_del:
-                raise AuthorityException(f"Requested Resources more than the available delegated resources "
-                                         f"Cores: [{requested_core}/{available_core_del}] "
-                                         f"RAM: [{requested_ram}/{available_ram_del}] "
-                                         f"Disk: [{requested_disk}/{available_disk_del}]")
-
-            # Compare the requested against available
-            if requested_core > available_core or requested_ram > available_ram or requested_disk > available_disk:
-                raise AuthorityException(f"Requested Resources more than the available resources "
-                                         f"Cores: [{requested_core}/{available_core}] "
-                                         f"RAM: [{requested_ram}/{available_ram}] "
-                                         f"Disk: [{requested_disk}/{available_disk}]")
-
-            properties = {Constants.SLIVER_PROPERTY_CORE: str(requested_core),
-                          Constants.SLIVER_PROPERTY_RAM: str(requested_ram),
-                          Constants.SLIVER_PROPERTY_DISK: str(requested_disk),
-                          Constants.SLIVER_PROPERTY_GRAPH_NODE_ID:
-                              config_properties.get(Constants.SLIVER_PROPERTY_GRAPH_NODE_ID)}
+            # Check components
+            # Check if Components can be allocated
+            self.__check_components(rid=reservation.get_reservation_id(),
+                                    requested_components=requested.attached_components_info,
+                                    graph_node=graph_node,
+                                    existing_reservations=reservation_info)
 
             unit = Unit(uid=ID(), rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
-                        actor_id=self.authority.get_guid(), properties=properties, rtype=rtype)
+                        actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type)
             gained = UnitSet(plugin=self.authority.get_plugin(), units={unit.uid: unit})
         else:
             raise AuthorityException("Modify not supported")
 
-        return ResourceSet(gained=gained, lost=lost, rtype=rtype)
+        result = ResourceSet(gained=gained, lost=lost, rtype=resource_type)
+        result.set_sliver(sliver=requested)
+        return result
 
     def revisit(self, *, reservation: IReservation):
         return

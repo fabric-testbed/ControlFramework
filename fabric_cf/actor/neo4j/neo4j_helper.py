@@ -23,13 +23,16 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import threading
-from typing import Any
+import json
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
+from fim.slivers.capacities_labels import Capacities
+from fim.slivers.network_node import NodeSliver
+
+from fabric_cf.actor.core.common.constants import Constants
 
 
 class Neo4jHelper:
@@ -112,7 +115,8 @@ class Neo4jHelper:
         combined_broker_model = Neo4jCBMGraph(graph_id=combined_broker_model_graph_id,
                                               importer=neo4j_graph_importer,
                                               logger=neo4j_graph_importer.log)
-        combined_broker_model.validate_graph()
+        if combined_broker_model.graph_exists():
+            combined_broker_model.validate_graph()
         return combined_broker_model
 
     @staticmethod
@@ -123,7 +127,7 @@ class Neo4jHelper:
         :return: Neo4jPropertyGraph
         """
         neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
-        graph = neo4j_graph_importer.import_graph_from_string_direct(graph_string=graph_str)
+        graph = neo4j_graph_importer.import_graph_from_string(graph_string=graph_str)
 
         return graph
 
@@ -135,3 +139,30 @@ class Neo4jHelper:
         """
         neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
         neo4j_graph_importer.delete_graph(graph_id=graph_id)
+
+    @staticmethod
+    def get_delegation(delegated_capacities: list, delegation_name: str) -> Capacities:
+        for capacity_dict in delegated_capacities:
+            name = capacity_dict.get(ABCPropertyGraph.FIELD_DELEGATION, None)
+            if name == delegation_name:
+                capacity_dict.pop(ABCPropertyGraph.FIELD_DELEGATION)
+                return Capacities().from_json(json.dumps(capacity_dict))
+        return None
+
+    @staticmethod
+    def get_node_sliver_props(*, sliver: NodeSliver) -> dict:
+        if sliver is not None:
+            result = {}
+            if sliver.management_ip is not None:
+                result[ABCPropertyGraph.PROP_MGMT_IP] = sliver.management_ip
+            if sliver.management_interface_mac_address is not None:
+                result[Constants.MANAGEMENT_INTERFACE_MAC_ADDRESS] = sliver.management_interface_mac_address
+            if sliver.instance_name is not None:
+                result[Constants.INSTANCE_NAME] = sliver.instance_name
+            if sliver.state is not None:
+                result[Constants.INSTANCE_STATE] = sliver.state
+            if sliver.worker_node_name is not None:
+                result[Constants.WORKER_NODE_NAME] = sliver.worker_node_name
+            if sliver.bqm_node_id is not None:
+                result[Constants.BQM_NODE_ID] = sliver.bqm_node_id
+            return result

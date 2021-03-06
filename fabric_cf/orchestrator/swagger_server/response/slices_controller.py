@@ -32,7 +32,8 @@ def slices_create_post(body, slice_name):  # noqa: E501
     received_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
     try:
         token = get_token()
-        value = handler.create_slice(token=token, slice_name=slice_name, slice_graph=body)
+        slice_graph = body.decode("utf-8")
+        value = handler.create_slice(token=token, slice_name=slice_name, slice_graph=slice_graph)
         response = Success()
         response.value = value
         success_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()

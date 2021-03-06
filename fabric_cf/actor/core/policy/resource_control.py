@@ -106,6 +106,7 @@ class ResourceControl(IResourceControl):
         self._free_resources(resource_set=resource_set)
 
     def correct_deficit(self, *, reservation: IAuthorityReservation) -> ResourceSet:
+        print("KOMAL correct_deficit")
         return self.assign(reservation=reservation)
 
     def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
@@ -145,11 +146,3 @@ class ResourceControl(IResourceControl):
 
     def get_guid(self) -> ID:
         return self.guid
-
-    def get_delegated_capacity_or_label(self, delegation_name:str, capacity_or_label_delegations: list) -> dict:
-        for d in capacity_or_label_delegations:
-            name = d.get("delegation", None)
-            if name == delegation_name:
-                return d
-
-        return None

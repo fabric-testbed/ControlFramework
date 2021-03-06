@@ -134,8 +134,7 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, IAuthorityProxy):
         avro_reservation.reservation_id = str(reservation.get_reservation_id())
         avro_reservation.sequence = reservation.get_lease_sequence_out()
 
-        rset = Translate.translate_resource_set(resource_set=reservation.get_resources(),
-                                                direction=Translate.direction_authority)
+        rset = Translate.translate_resource_set(resource_set=reservation.get_resources())
 
         if reservation.get_requested_resources() is not None:
             cset = reservation.get_requested_resources().get_resources()

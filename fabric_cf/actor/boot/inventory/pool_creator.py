@@ -34,7 +34,6 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.pool_manager import PoolManagerError
 from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
@@ -70,11 +69,9 @@ class PoolCreator:
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.container = GlobalsSingleton.get().get_container()
 
-        rd = ResourceData()
         create_pool_result = self.substrate.get_pool_manager().create_pool(
             slice_id=ID(), name=actor_name,
-            rtype=ResourceType(resource_type=Constants.PROPERTY_AGGREGATE_RESOURCE_MODEL),
-            resource_data=rd)
+            rtype=ResourceType(resource_type=Constants.PROPERTY_AGGREGATE_RESOURCE_MODEL))
 
         if create_pool_result.code != PoolManagerError.ErrorNone:
             raise PoolCreatorException(f"Could not create resource pool: {actor_name}. error={create_pool_result.code}")

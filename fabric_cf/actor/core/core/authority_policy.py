@@ -23,22 +23,17 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import traceback
 
 from fabric_cf.actor.core.apis.i_authority import IAuthority
 from fabric_cf.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.core.policy import Policy
-from fabric_cf.actor.core.core.ticket import Ticket
-from fabric_cf.actor.core.delegation.resource_delegation import ResourceDelegation
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.time.term import Term
-from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_data import ResourceData
+
 
 
 class AuthorityPolicy(Policy, IAuthorityPolicy):

@@ -180,7 +180,6 @@ class ConfigurationProcessor:
         plugin = None
         if actor.get_plugin() is None:
             if actor.get_type() == ActorType.Authority:
-                # TODO replacement of ANSIBLE HANDLER
                 plugin = AuthoritySubstrate(actor=actor, db=None, handler_processor=AnsibleHandlerProcessor())
 
             elif actor.get_type() == ActorType.Orchestrator:
@@ -220,15 +219,15 @@ class ConfigurationProcessor:
         @raises ConfigurationException in case of error
         """
         policy = None
-        if config.get_policy() is None:
-            if actor.get_type() == ActorType.Authority:
-                policy = self.make_site_policy(config=config)
-            elif actor.get_type() == ActorType.Broker:
-                policy = self.make_broker_policy(config=config)
-            elif actor.get_type() == ActorType.Orchestrator:
+        if actor.get_type() == ActorType.Authority:
+            policy = self.make_site_policy(config=config)
+        elif actor.get_type() == ActorType.Broker:
+            policy = self.make_broker_policy(config=config)
+        elif actor.get_type() == ActorType.Orchestrator:
+            if config.get_policy() is not None:
+                policy = self.make_policy(policy=config.get_policy())
+            else:
                 policy = ControllerTicketReviewPolicy()
-        else:
-            policy = self.make_policy(policy=config.get_policy())
 
         if policy is None:
             raise ConfigurationException(f"Could not instantiate policy for actor: {config.get_name()}")
@@ -240,7 +239,12 @@ class ConfigurationProcessor:
         @param config actor config
         @raises ConfigurationException in case of error
         """
-        policy = BrokerSimplerUnitsPolicy()
+        policy = None
+        if config.get_policy() is not None:
+            policy = self.make_policy(policy=config.get_policy())
+        else:
+            policy = BrokerSimplerUnitsPolicy()
+
         for i in config.get_controls():
             try:
                 if i.get_module_name() is None or i.get_class_name() is None:
@@ -248,6 +252,7 @@ class ConfigurationProcessor:
 
                 inventory = ReflectionUtils.create_instance(module_name=i.get_module_name(),
                                                             class_name=i.get_class_name())
+                inventory.set_logger(logger=self.logger)
 
                 if i.get_type() is None:
                     raise ConfigurationException("No type specified for control")
@@ -265,7 +270,11 @@ class ConfigurationProcessor:
         @param config actor config
         @raises ConfigurationException in case of error
         """
-        policy = AuthorityCalendarPolicy()
+        policy = None
+        if config.get_policy() is not None:
+            policy = self.make_policy(policy=config.get_policy())
+        else:
+            policy = AuthorityCalendarPolicy()
         for c in config.get_controls():
             try:
                 if c.get_module_name() is None or c.get_class_name() is None:

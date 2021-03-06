@@ -64,3 +64,9 @@ class IProxy(IActorIdentity):
         """
         Returns the logger
         """
+
+    @abstractmethod
+    def set_logger(self, *, logger):
+        """
+        Sets the logger
+        """

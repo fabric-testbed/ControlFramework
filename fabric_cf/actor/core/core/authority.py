@@ -33,7 +33,6 @@ from fabric_cf.actor.core.apis.i_actor import ActorType
 from fabric_cf.actor.core.apis.i_authority import IAuthority
 from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
 from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
 from fabric_cf.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.apis.i_reservation import IReservation
@@ -51,7 +50,6 @@ from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.client import Client
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
@@ -168,7 +166,7 @@ class Authority(Actor, IAuthority):
         self.policy.eject(resources=resources)
 
     def advertise(self, *, delegation: ABCPropertyGraph, delegation_name: str, client: AuthToken) -> str:
-        slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name(), data=ResourceData())
+        slice_obj = SliceFactory.create(slice_id=ID(), name=client.get_name())
         slice_obj.set_owner(owner=client)
         slice_obj.set_broker_client()
 

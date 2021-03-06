@@ -26,24 +26,43 @@
 from abc import ABC, abstractmethod
 from typing import Tuple
 
+import yaml
+
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 
 
+class ConfigurationException(Exception):
+    pass
+
+
 class HandlerBase(ABC):
+    @staticmethod
+    def load_config(path):
+        """
+        Read config file
+        """
+        if path is None:
+            raise ConfigurationException("No data source has been specified")
+        print("Reading config file: {}".format(path))
+        config_dict = None
+        with open(path) as f:
+            config_dict = yaml.safe_load(f)
+        return config_dict
+
     @abstractmethod
-    def create(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+    def create(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         """
         Create
         """
 
     @abstractmethod
-    def modify(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+    def modify(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         """
         Create
         """
 
     @abstractmethod
-    def delete(self, unit: ConfigToken, properties: dict) -> Tuple[dict, ConfigToken]:
+    def delete(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         """
         Create
         """

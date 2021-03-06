@@ -50,9 +50,6 @@ def session_scope(psql_db_engine):
         session.close()
 
 
-
-
-
 class PsqlDatabase:
     """
     Implements interface to Postgres database
@@ -69,6 +66,12 @@ class PsqlDatabase:
         Create the database
         """
         Base.metadata.create_all(self.db_engine)
+
+    def set_logger(self, logger):
+        """
+        Set the logger
+        """
+        self.logger = logger
 
     def reset_db(self):
         """
@@ -1033,7 +1036,7 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Proxies).filter(Proxies.prx_act_id == act_id):
-                    prx_obj = self.generate_reservation_dict_from_row(row)
+                    prx_obj = self.generate_proxy_dict_from_row(row)
                     result.append(prx_obj.copy())
                     prx_obj.clear()
         except Exception as e:
@@ -1041,29 +1044,26 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_config_mapping(self, *, act_id: int, cfgm_type: str, cfgm_path: str, properties: dict):
+    def add_config_mapping(self, *, act_id: int, cfgm_type: str, properties):
         """
         Add handlers mapping
         @param act_id actor id
         @param cfgm_type type
-        @param cfgm_path location for the handlers
         @param properties properties
         """
         try:
-            cfg_obj = ConfigMappings(cfgm_act_id=act_id, cfgm_type=cfgm_type, cfgm_path=cfgm_path,
-                                     properties=properties)
+            cfg_obj = ConfigMappings(cfgm_act_id=act_id, cfgm_type=cfgm_type, properties=properties)
             with session_scope(self.db_engine) as session:
                 session.add(cfg_obj)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def update_config_mapping(self, *, act_id: int, cfgm_type: str, cfgm_path: str, properties: dict):
+    def update_config_mapping(self, *, act_id: int, cfgm_type: str, properties):
         """
         Update handlers mapping
         @param act_id actor id
         @param cfgm_type type
-        @param cfgm_path location for the handlers
         @param properties properties
         """
         try:
@@ -1071,7 +1071,6 @@ class PsqlDatabase:
                 cfg_obj = session.query(ConfigMappings).filter(ConfigMappings.cfgm_act_id == act_id).filter(
                     ConfigMappings.cfgm_type == cfgm_type).first()
                 if cfg_obj is not None:
-                    cfg_obj.cfgm_path = cfgm_path
                     cfg_obj.properties = properties
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Config Mapping", cfgm_type))
@@ -1100,7 +1099,7 @@ class PsqlDatabase:
             return None
 
         cfg_obj = {'cfgm_id': row.cfgm_id, 'cfgm_act_id': row.cfgm_act_id, 'cfgm_type': row.cfgm_type,
-                   'cfgm_path': row.cfgm_path, 'properties': row.properties}
+                   'properties': row.properties}
 
         return cfg_obj
 

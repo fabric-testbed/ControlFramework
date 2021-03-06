@@ -254,3 +254,10 @@ class IPolicy(ABC):
 
         @returns guid
         """
+
+    @abstractmethod
+    def set_logger(self, logger):
+        """
+        Set logger
+        @param logger logger
+        """

@@ -50,7 +50,7 @@ class IBrokerReservation(IServerReservation):
     @abstractmethod
     def get_source(self) -> IDelegation:
         """
-        Returns source for this reservation. For optional use by policy
+        Returns source for this delegation. For optional use by policy
         to track where it filled this reservation from, e.g., for use on
         extends.
 

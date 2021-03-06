@@ -145,7 +145,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
         @throws Exception in case of error
         """
-        raise BrokerException("not implemented")
+        raise BrokerException(Constants.NOT_IMPLEMENTED)
 
     def initialize(self):
         if not self.initialized:
@@ -203,7 +203,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
                     reservation.get_pending_state() == ReservationPendingStates.Priming):
             source = reservation.get_source()
             if source is None:
-                raise BrokerException(Constants.NOT_SPECIFIED_PREFIX.format("source reservation"))
+                raise BrokerException(Constants.NOT_SPECIFIED_PREFIX.format("source delegation"))
 
             self.calendar.add_outlay(source=source,
                                      client=reservation,

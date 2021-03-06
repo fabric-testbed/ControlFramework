@@ -34,7 +34,6 @@ from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
 from fabric_cf.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
@@ -83,9 +82,6 @@ class LocalBroker(LocalProxy, IBrokerProxy):
         slice_obj = reservation.get_slice().clone_request()
 
         rset = self.abstract_clone_broker(rset=reservation.get_requested_resources())
-        rset.get_resource_data().request_properties = ResourceData.merge_properties(
-            from_props=reservation.get_slice().get_request_properties(),
-            to_props=rset.get_resource_data().get_request_properties())
 
         term = reservation.get_requested_term().clone()
 

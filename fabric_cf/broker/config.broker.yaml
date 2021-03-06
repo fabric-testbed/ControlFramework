@@ -118,6 +118,9 @@ actor:
   - guid: broker-guid
   - description: Broker
   - kafka-topic: broker-topic
+  - policy:
+      - module: fabric_cf.actor.core.policy.broker_simpler_units_policy
+      - class: BrokerSimplerUnitsPolicy
   - controls:
       - control:
           - type: VM, Container, Baremetal

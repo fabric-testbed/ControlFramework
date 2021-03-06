@@ -98,7 +98,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
                 for r in res_list:
                     slice_obj = self.get_slice_by_guid(guid=r.get_slice_id())
                     r.restore(actor=self.actor, slice_obj=slice_obj, logger=self.logger)
-                    rr = Converter.fill_reservation(reservation=r, full=False)
+                    rr = Converter.fill_reservation(reservation=r, full=True)
                     result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("get_authority_reservations: {}".format(e))

@@ -71,8 +71,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
 
     def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_obj: IKernelSlice):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_obj)
-        # Reservation backing the ticket granted to this reservation. For now only
-        # one source reservation can be used to issue a ticket to satisfy a client
+        # Delegation backing the ticket granted to this reservation. For now only
+        # one source delegation can be used to issue a ticket to satisfy a client
         # request.
         self.source = None
         # If this flag is true, then the reservation represents a request to export
@@ -135,6 +135,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         """
         super().restore(actor=actor, slice_obj=slice_obj)
         self.source = None
+        if actor is not None and self.resources is not None and self.resources.get_resources() is not None:
+            delegation_id = self.resources.get_resources().get_delegation_id()
+            delegation = self.actor.get_delegation(did=delegation_id)
+            self.source = delegation
         self.notified_failed = False
         self.closed_in_priming = False
 

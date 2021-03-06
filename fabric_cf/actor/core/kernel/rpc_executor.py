@@ -62,6 +62,10 @@ class RPCExecutor:
                                                             request.proxy.get_name()))
         try:
             request.proxy.execute(request=request.request)
+            if request.handler is None:
+                if request.timer is not None:
+                    logger.debug("Canceling the timer: {}".format(request.timer))
+                request.cancel_timer()
         except RPCException as e:
             RPCExecutor.post_exception(request=request, e=e)
         finally:

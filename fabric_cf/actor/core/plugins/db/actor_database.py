@@ -25,9 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import pickle
 import threading
+import traceback
 from typing import List
 
-from fabric_cf.actor.core.apis.i_actor import IActor
+
+from fabric_cf.actor.core.apis.i_actor import IActor, ActorType
 from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
 from fabric_cf.actor.core.apis.i_database import IDatabase
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
@@ -36,6 +38,7 @@ from fabric_cf.actor.core.apis.i_slice import ISlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.core.kernel.slice import SliceTypes
+from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.db.psql_database import PsqlDatabase
@@ -49,21 +52,25 @@ class ActorDatabase(IDatabase):
         self.db_host = db_host
         self.db = PsqlDatabase(user=self.user, password=self.password, database=self.database, db_host=self.db_host,
                                logger=logger)
+        self.actor_type = None
         self.actor_name = None
         self.actor_id = None
         self.initialized = False
         self.logger = None
         self.reset_state = False
+        self.actor = None
         self.lock = threading.Lock()
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['db']
+        del state['actor_type']
         del state['actor_name']
         del state['actor_id']
         del state['initialized']
         del state['logger']
         del state['reset_state']
+        del state['actor']
         del state['lock']
         return state
 
@@ -73,6 +80,7 @@ class ActorDatabase(IDatabase):
                                logger=None)
         self.actor_id = None
         self.actor_name = None
+        self.actor_type = None
         self.initialized = False
         self.logger = None
         self.reset_state = False
@@ -80,6 +88,8 @@ class ActorDatabase(IDatabase):
 
     def set_logger(self, *, logger):
         self.logger = logger
+        if self.db is not None:
+            self.db.set_logger(logger=logger)
 
     def set_reset_state(self, *, state: bool):
         self.reset_state = state
@@ -90,7 +100,8 @@ class ActorDatabase(IDatabase):
                 raise DatabaseException(Constants.NOT_SPECIFIED_PREFIX.format("actor name"))
             self.initialized = True
 
-    def actor_added(self):
+    def actor_added(self, *, actor):
+        self.actor = actor
         self.actor_id = self.get_actor_id_from_name(actor_name=self.actor_name)
         if self.actor_id is None:
             raise DatabaseException(Constants.OBJECT_NOT_FOUND.format("actor", self.actor_name))
@@ -103,6 +114,7 @@ class ActorDatabase(IDatabase):
             self.lock.acquire()
             actor = self.db.get_actor(name=actor_name)
             self.actor_id = actor['act_id']
+            self.actor_type = ActorType(actor['act_type'])
             return self.actor_id
         except Exception as e:
             self.logger.error(e)
@@ -145,7 +157,7 @@ class ActorDatabase(IDatabase):
                               slc_type=slice_object.get_slice_type().value,
                               slc_resource_type=str(slice_object.get_resource_type()),
                               properties=properties,
-                              slc_graph_id=str(slice_object.get_graph_id()))
+                              slc_graph_id=slice_object.get_graph_id())
         finally:
             self.lock.release()
 
@@ -163,7 +175,7 @@ class ActorDatabase(IDatabase):
                                  slc_type=slice_object.get_slice_type().value,
                                  slc_resource_type=str(slice_object.get_resource_type()),
                                  properties=properties,
-                                 slc_graph_id=str(slice_object.get_graph_id()))
+                                 slc_graph_id=slice_object.get_graph_id())
         finally:
             self.lock.release()
 
@@ -298,7 +310,25 @@ class ActorDatabase(IDatabase):
                                        rsv_state=reservation.get_state().value,
                                        rsv_pending=reservation.get_pending_state().value,
                                        rsv_joining=reservation.get_join_state().value,
-                                       properties=properties)
+                                       properties=properties,
+                                       rsv_graph_node_id=reservation.get_graph_node_id())
+
+            # Update for Orchestrator for Active / Ticketed Reservations
+            # TODO
+            '''
+            if self.actor_type == ActorType.Orchestrator and (reservation.is_active() or reservation.is_ticketed()) \
+                and reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
+                slice_obj = reservation.get_slice()
+                sliver = reservation.get_resources().get_sliver()
+                properties = Neo4jHelper.get_node_sliver_props(sliver=sliver)
+                self.logger.debug(f"Sliver properties: {properties} to be pushed to graph")
+                if slice_obj is not None and slice_obj.get_graph_id() is not None:
+                    graph = Neo4jHelper.get_graph(graph_id=slice_obj.get_graph_id())
+                    #graph.update_node_properties(node_id=sliver.node_id, props=properties)
+                    graph.update_node_property(node_id=sliver.node_id, prop_name=Constants.BQM_NODE_ID,
+                                               prop_val=sliver.bqm_node_id)
+                    self.logger.debug(f"Updated Slice graph_id: {slice_obj.get_graph_id()}")
+            '''
 
         finally:
             self.lock.release()
@@ -315,10 +345,11 @@ class ActorDatabase(IDatabase):
         try:
             slice_obj = self.get_slice_by_id(slc_id=slice_id)
             result = pickle.loads(pickled_res)
-            result.restore(actor=None, slice_obj=slice_obj)
+            result.restore(actor=self.actor, slice_obj=slice_obj)
             return result
         except Exception as e:
             self.logger.error(e)
+            self.logger.error(traceback.format_exc())
         return None
 
     def get_reservation(self, *, rid: ID) -> IReservation:
@@ -604,6 +635,7 @@ class ActorDatabase(IDatabase):
             return result
         except Exception as e:
             self.logger.error(e)
+            self.logger.error(traceback.format_exc())
         finally:
             self.lock.release()
         return None
@@ -658,7 +690,7 @@ class ActorDatabase(IDatabase):
     def _load_delegation_from_pickled_instance(self, pickled_del: str, slice_id: int) -> IDelegation:
         slice_obj = self.get_slice_by_id(slc_id=slice_id)
         delegation = pickle.loads(pickled_del)
-        delegation.restor(actor=None, slice_obj=slice_obj)
+        delegation.restore(actor=self.actor, slice_obj=slice_obj)
         return delegation
 
     def get_delegation(self, *, dlg_graph_id: str) -> IDelegation:
@@ -712,4 +744,34 @@ class ActorDatabase(IDatabase):
                 slice_id = d.get(Constants.DLG_SLC_ID)
                 dlg_obj = self._load_delegation_from_pickled_instance(pickled_del=pickled_del, slice_id=slice_id)
                 result.append(dlg_obj)
+        return result
+
+    def add_config_mapping(self, key: str, config_mapping: ConfigurationMapping):
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(config_mapping)
+            self.db.add_config_mapping(cfgm_type=key, act_id=self.actor_id, properties=properties)
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+            raise e
+        finally:
+            self.lock.release()
+
+    def get_config_mappings(self) -> List[ConfigurationMapping]:
+        cfg_map_list = None
+        result = []
+        try:
+            self.lock.acquire()
+            cfg_map_list = self.db.get_config_mappings(act_id=self.actor_id)
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+        finally:
+            self.lock.release()
+        if cfg_map_list is not None:
+            for c in cfg_map_list:
+                pickled_cfg_map = c.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+                cfg_obj = pickle.loads(pickled_cfg_map)
+                result.append(cfg_obj)
         return result

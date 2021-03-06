@@ -106,6 +106,8 @@ class PeerRegistry:
     def load_from_db(self):
         brokers = self.plugin.get_database().get_brokers()
         count = 0
+        if brokers is None:
+            return
         for b in brokers:
             agent = Proxy.get_proxy(proxy_reload_from_db=b)
             self.brokers[agent.get_identity().get_guid()] = agent
