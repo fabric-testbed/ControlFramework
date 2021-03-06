@@ -127,7 +127,7 @@ class Neo4jHelper:
         :return: Neo4jPropertyGraph
         """
         neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
-        graph = neo4j_graph_importer.import_graph_from_string_direct(graph_string=graph_str)
+        graph = neo4j_graph_importer.import_graph_from_string(graph_string=graph_str)
 
         return graph
 
