@@ -32,12 +32,25 @@ class ReservationIDWithModifyIndex:
         self.index = index
 
     def get_reservation_id(self) -> ID:
+        """
+        Get Reservation Id
+        :return:
+        """
         return self.rid
 
     def get_modify_index(self) -> int:
+        """
+        Get Modify Index
+        :return:
+        """
         return self.index
 
     def override_modify_index(self, *, index: int):
+        """
+        Override modify index
+        :param index:
+        :return:
+        """
         self.index = index
 
     def __str__(self):

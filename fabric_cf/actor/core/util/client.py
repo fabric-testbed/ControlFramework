@@ -42,28 +42,68 @@ class Client:
         self.__dict__.update(state)
 
     def set_name(self, *, name: str):
+        """
+        Set Name
+        :param name: name
+        :return:
+        """
         self.name = name
 
     def set_guid(self, *, guid: ID):
+        """
+        Set Guid
+        :param guid: guid
+        :return:
+        """
         self.guid = guid
 
     def set_type(self, *, client_type: str):
+        """
+        Set type
+        :param client_type:
+        :return:
+        """
         self.type = client_type
 
     def get_name(self) -> str:
+        """
+        Get name
+        :return: name
+        """
         return self.name
 
     def get_guid(self) -> ID:
+        """
+        Get guid
+        :return: guid
+        """
         return self.guid
 
     def get_type(self) -> str:
+        """
+        Get Type
+        :return: type
+        """
         return self.type
 
     def get_kafka_topic(self) -> str:
+        """
+        Get kafka Topic
+        :return: kafka topic
+        """
         return self.kafka_topic
 
     def set_kafka_topic(self, *, kafka_topic: str):
+        """
+        Set kafka topic
+        :param kafka_topic:
+        :return:
+        """
         self.kafka_topic = kafka_topic
 
     def get_auth_token(self) -> AuthToken:
+        """
+        Get auth token
+        :return:
+        """
         return AuthToken(name=self.name, guid=self.guid)

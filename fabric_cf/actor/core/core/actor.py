@@ -259,6 +259,11 @@ class Actor(IActor):
         self.logger.debug("External Tick end cycle: {}".format(cycle))
 
     def actor_tick(self, *, cycle: int):
+        """
+        Actor Tick
+        :param cycle: cycle
+        :return:
+        """
         try:
             if not self.recovered:
                 self.logger.warning("Tick for an actor that has not completed recovery")

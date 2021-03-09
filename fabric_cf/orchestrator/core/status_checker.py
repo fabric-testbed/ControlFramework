@@ -39,6 +39,14 @@ class Status(Enum):
 class StatusChecker:
 
     def check(self, *, controller: IMgmtController, rid, ok: List[ID], not_ok: List[ID]) -> Status:
+        """
+        Check status
+        :param controller:
+        :param rid:
+        :param ok:
+        :param not_ok:
+        :return:
+        """
         result = self.check_(controller=controller, rid=0)
         if result == Status.OK:
             ok.append(rid)

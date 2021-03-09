@@ -37,7 +37,6 @@ from fabric_cf.actor.core.common.exceptions import ControllerException
 from fabric_cf.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric_cf.actor.core.proxies.kafka.services.controller_service import ControllerService
-from fabric_cf.actor.core.util.prop_list import PropList
 from fabric_cf.actor.core.apis.i_controller import IController
 from fabric_cf.actor.core.core.actor import Actor
 from fabric_cf.actor.core.registry.peer_registry import PeerRegistry
@@ -343,17 +342,8 @@ class Controller(Actor, IController):
             raise ControllerException("Unknown reservation: {}".format(reservation_id))
 
         if rc.get_resources() is not None:
-            curr_config_props = rc.get_resources().get_config_properties()
-            curr_config_props = PropList.merge_properties(incoming=modify_properties, outgoing=curr_config_props)
-            rc.get_resources().set_config_properties(p=curr_config_props)
-
-            if rc.get_leased_resources() is not None:
-                curr_config_props = rc.get_leased_resources().get_config_properties()
-                curr_config_props = PropList.merge_properties(incoming=modify_properties, outgoing=curr_config_props)
-                rc.get_leased_resources().set_config_properties(p=curr_config_props)
-            else:
-                self.logger.warning("There were no leased resources for {}, no modify properties will be added".format(
-                    reservation_id))
+            # TODO
+            print("TODO")
         else:
             self.logger.warning("There are no approved resources for {}, no modify properties will be added".format(
                 reservation_id))

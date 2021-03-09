@@ -35,6 +35,12 @@ class ReservationDependencyStatusUpdate(IStatusUpdateCallback):
         self.reservation = None
 
     def success(self, *, ok: List[ID], act_on: List[ID]):
+        """
+        Success callback
+        :param ok:
+        :param act_on:
+        :return:
+        """
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
         # TODO
@@ -42,6 +48,13 @@ class ReservationDependencyStatusUpdate(IStatusUpdateCallback):
         logger.debug("Success")
 
     def failure(self, *, failed: List[ID], ok: List[ID], act_on: List[ID]):
+        """
+        Failure callback
+        :param failed:
+        :param ok:
+        :param act_on:
+        :return:
+        """
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
 
@@ -49,7 +62,16 @@ class ReservationDependencyStatusUpdate(IStatusUpdateCallback):
         # TODO
 
     def get_reservation(self) -> ReservationMng:
+        """
+        Get Reservation
+        :return:
+        """
         return self.reservation
 
     def set_reservation(self, *, reservation: ReservationMng):
+        """
+        Set reservation
+        :param reservation:
+        :return:
+        """
         self.reservation = reservation

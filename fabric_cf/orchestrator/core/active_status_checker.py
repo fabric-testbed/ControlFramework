@@ -37,6 +37,12 @@ class ActiveStatusChecker(StatusChecker):
         self.logger = GlobalsSingleton.get().get_logger()
 
     def check_(self, *, controller: IMgmtController, rid) -> Status:
+        """
+        Check status
+        :param controller:
+        :param rid:
+        :return:
+        """
         if not isinstance(rid, ID):
             return Status.NOTREADY
 

@@ -35,6 +35,10 @@ class ResourceType:
         self.resource_type = resource_type
 
     def get_type(self) -> str:
+        """
+        Get Type
+        :return:
+        """
         return self.resource_type
 
     def __eq__(self, other):

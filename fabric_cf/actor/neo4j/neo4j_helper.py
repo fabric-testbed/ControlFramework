@@ -154,6 +154,12 @@ class Neo4jHelper:
 
     @staticmethod
     def get_delegation(delegated_capacities: list, delegation_name: str) -> Capacities:
+        """
+        Get Delegated capacity given delegation name
+        :param delegated_capacities: list of delegated capacities
+        :param delegation_name: delegation name
+        :return: capacity for specified delegation
+        """
         for capacity_dict in delegated_capacities:
             name = capacity_dict.get(ABCPropertyGraph.FIELD_DELEGATION, None)
             if name == delegation_name:
@@ -163,6 +169,11 @@ class Neo4jHelper:
 
     @staticmethod
     def get_node_sliver_props(*, sliver: NodeSliver) -> dict:
+        """
+        Get Node sliver properties to be updated to Slice graph
+        :param sliver: sliver
+        :return: dictionary containing the properties that need to be updated
+        """
         if sliver is not None:
             result = {}
             if sliver.management_ip is not None:
@@ -178,3 +189,4 @@ class Neo4jHelper:
             if sliver.bqm_node_id is not None:
                 result[Constants.BQM_NODE_ID] = sliver.bqm_node_id
             return result
+        return sliver

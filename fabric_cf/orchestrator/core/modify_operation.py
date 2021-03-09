@@ -34,15 +34,32 @@ class ModifyOperation:
         self.properties = properties
 
     def get(self) -> ReservationIDWithModifyIndex:
+        """
+        Get Index
+        :return:
+        """
         return self.res_id
 
     def get_sub_command(self) -> str:
+        """
+        Get Sub Command
+        :return:
+        """
         return self.modify_sub_command
 
     def get_properties(self) -> dict:
+        """
+        Get properties
+        :return:
+        """
         return self.properties
 
     def override_index(self, *, index: int):
+        """
+        Override index
+        :param index:
+        :return:
+        """
         self.res_id.override_modify_index(index=index)
 
     def __str__(self):

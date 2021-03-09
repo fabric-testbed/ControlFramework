@@ -51,9 +51,18 @@ class OrchestratorHandler:
         self.pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
 
     def get_logger(self):
+        """
+        Get Logger
+        :return: logger
+        """
         return self.logger
 
     def validate_credentials(self, *, token) -> dict:
+        """
+        Validate credentials
+        :param token:
+        :return:
+        """
         try:
             fabric_token = FabricToken(logger=self.logger, token=token)
 
@@ -63,6 +72,11 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred while validating the token e: {e}")
 
     def get_broker(self, *, controller: IMgmtController) -> ID:
+        """
+        Get broker
+        :param controller:
+        :return:
+        """
         try:
             if self.controller_state.get_broker() is not None:
                 return self.controller_state.get_broker()
@@ -171,8 +185,6 @@ class OrchestratorHandler:
                     if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
-            #asm = OrchestratorSliceWrapper.load_slice_in_memory(slice_name=slice_name, slice_graph=slice_graph,
-            #                                                    logger=self.logger)
             neo4j_graph = OrchestratorSliceWrapper.load_slice_in_neo4j(slice_name=slice_name, slice_graph=slice_graph,
                                                                        logger=self.logger)
 

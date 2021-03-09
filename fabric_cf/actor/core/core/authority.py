@@ -323,6 +323,11 @@ class Authority(Actor, IAuthority):
         return KafkaAuthorityService.__module__
 
     def set_aggregate_resource_model(self, aggregate_resource_model: Neo4jARMGraph):
+        """
+        Set aggregate resource model
+        :param aggregate_resource_model: resource model
+        :return:
+        """
         self.policy.set_aggregate_resource_model(aggregate_resource_model=aggregate_resource_model)
 
     def load_model(self, *, graph_id: str):

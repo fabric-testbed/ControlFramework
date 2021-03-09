@@ -67,7 +67,7 @@ class MyQueryResponseHandler(IQueryResponseHandler):
 class ManagementUtils:
     @staticmethod
     def update_slice(*, slice_obj: ISlice, slice_mng: SliceAvro) -> ISlice:
-        return Translate.absorb_properties(slice_mng=slice_mng, slice_obj=slice_obj)
+        return
 
     @staticmethod
     def update_reservation(*, res_obj: IReservation, rsv_mng: ReservationMng) -> IReservation:

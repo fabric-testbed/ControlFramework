@@ -42,7 +42,6 @@ from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.bids import Bids
-from fabric_cf.actor.core.util.prop_list import PropList
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation

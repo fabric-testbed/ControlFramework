@@ -50,7 +50,6 @@ from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.prop_list import PropList
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.db import Units
@@ -267,22 +266,6 @@ class Translate:
                     ss = Translate.attach_properties(slice_mng=ss, slice_obj=slice_obj)
                 result.append(ss)
         return result
-
-    @staticmethod
-    def absorb_properties(*, slice_mng: SliceAvro, slice_obj: ISlice) -> ISlice:
-        slice_obj.set_local_properties(value=PropList.merge_properties(
-            incoming=slice_mng.get_local_properties(), outgoing=slice_obj.get_local_properties()))
-
-        slice_obj.set_config_properties(value=PropList.merge_properties(
-            incoming=slice_mng.get_config_properties(), outgoing=slice_obj.get_config_properties()))
-
-        slice_obj.set_request_properties(value=PropList.merge_properties(
-            incoming=slice_mng.get_request_properties(), outgoing=slice_obj.get_request_properties()))
-
-        slice_obj.set_resource_properties(value=PropList.merge_properties(
-            incoming=slice_mng.get_resource_properties(), outgoing=slice_obj.get_resource_properties()))
-
-        return slice_obj
 
     @staticmethod
     def translate_delegation_to_avro(*, delegation: IDelegation) -> DelegationAvro:

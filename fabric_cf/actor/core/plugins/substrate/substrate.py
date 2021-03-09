@@ -35,7 +35,6 @@ from fabric_cf.actor.core.plugins.handlers.handler_processor import HandlerProce
 from fabric_cf.actor.core.apis.i_substrate_database import ISubstrateDatabase
 from fabric_cf.actor.core.plugins.base_plugin import BasePlugin
 from fabric_cf.actor.core.apis.i_substrate import ISubstrate
-from fabric_cf.actor.core.util.prop_list import PropList
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_database import IDatabase

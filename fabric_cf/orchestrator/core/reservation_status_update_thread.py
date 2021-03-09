@@ -68,6 +68,10 @@ class ReservationStatusUpdateThread:
         self.stopped = False
 
     def start(self):
+        """
+        Start
+        :return:
+        """
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
@@ -82,6 +86,10 @@ class ReservationStatusUpdateThread:
             self.thread_lock.release()
 
     def stop(self):
+        """
+        Stop
+        :return:
+        """
         self.stopped = True
         self.stopped_worker.set()
         try:
@@ -101,6 +109,10 @@ class ReservationStatusUpdateThread:
                 self.thread_lock.release()
 
     def periodic(self):
+        """
+        Periodic
+        :return:
+        """
         self.logger.debug("Reservation Status Update Thread started")
         while not self.stopped_worker.wait(timeout=self.get_period()):
             self.run()
@@ -148,7 +160,13 @@ class ReservationStatusUpdateThread:
 
     def check_watch_entry(self, *, controller: IMgmtController, watch_entry: WatchEntry,
                           status_checker: StatusChecker) -> TriggeredWatchEntry:
-
+        """
+        Check watch entry
+        :param controller:
+        :param watch_entry:
+        :param status_checker:
+        :return:
+        """
         ok = []
         notok = []
 
@@ -166,6 +184,11 @@ class ReservationStatusUpdateThread:
                                    no_ok=notok)
 
     def process_callback(self, *, watch_entry: TriggeredWatchEntry):
+        """
+        Process callback
+        :param watch_entry:
+        :return:
+        """
         if len(watch_entry.not_ok) == 0:
             self.logger.debug("Invoking success callback for reservations: {}".format(watch_entry.watch))
             watch_entry.callback.success(watch_entry.ok, watch_entry.act)
@@ -175,6 +198,14 @@ class ReservationStatusUpdateThread:
 
     def process_watch_list(self, *, controller: IMgmtController, watch_list: List[WatchEntry], watch_type: str,
                            status_checker: StatusChecker):
+        """
+        Process watch list
+        :param controller:
+        :param watch_list:
+        :param watch_type:
+        :param status_checker:
+        :return:
+        """
         to_remove = []
         self.logger.debug("Scanning {} watch list".format(watch_type))
 
