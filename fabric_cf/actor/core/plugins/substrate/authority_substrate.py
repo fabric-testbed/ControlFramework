@@ -26,6 +26,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.i_slice import ISlice
 from fabric_cf.actor.core.core.pool_manager import PoolManager
 from fabric_cf.actor.core.plugins.substrate.substrate import Substrate
 
@@ -69,3 +72,12 @@ class AuthoritySubstrate(Substrate):
 
     def get_pool_manager(self) -> PoolManager:
         return self.pool_manager
+
+    def revisit(self, *, slice_obj: ISlice = None, reservation: IReservation = None, delegation: IDelegation = None):
+        if slice_obj is not None and slice_obj.is_inventory():
+            self.logger.debug("Recovering inventory slice")
+            self.recover_inventory_slice(slice_obj=slice_obj)
+
+    def recover_inventory_slice(self, *, slice_obj: ISlice):
+        if slice_obj.get_graph_id() is not None:
+            self.actor.load_model(graph_id=slice_obj.get_graph_id())

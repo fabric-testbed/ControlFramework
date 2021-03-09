@@ -212,6 +212,10 @@ class ReservationList:
                 break
 
     def print(self):
+        """
+        Print the list (used for tests)
+        :return:
+        """
         print("rw_list: {} c_to_r: {} r_to_c: {}".format(len(self.rset_wrapper_list), len(self.cycle_to_rset),
                                                          len(self.reservation_id_to_cycle)))
         for rw in self.rset_wrapper_list:

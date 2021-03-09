@@ -409,7 +409,16 @@ class Unit(ConfigToken):
         return self.uid.__hash__()
 
     def get_sliver(self) -> BaseSliver:
+        """
+        Return the sliver associated with the Unit
+        :return: sliver
+        """
         return self.sliver
 
     def set_sliver(self, *, sliver: BaseSliver):
+        """
+        Set the sliver associated with the Unit
+        :param sliver: sliver
+        :return:
+        """
         self.sliver = sliver

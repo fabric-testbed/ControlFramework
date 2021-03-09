@@ -42,7 +42,6 @@ from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.bids import Bids
-from fabric_cf.actor.core.util.prop_list import PropList
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
@@ -449,40 +448,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return False, node_id_to_reservations
 
     def extend_private(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term):
-        try:
-            rset = reservation.get_requested_resources()
-            needed = rset.get_units()
-            current = reservation.get_resources().get_units()
-            difference = needed - current
-
-            units = current
-
-            properties = None
-
-            if difference > 0:
-                available = inv.get_free()
-                to_allocate = min(difference, available)
-
-                if to_allocate > 0:
-                    properties = inv.allocate(count=to_allocate, request=rset.get_request_properties(),
-                                              resource=rset.get_resource_properties())
-
-                if to_allocate < difference:
-                    self.logger.error(f"partially satisfied request: allocated= {to_allocate} needed={difference}")
-
-                units += to_allocate
-            elif difference < 0:
-                properties = inv.free(count=-difference, request=rset.get_request_properties(),
-                                      resource=rset.get_resource_properties())
-                units += difference
-
-            properties = PropList.merge_properties(incoming=inv.get_properties(), outgoing=properties)
-
-            self.issue_ticket(reservation=reservation, units=units, rtype=inv.get_type(), term=term,
-                              properties=properties, source=inv.get_source())
-        except Exception as e:
-            self.logger.error(e)
-            reservation.fail(message=str(e), exception=e)
+        pass
 
     def issue_ticket(self, *, reservation: IBrokerReservation, units: int, rtype: ResourceType,
                      term: Term, source: IDelegation, sliver: BaseSliver) -> IBrokerReservation:

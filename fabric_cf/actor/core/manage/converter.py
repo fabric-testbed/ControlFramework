@@ -49,7 +49,6 @@ from fabric_cf.actor.core.proxies.kafka.kafka_proxy import KafkaProxy
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
 from fabric_cf.actor.core.util.client import Client
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.prop_list import PropList
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
 

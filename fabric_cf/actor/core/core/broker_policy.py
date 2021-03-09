@@ -129,6 +129,11 @@ class BrokerPolicy(Policy, IBrokerPolicy):
 
     @staticmethod
     def get_query_action(properties: dict) -> str:
+        """
+        Return Query action
+        :param properties: properties
+        :return: query action
+        """
         if properties is None:
             return None
         return properties.get(Constants.QUERY_ACTION, None)

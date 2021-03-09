@@ -25,7 +25,6 @@
 from bisect import bisect_left
 
 
-
 def binary_search(*, a, x):
     """
     Binary search element x in list a

@@ -40,13 +40,31 @@ class ModifyQueueCallback(IStatusUpdateCallback):
         self.modify_queue = {}
 
     def success(self, *, ok: List[ReservationIDWithModifyIndex], act_on: List[ID]):
+        """
+        Success callback
+        :param ok:
+        :param act_on:
+        :return:
+        """
         self.check_modify_queue(ok_or_failed=next(iter(ok)))
 
     def failure(self, *, failed: List[ReservationIDWithModifyIndex], ok: List[ReservationIDWithModifyIndex],
                 act_on: List[ID]):
+        """
+        Failure callback
+        :param failed:
+        :param ok:
+        :param act_on:
+        :return:
+        """
         self.check_modify_queue(ok_or_failed=next(iter(failed)))
 
     def check_modify_queue(self, *, ok_or_failed: ReservationIDWithModifyIndex):
+        """
+        Check Modify Queue
+        :param ok_or_failed:
+        :return:
+        """
         try:
             self.lock.acquire()
             res_queue = self.modify_queue.get(ok_or_failed.get_reservation_id(), None)
@@ -81,6 +99,13 @@ class ModifyQueueCallback(IStatusUpdateCallback):
             self.lock.release()
 
     def enqueue_modify(self, *, res: str, modify_sub_command: str, properties: dict):
+        """
+        Enqueue Modify
+        :param res:
+        :param modify_sub_command:
+        :param properties:
+        :return:
+        """
         rid = ID(uid=res)
         try:
             self.lock.acquire()
@@ -105,6 +130,13 @@ class ModifyQueueCallback(IStatusUpdateCallback):
             self.lock.release()
 
     def modify_sliver(self, *, rid: ID, modify_sub_command: str, properties: dict) -> int:
+        """
+        Modify sliver
+        :param rid:
+        :param modify_sub_command:
+        :param properties:
+        :return:
+        """
         try:
             controller = OrchestratorKernelSingleton.get().get_management_actor()
             reservation = controller.get_reservation(rid=rid)

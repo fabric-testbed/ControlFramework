@@ -37,9 +37,16 @@ class RPCError(Enum):
 
 
 class RPCException(Exception):
+    """
+    RPC Exception
+    """
     def __init__(self, *, message: str, error: RPCError = None):
         super().__init__(message)
         self.error = error
 
     def get_error_type(self) -> RPCError:
+        """
+        Get Error Type
+        :return:
+        """
         return self.error

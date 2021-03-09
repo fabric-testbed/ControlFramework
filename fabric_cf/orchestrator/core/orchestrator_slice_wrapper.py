@@ -31,8 +31,7 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
-from fim.graph.networkx_property_graph import NetworkXGraphImporter
-from fim.graph.slices.networkx_asm import NetworkxASM
+from fim.graph.slices.neo4j_asm import Neo4jASMFactory, Neo4jASM
 
 from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
@@ -103,7 +102,7 @@ class OrchestratorSliceWrapper:
 
         return ticketed_requested_entities
 
-    def create(self, *, bqm_graph: Neo4jPropertyGraph, slice_graph: NetworkxASM) -> List[TicketReservationAvro]:
+    def create(self, *, bqm_graph: Neo4jPropertyGraph, slice_graph: Neo4jASM) -> List[TicketReservationAvro]:
         try:
             slivers = []
             for nn_id in slice_graph.get_all_network_nodes():
@@ -119,22 +118,11 @@ class OrchestratorSliceWrapper:
             raise e
 
     @staticmethod
-    def load_slice_in_memory(*, slice_name: str, slice_graph: str, logger) -> NetworkxASM:
+    def load_slice_in_neo4j(*, slice_name: str, slice_graph: str, logger) -> Neo4jASM:
         try:
-            gi = NetworkXGraphImporter(logger=logger)
-            g = gi.import_graph_from_string_direct(graph_string=slice_graph)
-            asm = NetworkxASM(graph_id=g.graph_id, importer=g.importer, logger=g.importer.log)
-            asm.validate_graph()
-        except Exception as e:
-            logger.error(f"Exception occurred {e}")
-            logger.error(traceback.format_exc())
-            raise OrchestratorException(f"Failed to load the graph in Memory for slice: {slice_name}")
-        return asm
-
-    @staticmethod
-    def load_slice_in_neo4j(*, slice_name: str, slice_graph: str, logger) -> Neo4jPropertyGraph:
-        try:
-            return Neo4jHelper.get_graph_from_string(graph_str=slice_graph)
+            neo4j_graph = Neo4jHelper.get_graph_from_string(graph_str=slice_graph)
+            asm = Neo4jASMFactory.create(graph=neo4j_graph)
+            return asm
         except Exception as e:
             logger.error(f"Exception occurred {e}")
             logger.error(traceback.format_exc())

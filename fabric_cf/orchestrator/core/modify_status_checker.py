@@ -38,6 +38,12 @@ class ModifyStatusChecker(StatusChecker):
         self.logger = GlobalsSingleton.get().get_logger()
 
     def check_(self, *, controller: IMgmtController, rid) -> Status:
+        """
+        Check Status
+        :param controller:
+        :param rid:
+        :return:
+        """
         if not isinstance(rid, ReservationIDWithModifyIndex):
             return Status.NOTREADY
 

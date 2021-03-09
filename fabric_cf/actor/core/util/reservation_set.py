@@ -71,7 +71,7 @@ class ReservationSet:
         Returns:
             true if the set contains the specified reservation; false otherwise
         """
-        if reservation is not None and reservation.get_reservation_id() in self.reservations :
+        if reservation is not None and reservation.get_reservation_id() in self.reservations:
             return True
         if rid is not None and rid in self.reservations:
             return True

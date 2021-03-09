@@ -47,29 +47,58 @@ class OrchestratorKernel:
         self.controller = None
 
     def set_broker(self, *, broker: ID):
+        """
+        Set Broker
+        :param broker:
+        :return:
+        """
         self.broker = broker
 
     def get_broker(self) -> ID:
+        """
+        Get Broker
+        :return:
+        """
         return self.broker
 
     def get_sut(self) -> ReservationStatusUpdateThread:
+        """
+        Get SUT thread
+        :return:
+        """
         return self.sut
 
     def get_sdt(self) -> SliceDeferThread:
+        """
+        Get SDT thread
+        :return:
+        """
         return self.sdt
 
     def get_logger(self):
+        """
+        Get logger
+        :return:
+        """
         if self.logger is None:
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             self.logger = GlobalsSingleton.get().get_logger()
         return self.logger
 
     def get_management_actor(self) -> IMgmtController:
+        """
+        Get Management actor
+        :return:
+        """
         if self.controller is None:
             self.controller = ManagementUtils.get_local_actor()
         return self.controller
 
     def stop_threads(self):
+        """
+        Stop threads
+        :return:
+        """
         if self.sdt is not None:
             self.sdt.stop()
 
@@ -77,6 +106,10 @@ class OrchestratorKernel:
             self.sut.stop()
 
     def start_threads(self):
+        """
+        Start threads
+        :return:
+        """
         self.get_logger().debug("Starting Slice Defer Thread")
         self.sdt = SliceDeferThread()
         self.sdt.start()

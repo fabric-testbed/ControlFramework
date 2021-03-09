@@ -65,12 +65,22 @@ class SliceDeferThread:
             self.max_create_wait_time = wait_time
 
     def queue_slice(self, *, controller_slice: OrchestratorSliceWrapper):
+        """
+        Queue a slice
+        :param controller_slice:
+        :return:
+        """
         with self.defer_slice_avail_condition:
             self.deferred_slices.put_nowait(controller_slice)
             self.logger.debug(f"Added slice to deferred slices queue {controller_slice.__class__.__name__}")
             self.defer_slice_avail_condition.notify_all()
 
     def update_last(self, *, controller_slice: OrchestratorSliceWrapper):
+        """
+        Update the last slice
+        :param controller_slice:
+        :return:
+        """
         if controller_slice is None:
             return
 
@@ -80,6 +90,11 @@ class SliceDeferThread:
         self.last_slice_time = datetime.utcnow()
 
     def process_slice(self, *, controller_slice: OrchestratorSliceWrapper):
+        """
+        Process a slice
+        :param controller_slice:
+        :return:
+        """
         if controller_slice is None:
             return
 
@@ -99,6 +114,10 @@ class SliceDeferThread:
             self.demand_slice(controller_slice=controller_slice)
 
     def start(self):
+        """
+        Start thread
+        :return:
+        """
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
@@ -113,6 +132,10 @@ class SliceDeferThread:
             self.thread_lock.release()
 
     def stop(self):
+        """
+        Stop thread
+        :return:
+        """
         self.stopped = True
         try:
             self.thread_lock.acquire()
@@ -134,6 +157,10 @@ class SliceDeferThread:
                 self.thread_lock.release()
 
     def run(self):
+        """
+        Thread main loop
+        :return:
+        """
         while True:
             self.logger.debug("SliceDeferThread started")
             controller_slice = None
@@ -193,6 +220,11 @@ class SliceDeferThread:
         self.logger.debug("SliceDeferThread exited")
 
     def demand_slice(self, *, controller_slice: OrchestratorSliceWrapper):
+        """
+        Demand slice
+        :param controller_slice:
+        :return:
+        """
         if controller_slice is None:
             self.logger.error("demand slice was given a None slice")
             return
@@ -221,6 +253,11 @@ class SliceDeferThread:
             return
 
     def check_computed_reservations(self, *, controller_slice: OrchestratorSliceWrapper) -> bool:
+        """
+        Check computed reservations
+        :param controller_slice:
+        :return:
+        """
         if controller_slice is None or controller_slice.get_computed_reservations() is None:
             self.logger.info("Empty slice or no computed reservations")
             return False
@@ -228,6 +265,11 @@ class SliceDeferThread:
         return True
 
     def delay_not_done(self, *, controller_slice: OrchestratorSliceWrapper) -> bool:
+        """
+        Check if delay is done
+        :param controller_slice:
+        :return:
+        """
         if controller_slice is None:
             return False
 

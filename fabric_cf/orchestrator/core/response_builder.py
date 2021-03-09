@@ -46,6 +46,12 @@ class ResponseBuilder:
 
     @staticmethod
     def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = False) -> dict:
+        """
+        Get Reservation summary
+        :param res_list:
+        :param include_notices:
+        :return:
+        """
         reservations = []
         status = ResponseBuilder.SUCCESS_STATUS
         message = ""
@@ -77,6 +83,12 @@ class ResponseBuilder:
 
     @staticmethod
     def get_slice_summary(*, slice_list: List[SliceAvro], slice_id: str = None) -> dict:
+        """
+        Get slice summary
+        :param slice_list:
+        :param slice_id:
+        :return:
+        """
         slices = []
         status = ResponseBuilder.SUCCESS_STATUS
         message = ""
@@ -100,6 +112,11 @@ class ResponseBuilder:
 
     @staticmethod
     def get_broker_query_model_summary(*, bqm: dict):
+        """
+        Get BQM
+        :param bqm:
+        :return:
+        """
         status = ResponseBuilder.SUCCESS_STATUS
         message = ""
 
@@ -114,6 +131,11 @@ class ResponseBuilder:
 
     @staticmethod
     def get_slice_model_summary(*, slice_model: str):
+        """
+        Get Slice Model summary
+        :param slice_model:
+        :return:
+        """
         status = ResponseBuilder.SUCCESS_STATUS
         message = ""
 

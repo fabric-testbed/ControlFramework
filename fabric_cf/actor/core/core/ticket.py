@@ -171,6 +171,10 @@ class Ticket(IConcreteSet):
         return self.authority
 
     def get_term(self) -> Term:
+        """
+        Get term
+        :return: term
+        """
         if self.resource_delegation is None:
             return None
         return self.resource_delegation.get_term()
@@ -240,7 +244,16 @@ class Ticket(IConcreteSet):
         return self.resource_delegation.get_units()
 
     def get_delegation_id(self) -> str:
+        """
+        Get Delegation Id
+        :return: delegation id
+        """
         return self.delegation_id
 
     def set_delegation_id(self, *, delegation_id: str):
+        """
+        Set delgation id
+        :param delegation_id: delegation id
+        :return:
+        """
         self.delegation_id = delegation_id

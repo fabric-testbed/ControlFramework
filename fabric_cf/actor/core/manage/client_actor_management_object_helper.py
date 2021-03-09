@@ -56,7 +56,6 @@ from fabric_cf.actor.security.pdp_auth import ActionId
 from fabric_cf.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.prop_list import PropList
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.core.broker_policy import BrokerPolicy
 from fabric_cf.actor.security.pdp_auth import ResourceType as AuthResourceType

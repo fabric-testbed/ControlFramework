@@ -32,6 +32,13 @@ from fabric_cf.actor.core.apis.i_timer_task import ITimerTask
 class KernelTimer:
     @staticmethod
     def schedule(*, queue: ITimerQueue, task: ITimerTask, delay: int):
+        """
+        Schedule a timer
+        :param queue: timer queue (maps to Actor's queue)
+        :param task: task
+        :param delay: delay
+        :return:
+        """
         try:
             queue.logger.debug("Scheduling timer")
             from fabric_cf.actor.core.container.globals import GlobalsSingleton

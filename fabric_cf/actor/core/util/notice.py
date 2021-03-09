@@ -24,14 +24,25 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
+
 class Notice:
     def __init__(self):
         self.notice_string = None
 
     def get_notice(self):
+        """
+        Get notice string
+        :return:
+        """
         return self.notice_string
 
     def add(self, *, msg: str, ex: Exception = None):
+        """
+        Addd message
+        :param msg: message
+        :param ex: exception
+        :return:
+        """
         if msg is None:
             return
 
@@ -44,9 +55,17 @@ class Notice:
             self.notice_string += str(ex)
 
     def clear(self):
+        """
+        Clear the notice
+        :return:
+        """
         self.notice_string = None
 
     def is_empty(self) -> bool:
+        """
+        Returns true if empty; false otherwise
+        :return: true if empty; false otherwise
+        """
         return self.notice_string is None
 
     def __str__(self):
