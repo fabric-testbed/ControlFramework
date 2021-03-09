@@ -323,7 +323,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             res_list = None
             try:
                 if rid is not None:
-                    res = self.db.get_reservation(rid)
+                    res = self.db.get_reservation(rid=rid)
                     if res is not None:
                         res_list = [res]
                     else:

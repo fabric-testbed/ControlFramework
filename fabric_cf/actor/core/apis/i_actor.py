@@ -95,9 +95,6 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
          Each of the aforementioned roles is defined in a corresponding interface. An
          actor instance must implement at least one of these interfaces.
     """
-    PropertyGuid = "ActorGuid"
-    PropertyName = "ActorName"
-    PropertyType = "ActorType"
 
     @abstractmethod
     def actor_added(self):
@@ -369,4 +366,12 @@ class IActor(IActorIdentity, ISliceOperations, IReservationOperations, ITick, IT
         """
         Set logger
         @param logger logger
+        """
+
+    @abstractmethod
+    def load_model(self, *, graph_id: str):
+        """
+        Load any Graph Model
+        :param graph_id:
+        :return:
         """

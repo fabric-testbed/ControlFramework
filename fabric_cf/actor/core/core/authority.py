@@ -324,3 +324,7 @@ class Authority(Actor, IAuthority):
 
     def set_aggregate_resource_model(self, aggregate_resource_model: Neo4jARMGraph):
         self.policy.set_aggregate_resource_model(aggregate_resource_model=aggregate_resource_model)
+
+    def load_model(self, *, graph_id: str):
+        self.policy.set_aggregate_resource_model_graph_id(graph_id=graph_id)
+        self.policy.load_aggregate_resource_model()

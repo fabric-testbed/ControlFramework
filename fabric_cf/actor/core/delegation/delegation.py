@@ -418,7 +418,7 @@ class Delegation(IDelegation):
         self.owner = owner
 
     def load_graph(self, *, graph_str: str):
-        self.graph = Neo4jHelper.get_graph_from_string(graph_str=graph_str)
+        self.graph = Neo4jHelper.get_graph_from_string_direct(graph_str=graph_str)
 
     def get_delegation_name(self) -> str:
         return self.delegation_name

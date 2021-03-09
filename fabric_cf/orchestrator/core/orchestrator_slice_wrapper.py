@@ -32,6 +32,7 @@ from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReserva
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
 from fim.graph.networkx_property_graph import NetworkXGraphImporter
+from fim.graph.slices.neo4j_asm import Neo4jASMFactory, Neo4jASM
 from fim.graph.slices.networkx_asm import NetworkxASM
 
 from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
@@ -103,7 +104,7 @@ class OrchestratorSliceWrapper:
 
         return ticketed_requested_entities
 
-    def create(self, *, bqm_graph: Neo4jPropertyGraph, slice_graph: NetworkxASM) -> List[TicketReservationAvro]:
+    def create(self, *, bqm_graph: Neo4jPropertyGraph, slice_graph: Neo4jASM) -> List[TicketReservationAvro]:
         try:
             slivers = []
             for nn_id in slice_graph.get_all_network_nodes():
@@ -132,9 +133,11 @@ class OrchestratorSliceWrapper:
         return asm
 
     @staticmethod
-    def load_slice_in_neo4j(*, slice_name: str, slice_graph: str, logger) -> Neo4jPropertyGraph:
+    def load_slice_in_neo4j(*, slice_name: str, slice_graph: str, logger) -> Neo4jASM:
         try:
-            return Neo4jHelper.get_graph_from_string(graph_str=slice_graph)
+            neo4j_graph = Neo4jHelper.get_graph_from_string(graph_str=slice_graph)
+            asm = Neo4jASMFactory.create(graph=neo4j_graph)
+            return asm
         except Exception as e:
             logger.error(f"Exception occurred {e}")
             logger.error(traceback.format_exc())

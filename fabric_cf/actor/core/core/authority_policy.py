@@ -35,7 +35,6 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.time.term import Term
 
 
-
 class AuthorityPolicy(Policy, IAuthorityPolicy):
     def __init__(self, *, actor: IAuthority = None):
         super().__init__(actor=actor)

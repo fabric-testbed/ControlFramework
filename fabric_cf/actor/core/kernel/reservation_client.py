@@ -30,6 +30,8 @@ from typing import TYPE_CHECKING
 
 from datetime import datetime
 
+from fim.slivers.network_node import NodeSliver
+
 from fabric_cf.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric_cf.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
 from fabric_cf.actor.core.common.constants import Constants
@@ -45,6 +47,7 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingSta
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_state import ReservationState
 from fabric_cf.actor.core.util.update_data import UpdateData
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_slice import ISlice
@@ -262,6 +265,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.previous_lease_term = self.lease_term
         self.term = incoming.get_term()
         self.lease_term = self.term
+        self.update_slice_graph(sliver=self.leased_resources.get_sliver())
 
     def absorb_ticket_update(self, *, incoming: IReservation, update_data: UpdateData):
         """
@@ -290,6 +294,8 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.logger.debug("absorb_update: {}".format(incoming))
 
         self.policy.update_ticket_complete(reservation=self)
+        # Update Graph
+        self.update_slice_graph(sliver=self.resources.get_sliver())
 
     def accept_lease_update(self, *, incoming: IReservation, update_data: UpdateData) -> bool:
         """
@@ -1455,3 +1461,13 @@ class ReservationClient(Reservation, IKernelControllerReservation):
             self.recover_closing()
         elif self.state == ReservationStates.Failed:
             self.logger.warning("Reservation #{} has failed".format(self.get_reservation_id()))
+
+    def update_slice_graph(self, sliver: NodeSliver):
+        # Update for Orchestrator for Active / Ticketed Reservations
+        if sliver is not None:
+            properties = Neo4jHelper.get_node_sliver_props(sliver=sliver)
+            self.logger.debug(f"Sliver properties: {properties} to be pushed to graph")
+            if self.slice is not None and self.slice.get_graph_id() is not None:
+                graph = Neo4jHelper.get_graph(graph_id=self.slice.get_graph_id())
+                graph.update_node_properties(node_id=sliver.node_id, props=properties)
+                self.logger.debug(f"Updated Slice graph_id: {self.slice.get_graph_id()}")

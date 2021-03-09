@@ -957,3 +957,6 @@ class Actor(IActor):
             self.policy.set_logger(logger=logger)
         if self.plugin is not None:
             self.plugin.set_logger(logger=logger)
+
+    def load_model(self, *, graph_id: str):
+        return

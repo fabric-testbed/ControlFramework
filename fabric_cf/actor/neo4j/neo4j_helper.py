@@ -120,6 +120,18 @@ class Neo4jHelper:
         return combined_broker_model
 
     @staticmethod
+    def get_graph_from_string_direct(*, graph_str: str) -> Neo4jPropertyGraph:
+        """
+        Load arm graph from neo4j
+        :param graph_str: graph_str
+        :return: Neo4jPropertyGraph
+        """
+        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
+        graph = neo4j_graph_importer.import_graph_from_string_direct(graph_string=graph_str)
+
+        return graph
+
+    @staticmethod
     def get_graph_from_string(*, graph_str: str) -> Neo4jPropertyGraph:
         """
         Load arm graph from neo4j

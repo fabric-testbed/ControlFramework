@@ -42,6 +42,7 @@ from fabric_cf.actor.core.plugins.handlers.configuration_mapping import Configur
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.db.psql_database import PsqlDatabase
+from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
 
 
 class ActorDatabase(IDatabase):
@@ -312,24 +313,6 @@ class ActorDatabase(IDatabase):
                                        rsv_joining=reservation.get_join_state().value,
                                        properties=properties,
                                        rsv_graph_node_id=reservation.get_graph_node_id())
-
-            # Update for Orchestrator for Active / Ticketed Reservations
-            # TODO
-            '''
-            if self.actor_type == ActorType.Orchestrator and (reservation.is_active() or reservation.is_ticketed()) \
-                and reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
-                slice_obj = reservation.get_slice()
-                sliver = reservation.get_resources().get_sliver()
-                properties = Neo4jHelper.get_node_sliver_props(sliver=sliver)
-                self.logger.debug(f"Sliver properties: {properties} to be pushed to graph")
-                if slice_obj is not None and slice_obj.get_graph_id() is not None:
-                    graph = Neo4jHelper.get_graph(graph_id=slice_obj.get_graph_id())
-                    #graph.update_node_properties(node_id=sliver.node_id, props=properties)
-                    graph.update_node_property(node_id=sliver.node_id, prop_name=Constants.BQM_NODE_ID,
-                                               prop_val=sliver.bqm_node_id)
-                    self.logger.debug(f"Updated Slice graph_id: {slice_obj.get_graph_id()}")
-            '''
-
         finally:
             self.lock.release()
 

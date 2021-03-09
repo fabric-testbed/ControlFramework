@@ -31,7 +31,6 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_data import ResourceData
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.test.core.policy.controller_simple_policy_test import ControllerSimplePolicyTest
 from fabric_cf.actor.test.core.policy.controller_ticket_review_policy_test_wrapper import \
@@ -47,7 +46,7 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
         clock = controller.get_actor_clock()
         Term.clock = clock
 
-        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"), rdata=ResourceData())
+        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"))
         slice_obj = SliceFactory.create(slice_id=ID(), name="fail")
         controller.register_slice(slice_object=slice_obj)
 
@@ -81,7 +80,7 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
         clock = controller.get_actor_clock()
         Term.clock = clock
 
-        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"), rdata=ResourceData())
+        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"))
         slice_obj = SliceFactory.create(slice_id=ID(), name="nascent")
         controller.register_slice(slice_object=slice_obj)
 
@@ -126,7 +125,7 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
         clock = controller.get_actor_clock()
         Term.clock = clock
 
-        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"), rdata=ResourceData())
+        resources = ResourceSet(units=1, rtype=ResourceType(resource_type="1"))
         slice_obj = SliceFactory.create(slice_id=ID(), name="fail_nascent")
         controller.register_slice(slice_object=slice_obj)
 

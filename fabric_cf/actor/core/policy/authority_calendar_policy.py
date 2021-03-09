@@ -101,6 +101,9 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         self.clock = None
         self.initialized = False
         self.controls_by_resource_type = {}
+        self.aggregate_resource_model = None
+
+        self.lock = threading.Lock()
         self.restore()
 
     def restore(self):
@@ -113,10 +116,10 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             except Exception as e:
                 raise AuthorityException(f"Cannot restore resource control e:{e}")
 
-        self.load_aggregate_resource_model()
-
     def set_aggregate_resource_model(self, aggregate_resource_model: Neo4jARMGraph):
         self.aggregate_resource_model = aggregate_resource_model
+        if aggregate_resource_model is not None:
+            self.set_aggregate_resource_model_graph_id(graph_id=aggregate_resource_model.graph_id)
 
     def set_aggregate_resource_model_graph_id(self, graph_id: str):
         self.aggregate_resource_model_graph_id = graph_id
@@ -129,6 +132,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             super().initialize()
             self.calendar = AuthorityCalendar(clock=self.clock)
             self.initialize_controls()
+            self.load_aggregate_resource_model()
             self.initialized = True
 
     def initialize_controls(self):
@@ -391,10 +395,12 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             try:
                 ticketed_sliver = requested.get_sliver()
                 node_id = ticketed_sliver.bqm_node_id
+                self.logger.debug(f"node_id {node_id} serving reservation# {reservation}")
                 if node_id is None:
                     raise AuthorityException(f"Unable to find node_id {node_id} for reservation# {reservation}")
 
                 graph_node = self.get_node_from_graph(node_id=node_id)
+                self.logger.debug(f"Node {graph_node} serving reservation# {reservation}")
 
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
