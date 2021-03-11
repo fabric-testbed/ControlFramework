@@ -52,7 +52,7 @@ cp $config $name/config.yaml
 cp $arm $name/arm.graphml
 cp $handler $name/vm_handler_config.yml
 
-if [ -z $5 ]; then
+if [ -z $6 ]; then
   cp docker-compose.yml $name/
 else
   cp docker-compose-dev.yml $name/docker-compose.yml

@@ -6,9 +6,7 @@ services:
     container_name: site1-am-neo4j
     user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
     restart: always
-    networks:
-      - frontend
-      - backend
+    network_mode: host
     ports:
       - 7474:7474  # for HTTP
       - 7473:7473  # for HTTPS
@@ -31,8 +29,7 @@ services:
     image: fabrictestbed/postgres:12.3
     container_name: site1-am-db
     restart: always
-    networks:
-      - backend
+    network_mode: host
     volumes:
       - ./pg_data/data:${PGDATA:-/var/lib/postgresql/data}
       - ./pg_data/logs:${POSTGRES_INITDB_WALDIR:-/var/log/postgresql}
@@ -49,8 +46,7 @@ services:
     image: fabrictestbed/authzforce-pdp:3.1.0
     container_name: site1-am-pdp
     user: ${PDP_UID:-1000}:${PDP_GID:-1000}
-    networks:
-      - backend
+    network_mode: host
     ports:
       - 8080:8080
       - 8443:8443
@@ -67,9 +63,7 @@ services:
     depends_on:
       - database
       - neo4j
-    networks:
-      - frontend
-      - backend
+    network_mode: host
     ports:
       - 11000:11000
     volumes:
@@ -84,7 +78,3 @@ services:
       - ../../../../AMHandlers/fabric_am/playbooks:/etc/fabric/actor/playbooks
       - ../../../../AMHandlers/fabric_am/playbooks/inventory:/etc/fabric/actor/playbooks/inventory
       - ./ssh:~/.ssh
-networks:
-  frontend:
-  backend:
-    internal: true
