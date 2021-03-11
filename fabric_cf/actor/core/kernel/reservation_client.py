@@ -1471,3 +1471,9 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 graph = Neo4jHelper.get_graph(graph_id=self.slice.get_graph_id())
                 graph.update_node_properties(node_id=sliver.node_id, props=properties)
                 self.logger.debug(f"Updated Slice graph_id: {self.slice.get_graph_id()}")
+                if sliver.attached_components_info is not None:
+                    for component in sliver.attached_components_info.devices.values():
+                        self.logger.debug(f"Component properties: {properties} to be pushed to graph")
+                        properties = Neo4jHelper.get_component_sliver_props(component_sliver=component)
+                        graph.update_node_properties(node_id=component.node_id, props=properties)
+                        self.logger.debug(f"Updated Component in Slice graph_id: {self.slice.get_graph_id()}")

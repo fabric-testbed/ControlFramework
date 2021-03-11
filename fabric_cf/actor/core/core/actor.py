@@ -468,6 +468,8 @@ class Actor(IActor):
             except Exception as e:
                 self.logger.error(traceback.format_exc())
                 self.logger.error("Error in recoverSlice for property list {}".format(e))
+                if s.is_inventory():
+                    raise e
 
     def recover_slice(self, *, slice_obj: ISlice):
         """

@@ -56,45 +56,55 @@ class OrchestratorSliceWrapper:
         self.thread_lock = threading.Lock()
 
     def lock(self):
+        """
+        Lock slice
+        :return:
+        """
         self.thread_lock.acquire()
 
     def unlock(self):
+        """
+        Unlock slice
+        :return:
+        """
         if self.thread_lock.locked():
             self.thread_lock.release()
 
-    def remove_computed_reservation(self, *, rid: str):
-        if self.computed_reservations is not None:
-            reservation_to_remove = None
-            for reservation in self.computed_reservations:
-                if reservation.get_reservation_id() == rid:
-                    reservation_to_remove = reservation
-                    break
-            if reservation_to_remove is not None:
-                self.computed_reservations.remove(reservation_to_remove)
-
-    def add_computed_reservation(self, *, reservation: TicketReservationAvro):
-        if self.computed_reservations is None:
-            self.computed_reservations = []
-        self.computed_reservations.append(reservation)
-
-    def set_computed_reservations(self, *, reservations: List[TicketReservationAvro]):
-        self.computed_reservations = reservations
-
     def get_computed_reservations(self) -> List[TicketReservationAvro]:
+        """
+        Get computed reservations
+        :return: computed reservations
+        """
         return self.computed_reservations
 
     def get_all_reservations(self) -> List[ReservationMng]:
+        """
+        Get All reservations
+        :return: all reservations
+        """
         if self.controller is None:
             return None
         return self.controller.get_reservations()
 
     def get_slice_name(self) -> str:
+        """
+        Get Slice name
+        :return: slice name
+        """
         return self.slice_obj.get_slice_name()
 
     def get_slice_id(self) -> ID:
+        """
+        Get Slice Id
+        :return: slice id
+        """
         return ID(uid=self.slice_obj.get_slice_id())
 
     def get_requested_entities(self) -> dict:
+        """
+        Get Requested reservations in a dictionary with reservation id as the key
+        :return: dictionary reservation id -> reservation
+        """
         ticketed_requested_entities = {}
         if self.get_computed_reservations() is not None:
             for reservation in self.get_computed_reservations():
@@ -103,10 +113,19 @@ class OrchestratorSliceWrapper:
         return ticketed_requested_entities
 
     def create(self, *, bqm_graph: Neo4jPropertyGraph, slice_graph: Neo4jASM) -> List[TicketReservationAvro]:
+        """
+        Create a slice
+        :param bqm_graph: BQM Graph
+        :param slice_graph: Slice Graph
+        :return: List of computed reservations
+        """
         try:
             slivers = []
             for nn_id in slice_graph.get_all_network_nodes():
                 sliver = slice_graph.build_deep_node_sliver(node_id=nn_id)
+                # TODO remove this hard coding once query from BQM to identify the node which serves this sliver
+                # is added
+                sliver.bqm_node_id = 'HX7LQ53'
                 slivers.append(sliver)
 
             self.computed_reservations = self.reservation_converter.get_tickets(slivers=slivers,
@@ -116,14 +135,3 @@ class OrchestratorSliceWrapper:
         except Exception as e:
             self.logger.error("Exception occurred while generating reservations for slivers: {}".format(e))
             raise e
-
-    @staticmethod
-    def load_slice_in_neo4j(*, slice_name: str, slice_graph: str, logger) -> Neo4jASM:
-        try:
-            neo4j_graph = Neo4jHelper.get_graph_from_string(graph_str=slice_graph)
-            asm = Neo4jASMFactory.create(graph=neo4j_graph)
-            return asm
-        except Exception as e:
-            logger.error(f"Exception occurred {e}")
-            logger.error(traceback.format_exc())
-            raise OrchestratorException(f"Failed to load the graph in Neo4j for slice: {slice_name}")

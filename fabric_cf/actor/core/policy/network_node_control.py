@@ -49,6 +49,14 @@ class NetworkNodeControl(ResourceControl):
     """
     def __check_capacities(self, *, rid: ID, requested_capacities: Capacities, available_capacities: Capacities,
                            existing_reservations: List[IReservation]):
+        """
+        Check if the allocated capacities by the broker can be assigned
+        :param rid: reservation id
+        :param requested_capacities: Requested capacities
+        :param available_capacities: Available capacities
+        :param existing_reservations: Existing Reservations served by the same ARM node
+        :raises: AuthorityException in case the request cannot be satisfied
+        """
         self.logger.debug(f"available_capacities: {available_capacities}")
         self.logger.debug(f"requested_capacities: {requested_capacities} for reservation# {rid}")
         available_core = available_capacities.core
@@ -84,7 +92,15 @@ class NetworkNodeControl(ResourceControl):
                                   f"Disk: [{requested_capacities.disk}/{available_disk}]")
 
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_node: BaseSliver,
-                           existing_reservations: List[IReservation]) -> AttachedComponentsInfo:
+                           existing_reservations: List[IReservation]):
+        """
+        Check if the allocated components by the broker can be assigned
+        :param rid: reservation id
+        :param requested_components: Requested components
+        :param graph_node: ARM Graph Node serving the reservation
+        :param existing_reservations: Existing Reservations served by the same ARM node
+        :raises: AuthorityException in case the request cannot be satisfied
+        """
         self.logger.debug(f"requested_components: {requested_components} for reservation# {rid}")
         for name, c in requested_components.devices.items():
             if c.bqm_node_id is None:
@@ -134,7 +150,16 @@ class NetworkNodeControl(ResourceControl):
                                 f"is already assigned to reservation# {reservation}")
 
     def assign(self, *, reservation: IAuthorityReservation, delegation_name: str,
-               graph_node: BaseSliver, reservation_info: List[IReservation]) -> ResourceSet:
+               graph_node: BaseSliver, existing_reservations: List[IReservation]) -> ResourceSet:
+        """
+        Assign a reservation
+        :param reservation: reservation
+        :param delegation_name: Name of delegation serving the request
+        :param graph_node: ARM Graph Node serving the reservation
+        :param existing_reservations: Existing Reservations served by the same ARM node
+        :return: ResourceSet with updated sliver annotated with properties
+        :raises: AuthorityException in case the request cannot be satisfied
+        """
 
         if graph_node.capacity_delegations is None or len(graph_node.capacity_delegations) < 1 or reservation is None:
             raise AuthorityException(Constants.INVALID_ARGUMENT)
@@ -162,20 +187,20 @@ class NetworkNodeControl(ResourceControl):
             self.__check_capacities(rid=reservation.get_reservation_id(),
                                     requested_capacities=requested.get_capacities(),
                                     available_capacities=available_delegated_capacity,
-                                    existing_reservations=reservation_info)
+                                    existing_reservations=existing_reservations)
 
             # Check if Capacities can be satisfied by Capacities
             self.__check_capacities(rid=reservation.get_reservation_id(),
                                     requested_capacities=requested.get_capacities(),
                                     available_capacities=graph_node.get_capacities(),
-                                    existing_reservations=reservation_info)
+                                    existing_reservations=existing_reservations)
 
             # Check components
             # Check if Components can be allocated
             self.__check_components(rid=reservation.get_reservation_id(),
                                     requested_components=requested.attached_components_info,
                                     graph_node=graph_node,
-                                    existing_reservations=reservation_info)
+                                    existing_reservations=existing_reservations)
 
             unit = Unit(uid=ID(), rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
                         actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type)

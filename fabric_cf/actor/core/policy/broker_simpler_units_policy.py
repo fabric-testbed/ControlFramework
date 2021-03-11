@@ -417,8 +417,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             rset = reservation.get_requested_resources()
             needed = rset.get_units()
 
-            # TODO find a node which matches in BQM
-            node_id = "2046922a-a8ed-4b60-8190-b6ce614c514d"
+            node_id = rset.get_sliver().bqm_node_id
             if node_id is None:
                 raise BrokerException(f"Unable to find node_id {node_id} for reservation# {reservation}")
 
@@ -427,8 +426,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                    node_id_to_reservations=node_id_to_reservations)
 
-            delegation_id, sliver = inv.allocate(reservation=reservation, actor=self.actor, graph_node=graph_node,
-                                                 reservation_info=existing_reservations)
+            delegation_id, sliver = inv.allocate(reservation=reservation, graph_node=graph_node,
+                                                 existing_reservations=existing_reservations)
 
             if delegation_id is not None:
                 sliver.bqm_node_id = node_id
@@ -577,7 +576,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.lock.acquire()
             if delegation.get_delegation_id() in self.delegations:
                 self.combined_broker_model.merge_adm(adm=delegation.get_graph())
-                self.combined_broker_model.validate_graph()
+                #self.combined_broker_model.validate_graph()
                 self.logger.debug("Donated Delegation: self.combined_broker_model: {}".format(
                     self.combined_broker_model.serialize_graph()))
             else:

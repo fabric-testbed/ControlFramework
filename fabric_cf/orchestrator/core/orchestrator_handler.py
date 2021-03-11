@@ -185,8 +185,7 @@ class OrchestratorHandler:
                     if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
-            neo4j_graph = OrchestratorSliceWrapper.load_slice_in_neo4j(slice_name=slice_name, slice_graph=slice_graph,
-                                                                       logger=self.logger)
+            neo4j_graph = Neo4jHelper.load_slice_in_neo4j(slice_graph=slice_graph)
 
             try:
                 bqm_string, bqm_graph = self.discover_types(controller=controller, token=token, delete_graph=False)
@@ -257,6 +256,7 @@ class OrchestratorHandler:
         @throws Raises an exception in case of failure
         @returns List of reservations created for the Slice on success
         """
+        include_sliver = False
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"get_slivers invoked for Controller: {controller}")
@@ -267,6 +267,7 @@ class OrchestratorHandler:
             rid = None
             if sliver_id is not None:
                 rid = ID(uid=sliver_id)
+                include_sliver = True
 
             reservations = controller.get_reservations(id_token=token, slice_id=slice_guid, rid=rid)
             if reservations is None:
@@ -274,7 +275,8 @@ class OrchestratorHandler:
                     self.logger.error(controller.get_last_error())
                 raise OrchestratorException(f"Slice# {slice_id} has no reservations")
 
-            return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices)
+            return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices,
+                                                           include_sliver=True)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")

@@ -112,15 +112,15 @@ class IResourceControl:
 
     @abstractmethod
     def assign(self, *, reservation: IAuthorityReservation, delegation_name: str,
-               graph_node: BaseSliver, reservation_info: List[IReservation]) -> ResourceSet:
+               graph_node: BaseSliver, existing_reservations: List[IReservation]) -> ResourceSet:
         """
-        Assigns resources to the reservation.
-        @param reservation reservation
-        @param delegation_name delegation_name
-        @param graph_node graph_node
-        @param reservation_info reservation_info
-        @returns resources assigned to the reservation (allocated units)
-        @raises Exception in case of error
+        Assign a reservation
+        :param reservation: reservation
+        :param delegation_name: Name of delegation serving the request
+        :param graph_node: ARM Graph Node serving the reservation
+        :param existing_reservations: Existing Reservations served by the same ARM node
+        :return: ResourceSet with updated sliver annotated with properties
+        :raises: AuthorityException in case the request cannot be satisfied
         """
 
     @abstractmethod
