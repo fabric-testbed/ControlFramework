@@ -25,7 +25,7 @@ Run the `setup.sh` script to set up an Aggregate Manager. User is expected to sp
 
 #### Production
 ```
-./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/site-am-2broker-ad-enumerated.graphml
+./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/site-am-2broker-ad-enumerated.graphml ./vm_handler_config.yml
 ```
 #### Development
 ```

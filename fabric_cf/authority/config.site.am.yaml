@@ -130,7 +130,7 @@ actor:
           - module: fabric_am.handlers.vm_handler
           - class: VMHandler
           - properties:
-              - config.properties.file: /etc/fabric/actor/config/vm_handler_config.yml
+            - config.properties.file: /etc/fabric/actor/config/vm_handler_config.yml
   - controls:
       - control:
           - type: VM, Container, Baremetal
