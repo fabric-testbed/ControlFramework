@@ -32,7 +32,7 @@ if [ "$#" -lt 4 ]; then
     exit
 fi
 
-if [ "$#" -gt 5 ]; then
+if [ "$#" -gt 6 ]; then
     echo "Illegal number of parameters"
     exit
 fi
@@ -41,6 +41,7 @@ name=$1
 neo4jpwd=$2
 config=$3
 arm=$4
+handler=$5
 
 
 mkdir -p $name/pg_data/data $name/pg_data/logs $name/neo4j/data $name/neo4j/imports $name/neo4j/logs $name/pdp/conf $name/pdp/policies
@@ -49,6 +50,7 @@ cp am-yes.xml $name/pdp/policies
 cp env.template $name/.env
 cp $config $name/config.yaml
 cp $arm $name/arm.graphml
+cp $handler $name/vm_handler_config.yml
 
 if [ -z $5 ]; then
   cp docker-compose.yml $name/

@@ -77,9 +77,13 @@ services:
       - ./config.yaml:/etc/fabric/actor/config/config.yaml
       - ./arm.graphml:/etc/fabric/actor/config/neo4j/arm.graphml
       - ./logs/:/var/log/actor
+      - ./vm_handler_config.yml:/etc/fabric/actor/config/vm_handler_config.yml
       - ../../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
       - ../../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
       - ../../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
+      - ../../../../AMHandlers/fabric_am/playbooks:/etc/fabric/actor/playbooks
+      - ../../../../AMHandlers/fabric_am/playbooks/inventory:/etc/fabric/actor/playbooks/inventory
+      - ./ssh:~/.ssh
 networks:
   frontend:
   backend:
