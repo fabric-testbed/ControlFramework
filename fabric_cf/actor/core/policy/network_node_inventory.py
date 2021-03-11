@@ -26,12 +26,11 @@
 import json
 from typing import Tuple, List
 
-from fim.slivers.attached_components import AttachedComponentsInfo
+from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import Capacities
+from fim.slivers.capacities_labels import Capacities, Labels
 from fim.slivers.network_node import NodeSliver
 
-from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException
@@ -57,6 +56,15 @@ class NetworkNodeInventory(InventoryForType):
 
     def __check_capacities(self, *, rid: ID, requested_capacities: Capacities, delegated_capacities: dict,
                            existing_reservations: List[IReservation]) -> str:
+        """
+        Check if the requested capacities can be satisfied with the available capacities
+        :param rid: reservation id of the reservation being served
+        :param requested_capacities: Requested Capacities
+        :param delegated_capacities: Delegated Capacities
+        :param existing_reservations: Existing Reservations served by the same BQM node
+        :return: Delegation Id of the delegation which satisfies the request
+        :raises: BrokerException in case the request cannot be satisfied
+        """
         self.logger.debug(f"requested_capacities: {requested_capacities} for reservation# {rid}")
 
         for delegation_id, delegated_list in delegated_capacities.items():
@@ -101,12 +109,56 @@ class NetworkNodeInventory(InventoryForType):
                 return delegation_id
         return None
 
+    def __check_component_labels_and_capacities(self, *, available_component: ComponentSliver,
+                                                requested_component: ComponentSliver) -> ComponentSliver:
+        """
+        Check if available component capacities, labels to match requested component
+        :param available_component: available component
+        :param requested_component: requested component
+        :return: requested component annotated with properties in case of success, None otherwise
+        """
+        if requested_component.get_resource_model() is not None and \
+                requested_component.get_resource_model() != available_component.get_resource_model():
+            return requested_component
+
+        # Checking capacity for component
+        capacity_delegations = available_component.get_capacity_delegations()
+        for delegation_id, delegation_list in capacity_delegations.items():
+            for delegated in delegation_list:
+                self.logger.debug(f"available_capacity_delegations : {delegated} {type(delegated)} for component {available_component}")
+                delegated_capacity = Capacities().from_json(json.dumps(delegated))
+                if delegated_capacity.unit < 1:
+                    raise BrokerException(f"Insufficient resources for component: {requested_component.get_name()}"
+                                          f"Unit: [{1}/{delegated_capacity.unit}]")
+                requested_component.capacities = delegated_capacity
+
+        # Check labels
+        label_delegations = available_component.get_label_delegations()
+        for delegation_id, delegation_list in label_delegations.items():
+            for delegated in delegation_list:
+                self.logger.debug(f"available_label_delegations : {delegated} {type(delegated)} for component {available_component}")
+                delegated_label = Labels().from_json(json.dumps(delegated))
+                requested_component.labels = delegated_label
+
+        requested_component.bqm_node_id = available_component.node_id
+
+        return requested_component
+
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_node: BaseSliver,
                            existing_reservations: List[IReservation]) -> AttachedComponentsInfo:
+        """
+        Check if the requested capacities can be satisfied with the available capacities
+        :param rid: reservation id of the reservation being served
+        :param requested_components: Requested components
+        :param graph_node: BQM graph node identified to serve the reservation
+        :param existing_reservations: Existing Reservations served by the same BQM node
+        :return: Components updated with the corresponding BQM node ids
+        :raises: BrokerException in case the request cannot be satisfied
+        """
 
         self.logger.debug(f"requested_components: {requested_components} for reservation# {rid}")
-        for name, c in requested_components.devices.items():
-            resource_type = c.get_resource_type()
+        for name, requested_component in requested_components.devices.items():
+            resource_type = requested_component.get_resource_type()
             available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
 
             self.logger.debug(f"Resource Type: {resource_type} available_components: {available_components}")
@@ -149,32 +201,35 @@ class NetworkNodeInventory(InventoryForType):
 
             for component in available_components:
                 # check model matches the requested model
-                if c.get_resource_model() is not None and component.get_resource_model() == c.get_resource_model():
-                    self.logger.debug(f"Found a matching component with resource model {c.get_resource_model()}")
-                    self.logger.debug(f"Assigning {component.node_id} to component# {c} in reservation# {rid} ")
-                    c.bqm_node_id = component.node_id
-                    c.labels.bdf = component.get_labels().bdf
+                requested_component = self.__check_component_labels_and_capacities(available_component=component,
+                                                                                   requested_component=requested_component)
+                if requested_component.bqm_node_id is not None:
+                    self.logger.debug(f"Found a matching component with resource model "
+                                      f"{requested_component.get_resource_model()}")
+
+                    self.logger.debug(f"Assigning {component.node_id} to component# "
+                                      f"{requested_component} in reservation# {rid} ")
+
                     # Remove the component from available components as it is assigned
                     graph_node.attached_components_info.remove_device(component.get_name())
                     break
 
-                if c.get_resource_model() is None:
-                    self.logger.debug(f"Found a matching component# {component.node_id}")
-                    self.logger.debug(f"Assigning {component.node_id} to component# {c} in reservation# {rid} ")
-                    c.bqm_node_id = component.node_id
-                    c.labels.bdf = component.get_labels().bdf
-                    # Remove the component from available components as it is assigned
-                    graph_node.attached_components_info.remove_device(component.get_name())
-                    break
-
-            if c.bqm_node_id is None:
-                raise BrokerException(f"Component of type: {resource_type} model: {c.get_resource_model()} "
+            if requested_component.bqm_node_id is None:
+                raise BrokerException(f"Component of type: {resource_type} model: {requested_component.get_resource_model()} "
                                       f"not available in graph node: {graph_node.node_id}")
 
         return requested_components
 
-    def allocate(self, *, reservation: IReservation, actor: IActor, graph_node: BaseSliver,
-                 reservation_info: List[IReservation]) -> Tuple[str, BaseSliver]:
+    def allocate(self, *, reservation: IReservation, graph_node: BaseSliver,
+                 existing_reservations: List[IReservation]) -> Tuple[str, BaseSliver]:
+        """
+        Allocate an extending or ticketing reservation
+        :param reservation: reservation to be allocated
+        :param graph_node: BQM graph node identified to serve the reservation
+        :param existing_reservations: Existing Reservations served by the same BQM node
+        :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
+        :raises: BrokerException in case the request cannot be satisfied
+        """
         if graph_node.capacity_delegations is None or len(graph_node.capacity_delegations) < 1 or reservation is None:
             raise BrokerException(Constants.INVALID_ARGUMENT)
 
@@ -183,19 +238,19 @@ class NetworkNodeInventory(InventoryForType):
             raise BrokerException(f"Invalid resource type {requested.get_resource_type()}")
 
         # Check if Capacities can be satisfied
-        result = self.__check_capacities(rid=reservation.get_reservation_id(),
-                                         requested_capacities=requested.get_capacities(),
-                                         delegated_capacities=graph_node.get_capacity_delegations(),
-                                         existing_reservations=reservation_info)
+        delegation_id = self.__check_capacities(rid=reservation.get_reservation_id(),
+                                                requested_capacities=requested.get_capacities(),
+                                                delegated_capacities=graph_node.get_capacity_delegations(),
+                                                existing_reservations=existing_reservations)
 
         # Check if Components can be allocated
         requested.attached_components_info = self.__check_components(
             rid=reservation.get_reservation_id(),
             requested_components=requested.attached_components_info,
             graph_node=graph_node,
-            existing_reservations=reservation_info)
+            existing_reservations=existing_reservations)
 
-        return result, requested
+        return delegation_id, requested
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
         return

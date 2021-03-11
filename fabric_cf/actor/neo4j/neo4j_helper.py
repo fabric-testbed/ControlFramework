@@ -29,6 +29,8 @@ from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
+from fim.graph.slices.neo4j_asm import Neo4jASMFactory, Neo4jASM
+from fim.slivers.attached_components import ComponentSliver
 from fim.slivers.capacities_labels import Capacities
 from fim.slivers.network_node import NodeSliver
 
@@ -56,7 +58,7 @@ class Neo4jHelper:
         return neo4j_graph_importer
 
     @staticmethod
-    def get_arm_graph_from_file(*, filename: str) -> ABCPropertyGraph:
+    def get_arm_graph_from_file(*, filename: str) -> Neo4jARMGraph:
         """
         Load specified file directly with no manipulations or validation
         :param filename:
@@ -64,11 +66,12 @@ class Neo4jHelper:
         """
         neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
         neo4_graph = neo4j_graph_importer.import_graph_from_file(graph_file=filename)
-        neo4_graph.validate_graph()
+        site_arm = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=neo4_graph.graph_id,
+                                                          importer=neo4j_graph_importer))
 
-        arm_graph = Neo4jARMGraph(graph=neo4_graph)
+        #site_arm.validate_graph()
 
-        return arm_graph
+        return site_arm
 
     @staticmethod
     def get_arm_graph(*, graph_id: str) -> Neo4jARMGraph:
@@ -115,8 +118,8 @@ class Neo4jHelper:
         combined_broker_model = Neo4jCBMGraph(graph_id=combined_broker_model_graph_id,
                                               importer=neo4j_graph_importer,
                                               logger=neo4j_graph_importer.log)
-        if combined_broker_model.graph_exists():
-            combined_broker_model.validate_graph()
+        #if combined_broker_model.graph_exists():
+        #    combined_broker_model.validate_graph()
         return combined_broker_model
 
     @staticmethod
@@ -190,3 +193,25 @@ class Neo4jHelper:
                 result[Constants.BQM_NODE_ID] = sliver.bqm_node_id
             return result
         return sliver
+
+    @staticmethod
+    def get_component_sliver_props(*, component_sliver: ComponentSliver) -> dict:
+        """
+         Get Component sliver properties to be updated to Slice graph
+        :param component_sliver:
+        :return: dictionary containing the properties that need to be updated
+        """
+        if component_sliver is not None:
+            result = {}
+            if component_sliver.bqm_node_id is not None:
+                result[Constants.BQM_NODE_ID] = component_sliver.bqm_node_id
+            if component_sliver.labels is not None:
+                result[ABCPropertyGraph.PROP_LABELS] = component_sliver.labels
+            return result
+        return component_sliver
+
+    @staticmethod
+    def load_slice_in_neo4j(*, slice_graph: str) -> Neo4jASM:
+        neo4j_graph = Neo4jHelper.get_graph_from_string(graph_str=slice_graph)
+        asm = Neo4jASMFactory.create(graph=neo4j_graph)
+        return asm

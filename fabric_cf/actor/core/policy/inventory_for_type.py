@@ -26,13 +26,12 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List, Tuple, Dict
+from typing import TYPE_CHECKING, List, Tuple
 
 from fim.slivers.base_sliver import BaseSliver
 
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor import IActor
     from fabric_cf.actor.core.apis.i_reservation import IReservation
 
 
@@ -48,13 +47,13 @@ class InventoryForType:
         """
 
     @abstractmethod
-    def allocate(self, *, reservation: IReservation, actor: IActor, graph_node: BaseSliver,
-                 reservation_info: List[IReservation]) -> Tuple[str, BaseSliver]:
+    def allocate(self, *, reservation: IReservation, graph_node: BaseSliver,
+                 existing_reservations: List[IReservation]) -> Tuple[str, BaseSliver]:
         """
-        Allocate the sliver. This method is called for new ticketing/extending reservations.
-        @param reservation reservation
-        @param actor actor
-        @param graph_node graph_node
-        @param reservation_info reservation_info
-        @return delegation id
+        Allocate an extending or ticketing reservation
+        :param reservation: reservation to be allocated
+        :param graph_node: BQM graph node identified to serve the reservation
+        :param existing_reservations: Existing Reservations served by the same BQM node
+        :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
+        :raises: BrokerException in case the request cannot be satisfied
         """

@@ -206,7 +206,7 @@ class BrokerDelegation(Delegation):
         @param incoming incoming delegation
         @param update_data update data
         """
-        incoming.get_graph().validate_graph()
+        #incoming.get_graph().validate_graph()
         return True
 
     def absorb_delegation_update(self, *, incoming: IDelegation, update_data: UpdateData):

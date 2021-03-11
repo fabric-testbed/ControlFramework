@@ -35,8 +35,8 @@ from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 
 class ResponseBuilder:
     RESPONSE_STATUS = "status"
-    SUCCESS_STATUS = "success"
-    FAILURE_STATUS = "fail"
+    STATUS_OK = "OK"
+    STATUS_FAILURE = "FAILURE"
 
     RESPONSE_RESERVATIONS = "reservations"
     RESPONSE_SLICES = "slices"
@@ -44,39 +44,62 @@ class ResponseBuilder:
     RESPONSE_BQM = "bqm"
     RESPONSE_SLICE_MODEL = "slice_model"
 
+    PROP_SLICE_ID = "slice_id"
+    PROP_SLICE_NAME = "slice_name"
+    PROP_SLICE_STATE = "slice_state"
+    PROP_RESERVATION_ID = "reservation_id"
+    PROP_RESOURCE_TYPE = "resource_type"
+    PROP_RESERVATION_STATE = "reservation_state"
+    PROP_RESERVATION_PENDING_STATE = "pending_state"
+    PROP_RESERVATION_JOIN_STATE = "join_state"
+    PROP_NOTICES = "notices"
+    PROP_GRAPH_NODE_ID = "graph_node_id"
+    PROP_GRAPH_ID = "graph_id"
+    PROP_SLIVER = "sliver"
+
     @staticmethod
-    def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = False) -> dict:
+    def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = False,
+                                include_sliver: bool = False) -> dict:
         """
         Get Reservation summary
         :param res_list:
         :param include_notices:
+        :param include_sliver:
         :return:
         """
         reservations = []
-        status = ResponseBuilder.SUCCESS_STATUS
+        status = ResponseBuilder.STATUS_OK
         message = ""
 
         if res_list is not None:
             for reservation in res_list:
-                res_dict = {"slice_id": reservation.get_slice_id(), "reservation_id": reservation.get_reservation_id(),
-                            "resource_type": reservation.get_resource_type(),
-                            'state': ReservationStates(reservation.get_state()).name}
+                res_dict = {ResponseBuilder.PROP_SLICE_ID: reservation.get_slice_id(),
+                            ResponseBuilder.PROP_RESERVATION_ID: reservation.get_reservation_id(),
+                            ResponseBuilder.PROP_RESOURCE_TYPE: reservation.get_resource_type(),
+                            ResponseBuilder.PROP_RESERVATION_STATE: ReservationStates(reservation.get_state()).name}
 
                 if reservation.get_pending_state() is not None:
-                    res_dict['pending_state'] = ReservationPendingStates(reservation.get_pending_state()).name
+                    res_dict[ResponseBuilder.PROP_RESERVATION_JOIN_STATE] = ReservationPendingStates(reservation.get_pending_state()).name
 
                 if isinstance(reservation, LeaseReservationAvro) and reservation.get_join_state() is not None:
-                    res_dict['join_state'] = JoinState(reservation.get_join_state()).name
+                    res_dict[ResponseBuilder.PROP_RESERVATION_JOIN_STATE] = JoinState(reservation.get_join_state()).name
+
+                sliver = reservation.get_sliver()
+                if reservation.sliver is not None:
+                    res_dict[ResponseBuilder.PROP_GRAPH_NODE_ID] = sliver.bqm_node_id
+                    if include_sliver:
+                        res_dict[ResponseBuilder.PROP_SLIVER] = str(sliver)
 
                 if include_notices:
-                    res_dict['notices'] = reservation.get_notices()
+                    res_dict[ResponseBuilder.PROP_NOTICES] = reservation.get_notices()
 
                 reservations.append(res_dict)
         else:
-            status = ResponseBuilder.FAILURE_STATUS
+            status = ResponseBuilder.STATUS_FAILURE
             message = "No reservations were found/computed"
 
-        response = {ResponseBuilder.RESPONSE_STATUS: status, ResponseBuilder.RESPONSE_MESSAGE: message,
+        response = {ResponseBuilder.RESPONSE_STATUS: status,
+                    ResponseBuilder.RESPONSE_MESSAGE: message,
                     ResponseBuilder.RESPONSE_RESERVATIONS: reservations}
 
         return response
@@ -90,7 +113,7 @@ class ResponseBuilder:
         :return:
         """
         slices = []
-        status = ResponseBuilder.SUCCESS_STATUS
+        status = ResponseBuilder.STATUS_OK
         message = ""
 
         if slice_list is not None:
@@ -98,14 +121,17 @@ class ResponseBuilder:
                 slice_state = SliceState(s.get_state())
                 if slice_id is None and (slice_state == SliceState.Dead or slice_state == SliceState.Closing):
                     continue
-                s_dict = {'slice_id': s.get_slice_id(), 'slice_name': s.get_slice_name(),
-                          'graph_id': s.get_graph_id(), 'slice_state': slice_state.name}
+                s_dict = {ResponseBuilder.PROP_SLICE_ID: s.get_slice_id(),
+                          ResponseBuilder.PROP_SLICE_NAME: s.get_slice_name(),
+                          ResponseBuilder.PROP_GRAPH_ID: s.get_graph_id(),
+                          ResponseBuilder.PROP_SLICE_STATE: slice_state.name}
                 slices.append(s_dict)
         else:
-            status = ResponseBuilder.FAILURE_STATUS
+            status = ResponseBuilder.STATUS_FAILURE
             message = "No slices were found"
 
-        response = {ResponseBuilder.RESPONSE_STATUS: status, ResponseBuilder.RESPONSE_MESSAGE: message,
+        response = {ResponseBuilder.RESPONSE_STATUS: status,
+                    ResponseBuilder.RESPONSE_MESSAGE: message,
                     ResponseBuilder.RESPONSE_SLICES: slices}
 
         return response
@@ -117,14 +143,15 @@ class ResponseBuilder:
         :param bqm:
         :return:
         """
-        status = ResponseBuilder.SUCCESS_STATUS
+        status = ResponseBuilder.STATUS_OK
         message = ""
 
         if bqm is None:
             message = "No broker query model found"
-            status = ResponseBuilder.FAILURE_STATUS
+            status = ResponseBuilder.STATUS_FAILURE
 
-        response = {ResponseBuilder.RESPONSE_STATUS: status, ResponseBuilder.RESPONSE_MESSAGE: message,
+        response = {ResponseBuilder.RESPONSE_STATUS: status,
+                    ResponseBuilder.RESPONSE_MESSAGE: message,
                     ResponseBuilder.RESPONSE_BQM: bqm}
 
         return response
@@ -136,14 +163,15 @@ class ResponseBuilder:
         :param slice_model:
         :return:
         """
-        status = ResponseBuilder.SUCCESS_STATUS
+        status = ResponseBuilder.STATUS_OK
         message = ""
 
         if slice_model is None:
             message = "No slice model found"
-            status = ResponseBuilder.FAILURE_STATUS
+            status = ResponseBuilder.STATUS_FAILURE
 
-        response = {ResponseBuilder.RESPONSE_STATUS: status, ResponseBuilder.RESPONSE_MESSAGE: message,
+        response = {ResponseBuilder.RESPONSE_STATUS: status,
+                    ResponseBuilder.RESPONSE_MESSAGE: message,
                     ResponseBuilder.RESPONSE_SLICE_MODEL: slice_model}
 
         return response

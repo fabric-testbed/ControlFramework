@@ -408,7 +408,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                 delegation_name = self.get_delegation_name(delegation_id=requested.get_resources().get_delegation_id())
 
                 rset = rc.assign(reservation=reservation, delegation_name=delegation_name,
-                                 graph_node=graph_node, reservation_info=existing_reservations)
+                                 graph_node=graph_node, existing_reservations=existing_reservations)
 
                 if rset is None or rset.get_sliver() is None or rset.get_sliver().bqm_node_id is None:
                     raise AuthorityException(f"Could not assign resources to reservation# {reservation}")
