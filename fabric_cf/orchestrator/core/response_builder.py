@@ -86,7 +86,7 @@ class ResponseBuilder:
 
                 sliver = reservation.get_sliver()
                 if reservation.sliver is not None:
-                    res_dict[ResponseBuilder.PROP_GRAPH_NODE_ID] = sliver.bqm_node_id
+                    res_dict[ResponseBuilder.PROP_GRAPH_NODE_ID] = sliver.node_id
                     if include_sliver:
                         res_dict[ResponseBuilder.PROP_SLIVER] = str(sliver)
 

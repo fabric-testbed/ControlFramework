@@ -9,7 +9,7 @@ from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
-def slices_create_post(body, slice_name):  # noqa: E501
+def slices_create_post(body, slice_name, ssh_key):  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
@@ -33,7 +33,7 @@ def slices_create_post(body, slice_name):  # noqa: E501
     try:
         token = get_token()
         slice_graph = body.decode("utf-8")
-        value = handler.create_slice(token=token, slice_name=slice_name, slice_graph=slice_graph)
+        value = handler.create_slice(token=token, slice_name=slice_name, slice_graph=slice_graph, ssh_key=ssh_key)
         response = Success()
         response.value = value
         success_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()

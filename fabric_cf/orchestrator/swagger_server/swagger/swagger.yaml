@@ -49,6 +49,16 @@ paths:
       summary: Retrieve a listing and description of available resources
       description: Retrieve a listing and description of available resources
       operationId: resources_get
+      parameters:
+      - name: level
+        in: query
+        description: Level of details
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: integer
+          default: 1
       responses:
         "200":
           description: OK
@@ -172,6 +182,14 @@ paths:
       - name: sliceName
         in: query
         description: Slice Name
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+      - name: sshKey
+        in: query
+        description: User SSH Key
         required: true
         style: form
         explode: true
@@ -567,6 +585,15 @@ components:
       explode: true
       schema:
         type: string
+    sshKey:
+      name: sshKey
+      in: query
+      description: User SSH Key
+      required: true
+      style: form
+      explode: true
+      schema:
+        type: string
     newLeaseEndTime:
       name: newLeaseEndTime
       in: query
@@ -576,6 +603,16 @@ components:
       explode: true
       schema:
         type: string
+    level:
+      name: level
+      in: query
+      description: Level of details
+      required: true
+      style: form
+      explode: true
+      schema:
+        type: integer
+        default: 1
   requestBodies:
     Request:
       content:

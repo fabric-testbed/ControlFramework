@@ -119,11 +119,12 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         return reservation.get_client_auth_token().get_guid()
 
     @staticmethod
-    def get_resource_pools_query() -> dict:
+    def get_resource_pools_query(*, level: int) -> dict:
         """
         Return dictionary representing query
         """
-        properties = {Constants.QUERY_ACTION: Constants.QUERY_ACTION_DISCOVER_POOLS}
+        properties = {Constants.QUERY_ACTION: Constants.QUERY_ACTION_DISCOVER_POOLS,
+                      Constants.QUERY_DETAIL_LEVEL: str(level)}
         return properties
 
 

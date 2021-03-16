@@ -28,23 +28,21 @@ import json
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
-from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
+from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph, Neo4jCBMFactory
 from fim.graph.slices.neo4j_asm import Neo4jASMFactory, Neo4jASM
-from fim.slivers.attached_components import ComponentSliver
 from fim.slivers.capacities_labels import Capacities
 from fim.slivers.network_node import NodeSliver
+from fim.user import ExperimentTopology
 
-from fabric_cf.actor.core.common.constants import Constants
 
-
-class Neo4jHelper:
+class FimHelper:
     """
     Provides methods to load Graph Models and perform various operations on them
     """
     @staticmethod
     def get_neo4j_importer() -> Neo4jGraphImporter:
         """
-        get neo4j graph importer
+        get fim graph importer
         :return: Neo4jGraphImporter
         """
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
@@ -64,72 +62,76 @@ class Neo4jHelper:
         :param filename:
         :return:
         """
-        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer()
         neo4_graph = neo4j_graph_importer.import_graph_from_file(graph_file=filename)
         site_arm = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=neo4_graph.graph_id,
                                                           importer=neo4j_graph_importer))
 
-        #site_arm.validate_graph()
+        site_arm.validate_graph()
 
         return site_arm
 
     @staticmethod
     def get_arm_graph(*, graph_id: str) -> Neo4jARMGraph:
         """
-        Load arm graph from neo4j
+        Load arm graph from fim
         :param graph_id: graph_id
         :return: Neo4jARMGraph
         """
-        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer()
         arm_graph = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer))
+        if arm_graph.graph_exists():
+            arm_graph.validate_graph()
 
         return arm_graph
 
     @staticmethod
     def get_graph(*, graph_id: str) -> Neo4jPropertyGraph:
         """
-        Load arm graph from neo4j
+        Load arm graph from fim
         :param graph_id: graph_id
         :return: Neo4jARMGraph
         """
-        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer()
         arm_graph = Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer)
 
         return arm_graph
 
     @staticmethod
-    def get_neo4j_cbm_empty_graph() -> Neo4jCBMGraph:
+    def get_neo4j_cbm_graph(graph_id: str) -> Neo4jCBMGraph:
         """
-        Load cmb empty graph
+        Load cbm graph from fim
+        :param graph_id: graph_id
         :return: Neo4jCBMGraph
         """
-        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
-        combined_broker_model = Neo4jCBMGraph(importer=neo4j_graph_importer, logger=neo4j_graph_importer.log)
+        neo4j_graph_importer = FimHelper.get_neo4j_importer()
+        combined_broker_model = Neo4jCBMGraph(graph_id=graph_id,
+                                              importer=neo4j_graph_importer,
+                                              logger=neo4j_graph_importer.log)
+        if combined_broker_model.graph_exists():
+            combined_broker_model.validate_graph()
         return combined_broker_model
 
     @staticmethod
-    def get_neo4j_cbm_graph_from_database(combined_broker_model_graph_id: str) -> Neo4jCBMGraph:
+    def get_neo4j_cbm_graph_from_string_direct(*, graph_str: str) -> Neo4jCBMGraph:
         """
-        Load cbm graph from neo4j
-        :param combined_broker_model_graph_id: combined_broker_model_graph_id
+        Load Broker Query model graph from string
+        :param graph_str: graph_str
         :return: Neo4jCBMGraph
         """
-        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
-        combined_broker_model = Neo4jCBMGraph(graph_id=combined_broker_model_graph_id,
-                                              importer=neo4j_graph_importer,
-                                              logger=neo4j_graph_importer.log)
-        #if combined_broker_model.graph_exists():
-        #    combined_broker_model.validate_graph()
-        return combined_broker_model
+        neo4_graph = FimHelper.get_graph_from_string_direct(graph_str=graph_str)
+        if neo4_graph.graph_exists():
+            neo4_graph.validate_graph()
+        return Neo4jCBMFactory.create(neo4_graph)
 
     @staticmethod
     def get_graph_from_string_direct(*, graph_str: str) -> Neo4jPropertyGraph:
         """
-        Load arm graph from neo4j
+        Load arm graph from fim
         :param graph_str: graph_str
         :return: Neo4jPropertyGraph
         """
-        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer()
         graph = neo4j_graph_importer.import_graph_from_string_direct(graph_string=graph_str)
 
         return graph
@@ -137,11 +139,11 @@ class Neo4jHelper:
     @staticmethod
     def get_graph_from_string(*, graph_str: str) -> Neo4jPropertyGraph:
         """
-        Load arm graph from neo4j
+        Load arm graph from fim
         :param graph_str: graph_str
         :return: Neo4jPropertyGraph
         """
-        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer()
         graph = neo4j_graph_importer.import_graph_from_string(graph_string=graph_str)
 
         return graph
@@ -152,7 +154,7 @@ class Neo4jHelper:
         Delete a graph
         @param graph_id graph id
         """
-        neo4j_graph_importer = Neo4jHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer()
         neo4j_graph_importer.delete_graph(graph_id=graph_id)
 
     @staticmethod
@@ -171,47 +173,39 @@ class Neo4jHelper:
         return None
 
     @staticmethod
-    def get_node_sliver_props(*, sliver: NodeSliver) -> dict:
+    def update_node(*, graph_id: str, sliver: NodeSliver):
         """
-        Get Node sliver properties to be updated to Slice graph
-        :param sliver: sliver
-        :return: dictionary containing the properties that need to be updated
+        Update Sliver Node in ASM
+        :param graph_id:
+        :param sliver:
+        :return:
         """
         if sliver is not None:
-            result = {}
-            if sliver.management_ip is not None:
-                result[ABCPropertyGraph.PROP_MGMT_IP] = sliver.management_ip
-            if sliver.management_interface_mac_address is not None:
-                result[Constants.MANAGEMENT_INTERFACE_MAC_ADDRESS] = sliver.management_interface_mac_address
-            if sliver.instance_name is not None:
-                result[Constants.INSTANCE_NAME] = sliver.instance_name
-            if sliver.state is not None:
-                result[Constants.INSTANCE_STATE] = sliver.state
-            if sliver.worker_node_name is not None:
-                result[Constants.WORKER_NODE_NAME] = sliver.worker_node_name
-            if sliver.bqm_node_id is not None:
-                result[Constants.BQM_NODE_ID] = sliver.bqm_node_id
-            return result
-        return sliver
+            graph = FimHelper.get_graph(graph_id=graph_id)
+            asm_graph = Neo4jASMFactory.create(graph=graph)
+            neo4j_topo = ExperimentTopology()
+            neo4j_topo.cast(asm_graph=asm_graph)
+
+            node_name = sliver.get_name()
+            node = neo4j_topo.nodes[node_name]
+            node.set_properties(label_allocations=sliver.label_allocations,
+                                capacity_allocations=sliver.capacity_allocations,
+                                reservation_info=sliver.reservation_info,
+                                node_map=sliver.node_map)
+            if sliver.attached_components_info is not None:
+                for component in sliver.attached_components_info.devices.values():
+                    cname = component.get_name()
+                    node.components[cname].set_properties(label_allocations=component.label_allocations,
+                                                          capacity_allocations=component.capacity_allocations,
+                                                          node_map=component.node_map)
 
     @staticmethod
-    def get_component_sliver_props(*, component_sliver: ComponentSliver) -> dict:
+    def get_neo4j_asm_graph(*, slice_graph: str) -> Neo4jASM:
         """
-         Get Component sliver properties to be updated to Slice graph
-        :param component_sliver:
-        :return: dictionary containing the properties that need to be updated
+        Load Slice in Neo4j
+        :param slice_graph: slice graph string
+        :return: Neo4j ASM graph
         """
-        if component_sliver is not None:
-            result = {}
-            if component_sliver.bqm_node_id is not None:
-                result[Constants.BQM_NODE_ID] = component_sliver.bqm_node_id
-            if component_sliver.labels is not None:
-                result[ABCPropertyGraph.PROP_LABELS] = component_sliver.labels
-            return result
-        return component_sliver
-
-    @staticmethod
-    def load_slice_in_neo4j(*, slice_graph: str) -> Neo4jASM:
-        neo4j_graph = Neo4jHelper.get_graph_from_string(graph_str=slice_graph)
+        neo4j_graph = FimHelper.get_graph_from_string(graph_str=slice_graph)
         asm = Neo4jASMFactory.create(graph=neo4j_graph)
         return asm

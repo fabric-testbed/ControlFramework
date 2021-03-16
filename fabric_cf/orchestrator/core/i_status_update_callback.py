@@ -35,18 +35,18 @@ class IStatusUpdateCallback:
     def success(self, *, ok: List[ID], act_on: List[ID]):
         """
         All reservations in indicated group have gone to Active or have OK modify status
-        @param ok - reservations that transitioned to Active or OK modify status
-        @param act_on - reservations that need to be acted on
-        @throws Exception in case of error
+        :param ok - reservations that transitioned to Active or OK modify status
+        :param act_on - reservations that need to be acted on
+        :raises Exception in case of error
         """
         raise NotImplementedError
 
     def failure(self, *, failed: List[ID], ok: List[ID], act_on: List[ID]):
         """
         Some reservations may have gone into Failed or not OK modify status, so provide an action for those
-        @param failed - those reservations that failed or went to not OK
-        @param ok - reservations in the same group that went Active or OK
-        @param act_on - reservations to be acted on
-        @throws Exception in case of error
+        :param failed - those reservations that failed or went to not OK
+        :param ok - reservations in the same group that went Active or OK
+        :param act_on - reservations to be acted on
+        :raises Exception in case of error
         """
         raise NotImplementedError

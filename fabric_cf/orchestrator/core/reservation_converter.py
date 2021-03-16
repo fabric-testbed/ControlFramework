@@ -57,7 +57,7 @@ class ReservationConverter:
             ticket.set_slice_id(slice_id)
             ticket.set_broker(str(self.broker))
             ticket.set_units(1)
-            ticket.set_resource_type(str(sliver.get_resource_type()))
+            ticket.set_resource_type(str(sliver.get_type()))
             start = datetime.utcnow()
             end = start + timedelta(hours=24)
             ticket.set_start(ActorClock.to_milliseconds(when=start))

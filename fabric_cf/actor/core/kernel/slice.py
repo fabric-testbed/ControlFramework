@@ -78,6 +78,7 @@ class Slice(IKernelSlice):
         self.graph = None
         self.state_machine = SliceStateMachine(slice_id=slice_id)
         self.dirty = False
+        self.config_properties = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -265,3 +266,9 @@ class Slice(IKernelSlice):
             return True
 
         return False
+
+    def set_config_properties(self, *, value: dict):
+        self.config_properties = value
+
+    def get_config_properties(self) -> dict:
+        return self.config_properties

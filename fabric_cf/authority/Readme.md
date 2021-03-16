@@ -25,11 +25,11 @@ Run the `setup.sh` script to set up an Aggregate Manager. User is expected to sp
 
 #### Production
 ```
-./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/site-am-2broker-ad-enumerated.graphml ./vm_handler_config.yml
+./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/RENCI-ad.graphml ./vm_handler_config.yml
 ```
 #### Development
 ```
-./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/site-am-2broker-ad-enumerated.graphml dev
+./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/RENCI-ad.graphml dev
 ```
 
 ### Environment and Configuration
@@ -217,13 +217,16 @@ Update `docker-compose.yml` to point to correct volumes for the AM.
 ```
     volumes:
       - ./neo4j:/usr/src/app/neo4j
-      - ./config.site.am.yaml:/etc/fabric/actor/config/config.yaml
+      - ./config.yaml:/etc/fabric/actor/config/config.yaml
+      - ./arm.graphml:/etc/fabric/actor/config/neo4j/arm.graphml
       - ./logs/:/var/log/actor
-      - ../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
-      - ../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
-      - ../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
-      - ../../config/neo4j/site-am-2broker-ad-enumerated.graphml:/etc/fabric/actor/config/neo4j/site-am-2broker-ad-enumerated.graphml
-      - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
+      - ./vm_handler_config.yml:/etc/fabric/actor/config/vm_handler_config.yml
+      - ../../../../AMHandlers/fabric_am/playbooks:/etc/fabric/actor/playbooks
+      - ../../../../AMHandlers/fabric_am/playbooks/inventory:/etc/fabric/actor/playbooks/inventory
+      - ./ssh:/root/.ssh 
+      - ../../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
+      - ../../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
+      - ../../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
 ```
 ### Run
 Bring up PDP container

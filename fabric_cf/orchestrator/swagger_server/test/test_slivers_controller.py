@@ -33,7 +33,7 @@ class TestSliversController(BaseTestCase):
         body = 'body_example'
         query_string = [('slice_id', 'slice_id_example')]
         response = self.client.open(
-            '//slivers/modify/{sliverID}'.format(sliverID='sliver_id_example'),
+            '//slivers/modify/{sliverID}'.format(sliver_id='sliver_id_example'),
             method='PUT',
             data=json.dumps(body),
             content_type='text/plain',
@@ -48,7 +48,7 @@ class TestSliversController(BaseTestCase):
         """
         body = 'body_example'
         response = self.client.open(
-            '//slivers/poa/{sliverID}'.format(sliverID='sliver_id_example'),
+            '//slivers/poa/{sliverID}'.format(sliver_id='sliver_id_example'),
             method='POST',
             data=json.dumps(body),
             content_type='text/plain')
@@ -62,7 +62,7 @@ class TestSliversController(BaseTestCase):
         """
         query_string = [('slice_id', 'slice_id_example')]
         response = self.client.open(
-            '//slivers/{sliverID}'.format(sliverID='sliver_id_example'),
+            '//slivers/{sliverID}'.format(sliver_id='sliver_id_example'),
             method='GET',
             query_string=query_string)
         self.assert200(response,
@@ -75,7 +75,7 @@ class TestSliversController(BaseTestCase):
         """
         query_string = [('slice_id', 'slice_id_example')]
         response = self.client.open(
-            '//slivers/status/{sliverID}'.format(sliverID='sliver_id_example'),
+            '//slivers/status/{sliverID}'.format(sliver_id='sliver_id_example'),
             method='GET',
             query_string=query_string)
         self.assert200(response,

@@ -111,7 +111,7 @@ class BrokerDelegation(Delegation):
                 self.logger.error(
                     self.error_string_prefix.format(self, self.invalid_state_prefix.format('claim', 'claim')))
                 raise DelegationException(self.invalid_state_prefix.format('claim', 'claim'))
-            
+
         elif self.state == DelegationState.Closed:
             self.logger.error(
                 self.error_string_prefix.format(self, "initiating delegate on defunct Delegation"))
@@ -190,8 +190,6 @@ class BrokerDelegation(Delegation):
         if self.state == DelegationState.Nascent:
             self.transition(prefix="close", state=DelegationState.Closed)
             self.do_relinquish()
-            # TODO
-            # remove from the CBM
 
     def get_client_callback_proxy(self) -> IClientCallbackProxy:
         """
@@ -206,7 +204,7 @@ class BrokerDelegation(Delegation):
         @param incoming incoming delegation
         @param update_data update data
         """
-        #incoming.get_graph().validate_graph()
+        incoming.get_graph().validate_graph()
         return True
 
     def absorb_delegation_update(self, *, incoming: IDelegation, update_data: UpdateData):

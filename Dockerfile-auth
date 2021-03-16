@@ -20,6 +20,7 @@ RUN mkdir -p "/var/log/actor"
 RUN cp /usr/local/lib/python3.8/site-packages/fabric_mb/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
 
 RUN pip3 install git+https://github.com/fabric-testbed/ControlFramework.git
+RUN pip3 install fabric-am-handlers
 
 ENTRYPOINT ["python3"]
 CMD ["-m", "fabric_cf.authority"]

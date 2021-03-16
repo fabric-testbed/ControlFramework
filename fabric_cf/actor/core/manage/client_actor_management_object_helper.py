@@ -129,7 +129,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
         return result
 
-    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str) -> ResultPoolInfoAvro:
+    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultPoolInfoAvro:
         result = ResultPoolInfoAvro()
         result.status = ResultAvro()
 
@@ -144,7 +144,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
 
             b = self.client.get_broker(guid=broker)
             if b is not None:
-                request = BrokerPolicy.get_resource_pools_query()
+                request = BrokerPolicy.get_resource_pools_query(level=level)
                 response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request, id_token=id_token)
                 pool = Translate.translate_to_pool_info(query_response=response)
                 if result.pools is None:
