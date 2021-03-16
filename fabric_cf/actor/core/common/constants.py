@@ -179,14 +179,9 @@ class Constants:
     QUERY_RESPONSE = "query.response"
     QUERY_RESPONSE_STATUS = "query.response.status"
     QUERY_RESPONSE_MESSAGE = "query.response.message"
+    QUERY_DETAIL_LEVEL = "query.detail.level"
     BROKER_QUERY_MODEL = "bqm"
     POOL_TYPE = "neo4j"
-
-    QUEUE_THRESHOLD = "queue.threshold"
-
-    RESOURCE_MEMORY = "resource.memory"
-    RESOURCE_CLASS_INVENTORY_FOR_TYPE = "resource.class.invfortype"
-    RESOURCE_AVAILABLE_UNITS = "resource.units.now"
 
     UNIT_MODIFY_PROP_MESSAGE_SUFFIX = ".message"
     UNIT_MODIFY_PROP_CODE_SUFFIX = ".code"
@@ -236,16 +231,6 @@ class Constants:
 
     CLAIMS_SUB = "sub"
 
-    SLIVER_PROPERTY_CORE = 'core'
-    SLIVER_PROPERTY_RAM = 'ram'
-    SLIVER_PROPERTY_DISK = 'disk'
-    SLIVER_PROPERTY_UNIT = 'unit'
-    SLIVER_PROPERTY_GRAPH_NODE_ID = 'graph_node_id'
-
-    RESOURCE_TYPE_VM = 'VM'
-    RESOURCE_TYPE_BAREMETAL = 'Baremetal'
-    RESOURCE_TYPE_CONTAINER = 'Container'
-
     PROPERTY_EXCEPTION_MESSAGE = "exception.message"
     PROPERTY_TARGET_NAME = "target.name"
     PROPERTY_TARGET_RESULT_CODE = "target.code"
@@ -261,8 +246,4 @@ class Constants:
     RSV_SLC_ID = 'rsv_slc_id'
     DLG_SLC_ID = 'dlg_slc_id'
 
-    BQM_NODE_ID = "bqm_node_id"
-    WORKER_NODE_NAME = 'worker_node_name'
-    INSTANCE_STATE = 'state'
-    INSTANCE_NAME = 'instance_name'
-    MANAGEMENT_INTERFACE_MAC_ADDRESS = 'management_interface_mac_address'
+    USER_SSH_KEY = "user.ssh.key"

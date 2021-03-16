@@ -28,13 +28,15 @@ from __future__ import annotations
 import threading
 import traceback
 from datetime import datetime
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Tuple, List
 
+from fim.graph.resources.neo4j_adm import Neo4jADMGraph
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException
 from fabric_cf.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
@@ -45,7 +47,7 @@ from fabric_cf.actor.core.util.bids import Bids
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
+from fabric_cf.actor.fim.fim_helper import FimHelper
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_broker import IBroker
@@ -131,21 +133,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
     def load_combined_broker_model(self):
         if self.combined_broker_model_graph_id is None:
             self.logger.debug("Creating an empty Combined Broker Model Graph")
-
-            self.combined_broker_model = Neo4jHelper.get_neo4j_cbm_empty_graph()
-            self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
-
-            self.logger.debug("Empty Combined Broker Model Graph created: {}".format(
-                self.combined_broker_model_graph_id))
         else:
-            self.logger.debug("Loading an existing Combined Broker Model Graph: {}".format(
-                self.combined_broker_model_graph_id))
+            self.logger.debug(f"Loading an existing Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
 
-            self.combined_broker_model = Neo4jHelper.get_neo4j_cbm_graph_from_database(
-                combined_broker_model_graph_id=self.combined_broker_model_graph_id)
-            self.logger.debug(
-                "Successfully loaded an existing Combined Broker Model Graph: {}".format(
-                    self.combined_broker_model_graph_id))
+        self.combined_broker_model = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
+        self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
+        self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
+        self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model}")
 
     def initialize(self):
         if not self.initialized:
@@ -417,7 +411,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             rset = reservation.get_requested_resources()
             needed = rset.get_units()
 
-            node_id = rset.get_sliver().bqm_node_id
+            # TODO - Slice Node to BQM Node mapping - remove hardcoding
+            node_id = 'HX7LQ53'
+            # TODO - End
             if node_id is None:
                 raise BrokerException(f"Unable to find node_id {node_id} for reservation# {reservation}")
 
@@ -426,12 +422,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                    node_id_to_reservations=node_id_to_reservations)
 
-            delegation_id, sliver = inv.allocate(reservation=reservation, graph_node=graph_node,
-                                                 existing_reservations=existing_reservations)
+            delegation_id, sliver = inv.allocate(reservation=reservation, graph_id=self.combined_broker_model_graph_id,
+                                                 graph_node=graph_node, existing_reservations=existing_reservations)
 
             if delegation_id is not None:
-                sliver.bqm_node_id = node_id
-                sliver.worker_node_name = graph_node.get_name()
                 delegation = self.actor.get_delegation(did=delegation_id)
                 reservation = self.issue_ticket(reservation=reservation, units=needed, rtype=rset.get_type(), term=term,
                                                 source=delegation, sliver=sliver)
@@ -543,6 +537,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug("Processing Query with properties: {}".format(p))
 
         query_action = self.get_query_action(properties=p)
+        query_level = p.get(Constants.QUERY_DETAIL_LEVEL, None)
+        if query_level is not None:
+            query_level = int(query_level)
 
         if query_action is None:
             raise BrokerException(Constants.NOT_SPECIFIED_PREFIX.format(Constants.QUERY_ACTION))
@@ -553,7 +550,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         try:
             self.lock.acquire()
             if self.combined_broker_model is not None:
-                graph = self.combined_broker_model.get_bqm(some=5)
+                # TODO pass in level while getting BQM
+                graph = self.combined_broker_model.get_bqm(query_level=query_level)
                 result[Constants.BROKER_QUERY_MODEL] = graph.serialize_graph()
                 result[Constants.QUERY_RESPONSE_STATUS] = "True"
                 graph.delete_graph()
@@ -570,25 +568,58 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return result
 
     def donate_delegation(self, *, delegation: IDelegation):
+        """
+        Donate an incoming delegation by merging to CBM;
+        We take snapshot of CBM before merge, and rollback to snapshot in case merge fails
+        :param delegation:
+        :return:
+        :raises: Exception in case of failure
+        """
         self.logger.debug("Donate Delegation")
         self.bind_delegation(delegation=delegation)
         try:
             self.lock.acquire()
             if delegation.get_delegation_id() in self.delegations:
-                self.combined_broker_model.merge_adm(adm=delegation.get_graph())
-                #self.combined_broker_model.validate_graph()
-                self.logger.debug("Donated Delegation: self.combined_broker_model: {}".format(
-                    self.combined_broker_model.serialize_graph()))
+                self.merge_adm(adm_graph=delegation.get_graph())
+                self.logger.debug(f"Donated Delegation: {delegation.get_delegation_id()}")
             else:
-                self.logger.debug("Delegation ignored")
+                self.logger.warning("Delegation ignored")
+        except Exception as e:
+            self.logger.error(f"Failed to merge ADM: {delegation}")
+            self.logger.error(traceback.format_exc())
+            raise e
         finally:
             self.lock.release()
 
     def closed_delegation(self, *, delegation: IDelegation):
+        """
+        Close a delegation by un-merging from CBM
+        We take snapshot of CBM before un-merge, and rollback to snapshot in case un-merge fails
+        :param delegation:
+        :return:
+        """
         self.logger.debug("Close Delegation")
-        # TODO remove the delegation from the combined broker model
+        try:
+            self.lock.acquire()
+            if delegation.get_delegation_id() in self.delegations:
+                self.unmerge_adm(graph_id=delegation.get_delegation_id())
+                self.delegations.pop(delegation.get_delegation_id())
+                self.logger.debug(f"Closed Delegation: {delegation.get_delegation_id()}")
+            else:
+                self.logger.warning("Delegation ignored")
+        except Exception as e:
+            self.logger.error(f"Failed to un-merge ADM: {delegation}")
+            self.logger.error(traceback.format_exc())
+            raise e
+        finally:
+            self.lock.release()
 
     def get_node_from_graph(self, *, node_id: str) -> NodeSliver:
+        """
+        Get Node from CBM
+        :param node_id:
+        :return:
+        """
         try:
             self.lock.acquire()
             if self.combined_broker_model is None:
@@ -597,7 +628,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_existing_reservations(self, node_id: str, node_id_to_reservations: dict):
+    def get_existing_reservations(self, node_id: str, node_id_to_reservations: dict) -> List[IReservation]:
+        """
+        Get existing reservations which are served by CBM node identified by node_id
+        :param node_id:
+        :param node_id_to_reservations:
+        :return: list of reservations
+        """
         existing_reservations = self.actor.get_plugin().get_database().get_reservations_by_graph_node_id(
             graph_node_id=node_id)
 
@@ -619,10 +656,55 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return existing_reservations
 
     def set_logger(self, logger):
+        """
+        Set logger
+        :param logger:
+        :return:
+        """
         super().set_logger(logger=logger)
         if self.inventory is not None:
             for inv in self.inventory.map.values():
                 inv.set_logger(logger=logger)
+
+    def merge_adm(self, *, adm_graph: Neo4jADMGraph):
+        """
+        Merge delegation model in CBM
+        :param adm_graph: ADM
+        :return:
+        """
+        snapshot_graph_id = None
+        try:
+            if self.combined_broker_model.graph_exists():
+                snapshot_graph_id = self.combined_broker_model.snapshot()
+            self.combined_broker_model.merge_adm(adm=adm_graph)
+            self.combined_broker_model.validate_graph()
+        except Exception as e:
+            self.logger.error(f"Exception occurred: {e}")
+            self.logger.error(traceback.format_exc())
+            if snapshot_graph_id is not None:
+                self.logger.info(f"CBM rollback due to merge failure")
+                self.combined_broker_model.rollback(graph_id=snapshot_graph_id)
+            raise e
+
+    def unmerge_adm(self, *, graph_id: str):
+        """
+        Unmerge delegation model from CBM
+        :param graph_id:
+        :return:
+        """
+        snapshot_graph_id = None
+        try:
+            if self.combined_broker_model.graph_exists():
+                snapshot_graph_id = self.combined_broker_model.snapshot()
+            self.combined_broker_model.unmerge_adm(graph_id=graph_id)
+            self.combined_broker_model.validate_graph()
+        except Exception as e:
+            self.logger.error(f"Exception occurred: {e}")
+            self.logger.error(traceback.format_exc())
+            if snapshot_graph_id is not None:
+                self.logger.info(f"CBM rollback due to un-merge failure")
+                self.combined_broker_model.rollback(graph_id=snapshot_graph_id)
+            raise e
 
 
 if __name__ == '__main__':

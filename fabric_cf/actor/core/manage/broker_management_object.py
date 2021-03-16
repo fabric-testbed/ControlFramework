@@ -91,8 +91,8 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
     def add_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
         return self.client_helper.add_broker(broker=broker, caller=caller)
 
-    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str) -> ResultPoolInfoAvro:
-        return self.client_helper.get_pool_info(broker=broker, caller=caller, id_token=id_token)
+    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultPoolInfoAvro:
+        return self.client_helper.get_pool_info(broker=broker, caller=caller, id_token=id_token, level=level)
 
     def add_reservation(self, *, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
         return self.client_helper.add_reservation(reservation=reservation, caller=caller)

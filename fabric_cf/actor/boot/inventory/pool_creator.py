@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING, Dict
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 
 from fabric_cf.actor.boot.inventory.resource_pool_factory import ResourcePoolFactory
-from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
+from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.pool_manager import PoolManagerError
 from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
@@ -81,10 +81,10 @@ class PoolCreator:
         if create_pool_result.slice.get_graph_id() is not None:
             # load the graph from Neo4j database
             self.logger.debug(f"Reloading an existing graph for resource slice# {create_pool_result.slice}")
-            self.arm_graph = Neo4jHelper.get_arm_graph(graph_id=create_pool_result.slice.get_graph_id())
+            self.arm_graph = FimHelper.get_arm_graph(graph_id=create_pool_result.slice.get_graph_id())
             create_pool_result.slice.set_graph(graph=self.arm_graph)
         else:
-            self.arm_graph = Neo4jHelper.get_arm_graph_from_file(filename=substrate_file)
+            self.arm_graph = FimHelper.get_arm_graph_from_file(filename=substrate_file)
             create_pool_result.slice.set_graph(graph=self.arm_graph)
             self.substrate.get_pool_manager().update_pool(slice_obj=create_pool_result.slice)
             self.logger.debug(f"Created new graph for resource slice# {create_pool_result.slice}")

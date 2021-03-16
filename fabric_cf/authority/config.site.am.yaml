@@ -76,7 +76,7 @@ database:
   - db-user: fabric
   - db-password: fabric
   - db-name: am
-  - db-host: site1-am-db:5432
+  - db-host: localhost:5432
 
 container:
   - container.guid: site1-am-conainer
@@ -101,11 +101,11 @@ time:
   - time.manual: false
 
 pdp:
-  url: http://site1-am-pdp:8080/services/pdp
+  url: http://localhost:8080/services/pdp
   enable: True
 
 neo4j:
-  url: bolt://site1-am-neo4j:7687
+  url: bolt://localhost:7687
   user: neo4j
   pass: password
   import_host_dir: /usr/src/app/neo4j/imports/
@@ -147,4 +147,4 @@ peers:
     - type: broker
     - guid: broker-guid
     - kafka-topic: broker-topic
-    - delegation: del1
+    - delegation: primary

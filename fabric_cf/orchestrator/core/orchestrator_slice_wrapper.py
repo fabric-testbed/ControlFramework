@@ -24,17 +24,16 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
-import traceback
 from typing import List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
-from fim.graph.slices.neo4j_asm import Neo4jASMFactory, Neo4jASM
+from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
+from fim.graph.slices.neo4j_asm import Neo4jASM
+from fim.slivers.capacities_labels import Labels
+from fim.user.topology import ExperimentTopology
 
-from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
-from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
 from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.util.id import ID
@@ -112,7 +111,7 @@ class OrchestratorSliceWrapper:
 
         return ticketed_requested_entities
 
-    def create(self, *, bqm_graph: Neo4jPropertyGraph, slice_graph: Neo4jASM) -> List[TicketReservationAvro]:
+    def create(self, *, bqm_graph: Neo4jCBMGraph, slice_graph: Neo4jASM) -> List[TicketReservationAvro]:
         """
         Create a slice
         :param bqm_graph: BQM Graph
@@ -120,12 +119,11 @@ class OrchestratorSliceWrapper:
         :return: List of computed reservations
         """
         try:
+            # TODO - use BQM for shortest path search
+
             slivers = []
             for nn_id in slice_graph.get_all_network_nodes():
                 sliver = slice_graph.build_deep_node_sliver(node_id=nn_id)
-                # TODO remove this hard coding once query from BQM to identify the node which serves this sliver
-                # is added
-                sliver.bqm_node_id = 'HX7LQ53'
                 slivers.append(sliver)
 
             self.computed_reservations = self.reservation_converter.get_tickets(slivers=slivers,

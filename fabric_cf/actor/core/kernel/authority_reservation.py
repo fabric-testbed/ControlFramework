@@ -563,7 +563,7 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
             cs = self.resources.get_resources()
             notices = cs.get_notices()
             if notices is not None:
-                s += "\n{}".format(notices)
+                s += f" {notices}"
 
         return s
 

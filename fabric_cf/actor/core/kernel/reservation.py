@@ -659,5 +659,7 @@ class Reservation(IKernelReservation):
         if self.requested_resources is not None:
             request = self.requested_resources.get_sliver()
             if request is not None:
-                return request.bqm_node_id
+                node_map = request.get_node_map()
+                if node_map is not None:
+                    return node_map[1]
         return None

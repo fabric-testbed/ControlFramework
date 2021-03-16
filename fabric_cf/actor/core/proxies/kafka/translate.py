@@ -94,6 +94,7 @@ class Translate:
         avro_slice.description = slice_obj.get_description()
         avro_slice.owner = Translate.translate_auth_to_avro(auth=slice_obj.get_owner())
         avro_slice.state = slice_obj.get_state().value
+        avro_slice.config_properties = slice_obj.get_config_properties()
 
         if slice_obj.get_resource_type() is not None:
             avro_slice.set_resource_type(str(slice_obj.get_resource_type()))
@@ -242,17 +243,8 @@ class Translate:
 
     @staticmethod
     def attach_properties(*, slice_mng: SliceAvro, slice_obj: ISlice) -> SliceAvro:
-        if slice_obj.get_request_properties() is not None:
-            slice_mng.set_request_properties(slice_obj.get_request_properties())
-
-        if slice_obj.get_resource_properties() is not None:
-            slice_mng.set_resource_properties(slice_obj.get_resource_properties())
-
         if slice_obj.get_config_properties() is not None:
             slice_mng.set_config_properties(slice_obj.get_config_properties())
-
-        if slice_obj.get_local_properties() is not None:
-            slice_mng.set_config_properties(slice_obj.get_local_properties())
 
         return slice_mng
 

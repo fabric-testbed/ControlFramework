@@ -110,7 +110,7 @@ class KafkaController(KafkaActor, IMgmtController):
 
         return rret_val
 
-    def get_pool_info(self, *, broker: ID, id_token: str) -> List[PoolInfoAvro]:
+    def get_pool_info(self, *, broker: ID, id_token: str, level: int) -> List[PoolInfoAvro]:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:

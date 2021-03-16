@@ -17,9 +17,11 @@ class TestResourcesController(BaseTestCase):
 
         Retrieve a listing and description of available resources
         """
+        query_string = [('level', 1)]
         response = self.client.open(
             '//resources',
-            method='GET')
+            method='GET',
+            query_string=query_string)
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 

@@ -47,11 +47,12 @@ class InventoryForType:
         """
 
     @abstractmethod
-    def allocate(self, *, reservation: IReservation, graph_node: BaseSliver,
+    def allocate(self, *, reservation: IReservation, graph_id: str, graph_node: BaseSliver,
                  existing_reservations: List[IReservation]) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation
         :param reservation: reservation to be allocated
+        :param graph_id: BQM graph id
         :param graph_node: BQM graph node identified to serve the reservation
         :param existing_reservations: Existing Reservations served by the same BQM node
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties

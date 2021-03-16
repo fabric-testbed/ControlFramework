@@ -316,11 +316,6 @@ class ResourceSet:
         """
         return self.sliver
 
-    def get_sliver_node_id(self) -> str:
-        if self.sliver is not None:
-            return self.sliver.cbm_node_id
-        return self.sliver
-
     def get_reservation_id(self) -> ID:
         """
         Returns the reservation identifier attached to this resource set.
@@ -488,10 +483,6 @@ class ResourceSet:
         @params sliver : request sliver
         """
         self.sliver = sliver
-
-    def set_sliver_node_id(self, *, node_id: str):
-        if self.sliver is None:
-            self.sliver.cbm_node_id = node_id
 
     def set_reservation_id(self, *, rid: ID):
         """

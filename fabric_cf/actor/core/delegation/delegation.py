@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from fim.graph.abc_property_graph import ABCPropertyGraph
 
-from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
+from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.apis.i_actor import IActor
 from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
 from fabric_cf.actor.core.apis.i_delegation import IDelegation, DelegationState
@@ -88,7 +88,7 @@ class Delegation(IDelegation):
         self.slice_object = slice_obj
         if actor is not None:
             self.logger = actor.get_logger()
-        self.graph = Neo4jHelper.get_arm_graph(graph_id=str(self.dlg_graph_id))
+        self.graph = FimHelper.get_arm_graph(graph_id=str(self.dlg_graph_id))
 
     def set_graph(self, graph: ABCPropertyGraph):
         self.graph = graph
@@ -418,7 +418,7 @@ class Delegation(IDelegation):
         self.owner = owner
 
     def load_graph(self, *, graph_str: str):
-        self.graph = Neo4jHelper.get_graph_from_string_direct(graph_str=graph_str)
+        self.graph = FimHelper.get_graph_from_string_direct(graph_str=graph_str)
 
     def get_delegation_name(self) -> str:
         return self.delegation_name

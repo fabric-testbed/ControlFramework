@@ -67,15 +67,6 @@ class ISlice:
         """
 
     @abstractmethod
-    def get_local_properties(self) -> dict:
-        """
-        Returns the slice local properties list
-
-        Returns:
-            local properties list
-        """
-
-    @abstractmethod
     def get_description(self) -> str:
         """
         Returns the slice description
@@ -100,33 +91,6 @@ class ISlice:
 
         Returns:
             slice owner
-        """
-
-    @abstractmethod
-    def get_properties(self) -> dict:
-        """
-        Returns the slice properties
-
-        Returns:
-            slice properties
-        """
-
-    @abstractmethod
-    def get_request_properties(self) -> dict:
-        """
-        Returns the slice request properties list
-
-        Returns:
-            slice request properties list
-        """
-
-    @abstractmethod
-    def get_resource_properties(self) -> dict:
-        """
-        Returns the slice resource properties list
-
-        Returns:
-            slice resource properties list
         """
 
     @abstractmethod
@@ -241,32 +205,12 @@ class ISlice:
         """
 
     @abstractmethod
-    def set_local_properties(self, *, value: dict):
-        """
-        Set local properties
-        @param value: value
-        """
-
-    @abstractmethod
     def set_config_properties(self, *, value: dict):
         """
         Set handlers properties
         @param value: value
         """
 
-    @abstractmethod
-    def set_request_properties(self, *, value: dict):
-        """
-        Set request properties
-        @param value: value
-        """
-
-    @abstractmethod
-    def set_resource_properties(self, *, value: dict):
-        """
-        Set resource properties
-        @param value: value
-        """
     @abstractmethod
     def get_slice_type(self) -> SliceTypes:
         """

@@ -42,7 +42,7 @@ from fabric_cf.actor.core.time.calendar.authority_calendar import AuthorityCalen
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
+from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
 class AuthorityCalendarPolicy(AuthorityPolicy):
@@ -76,7 +76,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             self.logger.debug(f"Loading an existing Aggregate ResourceModel Graph:"
                               f" {self.aggregate_resource_model_graph_id}")
 
-            self.aggregate_resource_model = Neo4jHelper.get_arm_graph(graph_id=self.aggregate_resource_model_graph_id)
+            self.aggregate_resource_model = FimHelper.get_arm_graph(graph_id=self.aggregate_resource_model_graph_id)
             self.logger.debug(f"Successfully loaded an existing Aggregate Resource Model Graph: "
                               f"{self.aggregate_resource_model_graph_id}")
 
@@ -366,7 +366,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             approved = reservation.get_requested_term()
             reservation.set_approved(term=approved, approved_resources=assigned)
             reservation.set_bid_pending(value=False)
-            node_id = assigned.get_sliver().bqm_node_id
+            node_id = assigned.get_sliver().get_node_map()[1]
 
             if node_id_to_reservations.get(node_id, None) is None:
                 node_id_to_reservations[node_id] = ReservationSet()
@@ -394,7 +394,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         if rc is not None:
             try:
                 ticketed_sliver = requested.get_sliver()
-                node_id = ticketed_sliver.bqm_node_id
+                node_id = ticketed_sliver.get_node_map()[1]
                 self.logger.debug(f"node_id {node_id} serving reservation# {reservation}")
                 if node_id is None:
                     raise AuthorityException(f"Unable to find node_id {node_id} for reservation# {reservation}")
@@ -410,7 +410,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                 rset = rc.assign(reservation=reservation, delegation_name=delegation_name,
                                  graph_node=graph_node, existing_reservations=existing_reservations)
 
-                if rset is None or rset.get_sliver() is None or rset.get_sliver().bqm_node_id is None:
+                if rset is None or rset.get_sliver() is None or rset.get_sliver().get_node_map() is None:
                     raise AuthorityException(f"Could not assign resources to reservation# {reservation}")
 
                 return rset

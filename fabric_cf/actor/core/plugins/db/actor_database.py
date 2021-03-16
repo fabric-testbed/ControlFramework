@@ -42,7 +42,7 @@ from fabric_cf.actor.core.plugins.handlers.configuration_mapping import Configur
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.db.psql_database import PsqlDatabase
-from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
+from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
 class ActorDatabase(IDatabase):

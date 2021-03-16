@@ -45,14 +45,14 @@ echo "[INFO] update controllers to include response import"
 while read f; do
   echo "---------------------------------------------------"
   echo "[INFO] updating file: ${f}"
-  sed -i '' "s/from fabric.orchestrator.swagger_server import util/from fabric.orchestrator.swagger_server import util\\"$'\n'\\"from fabric.orchestrator.swagger_server.response import ${f%???} as rc/g" \
+  sed -i '' "s/from fabric_cf.orchestrator.swagger_server import util/from fabric_cf.orchestrator.swagger_server import util\\"$'\n'\\"from fabric_cf.orchestrator.swagger_server.response import ${f%???} as rc/g" \
     $STUB_DIR/swagger_server/controllers/${f}
   while read line; do
     if [[ $line == def* ]]; then
       echo "  - ${line}"
       func_name=$(echo $line | cut -d ':' -f 1 | cut -d ' ' -f 2-)
       echo "    ${func_name//=None/}"
-      sed -i '' "0,/'do some magic!'/s//rc.${func_name//=None/}/" $STUB_DIR/swagger_server/controllers/${f}
+      sed -i '' "s/'do some magic!'/rc.${func_name//=None/}/" $STUB_DIR/swagger_server/controllers/${f}
     fi
   done < <(cat $STUB_DIR/swagger_server/controllers/${f})
 done < <(ls -1 $STUB_DIR/swagger_server/controllers | grep -v '^__*')

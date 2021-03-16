@@ -194,6 +194,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 slice_obj_new.set_owner(owner=self.actor.get_identity())
                 slice_obj_new.get_owner().set_oidc_sub_claim(oidc_sub_claim=user_dn)
                 slice_obj_new.set_graph_id(graph_id=slice_obj.graph_id)
+                slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)

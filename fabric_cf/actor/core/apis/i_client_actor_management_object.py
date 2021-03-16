@@ -117,12 +117,13 @@ class IClientActorManagementObject:
         """
 
     @abstractmethod
-    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str) -> ResultPoolInfoAvro:
+    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultPoolInfoAvro:
         """
         Get Pool Info
         @param broker : broker ID
         @param caller: caller
         @param id_token: str
+        @param level: level of details
         @return pool information
         """
 

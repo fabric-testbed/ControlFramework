@@ -296,7 +296,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
 
         return rret_val
 
-    def get_pool_info(self, *, broker: ID, id_token: str) -> List[PoolInfoAvro]:
+    def get_pool_info(self, *, broker: ID, id_token: str, level: int) -> List[PoolInfoAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -309,6 +309,7 @@ class KafkaBroker(KafkaServerActor, IMgmtBroker):
             request.message_id = str(ID())
             request.callback_topic = self.callback_topic
             request.broker_id = str(broker)
+            request.level = level
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 

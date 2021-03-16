@@ -104,7 +104,7 @@ pdp:
 
 neo4j:
   url: bolt://localhost:7687
-  user: neo4j
+  user: fim
   pass: password
   import_host_dir: ../../../neo4j1/imports/
   import_dir: /imports

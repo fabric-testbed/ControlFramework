@@ -27,9 +27,9 @@ import traceback
 from typing import Tuple
 
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.graph.neo4j_property_graph import Neo4jPropertyGraph
+from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
 
-from fabric_cf.actor.neo4j.neo4j_helper import Neo4jHelper
+from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
@@ -93,21 +93,22 @@ class OrchestratorHandler:
 
         return None
 
-    def discover_types(self, *, controller: IMgmtController, token: str,
-                       delete_graph: bool = True) -> Tuple[dict, Neo4jPropertyGraph]:
+    def discover_types(self, *, controller: IMgmtController, token: str, level: int = 10,
+                       delete_graph: bool = True) -> Tuple[dict, Neo4jCBMGraph]:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
         :param token Fabric Token
+        :param level: level of details
         :param delete_graph flag indicating if the loaded graph should be deleted or not
-        :return tuple of dictionary containing the BQM and neo4j graph (if delete_graph = False)
+        :return tuple of dictionary containing the BQM and fim graph (if delete_graph = False)
         """
         broker = self.get_broker(controller=controller)
         if broker is None:
             raise OrchestratorException("Unable to determine broker proxy for this controller. "
                                         "Please check Orchestrator container configuration and logs.")
 
-        my_pools = controller.get_pool_info(broker=broker, id_token=token)
+        my_pools = controller.get_pool_info(broker=broker, id_token=token, level=level)
         if my_pools is None or len(my_pools) != 1:
             raise OrchestratorException(f"Could not discover types: {controller.get_last_error()}")
 
@@ -119,10 +120,9 @@ class OrchestratorHandler:
                 if status.lower() != "false":
                     bqm = p.properties.get(Constants.BROKER_QUERY_MODEL, None)
                     if bqm is not None:
-                        graph = Neo4jHelper.get_graph_from_string_direct(graph_str=bqm)
-                        graph.validate_graph()
+                        graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=bqm)
                         if delete_graph:
-                            Neo4jHelper.delete_graph(graph_id=graph.get_graph_id())
+                            FimHelper.delete_graph(graph_id=graph.get_graph_id())
                     response = bqm
                 else:
                     self.logger.error(p.properties.get(Constants.QUERY_RESPONSE_MESSAGE))
@@ -132,19 +132,20 @@ class OrchestratorHandler:
 
         return response, graph
 
-    def list_resources(self, *, token: str) -> dict:
+    def list_resources(self, *, token: str, level: int) -> dict:
         """
         List Resources
-        @param token Fabric Identity Token
-        @throws Raises an exception in case of failure
-        @returns Broker Query Model on success
+        :param token Fabric Identity Token
+        :param level: level of details (default set to 1)
+        :raises Raises an exception in case of failure
+        :returns Broker Query Model on success
         """
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
             try:
-                broker_query_model, graph = self.discover_types(controller=controller, token=token)
+                broker_query_model, graph = self.discover_types(controller=controller, token=token, level=level)
             except Exception as e:
                 self.logger.error(f"Failed to populate broker models e: {e}")
                 raise e
@@ -159,20 +160,21 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing list_resources e: {e}")
             raise e
 
-    def create_slice(self, *, token: str, slice_name: str, slice_graph: str) -> dict:
+    def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str) -> dict:
         """
         Create a slice
-        @param token Fabric Identity Token
-        @param slice_name Slice Name
-        @param slice_graph Slice Graph Model
-        @throws Raises an exception in case of failure
-        @returns List of reservations created for the Slice on success
+        :param token Fabric Identity Token
+        :param slice_name Slice Name
+        :param slice_graph Slice Graph Model
+        :param ssh_key: User ssh key
+        :raises Raises an exception in case of failure
+        :returns List of reservations created for the Slice on success
         """
         slice_id = None
         controller = None
         orchestrator_slice = None
         bqm_graph = None
-        neo4j_graph = None
+        asm_graph = None
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -185,7 +187,7 @@ class OrchestratorHandler:
                     if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
-            neo4j_graph = Neo4jHelper.load_slice_in_neo4j(slice_graph=slice_graph)
+            asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
 
             try:
                 bqm_string, bqm_graph = self.discover_types(controller=controller, token=token, delete_graph=False)
@@ -206,7 +208,8 @@ class OrchestratorHandler:
             slice_obj.set_slice_name(slice_name)
             slice_obj.set_client_slice(True)
             slice_obj.set_description("Description")
-            slice_obj.graph_id = neo4j_graph.get_graph_id()
+            slice_obj.graph_id = asm_graph.get_graph_id()
+            slice_obj.config_properties = {Constants.USER_SSH_KEY: ssh_key}
 
             self.logger.debug(f"Adding Slice {slice_name}")
             slice_id = controller.add_slice(slice_obj=slice_obj, id_token=token)
@@ -224,7 +227,7 @@ class OrchestratorHandler:
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
-            computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=neo4j_graph)
+            computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=asm_graph)
 
             # Process the Slice i.e. Demand the computed reservations i.e. Add them to the policy
             # Once added to the policy; Actor Tick Handler will do following asynchronously:
@@ -234,27 +237,27 @@ class OrchestratorHandler:
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
-            if slice_id is not None and controller is not None and neo4j_graph is not None:
-                Neo4jHelper.delete_graph(graph_id=neo4j_graph.graph_id)
+            if slice_id is not None and controller is not None and asm_graph is not None:
+                FimHelper.delete_graph(graph_id=asm_graph.graph_id)
                 controller.remove_slice(slice_id=slice_id, id_token=token)
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
         finally:
             if bqm_graph is not None:
-                Neo4jHelper.delete_graph(graph_id=bqm_graph.get_graph_id())
+                FimHelper.delete_graph(graph_id=bqm_graph.get_graph_id())
             if orchestrator_slice is not None:
                 orchestrator_slice.unlock()
 
     def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None, include_notices: bool = False) -> dict:
         """
         Get Slivers for a Slice
-        @param token Fabric Identity Token
-        @param slice_id Slice Id
-        @param sliver_id Sliver Id
-        @param include_notices include notices
-        @throws Raises an exception in case of failure
-        @returns List of reservations created for the Slice on success
+        :param token Fabric Identity Token
+        :param slice_id Slice Id
+        :param sliver_id Sliver Id
+        :param include_notices include notices
+        :raises Raises an exception in case of failure
+        :returns List of reservations created for the Slice on success
         """
         include_sliver = False
         try:
@@ -285,10 +288,10 @@ class OrchestratorHandler:
     def get_slices(self, *, token: str, slice_id: str = None) -> dict:
         """
         Get User Slices
-        @param token Fabric Identity Token
-        @param slice_id Slice Id
-=       @throws Raises an exception in case of failure
-        @returns List of Slices on success
+        :param token Fabric Identity Token
+        :param slice_id Slice Id
+=       :raises Raises an exception in case of failure
+        :returns List of Slices on success
         """
         try:
             controller = self.controller_state.get_management_actor()
@@ -313,9 +316,9 @@ class OrchestratorHandler:
     def delete_slice(self, *, token: str, slice_id: str = None):
         """
         Delete User Slice
-        @param token Fabric Identity Token
-        @param slice_id Slice Id
-=       @throws Raises an exception in case of failure
+        :param token Fabric Identity Token
+        :param slice_id Slice Id
+=       :raises Raises an exception in case of failure
         """
         try:
             controller = self.controller_state.get_management_actor()
@@ -351,10 +354,10 @@ class OrchestratorHandler:
     def get_slice_graph(self, *, token: str, slice_id: str) -> dict:
         """
         Get User Slice
-        @param token Fabric Identity Token
-        @param slice_id Slice Id
-=       @throws Raises an exception in case of failure
-        @returns Slice Graph on success
+        :param token Fabric Identity Token
+        :param slice_id Slice Id
+=       :raises Raises an exception in case of failure
+        :returns Slice Graph on success
         """
         try:
             controller = self.controller_state.get_management_actor()
@@ -375,7 +378,7 @@ class OrchestratorHandler:
             if slice_obj.get_graph_id() is None:
                 raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
 
-            slice_model = Neo4jHelper.get_graph(graph_id=slice_obj.get_graph_id())
+            slice_model = FimHelper.get_graph(graph_id=slice_obj.get_graph_id())
 
             if slice_model is None:
                 raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")

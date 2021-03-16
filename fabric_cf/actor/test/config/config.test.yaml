@@ -104,7 +104,7 @@ pdp:
 
 neo4j:
   url: bolt://localhost:7687
-  user: neo4j
+  user: fim
   pass: password
   import_host_dir: ../../../neo4j1/imports/
   import_dir: /imports
@@ -115,7 +115,7 @@ actor:
   - guid: site1-am-guid
   - description: Site AM
   - kafka-topic: site1-am-topic
-  - substrate.file: ../../../neo4j/site-am-2broker-ad-enumerated.graphml
+  - substrate.file: ../../../fim/site-am-2broker-ad-enumerated.graphml
   - resources:
       - resource:
         - type: VM
