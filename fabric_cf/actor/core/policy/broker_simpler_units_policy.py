@@ -31,6 +31,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Tuple, List
 
 from fim.graph.resources.neo4j_adm import Neo4jADMGraph
+from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 
@@ -48,6 +49,7 @@ from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
 from fabric_cf.actor.fim.fim_helper import FimHelper
+from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregateBQMPlugin
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.i_broker import IBroker
@@ -89,6 +91,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.queue = FIFOQueue()
         self.inventory = Inventory()
 
+        self.pluggable_registry = PluggableRegistry()
         self.lock = threading.Lock()
 
     def __getstate__(self):
@@ -108,6 +111,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         del state['allocation_horizon']
         del state['ready']
         del state['queue']
+        del state['pluggable_registry']
 
         return state
 
@@ -129,6 +133,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.ready = False
 
         self.queue = None
+        self.pluggable_registry = PluggableRegistry()
 
     def load_combined_broker_model(self):
         if self.combined_broker_model_graph_id is None:
@@ -139,7 +144,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.combined_broker_model = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
         self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
         self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
-        self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model}")
+        # TODO uncomment post complete integration
+        #self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregateBQMPlugin)
+        #self.logger.debug(f"Registered AggregateBQMPlugin")
 
     def initialize(self):
         if not self.initialized:
