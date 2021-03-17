@@ -206,7 +206,8 @@ class NetworkNodeControl(ResourceControl):
                                     existing_reservations=existing_reservations)
 
             unit = Unit(uid=ID(), rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
-                        actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type)
+                        actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type,
+                        properties=reservation.get_slice().get_config_properties())
             gained = UnitSet(plugin=self.authority.get_plugin(), units={unit.uid: unit})
         else:
             raise AuthorityException("Modify not supported")
