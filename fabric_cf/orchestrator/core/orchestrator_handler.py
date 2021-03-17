@@ -94,13 +94,14 @@ class OrchestratorHandler:
         return None
 
     def discover_types(self, *, controller: IMgmtController, token: str, level: int = 10,
-                       delete_graph: bool = True) -> Tuple[dict, Neo4jCBMGraph]:
+                       delete_graph: bool = True, ignore_validation: bool = True) -> Tuple[dict, Neo4jCBMGraph]:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
         :param token Fabric Token
         :param level: level of details
         :param delete_graph flag indicating if the loaded graph should be deleted or not
+        :param ignore_validation flag indicating to ignore validating the graph (only needed for ADs)
         :return tuple of dictionary containing the BQM and fim graph (if delete_graph = False)
         """
         broker = self.get_broker(controller=controller)
@@ -120,7 +121,8 @@ class OrchestratorHandler:
                 if status.lower() != "false":
                     bqm = p.properties.get(Constants.BROKER_QUERY_MODEL, None)
                     if bqm is not None:
-                        graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=bqm)
+                        graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=bqm,
+                                                                                 ignore_validation=ignore_validation)
                         if delete_graph:
                             FimHelper.delete_graph(graph_id=graph.get_graph_id())
                     response = bqm
@@ -145,7 +147,8 @@ class OrchestratorHandler:
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
             try:
-                broker_query_model, graph = self.discover_types(controller=controller, token=token, level=level)
+                broker_query_model, graph = self.discover_types(controller=controller, token=token, level=level,
+                                                                ignore_validation=True)
             except Exception as e:
                 self.logger.error(f"Failed to populate broker models e: {e}")
                 raise e

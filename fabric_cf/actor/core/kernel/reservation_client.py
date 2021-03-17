@@ -1489,6 +1489,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                           f"Slice Graph# {self.slice.get_graph_id()}")
         self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
-                                      reservation_state=str(self.get_reservation_state()))
+                                      reservation_state=self.state.name)
         self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                           f"Slice Graph# {self.slice.get_graph_id()}")
