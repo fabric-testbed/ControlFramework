@@ -113,14 +113,15 @@ class FimHelper:
         return combined_broker_model
 
     @staticmethod
-    def get_neo4j_cbm_graph_from_string_direct(*, graph_str: str) -> Neo4jCBMGraph:
+    def get_neo4j_cbm_graph_from_string_direct(*, graph_str: str, ignore_validation: bool = False) -> Neo4jCBMGraph:
         """
         Load Broker Query model graph from string
         :param graph_str: graph_str
+        :param ignore_validation: ignore validation when set to true
         :return: Neo4jCBMGraph
         """
         neo4_graph = FimHelper.get_graph_from_string_direct(graph_str=graph_str)
-        if neo4_graph.graph_exists():
+        if neo4_graph.graph_exists() and not ignore_validation:
             neo4_graph.validate_graph()
         return Neo4jCBMFactory.create(neo4_graph)
 

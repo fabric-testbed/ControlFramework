@@ -56,6 +56,8 @@ class AggregateBQMPlugin:
         :param kwargs:
         :return:
         """
+        if kwargs['query_level'] != 1:
+            return cbm.clone_graph(new_graph_id=str(uuid.uuid4()))
 
         # do a one-pass aggregation of servers, their components and interfaces
         nnodes = cbm.get_all_nodes_by_class(label=ABCPropertyGraph.CLASS_NetworkNode)
