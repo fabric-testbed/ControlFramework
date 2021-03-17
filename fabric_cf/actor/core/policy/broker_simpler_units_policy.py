@@ -145,8 +145,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
         self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
         # TODO uncomment post complete integration
-        #self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregateBQMPlugin)
-        #self.logger.debug(f"Registered AggregateBQMPlugin")
+        self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregateBQMPlugin)
+        self.logger.debug(f"Registered AggregateBQMPlugin")
 
     def initialize(self):
         if not self.initialized:
