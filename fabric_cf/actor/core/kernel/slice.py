@@ -23,10 +23,13 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import threading
 from enum import Enum
 from typing import Dict, Tuple
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
+from fim.slivers.capacities_labels import ReservationInfo
+from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
 from fabric_cf.actor.core.apis.i_slice import ISlice
@@ -37,6 +40,7 @@ from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, S
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
@@ -79,12 +83,14 @@ class Slice(IKernelSlice):
         self.state_machine = SliceStateMachine(slice_id=slice_id)
         self.dirty = False
         self.config_properties = None
+        self.lock = threading.Lock()
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['reservations']
         del state['delegations']
         del state['graph']
+        del state['lock']
         return state
 
     def __setstate__(self, state):
@@ -92,6 +98,7 @@ class Slice(IKernelSlice):
         self.reservations = ReservationSet()
         self.graph = None
         self.delegations = {}
+        self.lock = threading.Lock()
 
     def set_graph_id(self, graph_id: str):
         self.graph_id = graph_id
@@ -272,3 +279,17 @@ class Slice(IKernelSlice):
 
     def get_config_properties(self) -> dict:
         return self.config_properties
+
+    def update_slice_graph(self, sliver: NodeSliver, rid: str, reservation_state: str) -> NodeSliver:
+        try:
+            self.lock.acquire()
+            # Update for Orchestrator for Active / Ticketed Reservations
+            if sliver is not None and self.graph_id is not None:
+                if sliver.reservation_info is None:
+                    sliver.reservation_info = ReservationInfo()
+                sliver.reservation_info.reservation_id = rid
+                sliver.reservation_info.reservation_state = reservation_state
+                FimHelper.update_node(graph_id=self.graph_id, sliver=sliver)
+            return sliver
+        finally:
+            self.lock.release()

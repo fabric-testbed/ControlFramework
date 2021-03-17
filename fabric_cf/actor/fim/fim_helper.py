@@ -191,7 +191,8 @@ class FimHelper:
             node.set_properties(label_allocations=sliver.label_allocations,
                                 capacity_allocations=sliver.capacity_allocations,
                                 reservation_info=sliver.reservation_info,
-                                node_map=sliver.node_map)
+                                node_map=sliver.node_map,
+                                management_ip=sliver.management_ip)
             if sliver.attached_components_info is not None:
                 for component in sliver.attached_components_info.devices.values():
                     cname = component.get_name()

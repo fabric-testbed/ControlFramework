@@ -269,9 +269,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.term = incoming.get_term()
         self.lease_term = self.term
 
-    def accept_lease_update_to_asm(self):
-        self.leased_resources.sliver = self.update_slice_graph(sliver=self.leased_resources.get_sliver())
-
     def absorb_ticket_update(self, *, incoming: IReservation, update_data: UpdateData):
         """
         Absorbs an incoming ticket update.
@@ -299,10 +296,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.logger.debug("absorb_update: {}".format(incoming))
 
         self.policy.update_ticket_complete(reservation=self)
-
-    def accept_ticket_update_to_asm(self):
-        # Update Graph
-        self.resources.sliver = self.update_slice_graph(sliver=self.resources.get_sliver())
 
     def accept_lease_update(self, *, incoming: IReservation, update_data: UpdateData) -> bool:
         """
@@ -790,6 +783,9 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 # If redeem fails we should not fail the reservation!!! The
                 # failure may be due to the authority being unavailable
                 RPCManagerSingleton.get().redeem(reservation=self)
+
+                # Update ASM with Reservation Info
+                self.update_slice_graph(sliver=self.resources.sliver)
         elif self.joinstate == JoinState.BlockedJoin:
             # This reservation has a lease whose join processing was blocked
             # for a predecessor: see if we can get it going now. Note: if
@@ -805,6 +801,10 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 self.transition_with_join(prefix="unblocked join", state=self.state, pending=self.pending_state,
                                           join_state=JoinState.Joining)
                 self.service_pending = JoinState.Joining
+
+                # Update ASM with Reservation Info
+                self.update_slice_graph(sliver=self.resources.sliver)
+
         elif self.joinstate == JoinState.Joining and self.service_pending == JoinState.None_ and \
                 self.leased_resources.is_active() and not self.pending_recover and\
                 self.state != ReservationStates.ActiveTicketed:
@@ -829,6 +829,9 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                               format(self.leased_resources.get_notices().get_notice()), exception=None)
                 else:
                     self.fail(message="resources failed to join: (no details)", exception=None)
+            else:
+                # Update ASM with Reservation Info
+                self.update_slice_graph(sliver=self.leased_resources.sliver)
 
     def probe_pending(self):
         # Process join state to complete or restart join-related operations for Controller
@@ -925,6 +928,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         if self.leased_resources is not None:
             self.logger.debug("Closing leased resources: {}".format(type(self.leased_resources)))
             self.leased_resources.close()
+            self.update_slice_graph(sliver=self.leased_resources.sliver)
 
     def service_probe(self):
         # An exception in one of these service routines should mean some
@@ -949,23 +953,26 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.service_pending = JoinState.None_
 
     def service_update_lease(self):
-        if self.leased_resources is not None and self.last_lease_update.successful() and \
-                self.joinstate != JoinState.BlockedJoin:
-            # An update() was called above, so we must clear it. Update()
-            # must be called in every success case, and must not be called
-            # in any failure case. But: if the reservation is in
-            # BlockedJoin, then leave the update unserviced until a future
-            # probePending.
-            self.leased_resources.service_update(reservation=self)
-            self.set_dirty()
+        if self.leased_resources is not None and self.last_lease_update.successful():
+            if self.joinstate != JoinState.BlockedJoin:
+                # An update() was called above, so we must clear it. Update()
+                # must be called in every success case, and must not be called
+                # in any failure case. But: if the reservation is in
+                # BlockedJoin, then leave the update unserviced until a future
+                # probePending.
+                self.leased_resources.service_update(reservation=self)
+                self.set_dirty()
 
-            # If subsequent lease updates come in (e.g., for an extend)
-            # before we have cleared the initial one, then
-            # rset.serviceUpdate should now do the right thing.
+                # If subsequent lease updates come in (e.g., for an extend)
+                # before we have cleared the initial one, then
+                # rset.serviceUpdate should now do the right thing.
+
+                self.update_slice_graph(sliver=self.leased_resources.sliver)
 
     def service_update_ticket(self):
         if self.last_ticket_update.successful():
             self.resources.service_update(reservation=self)
+            self.update_slice_graph(sliver=self.resources.sliver)
 
     def set_broker(self, *, broker: IBrokerProxy) -> bool:
         if self.state != ReservationStates.Nascent:
@@ -1064,8 +1071,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                                           pending=ReservationPendingStates.None_,
                                           join_state=JoinState.BlockedJoin)
 
-                self.accept_lease_update_to_asm()
-
             if self.closed_during_redeem:
                 self.logger.info("Received updateLease for a reservation closed in the Redeeming state. Issuing close.")
                 self.close()
@@ -1078,8 +1083,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
                 self.transition(prefix="modified lease", state=ReservationStates.Active,
                                 pending=ReservationPendingStates.None_)
-
-                self.accept_lease_update_to_asm()
 
         elif self.state == ReservationStates.ActiveTicketed:
             if self.accept_lease_update(incoming=incoming, update_data=update_data):
@@ -1094,7 +1097,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                                               state=ReservationStates.Active,
                                               pending=ReservationPendingStates.None_,
                                               join_state=JoinState.Joining)
-                self.accept_lease_update_to_asm()
                 self.pending_recover = False
 
             if self.closed_during_redeem:
@@ -1113,7 +1115,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
             self.transition(prefix=self.CLOSE_COMPLETE, state=ReservationStates.Closed,
                             pending=ReservationPendingStates.None_)
 
-            self.accept_lease_update_to_asm()
             self.do_relinquish()
 
         elif self.state == ReservationStates.Closed:
@@ -1135,7 +1136,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 self.suggested = False
                 self.approved = False
                 self.pending_recover = False
-                self.accept_ticket_update_to_asm()
 
         elif self.state == ReservationStates.Active or self.state == ReservationStates.ActiveTicketed:
             if self.pending_state != ReservationPendingStates.ExtendingTicket:
@@ -1149,7 +1149,6 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 self.suggested = False
                 self.approved = False
                 self.pending_recover = False
-                self.accept_ticket_update_to_asm()
 
         elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait:
             self.logger.warning("Ticket update after close")
@@ -1477,12 +1476,19 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         elif self.state == ReservationStates.Failed:
             self.logger.warning("Reservation #{} has failed".format(self.get_reservation_id()))
 
-    def update_slice_graph(self, sliver: NodeSliver) -> NodeSliver:
-        # Update for Orchestrator for Active / Ticketed Reservations
-        if sliver is not None and self.slice is not None and self.slice.get_graph_id() is not None:
-            FimHelper.update_node(graph_id=self.slice.get_graph_id(), sliver=sliver)
-            if sliver.reservation_info is None:
-                sliver.reservation_info = ReservationInfo()
-            sliver.reservation_info.reservation_id = str(self.rid)
-            sliver.reservation_info.reservation_state = str(self.get_reservation_state())
-        return sliver
+    def fail(self, *, message: str, exception: Exception = None):
+        super().fail(message=message, exception=exception)
+        self.update_slice_graph(sliver=self.requested_resources.sliver)
+
+    def update_slice_graph(self, *, sliver: NodeSliver):
+        """
+        Update ASM with Sliver information
+        :param sliver: sliver
+        :return:
+        """
+        self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
+                          f"Slice Graph# {self.slice.get_graph_id()}")
+        self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
+                                      reservation_state=str(self.get_reservation_state()))
+        self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
+                          f"Slice Graph# {self.slice.get_graph_id()}")
