@@ -4,6 +4,8 @@ FABRIC enables a substrate provider to outsource resource arbitration and calend
 
 Besides common code, each AM type has specific plugins that determine its resource allocation behavior (Resource Management Policy) and the specific actions it takes to provision a sliver (Resource Handler). Both plugins are invoked by AM common core code based on the resource type or type of request being considered.
 
+NOTE: Authority container is still built on Pyhon3.8 because of an open BUG on Python 3.9 which causes ansible failures.
+https://github.com/dask/distributed/issues/4168
 ## Configuration
 `config.site.am.yaml` depicts an example config file for an Aggregate Manager.
 
