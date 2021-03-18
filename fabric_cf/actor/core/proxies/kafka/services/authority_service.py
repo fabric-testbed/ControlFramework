@@ -48,7 +48,7 @@ if TYPE_CHECKING:
 class AuthorityService(BrokerService):
 
     def pass_authority(self, *, reservation: ReservationAvro) -> IAuthorityReservation:
-        slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
+        slice_obj = Translate.translate_slice(slice_avro=reservation.slice)
         term = Translate.translate_term_from_avro(term=reservation.term)
 
         resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)

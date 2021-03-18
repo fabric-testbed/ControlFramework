@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
 class BrokerService(ActorService):
     def pass_agent(self, *, reservation: ReservationAvro) -> IBrokerReservation:
-        slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
+        slice_obj = Translate.translate_slice(slice_avro=reservation.slice)
         term = Translate.translate_term_from_avro(term=reservation.term)
         resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)
         rid = ID(uid=reservation.reservation_id)
@@ -64,7 +64,7 @@ class BrokerService(ActorService):
         return result
 
     def pass_agent_delegation(self, *, delegation: DelegationAvro) -> IDelegation:
-        slice_obj = Translate.translate_slice(slice_id=delegation.slice.guid, slice_name=delegation.slice.slice_name)
+        slice_obj = Translate.translate_slice(slice_avro=delegation.slice)
 
         result = DelegationFactory.create(did=delegation.get_delegation_id(), slice_id=slice_obj.get_slice_id())
         result.set_slice_object(slice_object=slice_obj)
