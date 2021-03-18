@@ -76,14 +76,18 @@ class Translate:
         return result
 
     @staticmethod
-    def translate_slice(*, slice_id: ID, slice_name: str) -> ISlice:
-        if slice_id is None and slice_name is None:
+    def translate_slice(*, slice_avro: SliceAvro) -> ISlice:
+        if slice_avro is None:
+            return None
+        if slice_avro.guid is None and slice_avro.slice_name is None:
             return None
 
-        if slice_id is None:
+        if slice_avro.guid is None:
             raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("Slice id"))
 
-        slice_obj = SliceFactory.create(slice_id=slice_id, name=slice_name)
+        slice_obj = SliceFactory.create(slice_id=slice_avro.guid, name=slice_avro.slice_name)
+        slice_obj.set_description(description=slice_avro.description)
+        slice_obj.set_config_properties(value=slice_avro.config_properties)
         return slice_obj
 
     @staticmethod

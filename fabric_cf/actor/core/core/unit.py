@@ -403,7 +403,7 @@ class Unit(ConfigToken):
 
     def __str__(self):
         return f"[unit: {self.uid} reservation: {self.reservation_id} actor: {self.actor_id} state: {self.state} " \
-               f"sliver: {self.sliver}]"
+               f"sliver: {self.sliver} properties: {self.properties}]"
 
     def __hash__(self):
         return self.uid.__hash__()
