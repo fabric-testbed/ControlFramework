@@ -83,7 +83,7 @@ class ActorService:
         return None
 
     def pass_client(self, *, reservation: ReservationAvro) -> IClientReservation:
-        slice_obj = Translate.translate_slice(slice_id=reservation.slice.guid, slice_name=reservation.slice.slice_name)
+        slice_obj = Translate.translate_slice(slice_avro=reservation.slice)
         term = Translate.translate_term_from_avro(term=reservation.term)
 
         resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)
@@ -93,7 +93,7 @@ class ActorService:
                                                term=term, slice_object=slice_obj, actor=self.actor)
 
     def pass_client_delegation(self, *, delegation: DelegationAvro, caller: AuthToken) -> IDelegation:
-        slice_obj = Translate.translate_slice(slice_id=delegation.slice.guid, slice_name=delegation.slice.slice_name)
+        slice_obj = Translate.translate_slice(slice_avro=delegation.slice)
 
         dlg = BrokerDelegationFactory.create(did=delegation.get_delegation_id(),
                                              slice_id=slice_obj.get_slice_id(),

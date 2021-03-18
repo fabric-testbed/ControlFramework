@@ -538,8 +538,7 @@ class KernelWrapper:
         else:
             self.kernel.amend_delegate(delegation=temp)
 
-    def handle_reserve(self, *, reservation: IKernelReservation, identity: AuthToken, create_new_slice: bool,
-                       verify_credentials: bool):
+    def handle_reserve(self, *, reservation: IKernelReservation, identity: AuthToken, create_new_slice: bool):
         """
         Handles a reserve, i.e., obtain a new ticket or lease. Called from both
         client and server side code. If the slice does not exist it will create
@@ -553,7 +552,6 @@ class KernelWrapper:
                    the slice object in the reservation. This flag is considered
                    only if the slice referenced by the reservation is not
                    registered with the kernel.
-        @param verify_credentials true if credentials to be verified
         @throws Exception in case of error
         """
         if reservation.get_slice() is None or reservation.get_slice().get_name() is None or \
@@ -660,12 +658,11 @@ class KernelWrapper:
                         self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestRedeem)
 
                 reservation.prepare(callback=callback, logger=self.logger)
-                self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True,
-                                    verify_credentials=True)
+                self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True)
             else:
                 reservation.set_logger(self.logger)
                 self.handle_reserve(reservation=reservation, identity=reservation.get_client_auth_token(),
-                                    create_new_slice=True, verify_credentials=True)
+                                    create_new_slice=True)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred in processing redeem request {}".format(e))
@@ -843,8 +840,7 @@ class KernelWrapper:
 
         reservation.prepare(callback=callback, logger=self.logger)
         reservation.validate_outgoing()
-        self.handle_reserve(reservation=reservation, identity=destination.get_identity(), create_new_slice=False,
-                            verify_credentials=False)
+        self.handle_reserve(reservation=reservation, identity=destination.get_identity(), create_new_slice=False)
 
     def ticket_request(self, *, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy,
                        compare_seq_numbers: bool):
@@ -896,19 +892,17 @@ class KernelWrapper:
                     else:
                         # This is a new reservation. No need to check sequence numbers
                         reservation.prepare(callback=callback, logger=self.logger)
-                        self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True,
-                                            verify_credentials=True)
+                        self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True)
                 else:
                     # New reservation for a new slice.
                     reservation.prepare(callback=callback, logger=self.logger)
-                    self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True,
-                                        verify_credentials=True)
+                    self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True)
             else:
                 # This is most likely a reservation being recovered. Do not compare sequence numbers,
                 # just trigger reserve.
                 reservation.set_logger(logger=self.logger)
                 self.handle_reserve(reservation=reservation, identity=reservation.get_client_auth_token(),
-                                    create_new_slice=True, verify_credentials=True)
+                                    create_new_slice=True)
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())

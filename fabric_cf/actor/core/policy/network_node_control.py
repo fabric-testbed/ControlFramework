@@ -205,6 +205,7 @@ class NetworkNodeControl(ResourceControl):
                                     graph_node=graph_node,
                                     existing_reservations=existing_reservations)
 
+            self.logger.debug(f"Slice properties: {reservation.get_slice().get_config_properties()}")
             unit = Unit(uid=ID(), rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
                         actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type,
                         properties=reservation.get_slice().get_config_properties())
