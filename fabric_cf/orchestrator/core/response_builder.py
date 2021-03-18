@@ -28,6 +28,8 @@ from typing import List
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
@@ -55,7 +57,11 @@ class ResponseBuilder:
     PROP_NOTICES = "notices"
     PROP_GRAPH_NODE_ID = "graph_node_id"
     PROP_GRAPH_ID = "graph_id"
-    PROP_SLIVER = "sliver"
+    PROP_NAME = "name"
+    PROP_MANAGEMENT_IP = "management_ip"
+    PROP_SITE = "site"
+    PROP_CAPACITIES = "capacities"
+    PROP_LABELS = "labels"
 
     @staticmethod
     def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = False,
@@ -85,10 +91,10 @@ class ResponseBuilder:
                     res_dict[ResponseBuilder.PROP_RESERVATION_JOIN_STATE] = JoinState(reservation.get_join_state()).name
 
                 sliver = reservation.get_sliver()
-                if reservation.sliver is not None:
+                if sliver is not None:
                     res_dict[ResponseBuilder.PROP_GRAPH_NODE_ID] = sliver.node_id
                     if include_sliver:
-                        res_dict[ResponseBuilder.PROP_SLIVER] = str(sliver)
+                        res_dict = ResponseBuilder.get_sliver_json(sliver=sliver, result=res_dict)
 
                 if include_notices:
                     res_dict[ResponseBuilder.PROP_NOTICES] = reservation.get_notices()
@@ -175,3 +181,16 @@ class ResponseBuilder:
                     ResponseBuilder.RESPONSE_SLICE_MODEL: slice_model}
 
         return response
+
+    @staticmethod
+    def get_sliver_json(*, sliver: BaseSliver, result: dict) -> dict:
+        if isinstance(sliver, NodeSliver):
+            result[ResponseBuilder.PROP_NAME] = sliver.get_name()
+            result[ResponseBuilder.PROP_SITE] = sliver.get_site()
+            if sliver.get_management_ip() is not None:
+                result[ResponseBuilder.PROP_MANAGEMENT_IP] = sliver.get_management_ip()
+            if sliver.get_capacities() is not None:
+                result[ResponseBuilder.PROP_CAPACITIES] = sliver.get_capacities().to_json()
+            if sliver.get_labels() is not None:
+                result[ResponseBuilder.PROP_LABELS] = sliver.get_labels().to_json()
+        return result
