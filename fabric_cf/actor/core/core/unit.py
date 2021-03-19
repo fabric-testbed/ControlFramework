@@ -27,7 +27,7 @@ from enum import Enum
 
 from fim.slivers.base_sliver import BaseSliver
 
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.notice import Notice
@@ -45,10 +45,10 @@ class UnitState(Enum):
 
 
 class Unit(ConfigToken):
-    def __init__(self, *, uid: ID, sliver: BaseSliver = None, rid: ID = None, slice_id: ID = None, actor_id: ID = None,
+    def __init__(self, *, rid: ID, sliver: BaseSliver = None, slice_id: ID = None, actor_id: ID = None,
                  properties: dict = None, state: UnitState = None, rtype: ResourceType = None):
-        # Unique identifier.
-        self.uid = uid
+        # Reservation this unit belongs to (id).
+        self.reservation_id = rid
         # Resource type.
         self.rtype = rtype
         # Unique identifier of parent unit (optional).
@@ -63,8 +63,6 @@ class Unit(ConfigToken):
             self.state = state
         # Configuration sequence number. Each unique configuration action is identified by a sequence number.
         self.sequence = 0
-        # Reservation this unit belongs to (id).
-        self.reservation_id = rid
         # Slice this unit belongs to.
         self.slice_id = slice_id
         # Actor this unit belongs to.
@@ -174,7 +172,7 @@ class Unit(ConfigToken):
         Get unit id
         @return unit id
         """
-        return self.uid
+        return self.reservation_id
 
     def get_properties(self) -> dict:
         """
@@ -214,7 +212,7 @@ class Unit(ConfigToken):
         Clone a unit
         @return copy of the object
         """
-        ret_val = Unit(uid=self.uid, sliver=self.sliver, properties=self.properties, state=self.state)
+        ret_val = Unit(rid=self.reservation_id, sliver=self.sliver, properties=self.properties, state=self.state)
         return ret_val
 
     def get_sequence(self) -> int:
@@ -249,7 +247,7 @@ class Unit(ConfigToken):
         ret_val = self.sequence
         return ret_val
 
-    def set_reservation(self, *, reservation: IReservation):
+    def set_reservation(self, *, reservation: ABCReservationMixin):
         """
         Set Reservation
         @param reservation reservation
@@ -330,7 +328,7 @@ class Unit(ConfigToken):
         """
         return self.reservation_id
 
-    def get_reservation(self) -> IReservation:
+    def get_reservation(self) -> ABCReservationMixin:
         """
         Get Reservation
         @return reservation
@@ -384,7 +382,7 @@ class Unit(ConfigToken):
         if not isinstance(other, Unit):
             return NotImplemented
 
-        return self.uid == other.uid
+        return self.reservation_id == other.reservation_id
 
     def get_notices(self) -> Notice:
         """
@@ -402,11 +400,11 @@ class Unit(ConfigToken):
         self.notices.add(msg=notice)
 
     def __str__(self):
-        return f"[unit: {self.uid} reservation: {self.reservation_id} actor: {self.actor_id} state: {self.state} " \
+        return f"[unit: {self.reservation_id} actor: {self.actor_id} state: {self.state} " \
                f"sliver: {self.sliver} properties: {self.properties}]"
 
     def __hash__(self):
-        return self.uid.__hash__()
+        return self.reservation_id.__hash__()
 
     def get_sliver(self) -> BaseSliver:
         """

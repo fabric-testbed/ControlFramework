@@ -27,12 +27,12 @@ import threading
 from abc import abstractmethod
 from datetime import datetime
 
-from fabric_cf.actor.core.apis.i_ticker import ITicker
+from fabric_cf.actor.core.apis.abc_ticker import ABCTicker
 from fabric_cf.actor.core.common.exceptions import TickException
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 
 
-class Tick(ITicker):
+class Tick(ABCTicker):
     """
     Abstract class for all container clock implementation
     """

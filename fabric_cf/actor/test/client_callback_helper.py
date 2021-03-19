@@ -23,11 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
-from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.rpc_request_state import RPCRequestState
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
@@ -38,7 +38,7 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class ClientCallbackHelper(IClientCallbackProxy):
+class ClientCallbackHelper(ABCClientCallbackProxy):
     class MyRequestState(RPCRequestState):
         def __init__(self):
             super().__init__()
@@ -63,14 +63,14 @@ class ClientCallbackHelper(IClientCallbackProxy):
     def get_name(self) -> str:
         return self.token.get_name()
 
-    def get_reservation(self) -> IReservation:
+    def get_reservation(self) -> ABCReservationMixin:
         return self.reservation
 
     def get_type(self):
         return Constants.PROTOCOL_LOCAL
 
-    def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
-                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_update_ticket(self, *, reservation: ABCBrokerReservation, update_data: UpdateData,
+                              callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         state = self.MyRequestState()
         state.reservation = LocalReturn.pass_reservation(reservation=reservation,
                                                          plugin=ActorRegistrySingleton.get().get_actor(
@@ -79,7 +79,7 @@ class ClientCallbackHelper(IClientCallbackProxy):
         self.prepared += 1
         return state
 
-    def execute(self, *, request: IRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState):
         if request.get_type() == RPCRequestType.UpdateTicket:
             self.called += 1
             self.reservation = request.reservation
@@ -88,9 +88,9 @@ class ClientCallbackHelper(IClientCallbackProxy):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         return GlobalsSingleton.get().get_logger()
 
-    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
+    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> ABCRPCRequestState:
         raise NotImplementedError
 
     def prepare_failed_request(self, *, request_id: str, failed_request_type,
-                               failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
+                               failed_reservation_id: ID, error: str, caller: AuthToken) -> ABCRPCRequestState:
         raise NotImplementedError

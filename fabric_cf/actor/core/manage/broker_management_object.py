@@ -35,7 +35,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.manage.client_actor_management_object_helper import ClientActorManagementObjectHelper
 from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric_cf.actor.core.manage.server_actor_management_object import ServerActorManagementObject
-from fabric_cf.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
+from fabric_cf.actor.core.apis.abc_client_actor_management_object import ABCClientActorManagementObject
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
@@ -46,15 +46,15 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.result_avro import ResultAvro
     from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
 
-    from fabric_cf.actor.core.apis.i_broker import IBroker
-    from fabric_cf.actor.core.apis.i_actor import IActor
+    from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class BrokerManagementObject(ServerActorManagementObject, IClientActorManagementObject):
-    def __init__(self, *, broker: IBroker = None):
+class BrokerManagementObject(ServerActorManagementObject, ABCClientActorManagementObject):
+    def __init__(self, *, broker: ABCBrokerMixin = None):
         super().__init__(sa=broker)
         self.client_helper = ClientActorManagementObjectHelper(client=broker)
 
@@ -80,7 +80,7 @@ class BrokerManagementObject(ServerActorManagementObject, IClientActorManagement
 
         return properties
 
-    def set_actor(self, *, actor: IActor):
+    def set_actor(self, *, actor: ABCActorMixin):
         if self.actor is None:
             super().set_actor(actor=actor)
             self.client_helper = ClientActorManagementObjectHelper(client=actor)

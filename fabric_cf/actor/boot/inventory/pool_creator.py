@@ -28,7 +28,6 @@ from typing import TYPE_CHECKING, Dict
 
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 
-from fabric_cf.actor.boot.inventory.resource_pool_factory import ResourcePoolFactory
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.pool_manager import PoolManagerError
@@ -37,7 +36,7 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
+    from fabric_cf.actor.core.common.resource_config import ResourceConfig
     from fabric_cf.actor.core.plugins.substrate.authority_substrate import AuthoritySubstrate
 
 
@@ -53,14 +52,6 @@ class PoolCreator:
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
         self.arm_graph = None
-
-    def get_factory(self):
-        """
-        Create ResourcePool Factory instance
-        """
-        factory = ResourcePoolFactory()
-        factory.set_substrate(substrate=self.substrate)
-        return factory
 
     def process_neo4j(self, substrate_file: str, actor_name: str) -> Dict:
         """
@@ -96,7 +87,7 @@ class PoolCreator:
 
         return self.arm_graph.generate_adms()
 
-    def register_handler(self, *, rpd: ResourcePoolDescriptor):
+    def register_handler(self, *, rpd: ResourceConfig):
         """
         Register Handlers for each Resource Type and Save it Plugin
         @param rpd Resource pool descriptor

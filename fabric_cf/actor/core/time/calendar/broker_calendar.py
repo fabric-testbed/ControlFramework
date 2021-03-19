@@ -25,10 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime
 
-from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.calendar.client_calendar import ClientCalendar
 from fabric_cf.actor.core.time.calendar.source_calendar import SourceCalendar
@@ -58,10 +58,10 @@ class BrokerCalendar(ClientCalendar):
         # <ReservationID, SourceCalendar>
         self.sources = {}
 
-    def remove(self, *, reservation: IReservation):
+    def remove(self, *, reservation: ABCReservationMixin):
         super().remove(reservation=reservation)
         self.remove_closing(reservation=reservation)
-        if isinstance(reservation, IBrokerReservation):
+        if isinstance(reservation, ABCBrokerReservation):
             self.remove_request(reservation=reservation)
 
             source = reservation.get_source()
@@ -69,11 +69,11 @@ class BrokerCalendar(ClientCalendar):
                 self.remove_request(reservation=reservation, source=source)
                 self.remove_outlay(source=source, client=reservation)
 
-    def remove_scheduled_or_in_progress(self, *, reservation: IReservation):
+    def remove_scheduled_or_in_progress(self, *, reservation: ABCReservationMixin):
         super().remove_scheduled_or_in_progress(reservation=reservation)
         self.remove_closing(reservation=reservation)
 
-        if isinstance(reservation, IBrokerReservation):
+        if isinstance(reservation, ABCBrokerReservation):
             self.remove_request(reservation=reservation)
 
             source = reservation.get_source()
@@ -104,7 +104,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def add_request(self, *, reservation: IReservation, cycle: int, source: IDelegation = None):
+    def add_request(self, *, reservation: ABCReservationMixin, cycle: int, source: ABCDelegation = None):
         """
         Adds a client request.
 
@@ -122,7 +122,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def get_request(self, *, source: IDelegation, cycle: int) -> ReservationSet:
+    def get_request(self, *, source: ABCDelegation, cycle: int) -> ReservationSet:
         """
         Returns the extending requests for the given source reservation.
 
@@ -139,7 +139,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def remove_request(self, *, reservation: IReservation, source: IDelegation = None):
+    def remove_request(self, *, reservation: ABCReservationMixin, source: ABCDelegation = None):
         """
         Removes the specified reservation from the requests list.
         @params reservation:  reservation to remove
@@ -155,7 +155,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def add_outlay(self, *, source: IDelegation, client: IReservation, start: datetime, end: datetime):
+    def add_outlay(self, *, source: ABCDelegation, client: ABCReservationMixin, start: datetime, end: datetime):
         """
          Adds an outlay reservation.
 
@@ -172,7 +172,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def remove_outlay(self, *, source: IDelegation, client: IReservation):
+    def remove_outlay(self, *, source: ABCDelegation, client: ABCReservationMixin):
         """
         Removes an outlay reservation.
 
@@ -186,7 +186,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def add_source(self, *, source: IDelegation):
+    def add_source(self, *, source: ABCDelegation):
         """
         Adds a source reservation. Creates a placeholder if necessary
         and adds the reservation to the holdings list.
@@ -202,7 +202,7 @@ class BrokerCalendar(ClientCalendar):
             self.lock.release()
         self.add_holdings(reservation=source, start=term.get_new_start_time(), end=term.get_end_time())
 
-    def get_source_calendar(self, *, source: IDelegation) -> SourceCalendar:
+    def get_source_calendar(self, *, source: ABCDelegation) -> SourceCalendar:
         """
         Returns the outlay calendar for the given source reservation.
 
@@ -216,7 +216,7 @@ class BrokerCalendar(ClientCalendar):
             self.sources[source.get_delegation_id()] = calendar
         return calendar
 
-    def remove_source_calendar(self, *, source: IDelegation):
+    def remove_source_calendar(self, *, source: ABCDelegation):
         """
         Removes any data structures associated with a source
         reservation.
@@ -230,7 +230,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def get_outlays(self, *, source: IDelegation, time: datetime = None) -> ReservationSet:
+    def get_outlays(self, *, source: ABCDelegation, time: datetime = None) -> ReservationSet:
         """
         Returns the client reservations satisfied from the given source
         reservation at the specified time.
@@ -265,7 +265,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def add_closing(self, *, reservation: IReservation, cycle: int):
+    def add_closing(self, *, reservation: ABCReservationMixin, cycle: int):
         """
         Adds a reservation to be closed on the specified cycle
 
@@ -278,7 +278,7 @@ class BrokerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def remove_closing(self, *, reservation: IReservation):
+    def remove_closing(self, *, reservation: ABCReservationMixin):
         """
         Removes the specified reservation from the list of closing
         reservations.

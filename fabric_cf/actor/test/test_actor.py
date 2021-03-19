@@ -23,12 +23,12 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.core.actor import Actor
+from fabric_cf.actor.core.core.actor import ActorMixin
 from fabric_cf.actor.core.manage.kafka.services.kafka_authority_service import KafkaAuthorityService
 from fabric_cf.actor.core.proxies.kafka.services.authority_service import AuthorityService
 
 
-class TestActor(Actor):
+class TestActor(ActorMixin):
     @staticmethod
     def get_kafka_service_class() -> str:
         return AuthorityService.__name__

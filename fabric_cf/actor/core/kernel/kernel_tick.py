@@ -26,7 +26,7 @@
 import threading
 from datetime import datetime
 
-from fabric_cf.actor.core.apis.i_tick import ITick
+from fabric_cf.actor.core.apis.abc_tick import ABCTick
 from fabric_cf.actor.core.kernel.tick import Tick
 
 
@@ -41,14 +41,14 @@ class KernelTick(Tick):
         self.to_tick = set()
         self.stopped_worker = threading.Event()
 
-    def add_tickable(self, *, tickable: ITick):
+    def add_tickable(self, *, tickable: ABCTick):
         """
         Add object which needs to receive periodic tick
         """
         with self.lock:
             self.to_tick.add(tickable)
 
-    def remove_tickable(self, *, tickable: ITick):
+    def remove_tickable(self, *, tickable: ABCTick):
         """
         Remove tickable object
         """

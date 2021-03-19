@@ -30,22 +30,22 @@ from typing import TYPE_CHECKING, List
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
-from fabric_mb.message_bus.messages.resource_delegation_avro import ResourceDelegationAvro
+from fabric_mb.message_bus.messages.resource_ticket_avro import ResourceTicketAvro
 from fabric_mb.message_bus.messages.resource_set_avro import ResourceSetAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fabric_mb.message_bus.messages.term_avro import TermAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fabric_mb.message_bus.messages.update_data_avro import UpdateDataAvro
 from fabric_mb.message_bus.messages.ticket import Ticket as AvroTicket
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.core.unit import Unit, UnitState
 from fabric_cf.actor.core.core.unit_set import UnitSet
-from fabric_cf.actor.core.delegation.resource_delegation import ResourceDelegation
+from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicket
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
@@ -57,7 +57,7 @@ from fabric_cf.actor.security.auth_token import AuthToken
 
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_slice import ISlice
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 
 
 class Translate:
@@ -76,7 +76,7 @@ class Translate:
         return result
 
     @staticmethod
-    def translate_slice(*, slice_avro: SliceAvro) -> ISlice:
+    def translate_slice(*, slice_avro: SliceAvro) -> ABCSlice:
         if slice_avro is None:
             return None
         if slice_avro.guid is None and slice_avro.slice_name is None:
@@ -91,7 +91,7 @@ class Translate:
         return slice_obj
 
     @staticmethod
-    def translate_slice_to_avro(*, slice_obj: ISlice) -> SliceAvro:
+    def translate_slice_to_avro(*, slice_obj: ABCSlice) -> SliceAvro:
         avro_slice = SliceAvro()
         avro_slice.slice_name = slice_obj.get_name()
         avro_slice.guid = str(slice_obj.get_slice_id())
@@ -145,50 +145,50 @@ class Translate:
         return avro_term
 
     @staticmethod
-    def translate_resource_delegation(*, resource_delegation: ResourceDelegation) -> ResourceDelegationAvro:
-        rd = ResourceDelegationAvro()
-        rd.units = resource_delegation.units
-        if resource_delegation.term is not None:
-            rd.term = Translate.translate_term(term=resource_delegation.term)
+    def translate_resource_ticket(*, resource_ticket: ResourceTicket) -> ResourceTicketAvro:
+        rd = ResourceTicketAvro()
+        rd.units = resource_ticket.units
+        if resource_ticket.term is not None:
+            rd.term = Translate.translate_term(term=resource_ticket.term)
 
-        if resource_delegation.type is not None:
-            rd.type = str(resource_delegation.type)
+        if resource_ticket.type is not None:
+            rd.type = str(resource_ticket.type)
 
-        if resource_delegation.guid is not None:
-            rd.guid = str(resource_delegation.guid)
+        if resource_ticket.guid is not None:
+            rd.guid = str(resource_ticket.guid)
 
-        if resource_delegation.properties is not None:
-            rd.properties = resource_delegation.properties
+        if resource_ticket.properties is not None:
+            rd.properties = resource_ticket.properties
 
-        if resource_delegation.issuer is not None:
-            rd.issuer = str(resource_delegation.issuer)
+        if resource_ticket.issuer is not None:
+            rd.issuer = str(resource_ticket.issuer)
 
-        if resource_delegation.holder is not None:
-            rd.holder = str(resource_delegation.holder)
+        if resource_ticket.holder is not None:
+            rd.holder = str(resource_ticket.holder)
 
         return rd
 
     @staticmethod
-    def translate_resource_delegation_from_avro(*, resource_delegation: ResourceDelegationAvro) -> ResourceDelegation:
-        rd = ResourceDelegation()
-        rd.units = resource_delegation.units
-        if resource_delegation.term is not None:
-            rd.term = Translate.translate_term_from_avro(term=resource_delegation.term)
+    def translate_resource_ticket_from_avro(*, resource_ticket: ResourceTicketAvro) -> ResourceTicket:
+        rd = ResourceTicket()
+        rd.units = resource_ticket.units
+        if resource_ticket.term is not None:
+            rd.term = Translate.translate_term_from_avro(term=resource_ticket.term)
 
-        if resource_delegation.type is not None:
-            rd.type = ResourceType(resource_type=resource_delegation.type)
+        if resource_ticket.type is not None:
+            rd.type = ResourceType(resource_type=resource_ticket.type)
 
-        if resource_delegation.guid is not None:
-            rd.guid = ID(uid=resource_delegation.guid)
+        if resource_ticket.guid is not None:
+            rd.guid = ID(uid=resource_ticket.guid)
 
-        if resource_delegation.properties is not None:
-            rd.properties = resource_delegation.properties
+        if resource_ticket.properties is not None:
+            rd.properties = resource_ticket.properties
 
-        if resource_delegation.issuer is not None:
-            rd.issuer = ID(uid=resource_delegation.issuer)
+        if resource_ticket.issuer is not None:
+            rd.issuer = ID(uid=resource_ticket.issuer)
 
-        if resource_delegation.holder is not None:
-            rd.holder = ID(uid=resource_delegation.holder)
+        if resource_ticket.holder is not None:
+            rd.holder = ID(uid=resource_ticket.holder)
 
         return rd
 
@@ -198,8 +198,8 @@ class Translate:
         avro_ticket.authority = Translate.translate_auth_to_avro(auth=ticket.authority.get_identity())
         avro_ticket.old_units = ticket.old_units
         avro_ticket.delegation_id = ticket.delegation_id
-        avro_ticket.resource_delegation = Translate.translate_resource_delegation(
-            resource_delegation=ticket.resource_delegation)
+        avro_ticket.resource_ticket = Translate.translate_resource_ticket(
+            resource_ticket=ticket.resource_ticket)
         return avro_ticket
 
     @staticmethod
@@ -210,9 +210,9 @@ class Translate:
         ticket.authority = ActorRegistrySingleton.get().get_proxy(protocol=Constants.PROTOCOL_KAFKA,
                                                                   actor_name=auth_identity.get_name())
         ticket.old_units = avro_ticket.old_units
-        if avro_ticket.resource_delegation is not None:
-            ticket.resource_delegation = Translate.translate_resource_delegation_from_avro(
-                resource_delegation=avro_ticket.resource_delegation)
+        if avro_ticket.resource_ticket is not None:
+            ticket.resource_ticket = Translate.translate_resource_ticket_from_avro(
+                resource_ticket=avro_ticket.resource_ticket)
 
         return ticket
 
@@ -246,14 +246,14 @@ class Translate:
         return result
 
     @staticmethod
-    def attach_properties(*, slice_mng: SliceAvro, slice_obj: ISlice) -> SliceAvro:
+    def attach_properties(*, slice_mng: SliceAvro, slice_obj: ABCSlice) -> SliceAvro:
         if slice_obj.get_config_properties() is not None:
             slice_mng.set_config_properties(slice_obj.get_config_properties())
 
         return slice_mng
 
     @staticmethod
-    def fill_slices(*, slice_list: List[ISlice], full: bool, user_dn: str) -> List[SliceAvro]:
+    def fill_slices(*, slice_list: List[ABCSlice], full: bool, user_dn: str) -> List[SliceAvro]:
         result = []
         for slice_obj in slice_list:
             if slice_obj is not None and (user_dn is None or user_dn == slice_obj.get_owner().get_oidc_sub_claim()):
@@ -264,7 +264,7 @@ class Translate:
         return result
 
     @staticmethod
-    def translate_delegation_to_avro(*, delegation: IDelegation) -> DelegationAvro:
+    def translate_delegation_to_avro(*, delegation: ABCDelegation) -> DelegationAvro:
         avro_delegation = DelegationAvro()
         avro_delegation.delegation_id = delegation.get_delegation_id()
         avro_delegation.slice = Translate.translate_slice_to_avro(slice_obj=delegation.get_slice_object())
@@ -291,7 +291,7 @@ class Translate:
 
     @staticmethod
     def translate_unit_from_avro(*, unit_avro: UnitAvro) -> Unit:
-        unit = Unit(uid=ID(uid=unit_avro.uid))
+        unit = Unit(rid=ID(uid=unit_avro.reservation_id))
 
         if unit_avro.properties is not None:
             unit.properties = unit_avro.properties
@@ -301,9 +301,6 @@ class Translate:
 
         if unit_avro.parent_id is not None:
             unit.parent_id = ID(uid=unit_avro.parent_id)
-
-        if unit_avro.reservation_id is not None:
-            unit.reservation_id = ID(uid=unit_avro.reservation_id)
 
         if unit_avro.slice_id is not None:
             unit.slice_id = ID(uid=unit_avro.slice_id)
@@ -319,9 +316,6 @@ class Translate:
     def translate_unit(*, unit: Unit) -> UnitAvro:
         result = UnitAvro()
         result.properties = unit.properties
-        if unit.uid is not None:
-            result.uid = str(unit.uid)
-
         if unit.rtype is not None:
             result.rtype = str(unit.rtype)
 

@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
@@ -37,7 +37,7 @@ class ModifyStatusChecker(StatusChecker):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def check_(self, *, controller: IMgmtController, rid) -> Status:
+    def check_(self, *, controller: ABCMgmtControllerMixin, rid) -> Status:
         """
         Check Status
         :param controller:

@@ -30,8 +30,8 @@ from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-    from fabric_cf.actor.core.apis.i_reservation import IReservation
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
     from fabric_cf.actor.core.util.update_data import UpdateData
     from fabric_cf.actor.security.auth_token import AuthToken
@@ -41,13 +41,13 @@ class IncomingReservationRPC(IncomingRPC):
     """
     Represents Incoming RPC message carrying a reservation
     """
-    def __init__(self, *, message_id: ID, request_type: RPCRequestType, reservation: IReservation,
-                 callback: ICallbackProxy = None, update_data: UpdateData = None, caller: AuthToken = None):
+    def __init__(self, *, message_id: ID, request_type: RPCRequestType, reservation: ABCReservationMixin,
+                 callback: ABCCallbackProxy = None, update_data: UpdateData = None, caller: AuthToken = None):
         super().__init__(message_id=message_id, request_type=request_type, callback=callback, caller=caller)
         self.reservation = reservation
         self.update_data = update_data
 
-    def get_reservation(self) -> IReservation:
+    def get_reservation(self) -> ABCReservationMixin:
         """
         Get Reservation
         @return reservation

@@ -35,7 +35,7 @@ from fim.slivers.capacities_labels import Labels
 from fim.user.topology import ExperimentTopology
 
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.util.id import ID
 
 
@@ -43,7 +43,7 @@ class OrchestratorSliceWrapper:
     """
     Orchestrator Wrapper Around Slice to hold the computed reservations for processing by Slice Deferred Thread
     """
-    def __init__(self, *, controller: IMgmtController, broker: ID, slice_obj: SliceAvro, logger):
+    def __init__(self, *, controller: ABCMgmtControllerMixin, broker: ID, slice_obj: SliceAvro, logger):
         self.controller = controller
         self.broker = broker
         self.slice_obj = slice_obj

@@ -27,29 +27,29 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
-from fabric_cf.actor.core.apis.i_actor_event import IActorEvent
-from fabric_cf.actor.core.apis.i_authority import IAuthority
-from fabric_cf.actor.core.apis.i_broker import IBroker
-from fabric_cf.actor.core.apis.i_controller import IController
+from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
+from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
+from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
+from fabric_cf.actor.core.apis.abc_controller import ABCController
 from fabric_cf.actor.core.util.rpc_exception import RPCException
 
 if TYPE_CHECKING:
 
-    from fabric_cf.actor.core.apis.i_actor import IActor
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
     from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
-    from fabric_cf.actor.core.apis.i_client_actor import IClientActor
-    from fabric_cf.actor.core.apis.i_server_actor import IServerActor
+    from fabric_cf.actor.core.apis.abc_client_actor import ABCClientActor
+    from fabric_cf.actor.core.apis.abc_server_actor import ABCServerActor
 
 
-class IncomingRPCEvent(IActorEvent):
+class IncomingRPCEvent(ABCActorEvent):
     """
     Represents incoming RPC event
     """
-    def __init__(self, *, actor: IActor, rpc: IncomingRPC):
+    def __init__(self, *, actor: ABCActorMixin, rpc: IncomingRPC):
         self.actor = actor
         self.rpc = rpc
 
-    def do_process_actor(self, *, actor: IActor):
+    def do_process_actor(self, *, actor: ABCActorMixin):
         """
         Process Incoming RPC events common for all actors
         """
@@ -75,7 +75,7 @@ class IncomingRPCEvent(IActorEvent):
             processed = False
         return processed
 
-    def do_process_client(self, *, client: IClientActor):
+    def do_process_client(self, *, client: ABCClientActor):
         """
         Process Incoming RPC events common for client actors
         """
@@ -94,7 +94,7 @@ class IncomingRPCEvent(IActorEvent):
             processed = self.do_process_actor(actor=client)
         return processed
 
-    def do_process_server(self, *, server: IServerActor):
+    def do_process_server(self, *, server: ABCServerActor):
         """
         Process Incoming RPC events common for server actors
         """
@@ -131,7 +131,7 @@ class IncomingRPCEvent(IActorEvent):
             processed = self.do_process_actor(actor=server)
         return processed
 
-    def do_process_broker(self, *, broker: IBroker):
+    def do_process_broker(self, *, broker: ABCBrokerMixin):
         """
         Process Incoming RPC events common for brokers
         """
@@ -140,7 +140,7 @@ class IncomingRPCEvent(IActorEvent):
             processed = self.do_process_client(client=broker)
         return processed
 
-    def do_process_authority(self, *, authority: IAuthority):
+    def do_process_authority(self, *, authority: ABCAuthority):
         """
         Process Incoming RPC events common for AMs
         """
@@ -166,7 +166,7 @@ class IncomingRPCEvent(IActorEvent):
             processed = self.do_process_server(server=authority)
         return processed
 
-    def do_process_controller(self, *, controller: IController):
+    def do_process_controller(self, *, controller: ABCController):
         """
         Process Incoming RPC events common for all controller/orchestrator
         """
@@ -188,17 +188,17 @@ class IncomingRPCEvent(IActorEvent):
         Process Incoming RPC events
         """
         done = False
-        if isinstance(self.actor, IAuthority):
+        if isinstance(self.actor, ABCAuthority):
             done = self.do_process_authority(authority=self.actor)
             if done:
                 return
 
-        if isinstance(self.actor, IBroker):
+        if isinstance(self.actor, ABCBrokerMixin):
             done = self.do_process_broker(broker=self.actor)
             if done:
                 return
 
-        if isinstance(self.actor, IController):
+        if isinstance(self.actor, ABCController):
             done = self.do_process_controller(controller=self.actor)
             if done:
                 return

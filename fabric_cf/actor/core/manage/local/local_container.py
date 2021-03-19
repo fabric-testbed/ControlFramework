@@ -35,18 +35,18 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.container_management_object import ContainerManagementObject
 from fabric_cf.actor.core.manage.management_object import ManagementObject
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
-from fabric_cf.actor.core.apis.i_mgmt_authority import IMgmtAuthority
-from fabric_cf.actor.core.apis.i_mgmt_broker import IMgmtBroker
-from fabric_cf.actor.core.apis.i_mgmt_container import IMgmtContainer
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
+from fabric_cf.actor.core.apis.abc_mgmt_authority import ABCMgmtAuthority
+from fabric_cf.actor.core.apis.abc_mgmt_broker_mixin import ABCMgmtBrokerMixin
+from fabric_cf.actor.core.apis.abc_mgmt_container import ABCMgmtContainer
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.manage.local.local_proxy import LocalProxy
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class LocalContainer(LocalProxy, IMgmtContainer):
+class LocalContainer(LocalProxy, ABCMgmtContainer):
     def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
         if not isinstance(manager, ContainerManagementObject):
@@ -89,7 +89,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
             component = self.get_management_object(key=guid)
 
             if component is not None:
-                if isinstance(component, IMgmtActor):
+                if isinstance(component, ABCMgmtActor):
                     return component
                 else:
                     self.last_exception = Exception(Constants.INVALID_MANAGEMENT_OBJECT_TYPE.format(type(component)))
@@ -235,7 +235,7 @@ class LocalContainer(LocalProxy, IMgmtContainer):
 
         return None
 
-    def get_controller(self, *, guid: ID) -> IMgmtController:
+    def get_controller(self, *, guid: ID) -> ABCMgmtControllerMixin:
         component = self.get_management_object(key=guid)
 
         if component is None:
@@ -243,29 +243,29 @@ class LocalContainer(LocalProxy, IMgmtContainer):
 
         self.clear_last()
 
-        if not isinstance(component, IMgmtController):
+        if not isinstance(component, ABCMgmtControllerMixin):
             self.last_exception = Exception("Invalid type")
         else:
             return component
 
         return None
 
-    def get_broker(self, *, guid: ID) -> IMgmtBroker:
+    def get_broker(self, *, guid: ID) -> ABCMgmtBrokerMixin:
         component = self.get_management_object(key=guid)
 
         if component is not None:
-            if isinstance(component, IMgmtBroker):
+            if isinstance(component, ABCMgmtBrokerMixin):
                 return component
             else:
                 self.last_exception = Exception(Constants.INVALID_MANAGEMENT_OBJECT_TYPE.format(type(component)))
 
         return None
 
-    def get_authority(self, *, guid: ID) -> IMgmtAuthority:
+    def get_authority(self, *, guid: ID) -> ABCMgmtAuthority:
         component = self.get_management_object(key=guid)
 
         if component is not None:
-            if isinstance(component, IMgmtAuthority):
+            if isinstance(component, ABCMgmtAuthority):
                 return component
             else:
                 self.last_exception = Exception(Constants.INVALID_MANAGEMENT_OBJECT_TYPE.format(type(component)))

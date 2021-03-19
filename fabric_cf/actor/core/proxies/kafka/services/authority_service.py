@@ -34,7 +34,7 @@ from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 from fabric_mb.message_bus.messages.message import IMessageAvro
 
 from fabric_cf.actor.core.common.exceptions import ProxyException
-from fabric_cf.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
+from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservationFactory
 from fabric_cf.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
@@ -42,12 +42,12 @@ from fabric_cf.actor.core.proxies.kafka.services.broker_service import BrokerSer
 from fabric_cf.actor.core.util.id import ID
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
+    from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 
 
 class AuthorityService(BrokerService):
 
-    def pass_authority(self, *, reservation: ReservationAvro) -> IAuthorityReservation:
+    def pass_authority(self, *, reservation: ReservationAvro) -> ABCAuthorityReservation:
         slice_obj = Translate.translate_slice(slice_avro=reservation.slice)
         term = Translate.translate_term_from_avro(term=reservation.term)
 

@@ -25,8 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import unittest
 
-from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.kernel.client_reservation_factory import ClientReservationFactory
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_holdings import ReservationHoldings
 
@@ -45,10 +45,10 @@ class ReservationHoldingsTest(unittest.TestCase):
             output += ","
         print(output)
 
-    def make_reservation(self, *, rid: str) -> IReservation:
+    def make_reservation(self, *, rid: str) -> ABCReservationMixin:
         return ClientReservationFactory.create(rid=ID(uid=rid))
 
-    def check_exists(self, *, holdings: ReservationHoldings, reservation: IReservation):
+    def check_exists(self, *, holdings: ReservationHoldings, reservation: ABCReservationMixin):
         rset = holdings.get_reservations()
         return rset.contains(reservation=reservation)
 

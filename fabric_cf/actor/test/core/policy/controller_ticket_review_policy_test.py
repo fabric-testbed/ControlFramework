@@ -25,10 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import time
 
-from fabric_cf.actor.core.apis.i_controller_policy import IControllerPolicy
-from fabric_cf.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
+from fabric_cf.actor.core.apis.abc_controller_policy import ABCControllerPolicy
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -38,7 +38,7 @@ from fabric_cf.actor.test.core.policy.controller_ticket_review_policy_test_wrapp
 
 
 class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
-    def get_controller_policy(self) -> IControllerPolicy:
+    def get_controller_policy(self) -> ABCControllerPolicy:
         return ControllerTicketReviewPolicyTestWrapper()
 
     def test_c_fail(self):
@@ -55,12 +55,12 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
 
         term = Term(start=clock.cycle_start_date(cycle=start), end=clock.cycle_end_date(cycle=end))
 
-        r1 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r1 = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         r1.set_renewable(renewable=False)
         controller.register(reservation=r1)
         controller.demand(rid=r1.get_reservation_id())
 
-        r2 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r2 = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         r2.set_renewable(renewable=False)
         controller.register(reservation=r2)
         controller.demand(rid=r2.get_reservation_id())
@@ -89,12 +89,12 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
 
         term = Term(start=clock.cycle_start_date(cycle=start), end=clock.cycle_end_date(cycle=end))
 
-        r1 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r1 = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         r1.set_renewable(renewable=False)
         controller.register(reservation=r1)
         controller.demand(rid=r1.get_reservation_id())
 
-        r2 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r2 = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         r2.set_renewable(renewable=False)
         controller.register(reservation=r2)
 
@@ -134,17 +134,17 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
 
         term = Term(start=clock.cycle_start_date(cycle=start), end=clock.cycle_end_date(cycle=end))
 
-        r1 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r1 = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         r1.set_renewable(renewable=False)
         controller.register(reservation=r1)
         controller.demand(rid=r1.get_reservation_id())
 
-        r2 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r2 = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         r2.set_renewable(renewable=False)
         controller.register(reservation=r2)
         r2demanded = False
 
-        r3 = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        r3 = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         r3.set_renewable(renewable=False)
         controller.register(reservation=r3)
         controller.demand(rid=r3.get_reservation_id())

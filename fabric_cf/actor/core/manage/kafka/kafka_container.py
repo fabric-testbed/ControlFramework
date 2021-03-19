@@ -32,21 +32,21 @@ from fabric_mb.message_bus.messages.actor_avro import ActorAvro
 from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
-from fabric_cf.actor.core.apis.i_mgmt_authority import IMgmtAuthority
-from fabric_cf.actor.core.apis.i_mgmt_broker import IMgmtBroker
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
-from fabric_cf.actor.core.apis.i_actor import ActorType
-from fabric_cf.actor.core.apis.i_component import IComponent
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
-from fabric_cf.actor.core.apis.i_mgmt_container import IMgmtContainer
+from fabric_cf.actor.core.apis.abc_mgmt_authority import ABCMgmtAuthority
+from fabric_cf.actor.core.apis.abc_mgmt_broker_mixin import ABCMgmtBrokerMixin
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+from fabric_cf.actor.core.apis.abc_component import ABCComponent
+from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
+from fabric_cf.actor.core.apis.abc_mgmt_container import ABCMgmtContainer
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 from fabric_cf.actor.core.util.id import ID
 
 
-class KafkaContainer(KafkaProxy, IMgmtContainer):
-    def get_management_object(self, *, key: ID) -> IComponent:
+class KafkaContainer(KafkaProxy, ABCMgmtContainer):
+    def get_management_object(self, *, key: ID) -> ABCComponent:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def do_get_actors(self, *, type: int) -> List[ActorAvro]:
@@ -98,7 +98,7 @@ class KafkaContainer(KafkaProxy, IMgmtContainer):
 
         return rret_val
 
-    def get_actor(self, *, guid: ID) -> IMgmtActor:
+    def get_actor(self, *, guid: ID) -> ABCMgmtActor:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_actors(self) -> List[ActorAvro]:
@@ -125,13 +125,13 @@ class KafkaContainer(KafkaProxy, IMgmtContainer):
     def get_authority_proxies(self, *, protocol: str) -> List[ProxyAvro]:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def get_controller(self, *, guid: ID) -> IMgmtController:
+    def get_controller(self, *, guid: ID) -> ABCMgmtControllerMixin:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def get_authority(self, *, guid: ID) -> IMgmtAuthority:
+    def get_authority(self, *, guid: ID) -> ABCMgmtAuthority:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def get_broker(self, *, guid: ID) -> IMgmtBroker:
+    def get_broker(self, *, guid: ID) -> ABCMgmtBrokerMixin:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def clone(self):

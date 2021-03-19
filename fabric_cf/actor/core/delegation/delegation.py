@@ -26,11 +26,11 @@
 from fim.graph.abc_property_graph import ABCPropertyGraph
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-from fabric_cf.actor.core.apis.i_delegation import IDelegation, DelegationState
-from fabric_cf.actor.core.apis.i_policy import IPolicy
-from fabric_cf.actor.core.apis.i_slice import ISlice
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
+from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DelegationException
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
@@ -39,7 +39,7 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class Delegation(IDelegation):
+class Delegation(ABCDelegation):
     error_string_prefix = 'error for delegation: {} : {}'
     invalid_state_prefix = "Invalid state for {}. Did you already {} this Delegation?"
 
@@ -83,7 +83,7 @@ class Delegation(IDelegation):
         self.policy = None
         self.callback = None
 
-    def restore(self, actor: IActor, slice_obj: ISlice):
+    def restore(self, actor: ABCActorMixin, slice_obj: ABCSlice):
         self.actor = actor
         self.slice_object = slice_obj
         if actor is not None:
@@ -96,7 +96,7 @@ class Delegation(IDelegation):
     def get_graph(self) -> ABCPropertyGraph:
         return self.graph
 
-    def get_actor(self) -> IActor:
+    def get_actor(self) -> ABCActorMixin:
         return self.actor
 
     def get_delegation_id(self) -> str:
@@ -109,7 +109,7 @@ class Delegation(IDelegation):
             return self.slice_object.get_slice_id()
         return None
 
-    def get_slice_object(self) -> ISlice:
+    def get_slice_object(self) -> ABCSlice:
         return self.slice_object
 
     def get_state(self) -> DelegationState:
@@ -121,7 +121,7 @@ class Delegation(IDelegation):
     def set_logger(self, *, logger):
         self.logger = logger
 
-    def set_slice_object(self, *, slice_object: ISlice):
+    def set_slice_object(self, *, slice_object: ABCSlice):
         self.slice_object = slice_object
 
     def transition(self, *, prefix: str, state: DelegationState):
@@ -168,10 +168,10 @@ class Delegation(IDelegation):
     def clear_dirty(self):
         self.dirty = False
 
-    def set_actor(self, actor: IActor):
+    def set_actor(self, actor: ABCActorMixin):
         self.actor = actor
 
-    def prepare(self, *, callback: ICallbackProxy, logger):
+    def prepare(self, *, callback: ABCCallbackProxy, logger):
         """
         Prepare a delegation
         """
@@ -194,7 +194,7 @@ class Delegation(IDelegation):
     def is_failed(self) -> bool:
         return self.state == DelegationState.Failed
 
-    def delegate(self, policy: IPolicy, id_token: str = None):
+    def delegate(self, policy: ABCPolicy, id_token: str = None):
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
         # protocol: so we may receive a reserve or extend when there is already
@@ -365,7 +365,7 @@ class Delegation(IDelegation):
 
         return msg
 
-    def get_callback(self) -> ICallbackProxy:
+    def get_callback(self) -> ABCCallbackProxy:
         return self.callback
 
     def get_update_data(self) -> UpdateData:
@@ -384,7 +384,7 @@ class Delegation(IDelegation):
     def get_sequence_out(self) -> int:
         return self.sequence_out
 
-    def update_delegation(self, *, incoming: IDelegation, update_data: UpdateData):
+    def update_delegation(self, *, incoming: ABCDelegation, update_data: UpdateData):
         self.logger.error(self.error_string_prefix.format(self, "Cannot update a authority delegation"))
         raise DelegationException("Cannot update a authority delegation")
 

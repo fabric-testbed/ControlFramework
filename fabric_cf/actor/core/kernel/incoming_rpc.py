@@ -29,8 +29,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-    from fabric_cf.actor.core.apis.i_rpc_response_handler import IRPCResponseHandler
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+    from fabric_cf.actor.core.apis.abc_response_handler import ABCResponseHandler
     from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
     from fabric_cf.actor.security.auth_token import AuthToken
 
@@ -39,7 +39,7 @@ class IncomingRPC:
     """
     Represents an incoming RPC message
     """
-    def __init__(self, *, message_id: ID, request_type: RPCRequestType, callback: ICallbackProxy, caller: AuthToken,
+    def __init__(self, *, message_id: ID, request_type: RPCRequestType, callback: ABCCallbackProxy, caller: AuthToken,
                  id_token: str = None):
         self.request_type = request_type
         self.message_id = message_id
@@ -57,7 +57,7 @@ class IncomingRPC:
         """
         return self.request_type
 
-    def get_callback(self) -> ICallbackProxy:
+    def get_callback(self) -> ABCCallbackProxy:
         """
         Get callback
         @return callback
@@ -78,14 +78,14 @@ class IncomingRPC:
         """
         return self.message_id
 
-    def set_response_handler(self, *, response_handler: IRPCResponseHandler):
+    def set_response_handler(self, *, response_handler: ABCResponseHandler):
         """
         Set response_handler
         @param response_handler response_handler
         """
         self.response_handler = response_handler
 
-    def get_response_handler(self) -> IRPCResponseHandler:
+    def get_response_handler(self) -> ABCResponseHandler:
         """
         Get response_handler
         @return response_handler

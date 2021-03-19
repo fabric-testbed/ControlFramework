@@ -27,8 +27,8 @@ from __future__ import annotations
 
 import traceback
 from typing import TYPE_CHECKING
-from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
-from fabric_cf.actor.core.apis.i_kernel_authority_reservation import IKernelAuthorityReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
+from fabric_cf.actor.core.apis.abc_kernel_authority_reservation_mixin import ABCKernelAuthorityReservationMixin
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
@@ -36,18 +36,18 @@ from fabric_cf.actor.core.kernel.reservation_server import ReservationServer
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-    from fabric_cf.actor.core.apis.i_policy import IPolicy
-    from fabric_cf.actor.core.apis.i_slice import ISlice
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+    from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-    from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
+    from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.id import ID
 
 
-class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
+class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin):
     """
     AuthorityReservation controls the state machine for a reservation on the
     authority side. It coordinates resource allocation, lease generation,
@@ -55,7 +55,7 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
     """
     UnexpectedExceptionString = "Unexpected reservation state: state={} pending={}"
 
-    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_object: IKernelSlice):
+    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_object: ABCKernelSlice):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_object)
         # The ticket.
         self.ticket = None
@@ -104,14 +104,14 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
 
         self.notified_about_failure = False
 
-    def restore(self, *, actor: IActor, slice_obj: ISlice):
+    def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """
         Must be invoked after creating reservation from unpickling
         """
         super().restore(actor=actor, slice_obj=slice_obj)
         self.notified_about_failure = False
 
-    def prepare(self, *, callback: ICallbackProxy, logger):
+    def prepare(self, *, callback: ABCCallbackProxy, logger):
         self.set_logger(logger=logger)
         self.callback = callback
         self.requested_resources.validate_incoming_ticket(term=self.requested_term)
@@ -121,7 +121,7 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
 
         self.state = ReservationStates.Ticketed
 
-    def reserve(self, *, policy: IPolicy):
+    def reserve(self, *, policy: ABCPolicy):
         self.nothing_pending()
         self.incoming_request()
         if self.is_active():
@@ -569,3 +569,23 @@ class AuthorityReservation(ReservationServer, IKernelAuthorityReservation):
 
     def get_ticket(self) -> ResourceSet:
         return self.ticket
+
+
+class AuthorityReservationFactory:
+    """
+    Factory class for creating authority reservations
+    """
+    @staticmethod
+    def create(*, resources: ResourceSet, term: Term, slice_obj: ABCSlice, rid: ID, actor: ABCActorMixin = None):
+        """
+        Create an Authotrity Reservation
+        :param resources:
+        :param term:
+        :param slice_obj:
+        :param rid:
+        :param actor:
+        :return:
+        """
+        res = AuthorityReservation(rid=rid, resources=resources, term=term, slice_object=slice_obj)
+        res.restore(actor=actor, slice_obj=slice_obj)
+        return res

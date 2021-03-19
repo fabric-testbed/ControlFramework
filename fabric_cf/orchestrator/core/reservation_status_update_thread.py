@@ -28,7 +28,7 @@ import threading
 import traceback
 from typing import List
 
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.iterable_queue import IterableQueue
 from fabric_cf.orchestrator.core.active_status_checker import ActiveStatusChecker
@@ -158,7 +158,7 @@ class ReservationStatusUpdateThread:
         finally:
             self.reservation_lock.release()
 
-    def check_watch_entry(self, *, controller: IMgmtController, watch_entry: WatchEntry,
+    def check_watch_entry(self, *, controller: ABCMgmtControllerMixin, watch_entry: WatchEntry,
                           status_checker: StatusChecker) -> TriggeredWatchEntry:
         """
         Check watch entry
@@ -196,7 +196,7 @@ class ReservationStatusUpdateThread:
             self.logger.debug("Invoking failure callback for reservations: {}".format(watch_entry.watch))
             watch_entry.callback.failure(watch_entry.not_ok, watch_entry.ok, watch_entry.act)
 
-    def process_watch_list(self, *, controller: IMgmtController, watch_list: List[WatchEntry], watch_type: str,
+    def process_watch_list(self, *, controller: ABCMgmtControllerMixin, watch_list: List[WatchEntry], watch_type: str,
                            status_checker: StatusChecker):
         """
         Process watch list

@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.calendar.client_calendar import ClientCalendar
 from fabric_cf.actor.core.util.reservation_list import ReservationList
@@ -46,7 +46,7 @@ class ControllerCalendar(ClientCalendar):
         self.closing = ReservationList()
         self.redeeming = ReservationList()
 
-    def remove(self, *, reservation: IReservation):
+    def remove(self, *, reservation: ABCReservationMixin):
         """
         Removes the reservation from the calendar.
 
@@ -70,7 +70,7 @@ class ControllerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def add_closing(self, *, reservation: IReservation, cycle: int):
+    def add_closing(self, *, reservation: ABCReservationMixin, cycle: int):
         """
         Adds a reservation to be closed on the specified cycle.
 
@@ -83,7 +83,7 @@ class ControllerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def remove_closing(self, *, reservation: IReservation):
+    def remove_closing(self, *, reservation: ABCReservationMixin):
         """
          Removes the given reservation from the closing list.
 
@@ -109,7 +109,7 @@ class ControllerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def add_redeeming(self, *, reservation: IReservation, cycle: int):
+    def add_redeeming(self, *, reservation: ABCReservationMixin, cycle: int):
         """
         Adds a reservation to be redeeming on the specified cycle.
 
@@ -122,7 +122,7 @@ class ControllerCalendar(ClientCalendar):
         finally:
             self.lock.release()
 
-    def remove_redeeming(self, *, reservation: IReservation):
+    def remove_redeeming(self, *, reservation: ABCReservationMixin):
         """
          Removes the given reservation from the redeeming list.
 

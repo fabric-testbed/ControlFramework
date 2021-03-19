@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import unittest
 
-from fabric_cf.actor.core.kernel.client_reservation_factory import ClientReservationFactory
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.calendar.client_calendar import ClientCalendar
 from fabric_cf.actor.core.util.id import ID

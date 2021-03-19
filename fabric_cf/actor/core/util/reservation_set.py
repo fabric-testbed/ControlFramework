@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import datetime
 
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import FrameworkException
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_count import ResourceCount
@@ -46,7 +46,7 @@ class ReservationSet:
             result += "rid={} r={}".format(r.get_reservation_id(), r)
         return result
 
-    def add(self, *, reservation: IReservation):
+    def add(self, *, reservation: ABCReservationMixin):
         """
         Adds the reservation to the set
 
@@ -61,7 +61,7 @@ class ReservationSet:
         """
         self.reservations.clear()
 
-    def contains(self, *, reservation: IReservation = None, rid: ID = None):
+    def contains(self, *, reservation: ABCReservationMixin = None, rid: ID = None):
         """
         Checks if the reservation is part of the set
 
@@ -88,7 +88,7 @@ class ReservationSet:
         for reservation in self.reservations.values():
             reservation.count(rc, when)
 
-    def get(self, *, rid: ID) -> IReservation:
+    def get(self, *, rid: ID) -> ABCReservationMixin:
         """
         Retrieves a reservation from the set.
 
@@ -99,7 +99,7 @@ class ReservationSet:
         """
         return self.reservations.get(rid, None)
 
-    def get_exception(self, *, rid: ID) -> IReservation:
+    def get_exception(self, *, rid: ID) -> ABCReservationMixin:
         """
         Returns the specified reservation. If the reservation is not
         present in the set, throws an exception.
@@ -126,7 +126,7 @@ class ReservationSet:
             return True
         return False
 
-    def remove(self, *, reservation: IReservation):
+    def remove(self, *, reservation: ABCReservationMixin):
         """
         Removes the specified reservation.
 

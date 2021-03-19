@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from fabric_mb.message_bus.messages.message import IMessageAvro
 
-from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.manage.kafka.services.kafka_client_actor_service import KafkaClientActorService
 from fabric_cf.actor.core.manage.kafka.services.kafka_server_actor_service import KafkaServerActorService

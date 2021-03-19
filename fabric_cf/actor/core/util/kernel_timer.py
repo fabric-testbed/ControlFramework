@@ -25,13 +25,13 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 
-from fabric_cf.actor.core.apis.i_timer_queue import ITimerQueue
-from fabric_cf.actor.core.apis.i_timer_task import ITimerTask
+from fabric_cf.actor.core.apis.abc_timer_queue import ABCTimerQueue
+from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
 
 
 class KernelTimer:
     @staticmethod
-    def schedule(*, queue: ITimerQueue, task: ITimerTask, delay: int):
+    def schedule(*, queue: ABCTimerQueue, task: ABCTimerTask, delay: int):
         """
         Schedule a timer
         :param queue: timer queue (maps to Actor's queue)

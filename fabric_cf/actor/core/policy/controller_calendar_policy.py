@@ -25,10 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from abc import abstractmethod
 
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.core.apis.i_controller_policy import IControllerPolicy
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
+from fabric_cf.actor.core.apis.abc_controller_policy import ABCControllerPolicy
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ControllerException
 from fabric_cf.actor.core.core.policy import Policy
@@ -40,7 +40,7 @@ from fabric_cf.actor.core.util.bids import Bids
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 
 
-class ControllerCalendarPolicy(Policy, IControllerPolicy):
+class ControllerCalendarPolicy(Policy, ABCControllerPolicy):
     """
     The base class for all calendar-based service manager policy implementations.
     """
@@ -168,11 +168,11 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                     self.logger.debug("Removing from pending: {}".format(reservation))
                     self.calendar.remove_pending(reservation=reservation)
 
-    def close(self, *, reservation: IReservation):
+    def close(self, *, reservation: ABCReservationMixin):
         # ignore any scheduled/in progress operations
         self.calendar.remove_scheduled_or_in_progress(reservation=reservation)
 
-    def closed(self, *, reservation: IReservation):
+    def closed(self, *, reservation: ABCReservationMixin):
         # remove the reservation from all calendar structures
         self.calendar.remove_holdings(reservation=reservation)
         self.calendar.remove_redeeming(reservation=reservation)
@@ -180,13 +180,13 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
         self.calendar.remove_closing(reservation=reservation)
         self.pending_notify.remove(reservation=reservation)
 
-    def demand(self, *, reservation: IClientReservation):
+    def demand(self, *, reservation: ABCClientReservation):
         if not reservation.is_nascent():
             self.logger.error("demand reservation is not fresh")
         else:
             self.calendar.add_demand(reservation=reservation)
 
-    def extend(self, *, reservation: IReservation, resources: ResourceSet, term: Term):
+    def extend(self, *, reservation: ABCReservationMixin, resources: ResourceSet, term: Term):
         # cancel any previously scheduled extends
         self.calendar.remove_renewing(reservation=reservation)
         # do not cancel the close: the extend may fail cancel any pending redeem: we will redeem after the extension
@@ -200,7 +200,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
         self.calendar.tick(cycle=cycle)
 
     @abstractmethod
-    def get_close(self, *, reservation: IClientReservation, term: Term) -> int:
+    def get_close(self, *, reservation: ABCClientReservation, term: Term) -> int:
         """
         Returns the time that a reservation should be closed.
 
@@ -224,7 +224,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
         return result
 
     @abstractmethod
-    def get_redeem(self, *, reservation: IClientReservation) -> int:
+    def get_redeem(self, *, reservation: ABCClientReservation) -> int:
         """
         Returns the time when the reservation should be redeemed.
 
@@ -242,7 +242,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
         return redeeming
 
     @abstractmethod
-    def get_renew(self, *, reservation: IClientReservation) -> int:
+    def get_renew(self, *, reservation: ABCClientReservation) -> int:
         """
         Returns the time when the reservation should be renewed.
 
@@ -259,7 +259,7 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
             self.calendar = ControllerCalendar(clock=self.clock)
             self.initialized = True
 
-    def is_expired(self, *, reservation: IReservation):
+    def is_expired(self, *, reservation: ABCReservationMixin):
         """
         Checks if the reservation has expired.
 
@@ -271,11 +271,11 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
         end = self.clock.cycle(when=term.get_end_time())
         return self.actor.get_current_cycle() > end
 
-    def remove(self, *, reservation: IReservation):
+    def remove(self, *, reservation: ABCReservationMixin):
         # remove the reservation from the calendar
         self.calendar.remove(reservation=reservation)
 
-    def revisit(self, *, reservation: IReservation):
+    def revisit(self, *, reservation: ABCReservationMixin):
         super().revisit(reservation=reservation)
 
         if reservation.get_state() == ReservationStates.Nascent:
@@ -366,10 +366,10 @@ class ControllerCalendarPolicy(Policy, IControllerPolicy):
                          requested_term: Term, actual_term: Term):
         return
 
-    def update_ticket_complete(self, *, reservation: IClientReservation):
+    def update_ticket_complete(self, *, reservation: ABCClientReservation):
         return
 
-    def update_delegation_complete(self, *, delegation: IDelegation):
+    def update_delegation_complete(self, *, delegation: ABCDelegation):
         return
 
     def lease_satisfies(self, *, request_resources: ResourceSet, actual_resources: ResourceSet, requested_term: Term,

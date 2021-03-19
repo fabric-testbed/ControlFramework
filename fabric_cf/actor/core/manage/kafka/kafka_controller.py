@@ -40,15 +40,15 @@ from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.exceptions import ManageException
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.util.id import ID
 
 
-class KafkaController(KafkaActor, IMgmtController):
+class KafkaController(KafkaActor, ABCMgmtControllerMixin):
     def clone(self):
         return KafkaController(guid=self.management_id,
                                kafka_topic=self.kafka_topic,

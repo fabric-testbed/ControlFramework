@@ -23,62 +23,62 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
-from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
+from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
-from fabric_cf.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
+from fabric_cf.actor.core.kernel.broker_reservation import BrokerReservationFactory
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class LocalBroker(LocalProxy, IBrokerProxy):
+class LocalBroker(LocalProxy, ABCBrokerProxy):
     """
     Local proxy for Broker. Allows communication with a Broker in the same container as the caller.
     """
-    def __init__(self, *, actor: IActor):
+    def __init__(self, *, actor: ABCActorMixin):
         super().__init__(actor=actor)
 
-    def _prepare_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                            caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+    def _prepare_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
+                            caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
         state.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                 caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+    def prepare_claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
+                                 caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
         return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
 
-    def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                   caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+    def prepare_reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
+                                   caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
         return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
 
-    def _prepare(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                 caller: AuthToken) -> IRPCRequestState:
+    def _prepare(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+                 caller: AuthToken) -> ABCRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
         state.reservation = self.pass_reservation(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                       caller: AuthToken) -> IRPCRequestState:
+    def prepare_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+                       caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                              caller: AuthToken) -> IRPCRequestState:
+    def prepare_extend_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+                              caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                           caller: AuthToken) -> IRPCRequestState:
+    def prepare_relinquish(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+                           caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def pass_reservation(self, *, reservation: IClientReservation, auth: AuthToken) -> IBrokerReservation:
+    def pass_reservation(self, *, reservation: ABCClientReservation, auth: AuthToken) -> ABCBrokerReservation:
         slice_obj = reservation.get_slice().clone_request()
 
         rset = self.abstract_clone_broker(rset=reservation.get_requested_resources())
@@ -92,7 +92,7 @@ class LocalBroker(LocalProxy, IBrokerProxy):
 
         return broker_reservation
 
-    def pass_delegation(self, *, delegation: IDelegation, auth: AuthToken) -> IDelegation:
+    def pass_delegation(self, *, delegation: ABCDelegation, auth: AuthToken) -> ABCDelegation:
         slice_obj = delegation.get_slice_object().clone_request()
 
         broker_delegation = BrokerDelegationFactory.create(did=str(delegation.get_delegation_id()),

@@ -35,14 +35,14 @@ from fabric_mb.message_bus.producer import AvroProducerApi
 
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.rpc_request_state import RPCRequestState
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.proxy import Proxy
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
+    from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.id import ID
 
@@ -60,7 +60,7 @@ class KafkaProxyRequestState(RPCRequestState):
         self.error_detail = None
 
 
-class KafkaProxy(Proxy, ICallbackProxy):
+class KafkaProxy(Proxy, ABCCallbackProxy):
     TypeDefault = 0
     TypeReturn = 1
     TypeBroker = 2
@@ -93,7 +93,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
             self.logger.error(traceback.format_exc())
             self.logger.error("Failed to create kafka producer {}".format(e))
 
-    def execute(self, *, request: IRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState):
         avro_message = None
         if request.get_type() == RPCRequestType.Query:
             avro_message = QueryAvro()
@@ -135,7 +135,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken, id_token: str):
+    def prepare_query(self, *, callback: ABCCallbackProxy, query: dict, caller: AuthToken, id_token: str):
         request = KafkaProxyRequestState()
         request.query = query
         request.callback_topic = callback.get_kafka_topic()
@@ -143,7 +143,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
         request.id_token = id_token
         return request
 
-    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
+    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.query = response
         request.request_id = request_id
@@ -151,7 +151,7 @@ class KafkaProxy(Proxy, ICallbackProxy):
         return request
 
     def prepare_failed_request(self, *, request_id: str, failed_request_type,
-                               failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
+                               failed_reservation_id: ID, error: str, caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.failed_request_type = failed_request_type
         request.failed_reservation_id = failed_reservation_id

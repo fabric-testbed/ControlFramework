@@ -36,17 +36,17 @@ from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
-from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
+from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, SliceNotFoundException, \
     DelegationNotFoundException, ManageException
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.manage.converter import Converter
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
-from fabric_cf.actor.core.apis.i_actor_management_object import IActorManagementObject
+from fabric_cf.actor.core.apis.abc_actor_management_object import ABCActorManagementObject
 from fabric_cf.actor.security.access_checker import AccessChecker
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
@@ -55,12 +55,12 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.auth_token import AuthToken
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.apis.i_slice import ISlice
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 
 
-class ActorManagementObject(ManagementObject, IActorManagementObject):
-    def __init__(self, *, actor: IActor = None):
+class ActorManagementObject(ManagementObject, ABCActorManagementObject):
+    def __init__(self, *, actor: ABCActorMixin = None):
         super().__init__()
         self.actor = actor
         self.db = None
@@ -101,7 +101,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         self.set_actor(actor=actor)
 
-    def set_actor(self, *, actor: IActor):
+    def set_actor(self, *, actor: ABCActorMixin):
         if self.actor is None:
             self.actor = actor
             self.db = actor.get_plugin().get_database()
@@ -205,8 +205,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                 elif slice_obj.is_client_slice():
                     slice_obj.set_client_slice(value=True)
 
-                class Runner(IActorRunnable):
-                    def __init__(self, *, actor: IActor):
+                class Runner(ABCActorRunnable):
+                    def __init__(self, *, actor: ABCActorMixin):
                         self.actor = actor
 
                     def run(self):
@@ -244,8 +244,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                                            actor_type=self.actor.get_type(),
                                            resource_id=str(slice_id))
 
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -270,8 +270,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         try:
             slice_id = ID(uid=slice_mng.get_slice_id())
 
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -303,7 +303,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
 
         return result
 
-    def get_slice_by_guid(self, *, guid: str, id_token: str = None) -> ISlice:
+    def get_slice_by_guid(self, *, guid: str, id_token: str = None) -> ABCSlice:
         return self.db.get_slice(slice_id=guid)
 
     def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: int = None,
@@ -373,8 +373,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -403,8 +403,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -433,8 +433,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             return result
 
         try:
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -454,7 +454,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
             result = ManagementObject.set_exception_details(result=result, e=e)
         return result
 
-    def get_actor(self) -> IActor:
+    def get_actor(self) -> ABCActorMixin:
         return self.actor
 
     def get_actor_name(self) -> str:
@@ -473,8 +473,8 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
         try:
             rid = ID(uid=reservation.get_reservation_id())
 
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):

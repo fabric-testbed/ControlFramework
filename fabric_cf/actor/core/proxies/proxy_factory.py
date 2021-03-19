@@ -32,7 +32,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.proxies.local.local_proxy_factory import LocalProxyFactory
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity
+    from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
     from fabric_cf.actor.core.proxies.actor_location import ActorLocation
 
 
@@ -45,13 +45,13 @@ class ProxyFactory:
         self.factories[Constants.PROTOCOL_LOCAL] = LocalProxyFactory()
         self.factories[Constants.PROTOCOL_KAFKA] = KafkaProxyFactory()
 
-    def new_callback(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation):
+    def new_callback(self, *, protocol: str, identity: ABCActorIdentity, location: ActorLocation):
         if protocol in self.factories:
             factory = self.factories[protocol]
             return factory.new_callback(identity=identity, location=location)
         return None
 
-    def new_proxy(self, *, protocol: str, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None):
+    def new_proxy(self, *, protocol: str, identity: ABCActorIdentity, location: ActorLocation, proxy_type: str = None):
         if protocol in self.factories:
             factory = self.factories[protocol]
             return factory.new_proxy(identity=identity, location=location, proxy_type=proxy_type)

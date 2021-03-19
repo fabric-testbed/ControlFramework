@@ -35,11 +35,12 @@ from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 
-from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException
+from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
 from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -47,12 +48,12 @@ from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.bids import Bids
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregateBQMPlugin
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_broker import IBroker
+    from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
     from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
     from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
@@ -78,7 +79,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
     #  How far in the future is the broker allocating resources
     ADVANCE_TIME = 3
 
-    def __init__(self, *, actor: IBroker = None):
+    def __init__(self, *, actor: ABCBrokerMixin = None):
         super().__init__(actor=actor)
         self.last_allocation = -1
         self.allocation_horizon = 0
@@ -165,7 +166,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         """
         self.inventory.add_inventory_by_type(rtype=resource_type, inventory=inventory)
 
-    def bind(self, *, reservation: IBrokerReservation) -> bool:
+    def bind(self, *, reservation: ABCBrokerReservation) -> bool:
         term = reservation.get_requested_term()
         self.logger.info("SlottedAgent bind arrived at cycle {} requested term {}".format(
             self.actor.get_current_cycle(), term))
@@ -176,7 +177,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return False
 
-    def bind_delegation(self, *, delegation: IDelegation) -> bool:
+    def bind_delegation(self, *, delegation: ABCDelegation) -> bool:
         try:
             self.lock.acquire()
             self.delegations[delegation.get_delegation_id()] = delegation
@@ -185,7 +186,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return False
 
-    def extend_broker(self, *, reservation: IBrokerReservation) -> bool:
+    def extend_broker(self, *, reservation: ABCBrokerReservation) -> bool:
         requested_term = reservation.get_requested_term()
         self.logger.info("SlottedAgent extend arrived at cycle {} requested term {}".format(
             self.actor.get_current_cycle(), requested_term))
@@ -211,7 +212,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         extending = self.process_renewing(renewing=renewing, pending=pending)
         return Bids(ticketing=ReservationSet(), extending=extending)
 
-    def get_allocation(self, *, reservation: IBrokerReservation) -> int:
+    def get_allocation(self, *, reservation: ABCBrokerReservation) -> int:
         if not self.ready:
             self.error(message="Agent not ready to accept bids")
 
@@ -228,7 +229,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return start
 
-    def get_approved_term(self, *, reservation: IBrokerReservation) -> Term:
+    def get_approved_term(self, *, reservation: ABCBrokerReservation) -> Term:
         return Term(start=reservation.get_requested_term().get_start_time(),
                     end=reservation.get_requested_term().get_end_time(),
                     new_start=reservation.get_requested_term().get_new_start_time())
@@ -236,7 +237,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
     def get_next_allocation(self, *, cycle: int) -> int:
         return self.last_allocation + self.CALL_INTERVAL
 
-    def get_renew(self, *, reservation: IClientReservation) -> int:
+    def get_renew(self, *, reservation: ABCClientReservation) -> int:
         new_start_cycle = self.actor.get_actor_clock().cycle(when=reservation.get_term().get_end_time()) + 1
         return new_start_cycle - self.ADVANCE_TIME - self.CLOCK_SKEW
 
@@ -384,7 +385,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             else:
                 self.queue.remove(reservation=reservation)
 
-    def ticket(self, *, reservation: IBrokerReservation, node_id_to_reservations: dict) -> Tuple[bool, dict]:
+    def ticket(self, *, reservation: ABCBrokerReservation, node_id_to_reservations: dict) -> Tuple[bool, dict]:
         self.logger.debug(f"cycle: {self.actor.get_current_cycle()} new ticket request: "
                           f"{reservation}/{type(reservation).__name__}")
 
@@ -412,7 +413,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return False, node_id_to_reservations
 
-    def ticket_inventory(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term,
+    def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
                          node_id_to_reservations: dict) -> Tuple[bool, dict]:
         try:
             rset = reservation.get_requested_resources()
@@ -447,16 +448,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.fail(message=str(e))
         return False, node_id_to_reservations
 
-    def extend_private(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term):
+    def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term):
         pass
 
-    def issue_ticket(self, *, reservation: IBrokerReservation, units: int, rtype: ResourceType,
-                     term: Term, source: IDelegation, sliver: BaseSliver) -> IBrokerReservation:
+    def issue_ticket(self, *, reservation: ABCBrokerReservation, units: int, rtype: ResourceType,
+                     term: Term, source: ABCDelegation, sliver: BaseSliver) -> ABCBrokerReservation:
 
         # make the new delegation
-        resource_delegation = self.actor.get_plugin().get_resource_delegation_factory().make_delegation(units=units,
-                                                                                                        term=term,
-                                                                                                        rtype=rtype)
+        resource_delegation = ResourceTicketFactory.create(issuer=self.actor.get_identity().get_guid(), units=units,
+                                                           term=term, rtype=rtype)
 
         # extract a new resource set
         mine = self.extract(source=source, delegation=resource_delegation)
@@ -478,7 +478,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return reservation
 
     def release(self, *, reservation):
-        if isinstance(reservation, IBrokerReservation):
+        if isinstance(reservation, ABCBrokerReservation):
             self.logger.debug("Broker reservation")
             super().release(reservation=reservation)
             if reservation.is_closed_in_priming():
@@ -493,7 +493,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                        slice_id=str(reservation.get_slice_id()),
                                        rset=reservation.get_resources(),
                                        term=reservation.get_term())
-        elif isinstance(reservation, IClientReservation):
+        elif isinstance(reservation, ABCClientReservation):
             self.logger.debug("Client reservation")
             super().release(reservation=reservation)
             status = self.inventory.remove(source=reservation)
@@ -574,7 +574,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug("Returning Query Result: {}".format(result))
         return result
 
-    def donate_delegation(self, *, delegation: IDelegation):
+    def donate_delegation(self, *, delegation: ABCDelegation):
         """
         Donate an incoming delegation by merging to CBM;
         We take snapshot of CBM before merge, and rollback to snapshot in case merge fails
@@ -598,7 +598,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def closed_delegation(self, *, delegation: IDelegation):
+    def closed_delegation(self, *, delegation: ABCDelegation):
         """
         Close a delegation by un-merging from CBM
         We take snapshot of CBM before un-merge, and rollback to snapshot in case un-merge fails
@@ -635,7 +635,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_existing_reservations(self, node_id: str, node_id_to_reservations: dict) -> List[IReservation]:
+    def get_existing_reservations(self, node_id: str, node_id_to_reservations: dict) -> List[ABCReservationMixin]:
         """
         Get existing reservations which are served by CBM node identified by node_id
         :param node_id:

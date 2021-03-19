@@ -26,12 +26,12 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.manage.converter import Converter
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
-from fabric_cf.actor.core.apis.i_management_object import IManagementObject
+from fabric_cf.actor.core.apis.abc_management_object import ABCManagementObject
 from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.util.id import ID
@@ -39,7 +39,7 @@ from fabric_mb.message_bus.messages.result_actor_avro import ResultActorAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_container_database import IContainerDatabase
+    from fabric_cf.actor.core.apis.abc_container_database import ABCContainerDatabase
     from fabric_cf.actor.security.auth_token import AuthToken
 
 
@@ -71,7 +71,7 @@ class ContainerManagementObject(ManagementObject):
         return properties
 
     @staticmethod
-    def get_container_management_database() -> IContainerDatabase:
+    def get_container_management_database() -> ABCContainerDatabase:
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         return GlobalsSingleton.get().get_container().get_database()
 
@@ -159,7 +159,7 @@ class ContainerManagementObject(ManagementObject):
     def get_authorities(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
         return self.do_get_actors(atype=ActorType.Authority.value, caller=caller, id_token=id_token)
 
-    def get_management_object(self, *, key: ID) -> IManagementObject:
+    def get_management_object(self, *, key: ID) -> ABCManagementObject:
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         return GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(key=key)
 

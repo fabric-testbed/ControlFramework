@@ -23,10 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_policy import IPolicy
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import ActorException
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.core.time.term import Term
@@ -35,11 +35,11 @@ from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 
 
-class Policy(IPolicy):
+class Policy(ABCPolicy):
     """
     Base class for all policy implementations.
     """
-    def __init__(self, *, actor: IActor = None):
+    def __init__(self, *, actor: ABCActorMixin = None):
         """
         Creates a new instance.
         @params actor : actor this policy belongs to
@@ -56,13 +56,13 @@ class Policy(IPolicy):
             self.guid = ID()
         self.guid = ID()
 
-    def close(self, *, reservation: IReservation):
+    def close(self, *, reservation: ABCReservationMixin):
         """
         Close a reservation
         @params reservation: reservation about to be closed
         """
 
-    def closed(self, *, reservation: IReservation):
+    def closed(self, *, reservation: ABCReservationMixin):
         """
         Notifies the policy that a reservation has been closed.
         @params reservation: reservation about to be closed
@@ -87,7 +87,7 @@ class Policy(IPolicy):
         self.logger.error(message)
         raise ActorException(message)
 
-    def extend(self, *, reservation: IReservation, resources: ResourceSet, term: Term):
+    def extend(self, *, reservation: ABCReservationMixin, resources: ResourceSet, term: Term):
         return
 
     def finish(self, *, cycle: int):
@@ -150,7 +150,7 @@ class Policy(IPolicy):
     def query(self, *, p):
         return None
 
-    def remove(self, *, reservation: IReservation):
+    def remove(self, *, reservation: ABCReservationMixin):
         return
 
     def reset(self):
@@ -159,21 +159,21 @@ class Policy(IPolicy):
     def recovery_starting(self):
         return
 
-    def revisit(self, *, reservation: IReservation):
+    def revisit(self, *, reservation: ABCReservationMixin):
         return
 
-    def revisit_delegation(self, *, delegation: IDelegation):
+    def revisit_delegation(self, *, delegation: ABCDelegation):
         return
 
     def recovery_ended(self):
         return
 
-    def set_actor(self, *, actor: IActor):
+    def set_actor(self, *, actor: ABCActorMixin):
         self.actor = actor
         if actor is not None:
             self.logger = actor.get_logger()
 
-    def closed_delegation(self, *, delegation: IDelegation):
+    def closed_delegation(self, *, delegation: ABCDelegation):
         return
 
     def set_logger(self, logger):

@@ -30,16 +30,16 @@ from typing import TYPE_CHECKING, List
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
-from fabric_cf.actor.core.apis.i_actor import IActor, ActorType
-from fabric_cf.actor.core.apis.i_container_database import IContainerDatabase
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
+from fabric_cf.actor.core.apis.abc_container_database import ABCContainerDatabase
 from fabric_cf.actor.db.psql_database import PsqlDatabase
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_management_object import IManagementObject
+    from fabric_cf.actor.core.apis.abc_management_object import ABCManagementObject
     from fabric_cf.actor.core.util.id import ID
 
 
-class ContainerDatabase(IContainerDatabase):
+class ContainerDatabase(ABCContainerDatabase):
     """
     Implements Container Interface to various Database operations
     """
@@ -91,7 +91,7 @@ class ContainerDatabase(IContainerDatabase):
         """
         self.db.reset_db()
 
-    def add_actor(self, *, actor: IActor):
+    def add_actor(self, *, actor: ABCActorMixin):
         """
         Add an actor
         @param actor actor
@@ -114,7 +114,7 @@ class ContainerDatabase(IContainerDatabase):
         """
         self.db.remove_actor(name=actor_name)
 
-    def get_actors(self, *, name: str = None, actor_type: int = None) -> List[IActor]:
+    def get_actors(self, *, name: str = None, actor_type: int = None) -> List[ABCActorMixin]:
         """
         Get Actors
         @param name actor name
@@ -237,7 +237,7 @@ class ContainerDatabase(IContainerDatabase):
             self.logger.error(e)
         return result
 
-    def add_manager_object(self, *, manager: IManagementObject):
+    def add_manager_object(self, *, manager: ABCManagementObject):
         """
         Add Management object
         @param manager management object

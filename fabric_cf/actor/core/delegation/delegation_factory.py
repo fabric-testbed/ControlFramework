@@ -26,7 +26,7 @@
 
 from fabric_cf.actor.core.util.id import ID
 from .delegation import Delegation
-from ..apis.i_delegation import IDelegation
+from ..apis.abc_delegation import ABCDelegation
 
 
 class DelegationFactory:
@@ -34,7 +34,7 @@ class DelegationFactory:
     Factory class to create delegation instances
     """
     @staticmethod
-    def create(did: str, slice_id: ID, delegation_name: str = None) -> IDelegation:
+    def create(did: str, slice_id: ID, delegation_name: str = None) -> ABCDelegation:
         """
         Create a delegation
         @param did delegation id

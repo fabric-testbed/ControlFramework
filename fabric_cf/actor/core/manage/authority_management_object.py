@@ -31,7 +31,7 @@ from fabric_mb.message_bus.messages.result_reservation_avro import ResultReserva
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
 
-from fabric_cf.actor.core.apis.i_authority import IAuthority
+from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException
 from fabric_cf.actor.core.manage.converter import Converter
@@ -43,12 +43,12 @@ from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.apis.i_substrate_database import ISubstrateDatabase
+    from fabric_cf.actor.core.apis.abc_substrate_database import ABCSubstrateDatabase
     from fabric_cf.actor.core.util.id import ID
 
 
 class AuthorityManagementObject(ServerActorManagementObject):
-    def __init__(self, *, authority: IAuthority = None):
+    def __init__(self, *, authority: ABCAuthority = None):
         super().__init__(sa=authority)
 
     def register_protocols(self):
@@ -112,7 +112,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         return result
 
-    def get_substrate_database(self) -> ISubstrateDatabase:
+    def get_substrate_database(self) -> ABCSubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
     def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitsAvro:

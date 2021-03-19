@@ -26,37 +26,37 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.apis.i_actor import ActorType
-from fabric_cf.actor.core.apis.i_authority import IAuthority
-from fabric_cf.actor.core.apis.i_broker import IBroker
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
+from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.proxies.kafka.kafka_authority_proxy import KafkaAuthorityProxy
 from fabric_cf.actor.core.proxies.kafka.kafka_broker_proxy import KafkaBrokerProxy
 from fabric_cf.actor.core.proxies.kafka.kafka_retun import KafkaReturn
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
-from fabric_cf.actor.core.apis.i_proxy_factory import IProxyFactory
+from fabric_cf.actor.core.apis.abc_proxy_factory import ABCProxyFactory
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity
-    from fabric_cf.actor.core.apis.i_proxy import IProxy
+    from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
+    from fabric_cf.actor.core.apis.abc_proxy import ABCProxy
     from fabric_cf.actor.core.proxies.actor_location import ActorLocation
-    from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 
 
-class KafkaProxyFactory(IProxyFactory):
-    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None) -> IProxy:
+class KafkaProxyFactory(ABCProxyFactory):
+    def new_proxy(self, *, identity: ABCActorIdentity, location: ActorLocation, proxy_type: str = None) -> ABCProxy:
         result = None
         actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
 
         if actor is not None:
             descriptor = location.get_descriptor()
             if descriptor is not None and descriptor.get_location() is not None:
-                if isinstance(actor, IAuthority):
+                if isinstance(actor, ABCAuthority):
                     result = KafkaAuthorityProxy(kafka_topic=descriptor.get_location(), identity=actor.get_identity(),
                                                  logger=actor.get_logger())
 
-                elif isinstance(actor, IBroker):
+                elif isinstance(actor, ABCBrokerMixin):
                     result = KafkaBrokerProxy(kafka_topic=descriptor.get_location(), identity=actor.get_identity(),
                                               logger=actor.get_logger())
         else:
@@ -77,7 +77,7 @@ class KafkaProxyFactory(IProxyFactory):
                 raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("proxy type"))
         return result
 
-    def new_callback(self, *, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:
+    def new_callback(self, *, identity: ABCActorIdentity, location: ActorLocation) -> ABCCallbackProxy:
         result = None
         actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
         if actor is not None:

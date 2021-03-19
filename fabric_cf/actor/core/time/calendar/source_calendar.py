@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.reservation_holdings import ReservationHoldings
 from fabric_cf.actor.core.util.reservation_list import ReservationList
@@ -38,7 +38,7 @@ class SourceCalendar:
     The calendar also maintains a list of incoming extension requests for
     reservations that have been satisfied from the underlying source delegations.
     """
-    def __init__(self, *, clock: ActorClock, source: IDelegation):
+    def __init__(self, *, clock: ActorClock, source: ABCDelegation):
         """
         Constructor
         @params clock: clock

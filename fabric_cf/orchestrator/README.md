@@ -320,6 +320,16 @@ Update `docker-compose.yml` to point to correct volumes for the Orchestrator.
       - ../../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
       - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
 ```
+
+#### nginx
+Update `docker-compose.yml` to point to correct volumes for the nginx.
+```
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./certs/fullchain.pem:/etc/ssl/public.pem
+      - ./certs/privkey.pem:/etc/ssl/private.pem
+```
+
 ### Run
 Bring up PDP container
 ```

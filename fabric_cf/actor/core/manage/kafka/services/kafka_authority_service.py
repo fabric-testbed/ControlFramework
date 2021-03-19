@@ -31,7 +31,7 @@ from fabric_mb.message_bus.messages.message import IMessageAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
 
-from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
 from fabric_cf.actor.core.common.constants import ErrorCodes
 from fabric_cf.actor.core.manage.kafka.services.kafka_server_actor_service import KafkaServerActorService
 from fabric_cf.actor.core.manage.management_object import ManagementObject

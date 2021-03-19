@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import bisect
 
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.util.utils import binary_search
@@ -35,7 +35,7 @@ class ReservationWrapper:
     """
     Internal class to represent a reservation.
     """
-    def __init__(self, *, reservation: IReservation, start: int, end: int):
+    def __init__(self, *, reservation: ABCReservationMixin, start: int, end: int):
         self.start = start
         self.end = end
         self.reservation = reservation
@@ -86,7 +86,7 @@ class ReservationHoldings:
         # Map of reservations to ReservationWrappers. Needed when removing a reservation.
         self.map = {}
 
-    def add_reservation(self, *, reservation: IReservation, start: int, end: int):
+    def add_reservation(self, *, reservation: ABCReservationMixin, start: int, end: int):
         """
         Adds a reservation to the collection for the specified period of time.
         The interval is closed on both sides.
@@ -180,7 +180,7 @@ class ReservationHoldings:
         if index >= 0:
             self.list.pop(index)
 
-    def remove_reservation(self, *, reservation: IReservation):
+    def remove_reservation(self, *, reservation: ABCReservationMixin):
         """
         Removes a reservation from the collection.
         @params reservation : reservation to remove

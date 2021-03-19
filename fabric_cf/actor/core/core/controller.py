@@ -30,29 +30,29 @@ import threading
 import traceback
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.apis.i_actor import ActorType
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import ControllerException
 from fabric_cf.actor.core.manage.controller_management_object import ControllerManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_controller_service import KafkaControllerService
 from fabric_cf.actor.core.proxies.kafka.services.controller_service import ControllerService
-from fabric_cf.actor.core.apis.i_controller import IController
-from fabric_cf.actor.core.core.actor import Actor
+from fabric_cf.actor.core.apis.abc_controller import ABCController
+from fabric_cf.actor.core.core.actor import ActorMixin
 from fabric_cf.actor.core.registry.peer_registry import PeerRegistry
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
-from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.time.actor_clock import ActorClock
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-    from fabric_cf.actor.core.apis.i_slice import ISlice
+    from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
+    from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.util.id import ID
 
 
-class Controller(Actor, IController):
+class Controller(ActorMixin, ABCController):
     """
     Implements Controller
     """
@@ -135,7 +135,7 @@ class Controller(Actor, IController):
         super().actor_added()
         self.registry.actor_added()
 
-    def add_broker(self, *, broker: IBrokerProxy):
+    def add_broker(self, *, broker: ABCBrokerProxy):
         self.registry.add_broker(broker=broker)
 
     def bid(self):
@@ -168,12 +168,12 @@ class Controller(Actor, IController):
                         self.logger.error("unexpected extend failure for #{} {}".format(extend.get_reservation_id(), e))
                         extend.fail(message="unexpected extend failure {}".format(e))
 
-    def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
+    def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
+                                broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
         raise ControllerException("Not implemented")
 
-    def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
-                                  broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
+    def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
+                                  broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
         raise ControllerException("Not implemented")
 
     def close_expiring(self):
@@ -199,7 +199,7 @@ class Controller(Actor, IController):
         self.policy.demand(reservation=reservation)
         reservation.set_policy(policy=self.policy)
 
-    def extend_lease_reservation(self, *, reservation: IControllerReservation):
+    def extend_lease_reservation(self, *, reservation: ABCControllerReservation):
         """
         Extend Lease for a reservation
         @param reservation reservation
@@ -209,7 +209,7 @@ class Controller(Actor, IController):
         else:
             self.wrapper.extend_lease(reservation=reservation)
 
-    def extend_lease(self, *, reservation: IControllerReservation = None, rset: ReservationSet = None):
+    def extend_lease(self, *, reservation: ABCControllerReservation = None, rset: ReservationSet = None):
         if reservation is not None and rset is not None:
             raise ControllerException("Invalid Arguments: reservation and rset can not be both not None")
         if reservation is None and rset is None:
@@ -221,7 +221,7 @@ class Controller(Actor, IController):
         if rset is not None:
             for r in rset.values():
                 try:
-                    if isinstance(r, IControllerReservation):
+                    if isinstance(r, ABCControllerReservation):
                         self.extend_lease_reservation(reservation=r)
                     else:
                         self.logger.warning("Reservation #{} cannot extendLease".format(
@@ -230,7 +230,7 @@ class Controller(Actor, IController):
                     self.logger.error("Could not extend_lease for #{} e={}".format(
                         r.get_reservation_id(), e))
 
-    def extend_ticket_client(self, *, reservation: IClientReservation):
+    def extend_ticket_client(self, *, reservation: ABCClientReservation):
         if not self.recovered:
             self.extending_ticket.add(reservation=reservation)
         else:
@@ -239,20 +239,20 @@ class Controller(Actor, IController):
     def extend_tickets_client(self, *, rset: ReservationSet):
         for reservation in rset.values():
             try:
-                if isinstance(reservation, IClientReservation):
+                if isinstance(reservation, ABCClientReservation):
                     self.extend_ticket_client(reservation=reservation)
                 else:
                     self.logger.warning("Reservation # {} cannot be ticketed".format(reservation.get_reservation_id()))
             except Exception as e:
                 self.logger.error("Could not ticket for #{} e: {}".format(reservation.get_reservation_id(), e))
 
-    def get_broker(self, *, guid: ID) -> IBrokerProxy:
+    def get_broker(self, *, guid: ID) -> ABCBrokerProxy:
         return self.registry.get_broker(guid=guid)
 
     def get_brokers(self) -> list:
         return self.registry.get_brokers()
 
-    def get_default_broker(self) -> IBrokerProxy:
+    def get_default_broker(self) -> ABCBrokerProxy:
         return self.registry.get_default_broker()
 
     def initialize(self):
@@ -275,7 +275,7 @@ class Controller(Actor, IController):
 
             self.redeem_reservations(rset=rset)
 
-    def redeem(self, *, reservation: IControllerReservation):
+    def redeem(self, *, reservation: ABCControllerReservation):
         if not self.recovered:
             self.redeeming.add(reservation=reservation)
         else:
@@ -284,7 +284,7 @@ class Controller(Actor, IController):
     def redeem_reservations(self, *, rset: ReservationSet):
         for reservation in rset.values():
             try:
-                if isinstance(reservation, IControllerReservation):
+                if isinstance(reservation, ABCControllerReservation):
                     self.redeem(reservation=reservation)
                 else:
                     self.logger.warning("Reservation #{} cannot be redeemed".format(reservation.get_reservation_id()))
@@ -292,7 +292,7 @@ class Controller(Actor, IController):
                 self.logger.error(traceback.format_exc())
                 self.logger.error("Could not redeem for #{} {}".format(reservation.get_reservation_id(), e))
 
-    def ticket_client(self, *, reservation: IClientReservation):
+    def ticket_client(self, *, reservation: ABCClientReservation):
         if not self.recovered:
             self.ticketing.add(reservation=reservation)
         else:
@@ -301,7 +301,7 @@ class Controller(Actor, IController):
     def tickets_client(self, *, rset: ReservationSet):
         for reservation in rset.values():
             try:
-                if isinstance(reservation, IClientReservation):
+                if isinstance(reservation, ABCClientReservation):
                     self.ticket_client(reservation=reservation)
                 else:
                     self.logger.warning("Reservation #{} cannot be ticketed".format(reservation.get_reservation_id()))
@@ -313,19 +313,19 @@ class Controller(Actor, IController):
         self.process_redeeming()
         self.bid()
 
-    def update_lease(self, *, reservation: IReservation, update_data, caller: AuthToken):
+    def update_lease(self, *, reservation: ABCReservationMixin, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise ControllerException("This actor cannot receive calls")
 
         self.wrapper.update_lease(reservation=reservation, update_data=update_data, caller=caller)
 
-    def update_ticket(self, *, reservation: IReservation, update_data, caller: AuthToken):
+    def update_ticket(self, *, reservation: ABCReservationMixin, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise ControllerException("This actor cannot receive calls")
 
         self.wrapper.update_ticket(reservation=reservation, update_data=update_data, caller=caller)
 
-    def update_delegation(self, *, delegation: IDelegation, update_data, caller: AuthToken):
+    def update_delegation(self, *, delegation: ABCDelegation, update_data, caller: AuthToken):
         raise ControllerException("Not supported in controller")
 
     def modify(self, *, reservation_id: ID, modify_properties: dict):
@@ -360,7 +360,7 @@ class Controller(Actor, IController):
         """
         for reservation in self.extending_ticket.values():
             try:
-                if isinstance(reservation, IClientReservation):
+                if isinstance(reservation, ABCClientReservation):
                     if not reservation.get_renewable():
                         reservation.set_renewable(renewable=True)
                         self.saved_extended_renewable.add(reservation=reservation)

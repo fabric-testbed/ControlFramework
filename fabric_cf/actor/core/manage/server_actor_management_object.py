@@ -34,11 +34,11 @@ from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 
-from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
-from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
+from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.kernel.slice import SliceTypes
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric_cf.actor.core.manage.converter import Converter
 from fabric_cf.actor.core.manage.management_object import ManagementObject
@@ -48,15 +48,15 @@ from fabric_cf.actor.core.proxies.kafka.translate import Translate
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
-    from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.apis.i_server_actor import IServerActor
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+    from fabric_cf.actor.core.apis.abc_server_actor import ABCServerActor
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
 
 
 class ServerActorManagementObject(ActorManagementObject):
-    def __init__(self, *, sa: IServerActor = None):
+    def __init__(self, *, sa: ABCServerActor = None):
         super().__init__(actor=sa)
 
     def save(self) -> dict:
@@ -179,8 +179,8 @@ class ServerActorManagementObject(ActorManagementObject):
             assert owner is not None
             slice_obj.set_owner(owner=owner)
 
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -216,8 +216,8 @@ class ServerActorManagementObject(ActorManagementObject):
             client_obj = Converter.fill_client(client_mng=client)
             client_obj.set_kafka_topic(kafka_topic=kafka_topic)
 
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -272,8 +272,8 @@ class ServerActorManagementObject(ActorManagementObject):
             return result
 
         try:
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -301,8 +301,8 @@ class ServerActorManagementObject(ActorManagementObject):
             return result
 
         try:
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):

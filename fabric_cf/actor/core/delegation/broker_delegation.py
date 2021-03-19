@@ -25,11 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 
-from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
-from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
-from fabric_cf.actor.core.apis.i_delegation import DelegationState, IDelegation
-from fabric_cf.actor.core.apis.i_policy import IPolicy
-from fabric_cf.actor.core.apis.i_proxy import IProxy
+from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
+from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+from fabric_cf.actor.core.apis.abc_delegation import DelegationState, ABCDelegation
+from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+from fabric_cf.actor.core.apis.abc_proxy import ABCProxy
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DelegationException
 from fabric_cf.actor.core.delegation.delegation import Delegation
@@ -39,7 +39,7 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 
 
 class BrokerDelegation(Delegation):
-    def __init__(self, dlg_graph_id: str, slice_id: ID, broker: IBrokerProxy = None):
+    def __init__(self, dlg_graph_id: str, slice_id: ID, broker: ABCBrokerProxy = None):
         super().__init__(dlg_graph_id=dlg_graph_id, slice_id=slice_id, delegation_name=None)
         self.exported = False
         self.broker = broker
@@ -68,7 +68,7 @@ class BrokerDelegation(Delegation):
         self.policy = None
         self.callback = None
 
-    def get_broker(self) -> IBrokerProxy:
+    def get_broker(self) -> ABCBrokerProxy:
         """
         Get the broker
         @return broker
@@ -92,7 +92,7 @@ class BrokerDelegation(Delegation):
     def claim(self):
         raise DelegationException("Not supported on Broker Delegation")
 
-    def delegate(self, policy: IPolicy, id_token: str = None):
+    def delegate(self, policy: ABCPolicy, id_token: str = None):
         self.policy = policy
 
         if self.state == DelegationState.Nascent:
@@ -191,14 +191,14 @@ class BrokerDelegation(Delegation):
             self.transition(prefix="close", state=DelegationState.Closed)
             self.do_relinquish()
 
-    def get_client_callback_proxy(self) -> IClientCallbackProxy:
+    def get_client_callback_proxy(self) -> ABCClientCallbackProxy:
         """
         Get Client callback proxy
         @return client callback proxy
         """
         return self.callback
 
-    def delegation_update_satisfies(self, *, incoming: IDelegation, update_data: UpdateData):
+    def delegation_update_satisfies(self, *, incoming: ABCDelegation, update_data: UpdateData):
         """
         Check if the incoming delegation satisfies the update
         @param incoming incoming delegation
@@ -207,7 +207,7 @@ class BrokerDelegation(Delegation):
         incoming.get_graph().validate_graph()
         return True
 
-    def absorb_delegation_update(self, *, incoming: IDelegation, update_data: UpdateData):
+    def absorb_delegation_update(self, *, incoming: ABCDelegation, update_data: UpdateData):
         """
         Absorbs an incoming delegation update.
 
@@ -226,7 +226,7 @@ class BrokerDelegation(Delegation):
         self.graph.delete_graph()
         self.graph = None
 
-    def accept_delegation_update(self, *, incoming: IDelegation, update_data: UpdateData):
+    def accept_delegation_update(self, *, incoming: ABCDelegation, update_data: UpdateData):
         """
         Determines whether the incoming delegation update is acceptable and if so
         accepts it.
@@ -260,7 +260,7 @@ class BrokerDelegation(Delegation):
 
         return success
 
-    def update_delegation(self, *, incoming: IDelegation, update_data: UpdateData):
+    def update_delegation(self, *, incoming: ABCDelegation, update_data: UpdateData):
         """
         Update delegation
         @param incoming incoming delegation
@@ -292,13 +292,13 @@ class BrokerDelegation(Delegation):
         Service delegate
         """
 
-    def set_site_proxy(self, *, site_proxy: IProxy):
+    def set_site_proxy(self, *, site_proxy: ABCProxy):
         """
         Set Authority Proxy
         """
         self.authority = site_proxy
 
-    def get_site_proxy(self) -> IProxy:
+    def get_site_proxy(self) -> ABCProxy:
         """
         get Authority Proxy
         """

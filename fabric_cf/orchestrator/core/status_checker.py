@@ -26,7 +26,7 @@
 from enum import Enum
 from typing import List
 
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.util.id import ID
 
 
@@ -38,7 +38,7 @@ class Status(Enum):
 
 class StatusChecker:
 
-    def check(self, *, controller: IMgmtController, rid, ok: List[ID], not_ok: List[ID]) -> Status:
+    def check(self, *, controller: ABCMgmtControllerMixin, rid, ok: List[ID], not_ok: List[ID]) -> Status:
         """
         Check status
         :param controller:
@@ -54,5 +54,5 @@ class StatusChecker:
             not_ok.append(rid)
         return result
 
-    def check_(self, *, controller: IMgmtController, rid) -> Status:
+    def check_(self, *, controller: ABCMgmtControllerMixin, rid) -> Status:
         raise NotImplementedError

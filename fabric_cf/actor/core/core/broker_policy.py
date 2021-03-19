@@ -27,30 +27,30 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
-from fabric_cf.actor.core.apis.i_broker_policy import IBrokerPolicy
+from fabric_cf.actor.core.apis.abc_broker_policy_mixin import ABCBrokerPolicyMixin
 from fabric_cf.actor.core.core.policy import Policy
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_broker import IBroker
-    from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-    from fabric_cf.actor.core.apis.i_reservation import IReservation
+    from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
+    from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
+    from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.time.term import Term
-    from fabric_cf.actor.core.delegation.resource_delegation import ResourceDelegation
-    from fabric_cf.actor.core.apis.i_server_reservation import IServerReservation
+    from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicket
+    from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
     from fabric_cf.actor.core.util.id import ID
 
 
-class BrokerPolicy(Policy, IBrokerPolicy):
+class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
     """
     Base implementation for Broker policy
     """
-    def __init__(self, *, actor: IBroker):
+    def __init__(self, *, actor: ABCBrokerMixin):
         super().__init__(actor=actor)
         # Initialization status.
         self.initialized = False
@@ -58,19 +58,19 @@ class BrokerPolicy(Policy, IBrokerPolicy):
     def allocate(self, *, cycle: int):
         return
 
-    def bind(self, *, reservation: IBrokerReservation) -> bool:
+    def bind(self, *, reservation: ABCBrokerReservation) -> bool:
         return False
 
-    def bind_delegation(self, *, delegation: IDelegation) -> bool:
+    def bind_delegation(self, *, delegation: ABCDelegation) -> bool:
         return False
 
-    def demand(self, *, reservation: IClientReservation):
+    def demand(self, *, reservation: ABCClientReservation):
         return
 
-    def donate_delegation(self, *, delegation: IDelegation):
+    def donate_delegation(self, *, delegation: ABCDelegation):
         return
 
-    def extend_broker(self, *, reservation: IBrokerReservation) -> bool:
+    def extend_broker(self, *, reservation: ABCBrokerReservation) -> bool:
         return False
 
     def initialize(self):
@@ -78,13 +78,13 @@ class BrokerPolicy(Policy, IBrokerPolicy):
             super().initialize()
             self.initialized = True
 
-    def revisit(self, *, reservation: IReservation):
+    def revisit(self, *, reservation: ABCReservationMixin):
         return
 
-    def update_ticket_complete(self, *, reservation: IClientReservation):
+    def update_ticket_complete(self, *, reservation: ABCClientReservation):
         return
 
-    def revisit_delegation(self, *, delegation: IDelegation):
+    def revisit_delegation(self, *, delegation: ABCDelegation):
         if delegation.get_state() == ReservationStates.Ticketed:
             self.donate_delegation(delegation=delegation)
 
@@ -92,10 +92,10 @@ class BrokerPolicy(Policy, IBrokerPolicy):
                          requested_term: Term, actual_term: Term):
         return
 
-    def update_delegation_complete(self, *, delegation: IDelegation):
+    def update_delegation_complete(self, *, delegation: ABCDelegation):
         self.donate_delegation(delegation=delegation)
 
-    def extract(self, *, source: IDelegation, delegation: ResourceDelegation) -> ResourceSet:
+    def extract(self, *, source: ABCDelegation, delegation: ResourceTicket) -> ResourceSet:
         """
         Creates a new resource set using the source and the specified delegation.
 
@@ -106,13 +106,13 @@ class BrokerPolicy(Policy, IBrokerPolicy):
         """
         extracted = ResourceSet(units=delegation.get_units(), rtype=delegation.get_resource_type())
 
-        cset = Ticket(delegation=delegation, plugin=self.actor.get_plugin(), authority=source.get_site_proxy(),
+        cset = Ticket(resource_ticket=delegation, plugin=self.actor.get_plugin(), authority=source.get_site_proxy(),
                       delegation_id=source.get_delegation_id())
 
         extracted.set_resources(cset=cset)
         return extracted
 
-    def get_client_id(self, *, reservation: IServerReservation) -> ID:
+    def get_client_id(self, *, reservation: ABCServerReservation) -> ID:
         """
         Get Client Id
         """

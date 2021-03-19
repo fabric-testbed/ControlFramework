@@ -23,13 +23,13 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
+from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class RPCRequestState(IRPCRequestState):
+class RPCRequestState(ABCRPCRequestState):
     """
     Implements RPC Request which carries state of an incoming/outgoing message
     """

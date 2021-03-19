@@ -36,7 +36,7 @@ from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.controller_management_object import ControllerManagementObject
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.manage.local.local_actor import LocalActor
 from fabric_cf.actor.core.util.id import ID
 
@@ -49,7 +49,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class LocalController(LocalActor, IMgmtController):
+class LocalController(LocalActor, ABCMgmtControllerMixin):
     def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
 

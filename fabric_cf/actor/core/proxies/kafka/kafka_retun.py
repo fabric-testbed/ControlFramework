@@ -32,8 +32,8 @@ from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegati
 from fabric_mb.message_bus.messages.update_lease_avro import UpdateLeaseAvro
 from fabric_mb.message_bus.messages.update_ticket_avro import UpdateTicketAvro
 
-from fabric_cf.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.core.unit_set import UnitSet
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
@@ -42,21 +42,21 @@ from fabric_cf.actor.core.proxies.kafka.translate import Translate
 
 if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
-    from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-    from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-    from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-    from fabric_cf.actor.core.apis.i_server_reservation import IServerReservation
+    from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
+    from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+    from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+    from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
     from fabric_cf.actor.core.util.update_data import UpdateData
 
 
-class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
+class KafkaReturn(KafkaProxy, ABCControllerCallbackProxy):
     def __init__(self, *, kafka_topic: str, identity: AuthToken, logger):
         super().__init__(kafka_topic=kafka_topic, identity=identity, logger=logger)
         self.type = KafkaProxy.TypeReturn
         self.callback = True
 
-    def execute(self, *, request: IRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState):
         avro_message = None
         if request.get_type() == RPCRequestType.UpdateTicket:
             avro_message = UpdateTicketAvro()
@@ -95,8 +95,8 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def prepare_update_delegation(self, *, delegation: IDelegation, update_data: UpdateData,
-                                  callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_update_delegation(self, *, delegation: ABCDelegation, update_data: UpdateData,
+                                  callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         request.udd = Translate.translate_udd(udd=update_data)
@@ -104,8 +104,8 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
         request.caller = caller
         return request
 
-    def _prepare(self, *, reservation: IServerReservation, update_data: UpdateData,
-                 callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def _prepare(self, *, reservation: ABCServerReservation, update_data: UpdateData,
+                 callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.reservation = self.pass_reservation(reservation=reservation, auth=caller)
         request.udd = Translate.translate_udd(udd=update_data)
@@ -113,16 +113,16 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
         request.caller = caller
         return request
 
-    def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
-                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_update_ticket(self, *, reservation: ABCBrokerReservation, update_data: UpdateData,
+                              callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, update_data=update_data, callback=callback, caller=caller)
 
-    def prepare_update_lease(self, *, reservation: IAuthorityReservation, update_data: UpdateData,
-                             callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_update_lease(self, *, reservation: ABCAuthorityReservation, update_data: UpdateData,
+                             callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, update_data=update_data, callback=callback, caller=caller)
 
     @staticmethod
-    def pass_reservation(reservation: IServerReservation, auth: AuthToken) -> ReservationAvro:
+    def pass_reservation(reservation: ABCServerReservation, auth: AuthToken) -> ReservationAvro:
         avro_reservation = ReservationAvro()
         avro_reservation.slice = Translate.translate_slice_to_avro(slice_obj=reservation.get_slice())
         term = None
@@ -154,7 +154,7 @@ class KafkaReturn(KafkaProxy, IControllerCallbackProxy):
         return avro_reservation
 
     @staticmethod
-    def pass_delegation(delegation: IDelegation, auth: AuthToken) -> DelegationAvro:
+    def pass_delegation(delegation: ABCDelegation, auth: AuthToken) -> DelegationAvro:
         avro_delegation = Translate.translate_delegation_to_avro(delegation=delegation)
         avro_delegation.sequence = delegation.get_sequence_out()
         return avro_delegation

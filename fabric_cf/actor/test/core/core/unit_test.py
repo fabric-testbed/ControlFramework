@@ -28,8 +28,8 @@ import unittest
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.unit import Unit, UnitState
-from fabric_cf.actor.core.kernel.client_reservation_factory import ClientReservationFactory
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType

@@ -26,33 +26,33 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.apis.i_authority import IAuthority
-from fabric_cf.actor.core.apis.i_broker import IBroker
+from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
+from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
 from fabric_cf.actor.core.proxies.local.local_authority import LocalAuthority
 from fabric_cf.actor.core.proxies.local.local_broker import LocalBroker
 from fabric_cf.actor.core.proxies.local.local_return import LocalReturn
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
-from fabric_cf.actor.core.apis.i_proxy_factory import IProxyFactory
+from fabric_cf.actor.core.apis.abc_proxy_factory import ABCProxyFactory
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity
+    from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
     from fabric_cf.actor.core.proxies.actor_location import ActorLocation
-    from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-    from fabric_cf.actor.core.apis.i_proxy import IProxy
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+    from fabric_cf.actor.core.apis.abc_proxy import ABCProxy
 
 
-class LocalProxyFactory(IProxyFactory):
-    def new_callback(self, *, identity: IActorIdentity, location: ActorLocation) -> ICallbackProxy:
+class LocalProxyFactory(ABCProxyFactory):
+    def new_callback(self, *, identity: ABCActorIdentity, location: ActorLocation) -> ABCCallbackProxy:
         actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
         if actor is not None:
             return LocalReturn(actor=actor)
         return None
 
-    def new_proxy(self, *, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None) -> IProxy:
+    def new_proxy(self, *, identity: ABCActorIdentity, location: ActorLocation, proxy_type: str = None) -> ABCProxy:
         actor = ActorRegistrySingleton.get().get_actor(actor_name_or_guid=identity.get_name())
         if actor is not None:
-            if isinstance(actor, IAuthority):
+            if isinstance(actor, ABCAuthority):
                 return LocalAuthority(actor=actor)
-            elif isinstance(actor, IBroker):
+            elif isinstance(actor, ABCBrokerMixin):
                 return LocalBroker(actor=actor)
         return None

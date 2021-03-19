@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.security.fabric_token import FabricToken
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType, PdpAuth
 

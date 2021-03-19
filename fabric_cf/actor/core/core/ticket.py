@@ -24,28 +24,28 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime
 
-from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
-from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
-from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
+from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
+from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import TicketException
-from fabric_cf.actor.core.delegation.resource_delegation import ResourceDelegation
+from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicket
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.notice import Notice
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class Ticket(IConcreteSet):
+class Ticket(ABCConcreteSet):
     """
     Ticket is an IConcreteSet implementation that wraps a ResourceDelegation for use inside of a ResourceSet
     """
 
-    def __init__(self, *, delegation: ResourceDelegation = None, plugin: IBasePlugin = None,
-                 authority: IAuthorityProxy = None, delegation_id: str = None):
+    def __init__(self, *, resource_ticket: ResourceTicket = None, plugin: ABCBasePlugin = None,
+                 authority: ABCAuthorityProxy = None, delegation_id: str = None):
         # Persistent fields
         # The encapsulated resource ticket.
-        self.resource_delegation = delegation
+        self.resource_ticket = resource_ticket
         # Units we used to have before the current extend
         self.old_units = 0
         # The delegation from which this ticket was issued
@@ -87,7 +87,7 @@ class Ticket(IConcreteSet):
         result += "]"
         return result
 
-    def restore(self, *, plugin: IBasePlugin, reservation: IReservation):
+    def restore(self, *, plugin: ABCBasePlugin, reservation: ABCReservationMixin):
         """
         Restore members after instantiating the object post database read
         @param plugin plugin
@@ -102,32 +102,32 @@ class Ticket(IConcreteSet):
         Return resource type
         @return resource type
         """
-        if self.resource_delegation is None:
+        if self.resource_ticket is None:
             return None
-        return self.resource_delegation.get_type()
+        return self.resource_ticket.get_type()
 
-    def get_delegation(self) -> ResourceDelegation:
+    def get_ticket(self) -> ResourceTicket:
         """
         Return resource delegation
         @return resource delegation
         """
-        return self.resource_delegation
+        return self.resource_ticket
 
     def add(self, *, concrete_set, configure: bool):
         raise TicketException("add() is not supported by Ticket")
 
-    def change(self, *, concrete_set: IConcreteSet, configure: bool):
+    def change(self, *, concrete_set: ABCConcreteSet, configure: bool):
         self.old_units = self.get_units()
 
         if not isinstance(concrete_set, Ticket):
             raise TicketException(Constants.INVALID_ARGUMENT)
 
-        assert concrete_set.resource_delegation is not None
+        assert concrete_set.resource_ticket is not None
 
-        self.resource_delegation = concrete_set.resource_delegation.clone()
+        self.resource_ticket = concrete_set.resource_ticket.clone()
 
     def _clone(self):
-        result = Ticket(delegation=self.resource_delegation, plugin=self.plugin, authority=self.authority,
+        result = Ticket(resource_ticket=self.resource_ticket, plugin=self.plugin, authority=self.authority,
                         delegation_id=self.delegation_id)
         result.old_units = self.old_units
         return result
@@ -152,18 +152,18 @@ class Ticket(IConcreteSet):
         Returns the ticket properties.
         @returns ticket properties
         """
-        if self.resource_delegation is None:
+        if self.resource_ticket is None:
             return None
-        return self.resource_delegation.get_properties()
+        return self.resource_ticket.get_properties()
 
-    def get_plugin(self) -> IBasePlugin:
+    def get_plugin(self) -> ABCBasePlugin:
         """
         Returns Actor Plugin
         @returns actor plugin
         """
         return self.plugin
 
-    def get_site_proxy(self) -> IAuthorityProxy:
+    def get_site_proxy(self) -> ABCAuthorityProxy:
         """
         Return corresponding Authority
         @return authority
@@ -175,9 +175,9 @@ class Ticket(IConcreteSet):
         Get term
         :return: term
         """
-        if self.resource_delegation is None:
+        if self.resource_ticket is None:
             return None
-        return self.resource_delegation.get_term()
+        return self.resource_ticket.get_term()
 
     def holding(self, *, when: datetime) -> int:
         if when is None:
@@ -215,7 +215,7 @@ class Ticket(IConcreteSet):
     def remove(self, *, concrete_set, configure: bool):
         raise TicketException("Not supported by TicketSet")
 
-    def setup(self, *, reservation: IReservation):
+    def setup(self, *, reservation: ABCReservationMixin):
         """
         Indicates that we're committing resources to a client (on an an agent).
         May need to touch TicketSet database since we're committing it. On a
@@ -239,9 +239,9 @@ class Ticket(IConcreteSet):
         return
 
     def get_units(self) -> int:
-        if self.resource_delegation is None:
+        if self.resource_ticket is None:
             return 0
-        return self.resource_delegation.get_units()
+        return self.resource_ticket.get_units()
 
     def get_delegation_id(self) -> str:
         """

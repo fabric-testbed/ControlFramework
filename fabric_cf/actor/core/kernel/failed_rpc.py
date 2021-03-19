@@ -26,7 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_rpc_response_handler import IRPCResponseHandler
+    from fabric_cf.actor.core.apis.abc_response_handler import ABCResponseHandler
     from fabric_cf.actor.core.kernel.rpc_request import RPCRequest
     from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
     from fabric_cf.actor.core.util.id import ID
@@ -110,7 +110,7 @@ class FailedRPC:
         """
         return self.request.retry_count
 
-    def get_handler(self) -> IRPCResponseHandler:
+    def get_handler(self) -> ABCResponseHandler:
         """
         Get handler
         @return response handler

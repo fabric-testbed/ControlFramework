@@ -25,19 +25,19 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from fabric_cf.actor.core.apis.i_event import IEvent
+from fabric_cf.actor.core.apis.abc_event import ABCEvent
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor import IActor
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
     from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
     from fabric_cf.actor.core.util.id import ID
 
 
-class InboundRPCEvent(IEvent):
+class InboundRPCEvent(ABCEvent):
     """
     Represents inbound RPC event
     """
-    def __init__(self, *, request: IncomingRPC, actor: IActor):
+    def __init__(self, *, request: IncomingRPC, actor: ABCActorMixin):
         self.request = request
         self.actor = actor
 
@@ -62,7 +62,7 @@ class InboundRPCEvent(IEvent):
         """
         return self.request
 
-    def get_actor(self) -> IActor:
+    def get_actor(self) -> ABCActorMixin:
         """
         Get actor
         @return actor

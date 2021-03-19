@@ -49,12 +49,12 @@ from fabric_mb.message_bus.messages.update_slice_avro import UpdateSliceAvro
 
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 
 
-class KafkaActor(KafkaProxy, IMgmtActor):
+class KafkaActor(KafkaProxy, ABCMgmtActor):
     def get_guid(self) -> ID:
         return self.management_id
 

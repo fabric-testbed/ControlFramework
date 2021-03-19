@@ -25,9 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-from fabric_cf.actor.core.apis.i_proxy import IProxy
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+from fabric_cf.actor.core.apis.abc_proxy import ABCProxy
 from fabric_cf.actor.core.common.exceptions import RegistryException
 from fabric_cf.actor.core.registry.callback_registry import CallbackRegistry
 from fabric_cf.actor.core.registry.proxy_registry import ProxyRegistry
@@ -40,11 +40,11 @@ class ActorRegistry:
     getActor(String) now looks up EITHER by name or guid - tries one, then the other
     """
     class ActorRegistryEntry:
-        def __init__(self, *, actor: IActor):
+        def __init__(self, *, actor: ABCActorMixin):
             self.actor = actor
             self.kafka_topics = {}
 
-        def get_actor(self) -> IActor:
+        def get_actor(self) -> ABCActorMixin:
             return self.actor
 
         def get_kafka_topic(self, *, protocol: str) -> str:
@@ -70,7 +70,7 @@ class ActorRegistry:
         finally:
             self.lock.release()
 
-    def get_actor(self, *, actor_name_or_guid: str) -> IActor:
+    def get_actor(self, *, actor_name_or_guid: str) -> ABCActorMixin:
         result = None
         entry = None
         try:
@@ -106,7 +106,7 @@ class ActorRegistry:
             self.lock.release()
         return result
 
-    def get_callback(self, *, protocol: str, actor_name: str) -> ICallbackProxy:
+    def get_callback(self, *, protocol: str, actor_name: str) -> ABCCallbackProxy:
         result = None
         try:
             self.lock.acquire()
@@ -134,7 +134,7 @@ class ActorRegistry:
             self.lock.release()
         return result
 
-    def get_proxy(self, *, protocol: str, actor_name: str) -> IProxy:
+    def get_proxy(self, *, protocol: str, actor_name: str) -> ABCProxy:
         result = None
         try:
             self.lock.acquire()
@@ -152,7 +152,7 @@ class ActorRegistry:
             self.lock.release()
         return result
 
-    def register_actor(self, *, actor: IActor):
+    def register_actor(self, *, actor: ABCActorMixin):
         actor_name = actor.get_name()
         guid = actor.get_guid()
 
@@ -167,7 +167,7 @@ class ActorRegistry:
         finally:
             self.lock.release()
 
-    def register_callback(self, *, callback: ICallbackProxy):
+    def register_callback(self, *, callback: ABCCallbackProxy):
         try:
             self.lock.acquire()
             self.callbacks.register_callback(callback=callback)
@@ -185,14 +185,14 @@ class ActorRegistry:
         finally:
             self.lock.release()
 
-    def register_proxy(self, *, proxy: IProxy):
+    def register_proxy(self, *, proxy: ABCProxy):
         try:
             self.lock.acquire()
             self.proxies.register_proxy(proxy=proxy)
         finally:
             self.lock.release()
 
-    def unregister(self, *, actor: IActor):
+    def unregister(self, *, actor: ABCActorMixin):
         try:
             self.lock.acquire()
             actor_name = actor.get_name()

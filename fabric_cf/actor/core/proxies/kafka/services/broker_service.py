@@ -32,9 +32,9 @@ from fabric_mb.message_bus.messages.reclaim_delegation_avro import ReclaimDelega
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 from fabric_mb.message_bus.messages.message import IMessageAvro
 
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
-from fabric_cf.actor.core.kernel.broker_reservation_factory import BrokerReservationFactory
+from fabric_cf.actor.core.kernel.broker_reservation import BrokerReservationFactory
 from fabric_cf.actor.core.kernel.incoming_delegation_rpc import IncomingDelegationRPC
 from fabric_cf.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
@@ -46,11 +46,11 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.extend_ticket_avro import ExtendTicketAvro
     from fabric_mb.message_bus.messages.relinquish_avro import RelinquishAvro
     from fabric_mb.message_bus.messages.ticket_avro import TicketAvro
-    from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
+    from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 
 
 class BrokerService(ActorService):
-    def pass_agent(self, *, reservation: ReservationAvro) -> IBrokerReservation:
+    def pass_agent(self, *, reservation: ReservationAvro) -> ABCBrokerReservation:
         slice_obj = Translate.translate_slice(slice_avro=reservation.slice)
         term = Translate.translate_term_from_avro(term=reservation.term)
         resource_set = Translate.translate_resource_set_from_avro(rset=reservation.resource_set)
@@ -63,7 +63,7 @@ class BrokerService(ActorService):
 
         return result
 
-    def pass_agent_delegation(self, *, delegation: DelegationAvro) -> IDelegation:
+    def pass_agent_delegation(self, *, delegation: DelegationAvro) -> ABCDelegation:
         slice_obj = Translate.translate_slice(slice_avro=delegation.slice)
 
         result = DelegationFactory.create(did=delegation.get_delegation_id(), slice_id=slice_obj.get_slice_id())

@@ -28,22 +28,22 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.apis.i_actor import IActor
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import PolicyException
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.apis.i_resource_control import IResourceControl
+from fabric_cf.actor.core.apis.abc_resource_control import ABCResourceControl
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-    from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
+    from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
     from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
-    from fabric_cf.actor.core.apis.i_reservation import IReservation
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.core.unit import Unit
 
 
-class ResourceControl(IResourceControl):
+class ResourceControl(ABCResourceControl):
     def __init__(self):
         self.guid = ID()
         self.types = set()
@@ -105,14 +105,14 @@ class ResourceControl(IResourceControl):
     def release(self, *, resource_set: ResourceSet):
         self._free_resources(resource_set=resource_set)
 
-    def correct_deficit(self, *, reservation: IAuthorityReservation) -> ResourceSet:
+    def correct_deficit(self, *, reservation: ABCAuthorityReservation) -> ResourceSet:
         print("KOMAL correct_deficit")
         return self.assign(reservation=reservation)
 
     def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         self.logger.debug("configuration complete")
 
-    def close(self, *, reservation: IReservation):
+    def close(self, *, reservation: ABCReservationMixin):
         self.logger.debug("close")
 
     def recovery_starting(self):
@@ -141,7 +141,7 @@ class ResourceControl(IResourceControl):
     def register_type(self, *, rtype: ResourceType):
         self.types.add(rtype)
 
-    def set_actor(self, *, actor: IActor):
+    def set_actor(self, *, actor: ABCActorMixin):
         self.authority = actor
 
     def get_guid(self) -> ID:

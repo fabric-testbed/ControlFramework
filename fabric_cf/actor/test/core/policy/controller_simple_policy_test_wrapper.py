@@ -23,10 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.core.policy.controller_simple_policy import ControllerSimplePolicy
 
 
 class ControllerSimplePolicyTestWrapper(ControllerSimplePolicy):
-    def get_renew(self, reservation: IClientReservation) -> int:
+    def get_renew(self, reservation: ABCClientReservation) -> int:
         return self.clock.cycle(reservation.get_term().get_new_start_time())

@@ -31,14 +31,14 @@ from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ResourcesException
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity
-    from fabric_cf.actor.core.apis.i_database import IDatabase
+    from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
+    from fabric_cf.actor.core.apis.abc_database import ABCDatabase
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.resource_type import ResourceType
-    from fabric_cf.actor.core.apis.i_slice import ISlice
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 
 
 class PoolManagerError(Enum):
@@ -66,7 +66,7 @@ class PoolManager:
     """
     Implements the class responsible for creating pools on startup
     """
-    def __init__(self, *, db: IDatabase, identity: IActorIdentity, logger):
+    def __init__(self, *, db: ABCDatabase, identity: ABCActorIdentity, logger):
         if db is None or identity is None or logger is None:
             raise ResourcesException("Invalid arguments {} {} {}".format(db, identity, logger))
         self.db = db
@@ -116,7 +116,7 @@ class PoolManager:
             result.code = PoolManagerError.ErrorInternalError
         return result
 
-    def update_pool(self, *, slice_obj: ISlice):
+    def update_pool(self, *, slice_obj: ABCSlice):
         """
         Update the resource pool
         @param slice_obj slice object

@@ -34,7 +34,7 @@ from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.broker_management_object import BrokerManagementObject
-from fabric_cf.actor.core.apis.i_mgmt_broker import IMgmtBroker
+from fabric_cf.actor.core.apis.abc_mgmt_broker_mixin import ABCMgmtBrokerMixin
 from fabric_cf.actor.core.manage.local.local_server_actor import LocalServerActor
 from fabric_cf.actor.core.util.id import ID
 
@@ -47,7 +47,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class LocalBroker(LocalServerActor, IMgmtBroker):
+class LocalBroker(LocalServerActor, ABCMgmtBrokerMixin):
     def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
         if not isinstance(manager, BrokerManagementObject):

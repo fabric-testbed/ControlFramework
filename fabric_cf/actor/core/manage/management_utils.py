@@ -30,28 +30,28 @@ from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
-from fabric_cf.actor.core.apis.i_query_response_handler import IQueryResponseHandler
+from fabric_cf.actor.core.apis.abc_query_response_handler import ABCQueryResponseHandler
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.apis.i_mgmt_container import IMgmtContainer
+from fabric_cf.actor.core.apis.abc_mgmt_container import ABCMgmtContainer
 from fabric_cf.actor.core.manage.local.local_container import LocalContainer
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.rpc_exception import RPCException, RPCError
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
-    from fabric_cf.actor.core.apis.i_slice import ISlice
-    from fabric_cf.actor.core.apis.i_reservation import IReservation
-    from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.apis.i_actor_proxy import IActorProxy
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+    from fabric_cf.actor.core.apis.abc_actor_proxy import ABCActorProxy
     from fabric_cf.actor.security.auth_token import AuthToken
 
 from fabric_cf.actor.core.manage.converter import Converter
 
 
-class MyQueryResponseHandler(IQueryResponseHandler):
+class MyQueryResponseHandler(ABCQueryResponseHandler):
     def __init__(self):
         self.result = None
         self.error = None
@@ -66,18 +66,18 @@ class MyQueryResponseHandler(IQueryResponseHandler):
 
 class ManagementUtils:
     @staticmethod
-    def update_slice(*, slice_obj: ISlice, slice_mng: SliceAvro) -> ISlice:
+    def update_slice(*, slice_obj: ABCSlice, slice_mng: SliceAvro) -> ABCSlice:
         return
 
     @staticmethod
-    def update_reservation(*, res_obj: IReservation, rsv_mng: ReservationMng) -> IReservation:
-        if isinstance(res_obj, IClientReservation):
+    def update_reservation(*, res_obj: ABCReservationMixin, rsv_mng: ReservationMng) -> ABCReservationMixin:
+        if isinstance(res_obj, ABCClientReservation):
             res_obj.set_renewable(renewable=rsv_mng.is_renewable())
 
         return Converter.absorb_res_properties(rsv_mng=rsv_mng, res_obj=res_obj)
 
     @staticmethod
-    def query(*, actor: IActor, actor_proxy: IActorProxy, query: dict, id_token: str):
+    def query(*, actor: ABCActorMixin, actor_proxy: ABCActorProxy, query: dict, id_token: str):
         handler = MyQueryResponseHandler()
 
         actor.query(query=query, actor_proxy=actor_proxy, handler=handler, id_token=id_token)
@@ -110,5 +110,5 @@ class ManagementUtils:
         return proxy
 
     @staticmethod
-    def connect(*, caller: AuthToken) -> IMgmtContainer():
+    def connect(*, caller: AuthToken) -> ABCMgmtContainer():
         return ManagementUtils.get_local_container(caller=caller)

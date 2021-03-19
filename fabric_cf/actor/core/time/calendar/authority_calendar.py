@@ -26,9 +26,9 @@
 import threading
 from datetime import datetime
 
-from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.apis.i_server_reservation import IServerReservation
+from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.calendar.base_calendar import BaseCalendar
 from fabric_cf.actor.core.util.reservation_holdings import ReservationHoldings
@@ -68,19 +68,19 @@ class AuthorityCalendar(BaseCalendar):
         self.__dict__.update(state)
         self.lock = threading.Lock()
 
-    def remove(self, *, reservation: IReservation):
+    def remove(self, *, reservation: ABCReservationMixin):
         """
         Removes the specified reservation from the calendar.
         @params reservation : reservation to remove
         """
-        if isinstance(reservation, IServerReservation):
+        if isinstance(reservation, ABCServerReservation):
             self.remove_request(reservation=reservation)
             self.remove_closing(reservation=reservation)
 
-        if isinstance(reservation, IAuthorityReservation):
+        if isinstance(reservation, ABCAuthorityReservation):
             self.remove_outlay(reservation=reservation)
 
-    def remove_schedule_or_in_progress(self, *, reservation: IReservation):
+    def remove_schedule_or_in_progress(self, *, reservation: ABCReservationMixin):
         """
         Removes the specified reservations from all internal calendar data
         structures that represent operations to be scheduled in the future or
@@ -88,7 +88,7 @@ class AuthorityCalendar(BaseCalendar):
         reservation from the outlays list
         @params reservation: reservation to remove
         """
-        if isinstance(reservation, IServerReservation):
+        if isinstance(reservation, ABCServerReservation):
             self.remove_request(reservation=reservation)
             self.remove_closing(reservation=reservation)
 
@@ -104,7 +104,7 @@ class AuthorityCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def add_request(self, *, reservation: IReservation, cycle: int):
+    def add_request(self, *, reservation: ABCReservationMixin, cycle: int):
         """
         Adds a new client request.
         @params reservation: reservation to add
@@ -116,7 +116,7 @@ class AuthorityCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def remove_request(self, *, reservation: IReservation):
+    def remove_request(self, *, reservation: ABCReservationMixin):
         """
         Removes the specified reservation from the request list.
         @params reservation: reservation to remove
@@ -140,7 +140,7 @@ class AuthorityCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def add_closing(self, *, reservation: IReservation, cycle: int):
+    def add_closing(self, *, reservation: ABCReservationMixin, cycle: int):
         """
         Adds a reservation to the closing list.
         @params reservation: reservation to add
@@ -152,7 +152,7 @@ class AuthorityCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def remove_closing(self, *, reservation: IReservation):
+    def remove_closing(self, *, reservation: ABCReservationMixin):
         """
         Removes the specified reservation from the closing list.
         @params reservation: reservation to remove
@@ -163,7 +163,7 @@ class AuthorityCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def add_outlay(self, *, reservation: IReservation, start: datetime, end: datetime):
+    def add_outlay(self, *, reservation: ABCReservationMixin, start: datetime, end: datetime):
         """
         Adds an allocated client reservation.
         @params reservation: reservation to add
@@ -177,7 +177,7 @@ class AuthorityCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def remove_outlay(self, *, reservation: IReservation):
+    def remove_outlay(self, *, reservation: ABCReservationMixin):
         """
         Removes a reservation from the outlays list.
         @params reservation: reservation to remove

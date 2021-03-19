@@ -27,19 +27,19 @@ import threading
 import traceback
 from typing import List
 
-from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_policy import IPolicy
-from fabric_cf.actor.core.apis.i_slice import ISlice
+from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException, \
     KernelException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-from fabric_cf.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
-from fabric_cf.actor.core.apis.i_kernel_reservation import IKernelReservation
-from fabric_cf.actor.core.apis.i_kernel_server_reservation import IKernelServerReservation
-from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
+from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import ABCKernelControllerReservationMixin
+from fabric_cf.actor.core.apis.abc_kernel_reservation import ABCKernelReservation
+from fabric_cf.actor.core.apis.abc_kernel_server_reservation import ABCKernelServerReservationMixin
+from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation import Reservation
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
@@ -55,7 +55,7 @@ from fabric_cf.actor.security.auth_token import AuthToken
 
 
 class Kernel:
-    def __init__(self, *, plugin: IBasePlugin, policy: IPolicy, logger):
+    def __init__(self, *, plugin: ABCBasePlugin, policy: ABCPolicy, logger):
         # The plugin.
         self.plugin = plugin
         # Policy
@@ -70,7 +70,7 @@ class Kernel:
         self.lock = threading.Lock()
         self.nothing_pending = threading.Condition()
 
-    def amend_reserve(self, *, reservation: IKernelReservation):
+    def amend_reserve(self, *, reservation: ABCKernelReservation):
         """
         Amends a previous reserve operation (both client and server side) for the
         reservation.
@@ -87,7 +87,7 @@ class Kernel:
             err = f"An error occurred during amend reserve for reservation #{reservation.get_reservation_id()}"
             self.error(err=err, e=e)
 
-    def amend_delegate(self, *, delegation: IDelegation):
+    def amend_delegate(self, *, delegation: ABCDelegation):
         """
         Amends a previous delegate operation for the delegation.
         @param delegation delegation
@@ -103,7 +103,7 @@ class Kernel:
             err = f"An error occurred during amend delegate for delegation #{delegation.get_delegation_id()}"
             self.error(err=err, e=e)
 
-    def claim_delegation(self, *, delegation: IDelegation):
+    def claim_delegation(self, *, delegation: ABCDelegation):
         """
         Processes a requests to claim new ticket for previously exported
         resources (broker role). On the client side this request is issued by
@@ -118,7 +118,7 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
 
-    def reclaim_delegation(self, *, delegation: IDelegation, id_token: str):
+    def reclaim_delegation(self, *, delegation: ABCDelegation, id_token: str):
         """
         Processes a requests to claim new ticket for previously exported
         resources (broker role). On the client side this request is issued by
@@ -134,7 +134,7 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
 
-    def fail(self, *, reservation: IKernelReservation, message: str):
+    def fail(self, *, reservation: ABCKernelReservation, message: str):
         """
         Handle a failed reservation
         @param reservation reservation
@@ -144,7 +144,7 @@ class Kernel:
             reservation.fail(message=message, exception=None)
         self.plugin.get_database().update_reservation(reservation=reservation)
 
-    def fail_delegation(self, *, delegation: IDelegation, message: str):
+    def fail_delegation(self, *, delegation: ABCDelegation, message: str):
         """
         Handle a failed delegation
         @param delegation delegation
@@ -154,7 +154,7 @@ class Kernel:
             delegation.fail(message=message, exception=None)
         self.plugin.get_database().update_delegation(delegation=delegation)
 
-    def close(self, *, reservation: IKernelReservation):
+    def close(self, *, reservation: ABCKernelReservation):
         """
         Handles a close operation for the reservation.
         Client: perform local close operations and issue close request to
@@ -175,7 +175,7 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
 
-    def compare_and_update(self, *, incoming: IKernelServerReservation, current: IKernelServerReservation):
+    def compare_and_update(self, *, incoming: ABCKernelServerReservationMixin, current: ABCKernelServerReservationMixin):
         """
         Compares the incoming request to the corresponding reservation stored at
         this actor. First compares sequence numbers. If the incoming request has
@@ -200,8 +200,8 @@ class Kernel:
         return code
 
     @staticmethod
-    def compare_and_update_ignore_pending(*, incoming: IKernelServerReservation,
-                                          current: IKernelServerReservation):
+    def compare_and_update_ignore_pending(*, incoming: ABCKernelServerReservationMixin,
+                                          current: ABCKernelServerReservationMixin):
         """
         Compares the incoming request to the corresponding reservation stored at
         this actor. First compares sequence numbers. If the incoming request has
@@ -233,7 +233,7 @@ class Kernel:
         self.logger.error(f"Error: {err} Exception: {e}")
         raise e
 
-    def extend_lease(self, *, reservation: IKernelReservation):
+    def extend_lease(self, *, reservation: ABCKernelReservation):
         """
         Handles an extend lease operation for the reservation.
         Client: issue an extend lease request.
@@ -251,7 +251,7 @@ class Kernel:
             self.error(err=f"An error occurred during extend lease for reservation #{reservation.get_reservation_id()}",
                        e=e)
 
-    def modify_lease(self, *, reservation: IKernelReservation):
+    def modify_lease(self, *, reservation: ABCKernelReservation):
         """
         Handles a modify lease operation for the reservation.
         Client: issue a modify lease request.
@@ -314,7 +314,7 @@ class Kernel:
 
         return 0
 
-    def extend_ticket(self, *, reservation: IKernelReservation):
+    def extend_ticket(self, *, reservation: ABCKernelReservation):
         """
         Handles an extend ticket operation for the reservation.
         Client: issue an extend ticket request.
@@ -338,21 +338,21 @@ class Kernel:
             self.error(err=f"An error occurred during extend ticket for reservation #{reservation.get_reservation_id()}",
                        e=e)
 
-    def get_client_slices(self) -> List[IKernelSlice]:
+    def get_client_slices(self) -> List[ABCKernelSlice]:
         """
         Returns all client slices.
         @return an array of client slices
         """
         return self.slices.get_client_slices()
 
-    def get_inventory_slices(self) -> List[IKernelSlice]:
+    def get_inventory_slices(self) -> List[ABCKernelSlice]:
         """
         Returns all inventory slices.
         @return an array of inventory slices
         """
         return self.slices.get_inventory_slices()
 
-    def get_local_slice(self, *, slice_object: ISlice) -> IKernelSlice:
+    def get_local_slice(self, *, slice_object: ABCSlice) -> ABCKernelSlice:
         """
         Returns the slice object registered with the kernel that corresponds to
         the argument.
@@ -366,8 +366,8 @@ class Kernel:
 
         return self.slices.get(slice_id=slice_object.get_slice_id(), raise_exception=True)
 
-    def get_or_create_local_slice(self, *, identity: AuthToken, reservation: IKernelReservation,
-                                  create_new_slice: bool) -> IKernelSlice:
+    def get_or_create_local_slice(self, *, identity: AuthToken, reservation: ABCKernelReservation,
+                                  create_new_slice: bool) -> ABCKernelSlice:
         """
         Returns the slice specified in the reservation or creates a new slice
         with the given parameters. Newly created slices are registered with the
@@ -399,7 +399,7 @@ class Kernel:
             self.register_slice(slice_object=result)
         return result
 
-    def get_reservation(self, *, rid: ID) -> IKernelReservation:
+    def get_reservation(self, *, rid: ID) -> ABCKernelReservation:
         """
         Returns the specified reservation.
         @param rid reservation id
@@ -409,7 +409,7 @@ class Kernel:
             return self.reservations.get(rid=rid)
         return None
 
-    def get_reservations(self, *, slice_id: ID) -> List[IKernelReservation]:
+    def get_reservations(self, *, slice_id: ID) -> List[ABCKernelReservation]:
         """
         Returns all reservations in the specified slice.
         @param slice_id slice id
@@ -421,7 +421,7 @@ class Kernel:
             result = sl.get_reservations_list()
         return result
 
-    def get_delegation(self, *, did: str) -> IDelegation:
+    def get_delegation(self, *, did: str) -> ABCDelegation:
         """
         Returns the specified delegation.
         @param did delegation id
@@ -436,14 +436,14 @@ class Kernel:
                 self.lock.release()
         return None
 
-    def get_plugin(self) -> IBasePlugin:
+    def get_plugin(self) -> ABCBasePlugin:
         """
         Returns the plugin.
         @return plugin object
         """
         return self.plugin
 
-    def get_slice(self, *, slice_id: ID) -> IKernelSlice:
+    def get_slice(self, *, slice_id: ID) -> ABCKernelSlice:
         """
         Returns a slice previously registered with the kernel.
         @param slice_id slice identifier
@@ -471,7 +471,7 @@ class Kernel:
         """
         return self.slices.get_slices()
 
-    def handle_duplicate_request(self, *, current: IKernelReservation, operation: RequestTypes):
+    def handle_duplicate_request(self, *, current: ABCKernelReservation, operation: RequestTypes):
         """
         Handles a duplicate request.
         @param current reservation
@@ -479,7 +479,7 @@ class Kernel:
         """
         current.handle_duplicate_request(operation=operation)
 
-    def probe_pending_slices(self, *, slice_obj: IKernelSlice):
+    def probe_pending_slices(self, *, slice_obj: ABCKernelSlice):
         """
         Probes to check for completion of pending operation.
         @param slice_obj the slice_obj being probed
@@ -496,7 +496,7 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during probe pending for slice_obj #{slice_obj.get_slice_id()}", e=e)
 
-    def probe_pending(self, *, reservation: IKernelReservation):
+    def probe_pending(self, *, reservation: ABCKernelReservation):
         """
         Probes to check for completion of pending operation.
         @param reservation the reservation being probed
@@ -512,7 +512,7 @@ class Kernel:
             self.error(err=f"An error occurred during probe pending for reservation #{reservation.get_reservation_id()}",
                        e=e)
 
-    def probe_pending_delegation(self, *, delegation: IDelegation):
+    def probe_pending_delegation(self, *, delegation: ABCDelegation):
         """
         Probes to check for completion of pending operation.
         @param delegation the delegation being probed
@@ -570,7 +570,7 @@ class Kernel:
         """
         return self.policy.query(p=properties)
 
-    def redeem(self, *, reservation: IKernelControllerReservation):
+    def redeem(self, *, reservation: ABCKernelControllerReservationMixin):
         """
         Redeem a reservation
         @param reservation reservation
@@ -588,7 +588,7 @@ class Kernel:
             self.logger.error(f"An error occurred during redeem for reservation #{reservation.get_reservation_id()} "
                               f"e: {e}")
 
-    def register(self, *, reservation: IKernelReservation, slice_object: IKernelSlice) -> bool:
+    def register(self, *, reservation: ABCKernelReservation, slice_object: ABCKernelSlice) -> bool:
         """
         Registers a new reservation with its slice and the kernel reservation
         table. Must be called with the kernel lock on.
@@ -626,7 +626,7 @@ class Kernel:
 
         return add
 
-    def register_delegation_with_slice(self, *, delegation: IDelegation, slice_object: IKernelSlice) -> bool:
+    def register_delegation_with_slice(self, *, delegation: ABCDelegation, slice_object: ABCKernelSlice) -> bool:
         """
         Registers a new delegation with its slice and the kernel delegation
         table. Must be called with the kernel lock on.
@@ -667,7 +667,7 @@ class Kernel:
 
         return add
 
-    def register_delegation(self, *, delegation: IDelegation):
+    def register_delegation(self, *, delegation: ABCDelegation):
         """
         Re-registers the delegation.
         @param delegation delegation
@@ -690,7 +690,7 @@ class Kernel:
                 self.unregister_no_check_d(delegation=delegation, slice_object=local_slice)
                 raise e
 
-    def register_reservation(self, *, reservation: IKernelReservation):
+    def register_reservation(self, *, reservation: ABCKernelReservation):
         """
         Re-registers the reservation.
         @param reservation reservation
@@ -713,7 +713,7 @@ class Kernel:
                 self.unregister_no_check(reservation=reservation, slice_object=local_slice)
                 raise e
 
-    def register_slice(self, *, slice_object: IKernelSlice):
+    def register_slice(self, *, slice_object: ABCKernelSlice):
         """
         Registers the specified slice with the kernel.
         @param slice_object slice to register
@@ -779,7 +779,7 @@ class Kernel:
                 # remove from the database
                 self.plugin.get_database().remove_slice(slice_id=slice_id)
 
-    def re_register_delegation(self, *, delegation: IDelegation):
+    def re_register_delegation(self, *, delegation: ABCDelegation):
         """
         Re-registers the delegation.
         @param delegation delegation
@@ -804,7 +804,7 @@ class Kernel:
             self.unregister_no_check_d(delegation=delegation, slice_object=local_slice)
             raise KernelException("The delegation has no database record")
 
-    def re_register_reservation(self, *, reservation: IKernelReservation):
+    def re_register_reservation(self, *, reservation: ABCKernelReservation):
         """
         Re-registers the reservation.
         @param reservation reservation
@@ -830,7 +830,7 @@ class Kernel:
             self.unregister_no_check(reservation=reservation, slice_object=local_slice)
             raise KernelException("The reservation has no database record")
 
-    def re_register_slice(self, *, slice_object: IKernelSlice):
+    def re_register_slice(self, *, slice_object: ABCKernelSlice):
         """
         Re-registers the specified slice with the kernel.
         @param slice_object slice to re-register
@@ -848,7 +848,7 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err="could not reregister slice", e=e)
 
-    def reserve(self, *, reservation: IKernelReservation):
+    def reserve(self, *, reservation: ABCKernelReservation):
         """
         Handles a reserve operation for the reservation.
         Client: issue a ticket request or a claim request.
@@ -867,7 +867,7 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during reserve for reservation #{reservation.get_reservation_id()}", e=e)
 
-    def delegate(self, *, delegation: IDelegation, id_token: str = None):
+    def delegate(self, *, delegation: ABCDelegation, id_token: str = None):
         """
         Handles a delegate operation for the delegation.
         Broker: process a request for a new delegate.
@@ -885,7 +885,7 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during delegate for delegation #{delegation.get_delegation_id()}", e=e)
 
-    def soft_validate_delegation(self, *, delegation: IDelegation = None, did: str = None) -> IDelegation:
+    def soft_validate_delegation(self, *, delegation: ABCDelegation = None, did: str = None) -> ABCDelegation:
         """
         Retrieves the locally registered delegation that corresponds to the
         passed delegation. Obtains the reservation from the containing slice
@@ -920,7 +920,7 @@ class Kernel:
 
         return result
 
-    def soft_validate(self, *, reservation: IKernelReservation = None, rid: ID = None) -> IKernelReservation:
+    def soft_validate(self, *, reservation: ABCKernelReservation = None, rid: ID = None) -> ABCKernelReservation:
         """
         Retrieves the locally registered reservation that corresponds to the
         passed reservation. Obtains the reservation from the containing slice
@@ -1007,7 +1007,7 @@ class Kernel:
         with self.nothing_pending:
             self.nothing_pending.wait()
 
-    def unregister(self, *, reservation: IKernelReservation, slice_object: IKernelSlice):
+    def unregister(self, *, reservation: ABCKernelReservation, slice_object: ABCKernelSlice):
         """
         Unregisters a reservation from the kernel data structures. Must be called
         with the kernel lock on. Performs state checks.
@@ -1021,7 +1021,7 @@ class Kernel:
         else:
             raise KernelException("Only reservations in failed, closed, or closewait state can be unregistered.")
 
-    def unregister_no_check(self, *, reservation: IKernelReservation, slice_object: IKernelSlice):
+    def unregister_no_check(self, *, reservation: ABCKernelReservation, slice_object: ABCKernelSlice):
         """
         Unregisters a reservation from the kernel data structures. Must be called
         with the kernel lock on. Does not perform state checks.
@@ -1032,7 +1032,7 @@ class Kernel:
         slice_object.unregister(reservation=reservation)
         self.reservations.remove(reservation=reservation)
 
-    def unregister_no_check_d(self, *, delegation: IDelegation, slice_object: IKernelSlice):
+    def unregister_no_check_d(self, *, delegation: ABCDelegation, slice_object: ABCKernelSlice):
         """
         Unregisters a delegation from the kernel data structures. Must be called
         with the kernel lock on. Does not perform state checks.
@@ -1084,7 +1084,7 @@ class Kernel:
         else:
             raise KernelException("Slice cannot be unregistered: not empty")
 
-    def update_lease(self, *, reservation: IKernelReservation, update: Reservation, update_data: UpdateData):
+    def update_lease(self, *, reservation: ABCKernelReservation, update: Reservation, update_data: UpdateData):
         """
         Handles an incoming update lease operation (client side only).
         @param reservation local reservation
@@ -1112,7 +1112,7 @@ class Kernel:
             self.error(err=f"An error occurred during update lease for reservation "
                            f"# {reservation.get_reservation_id()}", e=e)
 
-    def update_ticket(self, *, reservation: IKernelReservation, update: Reservation, update_data: UpdateData):
+    def update_ticket(self, *, reservation: ABCKernelReservation, update: Reservation, update_data: UpdateData):
         """
         Handles an incoming update ticket operation (client side only).
         @param reservation local reservation
@@ -1130,7 +1130,7 @@ class Kernel:
             self.error(err=f"An error occurred during update ticket for "
                            f"reservation # {reservation.get_reservation_id()}", e=e)
 
-    def update_delegation(self, *, delegation: IDelegation, update: IDelegation, update_data: UpdateData):
+    def update_delegation(self, *, delegation: ABCDelegation, update: ABCDelegation, update_data: UpdateData):
         """
         Handles an incoming update delegation operation (client side only).
         @param delegation local delegation
@@ -1147,7 +1147,7 @@ class Kernel:
             self.error(err=f"An error occurred during update delegation for "
                            f"delegation # {delegation.get_delegation_id()}", e=e)
 
-    def validate(self, *, reservation: IKernelReservation = None, rid: ID = None):
+    def validate(self, *, reservation: ABCKernelReservation = None, rid: ID = None):
         """
         Retrieves the locally registered reservation that corresponds to the
         passed reservation. Obtains the reservation from the containing slice
@@ -1176,7 +1176,7 @@ class Kernel:
 
         return None
 
-    def handle_failed_rpc(self, *, reservation: IKernelReservation, rpc: FailedRPC):
+    def handle_failed_rpc(self, *, reservation: ABCKernelReservation, rpc: FailedRPC):
         """
         Handle failed rpc
         @param reservation reservation
@@ -1184,7 +1184,7 @@ class Kernel:
         """
         reservation.handle_failed_rpc(failed=rpc)
 
-    def validate_delegation(self, *, delegation: IDelegation = None, did: str = None):
+    def validate_delegation(self, *, delegation: ABCDelegation = None, did: str = None):
         """
         Retrieves the locally registered delegation that corresponds to the
         passed delegation. Obtains the delegation from the containing slice

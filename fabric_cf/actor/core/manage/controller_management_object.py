@@ -37,7 +37,7 @@ from fabric_cf.actor.core.manage.client_actor_management_object_helper import Cl
 from fabric_cf.actor.core.manage.converter import Converter
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
-from fabric_cf.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
+from fabric_cf.actor.core.apis.abc_client_actor_management_object import ABCClientActorManagementObject
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
@@ -48,16 +48,16 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
-    from fabric_cf.actor.core.apis.i_controller import IController
-    from fabric_cf.actor.core.apis.i_actor import IActor
+    from fabric_cf.actor.core.apis.abc_controller import ABCController
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.resource_type import ResourceType
-    from fabric_cf.actor.core.apis.i_substrate_database import ISubstrateDatabase
+    from fabric_cf.actor.core.apis.abc_substrate_database import ABCSubstrateDatabase
 
 
-class ControllerManagementObject(ActorManagementObject, IClientActorManagementObject):
-    def __init__(self, *, actor: IController = None):
+class ControllerManagementObject(ActorManagementObject, ABCClientActorManagementObject):
+    def __init__(self, *, actor: ABCController = None):
         super().__init__(actor=actor)
         self.client_helper = ClientActorManagementObjectHelper(client=actor)
 
@@ -83,7 +83,7 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
         return properties
 
-    def set_actor(self, *, actor: IActor):
+    def set_actor(self, *, actor: ABCActorMixin):
         if self.actor is None:
             super().set_actor(actor=actor)
             self.client_helper = ClientActorManagementObjectHelper(client=actor)
@@ -149,7 +149,7 @@ class ControllerManagementObject(ActorManagementObject, IClientActorManagementOb
 
         return result
 
-    def get_substrate_database(self) -> ISubstrateDatabase:
+    def get_substrate_database(self) -> ABCSubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
     def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken,

@@ -29,12 +29,12 @@ import traceback
 from typing import List
 
 
-from fabric_cf.actor.core.apis.i_actor import IActor, ActorType
-from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
-from fabric_cf.actor.core.apis.i_database import IDatabase
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_reservation import IReservation, ReservationCategory
-from fabric_cf.actor.core.apis.i_slice import ISlice
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
+from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
+from fabric_cf.actor.core.apis.abc_database import ABCDatabase
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
+from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.core.kernel.slice import SliceTypes
@@ -45,7 +45,7 @@ from fabric_cf.actor.db.psql_database import PsqlDatabase
 from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
-class ActorDatabase(IDatabase):
+class ActorDatabase(ABCDatabase):
     def __init__(self, *, user: str, password: str, database: str, db_host: str, logger):
         self.user = user
         self.password = password
@@ -107,7 +107,7 @@ class ActorDatabase(IDatabase):
         if self.actor_id is None:
             raise DatabaseException(Constants.OBJECT_NOT_FOUND.format("actor", self.actor_name))
 
-    def revisit(self, *, actor: IActor, properties: dict):
+    def revisit(self, *, actor: ABCActorMixin, properties: dict):
         return
 
     def get_actor_id_from_name(self, *, actor_name: str) -> int:
@@ -134,7 +134,7 @@ class ActorDatabase(IDatabase):
             self.lock.release()
         return None
 
-    def get_slice_by_id(self, *, slc_id: int) -> ISlice:
+    def get_slice_by_id(self, *, slc_id: int) -> ABCSlice:
         try:
             self.lock.acquire()
             slice_dict = self.db.get_slice_by_id(act_id=self.actor_id, slc_id=slc_id)
@@ -147,7 +147,7 @@ class ActorDatabase(IDatabase):
             self.lock.release()
         return None
 
-    def add_slice(self, *, slice_object: ISlice):
+    def add_slice(self, *, slice_object: ABCSlice):
         try:
             if self.get_slice(slice_id=slice_object.get_slice_id()) is not None:
                 raise DatabaseException("Slice # {} already exists".format(slice_object.get_slice_id()))
@@ -162,7 +162,7 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def update_slice(self, *, slice_object: ISlice):
+    def update_slice(self, *, slice_object: ABCSlice):
         # Update the slice only when there are changes to be reflected in database
         if not slice_object.is_dirty():
             return
@@ -187,7 +187,7 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def get_slice(self, *, slice_id: ID) -> ISlice:
+    def get_slice(self, *, slice_id: ID) -> ABCSlice:
         try:
             slice_dict = self.db.get_slice(act_id=self.actor_id, slice_guid=str(slice_id))
             if slice_dict is not None:
@@ -197,7 +197,7 @@ class ActorDatabase(IDatabase):
             self.logger.error(e)
         return None
 
-    def get_slice_by_name(self, *, slice_name: str) -> ISlice:
+    def get_slice_by_name(self, *, slice_name: str) -> ABCSlice:
         try:
             slice_dict = self.db.get_slice_by_name(act_id=self.actor_id, slice_name=slice_name)
             if slice_dict is not None:
@@ -207,7 +207,7 @@ class ActorDatabase(IDatabase):
             self.logger.error(e)
         return None
 
-    def get_slices(self) -> List[ISlice]:
+    def get_slices(self) -> List[ABCSlice]:
         try:
             self.lock.acquire()
             result = []
@@ -224,7 +224,7 @@ class ActorDatabase(IDatabase):
             self.lock.release()
         return None
 
-    def get_inventory_slices(self) -> List[ISlice]:
+    def get_inventory_slices(self) -> List[ABCSlice]:
         try:
             self.lock.acquire()
             result = []
@@ -241,7 +241,7 @@ class ActorDatabase(IDatabase):
             self.lock.release()
         return None
 
-    def get_client_slices(self) -> List[ISlice]:
+    def get_client_slices(self) -> List[ABCSlice]:
         try:
             self.lock.acquire()
             result = []
@@ -260,7 +260,7 @@ class ActorDatabase(IDatabase):
             self.lock.release()
         return None
 
-    def get_slice_by_resource_type(self, *, rtype: ResourceType) -> ISlice:
+    def get_slice_by_resource_type(self, *, rtype: ResourceType) -> ABCSlice:
         try:
             self.lock.acquire()
             result_list = self.db.get_slices_by_resource_type(act_id=self.actor_id, slc_resource_type=str(rtype))
@@ -274,7 +274,7 @@ class ActorDatabase(IDatabase):
             self.lock.release()
         return None
 
-    def add_reservation(self, *, reservation: IReservation):
+    def add_reservation(self, *, reservation: ABCReservationMixin):
         try:
             self.lock.acquire()
             self.logger.debug("Adding reservation {} to slice {}".format(reservation.get_reservation_id(),
@@ -294,7 +294,7 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def update_reservation(self, *, reservation: IReservation):
+    def update_reservation(self, *, reservation: ABCReservationMixin):
         # Update the reservation only when there are changes to be reflected in database
         if not reservation.is_dirty():
             return
@@ -324,7 +324,7 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def _load_reservation_from_pickled_object(self, pickled_res: str, slice_id: int) -> IReservation:
+    def _load_reservation_from_pickled_object(self, pickled_res: str, slice_id: int) -> ABCReservationMixin:
         try:
             slice_obj = self.get_slice_by_id(slc_id=slice_id)
             result = pickle.loads(pickled_res)
@@ -335,7 +335,7 @@ class ActorDatabase(IDatabase):
             self.logger.error(traceback.format_exc())
         return None
 
-    def get_reservation(self, *, rid: ID) -> IReservation:
+    def get_reservation(self, *, rid: ID) -> ABCReservationMixin:
         res_dict = None
         try:
             self.lock.acquire()
@@ -350,7 +350,7 @@ class ActorDatabase(IDatabase):
             return self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
         return None
 
-    def get_reservations_by_slice_id(self, *, slice_id: ID) -> List[IReservation]:
+    def get_reservations_by_slice_id(self, *, slice_id: ID) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -368,7 +368,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_reservations_by_graph_node_id(self, *, graph_node_id: str) -> List[IReservation]:
+    def get_reservations_by_graph_node_id(self, *, graph_node_id: str) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -386,7 +386,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: int) -> List[IReservation]:
+    def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: int) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -402,7 +402,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_client_reservations(self) -> List[IReservation]:
+    def get_client_reservations(self) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -422,7 +422,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> List[IReservation]:
+    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -443,7 +443,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_holdings(self) -> List[IReservation]:
+    def get_holdings(self) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -462,7 +462,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_holdings_by_slice_id(self, *, slice_id: ID) -> List[IReservation]:
+    def get_holdings_by_slice_id(self, *, slice_id: ID) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -482,7 +482,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_broker_reservations(self) -> List[IReservation]:
+    def get_broker_reservations(self) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -501,7 +501,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_authority_reservations(self) -> List[IReservation]:
+    def get_authority_reservations(self) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -521,7 +521,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_reservations(self) -> List[IReservation]:
+    def get_reservations(self) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -540,7 +540,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def get_reservations_by_state(self, *, state: int) -> List[IReservation]:
+    def get_reservations_by_state(self, *, state: int) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -576,7 +576,7 @@ class ActorDatabase(IDatabase):
                 result.append(res_obj)
         return result
 
-    def add_broker(self, *, broker: IBrokerProxy):
+    def add_broker(self, *, broker: ABCBrokerProxy):
         try:
             self.lock.acquire()
             self.logger.debug("Adding broker {}({})".format(broker.get_name(), broker.get_guid()))
@@ -585,7 +585,7 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def update_broker(self, *, broker: IBrokerProxy):
+    def update_broker(self, *, broker: ABCBrokerProxy):
         try:
             self.lock.acquire()
             self.logger.debug("Updating broker {}({})".format(broker.get_name(), broker.get_guid()))
@@ -594,7 +594,7 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def remove_broker(self, *, broker: IBrokerProxy):
+    def remove_broker(self, *, broker: ABCBrokerProxy):
         try:
             self.lock.acquire()
             self.logger.debug("Removing broker {}({})".format(broker.get_name(), broker.get_guid()))
@@ -605,7 +605,7 @@ class ActorDatabase(IDatabase):
     def set_actor_name(self, *, name: str):
         self.actor_name = name
 
-    def get_brokers(self) -> List[IBrokerProxy]:
+    def get_brokers(self) -> List[ABCBrokerProxy]:
         try:
             self.lock.acquire()
             result = []
@@ -623,7 +623,7 @@ class ActorDatabase(IDatabase):
             self.lock.release()
         return None
 
-    def add_delegation(self, *, delegation: IDelegation):
+    def add_delegation(self, *, delegation: ABCDelegation):
         self.logger.debug("Adding delegation {} to slice {}".format(delegation.get_delegation_id(),
                                                                     delegation.get_slice_id()))
 
@@ -645,7 +645,7 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def update_delegation(self, *, delegation: IDelegation):
+    def update_delegation(self, *, delegation: ABCDelegation):
         # Update the delegation only when there are changes to be reflected in database
         if not delegation.is_dirty():
             return
@@ -670,13 +670,13 @@ class ActorDatabase(IDatabase):
         finally:
             self.lock.release()
 
-    def _load_delegation_from_pickled_instance(self, pickled_del: str, slice_id: int) -> IDelegation:
+    def _load_delegation_from_pickled_instance(self, pickled_del: str, slice_id: int) -> ABCDelegation:
         slice_obj = self.get_slice_by_id(slc_id=slice_id)
         delegation = pickle.loads(pickled_del)
         delegation.restore(actor=self.actor, slice_obj=slice_obj)
         return delegation
 
-    def get_delegation(self, *, dlg_graph_id: str) -> IDelegation:
+    def get_delegation(self, *, dlg_graph_id: str) -> ABCDelegation:
         dlg_dict = None
         try:
             self.lock.acquire()
@@ -691,7 +691,7 @@ class ActorDatabase(IDatabase):
             return self._load_delegation_from_pickled_instance(pickled_del=pickled_del, slice_id=slice_id)
         return None
 
-    def get_delegations(self) -> List[IDelegation]:
+    def get_delegations(self) -> List[ABCDelegation]:
         result = []
         dlg_dict_list = None
         try:
@@ -710,7 +710,7 @@ class ActorDatabase(IDatabase):
                 result.append(dlg_obj)
         return result
 
-    def get_delegations_by_slice_id(self, *, slice_id: ID) -> List[IDelegation]:
+    def get_delegations_by_slice_id(self, *, slice_id: ID) -> List[ABCDelegation]:
         result = []
         dlg_dict_list = None
         try:

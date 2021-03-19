@@ -30,7 +30,7 @@ from typing import List
 
 import requests
 
-from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 
 
 class PdpAuthException(Exception):

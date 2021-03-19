@@ -26,7 +26,7 @@
 import threading
 from datetime import datetime
 
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.calendar.base_calendar import BaseCalendar
 from fabric_cf.actor.core.util.reservation_holdings import ReservationHoldings
@@ -77,7 +77,7 @@ class ClientCalendar(BaseCalendar):
         self.__dict__.update(state)
         self.lock = threading.Lock()
 
-    def remove(self, *, reservation: IReservation):
+    def remove(self, *, reservation: ABCReservationMixin):
         """
         Removes the specified reservation from all internal calendar data structures
         @params reservation: reservation to remove
@@ -87,7 +87,7 @@ class ClientCalendar(BaseCalendar):
         self.remove_renewing(reservation=reservation)
         self.remove_holdings(reservation=reservation)
 
-    def remove_scheduled_or_in_progress(self, *, reservation: IReservation):
+    def remove_scheduled_or_in_progress(self, *, reservation: ABCReservationMixin):
         """
         Removes the specified reservations from all internal calendar data
         structures that represent operations to be scheduled in the future or
@@ -110,7 +110,7 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def add_demand(self, *, reservation: IReservation):
+    def add_demand(self, *, reservation: ABCReservationMixin):
         """
         Adds a reservation to the demand list.
         @params reservation: reservation to add
@@ -121,7 +121,7 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def remove_demand(self, *, reservation: IReservation):
+    def remove_demand(self, *, reservation: ABCReservationMixin):
         """
         Removes a reservation to the demand list.
         @params reservation: reservation to remove
@@ -143,7 +143,7 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def add_pending(self, *, reservation: IReservation):
+    def add_pending(self, *, reservation: ABCReservationMixin):
         """
         Adds a reservation to the pending list.
         @params reservation: reservation to add
@@ -154,7 +154,7 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def remove_pending(self, *, reservation: IReservation):
+    def remove_pending(self, *, reservation: ABCReservationMixin):
         """
         Removes a reservation to the pending list.
         @params reservation: reservation to remove
@@ -177,7 +177,7 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def add_renewing(self, *, reservation: IReservation, cycle: int):
+    def add_renewing(self, *, reservation: ABCReservationMixin, cycle: int):
         """
         Adds a reservation to the renewing list at the given cycle.
         @params reservation : reservation to add
@@ -189,7 +189,7 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def remove_renewing(self, *, reservation: IReservation):
+    def remove_renewing(self, *, reservation: ABCReservationMixin):
         """
         Removes the reservation from the renewing list.
         @params reservation : reservation to remove
@@ -216,7 +216,7 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def add_holdings(self, *, reservation: IReservation, start: datetime, end: datetime):
+    def add_holdings(self, *, reservation: ABCReservationMixin, start: datetime, end: datetime):
         """
         Adds a reservation to the holdings list.
         @params reservation : reservation to add
@@ -230,7 +230,7 @@ class ClientCalendar(BaseCalendar):
         finally:
             self.lock.release()
 
-    def remove_holdings(self, *, reservation: IReservation):
+    def remove_holdings(self, *, reservation: ABCReservationMixin):
         """
         Removes the reservation from the renewing list.
         @params reservation : reservation to remove

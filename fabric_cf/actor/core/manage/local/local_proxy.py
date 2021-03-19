@@ -29,14 +29,14 @@ from typing import TYPE_CHECKING
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 from fabric_cf.actor.core.manage.error import Error
-from fabric_cf.actor.core.apis.i_component import IComponent
+from fabric_cf.actor.core.apis.abc_component import ABCComponent
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class LocalProxy(IComponent):
+class LocalProxy(ABCComponent):
     def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         self.manager = manager
         self.auth = auth

@@ -31,7 +31,7 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
 from fim.slivers.network_node import NodeSliver
 
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
@@ -55,7 +55,7 @@ class NetworkNodeInventory(InventoryForType):
         self.logger = None
 
     def __check_capacities(self, *, rid: ID, requested_capacities: Capacities, delegated_capacities: dict,
-                           existing_reservations: List[IReservation]) -> str:
+                           existing_reservations: List[ABCReservationMixin]) -> str:
         """
         Check if the requested capacities can be satisfied with the available capacities
         :param rid: reservation id of the reservation being served
@@ -149,7 +149,7 @@ class NetworkNodeInventory(InventoryForType):
         return requested_component
 
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_id: str,
-                           graph_node: BaseSliver, existing_reservations: List[IReservation]) -> AttachedComponentsInfo:
+                           graph_node: BaseSliver, existing_reservations: List[ABCReservationMixin]) -> AttachedComponentsInfo:
         """
         Check if the requested capacities can be satisfied with the available capacities
         :param rid: reservation id of the reservation being served
@@ -227,8 +227,8 @@ class NetworkNodeInventory(InventoryForType):
 
         return requested_components
 
-    def allocate(self, *, reservation: IReservation, graph_id: str, graph_node: BaseSliver,
-                 existing_reservations: List[IReservation]) -> Tuple[str, BaseSliver]:
+    def allocate(self, *, reservation: ABCReservationMixin, graph_id: str, graph_node: BaseSliver,
+                 existing_reservations: List[ABCReservationMixin]) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation
         :param reservation: reservation to be allocated

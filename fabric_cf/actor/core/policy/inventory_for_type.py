@@ -32,7 +32,7 @@ from fim.slivers.base_sliver import BaseSliver
 
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_reservation import IReservation
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 
 
 class InventoryForType:
@@ -47,8 +47,8 @@ class InventoryForType:
         """
 
     @abstractmethod
-    def allocate(self, *, reservation: IReservation, graph_id: str, graph_node: BaseSliver,
-                 existing_reservations: List[IReservation]) -> Tuple[str, BaseSliver]:
+    def allocate(self, *, reservation: ABCReservationMixin, graph_id: str, graph_node: BaseSliver,
+                 existing_reservations: List[ABCReservationMixin]) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation
         :param reservation: reservation to be allocated

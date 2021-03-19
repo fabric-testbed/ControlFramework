@@ -30,11 +30,11 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.core.core.unit import Unit
 from fabric_cf.actor.core.plugins.db.server_actor_database import ServerActorDatabase
-from fabric_cf.actor.core.apis.i_substrate_database import ISubstrateDatabase
+from fabric_cf.actor.core.apis.abc_substrate_database import ABCSubstrateDatabase
 from fabric_cf.actor.core.util.id import ID
 
 
-class SubstrateActorDatabase(ServerActorDatabase, ISubstrateDatabase):
+class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
     def get_unit(self, *, uid: ID):
         result = None
         try:

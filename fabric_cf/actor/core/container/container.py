@@ -43,7 +43,7 @@ from fabric_cf.actor.core.proxies.proxy_factory import ProxyFactorySingleton
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
-from fabric_cf.actor.core.apis.i_actor_container import IActorContainer
+from fabric_cf.actor.core.apis.abc_actor_container import ABCActorContainer
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.protocol_descriptor import ProtocolDescriptor
 from fabric_cf.actor.core.kernel.kernel_tick import KernelTick
@@ -52,10 +52,10 @@ from fabric_cf.actor.core.util.id import ID
 
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.apis.i_tick import ITick
-    from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity
-    from fabric_cf.actor.core.apis.i_container_database import IContainerDatabase
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+    from fabric_cf.actor.core.apis.abc_tick import ABCTick
+    from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
+    from fabric_cf.actor.core.apis.abc_container_database import ABCContainerDatabase
     from fabric_cf.actor.boot.configuration import Configuration
 
 
@@ -72,7 +72,7 @@ class ContainerState(Enum):
     Failed = 7
 
 
-class Container(IActorContainer):
+class Container(ABCActorContainer):
     """
     Container is the "heart" of Fabric Core system. The container manager is responsible for managing the core instance.
     This is a singleton class.
@@ -99,7 +99,7 @@ class Container(IActorContainer):
         self.container_lock = threading.Lock()
         self.actor = None
 
-    def get_actor(self) -> IActor:
+    def get_actor(self) -> ABCActorMixin:
         """
         Return the actor running in the container
         @return actor
@@ -395,7 +395,7 @@ class Container(IActorContainer):
                 self.logger.error(f"Could not recover actor {a.get_name()}, exception: {e}")
                 raise e
 
-    def recover_actor(self, *, actor: IActor):
+    def recover_actor(self, *, actor: ABCActorMixin):
         """
         Recover actor
         """
@@ -413,21 +413,21 @@ class Container(IActorContainer):
 
         self.logger.info(f"Actor {actor_name} recovered successfully")
 
-    def register(self, *, tickable: ITick):
+    def register(self, *, tickable: ABCTick):
         """
         Register Actor with timer thread
         @param tickable actor
         """
         self.ticker.add_tickable(tickable=tickable)
 
-    def unregister(self, *, tickable: ITick):
+    def unregister(self, *, tickable: ABCTick):
         """
         Un-Register Actor with timer thread
         @param tickable actor
         """
         self.ticker.remove_tickable(tickable=tickable)
 
-    def register_actor(self, *, actor: IActor):
+    def register_actor(self, *, actor: ABCActorMixin):
         """
         Registers a new actor: adds the actor to the database, registers actor proxies and callbacks. Must not
         register the actor with the clock! Clock registration is a separate phase.
@@ -441,7 +441,7 @@ class Container(IActorContainer):
         self.actor = actor
         actor.start()
 
-    def unregister_actor(self, *, actor: IActor):
+    def unregister_actor(self, *, actor: ABCActorMixin):
         """
         Unregisters the actor from the container.
         @param actor actor
@@ -450,7 +450,7 @@ class Container(IActorContainer):
         self.management_object_manager.unload_actor_manager_objects(actor_name=actor.get_name())
         ActorRegistrySingleton.get().unregister(actor=actor)
 
-    def register_common(self, *, actor: IActor):
+    def register_common(self, *, actor: ABCActorMixin):
         """
         Performs the common steps required to register an actor with the container.
         @param actor actor
@@ -461,7 +461,7 @@ class Container(IActorContainer):
 
         RemoteActorCacheSingleton.get().register_with_registry(actor=actor)
 
-    def register_management_object(self, *, actor: IActor):
+    def register_management_object(self, *, actor: ABCActorMixin):
         """
         Register Actor Management Object
         """
@@ -496,7 +496,7 @@ class Container(IActorContainer):
         self.protocols[protocol.get_protocol()] = protocol
         self.logger.debug(f"Registered container protocol: {protocol.get_protocol()}")
 
-    def register_proxies(self, *, actor: IActor):
+    def register_proxies(self, *, actor: ABCActorMixin):
         """
         Registers all proxies for the specified actor.
         @param actor actor
@@ -521,7 +521,7 @@ class Container(IActorContainer):
                 self.logger.debug(f"Registering callback {actor.get_name()} for protocol {protocol.get_protocol()}")
                 ActorRegistrySingleton.get().register_callback(callback=callback)
 
-    def register_recovered_actor(self, *, actor: IActor):
+    def register_recovered_actor(self, *, actor: ABCActorMixin):
         """
         Registers a recovered actor.
         @param actor recovered actor
@@ -600,7 +600,7 @@ class Container(IActorContainer):
     def get_guid(self) -> ID:
         return self.guid
 
-    def get_database(self) -> IContainerDatabase:
+    def get_database(self) -> ABCContainerDatabase:
         return self.db
 
     def get_config(self) -> Configuration:
@@ -624,7 +624,7 @@ class Container(IActorContainer):
         return self.protocols.get(protocol, None)
 
     @staticmethod
-    def get_proxy(protocol: str, identity: IActorIdentity, location: ActorLocation, proxy_type: str = None):
+    def get_proxy(protocol: str, identity: ABCActorIdentity, location: ActorLocation, proxy_type: str = None):
         proxy = ActorRegistrySingleton.get().get_proxy(protocol=protocol, actor_name=identity.get_name())
         if proxy is None:
             proxy = ProxyFactorySingleton.get().new_proxy(protocol=protocol, identity=identity, location=location,

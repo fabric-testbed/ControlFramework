@@ -45,16 +45,16 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 
-from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
-from fabric_cf.actor.core.apis.i_mgmt_broker import IMgmtBroker
+from fabric_cf.actor.core.apis.abc_mgmt_broker_mixin import ABCMgmtBrokerMixin
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.kafka.kafka_server_actor import KafkaServerActor
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class KafkaBroker(KafkaServerActor, IMgmtBroker):
+class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
     def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
         self.clear_last()
         status = ResultAvro()

@@ -37,8 +37,8 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
-from fabric_cf.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
-from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
+from fabric_cf.actor.core.apis.abc_mgmt_server_actor import ABCMgmtServerActor
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.kernel.slice import SliceTypes
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID
 
 
-class KafkaServerActor(KafkaActor, IMgmtServerActor):
+class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
     def get_broker_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         status = ResultAvro()

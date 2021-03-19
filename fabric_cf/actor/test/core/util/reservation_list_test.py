@@ -25,8 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import unittest
 
-from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.kernel.client_reservation_factory import ClientReservationFactory
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_list import ReservationList
 
@@ -39,7 +39,7 @@ class ReservationListTest(unittest.TestCase):
         self.assertIsNotNone(r_list.cycle_to_rset)
         self.assertEqual(r_list.count, 0)
 
-    def make_reservation(self, rid: str) -> IReservation:
+    def make_reservation(self, rid: str) -> ABCReservationMixin:
         return ClientReservationFactory.create(rid=ID(uid=rid))
 
     def test_add_reservation(self):
@@ -103,7 +103,7 @@ class ReservationListTest(unittest.TestCase):
         self.assertEqual(0, r_list.size())
         self.assertEqual(0, len(r_list.reservation_id_to_cycle))
 
-    def check_exists(self, holdings: ReservationList, reservation: IReservation, cycle: int):
+    def check_exists(self, holdings: ReservationList, reservation: ABCReservationMixin, cycle: int):
         rset = holdings.get_reservations(cycle=cycle)
         return rset.contains(reservation=reservation)
 

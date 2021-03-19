@@ -26,11 +26,11 @@
 import pickle
 import traceback
 
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
-from fabric_cf.actor.core.apis.i_proxy import IProxy
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
+from fabric_cf.actor.core.apis.abc_proxy import ABCProxy
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
@@ -39,7 +39,7 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class Proxy(IProxy):
+class Proxy(ABCProxy):
     """
     Proxy class represents a stub to an actor. Proxies define a general interface, which is implementation
     independent and enables easy implementation of new communication protocols.
@@ -47,7 +47,7 @@ class Proxy(IProxy):
     PropertyProxyActorName = "prx_name"
 
     @staticmethod
-    def get_callback(*, actor: IActor, protocol: str) -> ICallbackProxy:
+    def get_callback(*, actor: ABCActorMixin, protocol: str) -> ABCCallbackProxy:
         """
         Obtains a callback for the specified actor
         @param actor actor
@@ -63,7 +63,7 @@ class Proxy(IProxy):
         return callback
 
     @staticmethod
-    def get_proxy(*, proxy_reload_from_db) -> IProxy:
+    def get_proxy(*, proxy_reload_from_db) -> ABCProxy:
         """
         Obtains a proxy object from the specified properties list. If a suitable
         proxy object has already been created and registered with the
@@ -92,7 +92,7 @@ class Proxy(IProxy):
         return proxy
 
     @staticmethod
-    def recover_proxy(*, proxy_reload_from_db: IProxy, register: bool) -> IProxy:
+    def recover_proxy(*, proxy_reload_from_db: ABCProxy, register: bool) -> ABCProxy:
         """
         Creates a proxy list from a properties list representing the
         serialization of the proxy. Optionally, the resulting object may be
@@ -116,7 +116,7 @@ class Proxy(IProxy):
         return proxy_reload_from_db
 
     @staticmethod
-    def decode(*, encoded, plugin: IBasePlugin) -> IConcreteSet:
+    def decode(*, encoded, plugin: ABCBasePlugin) -> ABCConcreteSet:
         try:
             decoded_resource = pickle.loads(encoded)
             print("Decoded object is of type={}".format(type(decoded_resource)))

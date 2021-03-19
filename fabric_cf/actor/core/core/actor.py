@@ -28,16 +28,16 @@ import threading
 import traceback
 from typing import List
 
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_policy import IPolicy
-from fabric_cf.actor.core.apis.i_timer_task import ITimerTask
-from fabric_cf.actor.core.apis.i_actor import IActor, ActorType
-from fabric_cf.actor.core.apis.i_actor_event import IActorEvent
-from fabric_cf.actor.core.apis.i_actor_proxy import IActorProxy
-from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
-from fabric_cf.actor.core.apis.i_query_response_handler import IQueryResponseHandler
-from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.apis.i_slice import ISlice
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
+from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
+from fabric_cf.actor.core.apis.abc_actor_proxy import ABCActorProxy
+from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
+from fabric_cf.actor.core.apis.abc_query_response_handler import ABCQueryResponseHandler
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.exceptions import ActorException
 from fabric_cf.actor.core.container.message_service import MessageService
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
@@ -71,11 +71,11 @@ class ExecutionStatus:
         self.done = True
 
 
-class ActorEvent(IActorEvent):
+class ActorEvent(ABCActorEvent):
     """
     Actor Event
     """
-    def __init__(self, *, status: ExecutionStatus, runnable: IActorRunnable):
+    def __init__(self, *, status: ExecutionStatus, runnable: ABCActorRunnable):
         self.status = status
         self.runnable = runnable
 
@@ -94,7 +94,7 @@ class ActorEvent(IActorEvent):
                 self.status.lock.notify_all()
 
 
-class Actor(IActor):
+class ActorMixin(ABCActorMixin):
     """
     Actor is the base class for all actor implementations
     """
@@ -205,7 +205,7 @@ class Actor(IActor):
     def close_by_rid(self, *, rid: ID):
         self.wrapper.close(rid=rid)
 
-    def close(self, *, reservation: IReservation):
+    def close(self, *, reservation: ABCReservationMixin):
         if reservation is not None:
             if not self.recovered:
                 self.logger.debug("Adding reservation: {} to closing list".format(reservation.get_reservation_id()))
@@ -244,7 +244,7 @@ class Actor(IActor):
     def external_tick(self, *, cycle: int):
         self.logger.debug("External Tick start cycle: {}".format(cycle))
 
-        class TickEvent(IActorEvent):
+        class TickEvent(ABCActorEvent):
             def __init__(self, *, base, cycle: int):
                 self.base = base
                 self.cycle = cycle
@@ -297,7 +297,7 @@ class Actor(IActor):
     def get_actor_clock(self) -> ActorClock:
         return self.clock
 
-    def get_client_slices(self) -> List[ISlice]:
+    def get_client_slices(self) -> List[ABCSlice]:
         return self.wrapper.get_client_slices()
 
     def get_current_cycle(self) -> int:
@@ -314,7 +314,7 @@ class Actor(IActor):
     def get_identity(self) -> AuthToken:
         return self.identity
 
-    def get_inventory_slices(self) -> List[ISlice]:
+    def get_inventory_slices(self) -> List[ABCSlice]:
         """
         Get inventory slices
         @return inventory slices
@@ -327,22 +327,22 @@ class Actor(IActor):
     def get_name(self) -> str:
         return self.name
 
-    def get_policy(self) -> IPolicy:
+    def get_policy(self) -> ABCPolicy:
         return self.policy
 
-    def get_delegation(self, *, did: str) -> IDelegation:
+    def get_delegation(self, *, did: str) -> ABCDelegation:
         return self.wrapper.get_delegation(did=did)
 
-    def get_reservation(self, *, rid: ID) -> IReservation:
+    def get_reservation(self, *, rid: ID) -> ABCReservationMixin:
         return self.wrapper.get_reservation(rid=rid)
 
-    def get_reservations(self, *, slice_id: ID) -> List[IReservation]:
+    def get_reservations(self, *, slice_id: ID) -> List[ABCReservationMixin]:
         return self.wrapper.get_reservations(slice_id=slice_id)
 
     def get_plugin(self):
         return self.plugin
 
-    def get_slice(self, *, slice_id: ID) -> ISlice:
+    def get_slice(self, *, slice_id: ID) -> ABCSlice:
         return self.wrapper.get_slice(slice_id=slice_id)
 
     def get_slices(self):
@@ -401,8 +401,8 @@ class Actor(IActor):
     def is_stopped(self) -> bool:
         return self.stopped
 
-    def query(self, *, query: dict = None, caller: AuthToken = None, actor_proxy: IActorProxy = None,
-              handler: IQueryResponseHandler = None, id_token: str = None) -> dict:
+    def query(self, *, query: dict = None, caller: AuthToken = None, actor_proxy: ABCActorProxy = None,
+              handler: ABCQueryResponseHandler = None, id_token: str = None) -> dict:
         """
         Query an actor
         @param query query
@@ -457,7 +457,7 @@ class Actor(IActor):
         self.plugin.recovery_ended()
         self.policy.recovery_ended()
 
-    def recover_slices(self, *, slices: List[ISlice]):
+    def recover_slices(self, *, slices: List[ABCSlice]):
         """
         Recover slices
         @param slices slices
@@ -471,7 +471,7 @@ class Actor(IActor):
                 if s.is_inventory():
                     raise e
 
-    def recover_slice(self, *, slice_obj: ISlice):
+    def recover_slice(self, *, slice_obj: ABCSlice):
         """
         Recover slice
         @param slice_obj slice_obj
@@ -497,7 +497,7 @@ class Actor(IActor):
 
             self.logger.info("Recovery of slice {} complete".format(slice_id))
 
-    def recover_reservations(self, *, slice_obj: ISlice):
+    def recover_reservations(self, *, slice_obj: ABCSlice):
         """
         Recover reservations
         @param slice_obj slice object
@@ -523,7 +523,7 @@ class Actor(IActor):
 
         self.logger.info("Recovery for reservations in slice {} completed".format(slice_obj))
 
-    def recover_reservation(self, *, r: IReservation, slice_obj: ISlice):
+    def recover_reservation(self, *, r: ABCReservationMixin, slice_obj: ABCSlice):
         """
         Recover reservation
         @param r reservation
@@ -561,7 +561,7 @@ class Actor(IActor):
             self.logger.error("Exception occurred in recovering reservation e={}".format(e))
             raise ActorException("Could not recover Reservation #{}".format(r))
 
-    def recover_delegations(self, *, slice_obj: ISlice):
+    def recover_delegations(self, *, slice_obj: ABCSlice):
         """
         Recover delegations for a slice
         @param slice_obj slice object
@@ -588,7 +588,7 @@ class Actor(IActor):
 
         self.logger.info("Recovery for delegations in slice {} completed".format(slice_obj))
 
-    def recover_delegation(self, *, d: IDelegation, slice_obj: ISlice):
+    def recover_delegation(self, *, d: ABCDelegation, slice_obj: ABCSlice):
         """
         Recover delegation
         @param d delegation
@@ -627,32 +627,32 @@ class Actor(IActor):
             self.logger.error("Exception occurred in recovering delegation e={}".format(e))
             raise ActorException("Could not recover delegation #{}".format(d))
 
-    def register(self, *, reservation: IReservation):
+    def register(self, *, reservation: ABCReservationMixin):
         self.wrapper.register_reservation(reservation=reservation)
 
-    def register_slice(self, *, slice_object: ISlice):
+    def register_slice(self, *, slice_object: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_object)
 
-    def remove_reservation(self, *, reservation: IReservation = None, rid: ID = None):
+    def remove_reservation(self, *, reservation: ABCReservationMixin = None, rid: ID = None):
         if reservation is not None:
             self.wrapper.remove_reservation(rid=reservation.get_reservation_id())
 
         if rid is not None:
             self.wrapper.remove_reservation(rid=rid)
 
-    def remove_slice(self, *, slice_object: ISlice):
+    def remove_slice(self, *, slice_object: ABCSlice):
         self.wrapper.remove_slice(slice_id=slice_object.get_slice_id())
 
     def remove_slice_by_slice_id(self, *, slice_id: ID):
         self.wrapper.remove_slice(slice_id=slice_id)
 
-    def re_register_delegation(self, *, delegation: IDelegation):
+    def re_register_delegation(self, *, delegation: ABCDelegation):
         self.wrapper.re_register_delegation(delegation=delegation)
 
-    def re_register(self, *, reservation: IReservation):
+    def re_register(self, *, reservation: ABCReservationMixin):
         self.wrapper.re_register_reservation(reservation=reservation)
 
-    def re_register_slice(self, *, slice_object: ISlice):
+    def re_register_slice(self, *, slice_object: ABCSlice):
         self.wrapper.re_register_slice(slice_object=slice_object)
 
     def issue_delayed(self):
@@ -734,7 +734,7 @@ class Actor(IActor):
             self.thread_lock.release()
         return result
 
-    def execute_on_actor_thread_and_wait(self, *, runnable: IActorRunnable):
+    def execute_on_actor_thread_and_wait(self, *, runnable: ABCActorRunnable):
         """
         Execute an incoming action on actor thread
         @param runnable incoming action/operation
@@ -826,7 +826,7 @@ class Actor(IActor):
     def __str__(self):
         return "actor: [{}/{}]".format(self.name, self.guid)
 
-    def unregister(self, *, reservation: IReservation, rid: ID):
+    def unregister(self, *, reservation: ABCReservationMixin, rid: ID):
         """
         Unregister reservation
         @param reservation reservation
@@ -838,7 +838,7 @@ class Actor(IActor):
         if rid is not None:
             self.wrapper.unregister_reservation(rid=rid)
 
-    def unregister_slice(self, *, slice_object: ISlice):
+    def unregister_slice(self, *, slice_object: ABCSlice):
         """
         Unregister slice
         @param slice_obj slice object
@@ -852,7 +852,7 @@ class Actor(IActor):
         """
         self.wrapper.unregister_slice(slice_id=slice_id)
 
-    def queue_timer(self, timer: ITimerTask):
+    def queue_timer(self, timer: ABCTimerTask):
         """
         Queue an event on Actor timer queue
         """
@@ -861,7 +861,7 @@ class Actor(IActor):
             self.logger.debug("Added timer to timer queue {}".format(timer.__class__.__name__))
             self.actor_main_lock.notify_all()
 
-    def queue_event(self, *, incoming: IActorEvent):
+    def queue_event(self, *, incoming: ABCActorEvent):
         """
         Queue an even on Actor Event Queue
         """
