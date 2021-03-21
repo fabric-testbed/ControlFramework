@@ -30,10 +30,12 @@ import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING, Tuple, List
 
-from fim.graph.resources.neo4j_adm import Neo4jADMGraph
+from fim.graph.abc_property_graph import ABCPropertyGraphConstants
+from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_link import NetworkLinkSliver
 
 from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
@@ -412,11 +414,41 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return False, node_id_to_reservations
 
+    def __candidate_nodes(self, sliver: NodeSliver) -> List[str]:
+        node_props = {'Site': sliver.site}
+        return self.combined_broker_model.get_matching_nodes_with_components(
+            label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+            props=node_props,
+            comps=sliver.attached_components_info)
+
+    def __candidate_links(self, sliver: NetworkLinkSliver) -> List[str]:
+        pass
+
     def ticket_inventory(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term,
                          node_id_to_reservations: dict) -> Tuple[bool, dict]:
         try:
             rset = reservation.get_requested_resources()
             needed = rset.get_units()
+
+            # for network node slivers
+            # find a list of candidate nodes that satisfy the requirements based on delegated
+            # capacities within the site
+            # for network link slivers
+            # orchestrator needs to provide a map to CBM guid of the node representing the
+            # intended link (and possibly interfaces connected to it)
+
+            res_sliver = rset.get_sliver()
+
+            if isinstance(res_sliver, NodeSliver):
+                node_id_list = self.__candidate_nodes(res_sliver)
+            elif isinstance(res_sliver, NetworkLinkSliver):
+                node_id_list = self.__candidate_links(res_sliver)
+            else:
+                self.logger.error(f'Reservation {reservation} sliver type is neither Node, nor NetworkLink')
+                raise BrokerException(f"Reservation sliver type is neither Node "
+                                      f"nor NetworkLink for reservation# {reservation}")
+
+            # FIXME: walk the list to find First/Best/Worst fit
 
             # TODO - Slice Node to BQM Node mapping - remove hardcoding
             node_id = 'HX7LQ53'
@@ -673,7 +705,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             for inv in self.inventory.map.values():
                 inv.set_logger(logger=logger)
 
-    def merge_adm(self, *, adm_graph: Neo4jADMGraph):
+    def merge_adm(self, *, adm_graph: ABCADMPropertyGraph):
         """
         Merge delegation model in CBM
         :param adm_graph: ADM

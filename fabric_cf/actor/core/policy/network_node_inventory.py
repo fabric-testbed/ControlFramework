@@ -135,6 +135,7 @@ class NetworkNodeInventory(InventoryForType):
                 break
 
         # Check labels
+        # FIXME this isn't quite right - we will need to pick one of available labels, but OK to leave for now
         label_delegations = available_component.get_label_delegations()
         for delegation_id, delegation_list in label_delegations.items():
             for delegated in delegation_list:
