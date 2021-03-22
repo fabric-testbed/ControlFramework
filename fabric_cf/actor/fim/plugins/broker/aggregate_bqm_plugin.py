@@ -32,7 +32,7 @@ from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.abc_bqm import ABCBQMPropertyGraph
 from fim.graph.networkx_property_graph import NetworkXGraphImporter
-from .networkx_abqm import NetworkXAggregateBQM
+from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.slivers.capacities_labels import Capacities
 from fim.slivers.network_node import CompositeNodeSliver
 from fim.slivers.attached_components import ComponentSliver

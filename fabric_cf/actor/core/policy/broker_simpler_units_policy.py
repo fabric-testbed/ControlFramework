@@ -34,7 +34,7 @@ from fim.graph.abc_property_graph import ABCPropertyGraphConstants
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_link import NetworkLinkSliver
 
 from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
@@ -415,7 +415,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return False, node_id_to_reservations
 
     def __candidate_nodes(self, sliver: NodeSliver) -> List[str]:
-        node_props = {'Site': sliver.site}
+        """
+        Identify candidate worker nodes in this site that have at least
+        as many needed components as in the sliver.
+        """
+        node_props = {'Site': sliver.site, 'Type': str(NodeType.Server)}
         return self.combined_broker_model.get_matching_nodes_with_components(
             label=ABCPropertyGraphConstants.CLASS_NetworkNode,
             props=node_props,
@@ -431,7 +435,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             needed = rset.get_units()
 
             # for network node slivers
-            # find a list of candidate nodes that satisfy the requirements based on delegated
+            # find a list of candidate worker nodes that satisfy the requirements based on delegated
             # capacities within the site
             # for network link slivers
             # orchestrator needs to provide a map to CBM guid of the node representing the
@@ -447,6 +451,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.error(f'Reservation {reservation} sliver type is neither Node, nor NetworkLink')
                 raise BrokerException(f"Reservation sliver type is neither Node "
                                       f"nor NetworkLink for reservation# {reservation}")
+
+            # no candidate nodes found
+            if len(node_id_list) == 0:
+                return False, node_id_to_reservations
 
             # FIXME: walk the list to find First/Best/Worst fit
 

@@ -29,6 +29,7 @@ from typing import Tuple, List
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
+from fim.slivers.delegations import Delegation, Pool
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.i_reservation import IReservation
@@ -69,12 +70,15 @@ class NetworkNodeInventory(InventoryForType):
 
         for delegation_id, delegated_list in delegated_capacities.items():
             for delegated in delegated_list:
+                if Pool.ispoolmention(delegated) or Pool.ispooldefinition(delegated):
+                    # ignore pool mentions and definitions for now
+                    continue
                 self.logger.debug(f"available_capacity_delegations: {delegated} {type(delegated)}")
-                delegated_capacity = Capacities().from_json(json.dumps(delegated))
+                delegated_capacity = Capacities().set_fields(**delegated)
 
-                available_core = delegated_capacity.core
-                available_ram = delegated_capacity.ram
-                available_disk = delegated_capacity.disk
+                #available_core = delegated_capacity.core
+                #available_ram = delegated_capacity.ram
+                #available_disk = delegated_capacity.disk
 
                 # Remove allocated capacities to the reservations
                 if existing_reservations is not None:
@@ -94,17 +98,22 @@ class NetworkNodeInventory(InventoryForType):
                             self.logger.debug(
                                 f"Excluding already assigned resources {resource_sliver.get_capacities()} to "
                                 f"reservation# {reservation.get_reservation_id()}")
-                            available_core -= resource_sliver.get_capacities().core
-                            available_ram -= resource_sliver.get_capacities().ram
-                            available_disk -= resource_sliver.get_capacities().disk
+                            delegated_capacity = delegated_capacity - resource_sliver.get_capacities()
+                            #available_core -= resource_sliver.get_capacities().core
+                            #available_ram -= resource_sliver.get_capacities().ram
+                            #available_disk -= resource_sliver.get_capacities().disk
 
                 # Compare the requested against available
-                if requested_capacities.core > available_core or requested_capacities.ram > available_ram or \
-                        requested_capacities.disk > available_disk:
-                    raise BrokerException(f"Insufficient resources "
-                                          f"Cores: [{requested_capacities.core}/{available_core}] "
-                                          f"RAM: [{requested_capacities.ram}/{available_ram}] "
-                                          f"Disk: [{requested_capacities.disk}/{available_disk}]")
+                delegated_capacity = delegated_capacity - requested_capacities
+                negative_fields = delegated_capacity.negative_fields()
+                if len(negative_fields) > 0:
+                #if requested_capacities.core > available_core or requested_capacities.ram > available_ram or \
+                #        requested_capacities.disk > available_disk:
+                    #raise BrokerException(f"Insufficient resources "
+                    #                       f"Cores: [{requested_capacities.core}/{available_core}] "
+                    #                      f"RAM: [{requested_capacities.ram}/{available_ram}] "
+                    #                      f"Disk: [{requested_capacities.disk}/{available_disk}]")
+                    raise BrokerException(f"Insufficient resources {negative_fields}")
 
                 return delegation_id
         return None
@@ -126,8 +135,13 @@ class NetworkNodeInventory(InventoryForType):
         capacity_delegations = available_component.get_capacity_delegations()
         for delegation_id, delegation_list in capacity_delegations.items():
             for delegated in delegation_list:
+                if Pool.ispoolmention(delegated) or Pool.ispooldefinition(delegated):
+                    # ignore pool mentions and definitions for now
+                    continue
                 self.logger.debug(f"available_capacity_delegations : {delegated} {type(delegated)} for component {available_component}")
-                delegated_capacity = Capacities().from_json(json.dumps(delegated))
+                delegated_capacity = Capacities().set_fields(**delegated)
+                # FIXME not clear this is needed - the next function check_components actually checks if
+                # this has been allocated.
                 if delegated_capacity.unit < 1:
                     raise BrokerException(f"Insufficient resources for component: {requested_component.get_name()}"
                                           f"Unit: [{1}/{delegated_capacity.unit}]")
@@ -139,8 +153,11 @@ class NetworkNodeInventory(InventoryForType):
         label_delegations = available_component.get_label_delegations()
         for delegation_id, delegation_list in label_delegations.items():
             for delegated in delegation_list:
+                if Pool.ispoolmention(delegated) or Pool.ispooldefinition(delegated):
+                    # ignore pool mentions and definitions for now
+                    continue
                 self.logger.debug(f"available_label_delegations : {delegated} {type(delegated)} for component {available_component}")
-                delegated_label = Labels().from_json(json.dumps(delegated))
+                delegated_label = Labels().set_fields(**delegated)
                 requested_component.label_allocations = delegated_label
                 break
 
