@@ -444,7 +444,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
     def __candidate_links(self, sliver: NetworkLinkSliver) -> List[str]:
         pass
 
-    def ticket_inventory(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term,
+    def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
                          node_id_to_reservations: dict) -> Tuple[bool, dict]:
         try:
             rset = reservation.get_requested_resources()
@@ -500,11 +500,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.fail(message=str(e))
         return False, node_id_to_reservations
 
-<<<<<<< HEAD
-    def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term):
-=======
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
-                         reservation: IBrokerReservation) -> Tuple[str, BaseSliver]:
+                         reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver]:
         delegation_id = None
         sliver = None
         self.logger.debug(f"Possible candidates to serve res# {reservation} candidates# {node_id_list}")
@@ -530,7 +527,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return delegation_id, sliver
 
-    def extend_private(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term):
+    def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term):
         pass
 
     def issue_ticket(self, *, reservation: ABCBrokerReservation, units: int, rtype: ResourceType,
