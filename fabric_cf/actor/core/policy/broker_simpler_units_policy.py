@@ -433,7 +433,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         Identify candidate worker nodes in this site that have at least
         as many needed components as in the sliver.
         """
-        node_props = {'Site': sliver.site, 'Type': str(NodeType.Server)}
+        node_props = {ABCPropertyGraphConstants.PROP_SITE: sliver.site,
+                      ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Server)}
         return self.combined_broker_model.get_matching_nodes_with_components(
             label=ABCPropertyGraphConstants.CLASS_NetworkNode,
             props=node_props,
@@ -502,7 +503,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                          reservation: IBrokerReservation) -> Tuple[str, BaseSliver]:
         delegation_id = None
         sliver = None
-        self.logger.debug(f"Possible candidates to server res# {reservation} candidates# {node_id_list}")
+        self.logger.debug(f"Possible candidates to serve res# {reservation} candidates# {node_id_list}")
         for node_id in node_id_list:
             try:
                 self.logger.debug(f"Attempting to allocate res# {reservation} via graph_node# {node_id}")
