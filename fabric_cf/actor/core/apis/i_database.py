@@ -247,7 +247,7 @@ class IDatabase:
         """
 
     @abstractmethod
-    def get_slice_by_name(self, *, slice_name: str) -> ISlice:
+    def get_slice_by_name(self, *, slice_name: str) -> List[ISlice]:
         """
         Retrieves the specified slice record.
 

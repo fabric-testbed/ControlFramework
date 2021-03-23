@@ -140,10 +140,7 @@ class ActorManagementObject(ManagementObject, IActorManagementObject):
                             slice_list = [slice_obj]
 
                     elif slice_name is not None:
-                        slice_obj = self.db.get_slice_by_name(slice_name=slice_name)
-                        if slice_obj is not None:
-                            slice_list = [slice_obj]
-
+                        slice_list = self.db.get_slice_by_name(slice_name=slice_name)
                     else:
                         slice_list = self.db.get_slices()
 

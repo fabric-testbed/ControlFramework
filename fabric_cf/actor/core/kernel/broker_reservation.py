@@ -30,7 +30,7 @@ import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.common.exceptions import BrokerException
+from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.apis.i_authority_policy import IAuthorityPolicy
 from fabric_cf.actor.core.apis.i_broker_policy import IBrokerPolicy
@@ -159,7 +159,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             return
 
         if not isinstance(self.policy, IBrokerPolicy):
-            raise BrokerException("Do not know how to recover: policy={}".format(self.policy))
+            raise BrokerException(msg=f"Do not know how to recover: policy={self.policy}")
 
         if self.state == ReservationStates.Nascent:
             if self.pending_state == ReservationPendingStates.None_:
@@ -176,7 +176,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                                                                                    self.print_state()))
 
             else:
-                raise BrokerException("Unexpected pending state")
+                raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE,
+                                      msg=f"pending_state={self.pending_state}")
 
         elif self.state == ReservationStates.Ticketed:
             if self.pending_state == ReservationPendingStates.None_ or \
@@ -193,23 +194,26 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                     "Added reservation #{} to the extending list. State={}".format(self.get_reservation_id(),
                                                                                    self.print_state()))
             else:
-                raise BrokerException("Unexpected pending state")
+                raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE,
+                                      msg=f"pending_state={self.pending_state}")
 
         elif self.state == ReservationStates.Failed:
             self.logger.warning("Reservation #{} has failed".format(self.get_reservation_id()))
         else:
-            raise BrokerException("Unexpected reservation state")
+            raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE,
+                                  msg=f"state={self.state}")
 
     def handle_failed_rpc(self, *, failed: FailedRPC):
         # make sure that the failed RPC came from the callback identity
         remote_auth = failed.get_remote_auth()
         if failed.get_request_type() == RPCRequestType.UpdateTicket:
             if self.callback is None or self.callback.get_identity() != remote_auth:
-                raise BrokerException("Unauthorized Failed reservation RPC: expected={}, but was: {}".format(
-                    self.callback.get_identity(), remote_auth))
+                raise BrokerException(msg=f"Unauthorized Failed reservation RPC: "
+                                          f"expected={self.callback.get_identity()}, but was: {remote_auth}")
         else:
-            raise BrokerException("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(
-                failed.get_request_type()))
+            raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
+                                  msg=f"Unexpected FailedRPC for BrokerReservation. "
+                                      f"RequestType={failed.get_request_type()}")
 
         super().handle_failed_rpc(failed=failed)
 
@@ -375,7 +379,8 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
             self.logger.debug("no op")
 
         else:
-            raise BrokerException("unsupported operation {}".format(RequestTypes(operation).name))
+            raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
+                                  msg=f"operation {RequestTypes(operation).name}")
 
     def generate_update(self):
         self.logger.debug("Generating update")

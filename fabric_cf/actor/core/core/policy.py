@@ -55,6 +55,7 @@ class Policy(IPolicy):
             self.clock = None
             self.guid = ID()
         self.guid = ID()
+        self.properties = None
 
     def close(self, *, reservation: IReservation):
         """
@@ -178,3 +179,6 @@ class Policy(IPolicy):
 
     def set_logger(self, logger):
         self.logger = logger
+
+    def set_properties(self, properties: dict):
+        self.properties = properties

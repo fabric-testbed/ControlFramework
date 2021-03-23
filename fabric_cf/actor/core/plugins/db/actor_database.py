@@ -197,14 +197,21 @@ class ActorDatabase(IDatabase):
             self.logger.error(e)
         return None
 
-    def get_slice_by_name(self, *, slice_name: str) -> ISlice:
+    def get_slice_by_name(self, *, slice_name: str) -> List[ISlice]:
         try:
-            slice_dict = self.db.get_slice_by_name(act_id=self.actor_id, slice_name=slice_name)
-            if slice_dict is not None:
-                pickled_slice = slice_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                return pickle.loads(pickled_slice)
+            self.lock.acquire()
+            result = []
+            slice_dict_list = self.db.get_slice_by_name(act_id=self.actor_id, slice_name=slice_name)
+            if slice_dict_list is not None:
+                for s in slice_dict_list:
+                    pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+                    slice_obj = pickle.loads(pickled_slice)
+                    result.append(slice_obj)
+            return result
         except Exception as e:
             self.logger.error(e)
+        finally:
+            self.lock.release()
         return None
 
     def get_slices(self) -> List[ISlice]:

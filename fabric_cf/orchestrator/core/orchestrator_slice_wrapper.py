@@ -83,7 +83,7 @@ class OrchestratorSliceWrapper:
         """
         if self.controller is None:
             return None
-        return self.controller.get_reservations()
+        return self.controller.get_reservations(slice_id=ID(uid=self.slice_obj.get_slice_id()))
 
     def get_slice_name(self) -> str:
         """

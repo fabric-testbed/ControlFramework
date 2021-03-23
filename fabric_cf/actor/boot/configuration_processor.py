@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, List
 from fabric_cf.actor.boot.configuration_exception import ConfigurationException
 from fabric_cf.actor.boot.inventory.pool_creator import PoolCreator
 from fabric_cf.actor.core.apis.i_authority import IAuthority
+from fabric_cf.actor.core.apis.i_policy import IPolicy
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
 from fabric_cf.actor.core.container.remote_actor_cache import RemoteActorCacheSingleton, RemoteActorCache
@@ -242,6 +243,8 @@ class ConfigurationProcessor:
         policy = None
         if config.get_policy() is not None:
             policy = self.make_policy(policy=config.get_policy())
+            properties = config.get_policy().get_properties()
+            policy.set_properties(properties=properties)
         else:
             policy = BrokerSimplerUnitsPolicy()
 
@@ -296,7 +299,7 @@ class ConfigurationProcessor:
         return policy
 
     @staticmethod
-    def make_policy(*, policy: PolicyConfig):
+    def make_policy(*, policy: PolicyConfig) -> IPolicy:
         """
         Creates Policy Instance
         @param policy policy config

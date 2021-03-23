@@ -34,7 +34,7 @@ from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.i_reservation import IReservation
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.exceptions import BrokerException
+from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 from fabric_cf.actor.core.util.id import ID
 
@@ -113,7 +113,8 @@ class NetworkNodeInventory(InventoryForType):
                     #                       f"Cores: [{requested_capacities.core}/{available_core}] "
                     #                      f"RAM: [{requested_capacities.ram}/{available_ram}] "
                     #                      f"Disk: [{requested_capacities.disk}/{available_disk}]")
-                    raise BrokerException(f"Insufficient resources {negative_fields}")
+                    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                          msg=f"{negative_fields}")
 
                 return delegation_id
         return None
@@ -142,9 +143,10 @@ class NetworkNodeInventory(InventoryForType):
                 delegated_capacity = Capacities().set_fields(**delegated)
                 # FIXME not clear this is needed - the next function check_components actually checks if
                 # this has been allocated.
-                if delegated_capacity.unit < 1:
-                    raise BrokerException(f"Insufficient resources for component: {requested_component.get_name()}"
-                                          f"Unit: [{1}/{delegated_capacity.unit}]")
+                #if delegated_capacity.unit < 1:
+                #    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                #                          msg=f"for component: {requested_component.get_name()}"
+                #                              f"Unit: [{1}/{delegated_capacity.unit}]")
                 requested_component.capacity_allocations = delegated_capacity
                 break
 
@@ -156,7 +158,8 @@ class NetworkNodeInventory(InventoryForType):
                 if Pool.ispoolmention(delegated) or Pool.ispooldefinition(delegated):
                     # ignore pool mentions and definitions for now
                     continue
-                self.logger.debug(f"available_label_delegations : {delegated} {type(delegated)} for component {available_component}")
+                self.logger.debug(f"available_label_delegations : {delegated} {type(delegated)} for component "
+                                  f"{available_component}")
                 delegated_label = Labels().set_fields(**delegated)
                 requested_component.label_allocations = delegated_label
                 break
@@ -187,8 +190,9 @@ class NetworkNodeInventory(InventoryForType):
             self.logger.debug(f"Resource Type: {resource_type} available_components: {available_components}")
 
             if available_components is None or len(available_components) == 0:
-                raise BrokerException(f"Insufficient resources Component of type: {resource_type} not available in "
-                                      f"graph node: {graph_node.node_id}")
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg=f"Component of type: {resource_type} not available in "
+                                          f"graph node: {graph_node.node_id}")
 
             for reservation in existing_reservations:
                 if rid == reservation.get_reservation_id():
@@ -220,8 +224,9 @@ class NetworkNodeInventory(InventoryForType):
             self.logger.debug(f"available_components after excluding allocated components: {available_components}")
 
             if available_components is None or len(available_components) == 0:
-                raise BrokerException(f"Insufficient resources Component of type: {resource_type} not available in "
-                                      f"graph node: {graph_node.node_id}")
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg=f"Component of type: {resource_type} not available in "
+                                          f"graph node: {graph_node.node_id}")
 
             for component in available_components:
                 # check model matches the requested model
@@ -240,8 +245,9 @@ class NetworkNodeInventory(InventoryForType):
                     break
 
             if requested_component.get_node_map() is None:
-                raise BrokerException(f"Component of type: {resource_type} model: {requested_component.get_model()} "
-                                      f"not available in graph node: {graph_node.node_id}")
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg=f"Component of type: {resource_type} not available in "
+                                          f"graph node: {graph_node.node_id}")
 
         return requested_components
 
@@ -257,11 +263,13 @@ class NetworkNodeInventory(InventoryForType):
         :raises: BrokerException in case the request cannot be satisfied
         """
         if graph_node.capacity_delegations is None or len(graph_node.capacity_delegations) < 1 or reservation is None:
-            raise BrokerException(Constants.INVALID_ARGUMENT)
+            raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
+                                  msg=f"capacity_delegations: {graph_node.capacity_delegations}")
 
         requested = reservation.get_requested_resources().get_sliver()
         if not isinstance(requested, NodeSliver):
-            raise BrokerException(f"Invalid resource type {requested.get_type()}")
+            raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
+                                  msg=f"resource type: {requested.get_type()}")
 
         # Check if Capacities can be satisfied
         delegation_id = self.__check_capacities(rid=reservation.get_reservation_id(),

@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import traceback
+import enum
 from enum import Enum
 from typing import Tuple
 
@@ -35,19 +35,19 @@ from fabric_cf.actor.core.util.reservation_set import ReservationSet
 
 
 class SliceState(Enum):
-    Nascent = 1
-    Configuring = 2
-    StableError = 3
-    StableOK = 4
-    Closing = 5
-    Dead = 6
+    Nascent = enum.auto()
+    Configuring = enum.auto()
+    StableError = enum.auto()
+    StableOK = enum.auto()
+    Closing = enum.auto()
+    Dead = enum.auto()
 
 
 class SliceCommand(Enum):
-    Create = 1
-    Modify = 2
-    Delete = 3
-    Reevaluate = 4
+    Create = enum.auto()
+    Modify = enum.auto()
+    Delete = enum.auto()
+    Reevaluate = enum.auto()
 
 
 class SliceOperation:

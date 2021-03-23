@@ -520,22 +520,21 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slice_by_name(self, *, act_id: int, slice_name: str) -> dict:
+    def get_slice_by_name(self, *, act_id: int, slice_name: str) -> list:
         """
         Get slice for an actor
         @param act_id actor id
         @param slice_name slice name
         @return slice dictionary
         """
-        result = {}
+        result = []
         try:
             with session_scope(self.db_engine) as session:
-                slc_obj = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
-                    Slices.slc_name == slice_name).first()
-                if slc_obj is not None:
-                    result = self.generate_slice_dict_from_row(slc_obj)
-                else:
-                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slice_name))
+                for row in session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
+                        Slices.slc_name == slice_name):
+                    slice_obj = self.generate_slice_dict_from_row(row)
+                    result.append(slice_obj.copy())
+                    slice_obj.clear()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
