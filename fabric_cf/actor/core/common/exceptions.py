@@ -23,6 +23,34 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import enum
+from typing import Any
+
+
+@enum.unique
+class ExceptionErrorCode(enum.Enum):
+    UNEXPECTED_STATE = enum.auto()
+    INVALID_ARGUMENT = enum.auto()
+    NOT_FOUND = enum.auto()
+    NOT_SUPPORTED = enum.auto()
+    NOT_IMPLEMENTED = enum.auto()
+    INSUFFICIENT_RESOURCES = enum.auto()
+    FAILURE = enum.auto()
+
+    def interpret(self, msg: str = None):
+        interpretations = {
+            1: "Unexpected state",
+            2: "Invalid argument(s)",
+            3: "Not found",
+            4: "Not supported",
+            5: "Not implemented",
+            6: "Insufficient resources",
+            7: "Failure",
+        }
+        if msg is None:
+            return interpretations[self.value]
+        else:
+            return str(msg) + ". " + interpretations[self.value]
 
 
 class DelegationNotFoundException(Exception):
@@ -97,8 +125,14 @@ class ResourcesException(Exception):
 
 class BrokerException(Exception):
     """
-    Authority Exception
+    Broker Exception
     """
+
+    def __init__(self, *, error_code: ExceptionErrorCode = ExceptionErrorCode.FAILURE, msg: Any = None):
+        msg = error_code.interpret(msg=msg)
+        super().__init__(msg)
+        self.error_code = error_code
+        self.msg = msg
 
 
 class DatabaseException(Exception):

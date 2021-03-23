@@ -41,7 +41,7 @@ class SliceDeferThread:
     slices to complete.
     """
     THREAD_SLEEP_TIME = 10000
-    DEFAULT_MAX_CREATE_TIME = 600000
+    DEFAULT_MAX_CREATE_TIME_IN_MS = 600000
 
     def __init__(self):
         self.deferred_slices = queue.Queue()
@@ -60,7 +60,7 @@ class SliceDeferThread:
             Constants.PROPERTY_CONF_CONTROLLER_CREATE_WAIT_TIME_MS, None)
 
         if wait_time is None:
-            self.max_create_wait_time = self.DEFAULT_MAX_CREATE_TIME
+            self.max_create_wait_time = self.DEFAULT_MAX_CREATE_TIME_IN_MS
         else:
             self.max_create_wait_time = wait_time
 
@@ -161,8 +161,27 @@ class SliceDeferThread:
         Thread main loop
         :return:
         """
+        self.logger.debug("SliceDeferThread started")
         while True:
-            self.logger.debug("SliceDeferThread started")
+            if self.last_slice is not None:
+                self.logger.info(f"Processing previously deferred slice {self.last_slice.get_slice_name()}/"
+                                 f"{self.last_slice.get_slice_id()}")
+
+                try:
+                    self.last_slice.lock()
+                    if self.delay_not_done(controller_slice=self.last_slice):
+                        if Term.delta(self.last_slice_time, datetime.utcnow()) > self.max_create_wait_time:
+                            self.logger.info(f"Maximum wait time exceeded for slice: {self.last_slice.get_slice_name()}/"
+                                             f"{self.last_slice.get_slice_id()}, proceeding anyway")
+                        else:
+                            continue
+                except Exception as e:
+                    self.logger.error(f"Exception while checking slice {self.last_slice.get_slice_name()}/"
+                                      f"{self.last_slice.get_slice_id()} e: {e}")
+                    self.logger.error(traceback.format_exc())
+                finally:
+                    self.last_slice.unlock()
+
             controller_slice = None
 
             with self.defer_slice_avail_condition:
@@ -187,25 +206,8 @@ class SliceDeferThread:
             if controller_slice is None:
                 continue
 
-            self.logger.info(f"Processing previously deferred slice {self.last_slice.get_slice_name()}/"
-                             f"{self.last_slice.get_slice_id()}")
-
-            try:
-                self.last_slice.lock()
-                if self.delay_not_done(controller_slice=self.last_slice):
-                    if Term.delta(self.last_slice, datetime.utcnow()) > self.max_create_wait_time:
-                        self.logger.info(f"Maximum wait time exceeded for slice: {self.last_slice.get_slice_name()}/"
-                                         f"{self.last_slice.get_slice_id()}, proceeding anyway")
-                    else:
-                        continue
-            except Exception as e:
-                self.logger.error(f"Exception while checking slice {self.last_slice.get_slice_name()}/"
-                                  f"{self.last_slice.get_slice_id()} e: {e}")
-            finally:
-                self.last_slice.unlock()
-
-            self.logger.info(f"Performing demand on deferred slice {self.last_slice.get_slice_name()}/"
-                             f"{self.last_slice.get_slice_id()}")
+            self.logger.info(f"Performing demand on deferred slice {controller_slice.get_slice_name()}/"
+                             f"{controller_slice.get_slice_id()}")
 
             self.update_last(controller_slice=controller_slice)
             try:
@@ -296,14 +298,14 @@ class SliceDeferThread:
                 return self.check_computed_reservations(controller_slice=controller_slice)
 
             for reservation in all_reservations:
-
-                if reservation.get_state() != ReservationStates.Active and \
-                        reservation.get_state() != ReservationStates.Closed and \
-                        reservation.get_state() != ReservationStates.CloseWait and \
-                        reservation.get_state() != ReservationStates.Failed:
+                reservation_state = ReservationStates(reservation.get_state())
+                if reservation_state != ReservationStates.Active and reservation_state != ReservationStates.Closed and \
+                        reservation_state != ReservationStates.CloseWait and \
+                        reservation_state != ReservationStates.Failed:
                     self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()}"
                                      f" has resource type: {reservation.get_resource_type()}"
                                      f" with reservation: {reservation.get_reservation_id()} "
+                                     f"in state: {reservation_state.name} "
                                      f"that is not yet done")
                     return True
             self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} "

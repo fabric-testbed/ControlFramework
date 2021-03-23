@@ -33,7 +33,7 @@ from fim.graph.abc_property_graph import ABCPropertyGraph
 
 from fabric_cf.actor.core.apis.i_actor import ActorType
 from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.common.exceptions import BrokerException
+from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
 from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
@@ -163,7 +163,7 @@ class Broker(Actor, IBroker):
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
                                 broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         if delegation_id is None:
-            raise BrokerException(Constants.INVALID_ARGUMENT)
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT, msg="delegation_id")
 
         if broker is None:
             broker = self.get_default_broker()
@@ -186,7 +186,7 @@ class Broker(Actor, IBroker):
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ISlice = None,
                                   broker: IBrokerProxy = None, id_token: str = None) -> IDelegation:
         if delegation_id is None:
-            raise BrokerException(Constants.INVALID_ARGUMENT)
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT, msg="delegation_id")
 
         if broker is None:
             broker = self.get_default_broker()
@@ -206,7 +206,7 @@ class Broker(Actor, IBroker):
         callback = ActorRegistrySingleton.get().get_callback(protocol=Constants.PROTOCOL_KAFKA,
                                                              actor_name=self.get_name())
         if callback is None:
-            raise BrokerException("Unsupported")
+            raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED, msg="callback is None")
 
         delegation.prepare(callback=callback, logger=self.logger)
         delegation.validate_outgoing()
@@ -219,14 +219,14 @@ class Broker(Actor, IBroker):
     def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
                          id_token: str = None):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.INVALID_ACTOR_STATE)
+            raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
         self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback,
                                               id_token=id_token)
 
     def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
                            id_token: str = None):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.INVALID_ACTOR_STATE)
+            raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
         self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback,
                                                 id_token=id_token)
 
@@ -242,10 +242,10 @@ class Broker(Actor, IBroker):
 
     def demand(self, *, rid: ID):
         if rid is None:
-            raise BrokerException(Constants.INVALID_ARGUMENT)
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT, msg="rid")
         reservation = self.get_reservation(rid=rid)
         if reservation is None:
-            raise BrokerException("unknown reservation #{}".format(rid))
+            raise BrokerException(error_code=ExceptionErrorCode.NOT_FOUND, msg=f"rid={rid}")
 
         self.policy.demand(reservation=reservation)
         reservation.set_policy(policy=self.policy)
@@ -289,7 +289,7 @@ class Broker(Actor, IBroker):
 
     def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
         if not self.recovered or self.is_stopped():
-            raise BrokerException(Constants.INVALID_ACTOR_STATE)
+            raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
         self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
     def get_broker(self, *, guid: ID) -> IBrokerProxy:
@@ -354,13 +354,13 @@ class Broker(Actor, IBroker):
 
     def ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.INVALID_ACTOR_STATE)
+            raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
 
         self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback, compare_seq_numbers=True)
 
     def relinquish(self, *, reservation: IReservation, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.INVALID_ACTOR_STATE)
+            raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
         self.wrapper.relinquish_request(reservation=reservation, caller=caller)
 
     def tick_handler(self):
@@ -370,12 +370,12 @@ class Broker(Actor, IBroker):
 
     def update_ticket(self, *, reservation: IReservation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.INVALID_ACTOR_STATE)
+            raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
         self.wrapper.update_ticket(reservation=reservation, update_data=update_data, caller=caller)
 
     def update_delegation(self, *, delegation: IDelegation, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException(Constants.INVALID_ACTOR_STATE)
+            raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
         self.wrapper.update_delegation(delegation=delegation, update_data=update_data, caller=caller)
 
     def register_client(self, *, client: Client):
@@ -384,12 +384,12 @@ class Broker(Actor, IBroker):
         try:
             database.get_client(guid=client.get_guid())
         except Exception as e:
-            raise BrokerException(Constants.OBJECT_NOT_FOUND.format(client.get_guid(), e))
+            raise BrokerException(error_code=ExceptionErrorCode.NOT_FOUND, msg=f"client: {client.get_guid()} e: {e}")
 
         try:
             database.add_client(client=client)
         except Exception as e:
-            raise BrokerException(Constants.FAILED_TO_ADD.format(client, e))
+            raise BrokerException(error_code=ExceptionErrorCode.FAILURE, msg=f"client: {client.get_guid()} e: {e}")
 
     def unregister_client(self, *, guid: ID):
         database = self.plugin.get_database()
@@ -397,12 +397,12 @@ class Broker(Actor, IBroker):
         try:
             database.get_client(guid=guid)
         except Exception as e:
-            raise BrokerException(Constants.OBJECT_NOT_FOUND.format(guid, e))
+            raise BrokerException(error_code=ExceptionErrorCode.NOT_FOUND, msg=f"client: {guid} e: {e}")
 
         try:
             database.remove_client(guid=guid)
         except Exception as e:
-            raise BrokerException(Constants.FAILED_TO_REMOVE.format(guid, e))
+            raise BrokerException(error_code=ExceptionErrorCode.FAILURE, msg=f"client: {guid} e: {e}")
 
     def get_client(self, *, guid: ID) -> Client:
         database = self.plugin.get_database()
@@ -410,7 +410,7 @@ class Broker(Actor, IBroker):
         try:
             ret_val = database.get_client(guid=guid)
         except Exception as e:
-            raise BrokerException(Constants.OBJECT_NOT_FOUND.format(guid, e))
+            raise BrokerException(error_code=ExceptionErrorCode.NOT_FOUND, msg=f"client: {guid} e: {e}")
 
         return ret_val
 

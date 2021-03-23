@@ -121,6 +121,8 @@ actor:
   - policy:
       - module: fabric_cf.actor.core.policy.broker_simpler_units_policy
       - class: BrokerSimplerUnitsPolicy
+      - properties:
+        - algorithm: FirstFit
   - controls:
       - control:
           - type: VM, Container, Baremetal

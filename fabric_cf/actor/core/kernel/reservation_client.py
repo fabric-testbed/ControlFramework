@@ -929,6 +929,10 @@ class ReservationClient(Reservation, IKernelControllerReservation):
             self.logger.debug("Closing leased resources: {}".format(type(self.leased_resources)))
             self.leased_resources.close()
             self.update_slice_graph(sliver=self.leased_resources.sliver)
+        elif self.resources is not None:
+            self.update_slice_graph(sliver=self.resources.sliver)
+        else:
+            self.update_slice_graph(sliver=self.requested_resources.sliver)
 
     def service_probe(self):
         # An exception in one of these service routines should mean some
