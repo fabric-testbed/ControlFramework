@@ -25,22 +25,26 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import enum
 import threading
 import traceback
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Tuple, List
 
-from fim.graph.resources.neo4j_adm import Neo4jADMGraph
+from fim.graph.abc_property_graph import ABCPropertyGraphConstants
+from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, NodeType
+from fim.slivers.network_link import NetworkLinkSliver
 
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.exceptions import BrokerException
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
+from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
 from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -57,6 +61,18 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
     from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
+
+
+class BrokerAllocationAlgorithm(Enum):
+    FirstFit = enum.auto()
+    BestFit = enum.auto()
+    WorstFit = enum.auto()
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
 
 
 class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
@@ -360,8 +376,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     continue
 
                 if not reservation.is_failed():
-                    reservation.fail(f"Insufficient resources for specified start time, Failing reservation: "
-                                     f"{reservation.get_reservation_id()}")
+                    reservation.fail(message=f"Insufficient resources for specified start time, Failing reservation: "
+                                             f"{reservation.get_reservation_id()}")
 
     def allocate_queue(self, *, start_cycle: int):
         if self.queue is None:
@@ -413,31 +429,67 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return False, node_id_to_reservations
 
-    def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
+    def __candidate_nodes(self, sliver: NodeSliver) -> List[str]:
+        """
+        Identify candidate worker nodes in this site that have at least
+        as many needed components as in the sliver.
+        """
+        node_props = {ABCPropertyGraphConstants.PROP_SITE: sliver.site,
+                      ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Server)}
+        return self.combined_broker_model.get_matching_nodes_with_components(
+            label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+            props=node_props,
+            comps=sliver.attached_components_info)
+
+    def __candidate_links(self, sliver: NetworkLinkSliver) -> List[str]:
+        pass
+
+    def ticket_inventory(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term,
                          node_id_to_reservations: dict) -> Tuple[bool, dict]:
         try:
             rset = reservation.get_requested_resources()
             needed = rset.get_units()
 
-            # TODO - Slice Node to BQM Node mapping - remove hardcoding
-            node_id = 'HX7LQ53'
-            # TODO - End
-            if node_id is None:
-                raise BrokerException(f"Unable to find node_id {node_id} for reservation# {reservation}")
+            # for network node slivers
+            # find a list of candidate worker nodes that satisfy the requirements based on delegated
+            # capacities within the site
+            # for network link slivers
+            # orchestrator needs to provide a map to CBM guid of the node representing the
+            # intended link (and possibly interfaces connected to it)
 
-            graph_node = self.get_node_from_graph(node_id=node_id)
+            res_sliver = rset.get_sliver()
 
-            existing_reservations = self.get_existing_reservations(node_id=node_id,
-                                                                   node_id_to_reservations=node_id_to_reservations)
+            if isinstance(res_sliver, NodeSliver):
+                node_id_list = self.__candidate_nodes(res_sliver)
+            elif isinstance(res_sliver, NetworkLinkSliver):
+                node_id_list = self.__candidate_links(res_sliver)
+            else:
+                self.logger.error(f'Reservation {reservation} sliver type is neither Node, nor NetworkLink')
+                raise BrokerException(msg=f"Reservation sliver type is neither Node "
+                                      f"nor NetworkLink for reservation# {reservation}")
 
-            delegation_id, sliver = inv.allocate(reservation=reservation, graph_id=self.combined_broker_model_graph_id,
-                                                 graph_node=graph_node, existing_reservations=existing_reservations)
+            # no candidate nodes found
+            if len(node_id_list) == 0:
+                return False, node_id_to_reservations
+
+            delegation_id = None
+            sliver = None
+            # FIXME: walk the list to find First/Best/Worst fit
+            if self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.FirstFit.name.lower():
+                delegation_id, sliver = self.__find_first_fit(node_id_list=node_id_list,
+                                                              node_id_to_reservations=node_id_to_reservations,
+                                                              inv=inv, reservation=reservation)
+            else:
+                raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
+                                      msg=f"Broker currently only supports First Fit")
 
             if delegation_id is not None:
                 delegation = self.actor.get_delegation(did=delegation_id)
                 reservation = self.issue_ticket(reservation=reservation, units=needed, rtype=rset.get_type(), term=term,
                                                 source=delegation, sliver=sliver)
 
+                node_map = sliver.get_node_map()
+                node_id = node_map[1]
                 if node_id_to_reservations.get(node_id, None) is None:
                     node_id_to_reservations[node_id] = ReservationSet()
                 node_id_to_reservations[node_id].add(reservation=reservation)
@@ -448,7 +500,37 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.fail(message=str(e))
         return False, node_id_to_reservations
 
+<<<<<<< HEAD
     def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term):
+=======
+    def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
+                         reservation: IBrokerReservation) -> Tuple[str, BaseSliver]:
+        delegation_id = None
+        sliver = None
+        self.logger.debug(f"Possible candidates to serve res# {reservation} candidates# {node_id_list}")
+        for node_id in node_id_list:
+            try:
+                self.logger.debug(f"Attempting to allocate res# {reservation} via graph_node# {node_id}")
+                graph_node = self.get_node_from_graph(node_id=node_id)
+
+                existing_reservations = self.get_existing_reservations(node_id=node_id,
+                                                                       node_id_to_reservations=node_id_to_reservations)
+
+                delegation_id, sliver = inv.allocate(reservation=reservation,
+                                                     graph_id=self.combined_broker_model_graph_id,
+                                                     graph_node=graph_node, existing_reservations=existing_reservations)
+
+                if delegation_id is not None and sliver is not None:
+                    break
+            except BrokerException as e:
+                if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:
+                    self.logger.error(f"Exception occurred: {e}")
+                else:
+                    raise e
+
+        return delegation_id, sliver
+
+    def extend_private(self, *, reservation: IBrokerReservation, inv: InventoryForType, term: Term):
         pass
 
     def issue_ticket(self, *, reservation: ABCBrokerReservation, units: int, rtype: ResourceType,
@@ -474,7 +556,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.set_bid_pending(value=False)
         else:
             if mine is None:
-                raise BrokerException("There was an error extracting a ticket from the source delegation")
+                raise BrokerException(msg="There was an error extracting a ticket from the source delegation")
         return reservation
 
     def release(self, *, reservation):
@@ -507,7 +589,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 return
             inv = self.inventory.get(resource_type=rset.get_type())
             if inv is None:
-                raise BrokerException("Cannot release resources: missing inventory")
+                raise BrokerException(msg="Cannot release resources: missing inventory")
         except Exception as e:
             self.logger.error(f"release resources {e}")
 
@@ -549,15 +631,16 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             query_level = int(query_level)
 
         if query_action is None:
-            raise BrokerException(Constants.NOT_SPECIFIED_PREFIX.format(Constants.QUERY_ACTION))
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                  msg=f"query_action {query_action}")
 
         if query_action != Constants.QUERY_ACTION_DISCOVER_POOLS:
-            raise BrokerException(f"Invalid Query Action '{query_action}' specified")
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                  msg=f"query_action {query_action}")
 
         try:
             self.lock.acquire()
             if self.combined_broker_model is not None:
-                # TODO pass in level while getting BQM
                 graph = self.combined_broker_model.get_bqm(query_level=query_level)
                 result[Constants.BROKER_QUERY_MODEL] = graph.serialize_graph()
                 result[Constants.QUERY_RESPONSE_STATUS] = "True"
@@ -673,7 +756,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             for inv in self.inventory.map.values():
                 inv.set_logger(logger=logger)
 
-    def merge_adm(self, *, adm_graph: Neo4jADMGraph):
+    def merge_adm(self, *, adm_graph: ABCADMPropertyGraph):
         """
         Merge delegation model in CBM
         :param adm_graph: ADM
@@ -712,6 +795,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.info(f"CBM rollback due to un-merge failure")
                 self.combined_broker_model.rollback(graph_id=snapshot_graph_id)
             raise e
+
+    def get_algorithm_type(self) -> str:
+        if self.properties is not None:
+            algo_str = self.properties.get(Constants.ALGORITHM, None)
+            if algo_str is not None:
+                return algo_str
+        return BrokerAllocationAlgorithm.FirstFit.name
 
 
 if __name__ == '__main__':

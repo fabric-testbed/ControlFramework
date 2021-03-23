@@ -261,3 +261,9 @@ class ABCPolicy(ABC):
         Set logger
         @param logger logger
         """
+
+    @abstractmethod
+    def set_properties(self, properties: dict):
+        """
+        Set Properties
+        """

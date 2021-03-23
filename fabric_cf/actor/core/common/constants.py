@@ -247,3 +247,4 @@ class Constants:
     DLG_SLC_ID = 'dlg_slc_id'
 
     USER_SSH_KEY = "user.ssh.key"
+    ALGORITHM = 'algorithm'

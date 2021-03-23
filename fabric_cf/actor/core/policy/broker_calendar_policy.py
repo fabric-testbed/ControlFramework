@@ -30,7 +30,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.exceptions import BrokerException
+from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.time.calendar.broker_calendar import BrokerCalendar
 from fabric_cf.actor.core.util.resource_count import ResourceCount
@@ -145,7 +145,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
         @throws Exception in case of error
         """
-        raise BrokerException(Constants.NOT_IMPLEMENTED)
+        raise BrokerException(error_code=ExceptionErrorCode.NOT_IMPLEMENTED)
 
     def initialize(self):
         if not self.initialized:
@@ -203,7 +203,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
                     reservation.get_pending_state() == ReservationPendingStates.Priming):
             source = reservation.get_source()
             if source is None:
-                raise BrokerException(Constants.NOT_SPECIFIED_PREFIX.format("source delegation"))
+                raise BrokerException(msg=f"source delegation is None for res# {reservation}")
 
             self.calendar.add_outlay(source=source,
                                      client=reservation,

@@ -247,7 +247,7 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_slice_by_name(self, *, slice_name: str) -> ABCSlice:
+    def get_slice_by_name(self, *, slice_name: str) -> List[ABCSlice]:
         """
         Retrieves the specified slice record.
 
