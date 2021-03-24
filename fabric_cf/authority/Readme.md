@@ -24,6 +24,7 @@ Run the `setup.sh` script to set up an Aggregate Manager. User is expected to sp
 - Neo4j Password to be used
 - Path to the config file for AM
 - Path to Aggregate Resource Model i.e. graphml
+- Path to Handler Config File
 
 #### Production
 ```
