@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
+from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
 from fabric_cf.actor.core.core.controller import Controller
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
@@ -98,7 +98,7 @@ class ControllerTestWrapper(Controller):
                 cs = Ticket(ticket=ticket, plugin=self.get_plugin())
                 self.update_lease_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs, r.get_approved_term())
 
-    def update_lease_wrapper(self, reservation: ReservationClient, rtype: ResourceType, units: int, cs: IConcreteSet, term: Term):
+    def update_lease_wrapper(self, reservation: ReservationClient, rtype: ResourceType, units: int, cs: ABCConcreteSet, term: Term):
         if reservation.state == ReservationStates.Ticketed:
             reservation.leased_resources = reservation.resources.abstract_clone()
             reservation.leased_resources.units = units

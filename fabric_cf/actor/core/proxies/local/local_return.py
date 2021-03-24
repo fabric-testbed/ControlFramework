@@ -23,34 +23,31 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
-from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-from fabric_cf.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
-from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.apis.i_server_reservation import IServerReservation
-from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.exceptions import ProxyException
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
 from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
-from fabric_cf.actor.core.kernel.client_reservation_factory import ClientReservationFactory
-from fabric_cf.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class LocalReturn(LocalProxy, IControllerCallbackProxy):
-    def __init__(self, *, actor: IActor):
+class LocalReturn(LocalProxy, ABCControllerCallbackProxy):
+    def __init__(self, *, actor: ABCActorMixin):
         super().__init__(actor=actor)
         self.callback = True
 
-    def prepare_update_delegation(self, *, delegation: IDelegation, update_data: UpdateData,
-                                  callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_update_delegation(self, *, delegation: ABCDelegation, update_data: UpdateData,
+                                  callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
 
         state = LocalProxy.LocalProxyRequestState()
         state.delegation = LocalReturn.pass_delegation(delegation=delegation)
@@ -59,8 +56,8 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
         state.callback = callback
         return state
 
-    def _prepare(self, *, reservation: IServerReservation, update_data: UpdateData,
-                 callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def _prepare(self, *, reservation: ABCServerReservation, update_data: UpdateData,
+                 callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
 
         state = LocalProxy.LocalProxyRequestState()
         state.reservation = LocalReturn.pass_reservation(reservation=reservation, plugin=self.get_actor().get_plugin())
@@ -69,16 +66,16 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
         state.callback = callback
         return state
 
-    def prepare_update_ticket(self, *, reservation: IBrokerReservation, update_data: UpdateData,
-                              callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_update_ticket(self, *, reservation: ABCBrokerReservation, update_data: UpdateData,
+                              callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, update_data=update_data, callback=callback, caller=caller)
 
-    def prepare_update_lease(self, *, reservation: IAuthorityReservation, update_data, callback: ICallbackProxy,
-                             caller: AuthToken) -> IRPCRequestState:
+    def prepare_update_lease(self, *, reservation: ABCAuthorityReservation, update_data, callback: ABCCallbackProxy,
+                             caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, update_data=update_data, callback=callback, caller=caller)
 
     @staticmethod
-    def pass_reservation(*, reservation: IServerReservation, plugin: IBasePlugin) -> IReservation:
+    def pass_reservation(*, reservation: ABCServerReservation, plugin: ABCBasePlugin) -> ABCReservationMixin:
         slice_obj = reservation.get_slice().clone_request()
         term = None
 
@@ -100,20 +97,20 @@ class LocalReturn(LocalProxy, IControllerCallbackProxy):
                 cset = concrete.clone()
                 rset.set_resources(cset=cset)
 
-        if isinstance(reservation, IBrokerReservation):
+        if isinstance(reservation, ABCBrokerReservation):
             client_reservation = ClientReservationFactory.create(rid=reservation.get_reservation_id(),
                                                                  resources=rset, term=term, slice_object=slice_obj)
             client_reservation.set_ticket_sequence_in(sequence=reservation.get_sequence_out())
             return client_reservation
         else:
-            controller_reservation = ControllerReservationFactory.create(rid=reservation.get_reservation_id(),
+            controller_reservation = ClientReservationFactory.create(rid=reservation.get_reservation_id(),
                                                                          resources=rset, term=term,
                                                                          slice_object=slice_obj)
             controller_reservation.set_lease_sequence_in(sequence=reservation.get_sequence_out())
             return controller_reservation
 
     @staticmethod
-    def pass_delegation(*, delegation: IDelegation) -> IDelegation:
+    def pass_delegation(*, delegation: ABCDelegation) -> ABCDelegation:
         slice_obj = delegation.get_slice_object().clone_request()
 
         delegation_new = DelegationFactory.create(did=delegation.get_delegation_id(),

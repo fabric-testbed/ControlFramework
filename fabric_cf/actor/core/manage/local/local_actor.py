@@ -30,7 +30,7 @@ from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
-from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
 from fabric_cf.actor.core.manage.local.local_proxy import LocalProxy
 from fabric_cf.actor.core.util.id import ID
 
@@ -42,7 +42,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class LocalActor(LocalProxy, IMgmtActor):
+class LocalActor(LocalProxy, ABCMgmtActor):
     def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
 

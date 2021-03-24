@@ -35,8 +35,8 @@ from fabric_cf.actor.core.manage.management_object import ManagementObject
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.apis.i_container_database import IContainerDatabase
-    from fabric_cf.actor.core.apis.i_management_object import IManagementObject
+    from fabric_cf.actor.core.apis.abc_container_database import ABCContainerDatabase
+    from fabric_cf.actor.core.apis.abc_management_object import ABCManagementObject
 
 
 class ManagementObjectManager:
@@ -92,7 +92,7 @@ class ManagementObjectManager:
         finally:
             self.lock.release()
 
-    def initialize(self, *, db: IContainerDatabase):
+    def initialize(self, *, db: ABCContainerDatabase):
         """
         Performs initialization. If the system is recovering after a
         shutdown/crash, loads all manager objects that pertain to the container.
@@ -155,7 +155,7 @@ class ManagementObjectManager:
 
             self.logger.info("Loaded management object with id: {}".format(manager.get_id()))
 
-    def register_manager_object(self, *, manager: IManagementObject):
+    def register_manager_object(self, *, manager: ABCManagementObject):
         self.db.add_manager_object(manager=manager)
         try:
             self.lock.acquire()

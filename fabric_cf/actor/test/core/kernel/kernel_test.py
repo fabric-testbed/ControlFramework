@@ -26,12 +26,12 @@
 import unittest
 import time
 
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_database import IDatabase
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.test.base_test_case import BaseTestCase
 
@@ -51,23 +51,23 @@ class KernelTest(BaseTestCase, unittest.TestCase):
     base_inventory_slices_count = 4
     base_res_count = 8
 
-    def enforceReservationExistsInDatabase(self, *, db: IDatabase, rid: ID):
+    def enforceReservationExistsInDatabase(self, *, db: ABCDatabase, rid: ID):
         res = db.get_reservation(rid=rid)
         self.assertIsNotNone(res)
 
-    def enforceReservationNotInDatabase(self, *, db: IDatabase, rid: ID):
+    def enforceReservationNotInDatabase(self, *, db: ABCDatabase, rid: ID):
         res = db.get_reservation(rid=rid)
         self.assertIsNone(res)
 
-    def enforceSliceExistsInDatabase(self, *, db: IDatabase, slice_id: ID):
+    def enforceSliceExistsInDatabase(self, *, db: ABCDatabase, slice_id: ID):
         slice_obj = db.get_slice(slice_id=slice_id)
         self.assertIsNotNone(slice_obj)
 
-    def enforceSliceNotInDatabase(self, *, db: IDatabase, slice_id: ID):
+    def enforceSliceNotInDatabase(self, *, db: ABCDatabase, slice_id: ID):
         slice_obj = db.get_slice(slice_id=slice_id)
         self.assertIsNone(slice_obj)
 
-    def get_kernel_wrapper(self, *, actor: IActor) -> KernelWrapper:
+    def get_kernel_wrapper(self, *, actor: ABCActorMixin) -> KernelWrapper:
         wrapper = KernelWrapper(actor=actor, plugin=actor.get_plugin(), policy=actor.get_policy())
         return wrapper
 
@@ -91,7 +91,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
         for i in range(10):
             rid = ID()
-            reservation = ControllerReservationFactory.create(rid=rid, slice_object=slice_obj)
+            reservation = ClientReservationFactory.create(rid=rid, slice_object=slice_obj)
             kernel.register_reservation(reservation=reservation)
 
             self.assertIsNotNone(kernel.get_reservation(rid=rid))
@@ -243,7 +243,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
         res_list = []
         for i in range(10):
-            res = ControllerReservationFactory.create(rid=ID())
+            res = ClientReservationFactory.create(rid=ID())
             res.set_slice(slice_object=slice_obj)
             res_list.append(res)
 
@@ -365,7 +365,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
         res_list = []
 
         for i in range(10):
-            res = ControllerReservationFactory.create(rid=ID())
+            res = ClientReservationFactory.create(rid=ID())
             res.set_slice(slice_object=slice_obj)
             res_list.append(res)
 
@@ -437,7 +437,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
         res_list = []
 
         for i in range(10):
-            res = ControllerReservationFactory.create(rid=ID())
+            res = ClientReservationFactory.create(rid=ID())
             res.set_slice(slice_object=slice_obj)
             res_list.append(res)
             kernel.register_reservation(reservation=res)
@@ -480,7 +480,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
 
         for i in range(10):
             rid = ID()
-            reservation = ControllerReservationFactory.create(rid=rid, slice_object=slice_obj)
+            reservation = ClientReservationFactory.create(rid=rid, slice_object=slice_obj)
             failed = False
 
             try:

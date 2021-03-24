@@ -23,20 +23,20 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
+from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import ABCKernelControllerReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
 
 
 class PredecessorState:
 
-    def __init__(self, *, reservation: IKernelControllerReservation, filters: dict = None):
+    def __init__(self, *, reservation: ABCKernelControllerReservationMixin, filters: dict = None):
         if reservation is None:
             raise ReservationException(Constants.INVALID_ARGUMENT)
         self.reservation = reservation
         self.filters = filters
 
-    def get_reservation(self) -> IKernelControllerReservation:
+    def get_reservation(self) -> ABCKernelControllerReservationMixin:
         return self.reservation
 
     def set_properties(self, config: dict):

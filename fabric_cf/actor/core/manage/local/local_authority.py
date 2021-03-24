@@ -30,7 +30,7 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.authority_management_object import AuthorityManagementObject
-from fabric_cf.actor.core.apis.i_mgmt_authority import IMgmtAuthority
+from fabric_cf.actor.core.apis.abc_mgmt_authority import ABCMgmtAuthority
 from fabric_cf.actor.core.manage.local.local_server_actor import LocalServerActor
 
 if TYPE_CHECKING:
@@ -39,10 +39,10 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+    from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
 
 
-class LocalAuthority(LocalServerActor, IMgmtAuthority):
+class LocalAuthority(LocalServerActor, ABCMgmtAuthority):
     def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
 
@@ -85,5 +85,5 @@ class LocalAuthority(LocalServerActor, IMgmtAuthority):
 
         return None
 
-    def clone(self) -> IMgmtActor:
+    def clone(self) -> ABCMgmtActor:
         return LocalAuthority(manager=self.manager, auth=self.auth)

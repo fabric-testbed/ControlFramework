@@ -29,19 +29,19 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
+    from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 
 
 class QueueWrapper:
     @abstractmethod
-    def add(self, *, reservation: IBrokerReservation):
+    def add(self, *, reservation: ABCBrokerReservation):
         """
         Add a reservation
         @param reservation: reservation
         """
 
     @abstractmethod
-    def remove(self, *, reservation: IBrokerReservation):
+    def remove(self, *, reservation: ABCBrokerReservation):
         """
         Remove a reservation
         @param reservation: reservation
@@ -55,7 +55,7 @@ class QueueWrapper:
         """
 
     @abstractmethod
-    def values(self) -> List[IBrokerReservation]:
+    def values(self) -> List[ABCBrokerReservation]:
         """
         Return values
         @return values

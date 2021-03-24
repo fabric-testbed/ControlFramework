@@ -35,14 +35,14 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 
-from fabric_cf.actor.core.apis.i_mgmt_authority import IMgmtAuthority
-from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
+from fabric_cf.actor.core.apis.abc_mgmt_authority import ABCMgmtAuthority
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.manage.kafka.kafka_server_actor import KafkaServerActor
 from fabric_cf.actor.core.util.id import ID
 
 
-class KafkaAuthority(KafkaServerActor, IMgmtAuthority):
+class KafkaAuthority(KafkaServerActor, ABCMgmtAuthority):
     def get_authority_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         self.clear_last()
         status = ResultAvro()

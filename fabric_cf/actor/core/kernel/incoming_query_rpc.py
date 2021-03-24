@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.util.id import ID
@@ -35,7 +35,7 @@ class IncomingQueryRPC(IncomingRPC):
     Represents Incoming Query RPC
     """
     def __init__(self, *, request_type: RPCRequestType, message_id: ID, query: dict, caller: AuthToken,
-                 id_token: str, request_id: ID = None, callback: ICallbackProxy = None):
+                 id_token: str, request_id: ID = None, callback: ABCCallbackProxy = None):
         super().__init__(message_id=message_id, request_type=request_type, callback=callback, caller=caller,
                          id_token=id_token)
         self.query = query

@@ -25,14 +25,14 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from fabric_cf.actor.core.apis.i_event import IEvent
+from fabric_cf.actor.core.apis.abc_event import ABCEvent
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.kernel.rpc_request import RPCRequest
     from fabric_cf.actor.core.util.id import ID
 
 
-class OutboundRPCEvent(IEvent):
+class OutboundRPCEvent(ABCEvent):
     """
     Represents outbound RPC event
     """

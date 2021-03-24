@@ -32,7 +32,7 @@ from fabric_cf.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
+    from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 
 
 class Inventory:
@@ -54,7 +54,7 @@ class Inventory:
 
         return self.map.get(resource_type, None)
 
-    def remove(self, *, source: IClientReservation):
+    def remove(self, *, source: ABCClientReservation):
         """
         Removes the inventory derived from the specified source.
         @param source source reservation

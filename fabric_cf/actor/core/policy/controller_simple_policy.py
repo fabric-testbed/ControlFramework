@@ -25,8 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.core.core.properties_manager import PropertiesManager
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 
 from fabric_cf.actor.core.policy.broker_simpler_units_policy import BrokerSimplerUnitsPolicy
 from fabric_cf.actor.core.policy.controller_calendar_policy import ControllerCalendarPolicy
@@ -81,7 +80,7 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
 
         return Bids(ticketing=bidding, extending=extending)
 
-    def get_close(self, *, reservation: IClientReservation, term: Term) -> int:
+    def get_close(self, *, reservation: ABCClientReservation, term: Term) -> int:
         """
         Very simple policy - based on ADVANCE_CLOSE
         """
@@ -112,14 +111,14 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
             extend_term = current_term.extend()
         return extend_term
 
-    def get_redeem(self, *, reservation: IClientReservation) -> int:
+    def get_redeem(self, *, reservation: ABCClientReservation) -> int:
         new_start = self.clock.cycle(when=reservation.get_term().get_new_start_time())
         result = new_start - self.CLOCK_SKEW
         if result < self.actor.get_current_cycle():
             result = self.actor.get_current_cycle()
         return result
 
-    def get_renew(self, *, reservation: IClientReservation) -> int:
+    def get_renew(self, *, reservation: ABCClientReservation) -> int:
         """
         Call up to the agent to receive the advanceTime. Do time based on new_start so that requests are aligned.
         """
@@ -189,14 +188,12 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
                     suggested_resources = reservation.get_suggested_resources()
                     current_term = reservation.get_term()
                     approved_resources = reservation.get_resources().abstract_clone()
-                    approved_resources = PropertiesManager.set_elastic_time(rset=approved_resources, value=False)
 
                     approved_term = self.get_extend_term(suggested_term=suggested_term, current_term=current_term)
                     if suggested_resources is not None:
                         approved_resources.set_units(units=suggested_resources.get_units())
                         approved_resources.set_type(rtype=suggested_resources.get_type())
                         approved_resources.get_resource_data().merge(other=suggested_resources.get_resource_data())
-                        approved_resources = PropertiesManager.set_elastic_time(rset=approved_resources, value=False)
 
                     reservation.set_approved(term=approved_term, approved_resources=approved_resources)
                     result.add(reservation=reservation)

@@ -29,14 +29,14 @@ from datetime import datetime
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.slivers.network_node import NodeSliver
 
-from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.authority_policy import AuthorityPolicy
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
-from fabric_cf.actor.core.apis.i_resource_control import IResourceControl
+from fabric_cf.actor.core.apis.abc_resource_control import ABCResourceControl
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.time.calendar.authority_calendar import AuthorityCalendar
 from fabric_cf.actor.core.util.id import ID
@@ -179,13 +179,17 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         for c in self.controls_by_guid.values():
             c.recovery_starting()
 
-    def revisit(self, *, reservation: IReservation):
+    def revisit(self, *, reservation: ABCReservationMixin):
         super().revisit(reservation=reservation)
-        if isinstance(reservation, IAuthorityReservation):
-            self.calendar.add_closing(reservation=reservation, cycle=self.get_close(term=reservation.get_term()))
+        if isinstance(reservation, ABCAuthorityReservation):
+            term = reservation.get_term()
+            if term is None:
+                term = reservation.get_requested_term()
+            self.calendar.add_closing(reservation=reservation, cycle=self.get_close(term=term))
             approved = reservation.get_approved_resources()
             if approved is None:
                 self.logger.debug("Reservation has no approved resources. Nothing is allocated to it.")
+                return
 
             rtype = approved.get_type()
             self.logger.debug(f"Resource type for recovered reservation: {rtype}")
@@ -199,7 +203,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         for c in self.controls_by_guid.values():
             c.recovery_ended()
 
-    def bind(self, *, reservation: IAuthorityReservation) -> bool:
+    def bind(self, *, reservation: ABCAuthorityReservation) -> bool:
         # Simple for now: make sure that this is a valid term and do not modify
         # its start/end time and add it to the calendar. If the request came
         # after its start time, but before its end cycle, add it for allocation
@@ -219,7 +223,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         self.calendar.add_closing(reservation=reservation, cycle=close)
         return False
 
-    def extend(self, *, reservation: IReservation, resources: ResourceSet, term: Term):
+    def extend(self, *, reservation: ABCReservationMixin, resources: ResourceSet, term: Term):
         # Simple for now: make sure that this is a valid term and do not modify
         # its start/end time and add it to the calendar. If the request came
         # after its start time, but before its end cycle, add it for allocation
@@ -244,7 +248,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         self.calendar.add_closing(reservation=reservation, cycle=close)
         return True
 
-    def correct_deficit(self, *, reservation: IAuthorityReservation):
+    def correct_deficit(self, *, reservation: ABCAuthorityReservation):
         if reservation.get_resources() is not None:
             rc = self.get_control_by_type(rtype=reservation.get_resources().get_type())
             if rc is not None:
@@ -252,7 +256,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             else:
                 raise AuthorityException(Constants.UNSUPPORTED_RESOURCE_TYPE.format(reservation.get_type()))
 
-    def close(self, *, reservation: IReservation):
+    def close(self, *, reservation: ABCReservationMixin):
         self.calendar.remove_schedule_or_in_progress(reservation=reservation)
         if reservation.get_type() is not None:
             rc = self.get_control_by_type(rtype=reservation.get_type())
@@ -261,11 +265,11 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             else:
                 raise AuthorityException(Constants.UNSUPPORTED_RESOURCE_TYPE.format(reservation.get_type()))
 
-    def closed(self, *, reservation: IReservation):
-        if isinstance(reservation, IAuthorityReservation):
+    def closed(self, *, reservation: ABCReservationMixin):
+        if isinstance(reservation, ABCAuthorityReservation):
             self.calendar.remove_outlay(reservation=reservation)
 
-    def remove(self, *, reservation: IReservation):
+    def remove(self, *, reservation: ABCReservationMixin):
         raise AuthorityException(Constants.NOT_IMPLEMENTED)
 
     def finish(self, *, cycle: int):
@@ -350,7 +354,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         for rid in rids_to_remove:
             bids.remove_by_rid(rid=rid)
 
-    def map(self, *, reservation: IAuthorityReservation, node_id_to_reservations: dict) -> dict:
+    def map(self, *, reservation: ABCAuthorityReservation, node_id_to_reservations: dict) -> dict:
         """
         Maps a reservation. Indicates we will approve the request: update its
         expire time in the calendar, and issue a map probe. The map probe will
@@ -379,7 +383,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
 
         return node_id_to_reservations
 
-    def assign_reservation(self, *, reservation: IAuthorityReservation, node_id_to_reservations: dict):
+    def assign_reservation(self, *, reservation: ABCAuthorityReservation, node_id_to_reservations: dict):
         """
         Assign resources for the given reservation
 
@@ -429,7 +433,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         else:
             raise AuthorityException(Constants.UNSUPPORTED_RESOURCE_TYPE.format(token.get_resource_type()))
 
-    def is_expired(self, *, reservation: IReservation) -> bool:
+    def is_expired(self, *, reservation: ABCReservationMixin) -> bool:
         """
         See if a reservation has expired
 
@@ -442,7 +446,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
 
         return now > end
 
-    def reschedule(self, *, reservation: IAuthorityReservation):
+    def reschedule(self, *, reservation: ABCAuthorityReservation):
         """
         Reschedule a reservation into the calendar
 
@@ -469,10 +473,10 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     def get_requests(self, *, cycle: int) -> ReservationSet:
         return self.calendar.get_requests(cycle=cycle)
 
-    def get_control_by_id(self, *, guid: ID) -> IResourceControl:
+    def get_control_by_id(self, *, guid: ID) -> ABCResourceControl:
         return self.controls_by_guid.get(guid, None)
 
-    def get_control_by_type(self, *, rtype: ResourceType) -> IResourceControl:
+    def get_control_by_type(self, *, rtype: ResourceType) -> ABCResourceControl:
         return self.controls_by_resource_type.get(rtype, None)
 
     def get_control_types(self):
@@ -490,7 +494,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             result[value].append(key)
         return result
 
-    def register_control(self, *, control: IResourceControl):
+    def register_control(self, *, control: ABCResourceControl):
         """
         Registers the given control for the specified resource type. If the
         policy plugin has already been initialized, the control should be
@@ -502,7 +506,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         self.register_control_types(control=control)
         self.controls_by_guid[control.get_guid()] = control
 
-    def register_control_types(self, *, control: IResourceControl):
+    def register_control_types(self, *, control: ABCResourceControl):
         types = control.get_types()
         if types is None or len(types) == 0:
             raise AuthorityException("Resource control does not specify any types")

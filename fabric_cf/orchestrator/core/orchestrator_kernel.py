@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
@@ -85,7 +85,7 @@ class OrchestratorKernel:
             self.logger = GlobalsSingleton.get().get_logger()
         return self.logger
 
-    def get_management_actor(self) -> IMgmtController:
+    def get_management_actor(self) -> ABCMgmtControllerMixin:
         """
         Get Management actor
         :return:

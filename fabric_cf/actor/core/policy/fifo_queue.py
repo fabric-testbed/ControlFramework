@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from typing import List
 
-from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.policy.queue_wrapper import QueueWrapper
 
 
@@ -35,13 +35,13 @@ class FIFOQueue(QueueWrapper):
     def __init__(self):
         self.queue = []
 
-    def values(self) -> List[IBrokerReservation]:
+    def values(self) -> List[ABCBrokerReservation]:
         return self.queue.copy()
 
-    def add(self, *, reservation: IBrokerReservation):
+    def add(self, *, reservation: ABCBrokerReservation):
         self.queue.append(reservation)
 
-    def remove(self, *, reservation: IBrokerReservation):
+    def remove(self, *, reservation: ABCBrokerReservation):
         self.queue.remove(reservation)
 
     def size(self) -> int:

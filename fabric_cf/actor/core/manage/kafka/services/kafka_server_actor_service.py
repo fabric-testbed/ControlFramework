@@ -33,7 +33,7 @@ from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
-from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
 from fabric_cf.actor.core.common.constants import ErrorCodes
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.manage.kafka.services.kafka_actor_service import KafkaActorService

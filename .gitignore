@@ -136,7 +136,6 @@ logs
 *.csr
 *.srl
 *_creds
-*.pem
 *.lock
 *.log
 neo4j1/
@@ -145,3 +144,4 @@ neo4j3/
 pdp/
 pg_data/
 schema/
+ssl/

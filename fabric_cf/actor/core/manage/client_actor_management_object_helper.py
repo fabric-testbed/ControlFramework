@@ -39,11 +39,11 @@ from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 
-from fabric_cf.actor.core.apis.i_actor_runnable import IActorRunnable
-from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
+from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
-from fabric_cf.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.manage.converter import Converter
@@ -53,7 +53,7 @@ from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.security.access_checker import AccessChecker
 from fabric_cf.actor.security.pdp_auth import ActionId
-from fabric_cf.actor.core.apis.i_client_actor_management_object import IClientActorManagementObject
+from fabric_cf.actor.core.apis.abc_client_actor_management_object import ABCClientActorManagementObject
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -64,13 +64,13 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
     from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-    from fabric_cf.actor.core.apis.i_client_actor import IClientActor
+    from fabric_cf.actor.core.apis.abc_client_actor import ABCClientActor
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.apis.i_actor import IActor
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 
 
-class ClientActorManagementObjectHelper(IClientActorManagementObject):
-    def __init__(self, *, client: IClientActor):
+class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
+    def __init__(self, *, client: ABCClientActor):
         self.client = client
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
@@ -173,7 +173,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         if reservation.get_broker() is not None:
             broker = ID(uid=reservation.get_broker())
 
-        rc = ControllerReservationFactory.create(rid=ID(), resources=rset, term=term)
+        rc = ClientReservationFactory.create(rid=ID(), resources=rset, term=term)
         rc.set_renewable(renewable=reservation.is_renewable())
 
         if rc.get_state() != ReservationStates.Nascent or rc.get_pending_state() != ReservationPendingStates.None_:
@@ -216,7 +216,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            class Runner(IActorRunnable):
+            class Runner(ABCActorRunnable):
                 def __init__(self, *, parent):
                     self.parent = parent
 
@@ -251,7 +251,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 return result
 
         try:
-            class Runner(IActorRunnable):
+            class Runner(ABCActorRunnable):
                 def __init__(self, *, parent):
                     self.parent = parent
 
@@ -293,8 +293,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -319,8 +319,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor, logger):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin, logger):
                     self.actor = actor
                     self.logger = logger
 
@@ -350,7 +350,7 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                                                     "Ignoring it!".format(rid, predid))
                                 continue
 
-                            if not isinstance(pr, IControllerReservation):
+                            if not isinstance(pr, ABCControllerReservation):
                                 self.logger.warning("Redeem predecessor for rid={} is not an IControllerReservation: "
                                                     "class={}".format(rid, type(pr)))
                                 continue
@@ -397,8 +397,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
             return result
 
         try:
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -450,8 +450,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
         self.logger.debug("reservation: {} | modifyProperties= {}".format(rid, modify_properties))
         try:
 
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -497,8 +497,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.interpret())
                 return result
 
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):
@@ -544,8 +544,8 @@ class ClientActorManagementObjectHelper(IClientActorManagementObject):
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.interpret())
                 return result
 
-            class Runner(IActorRunnable):
-                def __init__(self, *, actor: IActor):
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
 
                 def run(self):

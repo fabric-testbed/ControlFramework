@@ -31,10 +31,10 @@ from fim.graph.abc_property_graph import ABCPropertyGraph
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
-from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.server_actor_management_object import ServerActorManagementObject
-from fabric_cf.actor.core.apis.i_mgmt_server_actor import IMgmtServerActor
+from fabric_cf.actor.core.apis.abc_mgmt_server_actor import ABCMgmtServerActor
 from fabric_cf.actor.core.manage.local.local_actor import LocalActor
 from fabric_cf.actor.core.util.id import ID
 
@@ -44,10 +44,10 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
-    from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+    from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
 
 
-class LocalServerActor(LocalActor, IMgmtServerActor):
+class LocalServerActor(LocalActor, ABCMgmtServerActor):
     def __init__(self, *, manager: ManagementObject, auth: AuthToken):
         super().__init__(manager=manager, auth=auth)
 
@@ -188,5 +188,5 @@ class LocalServerActor(LocalActor, IMgmtServerActor):
         except Exception as e:
             self.last_exception = e
 
-    def clone(self) -> IMgmtActor:
+    def clone(self) -> ABCMgmtActor:
         return LocalServerActor(manager=self.manager, auth=self.auth)

@@ -26,14 +26,14 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity
+from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
 from fabric_cf.actor.security.auth_token import AuthToken
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID
 
 
-class ActorIdentity(IActorIdentity):
+class ActorIdentity(ABCActorIdentity):
     """
     Represent Actor Identity
     """

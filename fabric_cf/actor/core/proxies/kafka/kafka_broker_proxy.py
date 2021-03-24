@@ -34,8 +34,8 @@ from fabric_mb.message_bus.messages.relinquish_avro import RelinquishAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 from fabric_mb.message_bus.messages.ticket_avro import TicketAvro
 
-from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.core.ticket import Ticket
@@ -46,17 +46,17 @@ from fabric_cf.actor.core.proxies.kafka.translate import Translate
 
 if TYPE_CHECKING:
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
-    from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
-    from fabric_cf.actor.core.apis.i_reservation import IReservation
+    from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
+    from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 
 
-class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
+class KafkaBrokerProxy(KafkaProxy, ABCBrokerProxy):
     def __init__(self, *, kafka_topic: str, identity: AuthToken, logger):
         super().__init__(kafka_topic=kafka_topic, identity=identity, logger=logger)
         self.type = KafkaProxy.TypeBroker
 
-    def execute(self, *, request: IRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState):
         avro_message = None
         if request.get_type() == RPCRequestType.Ticket:
             avro_message = TicketAvro()
@@ -105,8 +105,8 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
                                                                                        self.kafka_topic, self.producer))
 
-    def _prepare_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                            caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+    def _prepare_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
+                            caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
@@ -114,36 +114,36 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         request.id_token = id_token
         return request
 
-    def prepare_claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                 caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+    def prepare_claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
+                                 caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
         return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
 
-    def prepare_reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy,
-                                   caller: AuthToken, id_token: str = None) -> IRPCRequestState:
+    def prepare_reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
+                                   caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
         return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
 
-    def _prepare(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                 caller: AuthToken) -> IRPCRequestState:
+    def _prepare(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+                 caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.reservation = self.pass_broker_reservation(reservation=reservation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
         return request
 
-    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                       caller: AuthToken) -> IRPCRequestState:
+    def prepare_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+                       caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                              caller: AuthToken) -> IRPCRequestState:
+    def prepare_extend_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+                              caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy,
-                           caller: AuthToken) -> IRPCRequestState:
+    def prepare_relinquish(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
+                           caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
     @staticmethod
-    def pass_broker_reservation(reservation: IReservation, auth: AuthToken) -> ReservationAvro:
+    def pass_broker_reservation(reservation: ABCReservationMixin, auth: AuthToken) -> ReservationAvro:
         avro_reservation = ReservationAvro()
         avro_reservation.slice = Translate.translate_slice_to_avro(slice_obj=reservation.get_slice())
         avro_reservation.term = Translate.translate_term(term=reservation.get_requested_term())
@@ -166,6 +166,6 @@ class KafkaBrokerProxy(KafkaProxy, IBrokerProxy):
         return avro_reservation
 
     @staticmethod
-    def pass_broker_delegation(delegation: IDelegation, auth: AuthToken) -> DelegationAvro:
+    def pass_broker_delegation(delegation: ABCDelegation, auth: AuthToken) -> DelegationAvro:
         avro_delegation = Translate.translate_delegation_to_avro(delegation=delegation)
         return avro_delegation

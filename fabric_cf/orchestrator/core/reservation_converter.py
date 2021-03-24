@@ -29,7 +29,7 @@ from typing import List
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fim.slivers.network_node import NodeSliver
 
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.id import ID
@@ -39,7 +39,7 @@ class ReservationConverter:
     """
     Class responsible for computing reservations from slivers
     """
-    def __init__(self, *, controller: IMgmtController, broker: ID):
+    def __init__(self, *, controller: ABCMgmtControllerMixin, broker: ID):
         self.controller = controller
         self.broker = broker
 

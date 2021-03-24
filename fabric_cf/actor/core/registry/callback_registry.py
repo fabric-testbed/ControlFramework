@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 
 
 class CallbackRegistry:
@@ -43,7 +43,7 @@ class CallbackRegistry:
 
         return protocol_table.get(actor_name, None)
 
-    def register_callback(self, *, callback: ICallbackProxy):
+    def register_callback(self, *, callback: ABCCallbackProxy):
         protocol = callback.get_type()
 
         entry = self.protocols.get(protocol, None)

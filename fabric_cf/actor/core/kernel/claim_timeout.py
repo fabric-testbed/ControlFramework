@@ -26,14 +26,14 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.apis.i_delegation import DelegationState
-from fabric_cf.actor.core.apis.i_timer_task import ITimerTask
+from fabric_cf.actor.core.apis.abc_delegation import DelegationState
+from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.kernel.rpc_request import RPCRequest
 
 
-class ClaimTimeout(ITimerTask):
+class ClaimTimeout(ABCTimerTask):
     """
     Claim Timeout
     """
@@ -51,7 +51,7 @@ class ClaimTimeout(ITimerTask):
                                        message="Timeout during claim. Please remove the delegation and retry later")
 
 
-class ReclaimTimeout(ITimerTask):
+class ReclaimTimeout(ABCTimerTask):
     """
     Reclaim timeout
     """

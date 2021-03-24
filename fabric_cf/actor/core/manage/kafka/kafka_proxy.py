@@ -33,7 +33,7 @@ from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.error import Error
-from fabric_cf.actor.core.apis.i_component import IComponent
+from fabric_cf.actor.core.apis.abc_component import ABCComponent
 from fabric_cf.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric_cf.actor.core.manage.messages.protocol_proxy_mng import ProtocolProxyMng
 
@@ -43,7 +43,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.id import ID
 
 
-class KafkaProxy(IComponent):
+class KafkaProxy(ABCComponent):
     def __init__(self, *, guid: ID, kafka_topic: str, auth: AuthAvro, logger,
                  message_processor: KafkaMgmtMessageProcessor, producer: AvroProducerApi = None):
         self.management_id = guid

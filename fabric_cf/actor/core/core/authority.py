@@ -29,19 +29,19 @@ import threading
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 
-from fabric_cf.actor.core.apis.i_actor import ActorType
-from fabric_cf.actor.core.apis.i_authority import IAuthority
-from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
-from fabric_cf.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.apis.i_slice import ISlice
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
+from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import AuthorityException
-from fabric_cf.actor.core.core.actor import Actor
+from fabric_cf.actor.core.core.actor import ActorMixin
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.manage.authority_management_object import AuthorityManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_authority_service import KafkaAuthorityService
 from fabric_cf.actor.core.proxies.kafka.services.authority_service import AuthorityService
@@ -53,7 +53,7 @@ from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class Authority(Actor, IAuthority):
+class Authority(ActorMixin, ABCAuthority):
     """
     Authority is the base implementation for a site authority actor.
     """
@@ -119,10 +119,10 @@ class Authority(Actor, IAuthority):
         self.extending_lease = ReservationSet()
         self.modifying_lease = ReservationSet()
 
-    def register_client_slice(self, *, slice_obj: ISlice):
+    def register_client_slice(self, *, slice_obj: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_obj)
 
-    def claim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
+    def claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken,
                          id_token: str = None):
         slice_obj = delegation.get_slice_object()
         if slice_obj is not None:
@@ -131,7 +131,7 @@ class Authority(Actor, IAuthority):
         self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback,
                                               id_token=id_token)
 
-    def reclaim_delegation(self, *, delegation: IDelegation, callback: IClientCallbackProxy, caller: AuthToken,
+    def reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken,
                            id_token: str = None):
 
         slice_obj = delegation.get_slice_object()
@@ -141,7 +141,7 @@ class Authority(Actor, IAuthority):
         self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback,
                                                 id_token=id_token)
 
-    def close_by_caller(self, *, reservation: IReservation, caller: AuthToken):
+    def close_by_caller(self, *, reservation: ABCReservationMixin, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise AuthorityException(Constants.INVALID_ACTOR_STATE)
 
@@ -159,7 +159,7 @@ class Authority(Actor, IAuthority):
             # self.logger.info("Authority expiring for cycle {} = {}".format(cycle, expired))
             self.close_reservations(reservations=expired)
 
-    def donate_delegation(self, *, delegation: IDelegation):
+    def donate_delegation(self, *, delegation: ABCDelegation):
         self.policy.donate_delegation(delegation=delegation)
 
     def eject(self, *, resources: ResourceSet):
@@ -177,7 +177,7 @@ class Authority(Actor, IAuthority):
         self.wrapper.advertise(delegation=dlg_obj, client=client)
         return dlg_obj.get_delegation_id()
 
-    def extend_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken = None):
+    def extend_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken = None):
         if caller is None:
             if not self.recovered:
                 self.extending_lease.add(reservation=reservation)
@@ -189,7 +189,7 @@ class Authority(Actor, IAuthority):
                 raise AuthorityException(Constants.INVALID_ACTOR_STATE)
             self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
-    def modify_lease(self, *, reservation: IAuthorityReservation, caller: AuthToken):
+    def modify_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken):
         if caller is None:
             if not self.recovered:
                 self.modifying_lease.add(reservation=reservation)
@@ -201,14 +201,14 @@ class Authority(Actor, IAuthority):
                 raise AuthorityException(Constants.INVALID_ACTOR_STATE)
             self.wrapper.modify_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
-    def extend_ticket(self, *, reservation: IReservation, caller: AuthToken):
+    def extend_ticket(self, *, reservation: ABCReservationMixin, caller: AuthToken):
         slice_obj = reservation.get_slice()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
         self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
 
-    def relinquish(self, *, reservation: IReservation, caller: AuthToken):
+    def relinquish(self, *, reservation: ABCReservationMixin, caller: AuthToken):
         if not self.is_recovered() or self.stopped:
             raise AuthorityException(Constants.INVALID_ACTOR_STATE)
         self.wrapper.relinquish_request(reservation=reservation, caller=caller)
@@ -216,7 +216,7 @@ class Authority(Actor, IAuthority):
     def freed(self, *, resources: ResourceSet):
         self.policy.freed(resources=resources)
 
-    def redeem(self, *, reservation: IReservation, callback: IControllerCallbackProxy = None, caller: AuthToken = None):
+    def redeem(self, *, reservation: ABCReservationMixin, callback: ABCControllerCallbackProxy = None, caller: AuthToken = None):
         if callback is None and caller is None:
             if not self.recovered:
                 self.redeeming.add(reservation=reservation)
@@ -234,7 +234,7 @@ class Authority(Actor, IAuthority):
                 self.logger.error("the redeem request is invalid")
         self.logger.debug("Completed processing Redeem Request")
 
-    def ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken):
+    def ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken):
         slice_obj = reservation.get_slice()
         if slice_obj is not None:
             slice_obj.set_broker_client()
@@ -273,7 +273,7 @@ class Authority(Actor, IAuthority):
         """
         for reservation in rset.values():
             try:
-                if isinstance(reservation, IAuthorityReservation):
+                if isinstance(reservation, ABCAuthorityReservation):
                     self.redeem(reservation=reservation)
                 else:
                     self.logger.warning("Reservation # {} cannot be redeemed".format(reservation.get_reservation_id()))

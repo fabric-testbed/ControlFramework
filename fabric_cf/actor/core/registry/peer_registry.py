@@ -33,9 +33,9 @@ from fabric_cf.actor.core.common.exceptions import RegistryException
 from fabric_cf.actor.core.proxies.proxy import Proxy
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
+    from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
+    from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
 
 
 class PeerRegistry:
@@ -54,7 +54,7 @@ class PeerRegistry:
     def actor_added(self):
         self.load_from_db()
 
-    def add_broker(self, *, broker: IBrokerProxy):
+    def add_broker(self, *, broker: ABCBrokerProxy):
         try:
             self.lock.acquire()
             self.brokers[broker.get_identity().get_guid()] = broker
@@ -70,7 +70,7 @@ class PeerRegistry:
         except Exception as e:
             self.plugin.get_logger().error("Error while adding broker {}".format(e))
 
-    def get_broker(self, *, guid: ID) -> IBrokerProxy:
+    def get_broker(self, *, guid: ID) -> ABCBrokerProxy:
         ret_val = None
         try:
             self.lock.acquire()
@@ -89,7 +89,7 @@ class PeerRegistry:
             self.lock.release()
         return ret_val
 
-    def get_default_broker(self) -> IBrokerProxy:
+    def get_default_broker(self) -> ABCBrokerProxy:
         try:
             self.lock.acquire()
             return self.default_broker
@@ -115,7 +115,7 @@ class PeerRegistry:
                 self.default_broker = agent
             count += 1
 
-    def remove_broker(self, *, broker: IBrokerProxy):
+    def remove_broker(self, *, broker: ABCBrokerProxy):
         try:
             self.lock.acquire()
             if broker.get_identity() in self.brokers:
@@ -123,6 +123,6 @@ class PeerRegistry:
         finally:
             self.lock.release()
 
-    def set_slices_plugin(self, *, plugin: IBasePlugin):
+    def set_slices_plugin(self, *, plugin: ABCBasePlugin):
         self.plugin = plugin
 

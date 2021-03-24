@@ -32,10 +32,10 @@ from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.apis.i_authority_policy import IAuthorityPolicy
-from fabric_cf.actor.core.apis.i_broker_policy import IBrokerPolicy
-from fabric_cf.actor.core.apis.i_reservation import ReservationCategory
-from fabric_cf.actor.core.apis.i_kernel_broker_reservation import IKernelBrokerReservation
+from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
+from fabric_cf.actor.core.apis.abc_broker_policy_mixin import ABCBrokerPolicyMixin
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
+from fabric_cf.actor.core.apis.abc_kernel_broker_reservation_mixin import ABCKernelBrokerReservationMixin
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
@@ -43,19 +43,19 @@ from fabric_cf.actor.core.kernel.reservation_server import ReservationServer
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
-    from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-    from fabric_cf.actor.core.apis.i_delegation import IDelegation
-    from fabric_cf.actor.core.apis.i_policy import IPolicy
-    from fabric_cf.actor.core.apis.i_slice import ISlice
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+    from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+    from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+    from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-    from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
+    from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
 
 
-class BrokerReservation(ReservationServer, IKernelBrokerReservation):
+class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
     """
     A note on exported "will call" reservations. An export() operation may be
     locally initiated on an agent. It binds and forms a ticket in the same way as
@@ -69,7 +69,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     """
     updated_absorbed = "update absorbed"
 
-    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_obj: IKernelSlice):
+    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_obj: ABCKernelSlice):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_obj)
         # Delegation backing the ticket granted to this reservation. For now only
         # one source delegation can be used to issue a ticket to satisfy a client
@@ -129,7 +129,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         self.notified_failed = False
         self.closed_in_priming = False
 
-    def restore(self, *, actor: IActor, slice_obj: ISlice):
+    def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """
         Must be invoked after creating reservation from unpickling
         """
@@ -154,11 +154,11 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
         """
         Recover the reservation post stateful restart
         """
-        if isinstance(self.policy, IAuthorityPolicy):
+        if isinstance(self.policy, ABCAuthorityPolicy):
             self.logger.debug("No recovery necessary for reservation #{}".format(self.get_reservation_id()))
             return
 
-        if not isinstance(self.policy, IBrokerPolicy):
+        if not isinstance(self.policy, ABCBrokerPolicyMixin):
             raise BrokerException(msg=f"Do not know how to recover: policy={self.policy}")
 
         if self.state == ReservationStates.Nascent:
@@ -217,7 +217,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
 
         super().handle_failed_rpc(failed=failed)
 
-    def prepare(self, *, callback: ICallbackProxy, logger):
+    def prepare(self, *, callback: ABCCallbackProxy, logger):
         self.set_logger(logger=logger)
         self.callback = callback
 
@@ -230,7 +230,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
 
         self.set_dirty()
 
-    def reserve(self, *, policy: IPolicy):
+    def reserve(self, *, policy: ABCPolicy):
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
         # protocol: so we may receive a reserve or extend when there is already
@@ -258,7 +258,7 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
                                 pending=ReservationPendingStates.None_)
                 self.generate_update()
 
-    def extend_ticket(self, *, actor: IActor):
+    def extend_ticket(self, *, actor: ABCActorMixin):
         self.incoming_request()
 
         # State must be ticketed. The reservation may be active, but the agent wouldn't know that
@@ -504,10 +504,10 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
 
         return success
 
-    def get_authority(self) -> IAuthorityProxy:
+    def get_authority(self) -> ABCAuthorityProxy:
         return self.authority
 
-    def get_source(self) -> IDelegation:
+    def get_source(self) -> ABCDelegation:
         return self.source
 
     def get_units(self, *, when: datetime = None) -> int:
@@ -526,12 +526,29 @@ class BrokerReservation(ReservationServer, IKernelBrokerReservation):
     def set_exporting(self):
         self.exporting = True
 
-    def set_source(self, *, source: IDelegation):
+    def set_source(self, *, source: ABCDelegation):
         """
         Set source
         @param source source
         """
         self.source = source
 
-    def set_authority(self, *, authority: IAuthorityProxy):
+    def set_authority(self, *, authority: ABCAuthorityProxy):
         self.authority = authority
+
+
+class BrokerReservationFactory:
+    @staticmethod
+    def create(*, rid: ID, resources: ResourceSet, term: Term, slice_obj: ABCSlice, actor: ABCActorMixin = None):
+        """
+        Create Broker Reservation
+        :param rid:
+        :param resources:
+        :param term:
+        :param slice_obj:
+        :param actor:
+        :return:
+        """
+        reservation = BrokerReservation(rid=rid, resources=resources, term=term, slice_obj=slice_obj)
+        reservation.restore(actor=actor, slice_obj=slice_obj)
+        return reservation

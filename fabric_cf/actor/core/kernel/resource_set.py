@@ -29,8 +29,8 @@ from datetime import datetime
 
 from fim.slivers.base_sliver import BaseSliver
 
-from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ResourcesException
 
@@ -38,7 +38,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.util.notice import Notice
-    from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
+    from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
@@ -91,8 +91,8 @@ class ResourceSet:
     Calls that "reach around" ResourceSet to the concrete set are
     discouraged/deprecated.
     """
-    def __init__(self, *, concrete: IConcreteSet = None, gained: IConcreteSet = None,
-                 lost: IConcreteSet = None, modified: IConcreteSet = None,
+    def __init__(self, *, concrete: ABCConcreteSet = None, gained: ABCConcreteSet = None,
+                 lost: ABCConcreteSet = None, modified: ABCConcreteSet = None,
                  rtype: ResourceType = None, sliver: BaseSliver = None, units: int = None):
         # What type of resources does this set contain. The meaning/assignment of
         # type values is an externally defined convention of interacting actors.
@@ -157,7 +157,7 @@ class ResourceSet:
         self.rid = None
         self.is_closing = False
 
-    def restore(self, *, plugin: IBasePlugin, reservation: IReservation):
+    def restore(self, *, plugin: ABCBasePlugin, reservation: ABCReservationMixin):
         """
         Restore post stateful restart
         @param plugin plugin
@@ -193,7 +193,7 @@ class ResourceSet:
             self.released = None
         return result
 
-    def merge_properties(self, *, reservation: IReservation, resource_set):
+    def merge_properties(self, *, reservation: ABCReservationMixin, resource_set):
         """
         Merge properties
         @param reservation reservation
@@ -204,7 +204,7 @@ class ResourceSet:
 
         self.sliver = resource_set.get_sliver()
 
-    def delta_update(self, *, reservation: IReservation, resource_set):
+    def delta_update(self, *, reservation: ABCReservationMixin, resource_set):
         if reservation is None or resource_set is None:
             raise ResourcesException(Constants.INVALID_ARGUMENT)
 
@@ -254,7 +254,7 @@ class ResourceSet:
         else:
             self.units = 0
 
-    def full_update(self, *, reservation: IReservation, resource_set):
+    def full_update(self, *, reservation: ABCReservationMixin, resource_set):
         if reservation is None or resource_set is None:
             raise ResourcesException(Constants.INVALID_ARGUMENT)
 
@@ -323,7 +323,7 @@ class ResourceSet:
         """
         return self.rid
 
-    def get_resources(self) -> IConcreteSet:
+    def get_resources(self) -> ABCConcreteSet:
         """
         Returns the concrete resources.
         @returns concrete resource set
@@ -462,7 +462,7 @@ class ResourceSet:
         if cs is not None:
             self.resources.add(concrete_set=cs, configure=True)
 
-    def service_update(self, *, reservation: IReservation):
+    def service_update(self, *, reservation: ABCReservationMixin):
         """
         Service a resource set update. Any changes to existing
         concrete resources should have been left in "updated" by an update
@@ -491,7 +491,7 @@ class ResourceSet:
         """
         self.rid = rid
 
-    def set_resources(self, *, cset: IConcreteSet):
+    def set_resources(self, *, cset: ABCConcreteSet):
         """
         Set the concrete resources. Used by proxies.
         @params cset :concrete resource set
@@ -512,7 +512,7 @@ class ResourceSet:
         """
         self.units = units
 
-    def setup(self, *, reservation: IReservation):
+    def setup(self, *, reservation: ABCReservationMixin):
         """
         Passes information about the containing reservation to the concrete set.
         @params reservation: containing reservation
@@ -528,7 +528,7 @@ class ResourceSet:
             result += " sliver: [{}]".format(self.sliver)
         return result
 
-    def update(self, *, reservation: IReservation, resource_set: ResourceSet):
+    def update(self, *, reservation: ABCReservationMixin, resource_set: ResourceSet):
         if reservation is None or resource_set is None:
             raise ResourcesException(Constants.INVALID_ARGUMENT)
 
@@ -537,7 +537,7 @@ class ResourceSet:
         else:
             self.delta_update(reservation=reservation, resource_set=resource_set)
 
-    def update_properties(self, *, reservation: IReservation, resource_set):
+    def update_properties(self, *, reservation: ABCReservationMixin, resource_set):
         if reservation is None or resource_set is None:
             raise ResourcesException(Constants.INVALID_ARGUMENT)
 

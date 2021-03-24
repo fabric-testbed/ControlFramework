@@ -32,17 +32,17 @@ from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 from fabric_mb.message_bus.messages.message import IMessageAvro
 from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
 
-from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
+from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.delegation.broker_delegation_factory import BrokerDelegationFactory
-from fabric_cf.actor.core.kernel.client_reservation_factory import ClientReservationFactory
 from fabric_cf.actor.core.kernel.incoming_delegation_rpc import IncomingDelegationRPC
 from fabric_cf.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
 from fabric_cf.actor.core.kernel.incoming_query_rpc import IncomingQueryRPC
 from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
 from fabric_cf.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.kafka.kafka_retun import KafkaReturn
@@ -59,19 +59,19 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.update_ticket_avro import UpdateTicketAvro
 
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-    from fabric_cf.actor.core.apis.i_actor import IActor
+    from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 
 
 class ActorService:
-    def __init__(self, *, actor: IActor):
+    def __init__(self, *, actor: ABCActorMixin):
         self.actor = actor
         self.logger = self.actor.get_logger()
 
     def get_callback(self, *, kafka_topic: str, auth: AuthToken):
         return KafkaReturn(kafka_topic=kafka_topic, identity=auth, logger=self.actor.get_logger())
 
-    def get_concrete(self, *, reservation: ReservationAvro) -> IConcreteSet:
+    def get_concrete(self, *, reservation: ReservationAvro) -> ABCConcreteSet:
         ticket = reservation.resource_set.ticket
         if reservation.resource_set.ticket is not None:
             return Translate.translate_ticket_from_avro(avro_ticket=ticket)
@@ -82,7 +82,7 @@ class ActorService:
 
         return None
 
-    def pass_client(self, *, reservation: ReservationAvro) -> IClientReservation:
+    def pass_client(self, *, reservation: ReservationAvro) -> ABCClientReservation:
         slice_obj = Translate.translate_slice(slice_avro=reservation.slice)
         term = Translate.translate_term_from_avro(term=reservation.term)
 
@@ -92,7 +92,7 @@ class ActorService:
         return ClientReservationFactory.create(rid=ID(uid=reservation.reservation_id), resources=resource_set,
                                                term=term, slice_object=slice_obj, actor=self.actor)
 
-    def pass_client_delegation(self, *, delegation: DelegationAvro, caller: AuthToken) -> IDelegation:
+    def pass_client_delegation(self, *, delegation: DelegationAvro, caller: AuthToken) -> ABCDelegation:
         slice_obj = Translate.translate_slice(slice_avro=delegation.slice)
 
         dlg = BrokerDelegationFactory.create(did=delegation.get_delegation_id(),

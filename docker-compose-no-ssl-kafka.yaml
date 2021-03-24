@@ -2,7 +2,7 @@ version: '3.6'
 
 services:
     zookeeper:
-        image: confluentinc/cp-zookeeper:5.5.0
+        image: confluentinc/cp-zookeeper:latest
         hostname: zookeeper
         container_name: zookeeper
         ports:
@@ -11,7 +11,7 @@ services:
         - ZOOKEEPER_CLIENT_PORT=2181
         - ZOOKEEPER_TICK_TIME=2000
     broker:
-        image: confluentinc/cp-server:5.5.0
+        image: confluentinc/cp-kafka:latest
         hostname: broker 
         container_name: broker 
         depends_on:
@@ -30,7 +30,7 @@ services:
         - KAFKA_TRANSACTION_STATE_LOG_MIN_ISR=1
         - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
     registry:
-        image: confluentinc/cp-schema-registry:5.5.0
+        image: confluentinc/cp-schema-registry:latest
         hostname: registry
         container_name: registry
         depends_on:

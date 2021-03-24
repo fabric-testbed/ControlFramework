@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import traceback
 from typing import TYPE_CHECKING
-from fabric_cf.actor.core.apis.i_timer_task import ITimerTask
+from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.failed_rpc_event import FailedRPCEvent
 from fabric_cf.actor.core.util.rpc_exception import RPCException, RPCError
@@ -36,7 +36,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.kernel.rpc_request import RPCRequest
 
 
-class QueryTimeout(ITimerTask):
+class QueryTimeout(ABCTimerTask):
     """
     Query timeout
     """

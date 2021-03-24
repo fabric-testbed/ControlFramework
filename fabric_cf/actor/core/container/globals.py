@@ -43,7 +43,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.container import Container
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor_container import IActorContainer
+    from fabric_cf.actor.core.apis.abc_actor_container import ABCActorContainer
     from fabric_cf.actor.boot.configuration import Configuration
 
 
@@ -175,7 +175,7 @@ class Globals:
     def get_jwt_validator(self):
         return self.jwt_validator
 
-    def get_container(self) -> IActorContainer:
+    def get_container(self) -> ABCActorContainer:
         """
         Get the container
         @return container

@@ -23,44 +23,44 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
-from fabric_cf.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
-from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
-from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
+from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
+from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
-from fabric_cf.actor.core.kernel.authority_reservation_factory import AuthorityReservationFactory
+from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservationFactory
 from fabric_cf.actor.core.proxies.local.local_broker import LocalBroker
 from fabric_cf.actor.core.proxies.local.local_proxy import LocalProxy
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class LocalAuthority(LocalBroker, IAuthorityProxy):
-    def _prepare(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
-                 caller: AuthToken) -> IRPCRequestState:
+class LocalAuthority(LocalBroker, ABCAuthorityProxy):
+    def _prepare(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                 caller: AuthToken) -> ABCRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
         state.reservation = self.pass_reservation_authority(reservation=reservation, auth=caller)
         state.callback = callback
         return state
 
-    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
-                       caller: AuthToken) -> IRPCRequestState:
+    def prepare_redeem(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                       caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_extend_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
-                             caller: AuthToken) -> IRPCRequestState:
+    def prepare_extend_lease(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                             caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_modify_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
-                             caller: AuthToken) -> IRPCRequestState:
+    def prepare_modify_lease(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                             caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def prepare_close(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
-                      caller: AuthToken) -> IRPCRequestState:
+    def prepare_close(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                      caller: AuthToken) -> ABCRPCRequestState:
         return self._prepare(reservation=reservation, callback=callback, caller=caller)
 
-    def pass_reservation_authority(self, *, reservation: IControllerReservation, auth: AuthToken) -> IReservation:
+    def pass_reservation_authority(self, *, reservation: ABCControllerReservation, auth: AuthToken) -> ABCReservationMixin:
         if reservation.get_resources().get_resources() is None:
             raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("concrete set"))
 

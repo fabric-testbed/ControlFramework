@@ -28,18 +28,18 @@ from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.util.rpc_exception import RPCException
-from fabric_cf.actor.core.apis.i_actor_event import IActorEvent
+from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor import IActor
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
     from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 
 
-class FailedRPCEvent(IActorEvent):
+class FailedRPCEvent(ABCActorEvent):
     """
     Represents Failed RPC Event
     """
-    def __init__(self, *, actor: IActor, failed: FailedRPC):
+    def __init__(self, *, actor: ABCActorMixin, failed: FailedRPC):
         self.actor = actor
         self.failed = failed
 

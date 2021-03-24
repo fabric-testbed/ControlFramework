@@ -36,8 +36,8 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.actor_identity import ActorIdentity
 from fabric_cf.actor.core.core.ticket import Ticket
@@ -53,24 +53,24 @@ from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_reservation import IReservation
-    from fabric_cf.actor.core.apis.i_proxy import IProxy
-    from fabric_cf.actor.core.apis.i_actor import IActor
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+    from fabric_cf.actor.core.apis.abc_proxy import ABCProxy
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 
 
 class Converter:
     @staticmethod
-    def absorb_res_properties(*, rsv_mng: ReservationMng, res_obj: IReservation):
+    def absorb_res_properties(*, rsv_mng: ReservationMng, res_obj: ABCReservationMixin):
         res_obj.get_resources().set_sliver(sliver=rsv_mng.get_sliver())
         return res_obj
 
     @staticmethod
-    def fill_reservation(*, reservation: IReservation, full: bool) -> ReservationMng:
+    def fill_reservation(*, reservation: ABCReservationMixin, full: bool) -> ReservationMng:
         rsv_mng = None
 
-        if isinstance(reservation, IControllerReservation):
+        if isinstance(reservation, ABCControllerReservation):
             rsv_mng = LeaseReservationAvro()
-        elif isinstance(reservation, IClientReservation):
+        elif isinstance(reservation, ABCClientReservation):
             rsv_mng = TicketReservationAvro()
         else:
             rsv_mng = ReservationMng()
@@ -85,7 +85,7 @@ class Converter:
         rsv_mng.set_state(reservation.get_state().value)
         rsv_mng.set_pending_state(reservation.get_pending_state().value)
 
-        if isinstance(reservation, IControllerReservation):
+        if isinstance(reservation, ABCControllerReservation):
             rsv_mng.set_leased_units(reservation.get_leased_abstract_units())
             rsv_mng.set_join_state(reservation.get_join_state().value)
             authority = reservation.get_authority()
@@ -93,7 +93,7 @@ class Converter:
             if authority is not None:
                 rsv_mng.set_authority(str(authority.get_guid()))
 
-        if isinstance(reservation, IClientReservation):
+        if isinstance(reservation, ABCClientReservation):
             broker = reservation.get_broker()
             if broker is not None:
                 rsv_mng.set_broker(str(broker.get_guid()))
@@ -119,9 +119,9 @@ class Converter:
         return rsv_mng
 
     @staticmethod
-    def attach_res_properties(*, mng: ReservationMng, reservation: IReservation):
+    def attach_res_properties(*, mng: ReservationMng, reservation: ABCReservationMixin):
         sliver = None
-        if isinstance(reservation, IControllerReservation):
+        if isinstance(reservation, ABCControllerReservation):
             if reservation.is_active():
                 sliver = reservation.get_leased_resources().get_sliver()
             else:
@@ -210,7 +210,7 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_proxy(*, proxy: IProxy) -> ProxyAvro:
+    def fill_proxy(*, proxy: ABCProxy) -> ProxyAvro:
         result = ProxyAvro()
         result.set_name(proxy.get_name())
         result.set_guid(str(proxy.get_guid()))
@@ -250,7 +250,7 @@ class Converter:
                            sliver=res_mng.get_sliver())
 
     @staticmethod
-    def fill_actor(*, actor: IActor) -> ActorAvro:
+    def fill_actor(*, actor: ABCActorMixin) -> ActorAvro:
         result = ActorAvro()
         result.set_name(actor.get_name())
         result.set_description(actor.get_description())
@@ -270,7 +270,7 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_actor_from_db(*, actor: IActor) -> ActorAvro:
+    def fill_actor_from_db(*, actor: ABCActorMixin) -> ActorAvro:
         result = ActorAvro()
         result.set_description(actor.get_description())
         result.set_name(actor.get_name())
@@ -283,7 +283,7 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_actors_from_db(*, act_list: List[IActor]) -> List[ActorAvro]:
+    def fill_actors_from_db(*, act_list: List[ABCActorMixin]) -> List[ActorAvro]:
         result = []
         for a in act_list:
             act_mng = Converter.fill_actor_from_db(actor=a)
@@ -292,7 +292,7 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_actors_from_db_status(*, act_list: List[IActor], status: int) -> List[ActorAvro]:
+    def fill_actors_from_db_status(*, act_list: List[ABCActorMixin], status: int) -> List[ActorAvro]:
         result = []
         for a in act_list:
             act_mng = Converter.fill_actor_from_db(actor=a)

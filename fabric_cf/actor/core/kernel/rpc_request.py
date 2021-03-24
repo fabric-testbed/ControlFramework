@@ -23,12 +23,12 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_proxy import IProxy
-from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
-from fabric_cf.actor.core.apis.i_rpc_response_handler import IRPCResponseHandler
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_proxy import ABCProxy
+from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
+from fabric_cf.actor.core.apis.abc_response_handler import ABCResponseHandler
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 
 
@@ -36,9 +36,9 @@ class RPCRequest:
     """
     Represents a RPC request being sent across Kafka
     """
-    def __init__(self, *, request: IRPCRequestState, actor: IActor, proxy: IProxy,
-                 sequence: int = None, handler: IRPCResponseHandler = None, reservation: IReservation = None,
-                 delegation: IDelegation = None):
+    def __init__(self, *, request: ABCRPCRequestState, actor: ABCActorMixin, proxy: ABCProxy,
+                 sequence: int = None, handler: ABCResponseHandler = None, reservation: ABCReservationMixin = None,
+                 delegation: ABCDelegation = None):
         self.request = request
         self.actor = actor
         self.proxy = proxy
@@ -49,28 +49,28 @@ class RPCRequest:
         self.retry_count = 0
         self.timer = None
 
-    def get_actor(self) -> IActor:
+    def get_actor(self) -> ABCActorMixin:
         """
         Get actor
         @return actor
         """
         return self.actor
 
-    def get_delegation(self) -> IDelegation:
+    def get_delegation(self) -> ABCDelegation:
         """
         Get delegation
         @return delegation
         """
         return self.delegation
 
-    def get_reservation(self) -> IReservation:
+    def get_reservation(self) -> ABCReservationMixin:
         """
         Get Reservation
         @return reservation
         """
         return self.reservation
 
-    def get_handler(self) -> IRPCResponseHandler:
+    def get_handler(self) -> ABCResponseHandler:
         """
         Get Response Handler
         @return response handler

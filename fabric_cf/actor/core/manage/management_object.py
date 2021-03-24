@@ -30,13 +30,13 @@ from typing import TYPE_CHECKING
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.apis.i_management_object import IManagementObject
+from fabric_cf.actor.core.apis.abc_management_object import ABCManagementObject
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 
-class ManagementObject(IManagementObject):
+class ManagementObject(ABCManagementObject):
     """
     Base class for all manager objects. A manager object is part of the management layer.
     It provides a set of management operations for a given component, for example, actor or slice.

@@ -35,14 +35,15 @@ from fim.slivers.capacities_labels import ReservationInfo
 from fim.slivers.network_node import NodeSliver
 from fim.user.topology import ExperimentTopology
 
-from fabric_cf.actor.core.apis.i_authority_policy import IAuthorityPolicy
-from fabric_cf.actor.core.apis.i_kernel_controller_reservation import IKernelControllerReservation
+from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
+from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import ABCKernelControllerReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.util.rpc_exception import RPCError
-from fabric_cf.actor.core.apis.i_reservation import IReservation, ReservationCategory
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
 from fabric_cf.actor.core.kernel.predecessor_state import PredecessorState
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.reservation import Reservation
@@ -53,22 +54,22 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.fim.fim_helper import FimHelper
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_slice import ISlice
-    from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
-    from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
-    from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-    from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
-    from fabric_cf.actor.core.apis.i_client_policy import IClientPolicy
-    from fabric_cf.actor.core.apis.i_policy import IPolicy
-    from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+    from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
+    from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
+    from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+    from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+    from fabric_cf.actor.core.apis.abc_client_policy import ABCClientPolicy
+    from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+    from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.resource_count import ResourceCount
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class ReservationClient(Reservation, IKernelControllerReservation):
+class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
     """
     Reservation state machine for a client-side reservation. Role: orchestrator,
     or an agent requesting tickets from an upstream agent. This class
@@ -97,7 +98,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
     CLOSE_COMPLETE = "close complete"
 
     def __init__(self, *, rid: ID, resources: ResourceSet = None, term: Term = None,
-                 slice_object: IKernelSlice = None, broker: IBrokerProxy = None):
+                 slice_object: ABCKernelSlice = None, broker: ABCBrokerProxy = None):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_object)
         self.service_pending = JoinState.None_
         # Proxy to the broker that serves tickets for this reservation.
@@ -219,7 +220,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
         self.suggested = True
 
-    def restore(self, *, actor: IActor, slice_obj: ISlice):
+    def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """
         Must be invoked after creating reservation from unpickling
         """
@@ -239,7 +240,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
         self.suggested = False
 
-    def absorb_lease_update(self, *, incoming: IReservation, update_date: UpdateData):
+    def absorb_lease_update(self, *, incoming: ABCReservationMixin, update_date: UpdateData):
         """
         Absorbs and incoming lease update.
 
@@ -269,7 +270,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.term = incoming.get_term()
         self.lease_term = self.term
 
-    def absorb_ticket_update(self, *, incoming: IReservation, update_data: UpdateData):
+    def absorb_ticket_update(self, *, incoming: ABCReservationMixin, update_data: UpdateData):
         """
         Absorbs an incoming ticket update.
 
@@ -297,7 +298,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
         self.policy.update_ticket_complete(reservation=self)
 
-    def accept_lease_update(self, *, incoming: IReservation, update_data: UpdateData) -> bool:
+    def accept_lease_update(self, *, incoming: ABCReservationMixin, update_data: UpdateData) -> bool:
         """
         Determines whether the incoming lease update is acceptable and if so
         accepts it.
@@ -330,7 +331,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 self.logger.error("accept_lease_update e:{}".format(e))
         return update_data.successful()
 
-    def accept_ticket_update(self, *, incoming: IReservation, update_data: UpdateData):
+    def accept_ticket_update(self, *, incoming: ABCReservationMixin, update_data: UpdateData):
         """
         Determines whether the incoming ticket update is acceptable and if so
         accepts it.
@@ -583,7 +584,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         else:
             self.error(err="Wrong state to initiate modify lease: {}".format(ReservationStates(self.state).name))
 
-    def extend_ticket(self, *, actor: IActor):
+    def extend_ticket(self, *, actor: ABCActorMixin):
         # Not permitted if there is a pending operation: cannot renew while a
         # previous renew or redeem is in progress (see note above).
         self.nothing_pending()
@@ -607,10 +608,10 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         self.sequence_ticket_out += 1
         RPCManagerSingleton.get().extend_ticket(reservation=self)
 
-    def get_authority(self) -> IAuthorityProxy:
+    def get_authority(self) -> ABCAuthorityProxy:
         return self.authority
 
-    def get_broker(self) -> IBrokerProxy:
+    def get_broker(self) -> ABCBrokerProxy:
         return self.broker
 
     def get_join_state(self) -> JoinState:
@@ -722,7 +723,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         return self.exported
 
     @staticmethod
-    def is_controller(*, actor: IActor):
+    def is_controller(*, actor: ABCActorMixin):
         """
         Check if the actor is Controller
         @return true if actor is a controller, false otherwise
@@ -730,7 +731,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         from fabric_cf.actor.core.core.controller import Controller
         return isinstance(actor, Controller)
 
-    def lease_update_satisfies(self, *, incoming: IReservation, update_data: UpdateData):
+    def lease_update_satisfies(self, *, incoming: ABCReservationMixin, update_data: UpdateData):
         """
         Check if lease update can be satisfied
         @return true if update is acceptable, false otherwise
@@ -745,7 +746,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
             self.logger.warning("lease update does not satisfy ticket term (ignored) e: {}".format(e))
             update_data.post(event="lease update does not satisfy ticket term (ignored)")
 
-    def prepare(self, *, callback: ICallbackProxy, logger):
+    def prepare(self, *, callback: ABCCallbackProxy, logger):
         self.set_logger(logger=logger)
         self.callback = callback
 
@@ -869,10 +870,10 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                 # are not cheating
                 self.do_relinquish()
 
-    def set_policy(self, *, policy: IClientPolicy):
+    def set_policy(self, *, policy: ABCClientPolicy):
         self.policy = policy
 
-    def reserve(self, *, policy: IPolicy):
+    def reserve(self, *, policy: ABCPolicy):
         assert self.slice is not None
 
         self.nothing_pending()
@@ -978,7 +979,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
             self.resources.service_update(reservation=self)
             self.update_slice_graph(sliver=self.resources.sliver)
 
-    def set_broker(self, *, broker: IBrokerProxy) -> bool:
+    def set_broker(self, *, broker: ABCBrokerProxy) -> bool:
         if self.state != ReservationStates.Nascent:
             self.error(err="setBroker on reservation while in use")
             return False
@@ -1021,7 +1022,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
     def set_ticket_sequence_out(self, *, sequence: int):
         self.sequence_lease_out = sequence
 
-    def ticket_update_satisfies(self, *, incoming: IReservation, update_data: UpdateData):
+    def ticket_update_satisfies(self, *, incoming: ABCReservationMixin, update_data: UpdateData):
         """
         Enforce minimum standards for an arriving ticket update.
         @param incoming  incoming ticket update
@@ -1059,7 +1060,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
 
         self.transition(prefix=prefix, state=state, pending=pending)
 
-    def update_lease(self, *, incoming: IReservation, update_data):
+    def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         if self.state == ReservationStates.Nascent:
             self.error(err="Lease update for a reservation without a ticket")
 
@@ -1127,7 +1128,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         elif self.state == ReservationStates.Failed:
             self.logger.error("Lease update on failed reservation")
 
-    def update_ticket(self, *, incoming: IReservation, update_data: UpdateData):
+    def update_ticket(self, *, incoming: ABCReservationMixin, update_data: UpdateData):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Ticketed:
             if self.pending_state != ReservationPendingStates.Ticketing and \
                     self.pending_state != ReservationPendingStates.ExtendingTicket:
@@ -1239,7 +1240,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
             result.append(v)
         return result
 
-    def get_client_callback_proxy(self) -> IClientCallbackProxy:
+    def get_client_callback_proxy(self) -> ABCClientCallbackProxy:
         return self.callback
 
     def handle_failed_rpc(self, *, failed: FailedRPC):
@@ -1463,7 +1464,7 @@ class ReservationClient(Reservation, IKernelControllerReservation):
         """
         Recover the reservation post stateful restart
         """
-        if isinstance(self.policy, IAuthorityPolicy):
+        if isinstance(self.policy, ABCAuthorityPolicy):
             self.logger.debug("No recovery necessary for reservation #{}".format(self.get_reservation_id()))
             return
 
@@ -1496,3 +1497,26 @@ class ReservationClient(Reservation, IKernelControllerReservation):
                                       reservation_state=self.state.name)
         self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                           f"Slice Graph# {self.slice.get_graph_id()}")
+
+
+class ClientReservationFactory:
+    """
+    Factory class for creating client reservations
+    """
+    @staticmethod
+    def create(*, rid: ID, resources: ResourceSet = None, term: Term = None, slice_object: ABCSlice = None,
+               broker: ABCBrokerProxy = None, actor: ABCActorMixin = None):
+        """
+        Create Client reservation
+        :param rid:
+        :param resources:
+        :param term:
+        :param slice_object:
+        :param broker:
+        :param actor:
+        :return:
+        """
+        result = ReservationClient(rid=rid, resources=resources, term=term, slice_object=slice_object, broker=broker)
+        if actor is not None:
+            result.restore(actor=actor, slice_obj=slice_object)
+        return result

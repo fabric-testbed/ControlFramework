@@ -23,11 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_state import IState
 from fabric_cf.actor.core.kernel.reservation_states import JoinState, ReservationPendingStates, ReservationStates
 
 
-class ReservationState(IState):
+class ReservationState:
     """
     Represents the state of a reservation.
     """

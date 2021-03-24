@@ -26,13 +26,13 @@
 from abc import abstractmethod
 from datetime import datetime
 
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.apis.i_slice import ISlice
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-from fabric_cf.actor.core.apis.i_kernel_server_reservation import IKernelServerReservation
-from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
+from fabric_cf.actor.core.apis.abc_kernel_server_reservation import ABCKernelServerReservationMixin
+from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
 from fabric_cf.actor.core.kernel.reservation import Reservation
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
@@ -45,7 +45,7 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class ReservationServer(Reservation, IKernelServerReservation):
+class ReservationServer(Reservation, ABCKernelServerReservationMixin):
     """
     Implementation note on error handling. There are several kinds of errors,
     all of which are logged: - Error on an incoming operation, caught with no
@@ -63,7 +63,7 @@ class ReservationServer(Reservation, IKernelServerReservation):
     classes to reflect this convention.
     """
 
-    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_object: IKernelSlice):
+    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_object: ABCKernelSlice):
         super().__init__(rid=rid, slice_object=slice_object)
         # Sequence number for incoming messages.
         self.sequence_in = 0
@@ -119,7 +119,7 @@ class ReservationServer(Reservation, IKernelServerReservation):
 
         self.policy = None
 
-    def restore(self, *, actor: IActor, slice_obj: ISlice):
+    def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """
         Must be invoked after creating reservation from unpickling
         """
@@ -129,7 +129,7 @@ class ReservationServer(Reservation, IKernelServerReservation):
                 self.callback.set_logger(logger=actor.get_logger())
             self.policy = actor.get_policy()
 
-    def prepare(self, *, callback: ICallbackProxy, logger):
+    def prepare(self, *, callback: ABCCallbackProxy, logger):
         self.internal_error(err="abstract method")
 
     def validate_incoming(self):
@@ -164,10 +164,10 @@ class ReservationServer(Reservation, IKernelServerReservation):
             self.generate_update()
             self.error(err="server cannot satisfy request closing")
 
-    def update_lease(self, *, incoming: IReservation, update_data):
+    def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         self.internal_error(err="Cannot update a server-side reservation")
 
-    def update_ticket(self, *, incoming: IReservation, update_data):
+    def update_ticket(self, *, incoming: ABCReservationMixin, update_data):
         self.internal_error(err="Cannot update a server-side reservation")
 
     def handle_failed_rpc(self, *, failed: FailedRPC):
@@ -247,7 +247,7 @@ class ReservationServer(Reservation, IKernelServerReservation):
         Generates an update to the callback object (if any) for this reservation.
         """
 
-    def get_callback(self) -> ICallbackProxy:
+    def get_callback(self) -> ABCCallbackProxy:
         return self.callback
 
     def get_sequence_in(self) -> int:

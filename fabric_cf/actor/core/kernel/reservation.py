@@ -28,17 +28,17 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from datetime import datetime
-from fabric_cf.actor.core.apis.i_reservation import IReservation, ReservationCategory
-from fabric_cf.actor.core.apis.i_kernel_reservation import IKernelReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
+from fabric_cf.actor.core.apis.abc_kernel_reservation import ABCKernelReservation
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
 from fabric_cf.actor.core.util.reservation_state import ReservationState
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.apis.i_policy import IPolicy
-    from fabric_cf.actor.core.apis.i_slice import ISlice
-    from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+    from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
+    from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
     from fabric_cf.actor.core.kernel.request_types import RequestTypes
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
@@ -46,7 +46,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class Reservation(IKernelReservation):
+class Reservation(ABCKernelReservation):
     """
     These are the only methods synchronized on the Reservation object itself. The
     purpose is to allow an external thread to await a state transition in a
@@ -68,7 +68,7 @@ class Reservation(IKernelReservation):
     """
 
     def __init__(self, *, rid: ID = None, resources: ResourceSet = None, term: Term = None,
-                 slice_object: IKernelSlice = None):
+                 slice_object: ABCKernelSlice = None):
         # The unique reservation identifier.
         self.rid = rid
         # Reservation category. Subclasses should supply the correct value.
@@ -166,7 +166,7 @@ class Reservation(IKernelReservation):
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
 
-    def restore(self, *, actor: IActor, slice_obj: ISlice):
+    def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """
         Must be invoked after creating reservation from unpickling
         """
@@ -240,7 +240,7 @@ class Reservation(IKernelReservation):
         Modify lease on reservation
         """
 
-    def extend_ticket(self, *, actor: IActor):
+    def extend_ticket(self, *, actor: ABCActorMixin):
         """
         Extend a ticket
         """
@@ -286,7 +286,7 @@ class Reservation(IKernelReservation):
     def get_category(self) -> ReservationCategory:
         return self.category
 
-    def get_kernel_slice(self) -> IKernelSlice:
+    def get_kernel_slice(self) -> ABCKernelSlice:
         return self.slice
 
     def get_leased_abstract_units(self) -> int:
@@ -345,7 +345,7 @@ class Reservation(IKernelReservation):
     def get_resources(self) -> ResourceSet:
         return self.resources
 
-    def get_slice(self) -> ISlice:
+    def get_slice(self) -> ABCSlice:
         return self.slice
 
     def get_slice_id(self):
@@ -486,7 +486,7 @@ class Reservation(IKernelReservation):
         if self.state == ReservationStates.Closed or self.state == ReservationStates.Failed:
             self.error(err="invalid Reservation")
 
-    def reserve(self, *, policy: IPolicy):
+    def reserve(self, *, policy: ABCPolicy):
         return
 
     def setup(self):
@@ -532,7 +532,7 @@ class Reservation(IKernelReservation):
     def service_update_ticket(self):
         return
 
-    def set_actor(self, *, actor: IActor):
+    def set_actor(self, *, actor: ABCActorMixin):
         self.actor = actor
 
     def set_approved(self, *, term: Term = None, approved_resources: ResourceSet = None):
@@ -571,7 +571,7 @@ class Reservation(IKernelReservation):
     def set_service_pending(self, *, code: ReservationPendingStates):
         self.service_pending = code
 
-    def set_slice(self, *, slice_object: ISlice):
+    def set_slice(self, *, slice_object: ABCSlice):
         self.slice = slice_object
 
     def __str__(self):
@@ -606,10 +606,10 @@ class Reservation(IKernelReservation):
         self.set_dirty()
         self.state_transition = True
 
-    def update_lease(self, *, incoming: IReservation, update_data):
+    def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         self.internal_error(err="abstract update_lease trap")
 
-    def update_ticket(self, *, incoming: IReservation, update_data):
+    def update_ticket(self, *, incoming: ABCReservationMixin, update_data):
         self.internal_error(err="abstract update_ticket trap")
 
     def validate_outgoing(self):

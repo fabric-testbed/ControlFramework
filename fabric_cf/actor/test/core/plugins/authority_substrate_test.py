@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_actor import IActor
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.core.authority import Authority
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
@@ -32,7 +32,7 @@ from fabric_cf.actor.test.core.plugins.substrate_test_base import SubstrateTestB
 
 
 class AuthoritySubstrateTest(SubstrateTestBase):
-    def get_actor_instance(self) -> IActor:
+    def get_actor_instance(self) -> ABCActorMixin:
         return Authority()
 
     def get_authority(self, name: str = BaseTestCase.authority_name, guid: ID = BaseTestCase.authority_guid):

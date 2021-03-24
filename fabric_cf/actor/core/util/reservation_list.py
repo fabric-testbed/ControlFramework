@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import bisect
 
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import FrameworkException
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
@@ -89,7 +89,7 @@ class ReservationList:
         # map of <reservation_id, int(cycle)>
         self.reservation_id_to_cycle = {}
 
-    def add_reservation(self, *, reservation: IReservation, cycle: int):
+    def add_reservation(self, *, reservation: ABCReservationMixin, cycle: int):
         """
         Adds a reservation associated with a given cycle.
         @params reservation:  the reservation
@@ -162,7 +162,7 @@ class ReservationList:
 
         return result
 
-    def remove_reservation(self, *, reservation: IReservation):
+    def remove_reservation(self, *, reservation: ABCReservationMixin):
         """
         Removes a reservation from the list.
         @params reservation: reservation to remove

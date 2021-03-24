@@ -24,19 +24,19 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-from fabric_cf.actor.core.apis.i_authority import IAuthority
-from fabric_cf.actor.core.apis.i_authority_policy import IAuthorityPolicy
-from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
+from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
+from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.core.policy import Policy
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.time.term import Term
 
 
-class AuthorityPolicy(Policy, IAuthorityPolicy):
-    def __init__(self, *, actor: IAuthority = None):
+class AuthorityPolicy(Policy, ABCAuthorityPolicy):
+    def __init__(self, *, actor: ABCAuthority = None):
         super().__init__(actor=actor)
         self.initialized = False
         self.delegations = None
@@ -47,13 +47,13 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
             self.initialized = True
             self.delegations = {}
 
-    def revisit(self, *, reservation: IReservation):
+    def revisit(self, *, reservation: ABCReservationMixin):
         return
 
-    def revisit_delegation(self, *, delegation: IDelegation):
+    def revisit_delegation(self, *, delegation: ABCDelegation):
         self.donate_delegation(delegation=delegation)
 
-    def donate_delegation(self, *, delegation: IDelegation):
+    def donate_delegation(self, *, delegation: ABCDelegation):
         self.delegations[delegation.get_delegation_id()] = delegation
 
     def eject(self, *, resources: ResourceSet):
@@ -71,7 +71,7 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
     def release(self, *, resources: ResourceSet):
         return
 
-    def bind_delegation(self, *, delegation: IDelegation) -> bool:
+    def bind_delegation(self, *, delegation: ABCDelegation) -> bool:
         result = False
 
         if delegation.get_delegation_id() not in self.delegations:
@@ -86,13 +86,13 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
     def assign(self, *, cycle: int):
         return
 
-    def correct_deficit(self, *, reservation: IAuthorityReservation):
+    def correct_deficit(self, *, reservation: ABCAuthorityReservation):
         if reservation.get_resources() is None:
             return
 
         self.finish_correct_deficit(reservation=reservation)
 
-    def finish_correct_deficit(self, *, reservation: IAuthorityReservation, rset: ResourceSet = None):
+    def finish_correct_deficit(self, *, reservation: ABCAuthorityReservation, rset: ResourceSet = None):
         """
         Finishes correcting a deficit.
         @param rset correction
@@ -112,11 +112,11 @@ class AuthorityPolicy(Policy, IAuthorityPolicy):
         else:
             reservation.get_resources().update(reservation=reservation, resource_set=rset)
 
-    def extend_authority(self, *, reservation: IAuthorityReservation) -> bool:
+    def extend_authority(self, *, reservation: ABCAuthorityReservation) -> bool:
         return False
 
-    def extend_broker(self, *, reservation: IBrokerReservation) -> bool:
+    def extend_broker(self, *, reservation: ABCBrokerReservation) -> bool:
         return False
 
-    def extend(self, *, reservation: IReservation, resources: ResourceSet, term: Term):
+    def extend(self, *, reservation: ABCReservationMixin, resources: ResourceSet, term: Term):
         return False

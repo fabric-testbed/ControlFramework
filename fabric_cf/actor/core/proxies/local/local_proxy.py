@@ -23,9 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.core.rpc_request_state import RPCRequestState
@@ -40,7 +40,7 @@ from fabric_cf.actor.core.util.rpc_exception import RPCError
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class LocalProxy(Proxy, ICallbackProxy):
+class LocalProxy(Proxy, ABCCallbackProxy):
     class LocalProxyRequestState(RPCRequestState):
         def __init__(self):
             super().__init__()
@@ -54,7 +54,7 @@ class LocalProxy(Proxy, ICallbackProxy):
             self.error_detail = None
             self.delegation = None
 
-    def __init__(self, *, actor: IActor):
+    def __init__(self, *, actor: ABCActorMixin):
         super().__init__(auth=actor.get_identity())
         self.logger = actor.get_logger()
         self.proxy_type = Constants.PROTOCOL_LOCAL
@@ -99,21 +99,21 @@ class LocalProxy(Proxy, ICallbackProxy):
         except Exception as e:
             raise ProxyException("Error while processing RPC request{} {}".format(RPCError.InvalidRequest, e))
 
-    def prepare_query(self, *, callback: ICallbackProxy, query: dict, caller: AuthToken, id_token: str):
+    def prepare_query(self, *, callback: ABCCallbackProxy, query: dict, caller: AuthToken, id_token: str):
         state = self.LocalProxyRequestState()
         state.id_token = id_token
         state.query = query
         state.callback = callback
         return state
 
-    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
+    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> ABCRPCRequestState:
         state = self.LocalProxyRequestState()
         state.query = response
         state.request_id = request_id
         return state
 
     def prepare_failed_request(self, *, request_id: str, failed_request_type,
-                               failed_reservation_id, error: str, caller: AuthToken) -> IRPCRequestState:
+                               failed_reservation_id, error: str, caller: AuthToken) -> ABCRPCRequestState:
         state = self.LocalProxyRequestState()
         state.request_id = request_id
         state.failed_request_type = failed_request_type
@@ -121,7 +121,7 @@ class LocalProxy(Proxy, ICallbackProxy):
         state.error_detail = error
         return state
 
-    def get_actor(self) -> IActor:
+    def get_actor(self) -> ABCActorMixin:
         result = ActorRegistrySingleton.get().get_actor(self.get_name())
         if result is None:
             raise ProxyException("Actor does not exist.")

@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import unittest
 import time
-from fabric_cf.actor.core.apis.i_database import IDatabase
+from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
 from fabric_cf.actor.test.base_test_case import BaseTestCase
@@ -41,7 +41,7 @@ class SubstrateTestBase(BaseTestCase, unittest.TestCase):
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
-    def make_actor_database(self) -> IDatabase:
+    def make_actor_database(self) -> ABCDatabase:
         db = SubstrateActorDatabase(user=self.db_user, password=self.db_pwd, database=self.db_name, db_host=self.db_host,
                                     logger=self.logger)
         return db

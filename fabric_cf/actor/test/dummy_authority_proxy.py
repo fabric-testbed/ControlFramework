@@ -23,51 +23,51 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
-from fabric_cf.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
-from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
-from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
+from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.security.auth_token import AuthToken
 from fabric_cf.actor.test.dummy_proxy import DummyProxy
 
 
-class DummyAuthorityProxy(DummyProxy, IAuthorityProxy):
+class DummyAuthorityProxy(DummyProxy, ABCAuthorityProxy):
     def __init__(self, *, auth: AuthToken = None):
         super().__init__(auth)
 
-    def prepare_redeem(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy, caller:
-    AuthToken) -> IRPCRequestState:
+    def prepare_redeem(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy, caller:
+    AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_extend_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
-                             caller: AuthToken) -> IRPCRequestState:
+    def prepare_extend_lease(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                             caller: AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_modify_lease(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
-                             caller: AuthToken) -> IRPCRequestState:
+    def prepare_modify_lease(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                             caller: AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_close(self, *, reservation: IControllerReservation, callback: IControllerCallbackProxy,
-                      caller: AuthToken) -> IRPCRequestState:
+    def prepare_close(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
+                      caller: AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_claim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_claim(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_reclaim(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_reclaim(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_extend_ticket(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_extend_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_relinquish(self, *, reservation: IReservation, callback: IClientCallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_relinquish(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_query(self, *, callback: ICallbackProxy, query:dict, caller: AuthToken, id_token: str):
+    def prepare_query(self, *, callback: ABCCallbackProxy, query:dict, caller: AuthToken, id_token: str):
         return None

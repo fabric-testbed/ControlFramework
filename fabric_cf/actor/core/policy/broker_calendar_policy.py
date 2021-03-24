@@ -35,13 +35,13 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, Re
 from fabric_cf.actor.core.time.calendar.broker_calendar import BrokerCalendar
 from fabric_cf.actor.core.util.resource_count import ResourceCount
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
-from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.core.broker_policy import BrokerPolicy
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_broker import IBroker
-    from fabric_cf.actor.core.apis.i_reservation import IReservation
+    from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 
 
 class BrokerCalendarPolicy(BrokerPolicy):
@@ -49,14 +49,14 @@ class BrokerCalendarPolicy(BrokerPolicy):
     BrokerCalendarPolicy specifies and implements some of the
     broker's base resource allocation and upstream bidding policy.
     """
-    def __init__(self, *, actor: IBroker):
+    def __init__(self, *, actor: ABCBrokerMixin):
         super().__init__(actor=actor)
         # The broker calendar: list of client requests, source reservations, and allocated reservations.
         self.calendar = None
         # Indicates if this actor is initialized
         self.initialized = False
 
-    def add_to_calendar(self, *, reservation: IBrokerReservation):
+    def add_to_calendar(self, *, reservation: ABCBrokerReservation):
         """
         Records the reservation in the calendar.
 
@@ -104,8 +104,8 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
             self.calendar.remove_pending(reservation)
 
-    def close(self, *, reservation: IReservation):
-        if isinstance(reservation, IClientReservation):
+    def close(self, *, reservation: ABCReservationMixin):
+        if isinstance(reservation, ABCClientReservation):
             rset = self.calendar.get_outlays(source=reservation)
             self.logger.debug("Client reservation; get outlays: {}".format(rset))
             self.actor.close_reservations(reservations=rset)
@@ -113,7 +113,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
             self.logger.debug("Removing reservation from scheduled or in progress list")
             self.calendar.remove_scheduled_or_in_progress(reservation=reservation)
 
-    def closed(self, *, reservation: IReservation):
+    def closed(self, *, reservation: ABCReservationMixin):
         self.release(reservation=reservation)
 
     def count(self, *, rvset: ReservationSet, when: datetime):
@@ -135,7 +135,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
     def get_closing(self, *, cycle: int) -> ReservationSet:
         return self.calendar.get_closing(cycle=cycle)
 
-    def get_renew(self, *, reservation: IClientReservation) -> int:
+    def get_renew(self, *, reservation: ABCClientReservation) -> int:
         """
         Returns the cycle when the reservation must be renewed.
 
@@ -154,29 +154,29 @@ class BrokerCalendarPolicy(BrokerPolicy):
             self.initialized = True
 
     def release(self, *, reservation):
-        if isinstance(reservation, IBrokerReservation):
+        if isinstance(reservation, ABCBrokerReservation):
             self.logger.debug("Broker reservation")
             source = reservation.get_source()
             if source is not None:
                 self.logger.debug("Broker reservation; removing outlay")
                 self.calendar.remove_outlay(source=source, client=reservation)
 
-        elif isinstance(reservation, IClientReservation):
+        elif isinstance(reservation, ABCClientReservation):
             self.logger.debug("Client reservation; removing source calendar")
             self.calendar.remove_source_calendar(source=reservation)
 
-    def remove(self, *, reservation: IReservation):
+    def remove(self, *, reservation: ABCReservationMixin):
         self.calendar.remove(reservation=reservation)
 
-    def revisit(self, *, reservation: IReservation):
+    def revisit(self, *, reservation: ABCReservationMixin):
         super().revisit(reservation=reservation)
 
-        if isinstance(reservation, IClientReservation):
+        if isinstance(reservation, ABCClientReservation):
             self.revisit_client(reservation=reservation)
-        elif isinstance(reservation, IBrokerReservation):
+        elif isinstance(reservation, ABCBrokerReservation):
             self.revisit_server(reservation=reservation)
 
-    def revisit_client(self, *, reservation: IClientReservation):
+    def revisit_client(self, *, reservation: ABCClientReservation):
         """
         Recovers a source reservation.
 
@@ -190,7 +190,7 @@ class BrokerCalendarPolicy(BrokerPolicy):
              reservation.get_pending_state() == ReservationPendingStates.ExtendingTicket):
             self.calendar.add_pending(reservation=reservation)
 
-    def revisit_server(self, *, reservation: IBrokerReservation):
+    def revisit_server(self, *, reservation: ABCBrokerReservation):
         """
         Recovers a client reservation.
 

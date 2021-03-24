@@ -31,10 +31,10 @@ from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.slivers.capacities_labels import ReservationInfo
 from fim.slivers.network_node import NodeSliver
 
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_slice import ISlice
-from fabric_cf.actor.core.apis.i_kernel_reservation import IKernelReservation
-from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_slice import ABCSlice
+from fabric_cf.actor.core.apis.abc_kernel_reservation import ABCKernelReservation
+from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
 from fabric_cf.actor.core.common.exceptions import SliceException
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, SliceState, SliceOperation
 from fabric_cf.actor.core.util.id import ID
@@ -50,7 +50,7 @@ class SliceTypes(Enum):
     BrokerClientSlice = 3
 
 
-class Slice(IKernelSlice):
+class Slice(ABCKernelSlice):
     """
     Slice implementation. A slice has a globally unique identifier, name,
     description, property list, an owning identity, an access control list, and a
@@ -113,7 +113,7 @@ class Slice(IKernelSlice):
     def get_graph(self) -> ABCPropertyGraph:
         return self.graph
 
-    def clone_request(self) -> ISlice:
+    def clone_request(self) -> ABCSlice:
         result = Slice()
         result.name = self.name
         result.guid = self.guid
@@ -131,7 +131,7 @@ class Slice(IKernelSlice):
     def get_reservations(self) -> ReservationSet:
         return self.reservations
 
-    def get_delegations(self) -> Dict[str, IDelegation]:
+    def get_delegations(self) -> Dict[str, ABCDelegation]:
         return self.delegations
 
     def get_reservations_list(self) -> list:
@@ -161,13 +161,13 @@ class Slice(IKernelSlice):
         self.state_machine.clear()
         self.transition_slice(operation=SliceStateMachine.CREATE)
 
-    def register(self, *, reservation: IKernelReservation):
+    def register(self, *, reservation: ABCKernelReservation):
         if self.reservations.contains(rid=reservation.get_reservation_id()):
             raise SliceException("Reservation #{} already exists in slice".format(reservation.get_reservation_id()))
 
         self.reservations.add(reservation=reservation)
 
-    def register_delegation(self, *, delegation: IDelegation):
+    def register_delegation(self, *, delegation: ABCDelegation):
         if delegation.get_delegation_id() in self.delegations:
             raise SliceException("Delegation #{} already exists in slice".format(delegation.get_delegation_id()))
 
@@ -200,10 +200,10 @@ class Slice(IKernelSlice):
     def set_resource_type(self, *, resource_type: ResourceType):
         self.resource_type = resource_type
 
-    def soft_lookup(self, *, rid: ID) -> IKernelReservation:
+    def soft_lookup(self, *, rid: ID) -> ABCKernelReservation:
         return self.reservations.get(rid=rid)
 
-    def soft_lookup_delegation(self, *, did: str) -> IDelegation:
+    def soft_lookup_delegation(self, *, did: str) -> ABCDelegation:
         return self.delegations.get(did, None)
 
     def __str__(self):
@@ -212,10 +212,10 @@ class Slice(IKernelSlice):
             msg += " Graph Id:{}".format(self.graph_id)
         return msg
 
-    def unregister(self, *, reservation: IKernelReservation):
+    def unregister(self, *, reservation: ABCKernelReservation):
         self.reservations.remove(reservation=reservation)
 
-    def unregister_delegation(self, *, delegation: IDelegation):
+    def unregister_delegation(self, *, delegation: ABCDelegation):
         if delegation.get_delegation_id() in self.delegations:
             self.delegations.pop(delegation.get_delegation_id())
 
@@ -293,3 +293,18 @@ class Slice(IKernelSlice):
             return sliver
         finally:
             self.lock.release()
+
+
+class SliceFactory:
+    @staticmethod
+    def create(*, slice_id: ID, name: str = None, properties: dict = None) -> ABCSlice:
+        """
+        Create slice
+        :param slice_id:
+        :param name:
+        :param properties:
+        :return:
+        """
+        result = Slice(slice_id=slice_id, name=name)
+        result.set_config_properties(value=properties)
+        return result

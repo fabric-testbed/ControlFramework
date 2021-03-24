@@ -23,9 +23,9 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
-from fabric_cf.actor.core.apis.i_broker_proxy import IBrokerProxy
-from fabric_cf.actor.core.apis.i_proxy import IProxy
+from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
+from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
+from fabric_cf.actor.core.apis.abc_proxy import ABCProxy
 
 
 class ProxyRegistry:
@@ -79,7 +79,7 @@ class ProxyRegistry:
             return None
         return entry.proxies[actor_name]
 
-    def register_proxy(self, *, proxy: IProxy):
+    def register_proxy(self, *, proxy: ABCProxy):
         protocol = proxy.get_type()
 
         entry = None
@@ -93,10 +93,10 @@ class ProxyRegistry:
         if name not in entry.proxies:
             entry.proxies[name] = proxy
 
-            if isinstance(proxy, IAuthorityProxy):
+            if isinstance(proxy, ABCAuthorityProxy):
                 entry.site_proxies.append(proxy)
 
-            if isinstance(proxy, IBrokerProxy):
+            if isinstance(proxy, ABCBrokerProxy):
                 entry.broker_proxies.append(proxy)
 
     def unregister(self, *, actor_name: str):
@@ -104,8 +104,8 @@ class ProxyRegistry:
             if actor_name in protocol.proxies:
                 proxy = protocol.proxies[actor_name]
                 protocol.proxies.pop(actor_name)
-                if isinstance(proxy, IAuthorityProxy):
+                if isinstance(proxy, ABCAuthorityProxy):
                     protocol.site_proxies.remove(proxy)
 
-                if isinstance(proxy, IBrokerProxy):
+                if isinstance(proxy, ABCBrokerProxy):
                     protocol.broker_proxies.remove(proxy)

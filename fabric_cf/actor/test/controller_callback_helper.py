@@ -23,11 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-from fabric_cf.actor.core.apis.i_callback_proxy import ICallbackProxy
-from fabric_cf.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
-from fabric_cf.actor.core.apis.i_rpc_request_state import IRPCRequestState
-from fabric_cf.actor.core.apis.i_reservation import IReservation
+from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
+from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
+from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.local.local_return import LocalReturn
@@ -39,9 +39,9 @@ from fabric_cf.actor.test.client_callback_helper import ClientCallbackHelper
 from fabric_cf.actor.test.test_exception import TestException
 
 
-class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
+class ControllerCallbackHelper(ClientCallbackHelper, ABCControllerCallbackProxy):
     class IUpdateLeaseHandler:
-        def handle_update_lease(self, *, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
+        def handle_update_lease(self, *, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
             """
             Implemented by derived class
             """
@@ -66,8 +66,8 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
         self.__dict__.update(state)
         self.updateLeaseHandler = None
 
-    def prepare_update_lease(self, *, reservation: IAuthorityReservation, update_data: UpdateData,
-                             callback: ICallbackProxy, caller: AuthToken) -> IRPCRequestState:
+    def prepare_update_lease(self, *, reservation: ABCAuthorityReservation, update_data: UpdateData,
+                             callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         state = ClientCallbackHelper.MyRequestState()
         state.reservation = LocalReturn.pass_reservation(reservation=reservation,
                                                          plugin=ActorRegistrySingleton.get().get_actor(
@@ -76,7 +76,7 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
         state.update_data.absorb(other=update_data)
         return state
 
-    def execute(self, *, request: IRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState):
         if request.get_type() == RPCRequestType.UpdateLease:
             self.lease = request.reservation
             self.called_for_lease += 1
@@ -86,7 +86,7 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
             else:
                 super().execute(request=request)
 
-    def get_lease(self) -> IReservation:
+    def get_lease(self) -> ABCReservationMixin:
         return self.lease
 
     def get_called_for_lease(self):
@@ -107,15 +107,15 @@ class ControllerCallbackHelper(ClientCallbackHelper, IControllerCallbackProxy):
     def get_name(self) -> str:
         return self.token.get_name()
 
-    def get_reservation(self) -> IReservation:
+    def get_reservation(self) -> ABCReservationMixin:
         return self.reservation
 
     def get_type(self):
         return Constants.PROTOCOL_LOCAL
 
-    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> IRPCRequestState:
+    def prepare_query_result(self, *, request_id: str, response, caller: AuthToken) -> ABCRPCRequestState:
         raise TestException(Constants.NOT_IMPLEMENTED)
 
     def prepare_failed_request(self, *, request_id: str, failed_request_type,
-                               failed_reservation_id: ID, error: str, caller: AuthToken) -> IRPCRequestState:
+                               failed_reservation_id: ID, error: str, caller: AuthToken) -> ABCRPCRequestState:
         raise TestException(Constants.NOT_IMPLEMENTED)

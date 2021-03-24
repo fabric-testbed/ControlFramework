@@ -32,22 +32,22 @@ from fabric_cf.actor.core.common.exceptions import UnitException
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.notice import Notice
 
-from fabric_cf.actor.core.apis.i_concrete_set import IConcreteSet
+from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
 from fabric_cf.actor.core.core.unit import UnitState, Unit
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.i_authority_proxy import IAuthorityProxy
-    from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
-    from fabric_cf.actor.core.apis.i_reservation import IReservation
+    from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
+    from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class UnitSet(IConcreteSet):
+class UnitSet(ABCConcreteSet):
     """
     Represents the unit in a reservation
     """
-    def __init__(self, *, plugin: IBasePlugin, units: dict = None):
+    def __init__(self, *, plugin: ABCBasePlugin, units: dict = None):
         self.units = units
         if self.units is None:
             self.units = {}
@@ -83,7 +83,7 @@ class UnitSet(IConcreteSet):
         result += "]"
         return result
 
-    def restore(self, *, plugin: IBasePlugin, reservation: IReservation):
+    def restore(self, *, plugin: ABCBasePlugin, reservation: ABCReservationMixin):
         """
         Restore post read from database
         @param plugin plugin
@@ -94,7 +94,7 @@ class UnitSet(IConcreteSet):
             self.logger = plugin.get_logger()
         self.reservation = reservation
 
-    def ensure_type(self, *, cset: IConcreteSet):
+    def ensure_type(self, *, cset: ABCConcreteSet):
         """
         Validate the type of incoming concrete set
         @param cset cset
@@ -110,7 +110,7 @@ class UnitSet(IConcreteSet):
         if u.get_id() not in self.units:
             self.units[u.get_id()] = u
 
-    def add(self, *, concrete_set: IConcreteSet, configure: bool):
+    def add(self, *, concrete_set: ABCConcreteSet, configure: bool):
         self.ensure_type(cset=concrete_set)
 
         self.add_from_dict(units=concrete_set.units)
@@ -138,7 +138,7 @@ class UnitSet(IConcreteSet):
                 result[u.get_id()] = u
         return result
 
-    def change(self, *, concrete_set: IConcreteSet, configure: bool):
+    def change(self, *, concrete_set: ABCConcreteSet, configure: bool):
         if not isinstance(concrete_set, UnitSet):
             raise UnitException("Must be UnitSet")
 
@@ -185,7 +185,7 @@ class UnitSet(IConcreteSet):
         self.transfer_out_units(units=lost)
         self.is_closed = True
 
-    def collect_released(self) -> IConcreteSet:
+    def collect_released(self) -> ABCConcreteSet:
         result = None
         if self.released is not None and len(self.released) > 0:
             result = UnitSet(plugin=self.plugin, units=self.released)
@@ -227,7 +227,7 @@ class UnitSet(IConcreteSet):
                 result.add(msg=n.get_notice())
         return result
 
-    def get_site_proxy(self) -> IAuthorityProxy:
+    def get_site_proxy(self) -> ABCAuthorityProxy:
         return None
 
     def get_units(self) -> int:
@@ -250,7 +250,7 @@ class UnitSet(IConcreteSet):
     def is_active(self) -> bool:
         return not self.is_fresh and self.reservation is not None and self.get_pending_count() == 0
 
-    def modify(self, *, concrete_set: IConcreteSet, configure: bool):
+    def modify(self, *, concrete_set: ABCConcreteSet, configure: bool):
         self.ensure_type(cset=concrete_set)
 
         for u in concrete_set.units.values():
@@ -279,7 +279,7 @@ class UnitSet(IConcreteSet):
             for u in rel.values():
                 self.units.pop(u.get_id())
 
-    def remove(self, *, concrete_set: IConcreteSet, configure: bool):
+    def remove(self, *, concrete_set: ABCConcreteSet, configure: bool):
         self.ensure_type(cset=concrete_set)
         self.is_fresh = False
 
@@ -298,7 +298,7 @@ class UnitSet(IConcreteSet):
             if configure:
                 self.transfer_out(u=u)
 
-    def setup(self, *, reservation: IReservation):
+    def setup(self, *, reservation: ABCReservationMixin):
         self.reservation = reservation
 
     def validate_concrete(self, *, rtype: ResourceType, units: int, term: Term):

@@ -26,25 +26,25 @@
 import traceback
 from typing import List
 
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_actor_identity import IActorIdentity
-from fabric_cf.actor.core.apis.i_base_plugin import IBasePlugin
-from fabric_cf.actor.core.apis.i_authority_reservation import IAuthorityReservation
-from fabric_cf.actor.core.apis.i_broker_reservation import IBrokerReservation
-from fabric_cf.actor.core.apis.i_client_callback_proxy import IClientCallbackProxy
-from fabric_cf.actor.core.apis.i_client_reservation import IClientReservation
-from fabric_cf.actor.core.apis.i_controller_callback_proxy import IControllerCallbackProxy
-from fabric_cf.actor.core.apis.i_controller_reservation import IControllerReservation
-from fabric_cf.actor.core.apis.i_delegation import IDelegation
-from fabric_cf.actor.core.apis.i_policy import IPolicy
-from fabric_cf.actor.core.apis.i_reservation import IReservation
-from fabric_cf.actor.core.apis.i_slice import ISlice
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
+from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
+from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
+from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
+from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import SliceNotFoundException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-from fabric_cf.actor.core.apis.i_kernel_client_reservation import IKernelClientReservation
-from fabric_cf.actor.core.apis.i_kernel_reservation import IKernelReservation
-from fabric_cf.actor.core.apis.i_kernel_slice import IKernelSlice
+from fabric_cf.actor.core.apis.abc_kernel_client_reservation_mixin import ABCKernelClientReservationMixin
+from fabric_cf.actor.core.apis.abc_kernel_reservation import ABCKernelReservation
+from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
 from fabric_cf.actor.core.kernel.kernel import Kernel
 from fabric_cf.actor.core.common.exceptions import KernelException
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
@@ -66,7 +66,7 @@ class KernelWrapper:
     invoking these calls. The internal kernel methods can only be invoked through
     an instance of the kernel wrapper.
     """
-    def __init__(self, *, actor: IActor, plugin: IBasePlugin, policy: IPolicy):
+    def __init__(self, *, actor: ABCActorMixin, plugin: ABCBasePlugin, policy: ABCPolicy):
         # The actor linked by the wrapper to the kernel.
         self.actor = actor
         # The kernel instance.
@@ -81,7 +81,7 @@ class KernelWrapper:
         """
         self.kernel.await_nothing_pending()
 
-    def claim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy,
+    def claim_delegation_request(self, *, delegation: ABCDelegation, caller: AuthToken, callback: ABCClientCallbackProxy,
                                  id_token: str = None):
         """
         Processes a request to claim a pre-advertised delegation
@@ -107,7 +107,7 @@ class KernelWrapper:
         exported.prepare(callback=callback, logger=self.logger)
         self.kernel.claim_delegation(delegation=exported)
 
-    def reclaim_delegation_request(self, *, delegation: IDelegation, caller: AuthToken, callback: IClientCallbackProxy,
+    def reclaim_delegation_request(self, *, delegation: ABCDelegation, caller: AuthToken, callback: ABCClientCallbackProxy,
                                    id_token: str = None):
         """
         Processes a request to re-claim a pre-claimed delegation
@@ -193,7 +193,7 @@ class KernelWrapper:
             except Exception as e:
                 self.logger.error("Error during close: {}".format(e))
 
-    def close_request(self, *, reservation: IReservation, caller: AuthToken, compare_sequence_numbers: bool):
+    def close_request(self, *, reservation: ABCReservationMixin, caller: AuthToken, compare_sequence_numbers: bool):
         """
         Processes an incoming request to close a reservation.
         Role: Authority
@@ -222,7 +222,7 @@ class KernelWrapper:
             target = self.kernel.validate(reservation=reservation)
             self.kernel.close(reservation=target)
 
-    def advertise(self, *, delegation: IDelegation, client: AuthToken):
+    def advertise(self, *, delegation: ABCDelegation, client: AuthToken):
         """
         Initiates a ticket export.
         Role: Broker or Authority
@@ -237,7 +237,7 @@ class KernelWrapper:
         delegation.prepare(callback=None, logger=self.logger)
         self.handle_delegate(delegation=delegation, identity=client)
 
-    def extend_lease(self, *, reservation: IControllerReservation):
+    def extend_lease(self, *, reservation: ABCControllerReservation):
         """
         Initiates a request to extend a lease.
         Role: Controller/Orchestrator
@@ -256,7 +256,7 @@ class KernelWrapper:
         target.validate_redeem()
         self.kernel.extend_lease(reservation=reservation)
 
-    def extend_lease_request(self, *, reservation: IAuthorityReservation, caller: AuthToken,
+    def extend_lease_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
                              compare_sequence_numbers: bool):
         """
         Processes an incoming request for a lease extension.
@@ -290,7 +290,7 @@ class KernelWrapper:
             target = self.kernel.validate(rid=reservation.get_reservation_id())
             self.kernel.extend_lease(reservation=target)
 
-    def modify_lease_request(self, *, reservation: IAuthorityReservation, caller: AuthToken,
+    def modify_lease_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
                              compare_sequence_numbers: bool):
         """
         Processes an incoming request for a lease modification.
@@ -339,7 +339,7 @@ class KernelWrapper:
 
         return self.kernel.extend_reservation(rid=rid, resources=resources, term=term)
 
-    def extend_ticket(self, *, reservation: IClientReservation):
+    def extend_ticket(self, *, reservation: ABCClientReservation):
         """
         Initiates a request to extend a ticket.
         Role: Broker or Controller
@@ -357,7 +357,7 @@ class KernelWrapper:
         target.validate_outgoing()
         self.kernel.extend_ticket(reservation=target)
 
-    def extend_ticket_request(self, *, reservation: IBrokerReservation, caller: AuthToken,
+    def extend_ticket_request(self, *, reservation: ABCBrokerReservation, caller: AuthToken,
                               compare_sequence_numbers: bool):
         """
         Processes an incoming request for a ticket extension.
@@ -395,7 +395,7 @@ class KernelWrapper:
             self.logger.debug("extend_ticket No sequence number comparison")
             self.extend_ticket(reservation=target)
 
-    def modify_lease(self, *, reservation: IControllerReservation):
+    def modify_lease(self, *, reservation: ABCControllerReservation):
         """
         Initiates a request to modify a lease.
         Role: Controller
@@ -413,7 +413,7 @@ class KernelWrapper:
         target.validate_redeem()
         self.kernel.modify_lease(reservation=target)
 
-    def relinquish_request(self, *, reservation: IBrokerReservation, caller: AuthToken):
+    def relinquish_request(self, *, reservation: ABCBrokerReservation, caller: AuthToken):
         if reservation is None or caller is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
@@ -438,21 +438,21 @@ class KernelWrapper:
             self.logger.warning("Duplicate relinquish request")
             self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestRelinquish)
 
-    def get_client_slices(self) -> List[ISlice]:
+    def get_client_slices(self) -> List[ABCSlice]:
         """
         Returns all client slices registered with the kernel.
         @return an array of client slices registered with the kernel
         """
         return self.kernel.get_client_slices()
 
-    def get_inventory_slices(self) -> List[ISlice]:
+    def get_inventory_slices(self) -> List[ABCSlice]:
         """
         Returns all inventory slices registered with the kernel.
         @return an array of inventory slices registered with the kernel
         """
         return self.kernel.get_inventory_slices()
 
-    def get_delegation(self, *, did: str) -> IDelegation:
+    def get_delegation(self, *, did: str) -> ABCDelegation:
         """
         Returns the delegation with the given delegation identifier.
         @param did delegation identifier
@@ -462,7 +462,7 @@ class KernelWrapper:
             raise KernelException(Constants.INVALID_ARGUMENT)
         return self.kernel.get_delegation(did=did)
 
-    def get_reservation(self, *, rid: ID) -> IReservation:
+    def get_reservation(self, *, rid: ID) -> ABCReservationMixin:
         """
         Returns the reservation with the given reservation identifier.
         @param rid reservation identifier
@@ -472,7 +472,7 @@ class KernelWrapper:
             raise KernelException(Constants.INVALID_ARGUMENT)
         return self.kernel.get_reservation(rid=rid)
 
-    def get_reservations(self, *, slice_id: ID) -> List[IReservation]:
+    def get_reservations(self, *, slice_id: ID) -> List[ABCReservationMixin]:
         """
         Returns all reservations in the given slice
         @param slice_id identifier of slice
@@ -483,7 +483,7 @@ class KernelWrapper:
 
         return self.kernel.get_reservations(slice_id=slice_id)
 
-    def get_slice(self, *, slice_id: ID) -> ISlice:
+    def get_slice(self, *, slice_id: ID) -> ABCSlice:
         """
         Returns the slice with the given name.
         @param slice_id identifier of slice to return
@@ -501,7 +501,7 @@ class KernelWrapper:
         """
         return self.kernel.get_slices()
 
-    def handle_delegate(self, *, delegation: IDelegation, identity: AuthToken, id_token: str = None):
+    def handle_delegate(self, *, delegation: ABCDelegation, identity: AuthToken, id_token: str = None):
         """
         Handles a delegation. Called from both AM and Broker.
 
@@ -538,7 +538,7 @@ class KernelWrapper:
         else:
             self.kernel.amend_delegate(delegation=temp)
 
-    def handle_reserve(self, *, reservation: IKernelReservation, identity: AuthToken, create_new_slice: bool):
+    def handle_reserve(self, *, reservation: ABCKernelReservation, identity: AuthToken, create_new_slice: bool):
         """
         Handles a reserve, i.e., obtain a new ticket or lease. Called from both
         client and server side code. If the slice does not exist it will create
@@ -580,7 +580,7 @@ class KernelWrapper:
         else:
             self.kernel.amend_reserve(reservation=temp)
 
-    def handle_update_reservation(self, *, reservation: IKernelReservation, auth: AuthToken):
+    def handle_update_reservation(self, *, reservation: ABCKernelReservation, auth: AuthToken):
         """
         Amend a reservation request or initiation, i.e., to issue a new bid on a
         previously filed request.
@@ -603,7 +603,7 @@ class KernelWrapper:
 
         return self.kernel.query(properties=properties)
 
-    def redeem(self, *, reservation: IControllerReservation):
+    def redeem(self, *, reservation: ABCControllerReservation):
         """
         Initiates a request to redeem a ticketed reservation.
         Role: Controller
@@ -627,8 +627,8 @@ class KernelWrapper:
         target.validate_redeem()
         self.kernel.redeem(reservation=target)
 
-    def redeem_request(self, *, reservation: IAuthorityReservation, caller: AuthToken,
-                       callback: IControllerCallbackProxy, compare_sequence_numbers: bool):
+    def redeem_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
+                       callback: ABCControllerCallbackProxy, compare_sequence_numbers: bool):
         """
         Processes an incoming request for a new lease.
         Role: Authority
@@ -668,7 +668,7 @@ class KernelWrapper:
             self.logger.error("Exception occurred in processing redeem request {}".format(e))
             reservation.fail_notify(message=str(e))
 
-    def register_reservation(self, *, reservation: IReservation):
+    def register_reservation(self, *, reservation: ABCReservationMixin):
         """
         Registers the given reservation with the kernel. Adds a database record
         for the reservation. The containing slice should have been previously
@@ -685,12 +685,12 @@ class KernelWrapper:
                     reservation will be unregistered from the kernel data
                     structures.
         """
-        if reservation is None or not isinstance(reservation, IKernelReservation):
+        if reservation is None or not isinstance(reservation, ABCKernelReservation):
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.register_reservation(reservation=reservation)
 
-    def register_slice(self, *, slice_object: ISlice):
+    def register_slice(self, *, slice_object: ABCSlice):
         """
         Registers the slice with the kernel: adds the slice object to the kernel
         data structures and adds a database record for the slice.
@@ -699,7 +699,7 @@ class KernelWrapper:
                     occurs. If a database error occurs, the slice will be
                     unregistered.
         """
-        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, IKernelSlice):
+        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCKernelSlice):
             raise KernelException("Invalid argument {}".format(slice_object))
 
         slice_object.set_owner(owner=self.actor.get_identity())
@@ -735,7 +735,7 @@ class KernelWrapper:
 
         self.kernel.remove_slice(slice_id=slice_id)
 
-    def re_register_reservation(self, *, reservation: IReservation):
+    def re_register_reservation(self, *, reservation: ABCReservationMixin):
         """
          Registers a previously unregistered reservation with the kernel. The
         containing slice should have been previously registered with the kernel
@@ -752,12 +752,12 @@ class KernelWrapper:
                     kernel data structures.
         @throws RuntimeException if a database error occurs
         """
-        if reservation is None or not isinstance(reservation, IKernelReservation):
+        if reservation is None or not isinstance(reservation, ABCKernelReservation):
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.re_register_reservation(reservation=reservation)
 
-    def re_register_delegation(self, *, delegation: IDelegation):
+    def re_register_delegation(self, *, delegation: ABCDelegation):
         """
          Registers a previously unregistered delegation with the kernel.
         @param delegation the delegation to reregister
@@ -768,12 +768,12 @@ class KernelWrapper:
                     kernel data structures.
         @throws RuntimeException if a database error occurs
         """
-        if delegation is None or not isinstance(delegation, IDelegation):
+        if delegation is None or not isinstance(delegation, ABCDelegation):
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.re_register_delegation(delegation=delegation)
 
-    def re_register_slice(self, *, slice_object: ISlice):
+    def re_register_slice(self, *, slice_object: ABCSlice):
         """
         Registers the slice with the kernel: adds the slice object to the kernel
         data structures. The slice object must have an existing database record.
@@ -782,7 +782,7 @@ class KernelWrapper:
                     occurs. If a database error occurs, the slice will be
                     unregistered.
         """
-        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, IKernelSlice):
+        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCKernelSlice):
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.re_register_slice(slice_object=slice_object)
@@ -799,7 +799,7 @@ class KernelWrapper:
             self.logger.error("Tick error: {}".format(e))
             self.logger.error(traceback.format_exc())
 
-    def delegate(self, *, delegation: IDelegation, destination: IActorIdentity, id_token: str = None):
+    def delegate(self, *, delegation: ABCDelegation, destination: ABCActorIdentity, id_token: str = None):
         """
         Initiates a delegate request. If the exported flag is set, this is a claim
         on a pre-reserved "will call" ticket.
@@ -821,7 +821,7 @@ class KernelWrapper:
         delegation.validate_outgoing()
         self.handle_delegate(delegation=delegation, identity=destination.get_identity(), id_token=id_token)
 
-    def ticket(self, *, reservation: IClientReservation, destination: IActorIdentity):
+    def ticket(self, *, reservation: ABCClientReservation, destination: ABCActorIdentity):
         """
         Initiates a ticket request. If the exported flag is set, this is a claim
         on a pre-reserved "will call" ticket.
@@ -830,7 +830,7 @@ class KernelWrapper:
         @param destination identity of the actor the request must be sent to
         @throws Exception in case of error
         """
-        if reservation is None or destination is None or not isinstance(reservation, IKernelClientReservation):
+        if reservation is None or destination is None or not isinstance(reservation, ABCKernelClientReservationMixin):
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         protocol = reservation.get_broker().get_type()
@@ -842,7 +842,7 @@ class KernelWrapper:
         reservation.validate_outgoing()
         self.handle_reserve(reservation=reservation, identity=destination.get_identity(), create_new_slice=False)
 
-    def ticket_request(self, *, reservation: IBrokerReservation, caller: AuthToken, callback: IClientCallbackProxy,
+    def ticket_request(self, *, reservation: ABCBrokerReservation, caller: AuthToken, callback: ABCClientCallbackProxy,
                        compare_seq_numbers: bool):
         """
         Processes an incoming request for a new ticket.
@@ -935,7 +935,7 @@ class KernelWrapper:
 
         self.kernel.unregister_slice(slice_id=slice_id)
 
-    def update_lease(self, *, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
+    def update_lease(self, *, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
         """
         Handles a lease update from an authority.
         Role: Controller
@@ -951,7 +951,7 @@ class KernelWrapper:
         reservation.validate_incoming()
         self.kernel.update_lease(reservation=target, update=reservation, update_data=update_data)
 
-    def update_ticket(self, *, reservation: IReservation, update_data: UpdateData, caller: AuthToken):
+    def update_ticket(self, *, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
         """
         Handles a ticket update from upstream broker.
         Role: Agent or Controller.
@@ -967,7 +967,7 @@ class KernelWrapper:
         reservation.validate_incoming_ticket()
         self.kernel.update_ticket(reservation=target, update=reservation, update_data=update_data)
 
-    def update_delegation(self, *, delegation: IDelegation, update_data: UpdateData, caller: AuthToken):
+    def update_delegation(self, *, delegation: ABCDelegation, update_data: UpdateData, caller: AuthToken):
         """
         Handles a delegation update from upstream broker.
         Role: Agent or Controller.

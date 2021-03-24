@@ -30,16 +30,15 @@ from typing import TYPE_CHECKING, List
 
 from fabric_cf.actor.boot.configuration_exception import ConfigurationException
 from fabric_cf.actor.boot.inventory.pool_creator import PoolCreator
-from fabric_cf.actor.core.apis.i_authority import IAuthority
-from fabric_cf.actor.core.apis.i_policy import IPolicy
+from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
+from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.resource_pool_descriptor import ResourcePoolDescriptor
+from fabric_cf.actor.core.common.resource_config import ResourceConfig
 from fabric_cf.actor.core.container.remote_actor_cache import RemoteActorCacheSingleton, RemoteActorCache
 from fabric_cf.actor.core.core.authority import Authority
 from fabric_cf.actor.core.core.broker import Broker
 from fabric_cf.actor.core.core.controller import Controller
-from fabric_cf.actor.core.delegation.simple_resource_delegation_factory import SimpleResourceDelegationFactory
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
 from fabric_cf.actor.core.plugins.base_plugin import BasePlugin
@@ -47,7 +46,7 @@ from fabric_cf.actor.core.plugins.handlers.ansible_handler_processor import Ansi
 from fabric_cf.actor.core.plugins.handlers.handler_processor import HandlerProcessor
 from fabric_cf.actor.core.plugins.db.server_actor_database import ServerActorDatabase
 from fabric_cf.actor.core.plugins.substrate.authority_substrate import AuthoritySubstrate
-from fabric_cf.actor.core.plugins.substrate.substrate import Substrate
+from fabric_cf.actor.core.plugins.substrate.substrate_mixin import SubstrateMixin
 from fabric_cf.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
 from fabric_cf.actor.core.policy.authority_calendar_policy import AuthorityCalendarPolicy
 from fabric_cf.actor.core.policy.broker_simpler_units_policy import BrokerSimplerUnitsPolicy
@@ -55,21 +54,21 @@ from fabric_cf.actor.core.policy.controller_ticket_review_policy import Controll
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.core.core.actor import Actor
+from fabric_cf.actor.core.core.actor import ActorMixin
 from fabric_cf.actor.security.auth_token import AuthToken
-from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.boot.configuration import Configuration, ActorConfig, PolicyConfig, Peer
-    from fabric_cf.actor.core.apis.i_actor import IActor
-    from fabric_cf.actor.core.apis.i_mgmt_actor import IMgmtActor
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+    from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
 
 
 class ExportAdvertisement:
     """
     Encapsulates information needed for the delegations to be exported which are later claimed by broker
     """
-    def __init__(self, *, exporter: IMgmtActor, client: ClientMng, delegation: str, topic: str):
+    def __init__(self, *, exporter: ABCMgmtActor, client: ClientMng, delegation: str, topic: str):
         self.exporter = exporter
         self.client = client
         self.delegation = delegation
@@ -100,14 +99,14 @@ class ConfigurationProcessor:
         try:
             self.create_actor()
             self.initialize_actor()
-            self.logger.info(f"There are {Actor.actor_count} actors")
+            self.logger.info(f"There are {ActorMixin.actor_count} actors")
             self.register_actor()
             self.create_default_slice()
             self.populate_inventory_neo4j()
             self.recover_actor()
             self.enable_ticking()
             self.process_topology()
-            self.logger.info(f"Processing exports with actor count {Actor.actor_count}")
+            self.logger.info(f"Processing exports with actor count {ActorMixin.actor_count}")
             self.process_advertise()
             self.logger.info("Processing exports completed")
         except Exception as e:
@@ -141,7 +140,7 @@ class ConfigurationProcessor:
         return actor
 
     @staticmethod
-    def make_actor_instance(*, actor_config: ActorConfig) -> IActor:
+    def make_actor_instance(*, actor_config: ActorConfig) -> ABCActorMixin:
         """
         Creates Actor instance
         @param actor_config actor config
@@ -171,7 +170,7 @@ class ConfigurationProcessor:
 
         return actor
 
-    def make_plugin_instance(self, *, actor: IActor, actor_config: ActorConfig):
+    def make_plugin_instance(self, *, actor: ABCActorMixin, actor_config: ActorConfig):
         """
         Creates Plugin instance for the Actor
         @param actor actor
@@ -184,7 +183,7 @@ class ConfigurationProcessor:
                 plugin = AuthoritySubstrate(actor=actor, db=None, handler_processor=AnsibleHandlerProcessor())
 
             elif actor.get_type() == ActorType.Orchestrator:
-                plugin = Substrate(actor=actor, db=None, handler_processor=HandlerProcessor())
+                plugin = SubstrateMixin(actor=actor, db=None, handler_processor=HandlerProcessor())
 
             elif actor.get_type() == ActorType.Broker:
                 plugin = BasePlugin(actor=actor, db=None, handler_processor=HandlerProcessor())
@@ -198,7 +197,7 @@ class ConfigurationProcessor:
             password = self.config.get_global_config().get_database()[Constants.PROPERTY_CONF_DB_PASSWORD]
             db_host = self.config.get_global_config().get_database()[Constants.PROPERTY_CONF_DB_HOST]
             db_name = self.config.get_global_config().get_database()[Constants.PROPERTY_CONF_DB_NAME]
-            if isinstance(plugin, Substrate):
+            if isinstance(plugin, SubstrateMixin):
                 db = SubstrateActorDatabase(user=user, password=password, database=db_name, db_host=db_host,
                                             logger=self.logger)
             else:
@@ -206,13 +205,9 @@ class ConfigurationProcessor:
                                          logger=self.logger)
 
             plugin.set_database(db=db)
-
-        resource_delegation_factory = SimpleResourceDelegationFactory()
-        resource_delegation_factory.set_actor(actor=actor)
-        plugin.set_resource_delegation_factory(resource_delegation_factory=resource_delegation_factory)
         return plugin
 
-    def make_actor_policy(self, *, actor: IActor, config: ActorConfig):
+    def make_actor_policy(self, *, actor: ABCActorMixin, config: ActorConfig):
         """
         Creates Actor Policy instance
         @param actor actor
@@ -311,17 +306,18 @@ class ConfigurationProcessor:
         return ReflectionUtils.create_instance(module_name=policy.get_module_name(),
                                                class_name=policy.get_class_name())
 
-    def do_specific(self, *, actor: IActor, config: ActorConfig):
+    def do_specific(self, *, actor: ABCActorMixin, config: ActorConfig):
         """
         Do Actor specify initialization
         @param actor actor
         @param config actor config
         @raises ConfigurationException in case of error
         """
-        if isinstance(actor, IAuthority):
+        if isinstance(actor, ABCAuthority):
             self.resources = self.read_resource_pools(config=config)
 
-    def read_resource_pools(self, *, config: ActorConfig) -> dict:
+    @staticmethod
+    def read_resource_pools(*, config: ActorConfig) -> dict:
         """
         Read resource pool config and create pools
         @param config actor config
@@ -333,7 +329,7 @@ class ConfigurationProcessor:
             return result
 
         for r in resources:
-            descriptor = ResourcePoolDescriptor()
+            descriptor = ResourceConfig()
             descriptor.set_resource_type(rtype=ResourceType(resource_type=r.get_type()))
             descriptor.set_resource_type_label(rtype_label=r.get_label())
 
@@ -353,7 +349,7 @@ class ConfigurationProcessor:
         @raises ConfigurationException in case of error
         """
         try:
-            Actor.actor_count += 1
+            ActorMixin.actor_count += 1
             self.actor.initialize()
         except Exception as e:
             raise ConfigurationException(f"Actor failed to initialize: {self.actor.get_name()} {e}")
@@ -388,7 +384,7 @@ class ConfigurationProcessor:
         Load Aggregate Resource model
         @raises ConfigurationException in case of error
         """
-        if isinstance(self.actor, IAuthority) and isinstance(self.actor.get_plugin(), AuthoritySubstrate):
+        if isinstance(self.actor, ABCAuthority) and isinstance(self.actor.get_plugin(), AuthoritySubstrate):
             creator = PoolCreator(substrate=self.actor.get_plugin(), resources=self.resources,
                                   neo4j_config=self.config.get_global_config().get_neo4j_config())
             self.aggregate_delegation_models = creator.process_neo4j(actor_name=self.actor.get_name(),
@@ -530,7 +526,7 @@ class ConfigurationProcessor:
             raise ConfigurationException(f"Could not process exports from: {peer.get_guid()} to "
                                          f"{self.actor.get_guid()}. e= {e}")
 
-    def parse_exports(self, *, peer: Peer, client: ClientMng, mgmt_actor: IMgmtActor):
+    def parse_exports(self, *, peer: Peer, client: ClientMng, mgmt_actor: ABCMgmtActor):
         """
         Identify all the delegations to be advertised
         @param peer peer config

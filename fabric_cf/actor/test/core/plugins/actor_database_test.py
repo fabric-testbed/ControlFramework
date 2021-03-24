@@ -26,9 +26,9 @@
 import unittest
 
 import time
-from fabric_cf.actor.core.apis.i_database import IDatabase
+from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.test.base_test_case import BaseTestCase
 
@@ -43,7 +43,7 @@ class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
     while not GlobalsSingleton.get().start_completed:
         time.sleep(0.0001)
 
-    def get_clean_database(self) -> IDatabase:
+    def get_clean_database(self) -> ABCDatabase:
         db = self.get_actor_database()
         db.set_actor_name(name=self.actor_name)
         db.set_reset_state(state=True)

@@ -43,7 +43,7 @@ from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
 
-from fabric_cf.actor.core.apis.i_actor import ActorType
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.constants import ErrorCodes
 from fabric_cf.actor.core.manage.kafka.services.kafka_actor_service import KafkaActorService
 from fabric_cf.actor.core.manage.management_object import ManagementObject

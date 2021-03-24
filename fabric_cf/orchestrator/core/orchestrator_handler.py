@@ -30,7 +30,7 @@ from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fabric_cf.actor.core.apis.i_mgmt_controller import IMgmtController
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.util.id import ID
@@ -71,7 +71,7 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred while validating the token e: {e}")
 
-    def get_broker(self, *, controller: IMgmtController) -> ID:
+    def get_broker(self, *, controller: ABCMgmtControllerMixin) -> ID:
         """
         Get broker
         :param controller:
@@ -93,7 +93,7 @@ class OrchestratorHandler:
 
         return None
 
-    def discover_types(self, *, controller: IMgmtController, token: str, level: int = 10,
+    def discover_types(self, *, controller: ABCMgmtControllerMixin, token: str, level: int = 10,
                        delete_graph: bool = True, ignore_validation: bool = True) -> Tuple[dict, Neo4jCBMGraph]:
         """
         Discover all the available resources by querying Broker

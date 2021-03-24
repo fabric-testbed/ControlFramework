@@ -26,13 +26,13 @@
 import time
 import unittest
 
-from fabric_cf.actor.core.apis.i_actor import IActor
-from fabric_cf.actor.core.apis.i_controller_policy import IControllerPolicy
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_controller_policy import ABCControllerPolicy
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.kernel.controller_reservation_factory import ControllerReservationFactory
+from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-from fabric_cf.actor.core.kernel.slice_factory import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -59,10 +59,10 @@ class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
         Term.set_clock(controller.get_actor_clock())
         return controller
 
-    def get_controller_instance(self) -> IActor:
+    def get_controller_instance(self) -> ABCActorMixin:
         return ControllerTestWrapper()
 
-    def get_controller_policy(self) -> IControllerPolicy:
+    def get_controller_policy(self) -> ABCControllerPolicy:
         policy = ControllerSimplePolicyTestWrapper()
         return policy
 
@@ -84,7 +84,7 @@ class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
 
         term = Term(start=clock.cycle_start_date(cycle=start), end=clock.cycle_end_date(cycle=end))
 
-        reservation = ControllerReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
+        reservation = ClientReservationFactory.create(rid=ID(), resources=resources, term=term, slice_object=slice_obj)
         reservation.set_renewable(renewable=False)
         controller.register(reservation=reservation)
         controller.demand(rid=reservation.get_reservation_id())

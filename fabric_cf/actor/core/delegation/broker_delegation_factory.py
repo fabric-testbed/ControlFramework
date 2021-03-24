@@ -26,8 +26,8 @@
 
 from fabric_cf.actor.core.util.id import ID
 from .broker_delegation import BrokerDelegation
-from ..apis.i_broker_proxy import IBrokerProxy
-from ..apis.i_delegation import IDelegation
+from ..apis.abc_broker_proxy import ABCBrokerProxy
+from ..apis.abc_delegation import ABCDelegation
 
 
 class BrokerDelegationFactory:
@@ -35,7 +35,7 @@ class BrokerDelegationFactory:
     Factory class to create broker delegation instances
     """
     @staticmethod
-    def create(did: str, slice_id: ID, broker: IBrokerProxy) -> IDelegation:
+    def create(did: str, slice_id: ID, broker: ABCBrokerProxy) -> ABCDelegation:
         """
         Create a broker delegation
         @param did delegation id

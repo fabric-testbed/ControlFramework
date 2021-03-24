@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import unittest
 import time
-from fabric_cf.actor.core.apis.i_container_database import IContainerDatabase
+from fabric_cf.actor.core.apis.abc_container_database import ABCContainerDatabase
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.test.base_test_case import BaseTestCase
 
@@ -42,7 +42,7 @@ class ContainerDatabaseTest(BaseTestCase, unittest.TestCase):
 
     container = GlobalsSingleton.get().get_container()
 
-    def get_clean_database(self) -> IContainerDatabase:
+    def get_clean_database(self) -> ABCContainerDatabase:
         self.db = self.container.get_database()
         return self.db
 
