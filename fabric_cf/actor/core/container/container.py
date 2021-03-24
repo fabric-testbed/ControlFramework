@@ -201,7 +201,7 @@ class Container(ABCActorContainer):
 
             if self.is_fresh():
                 try:
-                    self.cleanup_neo4j()
+                    #self.cleanup_neo4j()
                     from fabric_cf.actor.boot.configuration_loader import ConfigurationLoader
                     loader = ConfigurationLoader()
                     loader.process(config=self.config)

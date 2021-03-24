@@ -141,9 +141,9 @@ class Globals:
             if not self.initialized:
                 self.load_config()
                 self.log = self.make_logger()
-                self.log.info("Checking if connection to Kafka broker can be established")
-                admin_kafka_client = self.get_kafka_admin_client()
-                admin_kafka_client.list_topics()
+                #self.log.info("Checking if connection to Kafka broker can be established")
+                #admin_kafka_client = self.get_kafka_admin_client()
+                #admin_kafka_client.list_topics()
                 self.log.info("Connection to Kafka broker established successfully")
                 self.load_jwt_validator()
                 self.log.info("Main initialization complete.")

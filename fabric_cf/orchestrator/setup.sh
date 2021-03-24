@@ -40,7 +40,6 @@ fi
 name=$1
 neo4jpwd=$2
 config=$3
-arm=$4
 
 
 mkdir -p $name/pg_data/data $name/pg_data/logs $name/neo4j/data $name/neo4j/imports $name/neo4j/logs $name/pdp/conf $name/pdp/policies
@@ -48,11 +47,13 @@ echo $neo4jpwd > $name/neo4j/password
 cp orchestrator-yes.xml $name/pdp/policies
 cp env.template $name/.env
 cp $config $name/config.yaml
+cp -R nginx $name/
 
 if [ -z $4 ]; then
   cp docker-compose.yml $name/
 else
   cp docker-compose-dev.yml $name/docker-compose.yml
+  cp -R certs $name/
 fi
 
 sed -i "s/orchestrator/$name/g" $name/docker-compose.yml
