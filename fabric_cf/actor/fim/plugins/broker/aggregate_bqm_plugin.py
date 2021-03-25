@@ -45,7 +45,8 @@ class AggregateBQMPlugin:
     This is based on fim.pluggable BrokerPluggable
     """
 
-    def __init__(self, logger=None):
+    def __init__(self, actor, logger=None):
+        self.actor = actor
         self.log = logger
 
     def plug_produce_bqm(self, *, cbm: ABCCBMPropertyGraph, **kwargs) -> ABCBQMPropertyGraph:

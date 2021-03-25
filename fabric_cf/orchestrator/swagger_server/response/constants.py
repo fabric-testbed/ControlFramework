@@ -35,9 +35,13 @@ SLICES_CREATE_PATH = '/slices/create'
 SLICES_DELETE_PATH = '/slices/delete'
 SLICES_GET_PATH = '/slices'
 SLICES_GET_SLICE_ID_PATH = '/slices/{sliceID}'
+SLICES_RENEW_PATH = '/slices/renew/{sliceID}'
 
 
 SLIVERS_GET_PATH = '/slivers'
 SLIVERS_GET_SLIVER_ID_PATH = '/slivers/{sliverID}'
 
 VERSIONS_PATH = '/version'
+
+INTERNAL_SERVER_ERROR = 500
+BAD_REQUEST = 400

@@ -386,7 +386,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
                            new_resource_type: ResourceType, request_properties: dict,
                            config_properties: dict, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
@@ -403,7 +403,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
                 def run(self):
                     result = ResultAvro()
-                    r = self.actor.get_reservation(rid=ID(uid=reservation.get_reservation_id()))
+                    r = self.actor.get_reservation(rid=reservation)
                     if r is None:
                         result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
@@ -421,9 +421,9 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                     tmp_start_time = r.get_term().get_start_time()
                     new_term = r.get_term().extend()
 
-                    new_term.set_end_time(new_end_time)
-                    new_term.set_new_start_time(tmp_start_time)
-                    new_term.set_start_time(tmp_start_time)
+                    new_term.set_end_time(date=new_end_time)
+                    new_term.set_new_start_time(date=tmp_start_time)
+                    new_term.set_start_time(date=tmp_start_time)
 
                     self.actor.extend(rid=r.get_reservation_id(), resources=rset, term=new_term)
 

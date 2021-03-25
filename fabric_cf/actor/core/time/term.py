@@ -49,6 +49,7 @@ class Term:
     # Flag that controls, whether cycle numbers should be calculated.
     set_cycles: bool = True
     clock: ActorClock = None
+    HH_MM_TIME_FORMAT = "%Y-%m-%d %H:%M"
 
     @staticmethod
     def set_clock(clock: ActorClock):
@@ -303,7 +304,9 @@ class Term:
         if self.start_time is None or self.end_time is None or self.new_start_time is None:
             raise TimeException(Constants.INVALID_STATE)
 
-        return self.start_time == old_term.start_time and self.end_time > self.new_start_time
+        start_time_hh_mm = self.start_time.strftime(self.HH_MM_TIME_FORMAT)
+        old_start_time_hh_mm = old_term.start_time.strftime(self.HH_MM_TIME_FORMAT)
+        return start_time_hh_mm == old_start_time_hh_mm and self.end_time > self.new_start_time
 
     def get_end_time(self) -> datetime:
         """

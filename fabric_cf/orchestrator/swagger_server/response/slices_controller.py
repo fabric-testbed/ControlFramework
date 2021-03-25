@@ -1,11 +1,15 @@
+from datetime import datetime
+
 import connexion
 import six
 
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, SLICES_CREATE_PATH, \
-    SLICES_GET_SLICE_ID_PATH, GET_METHOD, SLICES_GET_PATH, DELETE_METHOD, SLICES_DELETE_PATH
+    SLICES_GET_SLICE_ID_PATH, GET_METHOD, SLICES_GET_PATH, DELETE_METHOD, SLICES_DELETE_PATH, SLICES_RENEW_PATH, \
+    INTERNAL_SERVER_ERROR, BAD_REQUEST
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
@@ -41,7 +45,7 @@ def slices_create_post(body, slice_name, ssh_key):  # noqa: E501
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
-        return str(e), 500
+        return str(e), INTERNAL_SERVER_ERROR
 
 
 def slices_delete_slice_iddelete(slice_id):  # noqa: E501
@@ -67,7 +71,7 @@ def slices_delete_slice_iddelete(slice_id):  # noqa: E501
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
-        return str(e), 500
+        return str(e), INTERNAL_SERVER_ERROR
 
 
 def slices_get():  # noqa: E501
@@ -91,7 +95,7 @@ def slices_get():  # noqa: E501
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
-        return str(e), 500
+        return str(e), INTERNAL_SERVER_ERROR
 
 
 def slices_modify_slice_idput(body, slice_id):  # noqa: E501
@@ -144,7 +148,28 @@ def slices_renew_slice_idpost(slice_id, new_lease_end_time):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
+    new_end_time = None
+    try:
+        new_end_time = datetime.strptime(new_lease_end_time, Constants.RENEW_TIME_FORMAT)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
+        return str(e), BAD_REQUEST
+
+    try:
+        token = get_token()
+        value = handler.renew_slice(token=token, slice_id=slice_id, new_end_time=new_end_time)
+        response = Success()
+        response.value = value
+        success_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
+        return response
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
+        return str(e), INTERNAL_SERVER_ERROR
 
 
 def slices_slice_idget(slice_id):  # noqa: E501
@@ -170,7 +195,7 @@ def slices_slice_idget(slice_id):  # noqa: E501
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
-        return str(e), 500
+        return str(e), INTERNAL_SERVER_ERROR
 
 
 def slices_status_slice_idget(slice_id):  # noqa: E501
@@ -199,4 +224,4 @@ def slices_status_slice_idget(slice_id):  # noqa: E501
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
-        return str(e), 500
+        return str(e), INTERNAL_SERVER_ERROR

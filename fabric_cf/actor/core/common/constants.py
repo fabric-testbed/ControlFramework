@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from datetime import timedelta
 from enum import Enum
 
 
@@ -248,3 +249,9 @@ class Constants:
 
     USER_SSH_KEY = "user.ssh.key"
     ALGORITHM = 'algorithm'
+
+    # Orchestrator Lease params
+    TWO_WEEKS = timedelta(days=30)
+    DEFAULT_MAX_DURATION = TWO_WEEKS
+    RENEW_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+    DEFAULT_LEASE_IN_HOURS = 24

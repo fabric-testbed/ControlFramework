@@ -30,6 +30,7 @@ from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReserva
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.util.id import ID
@@ -59,7 +60,7 @@ class ReservationConverter:
             ticket.set_units(1)
             ticket.set_resource_type(str(sliver.get_type()))
             start = datetime.utcnow()
-            end = start + timedelta(hours=24)
+            end = start + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
             ticket.set_start(ActorClock.to_milliseconds(when=start))
             ticket.set_end(ActorClock.to_milliseconds(when=end))
             ticket.set_state(ReservationStates.Unknown.value)

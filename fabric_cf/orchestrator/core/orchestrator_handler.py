@@ -24,11 +24,14 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
+from datetime import datetime, timedelta
 from typing import Tuple
 
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
 
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants
@@ -321,7 +324,7 @@ class OrchestratorHandler:
         Delete User Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
-=       :raises Raises an exception in case of failure
+        :raises Raises an exception in case of failure
         """
         try:
             controller = self.controller_state.get_management_actor()
@@ -390,4 +393,78 @@ class OrchestratorHandler:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
+            raise e
+
+    def renew_slice(self, *, token: str, slice_id: str, new_end_time: datetime):
+        """
+        Renew a slice
+        :param token Fabric Identity Token
+        :param slice_id Slice Id
+        :param new_end_time: New Lease End Time in UTC in '%Y-%m-%d %H:%M:%S' format
+=       :raises Raises an exception in case of failure
+        :return:
+        """
+        failed_to_extend_rid_list = []
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"renew_slice invoked for Controller: {controller}")
+
+            slice_guid = None
+            if slice_id is not None:
+                slice_guid = ID(uid=slice_id)
+
+            slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
+
+            if slice_list is None or len(slice_list) == 0:
+                raise OrchestratorException(f"Slice# {slice_id} not found")
+
+            slice_object = next(iter(slice_list))
+
+            slice_state = SliceState(slice_object.get_state())
+            if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
+                raise OrchestratorException(f"Slice# {slice_id} already closed")
+
+            if slice_state != SliceState.StableOK and slice_state != SliceState.StableError:
+                self.logger.info(f"Unable to renew Slice# {slice_guid} that is not yet stable, try again later")
+                raise OrchestratorException(f"Unable to renew Slice# {slice_guid} that is not yet stable, "
+                                            f"try again later")
+
+            now = datetime.utcnow()
+            if new_end_time <= now:
+                raise OrchestratorException(f"New term end time {new_end_time} is in the past! "
+                                            f"Can't renew slice {slice_id}!")
+            if (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
+                self.logger.info(f"New term end time {new_end_time} exceeds system default "
+                                 f"{Constants.DEFAULT_MAX_DURATION}, setting to system default: ")
+                new_end_time = now + Constants.DEFAULT_MAX_DURATION
+
+            reservations = controller.get_reservations(id_token=token, slice_id=slice_id)
+            if reservations is None or len(reservations) < 1:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                raise OrchestratorException(f"Slice# {slice_id} has no reservations")
+
+            self.logger.debug(f"There are {len(reservations)} reservations in the slice# {slice_id}")
+
+            for r in reservations:
+                res_state = ReservationStates(r.get_state())
+                if res_state == ReservationStates.Closed or res_state == ReservationStates.Failed or \
+                        res_state == ReservationStates.CloseWait:
+                    continue
+
+                current_end_time = ActorClock.from_milliseconds(milli_seconds=r.get_end())
+
+                if new_end_time < current_end_time:
+                    raise OrchestratorException(f"Attempted new term end time is shorter than current slice end time")
+
+                self.logger.debug(f"Extending reservation with reservation# {r.get_reservation_id()}")
+                result = controller.extend_reservation_end_time(reservation=ID(uid=r.get_reservation_id()),
+                                                                new_end_time=new_end_time)
+                if not result:
+                    failed_to_extend_rid_list.append(r.get_reservation_id())
+
+            return ResponseBuilder.get_response_summary(rid_list=failed_to_extend_rid_list)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing renew e: {e}")
             raise e
