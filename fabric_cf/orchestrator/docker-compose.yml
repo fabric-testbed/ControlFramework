@@ -3,6 +3,8 @@ services:
   nginx:
     image: library/nginx:1
     container_name: orchestrator-nginx
+    depends_on:
+      - orchestrator    
     networks:
       - frontend
       - backend    
