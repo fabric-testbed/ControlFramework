@@ -251,7 +251,7 @@ class Constants:
     ALGORITHM = 'algorithm'
 
     # Orchestrator Lease params
-    TWO_WEEKS = timedelta(days=14)
+    TWO_WEEKS = timedelta(days=30)
     DEFAULT_MAX_DURATION = TWO_WEEKS
     RENEW_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
     DEFAULT_LEASE_IN_HOURS = 24
