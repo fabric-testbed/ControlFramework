@@ -395,19 +395,17 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
             raise e
 
-    def renew_slice(self, *, token: str, slice_id: str, new_lease_end_time: str):
+    def renew_slice(self, *, token: str, slice_id: str, new_end_time: datetime):
         """
         Renew a slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
-        :param new_lease_end_time: New Lease End Time in UTC in '%Y-%m-%d %H:%M:%S' format
+        :param new_end_time: New Lease End Time in UTC in '%Y-%m-%d %H:%M:%S' format
 =       :raises Raises an exception in case of failure
         :return:
         """
         failed_to_extend_rid_list = []
         try:
-            new_end_time = datetime.strptime(new_lease_end_time, Constants.RENEW_TIME_FORMAT)
-
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"renew_slice invoked for Controller: {controller}")
 
