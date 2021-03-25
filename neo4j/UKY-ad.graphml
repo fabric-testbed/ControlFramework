@@ -1,0 +1,958 @@
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d13" for="edge" attr.name="Class" attr.type="string" />
+  <key id="d12" for="node" attr.name="Layer" attr.type="string" />
+  <key id="d11" for="node" attr.name="LabelDelegations" attr.type="string" />
+  <key id="d10" for="node" attr.name="Details" attr.type="string" />
+  <key id="d9" for="node" attr.name="Labels" attr.type="string" />
+  <key id="d8" for="node" attr.name="CapacityDelegations" attr.type="string" />
+  <key id="d7" for="node" attr.name="Site" attr.type="string" />
+  <key id="d6" for="node" attr.name="Capacities" attr.type="string" />
+  <key id="d5" for="node" attr.name="Model" attr.type="string" />
+  <key id="d4" for="node" attr.name="Type" attr.type="string" />
+  <key id="d3" for="node" attr.name="Name" attr.type="string" />
+  <key id="d2" for="node" attr.name="NodeID" attr.type="string" />
+  <key id="d1" for="node" attr.name="Class" attr.type="string" />
+  <key id="d0" for="node" attr.name="GraphID" attr.type="string" />
+  <graph edgedefault="undirected">
+    <node id="522">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">NetworkNode</data>
+      <data key="d2">3JB2R53</data>
+      <data key="d3">uky-w1</data>
+      <data key="d4">Server</data>
+      <data key="d5">R7525</data>
+      <data key="d6">{"core": 32, "cpu": 2, "disk": 100000, "ram": 512, "unit": 1}</data>
+      <data key="d7">UKY</data>
+      <data key="d8">[{"cpu": 2, "core": 32, "ram": 512, "disk": 100000, "unit": 1, "delegation": "primary"}]</data>
+    </node>
+    <node id="523">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">NetworkNode</data>
+      <data key="d2">3JB0R53</data>
+      <data key="d3">uky-w2</data>
+      <data key="d4">Server</data>
+      <data key="d5">R7525</data>
+      <data key="d6">{"core": 32, "cpu": 2, "disk": 4800, "ram": 512, "unit": 1}</data>
+      <data key="d7">UKY</data>
+      <data key="d8">[{"cpu": 2, "core": 32, "ram": 512, "disk": 4800, "unit": 1, "delegation": "primary"}]</data>
+    </node>
+    <node id="524">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">NetworkNode</data>
+      <data key="d2">3JB1R53</data>
+      <data key="d3">uky-w3</data>
+      <data key="d4">Server</data>
+      <data key="d5">R7525</data>
+      <data key="d6">{"core": 32, "cpu": 2, "disk": 4800, "ram": 512, "unit": 1}</data>
+      <data key="d7">UKY</data>
+      <data key="d8">[{"cpu": 2, "core": 32, "ram": 512, "disk": 4800, "unit": 1, "delegation": "primary"}]</data>
+    </node>
+    <node id="525">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ0160046A1P0FGN</data>
+      <data key="d3">uky-w1-nvme1</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "0000:21:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:21:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="526">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ016003SU1P0FGN</data>
+      <data key="d3">uky-w1-nvme2</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "0000:22:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:22:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="527">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ0160047A1P0FGN</data>
+      <data key="d3">uky-w2-nvme1</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "000:21:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "000:21:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="528">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ0160041X1P0FGN</data>
+      <data key="d3">uky-w2-nvme2</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "0000:22:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:22:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="529">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ016100981P0FGN</data>
+      <data key="d3">uky-w2-nvme3</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "0000:23:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:23:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="530">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ0161008L1P0FGN</data>
+      <data key="d3">uky-w2-nvme4</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "0000:24:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:24:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="531">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ016100951P0FGN</data>
+      <data key="d3">uky-w3-nvme1</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "0000:21:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:21:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="532">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ0160046F1P0FGN</data>
+      <data key="d3">uky-w3-nvme2</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "0000:22:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:22:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="533">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ0161000L1P0FGN</data>
+      <data key="d3">uky-w3-nvme3</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "0000:23:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:23:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="534">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ015301VG1P0FGN</data>
+      <data key="d3">uky-w3-nvme4</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d9">{"bdf": "0000:24:00.0"}</data>
+      <data key="d10">Dell Express Flash NVMe P4510 1TB SFF</data>
+      <data key="d8">[{"disk": 1000, "unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:24:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="535">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB2R53-gpu1</data>
+      <data key="d3">uky-w1-gpu1</data>
+      <data key="d4">GPU</data>
+      <data key="d5">RTX6000</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": "0000:25:00.0"}</data>
+      <data key="d10">NVIDIA Corporation TU102GL [Quadro RTX 6000/8000] (rev a1)</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:25:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="536">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB2R53-gpu2</data>
+      <data key="d3">uky-w1-gpu2</data>
+      <data key="d4">GPU</data>
+      <data key="d5">RTX6000</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": "0000:81:00.0"}</data>
+      <data key="d10">NVIDIA Corporation TU102GL [Quadro RTX 6000/8000] (rev a1)</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:81:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="537">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB0R53-gpu1</data>
+      <data key="d3">uky-w2-gpu1</data>
+      <data key="d4">GPU</data>
+      <data key="d5">Tesla T4</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": "0000:25:00.0"}</data>
+      <data key="d10">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:25:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="538">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB0R53-gpu2</data>
+      <data key="d3">uky-w2-gpu2</data>
+      <data key="d4">GPU</data>
+      <data key="d5">Tesla T4</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": "0000:81:00.0"}</data>
+      <data key="d10">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:81:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="539">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-gpu1</data>
+      <data key="d3">uky-w3-gpu1</data>
+      <data key="d4">GPU</data>
+      <data key="d5">Tesla T4</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": "0000:25:00.0"}</data>
+      <data key="d10">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:25:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="540">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-gpu2</data>
+      <data key="d3">uky-w3-gpu2</data>
+      <data key="d4">GPU</data>
+      <data key="d5">Tesla T4</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": "0000:81:00.0"}</data>
+      <data key="d10">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:81:00.0", "delegation": "primary"}]</data>
+    </node>
+    <node id="541">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB2R53-shnic</data>
+      <data key="d3">uky-w1-shnic</data>
+      <data key="d4">SharedNIC</data>
+      <data key="d5">ConnectX-6</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": "0000:a1:00.0", "mac": "0C:42:A1:EA:C7:60"}</data>
+      <data key="d10">Shared NIC: Mellanox Technologies MT28908 Family [ConnectX-6]</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:a1:00.0", "mac": "0C:42:A1:EA:C7:60", "delegation": "primary"}]</data>
+    </node>
+    <node id="542">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">SwitchFabric</data>
+      <data key="d2">3JB2R53-shnic-sf</data>
+      <data key="d3">uky-w1-shnic-l2sf</data>
+      <data key="d4">SwitchFabric</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="543">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-EA-C7-60</data>
+      <data key="d3">uky-w1-shnic-p1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+    </node>
+    <node id="544">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB0R53-shnic</data>
+      <data key="d3">uky-w2-shnic</data>
+      <data key="d4">SharedNIC</data>
+      <data key="d5">ConnectX-6</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": "0000:e2:00.0", "mac": "0C:42:A1:EA:C7:E8"}</data>
+      <data key="d10">Shared NIC: Mellanox Technologies MT28908 Family [ConnectX-6]</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:e2:00.0", "mac": "0C:42:A1:EA:C7:E8", "delegation": "primary"}]</data>
+    </node>
+    <node id="545">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">SwitchFabric</data>
+      <data key="d2">3JB0R53-shnic-sf</data>
+      <data key="d3">uky-w2-shnic-l2sf</data>
+      <data key="d4">SwitchFabric</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="546">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-EA-C7-E8</data>
+      <data key="d3">uky-w2-shnic-p1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+    </node>
+    <node id="547">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-shnic</data>
+      <data key="d3">uky-w3-shnic</data>
+      <data key="d4">SharedNIC</data>
+      <data key="d5">ConnectX-6</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": "0000:e2:00.0", "mac": "0C:42:A1:78:F8:1C"}</data>
+      <data key="d10">Shared NIC: Mellanox Technologies MT28908 Family [ConnectX-6]</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": "0000:e2:00.0", "mac": "0C:42:A1:78:F8:1C", "delegation": "primary"}]</data>
+    </node>
+    <node id="548">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">SwitchFabric</data>
+      <data key="d2">3JB1R53-shnic-sf</data>
+      <data key="d3">uky-w3-shnic-l2sf</data>
+      <data key="d4">SwitchFabric</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="549">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-78-F8-1C</data>
+      <data key="d3">uky-w3-shnic-p1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+    </node>
+    <node id="550">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB0R53-nic1</data>
+      <data key="d3">uky-w2-nic1</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d5">ConnectX-6</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": ["0000:41:00.0", "0000:41:00.1"], "mac": ["0C:42:A1:EA:C7:50", "0C:42:A1:EA:C7:51"]}</data>
+      <data key="d10">Mellanox Technologies MT28908 Family [ConnectX-6]</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": ["0000:41:00.0", "0000:41:00.1"], "mac": ["0C:42:A1:EA:C7:50", "0C:42:A1:EA:C7:51"], "delegation": "primary"}]</data>
+    </node>
+    <node id="551">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">SwitchFabric</data>
+      <data key="d2">3JB0R53-nic1-sf</data>
+      <data key="d3">uky-w2-nic1-l2sf</data>
+      <data key="d4">SwitchFabric</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="552">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-EA-C7-50</data>
+      <data key="d3">uky-w2-nic1-p1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+    </node>
+    <node id="553">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-EA-C7-51</data>
+      <data key="d3">uky-w2-nic1-p2</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+    </node>
+    <node id="554">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB0R53-nic2</data>
+      <data key="d3">uky-w2-nic2</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d5">ConnectX-6</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": ["0000:a1:00.0", "0000:a1:00.1"], "mac": ["0C:42:A1:78:F8:04", "0C:42:A1:78:F8:05"]}</data>
+      <data key="d10">Mellanox Technologies MT28908 Family [ConnectX-6]</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": ["0000:a1:00.0", "0000:a1:00.1"], "mac": ["0C:42:A1:78:F8:04", "0C:42:A1:78:F8:05"], "delegation": "primary"}]</data>
+    </node>
+    <node id="555">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">SwitchFabric</data>
+      <data key="d2">3JB0R53-nic2-sf</data>
+      <data key="d3">uky-w2-nic2-l2sf</data>
+      <data key="d4">SwitchFabric</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="556">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-78-F8-04</data>
+      <data key="d3">uky-w2-nic2-p1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+    </node>
+    <node id="557">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-78-F8-05</data>
+      <data key="d3">uky-w2-nic2-p2</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+    </node>
+    <node id="558">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-nic1</data>
+      <data key="d3">uky-w3-nic1</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d5">ConnectX-5</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": ["0000:41:00.0", "0000:41:00.1"], "mac": ["00C:42:A1:BE:8F:F8", "0C:42:A1:BE:8F:F9"]}</data>
+      <data key="d10">Mellanox Technologies MT27800 Family [ConnectX-5]</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": ["0000:41:00.0", "0000:41:00.1"], "mac": ["00C:42:A1:BE:8F:F8", "0C:42:A1:BE:8F:F9"], "delegation": "primary"}]</data>
+    </node>
+    <node id="559">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">SwitchFabric</data>
+      <data key="d2">3JB1R53-nic1-sf</data>
+      <data key="d3">uky-w3-nic1-l2sf</data>
+      <data key="d4">SwitchFabric</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="560">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-BE-8F-F8</data>
+      <data key="d3">uky-w3-nic1-p1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 25}</data>
+      <data key="d8">[{"bw": 25, "delegation": "primary"}]</data>
+    </node>
+    <node id="561">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-BE-8F-F9</data>
+      <data key="d3">uky-w3-nic1-p2</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 25}</data>
+      <data key="d8">[{"bw": 25, "delegation": "primary"}]</data>
+    </node>
+    <node id="562">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-nic2</data>
+      <data key="d3">uky-w3-nic2</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d5">ConnectX-5</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d9">{"bdf": ["0000:a1:00.0", "0000:a1:00.1"], "mac": ["0C:42:A1:BE:8F:DC", "0C:42:A1:BE:8F:DD"]}</data>
+      <data key="d10">Mellanox Technologies MT27800 Family [ConnectX-5]</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+      <data key="d11">[{"bdf": ["0000:a1:00.0", "0000:a1:00.1"], "mac": ["0C:42:A1:BE:8F:DC", "0C:42:A1:BE:8F:DD"], "delegation": "primary"}]</data>
+    </node>
+    <node id="563">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">SwitchFabric</data>
+      <data key="d2">3JB1R53-nic2-sf</data>
+      <data key="d3">uky-w3-nic2-l2sf</data>
+      <data key="d4">SwitchFabric</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="564">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-BE-8F-DC</data>
+      <data key="d3">uky-w3-nic2-p1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 25}</data>
+      <data key="d8">[{"bw": 25, "delegation": "primary"}]</data>
+    </node>
+    <node id="565">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-BE-8F-DD</data>
+      <data key="d3">uky-w3-nic2-p2</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 25}</data>
+      <data key="d8">[{"bw": 25, "delegation": "primary"}]</data>
+    </node>
+    <node id="566">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">NetworkNode</data>
+      <data key="d2">3DB3R53</data>
+      <data key="d3">nas</data>
+      <data key="d4">NAS</data>
+      <data key="d5">ME4084</data>
+      <data key="d6">{"disk": 100000, "unit": 1}</data>
+      <data key="d7">UKY</data>
+      <data key="d8">[{"disk": 100000, "unit": 1, "delegation": "primary"}]</data>
+    </node>
+    <node id="567">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">NetworkNode</data>
+      <data key="d2">FOC2451R0XZ</data>
+      <data key="d3">UKY-data-sw</data>
+      <data key="d4">Switch</data>
+      <data key="d5">NCS 55A1-36H</data>
+      <data key="d6">{"unit": 1}</data>
+      <data key="d7">UKY</data>
+      <data key="d8">[{"unit": 1, "delegation": "primary"}]</data>
+    </node>
+    <node id="568">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">SwitchFabric</data>
+      <data key="d2">FOC2451R0XZ-sf</data>
+      <data key="d3">UKY-data-sw-sf</data>
+      <data key="d4">SwitchFabric</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="569">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-00</data>
+      <data key="d3">HundredGigE 0/0/0/5</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+      <data key="d11">[{"ipv4_range": "192.168.1.1-192.168.10.255", "vlan_range": "100-200", "label_pool": "shared_pool", "delegation": "primary"}, {"pool": "shared_pool"}]</data>
+    </node>
+    <node id="570">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-01</data>
+      <data key="d3">HundredGigE 0/0/0/13</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+      <data key="d11">[{"pool": "shared_pool"}]</data>
+    </node>
+    <node id="571">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-02</data>
+      <data key="d3">HundredGigE 0/0/0/15</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+      <data key="d11">[{"vlan_range": "1500-2000", "label_pool": "datanic_pool", "delegation": "primary"}, {"pool": "datanic_pool"}]</data>
+    </node>
+    <node id="572">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-03</data>
+      <data key="d3">HundredGigE 0/0/0/9</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+      <data key="d11">[{"pool": "datanic_pool"}]</data>
+    </node>
+    <node id="573">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-04</data>
+      <data key="d3">HundredGigE 0/0/0/17</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+      <data key="d11">[{"pool": "datanic_pool"}]</data>
+    </node>
+    <node id="574">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-05</data>
+      <data key="d3">HundredGigE 0/0/0/19</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+      <data key="d11">[{"pool": "datanic_pool"}]</data>
+    </node>
+    <node id="575">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-06</data>
+      <data key="d3">HundredGigE 0/0/0/21</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 100}</data>
+      <data key="d8">[{"bw": 100, "delegation": "primary"}]</data>
+      <data key="d11">[{"pool": "shared_pool"}]</data>
+    </node>
+    <node id="576">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-07</data>
+      <data key="d3">HundredGigE 0/0/0/25.1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 25}</data>
+      <data key="d8">[{"bw": 25, "delegation": "primary"}]</data>
+      <data key="d11">[{"pool": "datanic_pool"}]</data>
+    </node>
+    <node id="577">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-08</data>
+      <data key="d3">HundredGigE 0/0/0/25.2</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 25}</data>
+      <data key="d8">[{"bw": 25, "delegation": "primary"}]</data>
+      <data key="d11">[{"pool": "datanic_pool"}]</data>
+    </node>
+    <node id="578">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-09</data>
+      <data key="d3">HundredGigE 0/0/0/25.3</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 25}</data>
+      <data key="d8">[{"bw": 25, "delegation": "primary"}]</data>
+      <data key="d11">[{"pool": "datanic_pool"}]</data>
+    </node>
+    <node id="579">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-10-00-00-00-00-0A</data>
+      <data key="d3">HundredGigE 0/0/0/25.4</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d6">{"bw": 25}</data>
+      <data key="d8">[{"bw": 25, "delegation": "primary"}]</data>
+      <data key="d11">[{"pool": "datanic_pool"}]</data>
+    </node>
+    <node id="580">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-00-DAC</data>
+      <data key="d3">l1</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="581">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-01-DAC</data>
+      <data key="d3">l2</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="582">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-02-DAC</data>
+      <data key="d3">l3</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="583">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-03-DAC</data>
+      <data key="d3">l4</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="584">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-04-DAC</data>
+      <data key="d3">l5</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="585">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-05-DAC</data>
+      <data key="d3">l6</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="586">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-06-DAC</data>
+      <data key="d3">l7</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="587">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-07-DAC</data>
+      <data key="d3">l8</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="588">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-08-DAC</data>
+      <data key="d3">l9</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="589">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-09-DAC</data>
+      <data key="d3">l10</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <node id="590">
+      <data key="d0">a00fe0f1-78af-4a5b-a172-9837b64d2ef1</data>
+      <data key="d1">Link</data>
+      <data key="d2">node_id-10-00-00-00-00-0A-DAC</data>
+      <data key="d3">l11</data>
+      <data key="d4">DAC</data>
+      <data key="d12">L2</data>
+    </node>
+    <edge source="522" target="525">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="522" target="526">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="522" target="535">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="522" target="536">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="522" target="541">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="523" target="527">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="523" target="528">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="523" target="529">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="523" target="530">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="523" target="537">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="523" target="538">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="523" target="544">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="523" target="550">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="523" target="554">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="524" target="531">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="524" target="532">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="524" target="533">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="524" target="534">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="524" target="539">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="524" target="540">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="524" target="547">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="524" target="558">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="524" target="562">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="541" target="542">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="542" target="543">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="543" target="580">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="544" target="545">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="545" target="546">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="546" target="581">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="547" target="548">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="548" target="549">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="549" target="586">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="550" target="551">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="551" target="552">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="551" target="553">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="552" target="582">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="553" target="583">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="554" target="555">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="555" target="556">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="555" target="557">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="556" target="584">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="557" target="585">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="558" target="559">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="559" target="560">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="559" target="561">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="560" target="587">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="561" target="588">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="562" target="563">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="563" target="564">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="563" target="565">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="564" target="589">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="565" target="590">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="567" target="568">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="568" target="569">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="570">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="571">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="572">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="573">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="574">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="575">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="576">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="577">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="578">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="568" target="579">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="569" target="580">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="570" target="581">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="571" target="582">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="572" target="583">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="573" target="584">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="574" target="585">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="575" target="586">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="576" target="587">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="577" target="588">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="578" target="589">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="579" target="590">
+      <data key="d13">connects</data>
+    </edge>
+  </graph>
+</graphml>
