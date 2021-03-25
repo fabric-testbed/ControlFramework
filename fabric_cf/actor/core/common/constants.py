@@ -254,4 +254,4 @@ class Constants:
     TWO_WEEKS = timedelta(days=14)
     DEFAULT_MAX_DURATION = TWO_WEEKS
     RENEW_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-    DEFAULT_LEASE_IN_HOURS = 1
+    DEFAULT_LEASE_IN_HOURS = 24
