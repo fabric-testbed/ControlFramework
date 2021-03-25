@@ -9,4 +9,4 @@ prometheus_client
 connexion
 swagger-ui-bundle
 fabric_fss_utils==0.08
-PyYAML==5.3.1
+PyYAML==5.4
