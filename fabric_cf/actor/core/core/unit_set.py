@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -166,7 +167,7 @@ class UnitSet(ABCConcreteSet):
             u.set_reservation(reservation=self.reservation)
             u.set_slice_id(slice_id=self.reservation.get_slice_id())
             u.set_actor_id(actor_id=self.plugin.get_actor().get_guid())
-            self.plugin.update_props(reservation=self.reservation, u=u)
+            self.plugin.update_props(reservation=self.reservation, unit=u)
 
     def clone(self):
         result = UnitSet(plugin=self.plugin, units=self.units.copy())
@@ -357,7 +358,7 @@ class UnitSet(ABCConcreteSet):
                 unit.set_actor_id(actor_id=self.plugin.get_actor().get_guid())
                 self.plugin.transfer_in(reservation=self.reservation, unit=unit)
             else:
-                self.post(u=unit, message="Unit cannot be transfered., State={}".format(unit.get_state()))
+                self.post(u=unit, message="Unit cannot be transferred., State={}".format(unit.get_state()))
         except Exception as e:
             self.fail(u=unit, message="Transfer in for node failed", e=e)
 

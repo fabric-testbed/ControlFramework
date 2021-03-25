@@ -31,8 +31,10 @@ from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
+from fabric_cf.actor.core.time.actor_clock import ActorClock
 
 
 class ResponseBuilder:
@@ -52,6 +54,7 @@ class ResponseBuilder:
     PROP_RESERVATION_ID = "reservation_id"
     PROP_RESOURCE_TYPE = "resource_type"
     PROP_RESERVATION_STATE = "reservation_state"
+    PROP_LEASE_END_TIME = "lease_end"
     PROP_RESERVATION_PENDING_STATE = "pending_state"
     PROP_RESERVATION_JOIN_STATE = "join_state"
     PROP_NOTICES = "notices"
@@ -85,7 +88,8 @@ class ResponseBuilder:
                             ResponseBuilder.PROP_RESERVATION_STATE: ReservationStates(reservation.get_state()).name}
 
                 if reservation.get_pending_state() is not None:
-                    res_dict[ResponseBuilder.PROP_RESERVATION_JOIN_STATE] = ReservationPendingStates(reservation.get_pending_state()).name
+                    res_dict[ResponseBuilder.PROP_RESERVATION_JOIN_STATE] = \
+                        ReservationPendingStates(reservation.get_pending_state()).name
 
                 if isinstance(reservation, LeaseReservationAvro) and reservation.get_join_state() is not None:
                     res_dict[ResponseBuilder.PROP_RESERVATION_JOIN_STATE] = JoinState(reservation.get_join_state()).name
@@ -98,6 +102,10 @@ class ResponseBuilder:
 
                 if include_notices:
                     res_dict[ResponseBuilder.PROP_NOTICES] = reservation.get_notices()
+
+                if reservation.get_end() is not None:
+                    end_time = ActorClock.from_milliseconds(milli_seconds=reservation.get_end())
+                    res_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.RENEW_TIME_FORMAT)
 
                 reservations.append(res_dict)
         else:
@@ -194,3 +202,17 @@ class ResponseBuilder:
             if sliver.get_labels() is not None:
                 result[ResponseBuilder.PROP_LABELS] = sliver.get_labels().to_json()
         return result
+
+    @staticmethod
+    def get_response_summary(*, rid_list: List[str]) -> dict:
+        response = {}
+        status = ResponseBuilder.STATUS_OK
+        message = ""
+        if rid_list is not None and len(rid_list) > 0:
+            status = ResponseBuilder.STATUS_FAILURE
+            response[ResponseBuilder.RESPONSE_RESERVATIONS] = rid_list
+
+        response[ResponseBuilder.RESPONSE_STATUS] = status
+        response[ResponseBuilder.RESPONSE_MESSAGE] = message
+
+        return response

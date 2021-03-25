@@ -36,8 +36,6 @@ from fabric_mb.message_bus.messages.ticket_avro import TicketAvro
 
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
-from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.core.unit_set import UnitSet
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType

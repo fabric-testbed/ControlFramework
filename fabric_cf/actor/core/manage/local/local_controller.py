@@ -190,8 +190,11 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
                            config_properties: dict = None) -> bool:
         self.clear_last()
         try:
-            result = self.manager.extend_reservation(reservation, new_end_time, new_units, new_resource_type,
-                                                     request_properties, config_properties, self.auth)
+            result = self.manager.extend_reservation(reservation=reservation,
+                                                     new_end_time=new_end_time, new_units=new_units,
+                                                     new_resource_type=new_resource_type,
+                                                     request_properties=request_properties,
+                                                     config_properties=config_properties, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0

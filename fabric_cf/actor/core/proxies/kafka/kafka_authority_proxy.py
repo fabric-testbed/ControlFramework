@@ -124,8 +124,8 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
 
     @staticmethod
     def pass_authority_reservation(reservation: ABCReservationMixin, caller: AuthToken) -> ReservationAvro:
-        cs = reservation.get_resources().get_resources()
-        if cs is None:
+        concrete = reservation.get_resources().get_resources()
+        if concrete is None:
             raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("ticket"))
 
         avro_reservation = ReservationAvro()
@@ -136,14 +136,11 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
 
         rset = Translate.translate_resource_set(resource_set=reservation.get_resources())
 
-        if reservation.get_requested_resources() is not None:
-            cset = reservation.get_requested_resources().get_resources()
+        if concrete is not None and isinstance(concrete, Ticket):
+            rset.ticket = Translate.translate_ticket(ticket=concrete)
 
-            if cset is not None and isinstance(cset, Ticket):
-                rset.ticket = Translate.translate_ticket(ticket=cset)
-
-            if cset is not None and isinstance(cset, UnitSet):
-                rset.units = Translate.translate_unit_set(unit_set=cset)
+        if concrete is not None and isinstance(concrete, UnitSet):
+            rset.unit_set = Translate.translate_unit_set(unit_set=concrete)
 
         avro_reservation.resource_set = rset
 

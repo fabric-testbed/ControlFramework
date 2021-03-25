@@ -321,7 +321,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         requests = self.calendar.get_all_requests(cycle=advance_cycle)
 
         if (requests is None or requests.size() == 0) and (self.queue is None or self.queue.size() == 0):
-            self.logger.debug(f"request: {requests} queue: {self.queue}")
+            self.logger.debug(f"requests: {requests} queue: {self.queue}")
             self.logger.debug(f"no requests for auction start cycle {start_cycle}")
             return
 
@@ -528,7 +528,20 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return delegation_id, sliver
 
     def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term):
-        pass
+        try:
+            self.logger.debug(f"Extend private initiated for {reservation}")
+            requested_resources = reservation.get_requested_resources()
+            needed = requested_resources.get_units()
+            current = reservation.get_resources().get_units()
+            if needed == current:
+                self.issue_ticket(reservation=reservation, units=needed, rtype=requested_resources.get_type(),
+                                  term=term, source=reservation.get_source(), sliver=reservation.get_resources().sliver)
+            else:
+                self.logger.error(f"Failed to satisfy the extend for reservation# {reservation}")
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+            reservation.fail(exception=e)
 
     def issue_ticket(self, *, reservation: ABCBrokerReservation, units: int, rtype: ResourceType,
                      term: Term, source: ABCDelegation, sliver: BaseSliver) -> ABCBrokerReservation:

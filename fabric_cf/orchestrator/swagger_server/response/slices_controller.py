@@ -5,7 +5,7 @@ from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, SLICES_CREATE_PATH, \
-    SLICES_GET_SLICE_ID_PATH, GET_METHOD, SLICES_GET_PATH, DELETE_METHOD, SLICES_DELETE_PATH
+    SLICES_GET_SLICE_ID_PATH, GET_METHOD, SLICES_GET_PATH, DELETE_METHOD, SLICES_DELETE_PATH, SLICES_RENEW_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
@@ -144,7 +144,20 @@ def slices_renew_slice_idpost(slice_id, new_lease_end_time):  # noqa: E501
 
     :rtype: Success
     """
-    return 'do some magic!'
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
+    try:
+        token = get_token()
+        value = handler.renew_slice(token=token, slice_id=slice_id, new_lease_end_time=new_lease_end_time)
+        response = Success()
+        response.value = value
+        success_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
+        return response
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
+        return str(e), 500
 
 
 def slices_slice_idget(slice_id):  # noqa: E501

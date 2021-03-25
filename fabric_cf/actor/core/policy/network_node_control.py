@@ -211,7 +211,9 @@ class NetworkNodeControl(ResourceControl):
                         properties=reservation.get_slice().get_config_properties())
             gained = UnitSet(plugin=self.authority.get_plugin(), units={unit.reservation_id: unit})
         else:
-            raise AuthorityException("Modify not supported")
+            # FIX ME: handle modify
+            self.logger.info(f"Extend Lease for now, no modify supported res# {reservation}")
+            return current
 
         result = ResourceSet(gained=gained, lost=lost, rtype=resource_type)
         result.set_sliver(sliver=requested)

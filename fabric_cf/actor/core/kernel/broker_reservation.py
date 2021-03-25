@@ -270,7 +270,7 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
             self.error(err="extending reservation with another pending request")
 
         if not self.requested_term.extends_term(old_term=self.term):
-            self.error(err="new term does not extend current term")
+            self.error(err=f"new term {self.requested_term} does not extend current term {self.term}")
 
         self.approved = False
         self.bid_pending = True
@@ -468,7 +468,7 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
 
                     # If the policy has processed this reservation, set granted to
                     # true so that we can send the ticket back to the client. If
-                    # the policy has not yet processed this reservation (binPending
+                    # the policy has not yet processed this reservation (bid_pending
                     # is true) then call the policy. The plugin may choose to
                     # process the request immediately (true) or to defer it
                     # (false). In case of a deferred request, we will eventually

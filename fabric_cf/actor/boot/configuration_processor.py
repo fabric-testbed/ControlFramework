@@ -294,7 +294,7 @@ class ConfigurationProcessor:
         return policy
 
     @staticmethod
-    def make_policy(*, policy: PolicyConfig) -> IPolicy:
+    def make_policy(*, policy: PolicyConfig) -> ABCPolicy:
         """
         Creates Policy Instance
         @param policy policy config

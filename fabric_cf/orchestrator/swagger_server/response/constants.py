@@ -35,6 +35,7 @@ SLICES_CREATE_PATH = '/slices/create'
 SLICES_DELETE_PATH = '/slices/delete'
 SLICES_GET_PATH = '/slices'
 SLICES_GET_SLICE_ID_PATH = '/slices/{sliceID}'
+SLICES_RENEW_PATH = '/slices/renew/{sliceID}'
 
 
 SLIVERS_GET_PATH = '/slivers'

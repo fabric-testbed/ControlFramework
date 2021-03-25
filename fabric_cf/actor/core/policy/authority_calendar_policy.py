@@ -223,15 +223,12 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         self.calendar.add_closing(reservation=reservation, cycle=close)
         return False
 
-    def extend(self, *, reservation: ABCReservationMixin, resources: ResourceSet, term: Term):
+    def extend_authority(self, *, reservation: ABCAuthorityReservation) -> bool:
         # Simple for now: make sure that this is a valid term and do not modify
         # its start/end time and add it to the calendar. If the request came
         # after its start time, but before its end cycle, add it for allocation
         # to lastAllocatedCycle + 1. If it came after its end cycle, throw an
         # exception.
-
-        if resources is not None and term is not None:
-            raise AuthorityException("Not implemented")
         current_cycle = self.actor.get_current_cycle()
         approved = reservation.get_requested_term()
         start = self.clock.cycle(when=approved.get_new_start_time())
@@ -246,7 +243,10 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         self.calendar.add_request(reservation=reservation, cycle=start)
         close = self.get_close(term=reservation.get_requested_term())
         self.calendar.add_closing(reservation=reservation, cycle=close)
-        return True
+        return False
+
+    def extend(self, *, reservation: ABCReservationMixin, resources: ResourceSet, term: Term):
+        raise AuthorityException(Constants.NOT_IMPLEMENTED)
 
     def correct_deficit(self, *, reservation: ABCAuthorityReservation):
         if reservation.get_resources() is not None:

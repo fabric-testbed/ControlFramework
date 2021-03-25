@@ -273,7 +273,7 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
                 # case of a deferred request, we will eventually come back to
                 # this method after the policy has done its job.
                 if self.is_bid_pending():
-                    granted = self.policy.bind(reservation=self)
+                    granted = self.policy.extend_authority(reservation=self)
                 else:
                     granted = True
 
@@ -286,11 +286,12 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
                     if self.requested_resources.get_sliver() is not None:
                         self.approved_resources.set_sliver(sliver=self.requested_resources.get_sliver())
 
-                    self.resources.update(self, self.approved_resources)
+                    self.resources.update(reservation=self, resource_set=self.approved_resources)
                     self.transition(prefix="extend lease", state=ReservationStates.Active,
                                     pending=ReservationPendingStates.Priming)
             except Exception as e:
                 self.logger.error("authority mapper extend e: {}".format(e))
+                self.logger.error(traceback.format_exc())
                 self.fail_notify(message=str(e))
         else:
             self.fail(message="mapAndUpdate: unexpected state", exception=None)
@@ -359,10 +360,10 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
                 failed.get_request_type()))
 
     def prepare_extend_lease(self):
-        self.requested_resources.validate_incoming_ticket(self.requested_term)
+        self.requested_resources.validate_incoming_ticket(term=self.requested_term)
 
     def prepare_modify_lease(self):
-        self.requested_resources.validate_incoming_ticket(self.requested_term)
+        self.requested_resources.validate_incoming_ticket(term=self.requested_term)
 
     def prepare_probe(self):
         try:
