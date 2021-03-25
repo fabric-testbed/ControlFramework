@@ -3,7 +3,7 @@ cryptography==3.3.2
 psycopg2-binary
 sqlalchemy
 fabric-message-bus
-fabric-fim==0.33
+fabric-fim==0.34
 waitress
 prometheus_client
 connexion
