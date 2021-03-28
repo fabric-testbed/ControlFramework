@@ -8,6 +8,11 @@ NOTE: Authority container is still built on Pyhon3.8 because of an open BUG on P
 https://github.com/dask/distributed/issues/4168
 ## Configuration
 `config.site.am.yaml` depicts an example config file for an Aggregate Manager.
+### Import pre-requistes
+- Kafka Configuration
+  - Request topic, consumer and producer credentials for each Actor from [Song](ywsong2@g.uky.edu)
+  - Request Hosts running the Actors to be added to Kafka Brokers and Schema Registry Firewall
+  - Make sure to configure consumer.group.id different for each actor
 
 ## Deployment
 Aggregate Manager must deploy following containers:
@@ -40,6 +45,7 @@ The script `setup.sh` generates directory for the AM, which has `.env` file whic
 User is expected to update `.env` file as needed and update volumes section for am in `docker-compose.yml`.
 
 Following files must be checked to update any of the parameters
+1. Clone AMHandlers [github repo](https://github.com/fabric-testbed/AMHandlers.git), and set up the configuration as listed [here](https://github.com/fabric-testbed/AMHandlers/blob/main/README.md)
 1. `.env` from [env.template](env.template) - Environment variables for `docker-compose.yml` to use
 2. `config.yaml` updated to reflect the correct information
 
@@ -105,7 +111,7 @@ runtime:
   - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
-  - kafka-group-id: fabric-cf
+  - kafka-group-id: 
   - kafka-sasl-mechanism:
   - kafka-sasl-producer-username:
   - kafka-sasl-producer-password:
@@ -215,7 +221,8 @@ peers:
     - delegation: del1
 ```
 #### am
-Update `docker-compose.yml` to point to correct volumes for the AM.
+Update `docker-compose.yml` to point to correct volumes for the AM. 
+**IMPORTANT**: When deploying AM on Headnode, use `network_mode: host` instead of container network.
 
 ```
     volumes:
