@@ -110,7 +110,12 @@ Remove existing swagger_server directory and move my_server/swagger_server to sw
 
 ## Configuration
 `config.site.orchestrator.yaml` depicts an example config file for an Orchestrator.
-
+### Import pre-requistes
+- Kafka Configuration
+  - Request topic, consumer and producer credentials for each Actor from [Song](ywsong2@g.uky.edu)
+  - Request Hosts running the Actors to be added to Kafka Brokers and Schema Registry Firewall
+  - Make sure to configure consumer.group.id different for each actor
+    
 ## Deployment
 Orchestrator must deploy following containers:
 - Neo4j
