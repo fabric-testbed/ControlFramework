@@ -202,17 +202,16 @@ PDP_UID=1000
 The parameters depicted below must be checked/updated before bring any of the containers up.
 ```
 runtime:
-  - plugin-dir: ./plugins
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-server: 
+  - kafka-schema-registry-url: 
   - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
   - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
   - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
   - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
-  - kafka-ssl-key-password:  fabric
+  - kafka-ssl-key-password:  
   - kafka-security-protocol: SSL
-  - kafka-group-id: fabric-cf
+  - kafka-group-id: 
   - kafka-sasl-mechanism:
   - kafka-sasl-producer-username:
   - kafka-sasl-producer-password:

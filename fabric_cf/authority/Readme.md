@@ -101,8 +101,7 @@ PDP_UID=1000
 The parameters depicted below must be checked/updated before bring any of the containers up.
 ```
 runtime:
-  - plugin-dir: ./plugins
-  - kafka-server: broker1:9092
+  - kafka-server: 
   - kafka-schema-registry-url: http://schemaregistry:8081
   - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
