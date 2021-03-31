@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 
 
 NAME = "fabric-cf"
-VERSION = "0.19"
+VERSION = "0.20"
 # To install the library, run the following
 #
 # python setup.py install
@@ -46,8 +46,8 @@ setup(
     name=NAME,
     version=VERSION,
     description="Fabric Control Framework",
-    author="Komal Thareja",
-    author_email="kthare10@renci.org",
+    author="Komal Thareja, Ilya Baldin",
+    author_email="kthare10@renci.org, ibaldin@renci.org",
     url="https://github.com/fabric-testbed/ControlFramework",
     keywords=["Swagger", "Fabric Control Framework"],
     install_requires=requirements,
