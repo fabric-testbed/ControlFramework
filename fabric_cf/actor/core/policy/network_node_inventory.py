@@ -151,7 +151,7 @@ class NetworkNodeInventory(InventoryForType):
         return requested_component
 
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_id: str,
-                           graph_node: BaseSliver, existing_reservations: List[ABCReservationMixin]) -> AttachedComponentsInfo:
+                           graph_node: NodeSliver, existing_reservations: List[ABCReservationMixin]) -> AttachedComponentsInfo:
         """
         Check if the requested capacities can be satisfied with the available capacities
         :param rid: reservation id of the reservation being served
@@ -186,7 +186,7 @@ class NetworkNodeInventory(InventoryForType):
                 if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
                     allocated_sliver = reservation.get_resources().get_sliver()
 
-                if allocated_sliver is not None:
+                if allocated_sliver is not None and allocated_sliver.attached_components_info is not None:
                     for allocated in allocated_sliver.attached_components_info.devices.values():
                         if allocated.get_node_map() is not None:
                             self.logger.debug(f"Already allocated components {allocated} of resource_type "
@@ -232,8 +232,8 @@ class NetworkNodeInventory(InventoryForType):
 
         return requested_components
 
-    def allocate(self, *, reservation: ABCReservationMixin, graph_id: str, graph_node: BaseSliver,
-                 existing_reservations: List[ABCReservationMixin]) -> Tuple[str, BaseSliver]:
+    def allocate(self, *, reservation: ABCReservationMixin, graph_id: str, graph_node: NodeSliver,
+                 existing_reservations: List[ABCReservationMixin]) -> Tuple[str, NodeSliver]:
         """
         Allocate an extending or ticketing reservation
         :param reservation: reservation to be allocated

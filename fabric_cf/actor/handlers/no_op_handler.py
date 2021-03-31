@@ -45,7 +45,7 @@ class NoOpHandler(HandlerBase):
             unit.sliver.state = 'active'
             unit.sliver.instance_name = 'instance_001'
             unit.sliver.management_ip = '1.2.3.4'
-            unit.sliver.management_interface_mac_address = 'fa:cb:ff:ee:ww'
+            #unit.sliver.management_interface_mac_address = 'fa:cb:ff:ee:ww'
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}

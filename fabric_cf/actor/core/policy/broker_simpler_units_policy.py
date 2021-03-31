@@ -54,7 +54,7 @@ from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregateBQMPlugin
+from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
@@ -162,7 +162,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
         self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
         # TODO uncomment post complete integration
-        self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregateBQMPlugin, actor=self.actor,
+        self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregatedBQMPlugin, actor=self.actor,
                                                    logger=self.logger)
         self.logger.debug(f"Registered AggregateBQMPlugin")
 
@@ -443,7 +443,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             comps=sliver.attached_components_info)
 
     def __candidate_links(self, sliver: NetworkLinkSliver) -> List[str]:
-        pass
+        return list()
 
     def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
                          node_id_to_reservations: dict) -> Tuple[bool, dict]:
@@ -779,6 +779,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 snapshot_graph_id = self.combined_broker_model.snapshot()
             self.combined_broker_model.merge_adm(adm=adm_graph)
             self.combined_broker_model.validate_graph()
+            # delete the snapshot
+            self.combined_broker_model.importer.delete_graph(graph_id=snapshot_graph_id)
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
