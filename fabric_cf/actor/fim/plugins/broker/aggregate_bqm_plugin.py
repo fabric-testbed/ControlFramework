@@ -96,7 +96,7 @@ class AggregatedBQMPlugin:
                                 occupied_component_capacities[rt][rm] = Capacities()
 
                             occupied_component_capacities[rt][rm] = occupied_component_capacities[rt][rm] + \
-                                                          allocated_component.capacities
+                                                          allocated_component.capacity_allocations
 
         return occupied_capacities, occupied_component_capacities
 
