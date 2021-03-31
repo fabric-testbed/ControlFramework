@@ -265,7 +265,6 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
-        include_sliver = False
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"get_slivers invoked for Controller: {controller}")
@@ -276,7 +275,6 @@ class OrchestratorHandler:
             rid = None
             if sliver_id is not None:
                 rid = ID(uid=sliver_id)
-                include_sliver = True
 
             reservations = controller.get_reservations(id_token=token, slice_id=slice_guid, rid=rid)
             if reservations is None:
@@ -458,8 +456,8 @@ class OrchestratorHandler:
                     raise OrchestratorException(f"Attempted new term end time is shorter than current slice end time")
 
                 self.logger.debug(f"Extending reservation with reservation# {r.get_reservation_id()}")
-                result = controller.extend_reservation_end_time(reservation=ID(uid=r.get_reservation_id()),
-                                                                new_end_time=new_end_time)
+                result = controller.extend_reservation(reservation=ID(uid=r.get_reservation_id()),
+                                                       new_end_time=new_end_time)
                 if not result:
                     failed_to_extend_rid_list.append(r.get_reservation_id())
 

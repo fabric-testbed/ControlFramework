@@ -67,14 +67,12 @@ class ABCClientActorManagementObject(ABC):
 
     @abstractmethod
     def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType, request_properties: dict,
-                           config_properties: dict, caller: AuthToken) -> ResultAvro:
+                           caller: AuthToken) -> ResultAvro:
         """
         Extend a reservation
         @param reservation : reservation to be extended
         @param new_end_time: new end time
-        @param new_resource_type: new resource type
-        @param config_properties: config_properties
+        @param new_units: new units
         @param caller: caller
         @return success or failure status
         """

@@ -475,7 +475,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             delegation_id = None
             sliver = None
-            # FIXME: walk the list to find First/Best/Worst fit
             if self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.FirstFit.name.lower():
                 delegation_id, sliver = self.__find_first_fit(node_id_list=node_id_list,
                                                               node_id_to_reservations=node_id_to_reservations,
