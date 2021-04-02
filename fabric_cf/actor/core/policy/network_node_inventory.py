@@ -259,12 +259,13 @@ class NetworkNodeInventory(InventoryForType):
                                                 existing_reservations=existing_reservations)
 
         # Check if Components can be allocated
-        requested.attached_components_info = self.__check_components(
-            rid=reservation.get_reservation_id(),
-            requested_components=requested.attached_components_info,
-            graph_id=graph_id,
-            graph_node=graph_node,
-            existing_reservations=existing_reservations)
+        if requested.attached_components_info is not None:
+            requested.attached_components_info = self.__check_components(
+                rid=reservation.get_reservation_id(),
+                requested_components=requested.attached_components_info,
+                graph_id=graph_id,
+                graph_node=graph_node,
+                existing_reservations=existing_reservations)
 
         requested.capacity_allocations = requested.get_capacities()
         requested.label_allocations = Labels().set_fields(instance_parent=graph_node.get_name())
