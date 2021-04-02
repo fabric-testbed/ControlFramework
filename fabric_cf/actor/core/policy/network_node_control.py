@@ -200,10 +200,11 @@ class NetworkNodeControl(ResourceControl):
 
             # Check components
             # Check if Components can be allocated
-            self.__check_components(rid=reservation.get_reservation_id(),
-                                    requested_components=requested.attached_components_info,
-                                    graph_node=graph_node,
-                                    existing_reservations=existing_reservations)
+            if requested.attached_components_info is not None:
+                self.__check_components(rid=reservation.get_reservation_id(),
+                                        requested_components=requested.attached_components_info,
+                                        graph_node=graph_node,
+                                        existing_reservations=existing_reservations)
 
             self.logger.debug(f"Slice properties: {reservation.get_slice().get_config_properties()}")
             unit = Unit(rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
