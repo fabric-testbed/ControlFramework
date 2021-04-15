@@ -49,9 +49,6 @@ class ABCBasePlugin(ABC):
     These methods are called as various events occur. All implementations of this class must have a
     constructor that takes no arguments, and set methods for their attributes.
     """
-    def __init__(self):
-        pass
-
     @abstractmethod
     def configure(self, *, properties):
         """

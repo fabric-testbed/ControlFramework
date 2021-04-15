@@ -39,18 +39,19 @@ from fabric_cf.actor.test.client_callback_helper import ClientCallbackHelper
 from fabric_cf.actor.test.test_exception import TestException
 
 
+class IUpdateLeaseHandler:
+    def handle_update_lease(self, *, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
+        """
+        Implemented by derived class
+        """
+
+    def check_termination(self):
+        """
+        Implemented by derived class
+        """
+
+
 class ControllerCallbackHelper(ClientCallbackHelper, ABCControllerCallbackProxy):
-    class IUpdateLeaseHandler:
-        def handle_update_lease(self, *, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
-            """
-            Implemented by derived class
-            """
-
-        def check_termination(self):
-            """
-            Implemented by derived class
-            """
-
     def __init__(self, *, name: str, guid: ID):
         super().__init__(name=name, guid=guid)
         self.called_for_lease = 0

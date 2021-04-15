@@ -115,8 +115,8 @@ def slices_modify_slice_idput(body, slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    if connexion.request.is_json:
-        body = str.from_dict(connexion.request.get_json())  # noqa: E501
+    slice_graph = body.decode("utf-8")
+
     return 'do some magic!'
 
 

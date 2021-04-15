@@ -185,16 +185,12 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
         return False
 
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType = None, request_properties: dict = None,
-                           config_properties: dict = None) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime) -> bool:
         self.clear_last()
         try:
             result = self.manager.extend_reservation(reservation=reservation,
-                                                     new_end_time=new_end_time, new_units=new_units,
-                                                     new_resource_type=new_resource_type,
-                                                     request_properties=request_properties,
-                                                     config_properties=config_properties, caller=self.auth)
+                                                     new_end_time=new_end_time, new_units=Constants.EXTEND_SAME_UNITS,
+                                                     caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0
@@ -202,22 +198,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             self.last_exception = e
 
         return False
-
-    def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
-        return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.EXTEND_SAME_UNITS)
-
-    def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime,
-                                            request_properties: dict) -> bool:
-        return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.EXTEND_SAME_UNITS,
-                                       request_properties=request_properties)
-
-    def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
-                                                   request_properties: dict, config_properties: dict) -> bool:
-        return self.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                       new_units=Constants.EXTEND_SAME_UNITS,
-                                       request_properties=request_properties, config_properties=config_properties)
 
     def clone(self):
         return LocalController(manager=self.manager, auth=self.auth)

@@ -107,12 +107,9 @@ class BrokerManagementObject(ServerActorManagementObject, ABCClientActorManageme
         return self.client_helper.demand_reservation(reservation=reservation, caller=caller)
 
     def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType, request_properties: dict,
-                           config_properties: dict, caller: AuthToken) -> ResultAvro:
+                           caller: AuthToken) -> ResultAvro:
         return self.client_helper.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                                     new_units=new_units, new_resource_type=new_resource_type,
-                                                     request_properties=request_properties,
-                                                     config_properties=config_properties, caller=caller)
+                                                     new_units=new_units, caller=caller)
 
     def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
                           id_token: str = None) -> ResultDelegationAvro:

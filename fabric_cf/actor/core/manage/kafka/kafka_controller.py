@@ -181,20 +181,7 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
     def demand_reservation_rid(self, *, rid: ID) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType = None, request_properties: dict = None,
-                           config_properties: dict = None) -> bool:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
-
-    def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
-
-    def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime,
-                                            request_properties: dict) -> bool:
-        raise ManageException(Constants.NOT_IMPLEMENTED)
-
-    def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
-                                                   request_properties: dict, config_properties: dict) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:

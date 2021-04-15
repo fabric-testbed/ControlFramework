@@ -1691,10 +1691,10 @@ def test():
     print("Proxies after remove {}".format(db.get_proxies(act_id=actor_id)))
 
     # Config Mapping operations
-    db.add_config_mapping(act_id=actor_id, cfgm_type="cfg-1", cfgm_path="/abc/def", properties=prop)
+    db.add_config_mapping(act_id=actor_id, cfgm_type="cfg-1", properties=prop)
     print("Config Mappings after add {}".format(db.get_config_mappings(act_id=actor_id)))
     prop['cfg-update'] = 'done'
-    db.update_config_mapping(act_id=actor_id, cfgm_type="cfg-1", cfgm_path="/abc/def", properties=prop)
+    db.update_config_mapping(act_id=actor_id, cfgm_type="cfg-1", properties=prop)
     print("Config Mappings after update by type {}".format(db.get_config_mappings_by_type(act_id=actor_id,
                                                                                           cfgm_type="cfg-1")))
     db.remove_config_mapping(cfgm_type="cfg-1")
