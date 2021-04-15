@@ -103,9 +103,9 @@ services:
       - 7473:7473  # for HTTPS
       - 7687:7687  # for Bolt
     volumes:
-      - ./neo4j1/data:/data
-      - ./neo4j1/imports:/imports
-      - ./neo4j1/logs:/logs
+      - ${NEO4DATA_HOST:-.}/neo4j1/data:/data
+      - ${NEO4DATA_HOST:-.}/neo4j1/imports:/imports
+      - ${NEO4DATA_HOST:-.}/neo4j1/logs:/logs
       - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
       - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
@@ -126,9 +126,9 @@ services:
       - 8473:8473  # for HTTPS
       - 8687:8687  # for Bolt
     volumes:
-      - ./neo4j2/data:/data
-      - ./neo4j2/imports:/imports
-      - ./neo4j2/logs:/logs
+      - ${NEO4DATA_HOST:-.}/neo4j2/data:/data
+      - ${NEO4DATA_HOST:-.}/neo4j2/imports:/imports
+      - ${NEO4DATA_HOST:-.}/neo4j2/logs:/logs
       - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
       - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
@@ -149,9 +149,9 @@ services:
       - 9473:9473  # for HTTPS
       - 9687:9687  # for Bolt
     volumes:
-      - ./neo4j3/data:/data
-      - ./neo4j3/imports:/imports
-      - ./neo4j3/logs:/logs
+      - ${NEO4DATA_HOST:-.}/neo4j3/data:/data
+      - ${NEO4DATA_HOST:-.}/neo4j3/imports:/imports
+      - ${NEO4DATA_HOST:-.}/neo4j3/logs:/logs
       - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
       - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
