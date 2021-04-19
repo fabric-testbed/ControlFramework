@@ -57,7 +57,7 @@ class UnitTest(BaseTestCase, unittest.TestCase):
         self.assertEqual(UnitState.DEFAULT, u1.get_state())
         self.assertIsNone(u1.get_property(name="foo"))
         self.assertIsNone(u1.get_parent_id())
-        self.assertIsNone(u1.get_reservation_id())
+        self.assertIsNotNone(u1.get_reservation_id())
         self.assertIsNone(u1.get_slice_id())
         self.assertIsNone(u1.get_actor_id())
 

@@ -1482,7 +1482,8 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
 
     def fail(self, *, message: str, exception: Exception = None):
         super().fail(message=message, exception=exception)
-        self.update_slice_graph(sliver=self.requested_resources.sliver)
+        if self.requested_resources is not None and self.requested_resources.sliver is not None:
+            self.update_slice_graph(sliver=self.requested_resources.sliver)
 
     def update_slice_graph(self, *, sliver: NodeSliver):
         """
