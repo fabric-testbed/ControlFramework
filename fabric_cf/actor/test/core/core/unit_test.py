@@ -94,4 +94,4 @@ class UnitTest(BaseTestCase, unittest.TestCase):
 
         db.add_unit(u=u1)
 
-        self.assertIsNotNone(db.get_unit(uid=uid))
+        self.assertIsNotNone(db.get_unit(uid=rid))
