@@ -74,7 +74,7 @@ oauth:
 database:
   - db-user: fabric
   - db-password: fabric
-  - db-name: am
+  - db-name: test
   - db-host: localhost:5432
 
 container:
