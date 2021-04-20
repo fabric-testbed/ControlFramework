@@ -26,13 +26,16 @@
 from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
 from fabric_cf.actor.core.core.controller import Controller
 from fabric_cf.actor.core.core.ticket import Ticket
+from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.time.term import Term
+from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
 class ControllerTestWrapper(Controller):
+    broker_guid = ID()
     def bid(self):
         candidates = self.policy.formulate_bids(cycle=self.current_cycle)
         if candidates is not None:
@@ -52,13 +55,11 @@ class ControllerTestWrapper(Controller):
                             self.fail_ticket(r)
                             continue
 
-                    delegation = self.get_plugin().get_resource_delegation_factory().make_delegation(
-                        units=r.get_approved_resources().get_units(),
-                        term=r.get_approved_term(),
-                        rtype=r.get_approved_type(),
-                        vector= None)
-                    ticket = self.get_plugin().get_resource_delegation_factory().make_ticket(delegation=delegation, source=None)
-                    cs = Ticket(ticket=ticket, plugin=self.get_plugin())
+                    ticket = ResourceTicketFactory.create(issuer=self.broker_guid,
+                                                          units=r.get_approved_resources().get_units(),
+                                                          term=r.get_approved_term(),
+                                                          rtype=r.get_approved_type())
+                    cs = Ticket(resource_ticket=ticket, plugin=self.get_plugin())
                     self.update_ticket_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs,
                                                r.get_approved_term())
 
@@ -66,12 +67,11 @@ class ControllerTestWrapper(Controller):
             if extending is not None:
                 for r in extending.values():
                     print("cycle: {} Extend Ticket request for: {}".format(self.current_cycle, r))
-                    delegation = self.get_plugin().get_resource_delegation_factory().make_delegation(
-                        units=r.get_approved_resources().get_units(),
-                        term=r.get_approved_term(),
-                        rtype=r.get_approved_type(), vector=None)
-                    ticket = self.get_plugin().get_resource_delegation_factory().make_ticket(delegation=delegation, source=None)
-                    cs = Ticket(ticket=ticket, plugin=self.get_plugin())
+                    ticket = ResourceTicketFactory.create(issuer=self.broker_guid,
+                                                          units=r.get_approved_resources().get_units(),
+                                                          term=r.get_approved_term(),
+                                                          rtype=r.get_approved_type())
+                    cs = Ticket(resource_ticket=ticket, plugin=self.get_plugin())
                     self.update_ticket_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs,
                                                r.get_approved_term())
 
@@ -91,11 +91,11 @@ class ControllerTestWrapper(Controller):
                 else:
                     print("cycle: {} extending lease for reservation r: {}".format(self.current_cycle, r))
 
-                delegation = self.get_plugin().get_resource_delegation_factory().make_delegation(units=r.resources.get_units(),
-                                                                                                 term=r.term,
-                                                                                                 rtype=r.resources.get_type(), vector=None)
-                ticket = self.get_plugin().get_resource_delegation_factory().make_ticket(delegation=delegation, source=None)
-                cs = Ticket(ticket=ticket, plugin=self.get_plugin())
+                ticket = ResourceTicketFactory.create(issuer=self.broker_guid,
+                                                      units=r.resources.get_units(),
+                                                      term=r.term,
+                                                      rtype=r.resources.get_type())
+                cs = Ticket(resource_ticket=ticket, plugin=self.get_plugin())
                 self.update_lease_wrapper(r, r.get_approved_type(), r.get_approved_units(), cs, r.get_approved_term())
 
     def update_lease_wrapper(self, reservation: ReservationClient, rtype: ResourceType, units: int, cs: ABCConcreteSet, term: Term):
