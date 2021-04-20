@@ -62,6 +62,7 @@ services:
   pdp:
     image: fabrictestbed/authzforce-pdp:3.1.0
     container_name: orchestrator-pdp
+    restart: always
     user: ${PDP_UID:-1000}:${PDP_GID:-1000}
     networks:
       - backend
