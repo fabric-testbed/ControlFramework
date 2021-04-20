@@ -54,12 +54,10 @@ class ReservationWrapper:
             # don't attempt to compare against unrelated types
             return NotImplemented
 
-        result = 0
         if self.end == other.end:
             if self.reservation is not None and other.reservation is not None:
-                result = self.reservation.get_reservation_id() < other.reservation.get_reservation_id()
+                return self.reservation.get_reservation_id() < other.reservation.get_reservation_id()
 
-            return result
         return self.end < other.end
 
     def __str__(self):
@@ -145,7 +143,7 @@ class ReservationHoldings:
         # Find the location of key in the list.
         index = binary_search(a=self.list, x=key)
         if index < 0:
-            index = -index -1
+            index = -index - 1
 
         # Scan the upper part of the list. We need to scan the whole list.
         i = index
@@ -153,8 +151,9 @@ class ReservationHoldings:
         while i < count:
             entry = self.list[i]
 
-            if rtype is None or rtype == entry.reservation.getType() and entry.start <= time <= entry.end:
-                result.add(reservation=entry.reservation)
+            if rtype is None or rtype == entry.reservation.getType():
+                if entry.start <= time <= entry.end:
+                    result.add(reservation=entry.reservation)
             i += 1
 
         # Scan the lower part of the list until no further intersections are possible
