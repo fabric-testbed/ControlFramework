@@ -118,7 +118,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         del state['clock']
         del state['initialized']
 
-        del state['delegations']
+        #del state['delegations']
         del state['combined_broker_model']
         del state['lock']
 
@@ -161,7 +161,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.combined_broker_model = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
         self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
         self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
-        # TODO uncomment post complete integration
         self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregatedBQMPlugin, actor=self.actor,
                                                    logger=self.logger)
         self.logger.debug(f"Registered AggregateBQMPlugin")
@@ -484,7 +483,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                       msg=f"Broker currently only supports First Fit")
 
             if delegation_id is not None:
-                delegation = self.actor.get_delegation(did=delegation_id)
+                #delegation = self.actor.get_delegation(did=delegation_id)
+                delegation = self.get_delegation(did=delegation_id)
                 reservation = self.issue_ticket(reservation=reservation, units=needed, rtype=rset.get_type(), term=term,
                                                 source=delegation, sliver=sliver)
 
@@ -815,6 +815,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 return algo_str
         return BrokerAllocationAlgorithm.FirstFit.name
 
+    def get_delegation(self, *, did: str) -> ABCDelegation:
+        try:
+            self.lock.acquire()
+            return self.delegations.get(did, None)
+        finally:
+            self.lock.release()
 
 if __name__ == '__main__':
     policy = BrokerSimplerUnitsPolicy()

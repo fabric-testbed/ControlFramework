@@ -102,7 +102,7 @@ class KernelWrapper:
                                        token=id_token, logger=self.logger, actor_type=self.actor.get_type())
 
         # Note: for claim we do not need the slice object, so we use
-        # validate(ReservationID) instead of validate(Reservation).
+        # validate_delegation(delegation_id) instead of validate_delegation(delegation).
         exported = self.kernel.validate_delegation(did=delegation.get_delegation_id())
         exported.prepare(callback=callback, logger=self.logger)
         self.kernel.claim_delegation(delegation=exported)

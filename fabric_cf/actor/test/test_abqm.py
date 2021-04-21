@@ -9,12 +9,14 @@ from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQ
 """
 Test of an ABQM plugin
 """
-
-neo4j = {"url": "bolt://localhost:7687",
-         "user": "neo4j",
-         "pass": "password",
-         "import_host_dir": "/tmp/neo4j1/imports/",
-         "import_dir": "/imports"}
+import yaml
+neo4j = None
+with open("./config/config.test.yaml", 'r') as stream:
+    try:
+        config_dict = yaml.safe_load(stream)
+        neo4j = config_dict["neo4j"]
+    except yaml.YAMLError as exc:
+        print(exc)
 
 
 class ABQM_Test(unittest.TestCase):
@@ -24,6 +26,7 @@ class ABQM_Test(unittest.TestCase):
                                  import_dir=neo4j["import_dir"])
 
     def test_abqm(self):
+        self.n4j_imp.delete_all_graphs()
         # these are produced by substrate tests
         site_ads = ['../../../neo4j/RENCI-ad.graphml', '../../../neo4j/UKY-ad.graphml',
                     '../../../neo4j/LBNL-ad.graphml', '../../../neo4j/Network-ad.graphml']
