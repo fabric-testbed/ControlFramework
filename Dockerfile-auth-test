@@ -17,3 +17,4 @@ RUN cp /usr/local/lib/python3.8/site-packages/fabric_mb/message_bus/schema/*.avs
 RUN cd /usr/src/app/fabric_cf/authority
 ENTRYPOINT ["python3"]
 CMD ["-m", "fabric_cf.authority"]
+#CMD ["tail", "-f", "/dev/null"]
