@@ -240,11 +240,11 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
         u = uset.get_set().values().__iter__().__next__()
         self.assertEqual(self.my_unit, u)
 
-    def _test_a_create(self):
+    def test_a_create(self):
         authority = self.get_authority()
         self.assertIsNotNone(authority)
 
-    def _test_b_donate(self):
+    def test_b_donate(self):
         site = self.get_authority()
         policy = site.get_policy()
         self.check_before_donate_delegation(site)
@@ -275,12 +275,12 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
 
             def handle_update_lease(self, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
                 if self.waiting_for_lease:
-                    self.parent.check_incoming_lease(site, request, reservation, update_data)
+                    self.parent.check_incoming_lease(request, reservation)
                     self.waiting_for_lease = False
                     self.waiting_for_close = True
                 elif self.waiting_for_close:
                     self.parent.assertTrue(site.get_current_cycle() >= AuthorityCalendarPolicyTest.TicketEndCycle)
-                    self.parent.check_incoming_close_lease(site, request, reservation, update_data)
+                    self.parent.check_incoming_close_lease(request, reservation)
                     self.waiting_for_close = False
                 else:
                     raise AuthorityException(Constants.INVALID_STATE)
@@ -301,7 +301,7 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
 
         handler.check_termination()
 
-    def _test_d_extend_lease(self):
+    def test_d_extend_lease(self):
         site = self.get_authority()
         policy = site.get_policy()
         controller = self.get_controller()
@@ -326,12 +326,12 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
 
             def handle_update_lease(self, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
                 if self.waiting_for_lease:
-                    self.parent.check_incoming_lease(site, request, reservation, update_data)
+                    self.parent.check_incoming_lease(request, reservation)
                     self.waiting_for_lease = False
                     self.waiting_for_close = True
                 elif self.waiting_for_close:
                     self.parent.assertTrue(site.get_current_cycle() >= AuthorityCalendarPolicyTest.TicketEndCycle)
-                    self.parent.check_incoming_close_lease(site, request, reservation, update_data)
+                    self.parent.check_incoming_close_lease(request, reservation)
                     self.waiting_for_close = False
                 else:
                     raise AuthorityException(Constants.INVALID_STATE)
@@ -353,7 +353,7 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
             self.external_tick(site, cycle)
         handler.check_termination()
 
-    def _test_e_close(self):
+    def test_e_close(self):
         site = self.get_authority()
         policy = site.get_policy()
         controller = self.get_controller()
@@ -376,15 +376,13 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
 
             def handle_update_lease(self, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
                 if self.waiting_for_lease:
-                    self.parent.check_incoming_lease(authority=site, request=request, incoming=reservation,
-                                                     udd=update_data)
+                    self.parent.check_incoming_lease(request=request, incoming=reservation)
                     self.waiting_for_lease = False
                     self.waiting_for_close = True
                 elif self.waiting_for_close:
                     print(site.get_current_cycle())
                     self.parent.assertTrue(site.get_current_cycle() < AuthorityCalendarPolicyTest.TicketEndCycle)
-                    self.parent.check_incoming_close_lease(authority=site, request=request, incoming=reservation,
-                                                           udd=update_data)
+                    self.parent.check_incoming_close_lease(request=request, incoming=reservation)
                     self.waiting_for_close = False
                 else:
                     raise AuthorityException(Constants.INVALID_STATE)
