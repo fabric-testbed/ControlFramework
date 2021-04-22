@@ -12,7 +12,7 @@ with open("./config/config.test.yaml", 'r') as stream:
         print(exc)
 
 
-class BrokerPolicyTestHelper:
+class FimTestHelper:
     n4j_imp = Neo4jGraphImporter(url=neo4j["url"], user=neo4j["user"],
                                  pswd=neo4j["pass"],
                                  import_host_dir=neo4j["import_host_dir"],
@@ -24,18 +24,18 @@ class BrokerPolicyTestHelper:
         site_ads = ['../../../neo4j/RENCI-ad.graphml', '../../../neo4j/UKY-ad.graphml',
                     '../../../neo4j/LBNL-ad.graphml', '../../../neo4j/Network-ad.graphml']
 
-        cbm = Neo4jCBMGraph(importer=BrokerPolicyTestHelper.n4j_imp)
+        cbm = Neo4jCBMGraph(importer=FimTestHelper.n4j_imp)
 
         adm_ids = dict()
         result = []
 
         for ad in site_ads:
-            plain_neo4j = BrokerPolicyTestHelper.n4j_imp.import_graph_from_file_direct(graph_file=ad)
+            plain_neo4j = FimTestHelper.n4j_imp.import_graph_from_file_direct(graph_file=ad)
             print(f"Validating ARM graph {ad}")
             plain_neo4j.validate_graph()
 
             site_arm = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=plain_neo4j.graph_id,
-                                                              importer=BrokerPolicyTestHelper.n4j_imp))
+                                                              importer=FimTestHelper.n4j_imp))
             # generate a dict of ADMs from site graph ARM
             site_adms = site_arm.generate_adms()
             print('ADMS' + str(site_adms.keys()))
@@ -44,3 +44,22 @@ class BrokerPolicyTestHelper:
             site_adm = site_adms['primary']
             result.append(site_adm)
         return result
+
+    @staticmethod
+    def generate_renci_adm():
+        renci_ad = '../../../neo4j/RENCI-ad.graphml'
+        cbm = Neo4jCBMGraph(importer=FimTestHelper.n4j_imp)
+        plain_neo4j = FimTestHelper.n4j_imp.import_graph_from_file_direct(graph_file=renci_ad)
+        print(f"Validating ARM graph {renci_ad}")
+        plain_neo4j.validate_graph()
+
+        site_arm = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=plain_neo4j.graph_id,
+                                                          importer=FimTestHelper.n4j_imp))
+        # generate a dict of ADMs from site graph ARM
+        site_adms = site_arm.generate_adms()
+        print('ADMS' + str(site_adms.keys()))
+
+        # desired ADM is under 'primary'
+        site_adm = site_adms['primary']
+
+        return site_arm, site_adm

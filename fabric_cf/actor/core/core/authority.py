@@ -216,7 +216,8 @@ class Authority(ActorMixin, ABCAuthority):
     def freed(self, *, resources: ResourceSet):
         self.policy.freed(resources=resources)
 
-    def redeem(self, *, reservation: ABCReservationMixin, callback: ABCControllerCallbackProxy = None, caller: AuthToken = None):
+    def redeem(self, *, reservation: ABCReservationMixin, callback: ABCControllerCallbackProxy = None,
+               caller: AuthToken = None):
         if callback is None and caller is None:
             if not self.recovered:
                 self.redeeming.add(reservation=reservation)

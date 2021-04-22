@@ -81,8 +81,8 @@ class KernelWrapper:
         """
         self.kernel.await_nothing_pending()
 
-    def claim_delegation_request(self, *, delegation: ABCDelegation, caller: AuthToken, callback: ABCClientCallbackProxy,
-                                 id_token: str = None):
+    def claim_delegation_request(self, *, delegation: ABCDelegation, caller: AuthToken,
+                                 callback: ABCClientCallbackProxy, id_token: str = None):
         """
         Processes a request to claim a pre-advertised delegation
 
@@ -107,8 +107,8 @@ class KernelWrapper:
         exported.prepare(callback=callback, logger=self.logger)
         self.kernel.claim_delegation(delegation=exported)
 
-    def reclaim_delegation_request(self, *, delegation: ABCDelegation, caller: AuthToken, callback: ABCClientCallbackProxy,
-                                   id_token: str = None):
+    def reclaim_delegation_request(self, *, delegation: ABCDelegation, caller: AuthToken,
+                                   callback: ABCClientCallbackProxy, id_token: str = None):
         """
         Processes a request to re-claim a pre-claimed delegation
 
@@ -658,7 +658,7 @@ class KernelWrapper:
                         self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestRedeem)
 
                 reservation.prepare(callback=callback, logger=self.logger)
-                self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True)
+                self.handle_reserve(reservation=reservation, identity=caller, create_new_slice=True)
             else:
                 reservation.set_logger(self.logger)
                 self.handle_reserve(reservation=reservation, identity=reservation.get_client_auth_token(),
@@ -689,6 +689,28 @@ class KernelWrapper:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.register_reservation(reservation=reservation)
+
+    def register_delegation(self, *, delegation: ABCDelegation):
+        """
+        Registers the given delegation with the kernel. Adds a database record
+        for the delegation. The containing slice should have been previously
+        registered with the kernel and no database record should exist. When
+        registering a delegation with an existing database record use
+        #re_register_delegation(ABCDelegation)}. Only delegations
+        that are not closed or failed can be registered. Closed or failed
+        delegations will be ignored.
+        @param delegation the delegation to register
+        @throws IllegalArgumentException when the passed in argument is illegal
+        @throws Exception if the delegation has already been registered with the
+                    kernel.
+        @throws RuntimeException when a database error occurs. In this case the
+                    delegation will be unregistered from the kernel data
+                    structures.
+        """
+        if delegation is None or not isinstance(delegation, ABCDelegation):
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        self.kernel.register_delegation(delegation=delegation)
 
     def register_slice(self, *, slice_object: ABCSlice):
         """
@@ -892,11 +914,11 @@ class KernelWrapper:
                     else:
                         # This is a new reservation. No need to check sequence numbers
                         reservation.prepare(callback=callback, logger=self.logger)
-                        self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True)
+                        self.handle_reserve(reservation=reservation, identity=caller, create_new_slice=True)
                 else:
                     # New reservation for a new slice.
                     reservation.prepare(callback=callback, logger=self.logger)
-                    self.handle_reserve(reservation=reservation, identity=callback, create_new_slice=True)
+                    self.handle_reserve(reservation=reservation, identity=caller, create_new_slice=True)
             else:
                 # This is most likely a reservation being recovered. Do not compare sequence numbers,
                 # just trigger reserve.

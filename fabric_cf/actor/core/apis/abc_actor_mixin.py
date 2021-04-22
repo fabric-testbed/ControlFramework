@@ -603,6 +603,18 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
+    def register_delegation(self, *, delegation: ABCDelegation):
+        """
+        Registers the delegation with the actor. The delegation must not have been previously
+        registered with the actor: there should be no database record for the delegation.
+
+        Args:
+            delegation: delegation to register
+        Raises:
+            Exception in case of error
+        """
+
+    @abstractmethod
     def remove_reservation(self, *, reservation: ABCReservationMixin = None, rid: ID = None):
         """
         Removes the specified reservation. Note: the reservation must have already been registered with the actor.

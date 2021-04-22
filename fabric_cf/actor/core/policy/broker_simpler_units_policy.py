@@ -118,7 +118,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         del state['clock']
         del state['initialized']
 
-        #del state['delegations']
+        del state['delegations']
         del state['combined_broker_model']
         del state['lock']
 

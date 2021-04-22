@@ -175,7 +175,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
 
-    def compare_and_update(self, *, incoming: ABCKernelServerReservationMixin, current: ABCKernelServerReservationMixin):
+    def compare_and_update(self, *, incoming: ABCKernelServerReservationMixin,
+                           current: ABCKernelServerReservationMixin):
         """
         Compares the incoming request to the corresponding reservation stored at
         this actor. First compares sequence numbers. If the incoming request has
@@ -846,7 +847,7 @@ class Kernel:
         except Exception as e:
             self.slices.remove(slice_id=slice_object.get_slice_id())
             self.logger.error(traceback.format_exc())
-            self.error(err="could not reregister slice", e=e)
+            self.error(err="could not re-register slice", e=e)
 
     def reserve(self, *, reservation: ABCKernelReservation):
         """

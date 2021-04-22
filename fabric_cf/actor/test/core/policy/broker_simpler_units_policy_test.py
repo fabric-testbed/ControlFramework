@@ -57,7 +57,7 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
 from fabric_cf.actor.test.base_test_case import BaseTestCase
 from fabric_cf.actor.test.client_callback_helper import ClientCallbackHelper
-from fabric_cf.actor.test.core.policy.broker_policy_test_helper import BrokerPolicyTestHelper
+from fabric_cf.actor.test.core.policy.fim_test_helper import FimTestHelper
 from fabric_cf.actor.test.dummy_authority_proxy import DummyAuthorityProxy
 
 
@@ -82,11 +82,11 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
     broker = None
 
     def setUp(self) -> None:
-        self.adms = BrokerPolicyTestHelper.generate_adms()
+        self.adms = FimTestHelper.generate_adms()
         PluggableRegistry.instance.clear()
 
     def tearDown(self) -> None:
-        BrokerPolicyTestHelper.n4j_imp.delete_all_graphs()
+        FimTestHelper.n4j_imp.delete_all_graphs()
 
     def get_broker(self, *, name: str = BaseTestCase.broker_name, guid: ID = BaseTestCase.broker_guid) -> ABCBrokerMixin:
         db = self.get_container_database()

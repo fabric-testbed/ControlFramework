@@ -628,6 +628,9 @@ class ActorMixin(ABCActorMixin):
     def register_slice(self, *, slice_object: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_object)
 
+    def register_delegation(self, *, delegation: ABCDelegation):
+        self.wrapper.register_delegation(delegation=delegation)
+
     def remove_reservation(self, *, reservation: ABCReservationMixin = None, rid: ID = None):
         if reservation is not None:
             self.wrapper.remove_reservation(rid=reservation.get_reservation_id())
