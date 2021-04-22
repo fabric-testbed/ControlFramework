@@ -106,8 +106,8 @@ services:
       - ${NEO4DATA_HOST:-.}/neo4j1/data:/data
       - ${NEO4DATA_HOST:-.}/neo4j1/imports:/imports
       - ${NEO4DATA_HOST:-.}/neo4j1/logs:/logs
-      - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
-      - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+      - ${NEO4DATA_HOST:-.}/ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ${NEO4DATA_HOST:-.}/ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
       - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
       - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:7687
@@ -129,8 +129,8 @@ services:
       - ${NEO4DATA_HOST:-.}/neo4j2/data:/data
       - ${NEO4DATA_HOST:-.}/neo4j2/imports:/imports
       - ${NEO4DATA_HOST:-.}/neo4j2/logs:/logs
-      - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
-      - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+      - ${NEO4DATA_HOST:-.}/ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ${NEO4DATA_HOST:-.}/ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
       - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
       - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:8687
@@ -152,8 +152,8 @@ services:
       - ${NEO4DATA_HOST:-.}/neo4j3/data:/data
       - ${NEO4DATA_HOST:-.}/neo4j3/imports:/imports
       - ${NEO4DATA_HOST:-.}/neo4j3/logs:/logs
-      - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
-      - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+      - ${NEO4DATA_HOST:-.}/ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ${NEO4DATA_HOST:-.}/ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
       - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
       - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:9687
