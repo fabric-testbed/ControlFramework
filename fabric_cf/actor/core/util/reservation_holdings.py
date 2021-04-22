@@ -50,6 +50,8 @@ class ReservationWrapper:
                 self.reservation.get_reservation_id() == other.reservation.get_reservation_id())
 
     def __lt__(self, other):
+        result = 0
+
         if not isinstance(other, ReservationWrapper):
             # don't attempt to compare against unrelated types
             return NotImplemented

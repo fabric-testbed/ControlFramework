@@ -43,15 +43,6 @@ class ABCAuthority(ABCServerActor):
     """
     IAuthority defines the interface for an actor acting in the authority role.
     """
-    @abstractmethod
-    def donate_delegation(self, *, delegation: ABCDelegation):
-        """
-        Accepts delegations to be merged to Model.
-
-        @param delegation delegation
-
-        @raises Exception in case of error
-        """
 
     @abstractmethod
     def eject(self, *, resources: ResourceSet):

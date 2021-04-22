@@ -136,6 +136,10 @@ class Broker(ActorMixin, ABCBrokerMixin):
     def register_client_slice(self, *, slice_obj: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_obj)
 
+    def donate_delegation(self, *, delegation: ABCDelegation):
+        ## This function is used by AUTs
+        self.policy.donate_delegation(delegation=delegation)
+
     def bid(self, *, cycle: int):
         """
         Bids for resources as dictated by the bidding policy for the current cycle.

@@ -970,7 +970,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                 # If subsequent lease updates come in (e.g., for an extend)
                 # before we have cleared the initial one, then
                 # rset.serviceUpdate should now do the right thing.
-    
+
                 self.update_slice_graph(sliver=self.leased_resources.sliver)
 
     def service_update_ticket(self):

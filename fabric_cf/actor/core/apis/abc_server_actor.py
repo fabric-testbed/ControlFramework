@@ -48,6 +48,16 @@ class ABCServerActor(ABCActorMixin):
     acting as servers for other actors (brokers and site authorities).
     """
     @abstractmethod
+    def donate_delegation(self, *, delegation: ABCDelegation):
+        """
+        Accepts delegations to be merged to Model.
+
+        @param delegation delegation
+
+        @raises Exception in case of error
+        """
+
+    @abstractmethod
     def register_client_slice(self, *, slice_obj: ABCSlice):
         """
         Registers a new client slice.

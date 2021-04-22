@@ -189,6 +189,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         broker_delegation = BrokerDelegationFactory.create(adm.graph_id, slice_id=slice_obj.get_slice_id(),
                                                            broker=broker)
         broker_delegation.set_graph(graph=adm)
+        broker_delegation.set_slice_object(slice_object=slice_obj)
         return broker_delegation
 
     def test_a_create(self):
@@ -218,7 +219,9 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         inv_slice.set_inventory(value=True)
         source = self.get_source_delegation(self.broker, inv_slice)
 
-        self.broker.get_policy().donate_delegation(delegation=source)
+        self.broker.register_slice(slice_object=inv_slice)
+        self.broker.register_delegation(delegation=source)
+        self.broker.donate_delegation(delegation=source)
 
         cycle = 1
         self.broker.external_tick(cycle=cycle)
@@ -267,7 +270,9 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         inv_slice.set_inventory(value=True)
         source = self.get_source_delegation(self.broker, inv_slice)
 
-        self.broker.get_policy().donate_delegation(delegation=source)
+        self.broker.register_slice(slice_object=inv_slice)
+        self.broker.register_delegation(delegation=source)
+        self.broker.donate_delegation(delegation=source)
 
         cycle = 1
         broker.external_tick(cycle=cycle)
@@ -326,7 +331,9 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         inv_slice.set_inventory(value=True)
         source = self.get_source_delegation(self.broker, inv_slice)
 
-        self.broker.get_policy().donate_delegation(delegation=source)
+        self.broker.register_slice(slice_object=inv_slice)
+        self.broker.register_delegation(delegation=source)
+        self.broker.donate_delegation(delegation=source)
 
         cycle = 1
         broker.external_tick(cycle=cycle)
@@ -375,9 +382,11 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         adm_list_len = len(self.adms)
         adm_list_len -= 1
 
+        self.broker.register_slice(slice_object=slice_obj)
         for i in range(0, adm_list_len):
             source = self.get_source_delegation(self.broker, slice_obj, adm_index=i)
-            policy.donate_delegation(delegation=source)
+            self.broker.register_delegation(delegation=source)
+            self.broker.donate_delegation(delegation=source)
 
             self.assertEqual(i + 1, len(policy.delegations))
 
@@ -398,10 +407,12 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         adm_list_len = len(self.adms)
         adm_list_len -= 1
 
+        self.broker.register_slice(slice_object=slice_obj)
         for i in range(0, adm_list_len):
             request = BrokerPolicy.get_resource_pools_query(level=i+1)
             source = self.get_source_delegation(self.broker, slice_obj, adm_index=i)
-            policy.donate_delegation(delegation=source)
+            self.broker.register_delegation(delegation=source)
+            self.broker.donate_delegation(delegation=source)
 
             response = policy.query(p=request)
             print(response)
@@ -424,7 +435,9 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         slice_obj.set_inventory(value=True)
 
         source = self.get_source_delegation(self.broker, slice_obj)
-        self.broker.get_policy().donate_delegation(delegation=source)
+        self.broker.register_slice(slice_object=slice_obj)
+        self.broker.register_delegation(delegation=source)
+        self.broker.donate_delegation(delegation=source)
 
         cycle = 1
         broker.external_tick(cycle=cycle)
@@ -476,7 +489,9 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         slice_obj.set_inventory(value=True)
 
         source = self.get_source_delegation(self.broker, slice_obj)
-        self.broker.get_policy().donate_delegation(delegation=source)
+        self.broker.register_slice(slice_object=slice_obj)
+        self.broker.register_delegation(delegation=source)
+        self.broker.donate_delegation(delegation=source)
 
         cycle = 1
         broker.external_tick(cycle=cycle)
