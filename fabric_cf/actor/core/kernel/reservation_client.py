@@ -957,21 +957,21 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         self.service_pending = JoinState.None_
 
     def service_update_lease(self):
-        if self.leased_resources is not None and self.last_lease_update.successful() and \
-                self.joinstate != JoinState.BlockedJoin:
-            # An update() was called above, so we must clear it. Update()
-            # must be called in every success case, and must not be called
-            # in any failure case. But: if the reservation is in
-            # BlockedJoin, then leave the update unserviced until a future
-            # probePending.
-            self.leased_resources.service_update(reservation=self)
-            self.set_dirty()
+        if self.leased_resources is not None and self.last_lease_update.successful():
+            if self.joinstate != JoinState.BlockedJoin:
+                # An update() was called above, so we must clear it. Update()
+                # must be called in every success case, and must not be called
+                # in any failure case. But: if the reservation is in
+                # BlockedJoin, then leave the update unserviced until a future
+                # probePending.
+                self.leased_resources.service_update(reservation=self)
+                self.set_dirty()
 
-            # If subsequent lease updates come in (e.g., for an extend)
-            # before we have cleared the initial one, then
-            # rset.serviceUpdate should now do the right thing.
-
-            self.update_slice_graph(sliver=self.leased_resources.sliver)
+                # If subsequent lease updates come in (e.g., for an extend)
+                # before we have cleared the initial one, then
+                # rset.serviceUpdate should now do the right thing.
+    
+                self.update_slice_graph(sliver=self.leased_resources.sliver)
 
     def service_update_ticket(self):
         if self.last_ticket_update.successful():

@@ -56,7 +56,8 @@ class ReservationWrapper:
 
         if self.end == other.end:
             if self.reservation is not None and other.reservation is not None:
-                return self.reservation.get_reservation_id() < other.reservation.get_reservation_id()
+                result = self.reservation.get_reservation_id() < other.reservation.get_reservation_id()
+            return result
 
         return self.end < other.end
 
