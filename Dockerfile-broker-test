@@ -1,0 +1,21 @@
+FROM python:3.9.0
+MAINTAINER Komal Thareja<komal.thareja@gmail.com>
+
+RUN mkdir -p /usr/src/app
+WORKDIR /usr/src/app
+VOLUME ["/usr/src/app"]
+
+#RUN pip3 install --upgrade pip
+
+EXPOSE 11000
+
+COPY . /usr/src/app/
+RUN pip3 install --no-cache-dir -r requirements.txt
+RUN mkdir -p "/etc/fabric/message_bus/schema"
+RUN mkdir -p "/etc/fabric/actor/config"
+RUN mkdir -p "/var/log/actor"
+RUN cp /usr/local/lib/python3.9/site-packages/fabric_mb/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
+
+RUN cd /usr/src/app/fabric_cf/broker
+ENTRYPOINT ["python3"]
+CMD ["-m", "fabric_cf.broker"]
