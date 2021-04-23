@@ -71,14 +71,14 @@ database:
   - db-user: fabric
   - db-password: fabric
   - db-name: orchestrator
-  - db-host: localhost:5432
+  - db-host: database:5432
 
 pdp:
   url: http://localhost:8082/services/pdp
   enable: False
 
 neo4j:
-  url: bolt://localhost:9687
+  url: bolt://neoj3:9687
   user: neo4j
   pass: password
   import_host_dir: /usr/src/app/neo4j/imports/

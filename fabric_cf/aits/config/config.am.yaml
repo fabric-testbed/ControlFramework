@@ -75,7 +75,7 @@ database:
   - db-user: fabric
   - db-password: fabric
   - db-name: am
-  - db-host: localhost:5432
+  - db-host: database:5432
 
 container:
   - container.guid: site1-am-conainer
@@ -104,7 +104,7 @@ pdp:
   enable: False
 
 neo4j:
-  url: bolt://localhost:7687
+  url: bolt://neo4j1:7687
   user: neo4j
   pass: password
   import_host_dir: /usr/src/app/neo4j/imports/
