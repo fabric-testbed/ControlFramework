@@ -51,13 +51,13 @@ class UnitTest(BaseTestCase, unittest.TestCase):
         return GlobalsSingleton.get().get_container().get_actor().get_plugin().get_database()
 
     def test_unit(self):
-        uid = ID()
-        u1 = Unit(uid=uid)
+        rid = ID()
+        u1 = Unit(rid=rid)
         self.assertIsNotNone(u1.get_id())
         self.assertEqual(UnitState.DEFAULT, u1.get_state())
         self.assertIsNone(u1.get_property(name="foo"))
         self.assertIsNone(u1.get_parent_id())
-        self.assertIsNone(u1.get_reservation_id())
+        self.assertIsNotNone(u1.get_reservation_id())
         self.assertIsNone(u1.get_slice_id())
         self.assertIsNone(u1.get_actor_id())
 
@@ -69,7 +69,6 @@ class UnitTest(BaseTestCase, unittest.TestCase):
 
         db = self.make_actor_database()
 
-        rid = ID()
         slice_id = ID()
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         actor_id = GlobalsSingleton.get().get_container().get_actor().get_guid()
@@ -95,4 +94,4 @@ class UnitTest(BaseTestCase, unittest.TestCase):
 
         db.add_unit(u=u1)
 
-        self.assertIsNotNone(db.get_unit(uid=uid))
+        self.assertIsNotNone(db.get_unit(uid=rid))

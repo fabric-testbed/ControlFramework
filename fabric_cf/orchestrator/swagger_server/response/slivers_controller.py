@@ -54,8 +54,7 @@ def slivers_modify_sliver_idput(body, sliver_id, slice_id):  # noqa: E501
 
     :rtype: Success
     """
-    if connexion.request.is_json:
-        body = str.from_dict(connexion.request.get_json())  # noqa: E501
+    sliver_body = body.decode("utf-8")
     return 'do some magic!'
 
 
@@ -72,8 +71,7 @@ def slivers_poa_sliver_idpost(body, sliver_id):  # noqa: E501
 
     :rtype: Success
     """
-    if connexion.request.is_json:
-        body = str.from_dict(connexion.request.get_json())  # noqa: E501
+    slice_graph = body.decode("utf-8")
     return 'do some magic!'
 
 

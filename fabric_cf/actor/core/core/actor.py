@@ -355,14 +355,9 @@ class ActorMixin(ABCActorMixin):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
 
         if not self.initialized:
-            if self.identity is None:
-                raise ActorException("The actor is not properly created: no identity")
-
-            if self.plugin is None:
-                raise ActorException("The actor is not properly created: no plugin")
-
-            if self.policy is None:
-                raise ActorException("The actor is not properly created: no policy")
+            if self.identity is None or self.plugin is None or self.policy is None:
+                raise ActorException(f"The actor is not properly created: identity: {self.identity} "
+                                     f"plugin: {self.plugin} policy: {self.policy}")
 
             if self.name is None:
                 self.name = self.identity.get_name()
@@ -632,6 +627,9 @@ class ActorMixin(ABCActorMixin):
 
     def register_slice(self, *, slice_object: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_object)
+
+    def register_delegation(self, *, delegation: ABCDelegation):
+        self.wrapper.register_delegation(delegation=delegation)
 
     def remove_reservation(self, *, reservation: ABCReservationMixin = None, rid: ID = None):
         if reservation is not None:

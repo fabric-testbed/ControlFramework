@@ -62,7 +62,7 @@ class SubstrateDatabaseTest(ActorDatabaseTest):
         db.add_reservation(reservation=res)
 
         rtype = ResourceType(resource_type="12")
-        u = Unit(uid=ID(), rid=res.get_reservation_id(), slice_id=slice_obj.get_slice_id(), actor_id=actor.get_guid())
+        u = Unit(rid=res.get_reservation_id(), slice_id=slice_obj.get_slice_id(), actor_id=actor.get_guid())
         u.set_resource_type(rtype=rtype)
         db.add_unit(u=u)
 

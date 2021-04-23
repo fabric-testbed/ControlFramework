@@ -28,28 +28,23 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  - plugin-dir: ./plugins
-  - kafka-server: 152.54.14.213:29092
-  - kafka-schema-registry-url: http://152.54.14.213:8081
-  - kafka-key-schema: ../../schema/key.avsc
-  - kafka-value-schema: ../../schema/message.avsc
-  - kafka-ssl-ca-location:  ../../../../../secrets/snakeoil-ca-1.crt
-  - kafka-ssl-certificate-location:  ../../../../../secrets//kafkacat1-ca1-signed.pem
-  - kafka-ssl-key-location:  ../../../../../secrets/kafkacat1.client.key
+  - kafka-server: broker1:9092
+  - kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
+  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
+  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
+  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
   - kafka-group-id: fabric-cf
-  - kafka-sasl-mechanism:
-  - kafka-sasl-producer-username:
-  - kafka-sasl-producer-password:
-  - kafka-sasl-consumer-username:
-  - kafka-sasl-consumer-password:
-  - prometheus.port: 11000
+  - orchestrator.rest.port: 8700
+  - prometheus.port: 11002
 
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: .
+  - log-directory: /var/log/actor
 
   ## The filename to be used for actor's log file.
   - log-file: actor.log
@@ -64,21 +59,33 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   - log-size: 5000000
 
-  - logger: broker
+  - logger: orchestrator
 
 oauth:
   - jwks-url: https://dev-2.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
   - key-refresh: 00:10:00
+  - verify-exp: False
 
 database:
   - db-user: fabric
   - db-password: fabric
-  - db-name: test
-  - db-host: localhost:5432
+  - db-name: orchestrator
+  - db-host: database:5432
+
+pdp:
+  url: http://localhost:8082/services/pdp
+  enable: False
+
+neo4j:
+  url: bolt://neo4j3:9687
+  user: neo4j
+  pass: password
+  import_host_dir: /usr/src/app/neo4j/imports/
+  import_dir: /imports
 
 container:
-  - container.guid: broker-conainer
+  - container.guid: orchestrator-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -92,6 +99,7 @@ time:
 
   # Internal tick length (in milliseconds)
   - time.cycleMillis: 1000
+
   # The number of the first tick
   - time.firstTick: 0
 
@@ -99,34 +107,21 @@ time:
   # manually (true)
   - time.manual: false
 
-pdp:
-  url: http://broker-pdp:8080/services/pdp
-
-neo4j:
-  url: bolt://localhost:7687
-  user: fim
-  pass: password
-  import_host_dir: ../../../neo4j1/imports/
-  import_dir: /imports
-
 actor:
-  - type: broker
-  - name: broker
-  - guid: broker-guid
-  - description: Broker
-  - kafka-topic: broker-topic
-  - controls:
-      - control:
-          - type: VM, Container, Baremetal
-          - class: NetworkNodeInventory
-          - module: fabric_cf.actor.core.policy.network_node_inventory
-
+  - type: orchestrator
+  - name: orchestrator
+  - guid: orchestrator-guid
+  - description: orchestrator
+  - kafka-topic: orchestrator-topic
+  - policy:
+      - module: fabric_cf.actor.core.policy.controller_ticket_review_policy
+      - class: ControllerTicketReviewPolicy
 peers:
   - peer:
-    - name: orchestrator
-    - type: orchestrator
-    - guid: orchestrator-guid
-    - kafka-topic: orchestrator-topic
+    - name: broker
+    - type: broker
+    - guid: broker-guid
+    - kafka-topic: broker-topic
   - peer:
     - name: net1-am
     - guid: net1-am-guid

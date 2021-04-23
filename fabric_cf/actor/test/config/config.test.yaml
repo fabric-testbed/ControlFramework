@@ -28,13 +28,12 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  - plugin-dir: ./plugins
   - kafka-server: 152.54.14.213:29092
   - kafka-schema-registry-url: http://152.54.14.213:8081
   - kafka-key-schema: ./schema/key.avsc
   - kafka-value-schema: ./schema/message.avsc
   - kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
-  - kafka-ssl-certificate-location:  ../../../secrets//kafkacat1-ca1-signed.pem
+  - kafka-ssl-certificate-location:  ../../../secrets/kafkacat1-ca1-signed.pem
   - kafka-ssl-key-location:  ../../../secrets/kafkacat1.client.key
   - kafka-ssl-key-password:  fabric
   - kafka-security-protocol: SSL
@@ -70,6 +69,7 @@ oauth:
   - jwks-url: https://dev-2.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
   - key-refresh: 00:10:00
+  - verify-exp: False
 
 database:
   - db-user: fabric
@@ -100,11 +100,12 @@ time:
   - time.manual: false
 
 pdp:
-  url: http://site1-am-pdp:8080/services/pdp
+  url: http://localhost:8082/services/pdp
+  enable: False
 
 neo4j:
   url: bolt://localhost:7687
-  user: fim
+  user: neo4j
   pass: password
   import_host_dir: ../../../neo4j1/imports/
   import_dir: /imports
@@ -115,7 +116,10 @@ actor:
   - guid: site1-am-guid
   - description: Site AM
   - kafka-topic: site1-am-topic
-  - substrate.file: ../../../fim/site-am-2broker-ad-enumerated.graphml
+  - substrate.file: ../../../neo4j/RENCI-ad.graphml
+  - policy:
+      - module: fabric_cf.actor.core.policy.authority_calendar_policy
+      - class: AuthorityCalendarPolicy
   - resources:
       - resource:
         - type: VM
@@ -124,14 +128,12 @@ actor:
         - handler:
           - module: fabric_cf.actor.handlers.no_op_handler
           - class: NoOpHandler
-          - properties:
-              - playbooks: ../../ansible/vm/
-              - playbook_mapping: ../../ansible/vm/vm.properties
   - controls:
       - control:
           - type: VM, Container, Baremetal
           - module: fabric_cf.actor.core.policy.network_node_control
           - class: NetworkNodeControl
+
 peers:
   - peer:
     - name: orchestrator
@@ -143,4 +145,4 @@ peers:
     - type: broker
     - guid: broker-guid
     - kafka-topic: broker-topic
-    - delegation: del1
+    - delegation: primary

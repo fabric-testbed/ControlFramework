@@ -9,6 +9,11 @@
 			{
 				"name": "guid",
 				"type": "string"
+			},
+			{
+				"name": "oidc_sub_claim",
+				"type": ["null", "string"],
+				"default": null
 			}
 		]
 	},
@@ -86,8 +91,46 @@
 	    "namespace": "fabric.cf.model",
         "name": "UnitRecord",
         "type": "record",
-        "fields": [
-			{
+        "fields": [{
+                "name": "reservation_id",
+                "type": "string"
+            },
+            {
+                "name": "rtype",
+                "type": ["null", "string"],
+                "default": null
+            },
+            {
+                "name": "sliver",
+                "type": ["null", "bytes"],
+                "default": null
+            },
+            {
+                "name": "parent_id",
+                "type": ["null", "string"],
+                "default": null
+            },
+            {
+                "name": "state",
+                "type": ["null", "int"],
+                "default": null
+            },
+            {
+                "name": "sequence",
+                "type": ["null", "int"],
+                "default": null
+            },
+            {
+                "name": "slice_id",
+                "type": ["null", "string"],
+                "default": null
+            },
+            {
+                "name": "actor_id",
+                "type": ["null", "string"],
+                "default": null
+            },
+            {
                 "name": "properties",
                 "type": ["null", {
                     "type": "map",
@@ -203,32 +246,8 @@
 				"type": ["null", "string"],
 				"default": null
 			},
-			{
-                "name": "local_properties",
-                "type": ["null", {
-                    "type": "map",
-                    "values": "string"
-                }],
-                "default": null
-            },
-            {
-                "name": "request_properties",
-                "type": ["null", {
-                    "type": "map",
-                    "values": "string"
-                }],
-                "default": null
-            },
             {
                 "name": "config_properties",
-                "type": ["null", {
-                    "type": "map",
-                    "values": "string"
-                }],
-                "default": null
-            },
-            {
-                "name": "resource_properties",
                 "type": ["null", {
                     "type": "map",
                     "values": "string"
@@ -246,12 +265,22 @@
 				"default": null
 			},
 			{
+				"name": "state",
+				"type": ["null", "int"],
+				"default": null
+			},
+			{
 				"name": "client_slice",
 				"type": ["null", "boolean"],
 				"default": null
 			},
 			{
 				"name": "broker_client_slice",
+				"type": ["null", "boolean"],
+				"default": null
+			},
+			{
+				"name": "inventory",
 				"type": ["null", "boolean"],
 				"default": null
 			}
@@ -406,9 +435,101 @@
 			{
 				"name": "notices",
 				"type": "string"
+			},
+			{
+				"name": "sliver",
+				"type": ["null", "bytes"],
+				"default": null
 			}
         ]
     },
+    {
+        "namespace": "fabric.cf.model",
+        "type": "record",
+		"name": "TermRecord",
+        "fields": [{
+                "name": "start_time",
+                "type": "long"
+            },
+            {
+                "name": "end_time",
+                "type": "long"
+            },
+            {
+                "name": "ticket_time",
+                "type": ["null", "long"],
+                "default": null
+            },
+            {
+                "name": "new_start_time",
+                "type": ["null", "long"],
+                "default": null
+            }
+        ]
+    },
+    {
+		"namespace": "fabric.cf.model",
+		"type": "record",
+		"name": "ResourceTicketRecord",
+		"fields": [{
+				"name": "guid",
+				"type": "string"
+			},
+			{
+				"name": "term",
+				"type": ["null", "fabric.cf.model.TermRecord"],
+				"default": null
+			},
+			{
+				"name": "units",
+				"type": "int"
+			},
+			{
+                "name": "properties",
+                "type": ["null", {
+                    "type": "map",
+                    "values": "string"
+                }],
+                "default": null
+            },
+            {
+				"name": "type",
+				"type": "string"
+			},
+			{
+				"name": "issuer",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "holder",
+				"type": ["null", "string"],
+			    "default": null
+			}
+		]
+	},
+    {
+		"namespace": "fabric.cf.model",
+		"type": "record",
+		"name": "TicketRecord",
+		"fields": [{
+				"name": "authority",
+				"type": "fabric.cf.model.AuthRecord"
+			},
+		    {
+				"name": "old_units",
+				"type": "int"
+			},
+			{
+				"name": "resource_ticket",
+				"type": "fabric.cf.model.ResourceTicketRecord"
+			},
+			{
+			    "name": "delegation_id",
+			    "type": "string"
+			}
+		]
+	},
     {
         "namespace": "fabric.cf.model",
         "name": "ReservationRecord",
@@ -430,29 +551,7 @@
 			},
             {
                 "name": "term",
-                "type": {
-                    "type": "record",
-                    "name": "term",
-                    "fields": [{
-                            "name": "start_time",
-                            "type": "long"
-                        },
-                        {
-                            "name": "end_time",
-                            "type": "long"
-                        },
-                        {
-                            "name": "ticket_time",
-                            "type": ["null", "long"],
-                            "default": null
-                        },
-                        {
-                            "name": "new_start_time",
-                            "type": ["null", "long"],
-                            "default": null
-                        }
-                    ]
-                }
+                "type": "fabric.cf.model.TermRecord"
             },
             {
                 "name": "resource_set",
@@ -468,40 +567,21 @@
                             "type": "string"
                         },
                         {
-                            "name": "resource_data",
-                            "type": {
-                                "name": "resource_data",
-                                "type": "record",
-                                "fields": [{
-                                        "name": "request_properties",
-                                        "type": ["null", {
-                                            "type": "map",
-                                            "values": "string"
-                                        }],
-                                        "default": null
-                                    },
-                                    {
-                                        "name": "config_properties",
-                                        "type": ["null", {
-                                            "type": "map",
-                                            "values": "string"
-                                        }],
-                                        "default": null
-                                    },
-                                    {
-                                        "name": "resource_properties",
-                                        "type": ["null", {
-                                            "type": "map",
-                                            "values": "string"
-                                        }],
-                                        "default": null
-                                    }
-                                ]
-                            }
+                            "name": "sliver",
+                            "type": ["null", "bytes"],
+                            "default": null
                         },
                         {
-                            "name": "concrete",
-                            "type": ["null", "bytes"],
+                            "name": "ticket",
+                            "type": ["null", "fabric.cf.model.TicketRecord"],
+                            "default": null
+                        },
+                        {
+                            "name": "unit_set",
+                            "type": ["null", {
+                                "type":"array",
+                                "items" : "fabric.cf.model.UnitRecord"
+                            }],
                             "default": null
                         }
                     ]
@@ -866,6 +946,11 @@
 				"default": null
 			},
 			{
+				"name": "slice_name",
+				"type": ["null", "string"],
+				"default": null
+			},
+			{
 				"name": "reservation_id",
 				"type": ["null", "string"],
 				"default": null
@@ -908,6 +993,11 @@
 			{
 				"name": "id_token",
 				"type": ["null", "string"],
+				"default": null
+			},
+			{
+				"name": "level",
+				"type": ["null", "int"],
 				"default": null
 			}
 		]

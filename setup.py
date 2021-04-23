@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 
 
 NAME = "fabric-cf"
-VERSION = "0.20"
+VERSION = "0.21"
 # To install the library, run the following
 #
 # python setup.py install

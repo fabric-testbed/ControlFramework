@@ -161,7 +161,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.combined_broker_model = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
         self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
         self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
-        # TODO uncomment post complete integration
         self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregatedBQMPlugin, actor=self.actor,
                                                    logger=self.logger)
         self.logger.debug(f"Registered AggregateBQMPlugin")
@@ -471,11 +470,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             # no candidate nodes found
             if len(node_id_list) == 0:
+                self.logger.error(f'No candidates nodes found to serve {reservation}')
                 return False, node_id_to_reservations
 
             delegation_id = None
             sliver = None
-            # FIXME: walk the list to find First/Best/Worst fit
             if self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.FirstFit.name.lower():
                 delegation_id, sliver = self.__find_first_fit(node_id_list=node_id_list,
                                                               node_id_to_reservations=node_id_to_reservations,

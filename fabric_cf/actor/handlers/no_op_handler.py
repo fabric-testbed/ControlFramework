@@ -41,11 +41,9 @@ class NoOpHandler(HandlerBase):
         result = None
         try:
             self.logger.info(f"Create invoked for unit: {unit}")
-            time.sleep(5)
             unit.sliver.state = 'active'
             unit.sliver.instance_name = 'instance_001'
             unit.sliver.management_ip = '1.2.3.4'
-            #unit.sliver.management_interface_mac_address = 'fa:cb:ff:ee:ww'
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
@@ -64,7 +62,6 @@ class NoOpHandler(HandlerBase):
         result = None
         try:
             self.logger.info(f"Delete invoked for unit: {unit}")
-            time.sleep(5)
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_DELETE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
@@ -83,7 +80,6 @@ class NoOpHandler(HandlerBase):
         result = None
         try:
             self.logger.info(f"Modify invoked for unit: {unit}")
-            time.sleep(5)
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_MODIFY,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}

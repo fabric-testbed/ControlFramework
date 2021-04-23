@@ -26,6 +26,7 @@
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
@@ -68,6 +69,13 @@ class ClientCallbackHelper(ABCClientCallbackProxy):
 
     def get_type(self):
         return Constants.PROTOCOL_LOCAL
+
+    def prepare_update_delegation(self, *, delegation: ABCDelegation, update_data: UpdateData,
+                                  callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
+        raise NotImplementedError
+
+    def set_logger(self, *, logger):
+        pass
 
     def prepare_update_ticket(self, *, reservation: ABCBrokerReservation, update_data: UpdateData,
                               callback: ABCCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:

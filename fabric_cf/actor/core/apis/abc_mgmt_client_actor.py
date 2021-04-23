@@ -115,49 +115,11 @@ class ABCMgmtClientActor(ABCComponent):
         """
 
     @abstractmethod
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType = None, request_properties: dict = None,
-                           config_properties: dict = None) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime) -> bool:
         """
         Extend a reservation
         @params reservation: reservation id
         @params new_end_time: new end time
-        @params new_units: new_units
-        @params new_resource_type: new_resource_type
-        @params request_properties: request_properties
-        @params config_properties: config_properties
-        @return true for success and false for failure
-        """
-
-    @abstractmethod
-    def extend_reservation_end_time(self, *, reservation: ID, new_end_time: datetime) -> bool:
-        """
-        Extend a reservation
-        @params reservation: reservation id
-        @params new_end_time: new end time
-        @return true for success and false for failure
-        """
-
-    @abstractmethod
-    def extend_reservation_end_time_request(self, *, reservation: ID, new_end_time: datetime,
-                                            request_properties: dict) -> bool:
-        """
-        Extend a reservation
-        @params reservation: reservation id
-        @params new_end_time: new end time
-        @params request_properties: request_properties
-        @return true for success and false for failure
-        """
-
-    @abstractmethod
-    def extend_reservation_end_time_request_config(self, *, reservation: ID, new_end_time: datetime,
-                                                   request_properties: dict, config_properties: dict) -> bool:
-        """
-        Extend a reservation
-        @params reservation: reservation id
-        @params new_end_time: new end time
-        @params request_properties: request_properties
-        @params config_properties: config_properties
         @return true for success and false for failure
         """
 

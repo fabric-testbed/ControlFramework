@@ -30,6 +30,10 @@ from sqlalchemy import Column, String, Integer, Sequence
 
 Base = declarative_base()
 
+FOREIGN_KEY_ACTOR_ID = 'Actors.act_id'
+FOREIGN_KEY_SLICE_ID = 'Slices.slc_id'
+FOREIGN_KEY_RESERVATION_ID = 'Reservations.rsv_id'
+
 
 class Actors(Base):
     """
@@ -49,7 +53,7 @@ class Clients(Base):
     """
     __tablename__ = 'Clients'
     clt_id = Column(Integer, Sequence('clt_id', start=1, increment=1), autoincrement=True, primary_key=True)
-    clt_act_id = Column(Integer, ForeignKey('Actors.act_id'))
+    clt_act_id = Column(Integer, ForeignKey(FOREIGN_KEY_ACTOR_ID))
     clt_name = Column(String, nullable=False)
     clt_guid = Column(String, nullable=False)
     properties = Column(LargeBinary)
@@ -61,7 +65,7 @@ class ConfigMappings(Base):
     """
     __tablename__ = 'ConfigMappings'
     cfgm_id = Column(Integer, Sequence('cfgm_id', start=1, increment=1), autoincrement=True, primary_key=True)
-    cfgm_act_id = Column(Integer, ForeignKey('Actors.act_id'))
+    cfgm_act_id = Column(Integer, ForeignKey(FOREIGN_KEY_ACTOR_ID))
     cfgm_type = Column(String, nullable=False)
     properties = Column(LargeBinary)
 
@@ -73,7 +77,7 @@ class ManagerObjects(Base):
     __tablename__ = 'ManagerObjects'
     mo_id = Column(Integer, Sequence('mo_id', start=1, increment=1), autoincrement=True, primary_key=True)
     mo_key = Column(String, nullable=False, unique=True)
-    mo_act_id = Column(Integer, ForeignKey('Actors.act_id'))
+    mo_act_id = Column(Integer, ForeignKey(FOREIGN_KEY_ACTOR_ID))
     properties = Column(JSON)
 
 
@@ -93,7 +97,7 @@ class Proxies(Base):
     """
     __tablename__ = 'Proxies'
     prx_id = Column(Integer, Sequence('prx_id', start=1, increment=1), autoincrement=True, primary_key=True)
-    prx_act_id = Column(Integer, ForeignKey('Actors.act_id'))
+    prx_act_id = Column(Integer, ForeignKey(FOREIGN_KEY_ACTOR_ID))
     prx_name = Column(String)
     properties = Column(LargeBinary)
 
@@ -105,7 +109,7 @@ class Reservations(Base):
     __tablename__ = 'Reservations'
     rsv_id = Column(Integer, Sequence('rsv_id', start=1, increment=1), autoincrement=True, primary_key=True)
     rsv_graph_node_id = Column(String, nullable=True)
-    rsv_slc_id = Column(Integer, ForeignKey('Slices.slc_id'))
+    rsv_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID))
     rsv_resid = Column(String, nullable=False)
     rsv_category = Column(Integer, nullable=False)
     rsv_state = Column(Integer, nullable=False)
@@ -124,7 +128,7 @@ class Slices(Base):
     slc_guid = Column(String, nullable=False)
     slc_name = Column(String, nullable=False)
     slc_type = Column(Integer, nullable=False)
-    slc_act_id = Column(Integer, ForeignKey('Actors.act_id'))
+    slc_act_id = Column(Integer, ForeignKey(FOREIGN_KEY_ACTOR_ID))
     slc_resource_type = Column(String)
     properties = Column(LargeBinary)
 
@@ -137,9 +141,9 @@ class Units(Base):
     unt_id = Column(Integer, Sequence('unt_id', start=1, increment=1), autoincrement=True, primary_key=True)
     unt_uid = Column(String)
     unt_unt_id = Column(Integer, nullable=True)
-    unt_act_id = Column(Integer, ForeignKey('Actors.act_id'))
-    unt_slc_id = Column(Integer, ForeignKey('Slices.slc_id'))
-    unt_rsv_id = Column(Integer, ForeignKey('Reservations.rsv_id'))
+    unt_act_id = Column(Integer, ForeignKey(FOREIGN_KEY_ACTOR_ID))
+    unt_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID))
+    unt_rsv_id = Column(Integer, ForeignKey(FOREIGN_KEY_RESERVATION_ID))
     unt_state = Column(Integer, nullable=False)
     properties = Column(LargeBinary)
 
@@ -162,8 +166,8 @@ class Delegations(Base):
     """
     __tablename__ = 'Delegations'
     dlg_id = Column(Integer, Sequence('dlg_id', start=1, increment=1), autoincrement=True, primary_key=True)
-    dlg_slc_id = Column(Integer, ForeignKey('Slices.slc_id'))
-    dlg_act_id = Column(Integer, ForeignKey('Actors.act_id'))
+    dlg_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID))
+    dlg_act_id = Column(Integer, ForeignKey(FOREIGN_KEY_ACTOR_ID))
     dlg_graph_id = Column(String, nullable=False)
     dlg_state = Column(Integer, nullable=False)
     properties = Column(LargeBinary)

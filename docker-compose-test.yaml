@@ -103,11 +103,11 @@ services:
       - 7473:7473  # for HTTPS
       - 7687:7687  # for Bolt
     volumes:
-      - ./neo4j1/data:/data
-      - ./neo4j1/imports:/imports
-      - ./neo4j1/logs:/logs
-      - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
-      - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+      - ${NEO4DATA_HOST:-.}/neo4j1/data:/data
+      - ${NEO4DATA_HOST:-.}/neo4j1/imports:/imports
+      - ${NEO4DATA_HOST:-.}/neo4j1/logs:/logs
+      - ./neo4j/certs/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ./neo4j/certs/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
       - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
       - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:7687
@@ -126,11 +126,11 @@ services:
       - 8473:8473  # for HTTPS
       - 8687:8687  # for Bolt
     volumes:
-      - ./neo4j2/data:/data
-      - ./neo4j2/imports:/imports
-      - ./neo4j2/logs:/logs
-      - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
-      - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+      - ${NEO4DATA_HOST:-.}/neo4j2/data:/data
+      - ${NEO4DATA_HOST:-.}/neo4j2/imports:/imports
+      - ${NEO4DATA_HOST:-.}/neo4j2/logs:/logs
+      - ./neo4j/certs/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ./neo4j/certs/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
       - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
       - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:8687
@@ -149,11 +149,11 @@ services:
       - 9473:9473  # for HTTPS
       - 9687:9687  # for Bolt
     volumes:
-      - ./neo4j3/data:/data
-      - ./neo4j3/imports:/imports
-      - ./neo4j3/logs:/logs
-      - ./ssl/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
-      - ./ssl/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+      - ${NEO4DATA_HOST:-.}/neo4j3/data:/data
+      - ${NEO4DATA_HOST:-.}/neo4j3/imports:/imports
+      - ${NEO4DATA_HOST:-.}/neo4j3/logs:/logs
+      - ./neo4j/certs/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ./neo4j/certs/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
       - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
       - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:9687
@@ -162,3 +162,62 @@ services:
       - NEO4J_dbms_connector_http_listen__address=0.0.0.0:9474
       - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:9473
       - NEO4J_dbms_connector_https_listen__address=0.0.0.0:9473
+  am:
+    build:
+      context: .
+      dockerfile: Dockerfile-auth-test
+    image: authority:latest
+    container_name: site1-am
+    restart: always
+    depends_on:
+      - database
+      - neo4j1
+    ports:
+      - 11000:11000
+    volumes:
+      - ${NEO4DATA_HOST:-.}/neo4j1:/usr/src/app/neo4j
+      - ./fabric_cf/aits/config/config.am.yaml:/etc/fabric/actor/config/config.yaml
+      - ./neo4j/RENCI-ad.graphml:/etc/fabric/actor/config/neo4j/arm.graphml
+      - ${AITS_LOG_DIR:-.}/fabric_cf/aits/am-logs/:/var/log/actor
+      - ./secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
+      - ./secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
+      - ./secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
+  broker:
+    build:
+      context: .
+      dockerfile: Dockerfile-broker-test
+    image: broker:latest
+    container_name: broker
+    restart: always
+    depends_on:
+      - database
+      - neo4j2
+    ports:
+      - 11001:11000
+    volumes:
+      - ${NEO4DATA_HOST:-.}/neo4j2:/usr/src/app/neo4j
+      - ./fabric_cf/aits/config/config.broker.yaml:/etc/fabric/actor/config/config.yaml
+      - ${AITS_LOG_DIR:-.}/fabric_cf/aits/broker-logs/:/var/log/actor
+      - ./secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
+      - ./secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
+      - ./secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
+  orchestrator:
+    build:
+      context: .
+      dockerfile: Dockerfile-orchestrator-test
+    image: orchestrator:latest
+    container_name: orchestrator
+    restart: always
+    depends_on:
+      - database
+      - neo4j3
+    ports:
+      - 8700:8700
+      - 11002:11000
+    volumes:
+      - ${NEO4DATA_HOST:-.}/neo4j3:/usr/src/app/neo4j
+      - ./fabric_cf/aits/config/config.orchestrator.yaml:/etc/fabric/actor/config/config.yaml
+      - ${AITS_LOG_DIR:-.}/fabric_cf/aits/orch-logs/:/var/log/actor
+      - ./secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
+      - ./secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
+      - ./secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem

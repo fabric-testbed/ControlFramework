@@ -110,12 +110,9 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
         return self.client_helper.demand_reservation(reservation=reservation, caller=caller)
 
     def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType, request_properties: dict,
-                           config_properties: dict, caller: AuthToken) -> ResultAvro:
+                           caller: AuthToken) -> ResultAvro:
         return self.client_helper.extend_reservation(reservation=reservation, new_end_time=new_end_time, 
-                                                     new_units=new_units, new_resource_type=new_resource_type,
-                                                     request_properties=request_properties, 
-                                                     config_properties=config_properties, caller=caller)
+                                                     new_units=new_units, caller=caller)
 
     def modify_reservation(self, *, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
         return self.client_helper.modify_reservation(rid=rid, modify_properties=modify_properties, caller=caller)

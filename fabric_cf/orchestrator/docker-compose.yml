@@ -31,8 +31,8 @@ services:
       - ${NEO4J_DATA_PATH_HOST:-$(pwd)/neo4j/data}:${NEO4J_DATA_PATH_DOCKER:-/data}
       - ${NEO4J_IMPORTS_PATH_HOST:-$(pwd)/neo4j/imports}:${NEO4J_IMPORTS_PATH_DOCKER:-/imports}
       - ${NEO4J_LOGS_PATH_HOST:-$(pwd)/neo4j/logs}:${NEO4J_LOGS_PATH_DOCKER:-/logs}
-      - ${NGINX_SSL_CERTS_DIR:-./ssl}/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
-      - ${NGINX_SSL_CERTS_DIR:-./ssl}/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+      - ../../neo4j/certs/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ../../neo4j/certs/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
     environment:
       - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
       - NEO4J_dbms_connector_bolt_advertised__address=${NEO4J_dbms_connector_bolt_advertised__address:-0.0.0.0:7687}
@@ -62,6 +62,7 @@ services:
   pdp:
     image: fabrictestbed/authzforce-pdp:3.1.0
     container_name: orchestrator-pdp
+    restart: always
     user: ${PDP_UID:-1000}:${PDP_GID:-1000}
     networks:
       - backend

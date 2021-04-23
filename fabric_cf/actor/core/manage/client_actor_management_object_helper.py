@@ -386,9 +386,8 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, new_units: int,
-                           new_resource_type: ResourceType, request_properties: dict,
-                           config_properties: dict, caller: AuthToken) -> ResultAvro:
+    def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
+                           caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
 
         if reservation is None or caller is None or new_end_time is None:
@@ -415,8 +414,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                     else:
                         rset.set_units(units=new_units)
 
-                    if new_resource_type is None:
-                        rset.set_type(rtype=r.get_resources().get_type())
+                    rset.set_type(rtype=r.get_resources().get_type())
 
                     tmp_start_time = r.get_term().get_start_time()
                     new_term = r.get_term().extend()

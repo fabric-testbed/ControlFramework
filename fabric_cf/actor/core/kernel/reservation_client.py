@@ -826,10 +826,9 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                                       join_state=JoinState.NoJoin)
             if self.leased_resources.get_concrete_units() == 0:
                 if self.leased_resources.get_notices().get_notice() is not None:
-                    self.fail(message="resources failed to join: {}".
-                              format(self.leased_resources.get_notices().get_notice()), exception=None)
+                    self.fail(message=f"resources failed to join: {self.leased_resources.get_notices().get_notice()}")
                 else:
-                    self.fail(message="resources failed to join: (no details)", exception=None)
+                    self.fail(message="resources failed to join: (no details)")
             else:
                 # Update ASM with Reservation Info
                 self.update_slice_graph(sliver=self.leased_resources.sliver)
@@ -1483,7 +1482,8 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
 
     def fail(self, *, message: str, exception: Exception = None):
         super().fail(message=message, exception=exception)
-        self.update_slice_graph(sliver=self.requested_resources.sliver)
+        if self.requested_resources is not None and self.requested_resources.sliver is not None:
+            self.update_slice_graph(sliver=self.requested_resources.sliver)
 
     def update_slice_graph(self, *, sliver: NodeSliver):
         """

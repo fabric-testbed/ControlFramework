@@ -48,7 +48,9 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
-
+    from fabric_cf.actor.core.util.reservation_set import ReservationSet
+    from fabric_cf.actor.core.kernel.resource_set import ResourceSet
+    from fabric_cf.actor.core.time.term import Term
 
 class ActorType(Enum):
     """
@@ -596,6 +598,18 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
 
         Args:
             reservation: reservation to register
+        Raises:
+            Exception in case of error
+        """
+
+    @abstractmethod
+    def register_delegation(self, *, delegation: ABCDelegation):
+        """
+        Registers the delegation with the actor. The delegation must not have been previously
+        registered with the actor: there should be no database record for the delegation.
+
+        Args:
+            delegation: delegation to register
         Raises:
             Exception in case of error
         """
