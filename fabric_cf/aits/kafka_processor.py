@@ -36,16 +36,6 @@ from fabric_cf.actor.core.manage.kafka.kafka_broker import KafkaBroker
 from fabric_cf.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric_cf.actor.core.util.id import ID
 
-import yaml
-
-runtime_config = None
-with open("./config/config.broker.yaml", 'r') as stream:
-    try:
-        config_dict = yaml.safe_load(stream)
-        runtime_config = config_dict["runtime"]
-    except yaml.YAMLError as exc:
-        print(exc)
-
 
 class KafkaProcessor:
     def __init__(self):
@@ -84,16 +74,16 @@ class KafkaProcessor:
         """
         Set up Kafka Producer and Consumer
         """
-        producer_conf = {Constants.BOOTSTRAP_SERVERS: runtime_config.get(Constants.PROPERTY_CONF_KAFKA_SERVER),
-                Constants.SECURITY_PROTOCOL: runtime_config.get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL),
-                Constants.SSL_CA_LOCATION: runtime_config.get(Constants.PROPERTY_CONF_KAFKA_S_SL_CA_LOCATION),
-                Constants.SSL_CERTIFICATE_LOCATION: runtime_config.get(Constants.PROPERTY_CONF_KAFKA_SSL_CERTIFICATE_LOCATION),
-                Constants.SSL_KEY_LOCATION: runtime_config.get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_LOCATION),
-                Constants.SSL_KEY_PASSWORD: runtime_config.get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_PASSWORD),
-                Constants.SCHEMA_REGISTRY_URL: runtime_config.get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL)}
+        producer_conf = {Constants.BOOTSTRAP_SERVERS: "localhost:19092",
+                Constants.SECURITY_PROTOCOL: "SSL",
+                Constants.SSL_CA_LOCATION: "../../secrets/snakeoil-ca-1.crt",
+                Constants.SSL_CERTIFICATE_LOCATION: "../../secrets/kafkacat1-ca1-signed.pem",
+                Constants.SSL_KEY_LOCATION: "../../secrets/kafkacat1.client.key",
+                Constants.SSL_KEY_PASSWORD: "fabric",
+                Constants.SCHEMA_REGISTRY_URL: "http://localhost:8081"}
 
-        self.key_schema = self.__load_schema(file_path=runtime_config.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA))
-        self.val_schema = self.__load_schema(file_path=runtime_config.get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA))
+        self.key_schema = self.__load_schema(file_path="../actor/test/schema/key.avsc")
+        self.val_schema = self.__load_schema(file_path="../actor/test/schema/message.avsc")
 
         from fabric_mb.message_bus.producer import AvroProducerApi
         self.producer = AvroProducerApi(conf=producer_conf, key_schema=self.key_schema,

@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+# MIT License
+#
+# Copyright (c) 2020 FABRIC Testbed
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+#
+# Author: Komal Thareja (kthare10@renci.org)
+import requests
+
+
+class OrchestratorHelper:
+    def __init__(self):
+        self.host = "http://localhost:8700"
+        self.token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImI0MTUxNjcyMTExOTFlMmUwNWIyMmI1NGIxZDNiNzY2N2U3NjRhNzQ3NzIyMTg1ZTcyMmU1MmUxNDZmZTQzYWEifQ.eyJlbWFpbCI6Imt0aGFyZTEwQGVtYWlsLnVuYy5lZHUiLCJnaXZlbl9uYW1lIjoiS29tYWwiLCJmYW1pbHlfbmFtZSI6IlRoYXJlamEiLCJuYW1lIjoiS29tYWwgVGhhcmVqYSIsImlzcyI6Imh0dHBzOi8vY2lsb2dvbi5vcmciLCJzdWIiOiJodHRwOi8vY2lsb2dvbi5vcmcvc2VydmVyQS91c2Vycy8xMTkwNDEwMSIsImF1ZCI6ImNpbG9nb246L2NsaWVudF9pZC8xMjUzZGVmYzYwYTMyM2ZjYWEzYjQ0OTMyNjQ3NjA5OSIsInRva2VuX2lkIjoiaHR0cHM6Ly9jaWxvZ29uLm9yZy9vYXV0aDIvaWRUb2tlbi82ZmMxYTYyNjY5ZmE0NTk4OTExMjY1ODI0OTgxZThkOC8xNjA2NjU4NjE3NzA4IiwiYXV0aF90aW1lIjoiMTYwNjY1ODYxNyIsImV4cCI6MTYxMDgzMDQzNCwiaWF0IjoxNjEwNzQ0MDM0LCJyb2xlcyI6WyJwcm9qZWN0LWxlYWRzIl0sInByb2plY3RzIjp7IlJFTkNJLVRFU1QiOlsidGFnIDEiLCJ0YWcgMiJdfSwic2NvcGUiOiJhbGwifQ.Gttyz2HQohcj0_fOF00RIGUAMiGtdCBfh5IPs3L2KMKL9Rddy7G_zoqtIynpGr58E8Fn4n4ssGOn9Mutas3kJBCZhF_DawI9uNYGxjhVeinE-Rq7r1Mciwcvj8dA4GPASeurU0yWucioNCxx6u-X4IxbGf2Z01ONPfDN09gSKFk9D_oWy-GTEdiwddr2c_AhtxhCJLS1ZQZ2-mY8R6BJMIZsHU_nv8PJb3luPuRD9b8oVN0W1bIm6JorTja7Tz3P5YcD86ZnBJgPLQW65HoXOfKfxmV4gEHx5c-APjQs1LnbpiL4SvOFdOobgTZYDOV9ei03iXlLdw0GymvQmg53GQ"
+        self.headers = {
+            'accept': 'application/json',
+            'Authorization': f"Bearer {self.token}"
+        }
+        self.headers_with_content = {
+            'accept': 'application/json',
+            'Authorization': f"Bearer {self.token}",
+            'Content-Type': "text/plain"
+        }
+        self.ssh_key = "empty ssh string"
+
+    def resources(self, level: int = 1):
+        url = f"{self.host}/resources?level={level}"
+        return requests.get(url, headers=self.headers, verify=False)
+
+    def create(self, slice_graph: str, slice_name: str):
+        url = f"{self.host}/slices/create?sliceName={slice_name}&sshKey={self.ssh_key}"
+        return requests.post(url, headers=self.headers_with_content, verify=False, data=slice_graph)
+
+    def delete(self, slice_id: str):
+        url = f"{self.host}/slices/delete/{slice_id}"
+        return requests.delete(url, headers=self.headers, verify=False)

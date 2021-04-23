@@ -26,20 +26,25 @@
 import logging
 import unittest
 
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.aits.kafka_processor import KafkaProcessorSingleton
 from fabric_cf.aits.manage_helper import ManageHelper
+from fabric_cf.aits.orchestrator_helper import OrchestratorHelper
+import fim.user as fu
 
 
 class IntegrationTest(unittest.TestCase):
+    RESERVATIONS = "reservations"
     logger = logging.getLogger('IntegrationTest')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
-    logging.basicConfig(format=log_format, filename="actor.log")
+    logging.basicConfig(format=log_format, filename="ait.log")
     logger.setLevel(logging.INFO)
 
     am_name = None
     broker_name = None
     orchestrator_name = None
     kafka_topic = None
+    slice_id = None
 
     def setUp(self) -> None:
         KafkaProcessorSingleton.get().set_logger(logger=self.logger)
@@ -57,6 +62,47 @@ class IntegrationTest(unittest.TestCase):
                                                           did=None, id_token=None)
         broker_delegations = manage_helper.do_get_delegations(actor_name=self.broker_name,
                                                               callback_topic=self.kafka_topic, did=None, id_token=None)
-        print(f"am_delegations {am_delegations}")
-        print(f"broker_delegations {broker_delegations}")
+        self.assertEqual(len(am_delegations), len(broker_delegations))
+        ad = am_delegations[0]
+        bd = broker_delegations[0]
+        self.assertEqual(ad.delegation_id, bd.delegation_id)
+        self.assertEqual(ad.slice, bd.slice)
         KafkaProcessorSingleton.get().stop()
+
+    def test_b_list_resources(self):
+        oh = OrchestratorHelper()
+        response = oh.resources()
+        self.assertEqual(response.status_code, 200)
+        json_obj = response.json()
+        self.assertIsNotNone(json_obj)
+        self.assertIsNotNone(json_obj.get(Constants.BROKER_QUERY_MODEL, None))
+        self.assertEqual(json_obj.get(Constants.QUERY_RESPONSE_STATUS, None), "True")
+
+    def test_c_create_slice_two_vms_with_components(self):
+        t = fu.ExperimentTopology()
+        n1 = t.add_node(name='n1', site='RENC')
+        cap = fu.Capacities()
+        cap.set_fields(core=4, ram=64, disk=500)
+        n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n1.add_component(ctype=fu.ComponentType.SmartNIC, model='ConnectX-6', name='nic1')
+
+        n2 = t.add_node(name='n2', site='RENC')
+        n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n2.add_component(ctype=fu.ComponentType.NVME, model='P4510', name='c1')
+        n2.add_component(ctype=fu.ComponentType.GPU, model='RTX6000', name='c2')
+
+        slice_graph = t.serialize()
+        oh = OrchestratorHelper()
+        response = oh.create(slice_graph=slice_graph, slice_name="test-slice-1")
+        self.assertEqual(response.status_code, 200)
+        json_obj = response.json()
+        self.assertIsNotNone(json_obj)
+        reservations = json_obj.get(self.RESERVATIONS, None)
+        self.assertIsNotNone(reservations)
+        self.assertEqual(len(reservations), 2)
+        self.slice_id = reservations[0]["slice_id"]
+
+    def test_d_delete_slice(self):
+        oh = OrchestratorHelper()
+        response = oh.delete(self.slice_id)
+        self.assertEqual(response.status_code, 200)

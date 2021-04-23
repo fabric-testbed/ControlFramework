@@ -38,13 +38,12 @@ class ManageHelper:
     def __init__(self, *, logger):
         self.logger = logger
 
-    @staticmethod
-    def print_result(*, status: ResultAvro):
-        print("Code={}".format(status.get_code()))
+    def print_result(self, *, status: ResultAvro):
+        self.logger.debug("Code={}".format(status.get_code()))
         if status.message is not None:
-            print("Message={}".format(status.message))
+            self.logger.debug("Message={}".format(status.message))
         if status.details is not None:
-            print("Details={}".format(status.details))
+            self.logger.debug("Details={}".format(status.details))
 
     @staticmethod
     def get_actor(*, actor_name: str) -> KafkaActor:
@@ -159,7 +158,7 @@ class ManageHelper:
                 slices, error = self.do_get_slices(actor_name=am, callback_topic=callback_topic, slice_id=None,
                                                    id_token=id_token)
                 if slices is None:
-                    print("Error occurred while getting slices for actor: {}".format(am))
+                    self.logger.debug("Error occurred while getting slices for actor: {}".format(am))
                     self.print_result(status=error.get_status())
                     return
 
@@ -170,21 +169,21 @@ class ManageHelper:
             delegations, error = self.do_get_delegations(actor_name=am, callback_topic=callback_topic, did=did,
                                                          id_token=id_token)
             if delegations is None:
-                print("Error occurred while getting delegations for actor: {}".format(am))
+                self.logger.debug("Error occurred while getting delegations for actor: {}".format(am))
                 self.print_result(status=error.get_status())
                 return
 
             if delegations is None or len(delegations) == 0:
-                print("No delegations to be claimed from {} by {}:".format(am, broker))
+                self.logger.debug("No delegations to be claimed from {} by {}:".format(am, broker))
                 return
 
             for d in delegations:
-                print("Claiming Delegation# {}".format(d.get_delegation_id()))
+                self.logger.debug("Claiming Delegation# {}".format(d.get_delegation_id()))
                 delegation, error = self.do_claim_resources(broker=broker, am_guid=am_actor.get_guid(),
                                                              did=d.get_delegation_id(), callback_topic=callback_topic,
                                                             id_token=id_token)
                 if delegation is not None:
-                    print("Delegation claimed: {} ".format(delegation.get_delegation_id()))
+                    self.logger.debug("Delegation claimed: {} ".format(delegation.get_delegation_id()))
                 else:
                     self.print_result(status=error.get_status())
         except Exception as e:
