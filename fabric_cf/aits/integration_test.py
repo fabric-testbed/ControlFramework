@@ -23,18 +23,40 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import time
+import logging
 import unittest
 
-from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.core.unit import Unit, UnitState
-from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
-from fabric_cf.actor.core.kernel.slice import SliceFactory
-from fabric_cf.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
-from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.test.base_test_case import BaseTestCase
+from fabric_cf.aits.kafka_processor import KafkaProcessorSingleton
+from fabric_cf.aits.manage_helper import ManageHelper
 
 
-class IntegrationTest(BaseTestCase, unittest.TestCase):
-    pass
+class IntegrationTest(unittest.TestCase):
+    logger = logging.getLogger('IntegrationTest')
+    log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
+    logging.basicConfig(format=log_format, filename="actor.log")
+    logger.setLevel(logging.INFO)
+
+    am_name = None
+    broker_name = None
+    orchestrator_name = None
+    kafka_topic = None
+
+    def setUp(self) -> None:
+        KafkaProcessorSingleton.get().set_logger(logger=self.logger)
+        self.am_name = KafkaProcessorSingleton.get().am_name
+        self.broker_name = KafkaProcessorSingleton.get().broker_name
+        self.orchestrator_name = KafkaProcessorSingleton.get().orchestrator_name
+        self.kafka_topic = KafkaProcessorSingleton.get().kafka_topic
+
+    def test_a_claim_resources(self):
+        KafkaProcessorSingleton.get().start()
+        manage_helper = ManageHelper(logger=self.logger)
+        manage_helper.claim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic,
+                                        did=None, id_token=None)
+        am_delegations = manage_helper.do_get_delegations(actor_name=self.am_name, callback_topic=self.kafka_topic,
+                                                          did=None, id_token=None)
+        broker_delegations = manage_helper.do_get_delegations(actor_name=self.broker_name,
+                                                              callback_topic=self.kafka_topic, did=None, id_token=None)
+        print(f"am_delegations {am_delegations}")
+        print(f"broker_delegations {broker_delegations}")
+        KafkaProcessorSingleton.get().stop()
