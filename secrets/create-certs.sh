@@ -11,11 +11,11 @@ cp snakeoil-ca-1.crt snakeoil-ca-1-copy.crt
 # openssl req -new -x509 -keyout snakeoil-ca-2.key -out snakeoil-ca-2.crt -days 365 -subj '/CN=ca2.test.fabric.io/OU=TEST/O=FABRIC/L=ChapelHill/S=NC/C=US' -passin pass:fabric -passout pass:fabric
 
 # kafkacat1
-openssl genrsa -des3 -passout "pass:fabric" -out kafkacat1.client.key 1024
+openssl genrsa -des3 -passout "pass:fabric" -out kafkacat1.client.key 2048
 openssl req -passin "pass:fabric" -passout "pass:fabric" -key kafkacat1.client.key -new -out kafkacat1.client.req -subj '/CN=kafkacat1.test.fabric.io/OU=TEST/O=FABRIC/L=ChapelHill/S=NC/C=US'
 openssl x509 -req -CA snakeoil-ca-1.crt -CAkey snakeoil-ca-1.key -in kafkacat1.client.req -out kafkacat1-ca1-signed.pem -days 9999 -CAcreateserial -passin "pass:fabric"
 
-openssl genrsa -des3 -passout "pass:fabric" -out kafkacat2.client.key 1024
+openssl genrsa -des3 -passout "pass:fabric" -out kafkacat2.client.key 2048
 openssl req -passin "pass:fabric" -passout "pass:fabric" -key kafkacat2.client.key -new -out kafkacat2.client.req -subj '/CN=kafkacat2.test.fabric.io/OU=TEST/O=FABRIC/L=ChapelHill/S=NC/C=US'
 openssl x509 -req -CA snakeoil-ca-1.crt -CAkey snakeoil-ca-1.key -in kafkacat2.client.req -out kafkacat2-ca1-signed.pem -days 9999 -CAcreateserial -passin "pass:fabric"
 
