@@ -5,21 +5,14 @@ RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 VOLUME ["/usr/src/app"]
 
-#RUN pip3 install --upgrade pip
-
 EXPOSE 11000
 
-#COPY authority.sh /usr/src/app
-#ENTRYPOINT ["/usr/src/app/authority.sh"]
-
-COPY requirements.txt /usr/src/app/
+COPY . /usr/src/app/
 RUN pip3 install --no-cache-dir -r requirements.txt
 RUN mkdir -p "/etc/fabric/message_bus/schema"
 RUN mkdir -p "/etc/fabric/actor/config"
 RUN mkdir -p "/var/log/actor"
 RUN cp /usr/local/lib/python3.8/site-packages/fabric_mb/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
-
-RUN pip3 install git+https://github.com/fabric-testbed/ControlFramework.git
 RUN pip3 install fabric-am-handlers
 
 ENTRYPOINT ["python3"]

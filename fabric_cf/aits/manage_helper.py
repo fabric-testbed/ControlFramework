@@ -24,9 +24,10 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
-from typing import Tuple
+from typing import Tuple, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 from fabric_cf.actor.core.manage.error import Error
@@ -58,60 +59,41 @@ class ManageHelper:
             raise Exception("Invalid arguments actor {} not found".format(actor_name))
         try:
             actor.prepare(callback_topic=callback_topic)
-            if slice_id is None:
-                return actor.get_slices(id_token=id_token), actor.get_last_error()
-            else:
-                slice_list = []
-                slice_obj = actor.get_slice(slice_id=ID(uid=slice_id), id_token=id_token)
-                if slice_obj is not None:
-                    slice_list.append(slice_obj)
-                return slice_list, actor.get_last_error()
+            return actor.get_slices(id_token=id_token, slice_id=ID(uid=slice_id)), actor.get_last_error()
         except Exception:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
         return None, None
 
-    def do_get_reservations(self, *, actor_name: str, callback_topic: str, rid: str, id_token: str):
+    def do_get_reservations(self, *, actor_name: str, callback_topic: str, rid: str,
+                            id_token: str) -> Tuple[List[ReservationMng], Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
             raise Exception("Invalid arguments actor {} not found".format(actor_name))
         try:
             actor.prepare(callback_topic=callback_topic)
-            if rid is None:
-                return actor.get_reservations(id_token=id_token), actor.get_last_error()
-            else:
-                rid_list = []
-                r = actor.get_reservation(rid=rid, id_token=id_token)
-                if r is not None:
-                    rid_list.append(r)
-                return rid_list, actor.get_last_error()
+            return actor.get_reservations(id_token=id_token, rid=ID(uid=rid)), actor.get_last_error()
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
 
-    def do_get_delegations(self, *, actor_name: str, callback_topic: str, did: str, id_token: str):
+    def do_get_delegations(self, *, actor_name: str, callback_topic: str, did: str,
+                           id_token: str) -> Tuple[List[DelegationAvro], Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
             raise Exception("Invalid arguments actor {} not found".format(actor_name))
         try:
             actor.prepare(callback_topic=callback_topic)
-            if did is None:
-                return actor.get_delegations(id_token=id_token), actor.get_last_error()
-            else:
-                did_list = []
-                d = actor.get_delegations(delegation_id=did, id_token=id_token)
-                if d is not None:
-                    did_list.append(d)
-                return did_list, actor.get_last_error()
+            return actor.get_delegations(id_token=id_token, delegation_id=did), actor.get_last_error()
         except Exception as e:
             traceback.print_exc()
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
 
-    def do_claim_resources(self, *, broker: str, am_guid: ID, callback_topic: str, id_token: str,
-                           did: str) -> Tuple[DelegationAvro, Error]:
+    def do_claim_delegations(self, *, broker: str, am_guid: ID, callback_topic: str, id_token: str,
+                             did: str) -> Tuple[DelegationAvro, Error]:
         """
         Claim delegations by invoking Management Actor Claim Delegations API
         @param broker broker guid
@@ -179,9 +161,9 @@ class ManageHelper:
 
             for d in delegations:
                 self.logger.debug("Claiming Delegation# {}".format(d.get_delegation_id()))
-                delegation, error = self.do_claim_resources(broker=broker, am_guid=am_actor.get_guid(),
-                                                             did=d.get_delegation_id(), callback_topic=callback_topic,
-                                                            id_token=id_token)
+                delegation, error = self.do_claim_delegations(broker=broker, am_guid=am_actor.get_guid(),
+                                                              did=d.get_delegation_id(), callback_topic=callback_topic,
+                                                              id_token=id_token)
                 if delegation is not None:
                     self.logger.debug("Delegation claimed: {} ".format(delegation.get_delegation_id()))
                 else:

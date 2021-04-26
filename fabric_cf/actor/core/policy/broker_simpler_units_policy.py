@@ -652,8 +652,16 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.lock.acquire()
             if self.combined_broker_model is not None:
                 graph = self.combined_broker_model.get_bqm(query_level=query_level)
-                result[Constants.BROKER_QUERY_MODEL] = graph.serialize_graph()
-                result[Constants.QUERY_RESPONSE_STATUS] = "True"
+                graph_string = None
+                if graph is not None:
+                    graph_string = graph.serialize_graph()
+                if graph_string is not None:
+                    result[Constants.BROKER_QUERY_MODEL] = graph_string
+                    result[Constants.QUERY_RESPONSE_STATUS] = "True"
+                else:
+                    result[Constants.BROKER_QUERY_MODEL] = ""
+                    result[Constants.QUERY_RESPONSE_STATUS] = "False"
+                    result[Constants.QUERY_RESPONSE_MESSAGE] = "Resource(s) not found"
                 graph.delete_graph()
         except Exception as e:
             self.logger.error(traceback.format_exc())

@@ -26,7 +26,7 @@
 from fim.graph.abc_property_graph import ABCPropertyGraph
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
-from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
@@ -88,7 +88,8 @@ class Delegation(ABCDelegation):
         self.slice_object = slice_obj
         if actor is not None:
             self.logger = actor.get_logger()
-        self.graph = FimHelper.get_arm_graph(graph_id=str(self.dlg_graph_id))
+        if actor.get_type() == ActorType.Authority:
+            self.graph = FimHelper.get_arm_graph(graph_id=str(self.dlg_graph_id))
 
     def set_graph(self, graph: ABCPropertyGraph):
         self.graph = graph

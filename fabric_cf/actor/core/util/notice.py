@@ -69,4 +69,6 @@ class Notice:
         return self.notice_string is None
 
     def __str__(self):
-        return self.notice_string
+        if self.notice_string is not None:
+            return self.notice_string
+        return ""

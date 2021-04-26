@@ -25,17 +25,14 @@
 # Author: Komal Thareja (kthare10@renci.org)
 
 
-class OrchestratorException(Exception):
-    """
-    Orchestrator Exception
-    """
-    HTTP_5XX_ERROR = 500
-    HTTP_NOT_FOUND = 404
-    HTTP_BAD_REQUEST = 400
+class Constants:
+    PROP_VALUE = 'value'
+    PROP_RESERVATIONS = "reservations"
+    PROP_SLICES = "slices"
+    PROP_SLICE_MODEL = "slice_model"
+    PROP_BQM_MODEL = "bqm"
 
-    def __init__(self, message: str, http_error_code: int = HTTP_5XX_ERROR):
-        super().__init__(message)
-        self.http_error_code = http_error_code
-
-    def get_http_error_code(self) -> int:
-        return self.http_error_code
+    PROP_CAPACITIES = "capacities"
+    PROP_LABELS = "labels"
+    PROP_SLIVER_NAME = "name"
+    PROP_MANAGEMENT_IP = "management_ip"

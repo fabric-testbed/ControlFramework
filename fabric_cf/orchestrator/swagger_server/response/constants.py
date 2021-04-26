@@ -36,10 +36,12 @@ SLICES_DELETE_PATH = '/slices/delete'
 SLICES_GET_PATH = '/slices'
 SLICES_GET_SLICE_ID_PATH = '/slices/{sliceID}'
 SLICES_RENEW_PATH = '/slices/renew/{sliceID}'
+SLICE_STATUS_SLICE_ID_PATH = '/slices/status/{sliceID}'
 
 
 SLIVERS_GET_PATH = '/slivers'
 SLIVERS_GET_SLIVER_ID_PATH = '/slivers/{sliverID}'
+SLIVERS_STATUS_SLIVER_ID_PATH = '/slivers/status/{sliverID}'
 
 VERSIONS_PATH = '/version'
 

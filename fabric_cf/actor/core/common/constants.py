@@ -165,7 +165,6 @@ class Constants:
 
     HOME_DIRECTORY = '/usr/src/app/'
     SUPERBLOCK_LOCATION = HOME_DIRECTORY + "state_recovery.lock"
-    CONTROLLER_LOCK_LOCATION = HOME_DIRECTORY + "controller_recovery.lock"
     CONFIGURATION_FILE = "/etc/fabric/actor/config/config.yaml"
     STATE_FILE_LOCATION = '/tmp/fabric_actor.tmp'
 
