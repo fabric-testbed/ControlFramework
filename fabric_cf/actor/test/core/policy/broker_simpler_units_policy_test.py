@@ -163,7 +163,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         self.assertIsNotNone(temp)
         bqm = response.get(Constants.BROKER_QUERY_MODEL, None)
         if count == 0:
-            self.assertIsNone(bqm)
+            self.assertEqual("", bqm)
         else:
             self.assertIsNotNone(bqm)
 

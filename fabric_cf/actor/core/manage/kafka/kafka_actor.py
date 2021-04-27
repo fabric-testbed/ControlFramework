@@ -74,7 +74,8 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.id_token = id_token
-            request.slice_id = slice_id
+            if slice_id is not None:
+                request.slice_id = str(slice_id)
             request.slice_name = slice_name
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)

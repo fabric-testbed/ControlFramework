@@ -34,7 +34,7 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
-from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.fabric_token import FabricToken
@@ -116,7 +116,7 @@ class OrchestratorHandler:
         if my_pools is None or len(my_pools) != 1:
             raise OrchestratorException(f"Could not discover types: {controller.get_last_error()}")
 
-        response = None
+        graph_ml = None
         graph = None
         for p in my_pools:
             try:
@@ -128,14 +128,14 @@ class OrchestratorHandler:
                                                                                  ignore_validation=ignore_validation)
                         if delete_graph:
                             FimHelper.delete_graph(graph_id=graph.get_graph_id())
-                    response = bqm
+                    graph_ml = bqm
                 else:
-                    self.logger.error(p.properties.get(Constants.QUERY_RESPONSE_MESSAGE))
+                    raise OrchestratorException(p.properties.get(Constants.QUERY_RESPONSE_MESSAGE))
             except Exception as e:
                 self.logger.error(traceback.format_exc())
                 self.logger.debug(f"Could not process discover types response {e}")
 
-        return response, graph
+        return graph_ml, graph
 
     def list_resources(self, *, token: str, level: int) -> dict:
         """
@@ -157,7 +157,8 @@ class OrchestratorHandler:
                 raise e
 
             if broker_query_model is None:
-                raise OrchestratorException("Failed to populate abstract models")
+                raise OrchestratorException("Resource(s) not found",
+                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
 
             return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
 
@@ -203,7 +204,8 @@ class OrchestratorHandler:
 
             if bqm_graph is None:
                 self.logger.error("Could not get Broker Query Model")
-                raise OrchestratorException("Broker Query Model not found!")
+                raise OrchestratorException("Broker Query Model not found!",
+                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
 
             broker = self.get_broker(controller=controller)
             if broker is None:
@@ -280,7 +282,15 @@ class OrchestratorHandler:
             if reservations is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
-                raise OrchestratorException(f"Slice# {slice_id} has no reservations")
+                    if controller.get_last_error().status.code == ErrorCodes.ErrorNoSuchSlice:
+                        raise OrchestratorException(f"Slice# {slice_id} not found",
+                                                    http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+                    elif controller.get_last_error().status.code == ErrorCodes.ErrorNoSuchReservation:
+                        raise OrchestratorException(f"Reservation# {rid} not found",
+                                                    http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+
+                raise OrchestratorException(f"Slice# {slice_id} has no reservations",
+                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
 
             return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices,
                                                            include_sliver=True)
@@ -309,7 +319,8 @@ class OrchestratorHandler:
             if slice_list is None or len(slice_list) == 0:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
-                raise OrchestratorException(f"User# has no Slices")
+                raise OrchestratorException(f"User# has no Slices",
+                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
 
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id)
         except Exception as e:
@@ -335,13 +346,15 @@ class OrchestratorHandler:
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
 
             if slice_list is None or len(slice_list) == 0:
-                raise OrchestratorException(f"Slice# {slice_id} not found")
+                raise OrchestratorException(f"Slice# {slice_id} not found",
+                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
 
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
             if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
-                raise OrchestratorException(f"Slice# {slice_id} already closed")
+                raise OrchestratorException(f"Slice# {slice_id} already closed",
+                                            http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
 
             if slice_state != SliceState.StableOK and slice_state != SliceState.StableError:
                 self.logger.info(f"Unable to delete Slice# {slice_guid} that is not yet stable, try again later")
@@ -375,7 +388,8 @@ class OrchestratorHandler:
             if slice_list is None or len(slice_list) == 0:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
-                raise OrchestratorException(f"User# has no Slices")
+                raise OrchestratorException(f"User# has no Slices",
+                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
 
             slice_obj = next(iter(slice_list))
 
@@ -399,7 +413,7 @@ class OrchestratorHandler:
         :param token Fabric Identity Token
         :param slice_id Slice Id
         :param new_end_time: New Lease End Time in UTC in '%Y-%m-%d %H:%M:%S' format
-=       :raises Raises an exception in case of failure
+        :raises Raises an exception in case of failure
         :return:
         """
         failed_to_extend_rid_list = []
@@ -414,13 +428,15 @@ class OrchestratorHandler:
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
 
             if slice_list is None or len(slice_list) == 0:
-                raise OrchestratorException(f"Slice# {slice_id} not found")
+                raise OrchestratorException(f"Slice# {slice_id} not found",
+                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
 
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
             if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
-                raise OrchestratorException(f"Slice# {slice_id} already closed")
+                raise OrchestratorException(f"Slice# {slice_id} already closed",
+                                            http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
 
             if slice_state != SliceState.StableOK and slice_state != SliceState.StableError:
                 self.logger.info(f"Unable to renew Slice# {slice_guid} that is not yet stable, try again later")
@@ -430,7 +446,8 @@ class OrchestratorHandler:
             now = datetime.utcnow()
             if new_end_time <= now:
                 raise OrchestratorException(f"New term end time {new_end_time} is in the past! "
-                                            f"Can't renew slice {slice_id}!")
+                                            f"Can't renew slice {slice_id}!",
+                                            http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
             if (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
                 self.logger.info(f"New term end time {new_end_time} exceeds system default "
                                  f"{Constants.DEFAULT_MAX_DURATION}, setting to system default: ")

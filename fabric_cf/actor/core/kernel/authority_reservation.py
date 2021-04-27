@@ -561,10 +561,9 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
     def get_notices(self) -> str:
         s = super().get_notices()
         if self.resources is not None and self.resources.get_resources() is not None:
-            cs = self.resources.get_resources()
-            notices = cs.get_notices()
-            if notices is not None:
-                s += f" {notices}"
+            resource_notices = self.resources.get_resources().get_notices()
+            if resource_notices is not None:
+                s += f" {resource_notices}"
 
         return s
 

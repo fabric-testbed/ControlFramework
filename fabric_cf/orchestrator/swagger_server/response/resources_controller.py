@@ -28,6 +28,7 @@ import traceback
 import connexion
 import six
 
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
 from fabric_cf.orchestrator.swagger_server import util, received_counter, success_counter, failure_counter
@@ -53,6 +54,10 @@ def resources_get(level: int):  # noqa: E501
         response.value = value
         success_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
         return response
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
+        return str(e), e.get_http_error_code()
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()

@@ -4,12 +4,13 @@ import connexion
 import six
 
 from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, SLICES_CREATE_PATH, \
     SLICES_GET_SLICE_ID_PATH, GET_METHOD, SLICES_GET_PATH, DELETE_METHOD, SLICES_DELETE_PATH, SLICES_RENEW_PATH, \
-    INTERNAL_SERVER_ERROR, BAD_REQUEST
+    INTERNAL_SERVER_ERROR, BAD_REQUEST, SLICE_STATUS_SLICE_ID_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
@@ -42,6 +43,10 @@ def slices_create_post(body, slice_name, ssh_key):  # noqa: E501
         response.value = value
         success_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
         return response
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
+        return str(e), e.get_http_error_code()
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
@@ -68,6 +73,10 @@ def slices_delete_slice_iddelete(slice_id):  # noqa: E501
         response = Success()
         success_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
         return response
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        return str(e), e.get_http_error_code()
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
@@ -92,6 +101,10 @@ def slices_get():  # noqa: E501
         response.value = value
         success_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
         return response
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
+        return str(e), e.get_http_error_code()
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
@@ -166,6 +179,10 @@ def slices_renew_slice_idpost(slice_id, new_lease_end_time):  # noqa: E501
         response.value = value
         success_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
         return response
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
+        return str(e), e.get_http_error_code()
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
@@ -192,6 +209,10 @@ def slices_slice_idget(slice_id):  # noqa: E501
         response.value = value
         success_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
         return response
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
+        return str(e), e.get_http_error_code()
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
@@ -213,15 +234,19 @@ def slices_status_slice_idget(slice_id):  # noqa: E501
     """
     handler = OrchestratorHandler()
     logger = handler.get_logger()
-    received_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
+    received_counter.labels(GET_METHOD, SLICE_STATUS_SLICE_ID_PATH).inc()
     try:
         token = get_token()
         value = handler.get_slices(token=token, slice_id=slice_id)
         response = Success()
         response.value = value
-        success_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
+        success_counter.labels(GET_METHOD, SLICE_STATUS_SLICE_ID_PATH).inc()
         return response
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, SLICE_STATUS_SLICE_ID_PATH).inc()
+        return str(e), e.get_http_error_code()
     except Exception as e:
         logger.exception(e)
-        failure_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
+        failure_counter.labels(GET_METHOD, SLICE_STATUS_SLICE_ID_PATH).inc()
         return str(e), INTERNAL_SERVER_ERROR
