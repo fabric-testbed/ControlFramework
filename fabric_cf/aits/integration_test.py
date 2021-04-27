@@ -41,7 +41,7 @@ class IntegrationTest(unittest.TestCase):
     STATUS = "status"
     STATUS_OK = "OK"
     STABLE_OK = "StableOK"
-    CLOSING = 'Closing'
+    CLOSING = "Closing"
 
     HTTP_OK = 200
     HTTP_NOT_FOUND = 404
@@ -74,15 +74,12 @@ class IntegrationTest(unittest.TestCase):
     def test_b_claim_resources(self):
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
-        manage_helper.claim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic,
-                                        did=None, id_token=None)
+        manage_helper.claim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
         am_delegations, status = manage_helper.do_get_delegations(actor_name=self.am_name,
-                                                                  callback_topic=self.kafka_topic,
-                                                                  did=None, id_token=None)
+                                                                  callback_topic=self.kafka_topic)
         self.assertEqual(0, status.get_status().code)
         broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
-                                                                      callback_topic=self.kafka_topic, did=None,
-                                                                      id_token=None)
+                                                                      callback_topic=self.kafka_topic)
         self.assertEqual(0, status.get_status().code)
         self.assertEqual(len(am_delegations), len(broker_delegations))
         ad = am_delegations[0]
@@ -131,7 +128,7 @@ class IntegrationTest(unittest.TestCase):
         manage_helper = ManageHelper(logger=self.logger)
         am_reservation, status = manage_helper.do_get_reservations(actor_name=KafkaProcessorSingleton.get().am_name,
                                                                    callback_topic=KafkaProcessorSingleton.get().kafka_topic,
-                                                                   rid=res_id, id_token=None)
+                                                                   rid=res_id)
         if am_res_state == -1:
             self.assertEqual(8, status.status.code)
         else:
@@ -143,7 +140,7 @@ class IntegrationTest(unittest.TestCase):
 
         broker_reservation, status = manage_helper.do_get_reservations(actor_name=KafkaProcessorSingleton.get().broker_name,
                                                                        callback_topic=KafkaProcessorSingleton.get().kafka_topic,
-                                                                       rid=res_id, id_token=None)
+                                                                       rid=res_id)
         self.assertEqual(0, status.status.code)
         self.assertEqual(1, len(broker_reservation))
         self.assertEqual(slice_id, broker_reservation[0].slice_id)
