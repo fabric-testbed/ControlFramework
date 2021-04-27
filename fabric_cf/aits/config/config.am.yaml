@@ -30,6 +30,8 @@
 runtime:
   - kafka-server: broker1:9092
   - kafka-schema-registry-url: http://schemaregistry:8081
+  #- kafka-server: 152.54.14.213:29092
+  #- kafka-schema-registry-url: http://152.54.14.213:8081
   - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
   - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem

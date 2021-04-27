@@ -202,8 +202,8 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(self.slice_id, s.slice_id)
 
             self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
-                                               am_res_state=ReservationStates.CloseWait.value,
-                                               broker_res_state=ReservationStates.CloseWait.value)
+                                               am_res_state=ReservationStates.Closed.value,
+                                               broker_res_state=ReservationStates.Closed.value)
 
     def test_e_create_delete_slice_two_vms_no_components(self):
         # Create Slice
@@ -259,8 +259,8 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(self.slice_id, s.slice_id)
 
             self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
-                                               am_res_state=ReservationStates.CloseWait.value,
-                                               broker_res_state=ReservationStates.CloseWait.value)
+                                               am_res_state=ReservationStates.Closed.value,
+                                               broker_res_state=ReservationStates.Closed.value)
 
     def test_f_create_delete_slice_with_capacities_exceeding_available_capacities(self):
         # Create Slice
