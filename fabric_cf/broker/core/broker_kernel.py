@@ -27,7 +27,7 @@ from datetime import datetime
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException
-from fabric_cf.actor.core.kernel.broker_query_model import BrokerQueryModel
+from fabric_cf.actor.core.kernel.broker_query_model_publisher import BrokerQueryModelPublisher
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 
 
@@ -54,8 +54,8 @@ class BrokerKernel:
         if self.kafka_topic is not None and self.publish_interval is not None and self.producer is not None:
             current_time = datetime.utcnow()
             if self.last_query_time is None or (current_time - self.last_query_time).seconds > self.publish_interval:
-                bqm = BrokerQueryModel(broker=self.mgmt_broker, logger=self.logger,
-                                       kafka_topic=self.kafka_topic, producer=self.producer)
+                bqm = BrokerQueryModelPublisher(broker=self.mgmt_broker, logger=self.logger,
+                                                kafka_topic=self.kafka_topic, producer=self.producer)
                 bqm.execute()
                 self.last_query_time = datetime.utcnow()
 

@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
@@ -64,7 +65,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -76,7 +77,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return result.proxies
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -89,7 +90,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return result.models
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -102,7 +103,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return self.get_first(result_list=result.delegations)
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -115,7 +116,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return self.get_first(result_list=result.delegations)
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -127,7 +128,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return result.units
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -140,7 +141,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return ID(uid=result.get_result())
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -157,7 +158,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
                 return rids
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -169,7 +170,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -181,7 +182,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -195,7 +196,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -210,6 +211,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False

@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import traceback
 from typing import TYPE_CHECKING, List
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
@@ -62,7 +63,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
             if result.status.get_code() == 0:
                 return result.slices
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -74,7 +75,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
             if result.status.get_code() == 0:
                 return result.clients
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -90,7 +91,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -106,7 +107,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -121,7 +122,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
             if result.status.get_code() == 0:
                 return result.reservations
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -135,7 +136,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
             if result.status.get_code() == 0:
                 return result.reservations
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -147,7 +148,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
             if result.status.get_code() == 0:
                 return result.slices
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -162,7 +163,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
             if result.status.get_code() == 0:
                 return result.reservations
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -174,7 +175,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
             if result.status.get_code() == 0:
                 return result.get_result()
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -186,7 +187,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
             if self.last_status.get_code() == 0 and result.get_result() is not None:
                 return ID(uid=result.get_result())
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
     def clone(self) -> ABCMgmtActor:
         return LocalServerActor(manager=self.manager, auth=self.auth)

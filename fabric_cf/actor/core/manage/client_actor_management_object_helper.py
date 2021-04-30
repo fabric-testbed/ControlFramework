@@ -129,7 +129,8 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultBrokerQueryModelAvro:
+    def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str,
+                               level: int) -> ResultBrokerQueryModelAvro:
         result = ResultBrokerQueryModelAvro()
         result.status = ResultAvro()
 
@@ -139,8 +140,9 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.resources,
-                                       token=id_token, logger=self.logger, actor_type=self.client.get_type())
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.resources,
+                                           token=id_token, logger=self.logger, actor_type=self.client.get_type())
 
             b = self.client.get_broker(guid=broker)
             if b is not None:

@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+import traceback
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -57,7 +59,7 @@ class LocalAuthority(LocalServerActor, ABCMgmtAuthority):
             if result.status.get_code() == 0:
                 return result.reservations
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -69,7 +71,7 @@ class LocalAuthority(LocalServerActor, ABCMgmtAuthority):
             if result.status.get_code() == 0:
                 return result.units
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -81,7 +83,7 @@ class LocalAuthority(LocalServerActor, ABCMgmtAuthority):
             if result.get_status().get_code() == 0:
                 return self.get_first(result_list=result.units)
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 

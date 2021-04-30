@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+import traceback
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
@@ -59,7 +61,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             if result.status.get_code() == 0:
                 return result.slices
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -71,7 +73,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -87,7 +89,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                 return result.reservations
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -100,7 +102,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             return result.get_code() == 0
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -113,7 +115,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             return result.get_code() == 0
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -133,7 +135,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                 return ID(uid=result.get_result())
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -147,7 +149,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                 return True
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -164,7 +166,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                 return True
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -178,7 +180,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                 return True
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -193,7 +195,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                 return result.reservation_states
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -209,6 +211,6 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                 return result.reservations
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None

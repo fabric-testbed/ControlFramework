@@ -29,10 +29,9 @@ from fabric_mb.message_bus.producer import AvroProducerApi
 
 from fabric_cf.actor.core.apis.abc_mgmt_broker_mixin import ABCMgmtBrokerMixin
 from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
-from fabric_cf.actor.core.common.constants import Constants
 
 
-class BrokerQueryModel(ABCTimerTask):
+class BrokerQueryModelPublisher(ABCTimerTask):
     """
     This class queries Broker for BQM and publishes it to Kafka Topic
     Queries are done periodically based on the configured timer and published to configured kafka topic.
@@ -48,7 +47,7 @@ class BrokerQueryModel(ABCTimerTask):
         """
         Process a claim timeout
         """
-        models = self.broker.get_broker_query_model(broker=self.broker.get_guid(), id_token=None, level=1)
+        models = self.broker.get_broker_query_model(broker=self.broker.get_guid(), level=1, id_token=None)
         if models is None or len(models) != 1:
             self.logger.error(f"Could not get broker query model: {self.broker.get_last_error()}")
             return

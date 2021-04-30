@@ -96,7 +96,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
 
             return None
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
     def get_actors(self) -> List[ActorAvro]:
@@ -109,7 +109,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
                 return result.actors
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
         return None
@@ -124,7 +124,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
                 return result.actors
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
         return None
@@ -140,7 +140,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
                 return result.actors
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
         return None
@@ -155,7 +155,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
                 return result.actors
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
         return None
@@ -170,7 +170,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
                 return result.actors
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
         return None
@@ -185,7 +185,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
                 return result.actors
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
         return None
@@ -200,7 +200,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
                 return result.proxies
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
         return None
@@ -215,7 +215,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
                 return result.proxies
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
         return None
@@ -230,7 +230,7 @@ class LocalContainer(LocalProxy, ABCMgmtContainer):
                 return result.proxies
 
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
             traceback.print_exc()
 
         return None

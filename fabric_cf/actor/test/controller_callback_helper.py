@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_mb.message_bus.producer import AvroProducerApi
+
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
@@ -77,7 +79,7 @@ class ControllerCallbackHelper(ClientCallbackHelper, ABCControllerCallbackProxy)
         state.update_data.absorb(other=update_data)
         return state
 
-    def execute(self, *, request: ABCRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
         if request.get_type() == RPCRequestType.UpdateLease:
             self.lease = request.reservation
             self.called_for_lease += 1

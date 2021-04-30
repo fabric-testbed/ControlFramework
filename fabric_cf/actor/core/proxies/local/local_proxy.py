@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_mb.message_bus.producer import AvroProducerApi
+
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
@@ -59,7 +61,7 @@ class LocalProxy(Proxy, ABCCallbackProxy):
         self.logger = actor.get_logger()
         self.proxy_type = Constants.PROTOCOL_LOCAL
 
-    def execute(self, *, request):
+    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
         try:
             incoming = None
             if request.get_type() == RPCRequestType.Query:

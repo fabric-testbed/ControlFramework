@@ -28,6 +28,7 @@ from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
+from fabric_cf.actor.core.common.constants import ErrorCodes
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
 
@@ -63,3 +64,11 @@ class LocalProxy(ABCComponent):
         if result_list is not None and len(result_list) > 0:
             return result_list.__iter__().__next__()
         return None
+
+    def on_exception(self, e: Exception, traceback_str: str):
+        self.last_exception = e
+        status = ResultAvro()
+        status.code = ErrorCodes.ErrorInternalError.value
+        status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
+        status.details = traceback_str
+        self.last_status = status

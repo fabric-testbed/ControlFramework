@@ -57,14 +57,14 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
 from fabric_cf.actor.test.base_test_case import BaseTestCase
 from fabric_cf.actor.test.client_callback_helper import ClientCallbackHelper
-from fabric_cf.actor.test.core.policy.fim_test_helper import FimTestHelper
+from fabric_cf.actor.test.fim_test_helper import FimTestHelper
 from fabric_cf.actor.test.dummy_authority_proxy import DummyAuthorityProxy
 
 
 class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
     DonateStartCycle = 10
     DonateEndCycle = 100
-    logger = logging.getLogger('BrokerPolicyTest')
+    logger = logging.getLogger('BrokerSimplerUnitsPolicyTest')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
     logging.basicConfig(format=log_format, filename="actor.log")
     logger.setLevel(logging.INFO)
