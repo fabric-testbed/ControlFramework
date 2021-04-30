@@ -25,7 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import threading
 from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.producer import AvroProducerApi
@@ -37,20 +36,11 @@ from fabric_cf.actor.core.kernel.failed_rpc_event import FailedRPCEvent
 if TYPE_CHECKING:
     from fabric_cf.actor.core.kernel.rpc_request import RPCRequest
 
-thread_local = threading.local()
-
 
 class RPCExecutor:
     """
     Execute an RPC
     """
-    @staticmethod
-    def get_producer() -> AvroProducerApi:
-        if not hasattr(thread_local, "producer"):
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            thread_local.producer = GlobalsSingleton.get().get_kafka_producer()
-        return thread_local.producer
-
     @staticmethod
     def post_exception(request: RPCRequest, e: RPCException):
         """
@@ -75,7 +65,6 @@ class RPCExecutor:
         logger.debug("Performing RPC: type={} to:{}".format(request.request.get_type(),
                                                             request.proxy.get_name()))
         try:
-            #producer = RPCExecutor.get_producer()
             request.proxy.execute(request=request.request, producer=producer)
             if request.handler is None:
                 if request.timer is not None:
