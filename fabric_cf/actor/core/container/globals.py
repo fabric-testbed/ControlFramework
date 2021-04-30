@@ -390,7 +390,7 @@ class Globals:
         Start the timer thread
         """
         if self.timer_thread is not None:
-            raise RuntimeError("This actor has already been started")
+            raise RuntimeError("This timer thread has already been started")
 
         self.timer_thread = threading.Thread(target=self.timer_loop)
         self.timer_thread.setName('GlobalTimer')

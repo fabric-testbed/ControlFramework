@@ -69,7 +69,7 @@ class IntegrationTest(unittest.TestCase):
         oh = OrchestratorHelper()
         response = oh.resources()
         self.assertEqual(self.HTTP_NOT_FOUND, response.status_code)
-        self.assertEqual("Resource(s) not found", response.json())
+        self.assertEqual("Resource(s) not found!", response.json())
 
     def test_b_claim_resources(self):
         KafkaProcessorSingleton.get().start()

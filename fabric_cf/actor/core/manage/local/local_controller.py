@@ -29,7 +29,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
+from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 
@@ -80,14 +80,14 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
         return None
 
-    def get_pool_info(self, *, broker: ID, id_token: str, level: int) -> List[PoolInfoAvro]:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> List[BrokerQueryModelAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_pool_info(broker=broker, caller=self.auth, id_token=id_token, level=level)
+            result = self.manager.get_broker_query_model(broker=broker, caller=self.auth, id_token=id_token, level=level)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.pools
+                return result.models
         except Exception as e:
             self.last_exception = e
 

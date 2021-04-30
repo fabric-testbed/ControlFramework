@@ -29,7 +29,7 @@ import traceback
 from typing import TYPE_CHECKING, List
 
 from fabric_cf.actor.boot.configuration_exception import ConfigurationException
-from fabric_cf.actor.boot.inventory.pool_creator import PoolCreator
+from fabric_cf.actor.boot.inventory.aggregate_resource_model_creator import AggregateResourceModelCreator
 from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.common.constants import Constants
@@ -314,12 +314,12 @@ class ConfigurationProcessor:
         @raises ConfigurationException in case of error
         """
         if isinstance(actor, ABCAuthority):
-            self.resources = self.read_resource_pools(config=config)
+            self.resources = self.read_resource_config(config=config)
 
     @staticmethod
-    def read_resource_pools(*, config: ActorConfig) -> dict:
+    def read_resource_config(*, config: ActorConfig) -> dict:
         """
-        Read resource pool config and create pools
+        Read resource config and create ARM and inventory slices
         @param config actor config
         @raises ConfigurationException in case of error
         """
@@ -385,8 +385,8 @@ class ConfigurationProcessor:
         @raises ConfigurationException in case of error
         """
         if isinstance(self.actor, ABCAuthority) and isinstance(self.actor.get_plugin(), AuthoritySubstrate):
-            creator = PoolCreator(substrate=self.actor.get_plugin(), resources=self.resources,
-                                  neo4j_config=self.config.get_global_config().get_neo4j_config())
+            creator = AggregateResourceModelCreator(substrate=self.actor.get_plugin(), resources=self.resources,
+                                                    neo4j_config=self.config.get_global_config().get_neo4j_config())
             self.aggregate_delegation_models = creator.process_neo4j(actor_name=self.actor.get_name(),
                                                                      substrate_file=self.config.get_actor().
                                                                      get_substrate_file())

@@ -37,8 +37,8 @@ from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.demand_reservation_avro import DemandReservationAvro
 from fabric_mb.message_bus.messages.extend_reservation_avro import ExtendReservationAvro
 from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
-from fabric_mb.message_bus.messages.get_pool_info_request_avro import GetPoolInfoRequestAvro
-from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
+from fabric_mb.message_bus.messages.get_broker_query_model_request_avro import GetBrokerQueryModelRequestAvro
+from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.reclaim_resources_avro import ReclaimResourcesAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -296,13 +296,13 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
 
         return rret_val
 
-    def get_pool_info(self, *, broker: ID, id_token: str, level: int) -> List[PoolInfoAvro]:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> List[BrokerQueryModelAvro]:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
 
         try:
-            request = GetPoolInfoRequestAvro()
+            request = GetBrokerQueryModelRequestAvro()
             request.id_token = id_token
             request.guid = str(self.management_id)
             request.auth = self.auth
@@ -330,7 +330,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
                     self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
-                        rret_val = message_wrapper.response.pools
+                        rret_val = message_wrapper.response.models
             else:
                 self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
                     request.name, self.kafka_topic))

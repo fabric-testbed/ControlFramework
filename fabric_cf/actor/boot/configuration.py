@@ -73,6 +73,10 @@ class GlobalConfig:
         if Constants.CONFIG_SECTION_PDP in config:
             self.pdp = config[Constants.CONFIG_SECTION_PDP]
 
+        self.bqm = {}
+        if Constants.BROKER_QUERY_MODEL in config:
+            self.bqm = config[Constants.BROKER_QUERY_MODEL]
+
     def get_runtime(self) -> dict:
         """
         Return runtime config
@@ -120,6 +124,12 @@ class GlobalConfig:
         Return PDP config
         """
         return self.pdp
+
+    def get_bqm_config(self) -> dict:
+        """
+        Return BQM config
+        """
+        return self.bqm
 
 
 class HandlerConfig:
@@ -299,7 +309,6 @@ class ActorConfig:
     def __init__(self, *, config: list):
         self.policy = None
         self.description = None
-        self.pools = []
         self.resources = []
         self.controls = []
         self.type = None

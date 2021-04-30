@@ -29,7 +29,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
+from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
@@ -42,7 +42,6 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
     from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
-    from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
 
@@ -78,14 +77,14 @@ class LocalBroker(LocalServerActor, ABCMgmtBrokerMixin):
 
         return None
 
-    def get_pool_info(self, *, broker: ID, id_token: str, level: int) -> List[PoolInfoAvro]:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> List[BrokerQueryModelAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_pool_info(broker=broker, caller=self.auth, id_token=id_token)
+            result = self.manager.get_broker_query_model(broker=broker, caller=self.auth, id_token=id_token)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.pools
+                return result.models
         except Exception as e:
             self.last_exception = e
 

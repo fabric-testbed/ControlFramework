@@ -119,11 +119,11 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
         return reservation.get_client_auth_token().get_guid()
 
     @staticmethod
-    def get_resource_pools_query(*, level: int) -> dict:
+    def get_broker_query_model_query(*, level: int) -> dict:
         """
         Return dictionary representing query
         """
-        properties = {Constants.QUERY_ACTION: Constants.QUERY_ACTION_DISCOVER_POOLS,
+        properties = {Constants.QUERY_ACTION: Constants.QUERY_ACTION_DISCOVER_BQM,
                       Constants.QUERY_DETAIL_LEVEL: str(level)}
         return properties
 

@@ -72,28 +72,20 @@ class KafkaProxy(Proxy, ABCCallbackProxy):
         self.logger = logger
         self.proxy_type = Constants.PROTOCOL_KAFKA
         self.type = self.TypeDefault
+        '''
         self.producer = self.create_kafka_producer()
+        '''
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['logger']
-        del state['producer']
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.logger = None
-        self.producer = None
 
-    def create_kafka_producer(self) -> AvroProducerApi:
-        try:
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            return GlobalsSingleton.get().get_kafka_producer()
-        except Exception as e:
-            self.logger.error(traceback.format_exc())
-            self.logger.error("Failed to create kafka producer {}".format(e))
-
-    def execute(self, *, request: ABCRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
         avro_message = None
         if request.get_type() == RPCRequestType.Query:
             avro_message = QueryAvro()
@@ -126,14 +118,11 @@ class KafkaProxy(Proxy, ABCCallbackProxy):
         else:
             raise ProxyException("Unsupported RPC: type={}".format(request.get_type()))
 
-        if self.producer is None:
-            self.producer = self.create_kafka_producer()
-
-        if self.producer is not None and self.producer.produce_sync(topic=self.kafka_topic, record=avro_message):
+        if producer is not None and producer.produce_sync(topic=self.kafka_topic, record=avro_message):
             self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
-                                                                                       self.kafka_topic, self.producer))
+                                                                                       self.kafka_topic, producer))
 
     def prepare_query(self, *, callback: ABCCallbackProxy, query: dict, caller: AuthToken, id_token: str):
         request = KafkaProxyRequestState()

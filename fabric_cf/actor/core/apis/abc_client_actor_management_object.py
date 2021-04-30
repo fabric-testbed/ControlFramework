@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
     from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
-    from fabric_mb.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
+    from fabric_mb.message_bus.messages.result_broker_query_model_avro import ResultBrokerQueryModelAvro
     from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
@@ -115,7 +115,7 @@ class ABCClientActorManagementObject(ABC):
         """
 
     @abstractmethod
-    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultPoolInfoAvro:
+    def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultBrokerQueryModelAvro:
         """
         Get Pool Info
         @param broker : broker ID

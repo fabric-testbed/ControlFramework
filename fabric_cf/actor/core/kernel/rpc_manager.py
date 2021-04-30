@@ -56,6 +56,7 @@ from fabric_cf.actor.core.kernel.rpc_executor import RPCExecutor
 from fabric_cf.actor.core.kernel.rpc_request import RPCRequest
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.proxies.proxy import Proxy
+from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.kernel_timer import KernelTimer
 from fabric_cf.actor.core.util.rpc_exception import RPCException, RPCError
 from fabric_cf.actor.core.util.update_data import UpdateData
@@ -77,6 +78,8 @@ class RPCManager:
         self.num_queued = 0
         self.pending_lock = threading.Lock()
         self.stats_lock = threading.Condition()
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        self.producer = GlobalsSingleton.get().get_kafka_producer()
         self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_THREADS,
                                                                  thread_name_prefix=self.__class__.__name__)
 
@@ -588,7 +591,7 @@ class RPCManager:
                                                                  rpc.get_actor().get_name()))
         self.enqueue(rpc=rpc)
 
-    def add_pending_request(self, *, guid: str, request: RPCRequest):
+    def add_pending_request(self, *, guid: ID, request: RPCRequest):
         try:
             self.pending_lock.acquire()
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
@@ -599,7 +602,7 @@ class RPCManager:
         finally:
             self.pending_lock.release()
 
-    def remove_pending_request(self, *, guid: str) -> RPCRequest:
+    def remove_pending_request(self, *, guid: ID) -> RPCRequest:
         result = None
         try:
             self.pending_lock.acquire()
@@ -639,7 +642,7 @@ class RPCManager:
 
         try:
             self.queued()
-            self.thread_pool.submit(RPCExecutor.run, rpc)
+            self.thread_pool.submit(RPCExecutor.run, rpc, self.producer)
         except Exception as e:
             logger.error(traceback.format_exc())
             logger.error("Exception occurred while starting RPC Executor {}".format(e))

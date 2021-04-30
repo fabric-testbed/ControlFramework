@@ -31,6 +31,7 @@ from fabric_mb.message_bus.messages.extend_lease_avro import ExtendLeaseAvro
 from fabric_mb.message_bus.messages.modify_lease_avro import ModifyLeaseAvro
 from fabric_mb.message_bus.messages.redeem_avro import RedeemAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
+from fabric_mb.message_bus.producer import AvroProducerApi
 
 from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
 from fabric_cf.actor.core.common.constants import Constants
@@ -55,7 +56,7 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
         super().__init__(kafka_topic=kafka_topic, identity=identity, logger=logger)
         self.type = self.TypeSite
 
-    def execute(self, *, request: ABCRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
         avro_message = None
         if request.get_type() == RPCRequestType.Redeem:
             avro_message = RedeemAvro()
@@ -86,17 +87,14 @@ class KafkaAuthorityProxy(KafkaBrokerProxy, ABCAuthorityProxy):
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
 
         else:
-            super().execute(request=request)
+            super().execute(request=request, producer=producer)
             return
 
-        if self.producer is None:
-            self.producer = self.create_kafka_producer()
-
-        if self.producer is not None and self.producer.produce_sync(topic=self.kafka_topic, record=avro_message):
+        if producer is not None and producer.produce_sync(topic=self.kafka_topic, record=avro_message):
             self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
-                                                                                       self.kafka_topic, self.producer))
+                                                                                       self.kafka_topic, producer))
 
     def _prepare(self, *, reservation: ABCControllerReservation, callback: ABCControllerCallbackProxy,
                  caller: AuthToken) -> ABCRPCRequestState:

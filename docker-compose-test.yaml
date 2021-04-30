@@ -175,7 +175,7 @@ services:
       - database
       - neo4j1
     ports:
-      - 11000:11000
+      - 11003:11000
     volumes:
       - ./authority.sh:/usr/src/app/docker-entrypoint.sh
       - ${NEO4DATA_HOST:-.}/neo4j1:/usr/src/app/neo4j

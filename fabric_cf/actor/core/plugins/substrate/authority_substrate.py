@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
-from fabric_cf.actor.core.core.pool_manager import PoolManager
+from fabric_cf.actor.core.core.inventory_slice_manager import InventorySliceManager
 from fabric_cf.actor.core.plugins.substrate.substrate_mixin import SubstrateMixin
 
 if TYPE_CHECKING:
@@ -41,7 +41,7 @@ if TYPE_CHECKING:
 class AuthoritySubstrate(SubstrateMixin):
     def __init__(self, *, actor: ActorMixin, db: ABCSubstrateDatabase, handler_processor: HandlerProcessor):
         super().__init__(actor=actor, db=db, handler_processor=handler_processor)
-        self.pool_manager = None
+        self.inventory_slice_manager = None
         self.initialized = False
 
     def __getstate__(self):
@@ -49,7 +49,7 @@ class AuthoritySubstrate(SubstrateMixin):
         del state['logger']
         del state['actor']
         del state['initialized']
-        del state['pool_manager']
+        del state['inventory_slice_manager']
 
         return state
 
@@ -60,17 +60,17 @@ class AuthoritySubstrate(SubstrateMixin):
         self.actor = None
 
         self.initialized = False
-        self.pool_manager = None
+        self.inventory_slice_manager = None
 
     def initialize(self):
         if not self.initialized:
             super().initialize()
-            self.pool_manager = PoolManager(db=self.get_database(), identity=self.actor,
-                                            logger=self.get_logger())
+            self.inventory_slice_manager = InventorySliceManager(db=self.get_database(), identity=self.actor,
+                                                                 logger=self.get_logger())
             self.initialized = True
 
-    def get_pool_manager(self) -> PoolManager:
-        return self.pool_manager
+    def get_inventory_slice_manager(self) -> InventorySliceManager:
+        return self.inventory_slice_manager
 
     def revisit(self, *, slice_obj: ABCSlice = None, reservation: ABCReservationMixin = None, delegation: ABCDelegation = None):
         if slice_obj is not None and slice_obj.is_inventory():

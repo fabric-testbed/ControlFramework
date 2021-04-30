@@ -28,10 +28,10 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
-  #- kafka-server: 152.54.14.213:29092
-  #- kafka-schema-registry-url: http://152.54.14.213:8081
+  #- kafka-server: broker1:9092
+  #- kafka-schema-registry-url: http://schemaregistry:8081
+  - kafka-server: 152.54.14.213:29092
+  - kafka-schema-registry-url: http://152.54.14.213:8081
   - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
   - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
@@ -112,6 +112,11 @@ neo4j:
   pass: password
   import_host_dir: /usr/src/app/neo4j/imports/
   import_dir: /imports
+
+bqm:
+  kafka-topic: broker-resource-usage
+    # in seconds (default set to 2 hours)
+  publish-interval: 7200
 
 actor:
   - type: broker

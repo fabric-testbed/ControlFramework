@@ -111,6 +111,11 @@ neo4j:
   import_host_dir: /usr/src/app/neo4j/imports/
   import_dir: /imports
 
+bqm:
+  kafka-topic: broker-resource-usage
+    # in seconds (default set to 2 hours)
+  publish-interval: 7200
+
 actor:
   - type: broker
   - name: broker

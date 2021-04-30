@@ -31,6 +31,7 @@ import prometheus_client
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
 from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
+from fabric_cf.broker.broker_kernel import BrokerKernelSingleton
 
 
 def main():
@@ -51,6 +52,7 @@ def main():
 
             while True:
                 time.sleep(0.0001)
+                BrokerKernelSingleton.get().do_periodic()
                 if h.interrupted:
                     GlobalsSingleton.get().stop()
     except Exception:

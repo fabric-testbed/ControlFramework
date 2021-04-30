@@ -41,9 +41,9 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 
 
-class PoolManagerError(Enum):
+class InventorySliceManagerError(Enum):
     """
-    Enumeration for Pool Manager errors
+    Enumeration for Inv Slice Manager errors
     """
     ErrorNone = 0
     ErrorPoolExists = -10
@@ -53,18 +53,18 @@ class PoolManagerError(Enum):
     ErrorInternalError = -50
 
 
-class CreatePoolResult:
+class CreateInventorySliceResult:
     """
-    Result of Create Pool
+    Result of Create Inv Slice
     """
     def __init__(self):
-        self.code = PoolManagerError.ErrorNone
+        self.code = InventorySliceManagerError.ErrorNone
         self.slice = None
 
 
-class PoolManager:
+class InventorySliceManager:
     """
-    Implements the class responsible for creating pools on startup
+    Implements the class responsible for creating inventory slices on startup
     """
     def __init__(self, *, db: ABCDatabase, identity: ABCActorIdentity, logger):
         if db is None or identity is None or logger is None:
@@ -73,22 +73,22 @@ class PoolManager:
         self.identity = identity
         self.logger = logger
 
-    def create_pool(self, *, slice_id: ID, name: str, rtype: ResourceType) -> CreatePoolResult:
+    def create_inventory_slice(self, *, slice_id: ID, name: str, rtype: ResourceType) -> CreateInventorySliceResult:
         """
         Create Inventory Pool at boot
         @param slice_id slice id
         @param name name
         @param rtype resource type
         """
-        result = CreatePoolResult()
+        result = CreateInventorySliceResult()
         if slice_id is None or name is None or rtype is None:
-            result.code = PoolManagerError.ErrorInvalidArguments
+            result.code = InventorySliceManagerError.ErrorInvalidArguments
             return result
         try:
             temp = self.db.get_slice(slice_id=slice_id)
 
-            if temp is not None and len(temp) > 0:
-                result.code = PoolManagerError.ErrorPoolExists
+            if temp is not None:
+                result.code = InventorySliceManagerError.ErrorPoolExists
                 return result
 
             slice_list = self.db.get_inventory_slices()
@@ -97,7 +97,7 @@ class PoolManager:
                     rt = slice_obj.get_resource_type()
                     if rt == rtype:
                         result.slice = slice_obj
-                        result.code = PoolManagerError.ErrorTypeExists
+                        result.code = InventorySliceManagerError.ErrorTypeExists
                         return result
 
             slice_obj = SliceFactory.create(slice_id=slice_id, name=name)
@@ -110,13 +110,13 @@ class PoolManager:
                 result.slice = slice_obj
             except Exception:
                 self.logger.error(traceback.format_exc())
-                result.code = PoolManagerError.ErrorDatabaseError
+                result.code = InventorySliceManagerError.ErrorDatabaseError
         except Exception:
             self.logger.error(traceback.format_exc())
-            result.code = PoolManagerError.ErrorInternalError
+            result.code = InventorySliceManagerError.ErrorInternalError
         return result
 
-    def update_pool(self, *, slice_obj: ABCSlice):
+    def update_inventory_slice(self, *, slice_obj: ABCSlice):
         """
         Update the resource pool
         @param slice_obj slice object
@@ -127,16 +127,16 @@ class PoolManager:
         except Exception as e:
             raise ResourcesException("Could not update slice {}".format(e))
 
-    def remove_pool(self, *, pool_id: ID, rtype: ResourceType):
+    def remove_inventory_slice(self, *, slice_id: ID, rtype: ResourceType):
         """
         Remove a pool
-        @param pool_id pool id
+        @param slice_id pool id
         @param rtype resource type
         """
-        slice_obj = self.db.get_slice(slice_id=pool_id)
+        slice_obj = self.db.get_slice(slice_id=slice_id)
 
         if slice_obj is not None:
             if not slice_obj.is_inventory() or rtype != slice_obj.get_resource_type():
                 raise ResourcesException(Constants.INVALID_ARGUMENT)
 
-            self.db.remove_slice(slice_id=pool_id)
+            self.db.remove_slice(slice_id=slice_id)

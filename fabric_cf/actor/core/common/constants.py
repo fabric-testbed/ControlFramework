@@ -108,6 +108,7 @@ class Constants:
     TYPE = "type"
     GUID = "guid"
     CREDMGR_HOST = "credmgr-host"
+    PUBLISH_INTERVAL = "publish-interval"
 
     PROPERTY_CLASS_NAME = "ObjectClassName"
     PROPERTY_MODULE_NAME = "ModuleName"
@@ -171,10 +172,7 @@ class Constants:
     ELASTIC_TIME = "request.elasticTime"
     ELASTIC_SIZE = "request.elasticSize"
 
-    POOL_NAME = 'pool.name'
-    POOL_PREFIX = "pool."
-    POOLS_COUNT = "pools.count"
-    QUERY_ACTION_DISCOVER_POOLS = "discover.pools"
+    QUERY_ACTION_DISCOVER_BQM = "discover.bqm"
     QUERY_ACTION = "query.action"
     QUERY_RESPONSE = "query.response"
     QUERY_RESPONSE_STATUS = "query.response.status"

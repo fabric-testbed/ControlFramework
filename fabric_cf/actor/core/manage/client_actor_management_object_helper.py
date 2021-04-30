@@ -31,7 +31,7 @@ from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
-from fabric_mb.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
+from fabric_mb.message_bus.messages.result_broker_query_model_avro import ResultBrokerQueryModelAvro
 from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
 from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
@@ -129,8 +129,8 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultPoolInfoAvro:
-        result = ResultPoolInfoAvro()
+    def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultBrokerQueryModelAvro:
+        result = ResultBrokerQueryModelAvro()
         result.status = ResultAvro()
 
         if broker is None or caller is None:
@@ -144,17 +144,17 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
             b = self.client.get_broker(guid=broker)
             if b is not None:
-                request = BrokerPolicy.get_resource_pools_query(level=level)
+                request = BrokerPolicy.get_broker_query_model_query(level=level)
                 response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request, id_token=id_token)
-                pool = Translate.translate_to_pool_info(query_response=response)
-                if result.pools is None:
-                    result.pools = []
-                result.pools.append(pool)
+                model = Translate.translate_to_broker_query_model(query_response=response, level=level)
+                if result.models is None:
+                    result.models = []
+                result.models.append(model)
             else:
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.interpret())
         except Exception as e:
-            self.logger.error("get_pool_info {}".format(e))
+            self.logger.error("get_broker_query_model {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
