@@ -5,7 +5,7 @@ devices.
 ### Orchestrator
 Complete Flow for all messages and processing at Orchestrator is described below:
 - OrchestratorHandler class:: create_slice processes incoming Create Slice as follows:
-  - Query Resources via Broker to get BQM by sending Query/QueryResponse exchange in OrchestratorHandler::discover_types()
+  - Query Resources via Broker to get BQM by sending Query/QueryResponse exchange in OrchestratorHandler::discover_broker_query_model()
   - Creates RequestWorkflow class (Place holder for any future embedding)
   - Invokes RequestWorkflow::run responsible for translating ASM into individual reservations representing slivers using BQM
   - Adds the computed reservations to queue of SliceDeferThread class

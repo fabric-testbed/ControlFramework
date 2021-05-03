@@ -151,7 +151,7 @@ class ResponseBuilder:
         return response
 
     @staticmethod
-    def get_broker_query_model_summary(*, bqm: dict):
+    def get_broker_query_model_summary(*, bqm: str):
         """
         Get BQM
         :param bqm:

@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_mb.message_bus.producer import AvroProducerApi
+
 from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.rpc_request_state import RPCRequestState
@@ -39,5 +41,5 @@ class DummyProxy(Proxy):
         super().__init__(auth=auth)
         self.proxy_type = Constants.PROTOCOL_LOCAL
 
-    def execute(self, *, request: ABCRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
         raise NotImplementedError

@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
+from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 from fabric_mb.message_bus.messages.resource_ticket_avro import ResourceTicketAvro
 from fabric_mb.message_bus.messages.resource_set_avro import ResourceSetAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
@@ -273,12 +273,11 @@ class Translate:
         return avro_delegation
 
     @staticmethod
-    def translate_to_pool_info(*, query_response: dict) -> PoolInfoAvro:
-        pool_info = PoolInfoAvro()
-        pool_info.type = Constants.POOL_TYPE
-        pool_info.name = Constants.BROKER_QUERY_MODEL
-        pool_info.properties = query_response
-        return pool_info
+    def translate_to_broker_query_model(*, query_response: dict, level: int) -> BrokerQueryModelAvro:
+        bqm = BrokerQueryModelAvro()
+        bqm.level = level
+        bqm.model = query_response.get(Constants.BROKER_QUERY_MODEL, None)
+        return bqm
 
     @staticmethod
     def translate_unit_set(*, unit_set: UnitSet) -> List[Units]:

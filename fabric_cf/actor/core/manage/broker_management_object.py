@@ -38,7 +38,7 @@ from fabric_cf.actor.core.manage.server_actor_management_object import ServerAct
 from fabric_cf.actor.core.apis.abc_client_actor_management_object import ABCClientActorManagementObject
 
 if TYPE_CHECKING:
-    from fabric_mb.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
+    from fabric_mb.message_bus.messages.result_broker_query_model_avro import ResultBrokerQueryModelAvro
     from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
     from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
     from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
@@ -50,7 +50,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
 class BrokerManagementObject(ServerActorManagementObject, ABCClientActorManagementObject):
@@ -91,8 +90,9 @@ class BrokerManagementObject(ServerActorManagementObject, ABCClientActorManageme
     def add_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
         return self.client_helper.add_broker(broker=broker, caller=caller)
 
-    def get_pool_info(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultPoolInfoAvro:
-        return self.client_helper.get_pool_info(broker=broker, caller=caller, id_token=id_token, level=level)
+    def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str,
+                               level: int) -> ResultBrokerQueryModelAvro:
+        return self.client_helper.get_broker_query_model(broker=broker, caller=caller, id_token=id_token, level=level)
 
     def add_reservation(self, *, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
         return self.client_helper.add_reservation(reservation=reservation, caller=caller)

@@ -28,6 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fabric_mb.message_bus.producer import AvroProducerApi
+
 from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
@@ -48,12 +50,13 @@ class ABCProxy(ABCActorIdentity):
         """
 
     @abstractmethod
-    def execute(self, *, request: ABCRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
         """
         Executes the specified request
 
         Args:
             request: request
+            producer: AVRO AvroProducerApi
 
         Raises:
             Exception in case of error

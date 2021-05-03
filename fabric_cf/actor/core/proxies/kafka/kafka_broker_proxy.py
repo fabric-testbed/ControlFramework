@@ -33,6 +33,7 @@ from fabric_mb.message_bus.messages.reclaim_delegation_avro import ReclaimDelega
 from fabric_mb.message_bus.messages.relinquish_avro import RelinquishAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 from fabric_mb.message_bus.messages.ticket_avro import TicketAvro
+from fabric_mb.message_bus.producer import AvroProducerApi
 
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
@@ -54,7 +55,7 @@ class KafkaBrokerProxy(KafkaProxy, ABCBrokerProxy):
         super().__init__(kafka_topic=kafka_topic, identity=identity, logger=logger)
         self.type = KafkaProxy.TypeBroker
 
-    def execute(self, *, request: ABCRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
         avro_message = None
         if request.get_type() == RPCRequestType.Ticket:
             avro_message = TicketAvro()
@@ -91,17 +92,14 @@ class KafkaBrokerProxy(KafkaProxy, ABCBrokerProxy):
             avro_message.callback_topic = request.callback_topic
             avro_message.auth = Translate.translate_auth_to_avro(auth=request.caller)
         else:
-            super().execute(request=request)
+            super().execute(request=request, producer=producer)
             return
 
-        if self.producer is None:
-            self.producer = self.create_kafka_producer()
-
-        if self.producer is not None and self.producer.produce_sync(topic=self.kafka_topic, record=avro_message):
+        if producer is not None and producer.produce_sync(topic=self.kafka_topic, record=avro_message):
             self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,
-                                                                                       self.kafka_topic, self.producer))
+                                                                                       self.kafka_topic, producer))
 
     def _prepare_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
                             caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:

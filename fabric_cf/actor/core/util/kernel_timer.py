@@ -34,7 +34,7 @@ class KernelTimer:
     def schedule(*, queue: ABCTimerQueue, task: ABCTimerTask, delay: int):
         """
         Schedule a timer
-        :param queue: timer queue (maps to Actor's queue)
+        :param queue: timer queue (maps to Actor class)
         :param task: task
         :param delay: delay
         :return:

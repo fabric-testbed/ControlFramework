@@ -644,7 +644,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"query_action {query_action}")
 
-        if query_action != Constants.QUERY_ACTION_DISCOVER_POOLS:
+        if query_action != Constants.QUERY_ACTION_DISCOVER_BQM:
             raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"query_action {query_action}")
 

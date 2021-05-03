@@ -29,11 +29,11 @@ import traceback
 
 from fabric_mb.message_bus.messages.extend_reservation_avro import ExtendReservationAvro
 from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
-from fabric_mb.message_bus.messages.get_pool_info_request_avro import GetPoolInfoRequestAvro
+from fabric_mb.message_bus.messages.get_broker_query_model_request_avro import GetBrokerQueryModelRequestAvro
 from fabric_mb.message_bus.messages.message import IMessageAvro
 from fabric_mb.message_bus.messages.reclaim_resources_avro import ReclaimResourcesAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
-from fabric_mb.message_bus.messages.result_pool_info_avro import ResultPoolInfoAvro
+from fabric_mb.message_bus.messages.result_broker_query_model_avro import ResultBrokerQueryModelAvro
 from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
 from fabric_mb.message_bus.messages.add_reservation_avro import AddReservationAvro
 from fabric_mb.message_bus.messages.add_reservations_avro import AddReservationsAvro
@@ -78,8 +78,8 @@ class KafkaClientActorService(KafkaActorService):
         elif message.get_message_name() == IMessageAvro.get_actors_request:
             result = self.get_brokers(request=message)
 
-        elif message.get_message_name() == IMessageAvro.get_pool_info_request:
-            result = self.get_pool_info(request=message)
+        elif message.get_message_name() == IMessageAvro.get_broker_query_model_request:
+            result = self.get_broker_query_model(request=message)
 
         elif message.get_message_name() == IMessageAvro.extend_reservation:
             result = self.extend_reservation(request=message)
@@ -201,8 +201,8 @@ class KafkaClientActorService(KafkaActorService):
         result.message_id = request.message_id
         return result
 
-    def get_pool_info(self, *, request: GetPoolInfoRequestAvro) -> ResultPoolInfoAvro:
-        result = ResultPoolInfoAvro()
+    def get_broker_query_model(self, *, request: GetBrokerQueryModelRequestAvro) -> ResultBrokerQueryModelAvro:
+        result = ResultBrokerQueryModelAvro()
         result.status = ResultAvro()
         result.message_id = request.message_id
 
@@ -215,7 +215,7 @@ class KafkaClientActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_pool_info(broker=ID(uid=request.broker_id), caller=auth, id_token=request.get_id_token())
+            result = mo.get_broker_query_model(broker=ID(uid=request.broker_id), caller=auth, id_token=request.get_id_token())
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

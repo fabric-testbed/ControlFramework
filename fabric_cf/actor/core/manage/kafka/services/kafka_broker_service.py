@@ -58,8 +58,8 @@ class KafkaBrokerService(KafkaClientActorService, KafkaServerActorService):
         elif message.get_message_name() == IMessageAvro.get_actors_request:
             result = self.get_brokers(request=message)
 
-        elif message.get_message_name() == IMessageAvro.get_pool_info_request:
-            result = self.get_pool_info(request=message)
+        elif message.get_message_name() == IMessageAvro.get_broker_query_model_request:
+            result = self.get_broker_query_model(request=message)
 
         elif message.get_message_name() == IMessageAvro.extend_reservation:
             result = self.extend_reservation(request=message)

@@ -204,22 +204,15 @@
     },
     {
 	    "namespace": "fabric.cf.model",
-        "name": "PoolRecord",
+        "name": "BrokerQueryModelRecord",
         "type": "record",
         "fields": [{
-                "name": "name",
-                "type": "string"
+                "name": "level",
+                "type": "int"
             },
             {
-                "name": "type",
-                "type": "string"
-            },
-			{
-                "name": "properties",
-                "type": ["null", {
-                    "type": "map",
-                    "values": "string"
-                }],
+                "name": "model",
+                "type": ["null", "string"],
                 "default": null
             }
         ]
@@ -830,11 +823,8 @@
 				"default": null
 			},
 			{
-				"name": "pools",
-				"type": ["null", {
-				    "type":"array",
-				    "items" : "fabric.cf.model.PoolRecord"
-				}],
+				"name": "model",
+                "type": ["null", "fabric.cf.model.BrokerQueryModelRecord"],
 				"default": null
 			},
 			{

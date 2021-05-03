@@ -92,7 +92,7 @@ class MessageService(AvroConsumerApi):
                     message.get_message_name() == IMessageAvro.get_delegations or \
                     message.get_message_name() == IMessageAvro.get_reservation_units_request or \
                     message.get_message_name() == IMessageAvro.get_unit_request or \
-                    message.get_message_name() == IMessageAvro.get_pool_info_request or \
+                    message.get_message_name() == IMessageAvro.get_broker_query_model_request or \
                     message.get_message_name() == IMessageAvro.add_slice or \
                     message.get_message_name() == IMessageAvro.update_slice or \
                     message.get_message_name() == IMessageAvro.remove_slice or \

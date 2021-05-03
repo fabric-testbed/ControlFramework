@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_mb.message_bus.producer import AvroProducerApi
+
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
@@ -87,7 +89,7 @@ class ClientCallbackHelper(ABCClientCallbackProxy):
         self.prepared += 1
         return state
 
-    def execute(self, *, request: ABCRPCRequestState):
+    def execute(self, *, request: ABCRPCRequestState, producer: AvroProducerApi):
         if request.get_type() == RPCRequestType.UpdateTicket:
             self.called += 1
             self.reservation = request.reservation

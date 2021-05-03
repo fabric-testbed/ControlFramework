@@ -23,11 +23,13 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import logging
 import time
-from abc import abstractmethod
+import unittest
 
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.network_node import NodeType
+from fim.slivers.capacities_labels import Capacities
+from fim.slivers.network_node import NodeType, NodeSliver
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
@@ -39,6 +41,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.core.ticket import Ticket
+from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservationFactory
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
@@ -49,6 +52,7 @@ from fabric_cf.actor.core.plugins.handlers.configuration_mapping import Configur
 from fabric_cf.actor.core.plugins.substrate.db.substrate_actor_database import SubstrateActorDatabase
 from fabric_cf.actor.core.plugins.substrate.substrate_mixin import SubstrateMixin
 from fabric_cf.actor.core.policy.authority_calendar_policy import AuthorityCalendarPolicy
+from fabric_cf.actor.core.policy.network_node_control import NetworkNodeControl
 from fabric_cf.actor.core.policy.resource_control import ResourceControl
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.time.term import Term
@@ -58,41 +62,66 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
 from fabric_cf.actor.test.base_test_case import BaseTestCase
 from fabric_cf.actor.test.controller_callback_helper import ControllerCallbackHelper, IUpdateLeaseHandler
-from fabric_cf.actor.test.core.policy.fim_test_helper import FimTestHelper
+from fabric_cf.actor.test.fim_test_helper import FimTestHelper
 
 
-class AuthorityCalendarPolicyTest(BaseTestCase):
+class AuthorityCalendarPolicyTest(BaseTestCase, unittest.TestCase):
     DonateStartCycle = 10
     DonateEndCycle = 100
-    Type = ResourceType(resource_type="1")
-    Label = "test resource"
-
     TicketStartCycle = DonateStartCycle + 1
     TicketEndCycle = TicketStartCycle + 10
     TicketNewEndCycle = TicketEndCycle + 10
     TicketUnits = 1
 
-    arm = None
-    adm = None
     my_unit = None
 
-    def setUp(self) -> None:
-        self.arm, self.adm = FimTestHelper.generate_renci_adm()
+    logger = logging.getLogger('AuthorityCalendarPolicyTest')
+    log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
+    logging.basicConfig(format=log_format, filename="actor.log")
+    logger.setLevel(logging.INFO)
 
-    def tearDown(self) -> None:
-        FimTestHelper.n4j_imp.delete_all_graphs()
+    from fabric_cf.actor.core.container.globals import Globals
+    Globals.config_file = "./config/config.test.yaml"
+    Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
 
-    @abstractmethod
+    from fabric_cf.actor.core.container.globals import GlobalsSingleton
+    GlobalsSingleton.get().start(force_fresh=True)
+    while not GlobalsSingleton.get().start_completed:
+        time.sleep(0.0001)
+
+    FimTestHelper.n4j_imp.delete_all_graphs()
+    arm, adm = FimTestHelper.generate_renci_adm()
+
     def build_sliver(self) -> BaseSliver:
-        pass
+        node_sliver = NodeSliver()
+        node_sliver.resource_type = NodeType.VM
+        node_sliver.node_id = "test-slice-node-1"
+        cap = Capacities()
+        cap.set_fields(core=4, ram=64, disk=500)
+        node_sliver.set_properties(name="node-1", type=NodeType.VM, site="RENC",
+                                   capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        node_map = tuple([self.arm.graph_id, 'HX6VQ53'])
+        node_sliver.set_node_map(node_map=node_map)
+        return node_sliver
 
-    @abstractmethod
     def get_control(self) -> ResourceControl:
-        pass
+        control = NetworkNodeControl()
+        control.add_type(rtype=ResourceType(resource_type=NodeType.VM.name))
+        return control
 
-    @abstractmethod
     def get_delegation(self, actor: ABCActorMixin) -> ABCDelegation:
-        pass
+        slice_object = SliceFactory.create(slice_id=ID(), name="inventory-slice")
+        slice_object.set_inventory(value=True)
+        actor.register_slice(slice_object=slice_object)
+
+        delegation_name = 'primary'
+
+        dlg_obj = DelegationFactory.create(did=self.adm.get_graph_id(), slice_id=slice_object.get_slice_id(),
+                                           delegation_name=delegation_name)
+        dlg_obj.set_slice_object(slice_object=slice_object)
+        dlg_obj.set_graph(graph=self.adm)
+        actor.register_delegation(delegation=dlg_obj)
+        return dlg_obj
 
     def check_before_donate_delegation(self, authority: ABCAuthority):
         policy = authority.get_policy()
@@ -184,7 +213,8 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
         req_new_start = authority.get_actor_clock().cycle_start_date(cycle=self.TicketEndCycle + 1)
         req_end = authority.get_actor_clock().cycle_end_date(cycle=self.TicketNewEndCycle)
         req_term = Term(start=req_start, end=req_end, new_start=req_new_start)
-        ticket = self.get_ticket(self.TicketUnits, self.Type, req_term, delegation, authority)
+        rtype = ResourceType(resource_type=request.get_requested_resources().get_sliver().resource_type.name)
+        ticket = self.get_ticket(self.TicketUnits, rtype, req_term, delegation, authority)
         new_request = self.get_request_from_request(request, req_term, ticket)
         return new_request
 
@@ -218,11 +248,6 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
         uset = rset.get_resources()
         self.assertIsNotNone(uset)
         self.assertEqual(0, uset.get_units())
-
-    def external_tick(self, site: ABCAuthority, cycle: int):
-        site.external_tick(cycle=cycle)
-        while site.get_current_cycle() != cycle:
-            time.sleep(0.001)
 
     def check_incoming_extend_lease(self, request: ABCAuthorityReservation, incoming: ABCReservationMixin):
         self.assertIsNotNone(incoming)
@@ -268,19 +293,20 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
         request = self.get_redeem_request(site, delegation)
 
         class UpdateLeaseHandler(IUpdateLeaseHandler):
-            def __init__(self, parent):
+            def __init__(self, parent, request):
                 self.waiting_for_lease = True
                 self.waiting_for_close = False
                 self.parent = parent
+                self.request = request
 
             def handle_update_lease(self, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
                 if self.waiting_for_lease:
-                    self.parent.check_incoming_lease(request, reservation)
+                    self.parent.check_incoming_lease(self.request, reservation)
                     self.waiting_for_lease = False
                     self.waiting_for_close = True
                 elif self.waiting_for_close:
                     self.parent.assertTrue(site.get_current_cycle() >= AuthorityCalendarPolicyTest.TicketEndCycle)
-                    self.parent.check_incoming_close_lease(request, reservation)
+                    self.parent.check_incoming_close_lease(self.request, reservation)
                     self.waiting_for_close = False
                 else:
                     raise AuthorityException(Constants.INVALID_STATE)
@@ -289,15 +315,20 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
                 self.parent.assertFalse(self.waiting_for_lease)
                 self.parent.assertFalse(self.waiting_for_close)
 
-        handler = UpdateLeaseHandler(self)
+        handler = UpdateLeaseHandler(self, request)
         proxy.set_update_lease_handler(handler=handler)
 
-        self.external_tick(site, 0)
+        cycle = 1
+        site.external_tick(cycle=cycle)
+        cycle += 1
+
         print("Redeeming request...")
         site.redeem(reservation=request, callback=proxy, caller=proxy.get_identity())
 
-        for cycle in range(1, self.DonateEndCycle):
-            self.external_tick(site, cycle)
+        for c in range(cycle, self.DonateEndCycle):
+            site.external_tick(cycle=c)
+            while site.get_current_cycle() != c:
+                time.sleep(0.001)
 
         handler.check_termination()
 
@@ -318,20 +349,21 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
         extend = self.get_extend_lease_request(site, delegation, request)
 
         class UpdateLeaseHandler(IUpdateLeaseHandler):
-            def __init__(self, parent):
+            def __init__(self, parent, request):
                 self.waiting_for_extend_lease = False
                 self.waiting_for_lease = True
                 self.waiting_for_close = False
                 self.parent = parent
+                self.request = request
 
             def handle_update_lease(self, reservation: ABCReservationMixin, update_data: UpdateData, caller: AuthToken):
                 if self.waiting_for_lease:
-                    self.parent.check_incoming_lease(request, reservation)
+                    self.parent.check_incoming_lease(self.request, reservation)
                     self.waiting_for_lease = False
                     self.waiting_for_close = True
                 elif self.waiting_for_close:
                     self.parent.assertTrue(site.get_current_cycle() >= AuthorityCalendarPolicyTest.TicketEndCycle)
-                    self.parent.check_incoming_close_lease(request, reservation)
+                    self.parent.check_incoming_close_lease(self.request, reservation)
                     self.waiting_for_close = False
                 else:
                     raise AuthorityException(Constants.INVALID_STATE)
@@ -340,17 +372,21 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
                 self.parent.assertFalse(self.waiting_for_lease)
                 self.parent.assertFalse(self.waiting_for_close)
 
-        handler = UpdateLeaseHandler(self)
+        handler = UpdateLeaseHandler(self, request)
 
         proxy.set_update_lease_handler(handler=handler)
-        self.external_tick(site, 0)
+        cycle = 1
+        site.external_tick(cycle=cycle)
+        cycle += 1
         print("Redeeming request")
         site.redeem(reservation=request, callback=proxy, caller=proxy.get_identity())
-        for cycle in range(self.DonateEndCycle):
+        for cycle in range(cycle, self.DonateEndCycle):
             if cycle == self.TicketEndCycle - 50:
                 print("Extending Lease")
                 site.extend_lease(reservation=extend, caller=proxy.get_identity())
-            self.external_tick(site, cycle)
+            site.external_tick(cycle=cycle)
+            while site.get_current_cycle() != cycle:
+                time.sleep(0.001)
         handler.check_termination()
 
     def test_e_close(self):
@@ -394,13 +430,17 @@ class AuthorityCalendarPolicyTest(BaseTestCase):
         handler = UpdateLeaseHandler(self)
         proxy.set_update_lease_handler(handler=handler)
 
-        self.external_tick(site, 0)
+        cycle = 1
+        site.external_tick(cycle=cycle)
+        cycle += 1
         print("Redeeming request...")
         site.redeem(reservation=request, callback=proxy, caller=proxy.get_identity())
 
-        for cycle in range(1, self.DonateEndCycle):
+        for cycle in range(cycle, self.DonateEndCycle):
             if cycle == self.TicketEndCycle - 5:
                 site.close(reservation=request)
-            self.external_tick(site, cycle)
+            site.external_tick(cycle=cycle)
+            while site.get_current_cycle() != cycle:
+                time.sleep(0.001)
 
         handler.check_termination()

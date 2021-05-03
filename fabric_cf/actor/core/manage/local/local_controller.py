@@ -25,11 +25,12 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fabric_mb.message_bus.messages.pool_info_avro import PoolInfoAvro
+from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 
@@ -64,7 +65,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -76,20 +77,21 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return result.proxies
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
-    def get_pool_info(self, *, broker: ID, id_token: str, level: int) -> List[PoolInfoAvro]:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> BrokerQueryModelAvro:
         self.clear_last()
         try:
-            result = self.manager.get_pool_info(broker=broker, caller=self.auth, id_token=id_token, level=level)
+            result = self.manager.get_broker_query_model(broker=broker, caller=self.auth, id_token=id_token,
+                                                         level=level)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
-                return result.pools
+                return result.model
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -102,7 +104,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return self.get_first(result_list=result.delegations)
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -115,7 +117,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return self.get_first(result_list=result.delegations)
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -127,7 +129,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return result.units
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -140,7 +142,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
             if result.status.get_code() == 0:
                 return ID(uid=result.get_result())
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -157,7 +159,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
                 return rids
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
 
@@ -169,7 +171,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -181,7 +183,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -195,7 +197,7 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
 
@@ -210,6 +212,6 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
             return result.get_code() == 0
         except Exception as e:
-            self.last_exception = e
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False

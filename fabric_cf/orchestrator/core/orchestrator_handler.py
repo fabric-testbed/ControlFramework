@@ -96,8 +96,9 @@ class OrchestratorHandler:
 
         return None
 
-    def discover_types(self, *, controller: ABCMgmtControllerMixin, token: str, level: int = 10,
-                       delete_graph: bool = True, ignore_validation: bool = True) -> Tuple[dict, Neo4jCBMGraph]:
+    def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str,
+                                    level: int = 10, delete_graph: bool = True,
+                                    ignore_validation: bool = True) -> Tuple[str, Neo4jCBMGraph]:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
@@ -112,30 +113,24 @@ class OrchestratorHandler:
             raise OrchestratorException("Unable to determine broker proxy for this controller. "
                                         "Please check Orchestrator container configuration and logs.")
 
-        my_pools = controller.get_pool_info(broker=broker, id_token=token, level=level)
-        if my_pools is None or len(my_pools) != 1:
+        model = controller.get_broker_query_model(broker=broker, id_token=token, level=level)
+        if model is None:
             raise OrchestratorException(f"Could not discover types: {controller.get_last_error()}")
 
-        graph_ml = None
-        graph = None
-        for p in my_pools:
-            try:
-                status = p.properties.get(Constants.QUERY_RESPONSE_STATUS, "False")
-                if status.lower() != "false":
-                    bqm = p.properties.get(Constants.BROKER_QUERY_MODEL, None)
-                    if bqm is not None:
-                        graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=bqm,
-                                                                                 ignore_validation=ignore_validation)
-                        if delete_graph:
-                            FimHelper.delete_graph(graph_id=graph.get_graph_id())
-                    graph_ml = bqm
-                else:
-                    raise OrchestratorException(p.properties.get(Constants.QUERY_RESPONSE_MESSAGE))
-            except Exception as e:
-                self.logger.error(traceback.format_exc())
-                self.logger.debug(f"Could not process discover types response {e}")
-
-        return graph_ml, graph
+        graph_ml = model.get_model()
+        try:
+            if graph_ml is not None and graph_ml != '':
+                graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=graph_ml,
+                                                                         ignore_validation=ignore_validation)
+                if delete_graph:
+                    FimHelper.delete_graph(graph_id=graph.get_graph_id())
+                return graph_ml, graph
+            else:
+                raise OrchestratorException(http_error_code=OrchestratorException.HTTP_NOT_FOUND,
+                                            message="Resource(s) not found!")
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            raise e
 
     def list_resources(self, *, token: str, level: int) -> dict:
         """
@@ -149,16 +144,8 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
-            try:
-                broker_query_model, graph = self.discover_types(controller=controller, token=token, level=level,
-                                                                ignore_validation=True)
-            except Exception as e:
-                self.logger.error(f"Failed to populate broker models e: {e}")
-                raise e
-
-            if broker_query_model is None:
-                raise OrchestratorException("Resource(s) not found",
-                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+            broker_query_model, graph = self.discover_broker_query_model(controller=controller, token=token,
+                                                                         level=level, ignore_validation=True)
 
             return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
 
@@ -196,16 +183,8 @@ class OrchestratorHandler:
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
 
-            try:
-                bqm_string, bqm_graph = self.discover_types(controller=controller, token=token, delete_graph=False)
-            except Exception as e:
-                self.logger.error(f"Exception occurred while listing resources e: {e}")
-                raise e
-
-            if bqm_graph is None:
-                self.logger.error("Could not get Broker Query Model")
-                raise OrchestratorException("Broker Query Model not found!",
-                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+            bqm_string, bqm_graph = self.discover_broker_query_model(controller=controller, token=token,
+                                                                     delete_graph=False)
 
             broker = self.get_broker(controller=controller)
             if broker is None:

@@ -107,7 +107,12 @@ class Constants:
     NAME = "name"
     TYPE = "type"
     GUID = "guid"
+    DESCRIPTION = "description"
+    LABEL = "label"
+    HANDLER = "handler"
     CREDMGR_HOST = "credmgr-host"
+    PUBLISH_INTERVAL = "publish-interval"
+    DELEGATION = "delegation"
 
     PROPERTY_CLASS_NAME = "ObjectClassName"
     PROPERTY_MODULE_NAME = "ModuleName"
@@ -160,6 +165,10 @@ class Constants:
 
     CONFIG_SECTION_NEO4J = "neo4j"
 
+    PROPERTY_CONF_MODULE_NAME = 'module'
+    PROPERTY_CONF_CLASS_NAME = 'class'
+    PROPERTY_CONF_PROPERTIES_NAME = 'properties'
+
     PROTOCOL_LOCAL = "local"
     PROTOCOL_KAFKA = "kafka"
 
@@ -171,10 +180,7 @@ class Constants:
     ELASTIC_TIME = "request.elasticTime"
     ELASTIC_SIZE = "request.elasticSize"
 
-    POOL_NAME = 'pool.name'
-    POOL_PREFIX = "pool."
-    POOLS_COUNT = "pools.count"
-    QUERY_ACTION_DISCOVER_POOLS = "discover.pools"
+    QUERY_ACTION_DISCOVER_BQM = "discover.bqm"
     QUERY_ACTION = "query.action"
     QUERY_RESPONSE = "query.response"
     QUERY_RESPONSE_STATUS = "query.response.status"

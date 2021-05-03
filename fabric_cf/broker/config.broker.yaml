@@ -28,57 +28,57 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  - kafka-server:
-  - kafka-schema-registry-url:
-  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
-  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
-  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
-  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
-  - kafka-ssl-key-password:
-  - kafka-security-protocol: SSL
-  - kafka-group-id:
-  - kafka-sasl-mechanism:
-  - kafka-sasl-producer-username:
-  - kafka-sasl-producer-password:
-  - kafka-sasl-consumer-username:
-  - kafka-sasl-consumer-password:
-  - prometheus.port: 11000
+  kafka-server:
+  kafka-schema-registry-url:
+  kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
+  kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
+  kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
+  kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  kafka-ssl-key-password:
+  kafka-security-protocol: SSL
+  kafka-group-id:
+  kafka-sasl-mechanism:
+  kafka-sasl-producer-username:
+  kafka-sasl-producer-password:
+  kafka-sasl-consumer-username:
+  kafka-sasl-consumer-password:
+  prometheus.port: 11000
 
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: /var/log/actor
+  log-directory: /var/log/actor
 
   ## The filename to be used for actor's log file.
-  - log-file: actor.log
+  log-file: actor.log
 
   ## The default log level for actor.
-  - log-level: DEBUG
+  log-level: DEBUG
 
   ## actor rotates log files. You may specify how many archived log files to keep here.
-  - log-retain: 5
+  log-retain: 5
 
   ## actor rotates log files after they exceed a certain size.
   ## You may specify the file size that results in a log file being rotated here.
-  - log-size: 5000000
+  log-size: 5000000
 
-  - logger: broker
+  logger: broker
 
 oauth:
-  - jwks-url: https://dev-2.fabric-testbed.net/certs
+  jwks-url: https://dev-2.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
-  - key-refresh: 00:10:00
-  - verify-exp: True
+  key-refresh: 00:10:00
+  verify-exp: True
 
 database:
-  - db-user: fabric
-  - db-password: fabric
-  - db-name: broker
-  - db-host: broker-db:5432
+  db-user: fabric
+  db-password: fabric
+  db-name: broker
+  db-host: broker-db:5432
 
 container:
-  - container.guid: broker-conainer
+  container.guid: broker-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -88,17 +88,17 @@ time:
   # Beginning of time (in unix time).
   # The default is -1, which translates into using the current time as
   # the beginning of time for the container's internal clock.
-  - time.startTime: -1
+  time.startTime: -1
 
   # Internal tick length (in milliseconds)
-  - time.cycleMillis: 1000
+  time.cycleMillis: 1000
 
   # The number of the first tick
-  - time.firstTick: 0
+  time.firstTick: 0
 
   # This property controls if time advances automatically (false) or
   # manually (true)
-  - time.manual: false
+  time.manual: false
 
 pdp:
   url: http://broker-pdp:8080/services/pdp
@@ -111,36 +111,41 @@ neo4j:
   import_host_dir: /usr/src/app/neo4j/imports/
   import_dir: /imports
 
+bqm:
+  kafka-topic: broker-resource-usage
+    # in seconds (default set to 2 hours)
+  publish-interval: 7200
+
 actor:
-  - type: broker
-  - name: broker
-  - guid: broker-guid
-  - description: Broker
-  - kafka-topic: broker-topic
-  - policy:
-      - module: fabric_cf.actor.core.policy.broker_simpler_units_policy
-      - class: BrokerSimplerUnitsPolicy
-      - properties:
-        - algorithm: FirstFit
-  - controls:
+  type: broker
+  name: broker
+  guid: broker-guid
+  description: Broker
+  kafka-topic: broker-topic
+  policy:
+      module: fabric_cf.actor.core.policy.broker_simpler_units_policy
+      class: BrokerSimplerUnitsPolicy
+      properties:
+        algorithm: FirstFit
+  controls:
       - control:
-          - type: VM, Container, Baremetal
-          - class: NetworkNodeInventory
-          - module: fabric_cf.actor.core.policy.network_node_inventory
+          type: VM, Container, Baremetal
+          class: NetworkNodeInventory
+          module: fabric_cf.actor.core.policy.network_node_inventory
 
 peers:
   - peer:
-    - name: orchestrator
-    - type: orchestrator
-    - guid: orchestrator-guid
-    - kafka-topic: orchestrator-topic
+      name: orchestrator
+      type: orchestrator
+      guid: orchestrator-guid
+      kafka-topic: orchestrator-topic
   - peer:
-    - name: net1-am 
-    - guid: net1-am-guid
-    - type: authority
-    - kafka-topic: net1-am-topic
+      name: net1-am
+      guid: net1-am-guid
+      type: authority
+      kafka-topic: net1-am-topic
   - peer:
-    - name: site1-am
-    - guid: site1-am-guid
-    - type: authority
-    - kafka-topic: site1-am-topic
+      name: site1-am
+      guid: site1-am-guid
+      type: authority
+      kafka-topic: site1-am-topic

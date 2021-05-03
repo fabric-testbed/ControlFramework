@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import datetime
 from typing import List
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -36,34 +35,27 @@ class GlobalConfig:
     def __init__(self, *, config: dict):
         self.runtime = {}
         if Constants.CONFIG_SECTION_RUNTIME in config:
-            for prop in config[Constants.CONFIG_SECTION_RUNTIME]:
-                for key, value in prop.items():
-                    self.runtime[key] = value
+            self.runtime = config.get(Constants.CONFIG_SECTION_RUNTIME)
+
         self.logging = {}
         if Constants.CONFIG_LOGGING_SECTION in config:
-            for prop in config[Constants.CONFIG_LOGGING_SECTION]:
-                for key, value in prop.items():
-                    self.logging[key] = value
+            self.logging = config.get(Constants.CONFIG_LOGGING_SECTION)
+
         self.oauth = {}
         if Constants.CONFIG_SECTION_O_AUTH in config:
-            for prop in config[Constants.CONFIG_SECTION_O_AUTH]:
-                for key, value in prop.items():
-                    self.oauth[key] = value
+            self.oauth = config.get(Constants.CONFIG_SECTION_O_AUTH)
+
         self.database = {}
         if Constants.CONFIG_SECTION_DATABASE in config:
-            for prop in config[Constants.CONFIG_SECTION_DATABASE]:
-                for key, value in prop.items():
-                    self.database[key] = value
+            self.database = config.get(Constants.CONFIG_SECTION_DATABASE)
+
         self.container = {}
         if Constants.CONFIG_SECTION_CONTAINER in config:
-            for prop in config[Constants.CONFIG_SECTION_CONTAINER]:
-                for key, value in prop.items():
-                    self.container[key] = value
+            self.container = config.get(Constants.CONFIG_SECTION_CONTAINER)
+
         self.time = {}
         if Constants.CONFIG_SECTION_TIME in config:
-            for prop in config[Constants.CONFIG_SECTION_TIME]:
-                for key, value in prop.items():
-                    self.time[key] = value
+            self.time = config.get(Constants.CONFIG_SECTION_TIME)
 
         self.neo4j = {}
         if Constants.CONFIG_SECTION_NEO4J in config:
@@ -72,6 +64,10 @@ class GlobalConfig:
         self.pdp = {}
         if Constants.CONFIG_SECTION_PDP in config:
             self.pdp = config[Constants.CONFIG_SECTION_PDP]
+
+        self.bqm = {}
+        if Constants.BROKER_QUERY_MODEL in config:
+            self.bqm = config[Constants.BROKER_QUERY_MODEL]
 
     def get_runtime(self) -> dict:
         """
@@ -121,25 +117,23 @@ class GlobalConfig:
         """
         return self.pdp
 
+    def get_bqm_config(self) -> dict:
+        """
+        Return BQM config
+        """
+        return self.bqm
+
 
 class HandlerConfig:
     """
     Represents Handler Config
     """
-    def __init__(self, *, config: list):
-        self.module_name = None
-        self.class_name = None
+    def __init__(self, *, config: dict):
+        self.module_name = config.get(Constants.PROPERTY_CONF_MODULE_NAME, None)
+        self.class_name = config.get(Constants.PROPERTY_CONF_CLASS_NAME, None)
         self.properties = {}
-        for prop in config:
-            for key, value in prop.items():
-                if key == 'module':
-                    self.module_name = value
-                elif key == 'class':
-                    self.class_name = value
-                elif key == 'properties':
-                    for p in value:
-                        for k, v in p.items():
-                            self.properties[k] = str(v)
+        if Constants.PROPERTY_CONF_PROPERTIES_NAME in config:
+            self.properties = config.get(Constants.PROPERTY_CONF_PROPERTIES_NAME)
 
     def get_module_name(self) -> str:
         """
@@ -164,20 +158,15 @@ class ControlConfig:
     """
     Represents Control or Inventory config
     """
-    def __init__(self, *, config: list):
+    def __init__(self, *, config: dict):
         self.type = []
-        self.module_name = None
-        self.class_name = None
-        for prop in config:
-            for key, value in prop.items():
-                if key == 'type':
-                    values = value.split(',')
-                    for v in values:
-                        self.type.append(v.strip())
-                elif key == 'module':
-                    self.module_name = value
-                elif key == 'class':
-                    self.class_name = value
+        self.module_name = config.get(Constants.PROPERTY_CONF_MODULE_NAME, None)
+        self.class_name = config.get(Constants.PROPERTY_CONF_CLASS_NAME, None)
+        if Constants.TYPE in config:
+            value = config.get(Constants.TYPE)
+            values = value.split(',')
+            for v in values:
+                self.type.append(v.strip())
 
     def get_type(self) -> List[str]:
         """
@@ -202,26 +191,11 @@ class ResourceConfig:
     """
     Represents resource config
     """
-    def __init__(self, *, config: list):
-        self.description = None
-        self.type = None
-        self.label = None
-        self.properties = {}
-        self.handler = None
-        for prop in config:
-            for key, value in prop.items():
-                if key == 'type':
-                    self.type = value
-                elif key == 'label':
-                    self.label = value
-                elif key == 'description':
-                    self.description = value
-                elif key == 'properties':
-                    for p in value:
-                        for k, v in p.items():
-                            self.properties[k] = str(v)
-                elif key == 'handler':
-                    self.handler = HandlerConfig(config=value)
+    def __init__(self, *, config: dict):
+        self.description = config.get(Constants.DESCRIPTION, None)
+        self.type = config.get(Constants.TYPE, None)
+        self.label = config.get(Constants.LABEL, None)
+        self.handler = HandlerConfig(config=config.get(Constants.HANDLER, None))
 
     def get_type(self) -> str:
         """
@@ -247,31 +221,17 @@ class ResourceConfig:
         """
         return self.handler
 
-    def get_properties(self) -> dict:
-        """
-        Return properties
-        """
-        return self.properties
-
 
 class PolicyConfig:
     """
     Represents Policy config
     """
-    def __init__(self, *, config: list):
-        self.module_name = None
-        self.class_name = None
+    def __init__(self, *, config: dict):
+        self.module_name = config.get(Constants.PROPERTY_CONF_MODULE_NAME, None)
+        self.class_name = config.get(Constants.PROPERTY_CONF_CLASS_NAME, None)
         self.properties = {}
-        for prop in config:
-            for key, value in prop.items():
-                if key == 'module':
-                    self.module_name = value
-                elif key == 'class':
-                    self.class_name = value
-                elif key == 'properties':
-                    for p in value:
-                        for k, v in p.items():
-                            self.properties[k] = str(v)
+        if Constants.PROPERTY_CONF_PROPERTIES_NAME in config:
+            self.properties = config.get(Constants.PROPERTY_CONF_PROPERTIES_NAME)
 
     def get_module_name(self) -> str:
         """
@@ -296,40 +256,27 @@ class ActorConfig:
     """
     Represents Actor Config
     """
-    def __init__(self, *, config: list):
-        self.policy = None
-        self.description = None
-        self.pools = []
+    def __init__(self, *, config: dict):
+        self.policy = PolicyConfig(config=config.get('policy', None))
+        self.description = config.get(Constants.DESCRIPTION, None)
         self.resources = []
         self.controls = []
-        self.type = None
-        self.name = None
-        self.guid = None
-        self.kafka_topic = None
-        self.policy = None
-        self.substrate_file = None
-        for prop in config:
-            for key, value in prop.items():
-                if key == 'type':
-                    self.type = value
-                elif key == 'name':
-                    self.name = value
-                elif key == 'guid':
-                    self.guid = value
-                elif key == 'description':
-                    self.description = value
-                elif key == 'kafka-topic':
-                    self.kafka_topic = value
-                elif key == 'substrate.file':
-                    self.substrate_file = value
-                elif key == 'controls':
-                    for c in value:
-                        self.controls.append(ControlConfig(config=c['control']))
-                elif key == 'policy':
-                    self.policy = PolicyConfig(config=value)
-                elif key == 'resources':
-                    for p in value:
-                        self.resources.append(ResourceConfig(config=p['resource']))
+        self.type = config.get(Constants.TYPE, None)
+        self.name = config.get(Constants.NAME, None)
+        self.guid = config.get(Constants.GUID, None)
+        self.kafka_topic = config.get(Constants.KAFKA_TOPIC, None)
+        self.substrate_file = config.get(Constants.PROPERTY_SUBSTRATE_FILE)
+        res = config.get('resources', None)
+        if res is not None:
+            for r in res:
+                resource_config = ResourceConfig(config=r['resource'])
+                self.resources.append(resource_config)
+
+        ctrls = config.get('controls', None)
+        if ctrls is not None:
+            for c in ctrls:
+                control_config = ControlConfig(config=c['control'])
+                self.controls.append(control_config)
 
     def get_type(self) -> str:
         """
@@ -390,24 +337,12 @@ class Peer:
     """
     Represent Peer Config
     """
-    def __init__(self, *, config: list):
-        self.name = None
-        self.type = None
-        self.guid = None
-        self.kafka_topic = None
-        self.delegation = None
-        for prop in config:
-            for key, value in prop.items():
-                if key == 'name':
-                    self.name = value
-                elif key == 'type':
-                    self.type = value
-                elif key == 'guid':
-                    self.guid = value
-                elif key == 'kafka-topic':
-                    self.kafka_topic = value
-                elif key == 'delegation':
-                    self.delegation = value
+    def __init__(self, *, config: dict):
+        self.name = config.get(Constants.NAME, None)
+        self.type = config.get(Constants.TYPE, None)
+        self.guid = config.get(Constants.GUID, None)
+        self.kafka_topic = config.get(Constants.KAFKA_TOPIC, None)
+        self.delegation = config.get(Constants.DELEGATION, None)
 
     def get_name(self) -> str:
         """
