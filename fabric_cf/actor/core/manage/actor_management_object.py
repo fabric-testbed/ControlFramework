@@ -361,7 +361,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def remove_reservation(self, *, caller: AuthToken, rid: ID) -> ResultAvro:
+    def remove_reservation(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultAvro:
         result = ResultAvro()
 
         if rid is None or caller is None:
@@ -370,6 +370,13 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.delete,
+                                           resource_type=ResourceType.sliver,
+                                           token=id_token, logger=self.logger,
+                                           actor_type=self.actor.get_type(),
+                                           resource_id=str(rid))
+
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
@@ -391,7 +398,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def close_reservation(self, *, caller: AuthToken, rid: ID) -> ResultAvro:
+    def close_reservation(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultAvro:
         result = ResultAvro()
 
         if rid is None or caller is None:
@@ -400,6 +407,13 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.close,
+                                           resource_type=ResourceType.sliver,
+                                           token=id_token, logger=self.logger,
+                                           actor_type=self.actor.get_type(),
+                                           resource_id=str(rid))
+
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
@@ -421,7 +435,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def close_slice_reservations(self, *, caller: AuthToken, slice_id: ID) -> ResultAvro:
+    def close_slice_reservations(self, *, caller: AuthToken, slice_id: ID, id_token: str = None) -> ResultAvro:
         result = ResultAvro()
 
         if slice_id is None or caller is None:
@@ -430,6 +444,13 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.close,
+                                           resource_type=ResourceType.slice,
+                                           token=id_token, logger=self.logger,
+                                           actor_type=self.actor.get_type(),
+                                           resource_id=str(slice_id))
+
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor

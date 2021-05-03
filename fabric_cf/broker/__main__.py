@@ -30,7 +30,7 @@ import prometheus_client
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
-from fabric_cf.actor.core.container.globals import GlobalsSingleton
+from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
 from fabric_cf.broker.core.broker_kernel import BrokerKernelSingleton
 
 

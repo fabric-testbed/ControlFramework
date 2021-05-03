@@ -29,6 +29,7 @@ from typing import Tuple, List
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
@@ -52,7 +53,8 @@ class ManageHelper:
         actor = KafkaProcessorSingleton.get().get_mgmt_actor(name=actor_name)
         return actor
 
-    def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None, id_token: str = None):
+    def do_get_slices(self, *, actor_name: str, callback_topic: str, slice_id: str = None,
+                      id_token: str = None) -> Tuple[List[SliceAvro], Error]:
         actor = self.get_actor(actor_name=actor_name)
 
         if actor is None:
@@ -66,7 +68,7 @@ class ManageHelper:
         except Exception:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
-        return None, None
+        return None, actor.get_last_error()
 
     def do_get_reservations(self, *, actor_name: str, callback_topic: str, rid: str = None,
                             id_token: str = None) -> Tuple[List[ReservationMng], Error]:
@@ -83,6 +85,7 @@ class ManageHelper:
         except Exception as e:
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
+        return None, actor.get_last_error()
 
     def do_get_delegations(self, *, actor_name: str, callback_topic: str, did: str = None,
                            id_token: str = None) -> Tuple[List[DelegationAvro], Error]:
@@ -97,6 +100,7 @@ class ManageHelper:
             traceback.print_exc()
             ex_str = traceback.format_exc()
             self.logger.error(ex_str)
+        return None, actor.get_last_error()
 
     def do_claim_delegations(self, *, broker: str, am_guid: ID, callback_topic: str, id_token: str = None,
                              did: str = None) -> Tuple[DelegationAvro, Error]:

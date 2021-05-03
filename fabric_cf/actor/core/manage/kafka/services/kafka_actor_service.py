@@ -299,7 +299,8 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            result.status = mo.remove_reservation(caller=auth, rid=ID(uid=request.reservation_id))
+            result.status = mo.remove_reservation(caller=auth, rid=ID(uid=request.reservation_id),
+                                                  id_token=request.id_token)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -324,9 +325,11 @@ class KafkaActorService(KafkaService):
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             if request.get_slice_id() is not None:
-                result.status = mo.close_slice_reservations(caller=auth, slice_id=ID(uid=request.slice_id))
+                result.status = mo.close_slice_reservations(caller=auth, slice_id=ID(uid=request.slice_id),
+                                                            id_token=request.id_token)
             else:
-                result.status = mo.close_reservation(caller=auth, rid=ID(uid=request.reservation_id))
+                result.status = mo.close_reservation(caller=auth, rid=ID(uid=request.reservation_id),
+                                                     id_token=request.id_token)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

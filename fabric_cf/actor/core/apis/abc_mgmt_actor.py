@@ -104,27 +104,30 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def close_reservation(self, *, rid: ID) -> bool:
+    def close_reservation(self, *, rid: ID, id_token: str = None) -> bool:
         """
         Closes the specified reservation
         @param rid reservation id
+        @param id_token id token
         @return true for success; false otherwise
         """
 
     @abstractmethod
-    def close_reservations(self, *, slice_id: ID) -> bool:
+    def close_reservations(self, *, slice_id: ID, id_token: str = None) -> bool:
         """
         Closes all reservations in the specified slice.
         @param slice_id slice ID
+        @param id_token id token
         @return true for success; false otherwise
         """
 
     @abstractmethod
-    def remove_reservation(self, *, rid: ID) -> bool:
+    def remove_reservation(self, *, rid: ID, id_token: str = None) -> bool:
         """
         Removes the specified reservation.
         Note only closed reservations can be removed.
         @param rid reservation id of the reservation to be removed
+        @param id_token id token
         @return true for success; false otherwise
         """
 
