@@ -93,10 +93,10 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
-    def remove_reservation(self, *, rid: ID) -> bool:
+    def remove_reservation(self, *, rid: ID, id_token: str = None) -> bool:
         self.clear_last()
         try:
-            result = self.manager.remove_reservation(caller=self.auth, rid=rid)
+            result = self.manager.remove_reservation(caller=self.auth, rid=rid, id_token=id_token)
             self.last_status = result
 
             return result.get_code() == 0
@@ -106,10 +106,10 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def close_reservation(self, *, rid: ID) -> bool:
+    def close_reservation(self, *, rid: ID, id_token: str = None) -> bool:
         self.clear_last()
         try:
-            result = self.manager.close_reservation(caller=self.auth, rid=rid)
+            result = self.manager.close_reservation(caller=self.auth, rid=rid, id_token=id_token)
             self.last_status = result
 
             return result.get_code() == 0
@@ -170,10 +170,10 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def close_reservations(self, *, slice_id: ID) -> bool:
+    def close_reservations(self, *, slice_id: ID, id_token: str = None) -> bool:
         self.clear_last()
         try:
-            result = self.manager.close_slice_reservations(caller=self.auth, slice_id=slice_id)
+            result = self.manager.close_slice_reservations(caller=self.auth, slice_id=slice_id, id_token=id_token)
             self.last_status = result
 
             if self.last_status.get_code() == 0:

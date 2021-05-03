@@ -118,17 +118,17 @@ actor:
       class: ControllerTicketReviewPolicy
 peers:
   - peer:
-    name: broker
-    type: broker
-    guid: broker-guid
-    kafka-topic: broker-topic
+      name: broker
+      type: broker
+      guid: broker-guid
+      kafka-topic: broker-topic
   - peer:
-    name: net1-am
-    guid: net1-am-guid
-    type: authority
-    kafka-topic: net1-am-topic
+      name: net1-am
+      guid: net1-am-guid
+      type: authority
+      kafka-topic: net1-am-topic
   - peer:
-    name: site1-am
-    guid: site1-am-guid
-    type: authority
-    kafka-topic: site1-am-topic
+      name: site1-am
+      guid: site1-am-guid
+      type: authority
+      kafka-topic: site1-am-topic

@@ -363,7 +363,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return response.delegations
 
-    def remove_reservation(self, *, rid: ID) -> bool:
+    def remove_reservation(self, *, rid: ID, id_token: str = None) -> bool:
         status = ResultAvro()
         self.clear_last()
         if rid is None:
@@ -380,6 +380,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.reservation_id = str(rid)
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -415,7 +416,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return status.code == 0
 
-    def close_reservation(self, *, rid: ID) -> bool:
+    def close_reservation(self, *, rid: ID, id_token: str = None) -> bool:
         status = ResultAvro()
         self.clear_last()
         if rid is None:
@@ -432,6 +433,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.reservation_id = str(rid)
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
@@ -467,7 +469,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return status.code == 0
 
-    def close_reservations(self, *, slice_id: ID) -> bool:
+    def close_reservations(self, *, slice_id: ID, id_token: str = None) -> bool:
         status = ResultAvro()
         self.clear_last()
         if slice_id is None:
@@ -484,6 +486,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.slice_id = str(slice_id)
+            request.id_token = id_token
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
