@@ -107,8 +107,12 @@ class Constants:
     NAME = "name"
     TYPE = "type"
     GUID = "guid"
+    DESCRIPTION = "description"
+    LABEL = "label"
+    HANDLER = "handler"
     CREDMGR_HOST = "credmgr-host"
     PUBLISH_INTERVAL = "publish-interval"
+    DELEGATION = "delegation"
 
     PROPERTY_CLASS_NAME = "ObjectClassName"
     PROPERTY_MODULE_NAME = "ModuleName"
@@ -160,6 +164,10 @@ class Constants:
     PROPERTY_CONF_DB_HOST = "db-host"
 
     CONFIG_SECTION_NEO4J = "neo4j"
+
+    PROPERTY_CONF_MODULE_NAME = 'module'
+    PROPERTY_CONF_CLASS_NAME = 'class'
+    PROPERTY_CONF_PROPERTIES_NAME = 'properties'
 
     PROTOCOL_LOCAL = "local"
     PROTOCOL_KAFKA = "kafka"

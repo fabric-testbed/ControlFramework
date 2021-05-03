@@ -314,6 +314,19 @@ class Globals:
         producer = AvroProducerApi(conf=conf, key_schema=key_schema, record_schema=val_schema, logger=self.get_logger())
         return producer
 
+    def get_simple_kafka_producer(self):
+        """
+        Create and return a kafka producer
+        @return producer
+        """
+        conf = self.get_kafka_config_producer()
+        if conf is not None:
+            conf.pop(Constants.SCHEMA_REGISTRY_URL)
+
+        from confluent_kafka import Producer
+        producer = Producer(conf)
+        return producer
+
     def get_kafka_admin_client(self):
         """
         Create and return a kafka admin client

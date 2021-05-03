@@ -148,10 +148,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             if b is not None:
                 request = BrokerPolicy.get_broker_query_model_query(level=level)
                 response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request, id_token=id_token)
-                model = Translate.translate_to_broker_query_model(query_response=response, level=level)
-                if result.models is None:
-                    result.models = []
-                result.models.append(model)
+                result.model = Translate.translate_to_broker_query_model(query_response=response, level=level)
             else:
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.interpret())

@@ -339,7 +339,6 @@ class ConfigurationProcessor:
                 descriptor.set_handler_module(module=handler.get_module_name())
                 descriptor.set_handler_properties(properties=handler.get_properties())
 
-            descriptor.pool_properties = r.get_properties()
             result[descriptor.get_resource_type()] = descriptor
         return result
 

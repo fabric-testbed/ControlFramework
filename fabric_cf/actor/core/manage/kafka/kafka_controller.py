@@ -109,7 +109,7 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
 
         return rret_val
 
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> List[BrokerQueryModelAvro]:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> BrokerQueryModelAvro:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:

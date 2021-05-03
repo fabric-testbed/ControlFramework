@@ -28,52 +28,52 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  - kafka-server: broker1:9092
-  - kafka-schema-registry-url: http://schemaregistry:8081
-  #- kafka-server: 152.54.14.213:29092
-  #- kafka-schema-registry-url: http://152.54.14.213:8081
-  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
-  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
-  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
-  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
-  - kafka-ssl-key-password:  fabric
-  - kafka-security-protocol: SSL
-  - kafka-group-id: fabric-cf
-  - orchestrator.rest.port: 8700
-  - prometheus.port: 11002
+  kafka-server: broker1:9092
+  kafka-schema-registry-url: http://schemaregistry:8081
+  #kafka-server: 152.54.14.213:29092
+  #kafka-schema-registry-url: http://152.54.14.213:8081
+  kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
+  kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
+  kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
+  kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  kafka-ssl-key-password:  fabric
+  kafka-security-protocol: SSL
+  kafka-group-id: fabric-cf
+  orchestrator.rest.port: 8700
+  prometheus.port: 11002
 
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: /var/log/actor
+  log-directory: /var/log/actor
 
   ## The filename to be used for actor's log file.
-  - log-file: actor.log
+  log-file: actor.log
 
   ## The default log level for actor.
-  - log-level: DEBUG
+  log-level: DEBUG
 
   ## actor rotates log files. You may specify how many archived log files to keep here.
-  - log-retain: 5
+  log-retain: 5
 
   ## actor rotates log files after they exceed a certain size.
   ## You may specify the file size that results in a log file being rotated here.
-  - log-size: 5000000
+  log-size: 5000000
 
-  - logger: orchestrator
+  logger: orchestrator
 
 oauth:
-  - jwks-url: https://dev-2.fabric-testbed.net/certs
+  jwks-url: https://dev-2.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
-  - key-refresh: 00:10:00
-  - verify-exp: False
+  key-refresh: 00:10:00
+  verify-exp: False
 
 database:
-  - db-user: fabric
-  - db-password: fabric
-  - db-name: orchestrator
-  - db-host: database:5432
+  db-user: fabric
+  db-password: fabric
+  db-name: orchestrator
+  db-host: database:5432
 
 pdp:
   url: http://localhost:8082/services/pdp
@@ -87,7 +87,7 @@ neo4j:
   import_dir: /imports
 
 container:
-  - container.guid: orchestrator-conainer
+  container.guid: orchestrator-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -97,40 +97,40 @@ time:
   # Beginning of time (in unix time).
   # The default is -1, which translates into using the current time as
   # the beginning of time for the container's internal clock.
-  - time.startTime: -1
+  time.startTime: -1
 
   # Internal tick length (in milliseconds)
-  - time.cycleMillis: 1000
+  time.cycleMillis: 1000
 
   # The number of the first tick
-  - time.firstTick: 0
+  time.firstTick: 0
 
   # This property controls if time advances automatically (false) or
   # manually (true)
-  - time.manual: false
+  time.manual: false
 
 actor:
-  - type: orchestrator
-  - name: orchestrator
-  - guid: orchestrator-guid
-  - description: orchestrator
-  - kafka-topic: orchestrator-topic
-  - policy:
-      - module: fabric_cf.actor.core.policy.controller_ticket_review_policy
-      - class: ControllerTicketReviewPolicy
+  type: orchestrator
+  name: orchestrator
+  guid: orchestrator-guid
+  description: orchestrator
+  kafka-topic: orchestrator-topic
+  policy:
+      module: fabric_cf.actor.core.policy.controller_ticket_review_policy
+      class: ControllerTicketReviewPolicy
 peers:
   - peer:
-    - name: broker
-    - type: broker
-    - guid: broker-guid
-    - kafka-topic: broker-topic
+      name: broker
+      type: broker
+      guid: broker-guid
+      kafka-topic: broker-topic
   - peer:
-    - name: net1-am
-    - guid: net1-am-guid
-    - type: authority
-    - kafka-topic: net1-am-topic
+      name: net1-am
+      guid: net1-am-guid
+      type: authority
+      kafka-topic: net1-am-topic
   - peer:
-    - name: site1-am
-    - guid: site1-am-guid
-    - type: authority
-    - kafka-topic: site1-am-topic
+      name: site1-am
+      guid: site1-am-guid
+      type: authority
+      kafka-topic: site1-am-topic

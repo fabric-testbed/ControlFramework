@@ -42,7 +42,6 @@ if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.util.id import ID
 
 
@@ -115,7 +114,8 @@ class ABCClientActorManagementObject(ABC):
         """
 
     @abstractmethod
-    def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str, level: int) -> ResultBrokerQueryModelAvro:
+    def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str,
+                               level: int) -> ResultBrokerQueryModelAvro:
         """
         Get Pool Info
         @param broker : broker ID

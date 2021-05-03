@@ -39,8 +39,8 @@ class BrokerKernel:
     def __init__(self):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
-        self.mgmt_broker = ManagementUtils.get_local_actor()
-        self.producer = GlobalsSingleton.get().get_kafka_producer()
+        self.broker = GlobalsSingleton.get().get_container().get_actor()
+        self.producer = GlobalsSingleton.get().get_simple_kafka_producer()
         self.kafka_topic = GlobalsSingleton.get().get_config().get_global_config().get_bqm_config().get(
             Constants.KAFKA_TOPIC, None)
         self.publish_interval = GlobalsSingleton.get().get_config().get_global_config().get_bqm_config().get(
@@ -54,7 +54,7 @@ class BrokerKernel:
         if self.kafka_topic is not None and self.publish_interval is not None and self.producer is not None:
             current_time = datetime.utcnow()
             if self.last_query_time is None or (current_time - self.last_query_time).seconds > self.publish_interval:
-                bqm = BrokerQueryModelPublisher(broker=self.mgmt_broker, logger=self.logger,
+                bqm = BrokerQueryModelPublisher(broker=self.broker, logger=self.logger,
                                                 kafka_topic=self.kafka_topic, producer=self.producer)
                 bqm.execute()
                 self.last_query_time = datetime.utcnow()

@@ -113,27 +113,24 @@ class OrchestratorHandler:
             raise OrchestratorException("Unable to determine broker proxy for this controller. "
                                         "Please check Orchestrator container configuration and logs.")
 
-        models = controller.get_broker_query_model(broker=broker, id_token=token, level=level)
-        if models is None or len(models) != 1:
+        model = controller.get_broker_query_model(broker=broker, id_token=token, level=level)
+        if model is None:
             raise OrchestratorException(f"Could not discover types: {controller.get_last_error()}")
 
-        graph_ml = None
-        graph = None
-        for m in models:
-            try:
-                graph_ml = m.get_model()
-                if graph_ml is not None and graph_ml != '':
-                    graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=graph_ml,
-                                                                             ignore_validation=ignore_validation)
-                    if delete_graph:
-                        FimHelper.delete_graph(graph_id=graph.get_graph_id())
-                    return graph_ml, graph
-                else:
-                    raise OrchestratorException(http_error_code=OrchestratorException.HTTP_NOT_FOUND,
-                                                message="Resource(s) not found!")
-            except Exception as e:
-                self.logger.error(traceback.format_exc())
-                raise e
+        graph_ml = model.get_model()
+        try:
+            if graph_ml is not None and graph_ml != '':
+                graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=graph_ml,
+                                                                         ignore_validation=ignore_validation)
+                if delete_graph:
+                    FimHelper.delete_graph(graph_id=graph.get_graph_id())
+                return graph_ml, graph
+            else:
+                raise OrchestratorException(http_error_code=OrchestratorException.HTTP_NOT_FOUND,
+                                            message="Resource(s) not found!")
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            raise e
 
     def list_resources(self, *, token: str, level: int) -> dict:
         """

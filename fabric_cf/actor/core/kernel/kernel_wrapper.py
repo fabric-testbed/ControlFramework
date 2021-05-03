@@ -598,8 +598,9 @@ class KernelWrapper:
         @param id_token id_token
         @return query response
         """
-        AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.resources,
-                                   token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+        if id_token is not None:
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.resources,
+                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
 
         return self.kernel.query(properties=properties)
 

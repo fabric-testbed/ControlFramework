@@ -823,11 +823,8 @@
 				"default": null
 			},
 			{
-				"name": "models",
-				"type": ["null", {
-				    "type":"array",
-				    "items" : "fabric.cf.model.BrokerQueryModelRecord"
-				}],
+				"name": "model",
+                "type": ["null", "fabric.cf.model.BrokerQueryModelRecord"],
 				"default": null
 			},
 			{

@@ -296,7 +296,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
 
         return rret_val
 
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> List[BrokerQueryModelAvro]:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> BrokerQueryModelAvro:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -330,7 +330,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
                     self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
                     status = message_wrapper.response.status
                     if status.code == 0:
-                        rret_val = message_wrapper.response.models
+                        rret_val = message_wrapper.response.model
             else:
                 self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
                     request.name, self.kafka_topic))

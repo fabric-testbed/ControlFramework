@@ -24,11 +24,14 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
+from datetime import datetime
 
-from fabric_mb.message_bus.producer import AvroProducerApi
+from confluent_kafka.cimpl import Producer
 
-from fabric_cf.actor.core.apis.abc_mgmt_broker_mixin import ABCMgmtBrokerMixin
+from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
 from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
+from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.core.broker_policy import BrokerPolicy
 
 
 class BrokerQueryModelPublisher(ABCTimerTask):
@@ -37,7 +40,7 @@ class BrokerQueryModelPublisher(ABCTimerTask):
     Queries are done periodically based on the configured timer and published to configured kafka topic.
     Published information will be used by the Portal
     """
-    def __init__(self, *, broker: ABCMgmtBrokerMixin, logger, producer: AvroProducerApi, kafka_topic: str):
+    def __init__(self, *, broker: ABCBrokerMixin, logger, producer: Producer, kafka_topic: str):
         self.broker = broker
         self.logger = logger
         self.producer = producer
@@ -47,19 +50,28 @@ class BrokerQueryModelPublisher(ABCTimerTask):
         """
         Process a claim timeout
         """
-        models = self.broker.get_broker_query_model(broker=self.broker.get_guid(), level=1, id_token=None)
-        if models is None or len(models) != 1:
-            self.logger.error(f"Could not get broker query model: {self.broker.get_last_error()}")
-            return
+        try:
+            request = BrokerPolicy.get_broker_query_model_query(level=1)
+            response = self.broker.query(query=request, caller=self.broker.get_identity())
+            if response is None:
+                self.logger.error(f"Could not get broker query model!")
+                return
 
-        for m in models:
-            try:
-                if m.get_model() is not None and m.get_model() != '':
-                    # Publish to Kafka
-                    if self.producer is not None and self.kafka_topic is not None:
-                        self.producer.produce_sync(topic=self.kafka_topic, record=m)
-                else:
-                    self.logger.error(f"Could not get broker query model")
-            except Exception as e:
-                self.logger.error(traceback.format_exc())
-                self.logger.debug(f"Could not process get_broker_query_model response {e}")
+            status = response.get(Constants.QUERY_RESPONSE_STATUS, None)
+            bqm = response.get(Constants.BROKER_QUERY_MODEL, None)
+
+            if status is None or status == 'False' or bqm is None or bqm == '':
+                self.logger.error(f"Could not get broker query model!")
+                return
+
+            key = f'{self.broker.get_guid()}-{datetime.utcnow().timestamp()}'
+
+            # Publish to Kafka
+            if self.producer is not None and self.kafka_topic is not None:
+                self.producer.produce(topic=self.kafka_topic, key=key, value=bqm)
+            else:
+                self.logger.error(f"Could not get broker query model")
+        except Exception as e:
+            self.logger.debug(f"Exception occurred in BQM publisher: {e}")
+            self.logger.error(traceback.format_exc())
+

@@ -32,14 +32,13 @@ class ResourceConfig:
         self.handler_module = None
         self.handler_class = None
         self.handler_properties = {}
-        self.pool_properties = {}
         self.resource_type = None
         self.resource_label = None
         self.description = None
 
     def __str__(self):
         return f"handler_module:{self.handler_module} handler_class:{self.handler_class} " \
-               f"handler_properties:{self.handler_properties} pool_properties:{self.pool_properties} " \
+               f"handler_properties:{self.handler_properties} " \
                f"resource_type:{self.resource_type} resource_label:{self.resource_label} description:{self.description}"
 
     def get_resource_type(self) -> ResourceType:
@@ -97,20 +96,6 @@ class ResourceConfig:
         @param properties handler Properties
         """
         self.handler_properties = properties
-
-    def get_pool_properties(self) -> dict:
-        """
-        Get Pool Properties
-        @return Pool Properties
-        """
-        return self.pool_properties
-
-    def set_pool_properties(self, *, properties: dict):
-        """
-        Set Pool Properties
-        @param properties Pool Properties
-        """
-        self.pool_properties = properties
 
     def get_resource_type_label(self) -> str:
         """
