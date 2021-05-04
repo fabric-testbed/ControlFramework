@@ -323,6 +323,14 @@ class Globals:
         if conf is not None:
             conf.pop(Constants.SCHEMA_REGISTRY_URL)
 
+        bqm_config = self.config.get_global_config().get_bqm_config()
+        if bqm_config is not None:
+            prod_user_name = bqm_config.get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_USERNAME, None)
+            prod_password = bqm_config.get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_PASSWORD, None)
+            if prod_user_name is not None and prod_password is not None:
+                conf[Constants.SASL_USERNAME] = prod_user_name
+                conf[Constants.SASL_PASSWORD] = prod_password
+
         from confluent_kafka import Producer
         producer = Producer(conf)
         return producer

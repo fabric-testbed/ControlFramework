@@ -117,6 +117,8 @@ bqm:
   kafka-topic: broker-resource-usage
     # in seconds (default set to 2 hours)
   publish-interval: 120
+  kafka-sasl-producer-username:
+  kafka-sasl-producer-password:
 
 actor:
   type: broker
