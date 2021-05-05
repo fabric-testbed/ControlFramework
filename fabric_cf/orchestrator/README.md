@@ -100,7 +100,7 @@ In a browser, go to [Swagger definition](https://app.swaggerhub.com/apis/kthare1
 
 From the generate code icon (downward facing arrow), select Download API > JSON Resolved
 
-A file named kthare10-orchestrator-1.0.0-resolved.json should be downloaded. Rename it as openapi.json and copy it to ActorBase/fabric/orchestrator. Run the following command to generate the Flask based server.
+A file named kthare10-orchestrator-1.0.0-resolved.json should be downloaded. Rename it as openapi.json and copy it to `ControlFramework/fabric_cf/orchestrator`. Run the following command to generate the Flask based server.
 
 ```bash
 $ cp kthare10-orchestrator-1.0.0-resolved.json openapi.json
