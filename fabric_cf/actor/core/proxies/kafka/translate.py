@@ -253,10 +253,10 @@ class Translate:
         return slice_mng
 
     @staticmethod
-    def fill_slices(*, slice_list: List[ABCSlice], full: bool, user_dn: str) -> List[SliceAvro]:
+    def fill_slices(*, slice_list: List[ABCSlice], full: bool) -> List[SliceAvro]:
         result = []
         for slice_obj in slice_list:
-            if slice_obj is not None and (user_dn is None or user_dn == slice_obj.get_owner().get_oidc_sub_claim()):
+            if slice_obj is not None:
                 ss = Translate.translate_slice_to_avro(slice_obj=slice_obj)
                 if full:
                     ss = Translate.attach_properties(slice_mng=ss, slice_obj=slice_obj)

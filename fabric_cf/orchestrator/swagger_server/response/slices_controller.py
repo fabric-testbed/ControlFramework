@@ -14,7 +14,7 @@ from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
-def slices_create_post(body, slice_name, ssh_key):  # noqa: E501
+def slices_create_post(body, slice_name, ssh_key, lease_end_time):  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources.
@@ -28,6 +28,10 @@ def slices_create_post(body, slice_name, ssh_key):  # noqa: E501
     :type body: dict | bytes
     :param slice_name: Slice Name
     :type slice_name: str
+    :param ssh_key: User SSH Key
+    :type ssh_key: str
+    :param lease_end_time: Lease End Time for the Slice
+    :type lease_end_time: str
 
     :rtype: Success
     """
@@ -35,10 +39,12 @@ def slices_create_post(body, slice_name, ssh_key):  # noqa: E501
     handler = OrchestratorHandler()
     logger = handler.get_logger()
     received_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
+
     try:
         token = get_token()
         slice_graph = body.decode("utf-8")
-        value = handler.create_slice(token=token, slice_name=slice_name, slice_graph=slice_graph, ssh_key=ssh_key)
+        value = handler.create_slice(token=token, slice_name=slice_name, slice_graph=slice_graph,
+                                     ssh_key=ssh_key, lease_end_time=lease_end_time)
         response = Success()
         response.value = value
         success_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
@@ -164,17 +170,10 @@ def slices_renew_slice_idpost(slice_id, new_lease_end_time):  # noqa: E501
     handler = OrchestratorHandler()
     logger = handler.get_logger()
     received_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
-    new_end_time = None
-    try:
-        new_end_time = datetime.strptime(new_lease_end_time, Constants.RENEW_TIME_FORMAT)
-    except Exception as e:
-        logger.exception(e)
-        failure_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
-        return str(e), BAD_REQUEST
 
     try:
         token = get_token()
-        value = handler.renew_slice(token=token, slice_id=slice_id, new_end_time=new_end_time)
+        value = handler.renew_slice(token=token, slice_id=slice_id, new_lease_end_time=new_lease_end_time)
         response = Success()
         response.value = value
         success_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()

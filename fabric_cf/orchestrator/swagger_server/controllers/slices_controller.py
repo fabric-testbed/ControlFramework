@@ -6,7 +6,7 @@ from fabric_cf.orchestrator.swagger_server import util
 from fabric_cf.orchestrator.swagger_server.response import slices_controller as rc
 
 
-def slices_create_post(body, slice_name, ssh_key):  # noqa: E501
+def slices_create_post(body, slice_name, ssh_key, lease_end_time=None):  # noqa: E501
     """Create slice
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources. Resources may be requested to be created now or in future. On success, one or more slivers are allocated, containing resources satisfying the request, and assigned to the given slice. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke get slice API to get the latest state of the requested resources.   # noqa: E501
@@ -17,10 +17,13 @@ def slices_create_post(body, slice_name, ssh_key):  # noqa: E501
     :type slice_name: str
     :param ssh_key: User SSH Key
     :type ssh_key: str
+    :param lease_end_time: Lease End Time for the Slice
+    :type lease_end_time: str
 
     :rtype: Success
     """
-    return rc.slices_create_post(body, slice_name, ssh_key)
+
+    return rc.slices_create_post(body, slice_name, ssh_key, lease_end_time)
 
 
 def slices_delete_slice_iddelete(slice_id):  # noqa: E501

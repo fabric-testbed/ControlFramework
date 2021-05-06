@@ -154,13 +154,15 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing list_resources e: {e}")
             raise e
 
-    def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str) -> dict:
+    def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
+                     lease_end_time: str) -> dict:
         """
         Create a slice
         :param token Fabric Identity Token
         :param slice_name Slice Name
         :param slice_graph Slice Graph Model
         :param ssh_key: User ssh key
+        :param lease_end_time: Lease End Time (UTC)
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
@@ -170,6 +172,10 @@ class OrchestratorHandler:
         bqm_graph = None
         asm_graph = None
         try:
+            end_time = None
+            if lease_end_time is not None:
+                end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
+
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
 
@@ -214,7 +220,8 @@ class OrchestratorHandler:
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
-            computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=asm_graph)
+            computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=asm_graph,
+                                                              end_time=end_time)
 
             # Process the Slice i.e. Demand the computed reservations i.e. Add them to the policy
             # Once added to the policy; Actor Tick Handler will do following asynchronously:
@@ -386,12 +393,12 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
             raise e
 
-    def renew_slice(self, *, token: str, slice_id: str, new_end_time: datetime):
+    def renew_slice(self, *, token: str, slice_id: str, new_lease_end_time: str):
         """
         Renew a slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
-        :param new_end_time: New Lease End Time in UTC in '%Y-%m-%d %H:%M:%S' format
+        :param new_lease_end_time: New Lease End Time in UTC in '%Y-%m-%d %H:%M:%S' format
         :raises Raises an exception in case of failure
         :return:
         """
@@ -422,15 +429,7 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Unable to renew Slice# {slice_guid} that is not yet stable, "
                                             f"try again later")
 
-            now = datetime.utcnow()
-            if new_end_time <= now:
-                raise OrchestratorException(f"New term end time {new_end_time} is in the past! "
-                                            f"Can't renew slice {slice_id}!",
-                                            http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
-            if (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
-                self.logger.info(f"New term end time {new_end_time} exceeds system default "
-                                 f"{Constants.DEFAULT_MAX_DURATION}, setting to system default: ")
-                new_end_time = now + Constants.DEFAULT_MAX_DURATION
+            new_end_time = self.__validate_lease_end_time(lease_end_time=new_lease_end_time)
 
             reservations = controller.get_reservations(id_token=token, slice_id=slice_id)
             if reservations is None or len(reservations) < 1:
@@ -462,3 +461,30 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing renew e: {e}")
             raise e
+
+    def __validate_lease_end_time(self, lease_end_time: str) -> datetime:
+        """
+        Validate Lease End Time
+        :param lease_end_time: New End Time
+        :return End Time
+        :raises Exception if new end time is in past
+        """
+        new_end_time = None
+        try:
+            new_end_time = datetime.strptime(lease_end_time, Constants.RENEW_TIME_FORMAT)
+        except Exception as e:
+            raise OrchestratorException(f"Lease End Time is not in format {Constants.RENEW_TIME_FORMAT}",
+                                        http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+
+        now = datetime.utcnow()
+        if new_end_time <= now:
+            raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
+                                        http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+
+        if (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
+            self.logger.info(f"New term end time {new_end_time} exceeds system default "
+                             f"{Constants.DEFAULT_MAX_DURATION}, setting to system default: ")
+
+            new_end_time = now + Constants.DEFAULT_MAX_DURATION
+
+        return new_end_time
