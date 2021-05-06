@@ -19,7 +19,8 @@ class TestSlicesController(BaseTestCase):
         """
         body = 'body_example'
         query_string = [('slice_name', 'slice_name_example'),
-                        ('ssh_key', 'ssh_key_example')]
+                        ('ssh_key', 'ssh_key_example'),
+                        ('lease_end_time', 'lease_end_time_example')]
         response = self.client.open(
             '//slices/create',
             method='POST',

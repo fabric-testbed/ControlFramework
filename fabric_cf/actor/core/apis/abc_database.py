@@ -247,11 +247,12 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_slice_by_name(self, *, slice_name: str) -> List[ABCSlice]:
+    def get_slice_by_name(self, *, slice_name: str, oidc_claim_sub: str) -> List[ABCSlice]:
         """
         Retrieves the specified slice record.
 
         @param slice_name slice name
+        @param oidc_claim_sub User OIDC Sub Claim
 
         @return dict of properties
 

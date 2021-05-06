@@ -140,7 +140,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                             slice_list = [slice_obj]
 
                     elif slice_name is not None:
-                        slice_list = self.db.get_slice_by_name(slice_name=slice_name)
+                        slice_list = self.db.get_slice_by_name(slice_name=slice_name, oidc_claim_sub=user_dn)
                     else:
                         slice_list = self.db.get_slices()
 
@@ -150,7 +150,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                     result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 if slice_list is not None:
-                    result.slices = Translate.fill_slices(slice_list=slice_list, full=True, user_dn=user_dn)
+                    result.slices = Translate.fill_slices(slice_list=slice_list, full=True)
                 else:
                     result.status.set_code(ErrorCodes.ErrorNoSuchSlice.value)
                     result.status.set_message(ErrorCodes.ErrorNoSuchSlice.interpret())

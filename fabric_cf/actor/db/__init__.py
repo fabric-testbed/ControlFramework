@@ -111,6 +111,7 @@ class Reservations(Base):
     rsv_graph_node_id = Column(String, nullable=True)
     rsv_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID))
     rsv_resid = Column(String, nullable=False)
+    oidc_claim_sub = Column(String, nullable=False)
     rsv_category = Column(Integer, nullable=False)
     rsv_state = Column(Integer, nullable=False)
     rsv_pending = Column(Integer, nullable=False)
@@ -125,6 +126,7 @@ class Slices(Base):
     __tablename__ = 'Slices'
     slc_id = Column(Integer, Sequence('slc_id', start=1, increment=1), autoincrement=True, primary_key=True)
     slc_graph_id = Column(String, nullable=True)
+    oidc_claim_sub = Column(String, nullable=True)
     slc_guid = Column(String, nullable=False)
     slc_name = Column(String, nullable=False)
     slc_type = Column(Integer, nullable=False)

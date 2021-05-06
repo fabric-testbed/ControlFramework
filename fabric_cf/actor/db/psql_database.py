@@ -386,7 +386,7 @@ class PsqlDatabase:
         return result
 
     def add_slice(self, *, act_id: int, slc_guid: str, slc_name: str, slc_type: int,
-                  slc_resource_type: str, properties, slc_graph_id: str = None):
+                  slc_resource_type: str, properties, slc_graph_id: str = None, oidc_claim_sub: str = None):
         """
         Add a slice
         @param act_id actor id
@@ -396,9 +396,10 @@ class PsqlDatabase:
         @param slc_resource_type slice resource type
         @param properties pickled instance
         @param slc_graph_id slice graph id
+        @param oidc_claim_sub User OIDC Sub
         """
         try:
-            slc_obj = Slices(slc_guid=slc_guid, slc_name=slc_name, slc_type=slc_type,
+            slc_obj = Slices(slc_guid=slc_guid, slc_name=slc_name, slc_type=slc_type, oidc_claim_sub=oidc_claim_sub,
                              slc_resource_type=slc_resource_type, properties=properties, slc_act_id=act_id)
             if slc_graph_id is not None:
                 slc_obj.slc_graph_id = slc_graph_id
@@ -520,18 +521,43 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slice_by_name(self, *, act_id: int, slice_name: str) -> list:
+    def get_slice_by_name(self, *, act_id: int, slice_name: str, oidc_claim_sub: str = None) -> list:
         """
         Get slice for an actor
         @param act_id actor id
         @param slice_name slice name
+        @param oidc_claim_sub User OIDC Sub claim
         @return slice dictionary
         """
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
-                        Slices.slc_name == slice_name):
+                rows = []
+                if oidc_claim_sub is not None:
+                    rows = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
+                        Slices.slc_name == slice_name).filter(Slices.oidc_claim_sub == oidc_claim_sub)
+                else:
+                    rows = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
+                        Slices.slc_name == slice_name)
+                for row in rows:
+                    slice_obj = self.generate_slice_dict_from_row(row)
+                    result.append(slice_obj.copy())
+                    slice_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_slice_by_oidc_claim_sub(self, *, oidc_claim_sub: str) -> list:
+        """
+        Get slice for an user
+        @param oidc_claim_sub User OIDC SUB name
+        @return slice dictionary
+        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Slices).filter(Slices.oidc_claim_sub == oidc_claim_sub):
                     slice_obj = self.generate_slice_dict_from_row(row)
                     result.append(slice_obj.copy())
                     slice_obj.clear()
@@ -622,7 +648,8 @@ class PsqlDatabase:
         return result
 
     def add_reservation(self, *, act_id: int, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
-                        rsv_pending: int, rsv_joining: int, properties, rsv_graph_node_id: str = None):
+                        rsv_pending: int, rsv_joining: int, properties, rsv_graph_node_id: str = None,
+                        oidc_claim_sub: str = None):
         """
         Add a reservation
         @param act_id actor id
@@ -634,12 +661,13 @@ class PsqlDatabase:
         @param rsv_joining join state
         @param properties pickled instance
         @param rsv_graph_node_id graph id
+        @param oidc_claim_sub OIDC Sub claim
         """
         try:
             slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
             rsv_obj = Reservations(rsv_slc_id=slc_obj['slc_id'], rsv_resid=rsv_resid, rsv_category=rsv_category,
                                    rsv_state=rsv_state, rsv_pending=rsv_pending, rsv_joining=rsv_joining,
-                                   properties=properties)
+                                   properties=properties, oidc_claim_sub=oidc_claim_sub)
             if rsv_graph_node_id is not None:
                 rsv_obj.rsv_graph_node_id = rsv_graph_node_id
             with session_scope(self.db_engine) as session:
@@ -722,6 +750,24 @@ class PsqlDatabase:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(Reservations.rsv_slc_id.in_(slc_id_list)):
+                    rsv_obj = self.generate_reservation_dict_from_row(row)
+                    result.append(rsv_obj.copy())
+                    rsv_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_reservations_by_oidc_claim_sub(self, *, oidc_claim_sub: str) -> list:
+        """
+        Get Reservations for an actor
+        @param oidc_claim_sub OIDC Claim Sub
+        @return list of reservations
+        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Reservations).filter(Reservations.oidc_claim_sub == oidc_claim_sub):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
