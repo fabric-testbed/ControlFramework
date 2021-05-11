@@ -84,6 +84,12 @@ class ReservationPendingStates(Enum):
     SendUpdate = 24
     Unknown = 25
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
 
 class JoinState(Enum):
     """
@@ -94,3 +100,9 @@ class JoinState(Enum):
     BlockedJoin = 33
     BlockedRedeem = 34
     Joining = 35
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name

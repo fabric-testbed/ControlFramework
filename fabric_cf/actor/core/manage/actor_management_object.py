@@ -601,7 +601,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return result
 
     def get_delegations(self, *, caller: AuthToken, id_token: str = None, slice_id: ID = None,
-                        did: str = None) -> ResultDelegationAvro:
+                        did: str = None, state: int = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -624,9 +624,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                         result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
                         result.status.set_message(ErrorCodes.ErrorNoSuchDelegation.interpret())
                 elif slice_id is not None:
-                    dlg_list = self.db.get_delegations_by_slice_id(slice_id=slice_id)
+                    dlg_list = self.db.get_delegations_by_slice_id(slice_id=slice_id, state=state)
                 else:
-                    dlg_list = self.db.get_delegations()
+                    dlg_list = self.db.get_delegations(state=state)
             except Exception as e:
                 self.logger.error("get_delegations db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)

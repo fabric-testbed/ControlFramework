@@ -743,13 +743,13 @@ class ActorDatabase(ABCDatabase):
             return self._load_delegation_from_pickled_instance(pickled_del=pickled_del, slice_id=slice_id)
         return None
 
-    def get_delegations(self) -> List[ABCDelegation]:
+    def get_delegations(self, state: int = None) -> List[ABCDelegation]:
         result = []
         dlg_dict_list = None
         try:
             self.lock.acquire()
             self.logger.debug("Actor ID: {}".format(self.actor_id))
-            dlg_dict_list = self.db.get_delegations(dlg_act_id=self.actor_id)
+            dlg_dict_list = self.db.get_delegations(dlg_act_id=self.actor_id, state=state)
         except Exception as e:
             self.logger.error(e)
         finally:
@@ -762,13 +762,14 @@ class ActorDatabase(ABCDatabase):
                 result.append(dlg_obj)
         return result
 
-    def get_delegations_by_slice_id(self, *, slice_id: ID) -> List[ABCDelegation]:
+    def get_delegations_by_slice_id(self, *, slice_id: ID, state: int = None) -> List[ABCDelegation]:
         result = []
         dlg_dict_list = None
         try:
             self.lock.acquire()
             result = []
-            dlg_dict_list = self.db.get_delegations_by_slice_id(dlg_act_id=self.actor_id, slc_guid=str(slice_id))
+            dlg_dict_list = self.db.get_delegations_by_slice_id(dlg_act_id=self.actor_id, slc_guid=str(slice_id),
+                                                                state=state)
         except Exception as e:
             self.logger.error(e)
         finally:

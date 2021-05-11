@@ -1598,19 +1598,27 @@ class PsqlDatabase:
 
         return dlg_obj
 
-    def get_delegations(self, *, dlg_act_id: int) -> list:
+    def get_delegations(self, *, dlg_act_id: int, state: int = None) -> list:
         """
         Get delegations
         @param dlg_act_id actor id
+        @param state delegation state
         @param list of delegations
         """
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Delegations).filter(Delegations.dlg_act_id == dlg_act_id):
-                    dlg_obj = self.generate_delegation_dict_from_row(row)
-                    result.append(dlg_obj.copy())
-                    dlg_obj.clear()
+                if state is None:
+                    for row in session.query(Delegations).filter(Delegations.dlg_act_id == dlg_act_id):
+                        dlg_obj = self.generate_delegation_dict_from_row(row)
+                        result.append(dlg_obj.copy())
+                        dlg_obj.clear()
+                else:
+                    for row in session.query(Delegations).filter(Delegations.dlg_act_id == dlg_act_id).filter(
+                            Delegations.dlg_state == state):
+                        dlg_obj = self.generate_delegation_dict_from_row(row)
+                        result.append(dlg_obj.copy())
+                        dlg_obj.clear()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -1637,11 +1645,12 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_delegations_by_slice_id(self, *, dlg_act_id: int, slc_guid: str) -> list:
+    def get_delegations_by_slice_id(self, *, dlg_act_id: int, slc_guid: str, state: int = None) -> list:
         """
         Get delegations
         @param dlg_act_id actor id
         @param slc_guid slice id
+        @param state delegation state
         @return list of delegations
         """
         result = []
@@ -1650,10 +1659,17 @@ class PsqlDatabase:
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
-                for row in session.query(Delegations).filter(Delegations.dlg_slc_id == slc_obj['slc_id']):
-                    rsv_obj = self.generate_delegation_dict_from_row(row)
-                    result.append(rsv_obj.copy())
-                    rsv_obj.clear()
+                if state is None:
+                    for row in session.query(Delegations).filter(Delegations.dlg_slc_id == slc_obj['slc_id']):
+                        rsv_obj = self.generate_delegation_dict_from_row(row)
+                        result.append(rsv_obj.copy())
+                        rsv_obj.clear()
+                else:
+                    for row in session.query(Delegations).filter(Delegations.dlg_slc_id == slc_obj['slc_id']).filter(
+                            Delegations.dlg_state == state):
+                        rsv_obj = self.generate_delegation_dict_from_row(row)
+                        result.append(rsv_obj.copy())
+                        rsv_obj.clear()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e

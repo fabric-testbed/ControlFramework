@@ -127,7 +127,6 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
                       Constants.QUERY_DETAIL_LEVEL: str(level)}
         return properties
 
-
     @staticmethod
     def get_query_action(properties: dict) -> str:
         """

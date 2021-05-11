@@ -380,14 +380,15 @@ class KafkaActorService(KafkaService):
 
             if request.get_delegation_id() is not None:
                 result = mo.get_delegations(caller=auth, did=ID(uid=request.get_delegation_id()),
-                                            id_token=request.get_id_token())
+                                            id_token=request.get_id_token(), state=request.delegation_state)
 
             elif request.get_slice_id() is not None:
                 result = mo.get_delegations(caller=auth, slice_id=ID(uid=request.get_slice_id()),
-                                            id_token=request.get_id_token())
+                                            id_token=request.get_id_token(), state=request.delegation_state)
 
             else:
-                result = mo.get_delegations(caller=auth, id_token=request.get_id_token())
+                result = mo.get_delegations(caller=auth, id_token=request.get_id_token(),
+                                            state=request.delegation_state)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
