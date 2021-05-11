@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+from datetime import datetime
 from typing import List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -111,11 +112,13 @@ class OrchestratorSliceWrapper:
 
         return ticketed_requested_entities
 
-    def create(self, *, bqm_graph: Neo4jCBMGraph, slice_graph: Neo4jASM) -> List[TicketReservationAvro]:
+    def create(self, *, bqm_graph: Neo4jCBMGraph, slice_graph: Neo4jASM,
+               end_time: datetime) -> List[TicketReservationAvro]:
         """
         Create a slice
         :param bqm_graph: BQM Graph
         :param slice_graph: Slice Graph
+        :param end_time: End Time
         :return: List of computed reservations
         """
         try:
@@ -127,7 +130,8 @@ class OrchestratorSliceWrapper:
                 slivers.append(sliver)
 
             self.computed_reservations = self.reservation_converter.get_tickets(slivers=slivers,
-                                                                                slice_id=self.slice_obj.get_slice_id())
+                                                                                slice_id=self.slice_obj.get_slice_id(),
+                                                                                end_time=end_time)
 
             return self.computed_reservations
         except Exception as e:

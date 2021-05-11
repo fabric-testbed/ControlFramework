@@ -195,6 +195,14 @@ paths:
         explode: true
         schema:
           type: string
+      - name: leaseEndTime
+        in: query
+        description: Lease End Time for the Slice
+        required: false
+        style: form
+        explode: true
+        schema:
+          type: string
       requestBody:
         $ref: '#/components/requestBodies/Request'
       responses:
@@ -599,6 +607,15 @@ components:
       in: query
       description: New Lease End Time for the Slice
       required: true
+      style: form
+      explode: true
+      schema:
+        type: string
+    leaseEndTime:
+      name: leaseEndTime
+      in: query
+      description: Lease End Time for the Slice
+      required: false
       style: form
       explode: true
       schema:

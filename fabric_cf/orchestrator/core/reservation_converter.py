@@ -44,12 +44,13 @@ class ReservationConverter:
         self.controller = controller
         self.broker = broker
 
-    def get_tickets(self, *, slivers: List[NodeSliver], slice_id: str) -> List[TicketReservationAvro]:
+    def get_tickets(self, *, slivers: List[NodeSliver], slice_id: str,
+                    end_time: datetime) -> List[TicketReservationAvro]:
         """
         Responsible to generate reservations from the slivers; Adds the reservation Orchestrator
         :param slivers list of slivers computed from the ASM (Slice graph)
         :param slice_id Slice Id
-
+        :param end_time End Time
         :returns list of tickets
         """
         reservation_list = []
@@ -61,6 +62,8 @@ class ReservationConverter:
             ticket.set_resource_type(str(sliver.get_type()))
             start = datetime.utcnow()
             end = start + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
+            if end_time is not None:
+                end = end_time
             ticket.set_start(ActorClock.to_milliseconds(when=start))
             ticket.set_end(ActorClock.to_milliseconds(when=end))
             ticket.set_state(ReservationStates.Unknown.value)

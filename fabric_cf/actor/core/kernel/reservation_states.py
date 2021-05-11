@@ -39,6 +39,31 @@ class ReservationStates(Enum):
     Failed = 8
     Unknown = 9
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def translate(state_name: str):
+        if state_name.lower() == ReservationStates.Nascent.name.lower():
+            return ReservationStates.Nascent
+        elif state_name.lower() == ReservationStates.Ticketed.name.lower():
+            return ReservationStates.Ticketed
+        elif state_name.lower() == ReservationStates.Active.name.lower():
+            return ReservationStates.Active
+        elif state_name.lower() == ReservationStates.ActiveTicketed.name.lower():
+            return ReservationStates.ActiveTicketed
+        elif state_name.lower() == ReservationStates.Closed.name.lower():
+            return ReservationStates.Closed
+        elif state_name.lower() == ReservationStates.CloseWait.name.lower():
+            return ReservationStates.CloseWait
+        elif state_name.lower() == ReservationStates.Failed.name.lower():
+            return ReservationStates.Failed
+        else:
+            return ReservationStates.Unknown
+
 
 class ReservationPendingStates(Enum):
     """
@@ -59,6 +84,12 @@ class ReservationPendingStates(Enum):
     SendUpdate = 24
     Unknown = 25
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
 
 class JoinState(Enum):
     """
@@ -69,3 +100,9 @@ class JoinState(Enum):
     BlockedJoin = 33
     BlockedRedeem = 34
     Joining = 35
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name

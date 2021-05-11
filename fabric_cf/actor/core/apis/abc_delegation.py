@@ -33,6 +33,7 @@ from fim.graph.abc_property_graph import ABCPropertyGraph
 
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
+from fabric_cf.actor.core.common.exceptions import DelegationException
 from fabric_cf.actor.core.util.update_data import UpdateData
 
 if TYPE_CHECKING:
@@ -50,6 +51,27 @@ class DelegationState(Enum):
     Closed = 3
     Reclaimed = 4
     Failed = 5
+
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def translate(state_name: str):
+        if state_name.lower() == DelegationState.Nascent.name.lower():
+            return DelegationState.Nascent
+        elif state_name.lower() == DelegationState.Delegated.name.lower():
+            return DelegationState.Delegated
+        elif state_name.lower() == DelegationState.Closed.name.lower():
+            return DelegationState.Closed
+        elif state_name.lower() == DelegationState.Reclaimed.name.lower():
+            return DelegationState.Reclaimed
+        elif state_name.lower() == DelegationState.Failed.name.lower():
+            return DelegationState.Failed
+        else:
+            raise DelegationException(f"Invalid delegation state {state_name}")
 
 
 class ABCDelegation(ABC):

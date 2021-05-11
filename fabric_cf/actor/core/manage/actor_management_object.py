@@ -140,7 +140,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                             slice_list = [slice_obj]
 
                     elif slice_name is not None:
-                        slice_list = self.db.get_slice_by_name(slice_name=slice_name)
+                        slice_list = self.db.get_slice_by_name(slice_name=slice_name, oidc_claim_sub=user_dn)
+                    elif user_dn is not None:
+                        slice_list = self.db.get_slice_by_oidc_claim_sub(oidc_claim_sub=user_dn)
                     else:
                         slice_list = self.db.get_slices()
 
@@ -150,7 +152,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                     result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 if slice_list is not None:
-                    result.slices = Translate.fill_slices(slice_list=slice_list, full=True, user_dn=user_dn)
+                    result.slices = Translate.fill_slices(slice_list=slice_list, full=True)
                 else:
                     result.status.set_code(ErrorCodes.ErrorNoSuchSlice.value)
                     result.status.set_message(ErrorCodes.ErrorNoSuchSlice.interpret())
@@ -304,7 +306,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return self.db.get_slice(slice_id=guid)
 
     def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: int = None,
-                         slice_id: ID = None, rid: ID = None) -> ResultReservationAvro:
+                         slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -314,10 +316,19 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
+            user_dn = None
             if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
-                                           token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
-                                           resource_id=str(rid))
+                fabric_token = AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                                          token=id_token, logger=self.logger,
+                                                          actor_type=self.actor.get_type(),
+                                                          resource_id=str(rid))
+                user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
+
+                if user_dn is None:
+                    result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
+                    result.status.set_message(ErrorCodes.ErrorInvalidToken.interpret())
+                    return result
+
             res_list = None
             try:
                 if rid is not None:
@@ -590,7 +601,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return result
 
     def get_delegations(self, *, caller: AuthToken, id_token: str = None, slice_id: ID = None,
-                        did: str = None) -> ResultDelegationAvro:
+                        did: str = None, state: int = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -613,9 +624,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                         result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
                         result.status.set_message(ErrorCodes.ErrorNoSuchDelegation.interpret())
                 elif slice_id is not None:
-                    dlg_list = self.db.get_delegations_by_slice_id(slice_id=slice_id)
+                    dlg_list = self.db.get_delegations_by_slice_id(slice_id=slice_id, state=state)
                 else:
-                    dlg_list = self.db.get_delegations()
+                    dlg_list = self.db.get_delegations(state=state)
             except Exception as e:
                 self.logger.error("get_delegations db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)

@@ -165,11 +165,12 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_reservation(self, *, rid: ID) -> ABCReservationMixin:
+    def get_reservation(self, *, rid: ID, oidc_claim_sub: str = None) -> ABCReservationMixin:
         """
         Retrieves the specified reservation record.
 
         @param rid Reservation identifier
+        @param oidc_claim_sub oidc claim sub
 
         @return dict of properties
 
@@ -247,11 +248,12 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_slice_by_name(self, *, slice_name: str) -> List[ABCSlice]:
+    def get_slice_by_name(self, *, slice_name: str, oidc_claim_sub: str) -> List[ABCSlice]:
         """
         Retrieves the specified slice record.
 
         @param slice_name slice name
+        @param oidc_claim_sub User OIDC Sub Claim
 
         @return dict of properties
 
@@ -403,12 +405,24 @@ class ABCDatabase(ABC):
         """
         Get Delegation
         @params dlg_graph_id: dlg_graph_id
+        @return Delegation
         """
 
     @abstractmethod
-    def get_delegations(self) -> List[ABCDelegation]:
+    def get_delegations(self, state: int = None) -> List[ABCDelegation]:
         """
         Get delegations
+        @params state delegation state
+        @return List of delegations
+        """
+
+    @abstractmethod
+    def get_delegations_by_slice_id(self, *, slice_id: ID, state: int = None) -> List[ABCDelegation]:
+        """
+        Get delegations
+        @params slice_id Slice Id
+        @params state delegation state
+        @return List of delegations
         """
 
     @abstractmethod
