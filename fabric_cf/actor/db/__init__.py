@@ -111,7 +111,7 @@ class Reservations(Base):
     rsv_graph_node_id = Column(String, nullable=True)
     rsv_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID))
     rsv_resid = Column(String, nullable=False)
-    oidc_claim_sub = Column(String, nullable=False)
+    oidc_claim_sub = Column(String, nullable=True)
     rsv_category = Column(Integer, nullable=False)
     rsv_state = Column(Integer, nullable=False)
     rsv_pending = Column(Integer, nullable=False)

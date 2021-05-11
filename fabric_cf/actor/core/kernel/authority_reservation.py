@@ -283,8 +283,6 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
                     self.previous_term = self.term
                     self.ticket = self.requested_resources
                     self.term = self.approved_term
-                    if self.requested_resources.get_sliver() is not None:
-                        self.approved_resources.set_sliver(sliver=self.requested_resources.get_sliver())
 
                     self.resources.update(reservation=self, resource_set=self.approved_resources)
                     self.transition(prefix="extend lease", state=ReservationStates.Active,

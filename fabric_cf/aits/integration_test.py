@@ -26,14 +26,18 @@
 import logging
 import time
 import unittest
+from datetime import datetime, timedelta
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.aits.elements.slice import Slice
 from fabric_cf.aits.kafka_processor import KafkaProcessorSingleton
 from fabric_cf.aits.manage_helper import ManageHelper
 from fabric_cf.aits.orchestrator_helper import OrchestratorHelper, Status
 import fim.user as fu
+
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 
 
 class IntegrationTest(unittest.TestCase):
@@ -43,8 +47,7 @@ class IntegrationTest(unittest.TestCase):
     STABLE_OK = "StableOK"
     CLOSING = "Closing"
 
-    HTTP_OK = 200
-    HTTP_NOT_FOUND = 404
+    TIME_FORMAT_IN_SECONDS = "%Y-%m-%d %H:%M"
 
     TEST_SLICE_NAME = "test-slice-1"
     logger = logging.getLogger('IntegrationTest')
@@ -68,7 +71,7 @@ class IntegrationTest(unittest.TestCase):
     def test_a_list_resources(self):
         oh = OrchestratorHelper()
         response = oh.resources()
-        self.assertEqual(self.HTTP_NOT_FOUND, response.status_code)
+        self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
         self.assertEqual("Resource(s) not found!", response.json())
 
     def test_b_claim_resources(self):
@@ -91,7 +94,7 @@ class IntegrationTest(unittest.TestCase):
     def test_c_list_resources(self):
         oh = OrchestratorHelper()
         response = oh.resources()
-        self.assertEqual(self.HTTP_OK, response.status_code)
+        self.assertEqual(OrchestratorException.HTTP_OK, response.status_code)
         status = response.json()[self.VALUE][self.STATUS]
         self.assertEqual(status, self.STATUS_OK)
         json_obj = response.json()[self.VALUE]
@@ -123,7 +126,8 @@ class IntegrationTest(unittest.TestCase):
 
         return t.serialize()
 
-    def assert_am_broker_reservations(self, slice_id: str, res_id: str, am_res_state: int, broker_res_state: int):
+    def assert_am_broker_reservations(self, slice_id: str, res_id: str, am_res_state: int, broker_res_state: int,
+                                      new_time: str = None):
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
         am_reservation, status = manage_helper.do_get_reservations(actor_name=KafkaProcessorSingleton.get().am_name,
@@ -137,6 +141,10 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(slice_id, am_reservation[0].slice_id)
             self.assertEqual(res_id, am_reservation[0].reservation_id)
             self.assertEqual(am_res_state, am_reservation[0].state)
+            if new_time is not None:
+                lease_end = ActorClock.from_milliseconds(milli_seconds=am_reservation[0].requested_end)
+                lease_end_str = lease_end.strftime(self.TIME_FORMAT_IN_SECONDS)
+                self.assertEqual(new_time, lease_end_str)
 
         broker_reservation, status = manage_helper.do_get_reservations(actor_name=KafkaProcessorSingleton.get().broker_name,
                                                                        callback_topic=KafkaProcessorSingleton.get().kafka_topic,
@@ -146,6 +154,10 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(slice_id, broker_reservation[0].slice_id)
         self.assertEqual(res_id, broker_reservation[0].reservation_id)
         self.assertEqual(broker_res_state, broker_reservation[0].state)
+        if new_time is not None:
+            lease_end = ActorClock.from_milliseconds(milli_seconds=broker_reservation[0].requested_end)
+            lease_end_str = lease_end.strftime(self.TIME_FORMAT_IN_SECONDS)
+            self.assertEqual(new_time, lease_end_str)
 
         KafkaProcessorSingleton.get().stop()
 
@@ -333,3 +345,105 @@ class IntegrationTest(unittest.TestCase):
         status, response = oh.delete(self.slice_id)
         self.assertEqual(status, Status.FAILURE)
         self.assertEqual(f"Slice# {self.slice_id} already closed", response.json())
+
+    def test_h_create_slice_with_lease_end_and_renew_slice(self):
+        # Create Slice
+        slice_graph = self.build_slice(include_components=True)
+        oh = OrchestratorHelper()
+        now = datetime.utcnow()
+        new_time = now + timedelta(days=2)
+        new_time_str = new_time.strftime(Constants.RENEW_TIME_FORMAT)
+        status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME,
+                                     lease_end_time=new_time_str)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(response, list))
+        self.assertEqual(len(response), 2)
+        self.slice_id = response[0].slice_id
+
+        # wait for slice to be Stable
+        slice_state = None
+        while slice_state != self.STABLE_OK:
+            status, slice_obj = oh.slice_status(slice_id=self.slice_id)
+            self.assertEqual(Status.OK, status)
+            self.assertTrue(isinstance(slice_obj, Slice))
+            slice_state = slice_obj.slice_state
+            time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        new_time_str_without_seconds = new_time.strftime(self.TIME_FORMAT_IN_SECONDS)
+
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Active.name, s.get_state())
+            self.assertIsNotNone(s.management_ip)
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+            lease_end = datetime.strptime(s.lease_end, Constants.RENEW_TIME_FORMAT)
+            lease_end_without_seconds = lease_end.strftime(self.TIME_FORMAT_IN_SECONDS)
+            self.assertEqual(new_time_str_without_seconds, lease_end_without_seconds)
+
+            self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
+                                               am_res_state=ReservationStates.Active.value,
+                                               broker_res_state=ReservationStates.Ticketed.value,
+                                               new_time=new_time_str_without_seconds)
+
+        # Renew Slice
+        now = datetime.utcnow()
+        new_time = now + timedelta(days=14)
+
+        new_time_str = new_time.strftime(self.TIME_FORMAT_IN_SECONDS)
+        status, response = oh.renew(slice_id=self.slice_id, new_lease_end_time=new_time_str)
+        self.assertEqual(Status.FAILURE, status)
+        self.assertEqual(OrchestratorException.HTTP_BAD_REQUEST, response.status_code)
+
+        new_time_str = new_time.strftime(Constants.RENEW_TIME_FORMAT)
+
+        status, response = oh.renew(slice_id="Slice_not-exists", new_lease_end_time=new_time_str)
+        self.assertEqual(Status.FAILURE, status)
+        self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
+
+        status, response = oh.renew(slice_id=self.slice_id, new_lease_end_time=new_time_str)
+        self.assertEqual(Status.OK, status)
+
+        time.sleep(10)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        new_time_str_without_seconds = new_time.strftime(self.TIME_FORMAT_IN_SECONDS)
+        for s in slivers:
+            self.assertEqual(ReservationStates.Active.name, s.get_state())
+            self.assertIsNotNone(s.management_ip)
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+            lease_end = datetime.strptime(s.lease_end, Constants.RENEW_TIME_FORMAT)
+            lease_end_without_seconds = lease_end.strftime(self.TIME_FORMAT_IN_SECONDS)
+            self.assertEqual(new_time_str_without_seconds, lease_end_without_seconds)
+
+            self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
+                                               am_res_state=ReservationStates.Active.value,
+                                               broker_res_state=ReservationStates.Ticketed.value,
+                                               new_time=new_time_str_without_seconds)
+
+        # Delete Slice
+        status, response = oh.delete(self.slice_id)
+        self.assertEqual(Status.OK, status)
+
+        time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Closed.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+            self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
+                                               am_res_state=ReservationStates.Closed.value,
+                                               broker_res_state=ReservationStates.Closed.value)

@@ -369,11 +369,11 @@ class ActorDatabase(ABCDatabase):
             self.logger.error(traceback.format_exc())
         return None
 
-    def get_reservation(self, *, rid: ID) -> ABCReservationMixin:
+    def get_reservation(self, *, rid: ID, oidc_claim_sub: str = None) -> ABCReservationMixin:
         res_dict = None
         try:
             self.lock.acquire()
-            res_dict = self.db.get_reservation(act_id=self.actor_id, rsv_resid=str(rid))
+            res_dict = self.db.get_reservation(act_id=self.actor_id, rsv_resid=str(rid), oidc_claim_sub=oidc_claim_sub)
         except Exception as e:
             self.logger.error(e)
         finally:

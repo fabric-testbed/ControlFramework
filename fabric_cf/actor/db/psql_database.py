@@ -963,11 +963,12 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservation(self, *, act_id: int, rsv_resid: str) -> dict:
+    def get_reservation(self, *, act_id: int, rsv_resid: str, oidc_claim_sub: str = None) -> dict:
         """
         Get Reservation for an actor
         @param act_id actor id
         @param rsv_resid reservation guid
+        @param oidc_claim_sub oidc claim sub
         @return list of reservations
         """
         result = None
@@ -976,8 +977,15 @@ class PsqlDatabase:
             if slc_id_list is None or len(slc_id_list) == 0:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
-                rsv_obj = session.query(Reservations).filter(
-                    Reservations.rsv_resid == rsv_resid).filter(Reservations.rsv_slc_id.in_(slc_id_list)).first()
+                rsv_obj = None
+                if oidc_claim_sub is None:
+                    rsv_obj = session.query(Reservations).filter(
+                        Reservations.rsv_resid == rsv_resid).filter(Reservations.rsv_slc_id.in_(slc_id_list)).first()
+                else:
+                    rsv_obj = session.query(Reservations).filter(
+                        Reservations.rsv_resid == rsv_resid).filter(
+                        Reservations.oidc_claim_sub == oidc_claim_sub).filter(
+                        Reservations.rsv_slc_id.in_(slc_id_list)).first()
                 if rsv_obj is None:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
                 result = self.generate_reservation_dict_from_row(rsv_obj)

@@ -24,10 +24,12 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import enum
+from datetime import datetime
 from typing import Tuple, Union, List
 
 import requests
 
+from fabric_cf.actor.core.common.constants import Constants as CFConstants
 from fabric_cf.aits.elements.constants import Constants
 from fabric_cf.aits.elements.reservation import ReservationFactory, Reservation
 from fabric_cf.aits.elements.slice import SliceFactory, Slice
@@ -61,8 +63,12 @@ class OrchestratorHelper:
         url = f"{self.host}/resources?level={level}"
         return requests.get(url, headers=self.headers, verify=False)
 
-    def create(self, slice_graph: str, slice_name: str) -> Tuple[Status, Union[List[Reservation], requests.Response]]:
-        url = f"{self.host}/slices/create?sliceName={slice_name}&sshKey={self.ssh_key}"
+    def create(self, slice_graph: str, slice_name: str,
+               lease_end_time: str = None) -> Tuple[Status, Union[List[Reservation], requests.Response]]:
+        if lease_end_time is None:
+            url = f"{self.host}/slices/create?sliceName={slice_name}&sshKey={self.ssh_key}"
+        else:
+            url = f"{self.host}/slices/create?sliceName={slice_name}&sshKey={self.ssh_key}&leaseEndTime={lease_end_time}"
         response = requests.post(url, headers=self.headers_with_content, verify=False, data=slice_graph)
         if response.status_code == self.HTTP_OK:
             reservations = ReservationFactory.create_reservations(reservation_list=
@@ -131,4 +137,24 @@ class OrchestratorHelper:
                 result = next(iter(reservations))
             return Status.OK, result
         else:
+            return Status.FAILURE, response
+
+    def renew(self, slice_id: str, new_lease_end_time: str) -> Tuple[Status, Union[requests.Response, None]]:
+        """
+        Renew a slice
+        @param token fabric token
+        @param slice_id slice_id
+        @param new_lease_end_time new_lease_end_time
+        @return Tuple containing Status and List of Reservation Id failed to extend
+        """
+        response = None
+        try:
+            # Set the tokens
+            url = f"{self.host}/slices/renew/{slice_id}?newLeaseEndTime={new_lease_end_time}"
+            response = requests.post(url, headers=self.headers, verify=False)
+            if response.status_code != self.HTTP_OK:
+                return Status.FAILURE, response
+
+            return Status.OK, response
+        except Exception as e:
             return Status.FAILURE, response

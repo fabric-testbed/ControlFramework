@@ -141,6 +141,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
                     elif slice_name is not None:
                         slice_list = self.db.get_slice_by_name(slice_name=slice_name, oidc_claim_sub=user_dn)
+                    elif user_dn is not None:
+                        slice_list = self.db.get_slice_by_oidc_claim_sub(oidc_claim_sub=user_dn)
                     else:
                         slice_list = self.db.get_slices()
 
@@ -304,7 +306,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return self.db.get_slice(slice_id=guid)
 
     def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: int = None,
-                         slice_id: ID = None, rid: ID = None) -> ResultReservationAvro:
+                         slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -314,10 +316,19 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
+            user_dn = None
             if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
-                                           token=id_token, logger=self.logger, actor_type=self.actor.get_type(),
-                                           resource_id=str(rid))
+                fabric_token = AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                                          token=id_token, logger=self.logger,
+                                                          actor_type=self.actor.get_type(),
+                                                          resource_id=str(rid))
+                user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
+
+                if user_dn is None:
+                    result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
+                    result.status.set_message(ErrorCodes.ErrorInvalidToken.interpret())
+                    return result
+
             res_list = None
             try:
                 if rid is not None:

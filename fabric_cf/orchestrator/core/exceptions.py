@@ -29,6 +29,7 @@ class OrchestratorException(Exception):
     """
     Orchestrator Exception
     """
+    HTTP_OK = 200
     HTTP_5XX_ERROR = 500
     HTTP_NOT_FOUND = 404
     HTTP_BAD_REQUEST = 400

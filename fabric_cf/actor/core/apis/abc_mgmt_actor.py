@@ -81,12 +81,13 @@ class ABCMgmtActor(ABCComponent):
 
     @abstractmethod
     def get_reservations(self, *, id_token: str = None, state: int = None,
-                         slice_id: ID = None, rid: ID = None) -> List[ReservationMng]:
+                         slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None) -> List[ReservationMng]:
         """
         @param id_token id token
         @param state state
         @param slice_id slice ID
         @param rid reservation id
+        @param oidc_claim_sub: oidc claim sub
         Obtains all reservations
         @return returns list of the reservations
         """

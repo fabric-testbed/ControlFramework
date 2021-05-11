@@ -165,11 +165,12 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_reservation(self, *, rid: ID) -> ABCReservationMixin:
+    def get_reservation(self, *, rid: ID, oidc_claim_sub: str = None) -> ABCReservationMixin:
         """
         Retrieves the specified reservation record.
 
         @param rid Reservation identifier
+        @param oidc_claim_sub oidc claim sub
 
         @return dict of properties
 
