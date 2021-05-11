@@ -32,7 +32,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Tuple, List
 
-from fim.graph.abc_property_graph import ABCPropertyGraphConstants
+from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.base_sliver import BaseSliver
@@ -648,13 +648,19 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"query_action {query_action}")
 
+        bqm_format = p.get(Constants.BROKER_QUERY_MODEL_FORMAT, None)
+        if bqm_format is not None:
+            bqm_format = GraphFormat(int(bqm_format))
+        else:
+            bqm_format = GraphFormat.GRAPHML
+
         try:
             self.lock.acquire()
             if self.combined_broker_model is not None:
                 graph = self.combined_broker_model.get_bqm(query_level=query_level)
                 graph_string = None
                 if graph is not None:
-                    graph_string = graph.serialize_graph()
+                    graph_string = graph.serialize_graph(format=bqm_format)
                 if graph_string is not None:
                     result[Constants.BROKER_QUERY_MODEL] = graph_string
                     result[Constants.QUERY_RESPONSE_STATUS] = "True"
