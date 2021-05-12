@@ -52,7 +52,7 @@ class BrokerQueryModelPublisher(ABCTimerTask):
         Process a claim timeout
         """
         try:
-            request = BrokerPolicy.get_broker_query_model_query(level=1, bqm_format=GraphFormat.JSON_NODELINK.value)
+            request = BrokerPolicy.get_broker_query_model_query(level=1, bqm_format=GraphFormat.JSON_NODELINK)
             response = self.broker.query(query=request, caller=self.broker.get_identity())
             if response is None:
                 self.logger.error(f"Could not get broker query model!")

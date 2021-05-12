@@ -121,7 +121,7 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
         return reservation.get_client_auth_token().get_guid()
 
     @staticmethod
-    def get_broker_query_model_query(*, level: int, bqm_format: int = GraphFormat.GRAPHML.value) -> dict:
+    def get_broker_query_model_query(*, level: int, bqm_format: GraphFormat = GraphFormat.GRAPHML) -> dict:
         """
         Return dictionary representing query
         :param level: Graph Level
@@ -130,7 +130,7 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
         """
         properties = {Constants.QUERY_ACTION: Constants.QUERY_ACTION_DISCOVER_BQM,
                       Constants.QUERY_DETAIL_LEVEL: str(level),
-                      Constants.BROKER_QUERY_MODEL_FORMAT: str(bqm_format)}
+                      Constants.BROKER_QUERY_MODEL_FORMAT: str(bqm_format.value)}
         return properties
 
     @staticmethod
