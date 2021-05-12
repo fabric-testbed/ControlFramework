@@ -759,10 +759,14 @@ class ActorMixin(ABCActorMixin):
         Actor run function for actor thread
         """
         try:
+            self.logger.info("Actor Main Thread started")
             self.actor_count -= 1
             self.actor_main()
         except Exception as e:
-            self.logger.error("Unexpected error {}".format(e))
+            self.logger.error(f"Unexpected error {e}")
+            self.logger.error(traceback.format_exc())
+        finally:
+            self.logger.info("Actor Main Thread exited")
 
     def start(self):
         """
@@ -801,6 +805,7 @@ class ActorMixin(ABCActorMixin):
                     temp.join()
                 except Exception as e:
                     self.logger.error("Could not join actor thread {}".format(e))
+                    self.logger.error(traceback.format_exc())
                 finally:
                     self.thread_lock.release()
         finally:
@@ -896,12 +901,20 @@ class ActorMixin(ABCActorMixin):
                     return
 
                 if not self.event_queue.empty():
-                    for event in IterableQueue(source_queue=self.event_queue):
-                        events.append(event)
+                    try:
+                        for event in IterableQueue(source_queue=self.event_queue):
+                            events.append(event)
+                    except Exception as e:
+                        self.logger.error(f"Error while adding event to event queue! e: {e}")
+                        self.logger.error(traceback.format_exc())
 
                 if not self.timer_queue.empty():
-                    for timer in IterableQueue(source_queue=self.timer_queue):
-                        timers.append(timer)
+                    try:
+                        for timer in IterableQueue(source_queue=self.timer_queue):
+                            timers.append(timer)
+                    except Exception as e:
+                        self.logger.error(f"Error while adding event to event queue! e: {e}")
+                        self.logger.error(traceback.format_exc())
 
                 self.actor_main_lock.notify_all()
 
@@ -913,8 +926,8 @@ class ActorMixin(ABCActorMixin):
                     try:
                         e.process()
                     except Exception as e:
-                        self.logger.error(traceback.format_exc())
                         self.logger.error("Error while processing event {} {}".format(type(e), e))
+                        self.logger.error(traceback.format_exc())
 
             if len(timers) > 0:
                 for t in timers:
@@ -922,6 +935,7 @@ class ActorMixin(ABCActorMixin):
                         t.execute()
                     except Exception as e:
                         self.logger.error("Error while processing a timer {}".format(e))
+                        self.logger.error(traceback.format_exc())
 
     def setup_message_service(self):
         """

@@ -187,6 +187,7 @@ class Constants:
     QUERY_RESPONSE_MESSAGE = "query.response.message"
     QUERY_DETAIL_LEVEL = "query.detail.level"
     BROKER_QUERY_MODEL = "bqm"
+    BROKER_QUERY_MODEL_FORMAT = "bqm.format"
     POOL_TYPE = "neo4j"
 
     UNIT_MODIFY_PROP_MESSAGE_SUFFIX = ".message"

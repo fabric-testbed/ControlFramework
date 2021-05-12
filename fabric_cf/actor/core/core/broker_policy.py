@@ -27,6 +27,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fim.graph.abc_property_graph import GraphFormat
+
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.ticket import Ticket
@@ -119,12 +121,16 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
         return reservation.get_client_auth_token().get_guid()
 
     @staticmethod
-    def get_broker_query_model_query(*, level: int) -> dict:
+    def get_broker_query_model_query(*, level: int, bqm_format: GraphFormat = GraphFormat.GRAPHML) -> dict:
         """
         Return dictionary representing query
+        :param level: Graph Level
+        :param bqm_format: Graph Format
+        :return dictionary representing the query
         """
         properties = {Constants.QUERY_ACTION: Constants.QUERY_ACTION_DISCOVER_BQM,
-                      Constants.QUERY_DETAIL_LEVEL: str(level)}
+                      Constants.QUERY_DETAIL_LEVEL: str(level),
+                      Constants.BROKER_QUERY_MODEL_FORMAT: str(bqm_format.value)}
         return properties
 
     @staticmethod
