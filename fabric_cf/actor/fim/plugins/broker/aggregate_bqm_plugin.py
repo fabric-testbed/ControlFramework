@@ -35,7 +35,7 @@ from fim.graph.resources.abc_bqm import ABCBQMPropertyGraph
 from fim.graph.networkx_property_graph import NetworkXGraphImporter
 from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.slivers.capacities_labels import Capacities
-from fim.slivers.delegations import Delegation, Pool
+from fim.slivers.delegations import DelegationFormat
 from fim.slivers.network_node import CompositeNodeSliver, NodeType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.switch_fabric import SFType
@@ -156,13 +156,13 @@ class AggregatedBQMPlugin:
                     site_sliver.capacity_allocations = site_sliver.capacity_allocations + allocated_caps
 
                 # calculate available node capacities based on delegations
-                for delegation_id, delegated_list in sliver.get_capacity_delegations().items():
-                    for delegated in delegated_list:
-                        if Pool.ispoolmention(delegated) or Pool.ispooldefinition(delegated):
-                            # ignore pool mentions and definitions for now
-                            continue
+                if sliver.get_capacity_delegations() is not None:
+                    # CBM only has one delegation if it has one
+                    _, delegation = sliver.get_capacity_delegations().get_sole_delegation()
+                    # FIXME: skip pool definitions and references for now
+                    if delegation.get_format() == DelegationFormat.SinglePool:
                         site_sliver.capacities = site_sliver.capacities + \
-                                                 Capacities().set_fields(**delegated)
+                            delegation.get_details()
 
                 # merge allocated component capacities
                 for kt, v in allocated_comp_caps.items():
