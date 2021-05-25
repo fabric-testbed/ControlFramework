@@ -110,7 +110,7 @@ Remove existing swagger_server directory and move my_server/swagger_server to sw
 
 ## Configuration
 `config.site.orchestrator.yaml` depicts an example config file for an Orchestrator.
-### Import pre-requistes
+### Pre-requisites
 - Kafka Configuration
   - Request topic, consumer and producer credentials for each Actor from [Song](ywsong2@g.uky.edu)
   - Request Hosts running the Actors to be added to Kafka Brokers and Schema Registry Firewall
@@ -202,55 +202,55 @@ PDP_UID=1000
 The parameters depicted below must be checked/updated before bring any of the containers up.
 ```
 runtime:
-  - kafka-server: 
-  - kafka-schema-registry-url: 
-  - kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  - kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
-  - kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
-  - kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
-  - kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
-  - kafka-ssl-key-password:  
-  - kafka-security-protocol: SSL
-  - kafka-group-id: 
-  - kafka-sasl-mechanism:
-  - kafka-sasl-producer-username:
-  - kafka-sasl-producer-password:
-  - kafka-sasl-consumer-username:
-  - kafka-sasl-consumer-password:
-  - orchestrator.rest.port: 8700
-  - prometheus.port: 11000
+  kafka-server:
+  kafka-schema-registry-url:
+  kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
+  kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
+  kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
+  kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
+  kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  kafka-ssl-key-password:
+  kafka-security-protocol: SSL
+  kafka-group-id:
+  kafka-sasl-mechanism:
+  kafka-sasl-producer-username:
+  kafka-sasl-producer-password:
+  kafka-sasl-consumer-username:
+  kafka-sasl-consumer-password:
+  orchestrator.rest.port: 8700
+  prometheus.port: 11000
 
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  - log-directory: /var/log/actor
+  log-directory: /var/log/actor
 
   ## The filename to be used for actor's log file.
-  - log-file: actor.log
+  log-file: actor.log
 
   ## The default log level for actor.
-  - log-level: DEBUG
+  log-level: DEBUG
 
   ## actor rotates log files. You may specify how many archived log files to keep here.
-  - log-retain: 5
+  log-retain: 5
 
   ## actor rotates log files after they exceed a certain size.
   ## You may specify the file size that results in a log file being rotated here.
-  - log-size: 5000000
+  log-size: 5000000
 
-  - logger: orchestrator
+  logger: orchestrator
 
 oauth:
-  - jwks-url: https://dev-2.fabric-testbed.net/certs
+  jwks-url: https://dev-2.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
-  - key-refresh: 00:10:00
-  - verify-exp: True
+  key-refresh: 00:10:00
+  verify-exp: True
 
 database:
-  - db-user: fabric
-  - db-password: fabric
-  - db-name: orchestrator
-  - db-host: orchestrator-db:5432
+  db-user: fabric
+  db-password: fabric
+  db-name: orchestrator
+  db-host: orchestrator-db:5432
 
 pdp:
   url: http://orchestrator-pdp:8080/services/pdp
@@ -264,7 +264,7 @@ neo4j:
   import_dir: /imports
 
 container:
-  - container.guid: orchestrator-conainer
+  container.guid: orchestrator-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -274,41 +274,43 @@ time:
   # Beginning of time (in unix time).
   # The default is -1, which translates into using the current time as
   # the beginning of time for the container's internal clock.
-  - time.startTime: -1
+  time.startTime: -1
 
   # Internal tick length (in milliseconds)
-  - time.cycleMillis: 1000
+  time.cycleMillis: 1000
 
   # The number of the first tick
-  - time.firstTick: 0
+  time.firstTick: 0
 
   # This property controls if time advances automatically (false) or
   # manually (true)
-  - time.manual: false
+  time.manual: false
 
 actor:
-  - type: orchestrator
-  - name: orchestrator
-  - guid: orchestrator-guid
-  - description: orchestrator
-  - kafka-topic: orchestrator-topic
-
+  type: orchestrator
+  name: orchestrator
+  guid: orchestrator-guid
+  description: orchestrator
+  kafka-topic: orchestrator-topic
+  policy:
+      module: fabric_cf.actor.core.policy.controller_ticket_review_policy
+      class: ControllerTicketReviewPolicy
 peers:
   - peer:
-    - name: broker
-    - type: broker
-    - guid: broker-guid
-    - kafka-topic: broker-topic
+      name: broker
+      type: broker
+      guid: broker-guid
+      kafka-topic: broker-topic
   - peer:
-    - name: net1-am
-    - guid: net1-am-guid
-    - type: authority
-    - kafka-topic: net1-am-topic
+      name: net1-am
+      guid: net1-am-guid
+      type: authority
+      kafka-topic: net1-am-topic
   - peer:
-    - name: site1-am
-    - guid: site1-am-guid
-    - type: authority
-    - kafka-topic: site1-am-topic
+      name: site1-am
+      guid: site1-am-guid
+      type: authority
+      kafka-topic: site1-am-topic
 ```
 
 #### orchestrator
@@ -322,7 +324,13 @@ Update `docker-compose.yml` to point to correct volumes for the Orchestrator.
       - ../../../secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
       - ../../../secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
       - ../../../secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
-      - ./pubkey.pem:/etc/fabric/message_bus/ssl/credmgr.pem
+      #- ./state_recovery.lock:/usr/src/app/state_recovery.lock
+```
+##### Stateful Restart
+For the stateful restart, uncomment the `- ./state_recovery.lock:/usr/src/app/state_recovery.lock` from volumes section of Orchestrator container. After this `orchestrator` container can be stopped, removed and recreated in a stateful manner. However, it is required that neo4j and database containers are not removed and retain the state.
+```
+docker-compose stop orchestrator
+docker-compose rm -fv orchestrator
 ```
 
 #### nginx
