@@ -8,5 +8,5 @@ waitress
 prometheus_client
 connexion==2.7.0
 swagger-ui-bundle
-fabric_fss_utils==0.10
+fabric_fss_utils==0.13
 PyYAML==5.4
