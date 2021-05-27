@@ -31,6 +31,7 @@ from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph, Neo4jCBMFactory
 from fim.graph.slices.neo4j_asm import Neo4jASMFactory, Neo4jASM
 from fim.slivers.capacities_labels import Capacities
+from fim.slivers.delegations import Delegations
 from fim.slivers.network_node import NodeSliver
 from fim.user import ExperimentTopology
 
@@ -159,19 +160,15 @@ class FimHelper:
         neo4j_graph_importer.delete_graph(graph_id=graph_id)
 
     @staticmethod
-    def get_delegation(delegated_capacities: list, delegation_name: str) -> Capacities:
+    def get_delegation(delegated_capacities: Delegations, delegation_name: str) -> Capacities:
         """
         Get Delegated capacity given delegation name
         :param delegated_capacities: list of delegated capacities
         :param delegation_name: delegation name
         :return: capacity for specified delegation
         """
-        for capacity_dict in delegated_capacities:
-            name = capacity_dict.get(ABCPropertyGraph.FIELD_DELEGATION, None)
-            if name == delegation_name:
-                capacity_dict.pop(ABCPropertyGraph.FIELD_DELEGATION)
-                return Capacities().from_json(json.dumps(capacity_dict))
-        return None
+        delegation = delegated_capacities.get_by_delegation_id(delegation_name)
+        return delegation.get_details() if delegation is not None else None
 
     @staticmethod
     def update_node(*, graph_id: str, sliver: NodeSliver):

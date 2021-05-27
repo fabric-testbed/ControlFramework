@@ -23,13 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import json
 from typing import Tuple, List
 
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver
-from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
-from fim.slivers.delegations import Delegation, Delegations, DelegationFormat
+from fim.slivers.delegations import Delegations, DelegationFormat
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
