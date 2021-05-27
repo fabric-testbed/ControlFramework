@@ -74,6 +74,8 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
             if i >= start and (i < (end - 1)):
                 self.assertTrue(r1.is_closed())
                 self.assertTrue(r2.is_closed())
+                print(f"KOMAL: {r1.get_notices()}")
+                print(f"KOMAL: {r2.get_notices()}")
 
     def test_d_nascent(self):
         controller = self.get_controller()

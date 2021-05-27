@@ -705,20 +705,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def closed_delegation(self, *, delegation: ABCDelegation):
-        """
-        Close a delegation by un-merging from CBM
-        We take snapshot of CBM before un-merge, and rollback to snapshot in case un-merge fails
-        :param delegation:
-        :return:
-        """
-        self.logger.debug("Close Delegation")
+    def remove_delegation(self, *, delegation: ABCDelegation):
         try:
             self.lock.acquire()
             if delegation.get_delegation_id() in self.delegations:
                 self.unmerge_adm(graph_id=delegation.get_delegation_id())
                 self.delegations.pop(delegation.get_delegation_id())
-                self.logger.debug(f"Closed Delegation: {delegation.get_delegation_id()}")
+                self.logger.debug("Delegation unmerged from ADM")
             else:
                 self.logger.warning("Delegation ignored")
         except Exception as e:
@@ -727,6 +720,26 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             raise e
         finally:
             self.lock.release()
+
+    def closed_delegation(self, *, delegation: ABCDelegation):
+        """
+        Close a delegation by un-merging from CBM
+        We take snapshot of CBM before un-merge, and rollback to snapshot in case un-merge fails
+        :param delegation:
+        :return:
+        """
+        self.logger.debug("Close Delegation")
+        self.remove_delegation(delegation=delegation)
+
+    def reclaim_delegation(self, *, delegation: ABCDelegation):
+        """
+        Reclaim a delegation by un-merging from CBM
+        We take snapshot of CBM before un-merge, and rollback to snapshot in case un-merge fails
+        :param delegation:
+        :return:
+        """
+        self.logger.debug("Reclaim Delegation")
+        self.remove_delegation(delegation=delegation)
 
     def get_node_from_graph(self, *, node_id: str) -> NodeSliver:
         """
@@ -793,7 +806,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.combined_broker_model.merge_adm(adm=adm_graph)
             self.combined_broker_model.validate_graph()
             # delete the snapshot
-            self.combined_broker_model.importer.delete_graph(graph_id=snapshot_graph_id)
+            if snapshot_graph_id is not None:
+                self.combined_broker_model.importer.delete_graph(graph_id=snapshot_graph_id)
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
@@ -813,7 +827,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if self.combined_broker_model.graph_exists():
                 snapshot_graph_id = self.combined_broker_model.snapshot()
             self.combined_broker_model.unmerge_adm(graph_id=graph_id)
-            self.combined_broker_model.validate_graph()
+            if self.combined_broker_model.graph_exists():
+                self.combined_broker_model.validate_graph()
+
+            if snapshot_graph_id is not None:
+                # delete the snapshot
+                self.combined_broker_model.importer.delete_graph(graph_id=snapshot_graph_id)
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())

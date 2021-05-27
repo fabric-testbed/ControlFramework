@@ -47,3 +47,6 @@ class IncomingQueryRPC(IncomingRPC):
         @return query
         """
         return self.query
+
+    def get_update_data(self):
+        return None

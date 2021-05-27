@@ -45,12 +45,10 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.claim_timeout import ClaimTimeout, ReclaimTimeout
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.failed_rpc_event import FailedRPCEvent
-from fabric_cf.actor.core.kernel.inbound_rpc_event import InboundRPCEvent
 from fabric_cf.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
 from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
 from fabric_cf.actor.core.kernel.incoming_rpc_event import IncomingRPCEvent
 from fabric_cf.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
-from fabric_cf.actor.core.kernel.outbound_rpc_event import OutboundRPCEvent
 from fabric_cf.actor.core.kernel.query_timeout import QueryTimeout
 from fabric_cf.actor.core.kernel.rpc_executor import RPCExecutor
 from fabric_cf.actor.core.kernel.rpc_request import RPCRequest
@@ -227,14 +225,22 @@ class RPCManager:
 
     def update_lease(self, *, reservation: ABCAuthorityReservation):
         self.validate(reservation=reservation)
-        # get a callback to the actor calling updateTicket, so that any
+        # get a callback to the actor calling update_lease, so that any
         # failures in the remote actor can be delivered back
         callback = Proxy.get_callback(actor=reservation.get_actor(), protocol=reservation.get_callback().get_type())
         if callback is None:
             raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("callback"))
+
+        # Send Update Lease back to Orchestrator
         self.do_update_lease(actor=reservation.get_actor(), proxy=reservation.get_callback(),
                              reservation=reservation, update_data=reservation.get_update_data(),
                              callback=callback, caller=reservation.get_actor().get_identity())
+
+        if reservation.get_broker_callback() is not None:
+            # Send Update Lease to Broker
+            self.do_update_lease(actor=reservation.get_actor(), proxy=reservation.get_broker_callback(),
+                                 reservation=reservation, update_data=reservation.get_update_data(),
+                                 callback=callback, caller=reservation.get_actor().get_identity())
 
     def query(self, *, actor: ABCActorMixin, remote_actor: ABCActorProxy, callback: ABCCallbackProxy,
               query: dict, handler: ABCQueryResponseHandler, id_token: str):
@@ -308,7 +314,7 @@ class RPCManager:
 
         rid = None
         if isinstance(rpc, IncomingReservationRPC):
-            rid = rpc.get_reservation().get_reservation_id()
+            rid = rpc.get().get_reservation_id()
 
         state = proxy.prepare_failed_request(request_id=str(rpc.get_message_id()),
                                              failed_request_type=rpc.get_request_type(),
@@ -453,8 +459,9 @@ class RPCManager:
                          sequence=delegation.get_sequence_out())
         self.enqueue(rpc=rpc)
 
-    def do_update_lease(self, *, actor: ABCActorMixin, proxy: ABCControllerCallbackProxy, reservation: ABCAuthorityReservation,
-                        update_data: UpdateData, callback: ABCCallbackProxy, caller: AuthToken):
+    def do_update_lease(self, *, actor: ABCActorMixin, proxy: ABCControllerCallbackProxy,
+                        reservation: ABCAuthorityReservation, update_data: UpdateData, callback: ABCCallbackProxy,
+                        caller: AuthToken):
         proxy.get_logger().info("Outbound update lease request from <{}>: {}".format(caller.get_name(), reservation))
 
         state = proxy.prepare_update_lease(reservation=reservation, update_data=update_data, callback=callback,
@@ -513,51 +520,51 @@ class RPCManager:
 
         elif rpc.get_request_type() == RPCRequestType.ClaimDelegation:
             actor.get_logger().info("Inbound claim delegation request from <{}>:{}".format(
-                rpc.get_caller().get_name(), rpc.get_delegation()))
+                rpc.get_caller().get_name(), rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.ReclaimDelegation:
             actor.get_logger().info("Inbound reclaim delegation request from <{}>:{}".format(
-                rpc.get_caller().get_name(), rpc.get_delegation()))
+                rpc.get_caller().get_name(), rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.Ticket:
             actor.get_logger().info("Inbound ticket request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                 rpc.get_reservation()))
+                                                                                 rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.ExtendTicket:
             actor.get_logger().info("Inbound extend ticket request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                        rpc.get_reservation()))
+                                                                                        rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.Relinquish:
             actor.get_logger().info("Inbound relinquish request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                     rpc.get_reservation()))
+                                                                                     rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.UpdateTicket:
             actor.get_logger().info("Inbound update ticket request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                        rpc.get_reservation()))
+                                                                                        rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.UpdateDelegation:
             actor.get_logger().info("Inbound update delegation request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                            rpc.get_delegation()))
+                                                                                            rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.Redeem:
             actor.get_logger().info("Inbound redeem request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                 rpc.get_reservation()))
+                                                                                 rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.ExtendLease:
             actor.get_logger().info("Inbound extend lease request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                       rpc.get_reservation()))
+                                                                                       rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.Close:
             actor.get_logger().info("Inbound close request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                rpc.get_reservation()))
+                                                                                rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.UpdateLease:
             actor.get_logger().info("Inbound update lease request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                       rpc.get_reservation()))
+                                                                                       rpc.get()))
 
         elif rpc.get_request_type() == RPCRequestType.FailedRPC:
             actor.get_logger().info("Inbound FailedRPC from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                            rpc.get_reservation()))
+                                                                            rpc.get()))
 
         if rpc.get_request_type() == RPCRequestType.FailedRPC:
             actor.get_logger().debug("Failed RPC")

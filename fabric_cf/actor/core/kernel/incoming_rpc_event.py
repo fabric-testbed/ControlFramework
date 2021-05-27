@@ -80,14 +80,22 @@ class IncomingRPCEvent(ABCActorEvent):
         Process Incoming RPC events common for client actors
         """
         processed = True
-        if self.rpc.get_request_type() == RPCRequestType.UpdateTicket:
+        if self.rpc.get_request_type() == RPCRequestType.UpdateLease:
+            client.get_logger().info("processing update lease from <{}>".format(self.rpc.get_caller().get_name()))
+            if self.rpc.get().get_resources().get_resources() is not None:
+                client.get_logger().info("inbound lease is {}".format(
+                    self.rpc.get().get_resources().get_resources()))
+
+            client.update_lease(reservation=self.rpc.get(), update_data=self.rpc.get_update_data(),
+                                    caller=self.rpc.get_caller())
+        elif self.rpc.get_request_type() == RPCRequestType.UpdateTicket:
             client.get_logger().info("processing update ticket from <{}>".format(self.rpc.get_caller().get_name()))
-            client.update_ticket(reservation=self.rpc.get_reservation(), update_data=self.rpc.get_update_data(),
+            client.update_ticket(reservation=self.rpc.get(), update_data=self.rpc.get_update_data(),
                                  caller=self.rpc.get_caller())
             client.get_logger().info("update ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
         elif self.rpc.get_request_type() == RPCRequestType.UpdateDelegation:
             client.get_logger().info("processing update delegation from <{}>".format(self.rpc.get_caller().get_name()))
-            client.update_delegation(delegation=self.rpc.get_delegation(), update_data=self.rpc.get_update_data(),
+            client.update_delegation(delegation=self.rpc.get(), update_data=self.rpc.get_update_data(),
                                      caller=self.rpc.get_caller())
             client.get_logger().info("update delegation processed from <{}>".format(self.rpc.get_caller().get_name()))
         else:
@@ -101,30 +109,30 @@ class IncomingRPCEvent(ABCActorEvent):
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.ClaimDelegation:
             server.get_logger().info("processing claim delegation from <{}>".format(self.rpc.get_caller().get_name()))
-            server.claim_delegation(delegation=self.rpc.get_delegation(), callback=self.rpc.get_callback(),
+            server.claim_delegation(delegation=self.rpc.get(), callback=self.rpc.get_callback(),
                                     caller=self.rpc.get_caller(), id_token=self.rpc.get_id_token())
             server.get_logger().info("claim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.ReclaimDelegation:
             server.get_logger().info("processing reclaim delegation from <{}>".format(self.rpc.get_caller().get_name()))
-            server.reclaim_delegation(delegation=self.rpc.get_delegation(), callback=self.rpc.get_callback(),
+            server.reclaim_delegation(delegation=self.rpc.get(), callback=self.rpc.get_callback(),
                                       caller=self.rpc.get_caller(), id_token=self.rpc.get_id_token())
             server.get_logger().info("reclaim processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.Ticket:
             server.get_logger().info("processing ticket from <{}>".format(self.rpc.get_caller().get_name()))
-            server.ticket(reservation=self.rpc.get_reservation(), callback=self.rpc.get_callback(),
+            server.ticket(reservation=self.rpc.get(), callback=self.rpc.get_callback(),
                           caller=self.rpc.get_caller())
             server.get_logger().info("ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.ExtendTicket:
             server.get_logger().info("processing extend ticket from <{}>".format(self.rpc.get_caller().get_name()))
-            server.extend_ticket(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
-            server.get_logger().info("extend processed from <{}>".format(self.rpc.get_caller().get_name()))
+            server.extend_ticket(reservation=self.rpc.get(), caller=self.rpc.get_caller())
+            server.get_logger().info("extend ticket processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         elif self.rpc.get_request_type() == RPCRequestType.Relinquish:
             server.get_logger().info("processing relinquish from <{}>".format(self.rpc.get_caller().get_name()))
-            server.relinquish(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
+            server.relinquish(reservation=self.rpc.get(), caller=self.rpc.get_caller())
             server.get_logger().info("relinquish processed from <{}>".format(self.rpc.get_caller().get_name()))
 
         else:
@@ -147,20 +155,20 @@ class IncomingRPCEvent(ABCActorEvent):
         processed = True
         if self.rpc.get_request_type() == RPCRequestType.Redeem:
             authority.get_logger().info("processing redeem from <{}>".format(self.rpc.get_caller().get_name()))
-            authority.redeem(reservation=self.rpc.get_reservation(), callback=self.rpc.get_callback(),
+            authority.redeem(reservation=self.rpc.get(), callback=self.rpc.get_callback(),
                              caller=self.rpc.get_caller())
 
         elif self.rpc.get_request_type() == RPCRequestType.ExtendLease:
             authority.get_logger().info("processing extend lease from <{}>".format(self.rpc.get_caller().get_name()))
-            authority.extend_lease(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
+            authority.extend_lease(reservation=self.rpc.get(), caller=self.rpc.get_caller())
 
         elif self.rpc.get_request_type() == RPCRequestType.ModifyLease:
             authority.get_logger().info("processing modify lease from <{}>".format(self.rpc.get_caller().get_name()))
-            authority.modify_lease(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
+            authority.modify_lease(reservation=self.rpc.get(), caller=self.rpc.get_caller())
 
         elif self.rpc.get_request_type() == RPCRequestType.Close:
             authority.get_logger().info("processing close from <{}>".format(self.rpc.get_caller().get_name()))
-            authority.relinquish(reservation=self.rpc.get_reservation(), caller=self.rpc.get_caller())
+            authority.relinquish(reservation=self.rpc.get(), caller=self.rpc.get_caller())
 
         else:
             processed = self.do_process_server(server=authority)
@@ -170,17 +178,7 @@ class IncomingRPCEvent(ABCActorEvent):
         """
         Process Incoming RPC events common for all controller/orchestrator
         """
-        processed = True
-        if self.rpc.get_request_type() == RPCRequestType.UpdateLease:
-            controller.get_logger().info("processing redeem from <{}>".format(self.rpc.get_caller().get_name()))
-            if self.rpc.get_reservation().get_resources().get_resources() is not None:
-                controller.get_logger().info("inbound lease is {}".format(
-                    self.rpc.get_reservation().get_resources().get_resources()))
-
-            controller.update_lease(reservation=self.rpc.get_reservation(), update_data=self.rpc.get_update_data(),
-                                    caller=self.rpc.get_caller())
-        else:
-            processed = self.do_process_client(client=controller)
+        processed = self.do_process_client(client=controller)
         return processed
 
     def process(self):

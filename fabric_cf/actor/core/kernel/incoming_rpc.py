@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from abc import abstractmethod
 from typing import TYPE_CHECKING
 
 
@@ -39,7 +41,8 @@ class IncomingRPC:
     """
     Represents an incoming RPC message
     """
-    def __init__(self, *, message_id: ID, request_type: RPCRequestType, callback: ABCCallbackProxy, caller: AuthToken,
+    def __init__(self, *, message_id: ID, request_type: RPCRequestType,
+                 callback: ABCCallbackProxy, caller: AuthToken,
                  id_token: str = None):
         self.request_type = request_type
         self.message_id = message_id
@@ -130,3 +133,15 @@ class IncomingRPC:
     def __str__(self):
         return "MessageID={} requestType={} caller={}:{}".format(self.message_id, self.request_type,
                                                                  self.caller.get_name(), self.caller.get_guid())
+
+    @abstractmethod
+    def get(self):
+        """
+        Return delegation or reservation or dictionary containing the request
+        """
+
+    @abstractmethod
+    def get_update_data(self):
+        """
+        Return updated data
+        """

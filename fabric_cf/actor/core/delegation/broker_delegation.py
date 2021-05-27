@@ -40,7 +40,7 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 
 class BrokerDelegation(Delegation):
     def __init__(self, dlg_graph_id: str, slice_id: ID, broker: ABCBrokerProxy = None):
-        super().__init__(dlg_graph_id=dlg_graph_id, slice_id=slice_id, delegation_name=None)
+        super().__init__(dlg_graph_id=dlg_graph_id, slice_id=slice_id)
         self.exported = False
         self.broker = broker
         self.authority = None
@@ -56,7 +56,6 @@ class BrokerDelegation(Delegation):
         del state['slice_object']
         del state['logger']
         del state['policy']
-        del state['callback']
         return state
 
     def __setstate__(self, state):
@@ -66,7 +65,6 @@ class BrokerDelegation(Delegation):
         self.slice_object = None
         self.logger = None
         self.policy = None
-        self.callback = None
 
     def get_broker(self) -> ABCBrokerProxy:
         """
@@ -95,8 +93,7 @@ class BrokerDelegation(Delegation):
     def delegate(self, policy: ABCPolicy, id_token: str = None):
         self.policy = policy
 
-        if self.state == DelegationState.Nascent:
-
+        if self.state == DelegationState.Nascent or self.state == DelegationState.Reclaimed:
             if self.exported:
                 self.sequence_out += 1
                 RPCManagerSingleton.get().claim_delegation(delegation=self, id_token=id_token)
@@ -204,7 +201,8 @@ class BrokerDelegation(Delegation):
         @param incoming incoming delegation
         @param update_data update data
         """
-        incoming.get_graph().validate_graph()
+        if incoming.get_graph() is not None:
+            incoming.get_graph().validate_graph()
         return True
 
     def absorb_delegation_update(self, *, incoming: ABCDelegation, update_data: UpdateData):
@@ -223,8 +221,9 @@ class BrokerDelegation(Delegation):
 
         self.graph = incoming.get_graph()
         self.policy.update_delegation_complete(delegation=self)
-        self.graph.delete_graph()
-        self.graph = None
+        if self.graph is not None:
+            self.graph.delete_graph()
+            self.graph = None
 
     def accept_delegation_update(self, *, incoming: ABCDelegation, update_data: UpdateData):
         """
@@ -268,7 +267,10 @@ class BrokerDelegation(Delegation):
         """
         if self.state == DelegationState.Nascent or self.state == DelegationState.Delegated:
             if self.accept_delegation_update(incoming=incoming, update_data=update_data):
-                self.transition(prefix="Delegation update", state=DelegationState.Delegated)
+                if incoming.get_graph() is not None:
+                    self.transition(prefix="Delegation update", state=DelegationState.Delegated)
+                else:
+                    self.transition(prefix="Delegation reclaimed", state=DelegationState.Reclaimed)
                 self.set_dirty()
 
         elif self.state == DelegationState.Closed:

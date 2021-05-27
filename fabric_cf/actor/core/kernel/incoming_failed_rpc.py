@@ -67,3 +67,6 @@ class IncomingFailedRPC(IncomingRPC):
         @return failed reservation id
         """
         return self.failed_reservation_id
+
+    def get(self):
+        return None

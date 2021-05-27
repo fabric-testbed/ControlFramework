@@ -28,8 +28,8 @@ from enum import Enum
 from typing import Dict, Tuple
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
+from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import ReservationInfo
-from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
@@ -280,7 +280,7 @@ class Slice(ABCKernelSlice):
     def get_config_properties(self) -> dict:
         return self.config_properties
 
-    def update_slice_graph(self, sliver: NodeSliver, rid: str, reservation_state: str) -> NodeSliver:
+    def update_slice_graph(self, sliver: BaseSliver, rid: str, reservation_state: str) -> BaseSliver:
         try:
             self.lock.acquire()
             # Update for Orchestrator for Active / Ticketed Reservations

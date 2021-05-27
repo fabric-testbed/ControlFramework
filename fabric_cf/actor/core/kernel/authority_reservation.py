@@ -65,6 +65,7 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
         self.notified_about_failure = False
         # Creates a new "blank" reservation instance. Used during recovery.
         self.category = ReservationCategory.Authority
+        self.broker_callback = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -110,6 +111,12 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
         """
         super().restore(actor=actor, slice_obj=slice_obj)
         self.notified_about_failure = False
+
+    def set_broker_callback(self, *, broker_callback: ABCCallbackProxy):
+        self.broker_callback = broker_callback
+
+    def get_broker_callback(self) -> ABCCallbackProxy:
+        return self.broker_callback
 
     def prepare(self, *, callback: ABCCallbackProxy, logger):
         self.set_logger(logger=logger)
@@ -259,6 +266,7 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
                                     pending=ReservationPendingStates.Priming)
                 except Exception as e:
                     self.logger.error("authority redeem e: {}".format(e))
+                    self.logger.error(traceback.format_exc())
                     self.fail_notify(message=str(e))
         elif self.state == ReservationStates.Active:
             assert extend

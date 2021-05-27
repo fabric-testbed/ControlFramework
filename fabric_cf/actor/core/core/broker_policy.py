@@ -72,6 +72,9 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
     def donate_delegation(self, *, delegation: ABCDelegation):
         return
 
+    def reclaim_delegation(self, *, delegation: ABCDelegation):
+        return
+
     def extend_broker(self, *, reservation: ABCBrokerReservation) -> bool:
         return False
 
@@ -95,7 +98,10 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
         return
 
     def update_delegation_complete(self, *, delegation: ABCDelegation):
-        self.donate_delegation(delegation=delegation)
+        if delegation.get_graph() is not None:
+            self.donate_delegation(delegation=delegation)
+        else:
+            self.reclaim_delegation(delegation=delegation)
 
     def extract(self, *, source: ABCDelegation, delegation: ResourceTicket) -> ResourceSet:
         """

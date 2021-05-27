@@ -28,6 +28,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_server_policy import ABCServerPolicy
 
 if TYPE_CHECKING:
@@ -197,4 +198,11 @@ class ABCAuthorityPolicy(ABCServerPolicy):
         in the future.
 
         @params resources: set of recovered inventory resources
+        """
+
+    @abstractmethod
+    def reclaim(self, *, delegation: ABCDelegation):
+        """
+        Reclaim a delegation
+        @param delegation delegation to be reclaimed
         """

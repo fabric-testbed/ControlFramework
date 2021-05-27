@@ -26,6 +26,7 @@
 from enum import Enum
 from fabric_cf.actor.core.policy.controller_simple_policy import ControllerSimplePolicy
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
+from fabric_cf.actor.core.util.update_data import UpdateData
 
 
 class TicketReviewSliceState(Enum):
@@ -152,9 +153,14 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                 # take action on the current reservation
                 if slice_status_map[slice_id] == TicketReviewSliceState.Failing:
                     if reservation.get_resources() is not None and reservation.get_resources().get_type() is not None:
-                        self.logger.info("Closing reservation {} due to failure in slice {}".format(
-                            reservation.get_reservation_id(), slice_obj.get_name()))
+                        msg = f"TicketReviewPolicy: Closing reservation {reservation.get_reservation_id()} due to " \
+                              f"failure in slice {slice_obj.get_name()}"
+                        self.logger.info(msg)
 
+                        update_data = UpdateData()
+                        update_data.failed = True
+                        update_data.message = msg
+                        reservation.mark_close_by_ticket_review(update_data=update_data)
                         self.actor.close(reservation=reservation)
                         self.calendar.remove_pending(reservation=reservation)
                         self.pending_notify.remove(reservation=reservation)

@@ -30,13 +30,9 @@ from typing import TYPE_CHECKING
 
 from datetime import datetime
 
-from fim.graph.slices.neo4j_asm import Neo4jASMFactory
-from fim.slivers.capacities_labels import ReservationInfo
-from fim.slivers.network_node import NodeSliver
-from fim.user.topology import ExperimentTopology
+from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
-from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import ABCKernelControllerReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
@@ -51,7 +47,6 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingSta
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_state import ReservationState
 from fabric_cf.actor.core.util.update_data import UpdateData
-from fabric_cf.actor.fim.fim_helper import FimHelper
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
@@ -1485,7 +1480,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         if self.requested_resources is not None and self.requested_resources.sliver is not None:
             self.update_slice_graph(sliver=self.requested_resources.sliver)
 
-    def update_slice_graph(self, *, sliver: NodeSliver):
+    def update_slice_graph(self, *, sliver: BaseSliver):
         """
         Update ASM with Sliver information
         :param sliver: sliver
@@ -1497,6 +1492,10 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                                       reservation_state=self.state.name)
         self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                           f"Slice Graph# {self.slice.get_graph_id()}")
+
+    def mark_close_by_ticket_review(self, *, update_data: UpdateData):
+        if self.last_ticket_update is not None:
+            self.last_ticket_update.absorb(other=update_data)
 
 
 class ClientReservationFactory:

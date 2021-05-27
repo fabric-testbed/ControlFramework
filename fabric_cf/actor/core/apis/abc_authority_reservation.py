@@ -28,6 +28,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
 if TYPE_CHECKING:
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
@@ -58,4 +59,17 @@ class ABCAuthorityReservation(ABCServerReservation):
         @params value : true, reservations with no pending operations but with a
                  deficit will be sent back without attempting to fix the deficit,
                 false - if a deficit exists, the system will attempt to fix it.
+        """
+
+    @abstractmethod
+    def set_broker_callback(self, *, broker_callback: ABCCallbackProxy):
+        """
+        Set the Broker Callback Proxy
+        @param broker_callback Broker callback
+        """
+
+    @abstractmethod
+    def get_broker_callback(self) -> ABCCallbackProxy:
+        """
+        Get the Broker Callback Proxy
         """

@@ -27,6 +27,7 @@ from typing import List
 
 from fim.slivers.attached_components import AttachedComponentsInfo
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.delegations import DelegationFormat
 from fim.slivers.network_node import NodeSliver
 from fim.user import Capacities
 
@@ -40,7 +41,6 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.policy.resource_control import ResourceControl
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
 class NetworkNodeControl(ResourceControl):
@@ -164,13 +164,22 @@ class NetworkNodeControl(ResourceControl):
         :raises: AuthorityException in case the request cannot be satisfied
         """
 
-        if graph_node.capacity_delegations is None or len(graph_node.capacity_delegations) < 1 or reservation is None:
+        if graph_node.get_capacity_delegations() is None or reservation is None:
             raise AuthorityException(Constants.INVALID_ARGUMENT)
 
+        # get the Capacities object
+        delegated_capacity = None
         delegated_capacities = graph_node.get_capacity_delegations()
-        available_delegated_capacity = FimHelper.get_delegation(delegated_capacities=delegated_capacities,
-                                                                delegation_name=delegation_name)
-        if available_delegated_capacity is None:
+        delegation_id, deleg = delegated_capacities.get_sole_delegation()
+        self.logger.debug(f"Available_capacity_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            delegated_capacity = None
+        else:
+            delegated_capacity = deleg.get_details()
+
+        # get the Capacities object
+        if delegated_capacity is None:
             raise AuthorityException(f"Allocated node {graph_node.node_id} does not have delegation: {delegation_name}")
 
         reservation.set_send_with_deficit(value=True)
@@ -189,7 +198,7 @@ class NetworkNodeControl(ResourceControl):
             # Check if Capacities can be satisfied by Delegated Capacities
             self.__check_capacities(rid=reservation.get_reservation_id(),
                                     requested_capacities=requested.get_capacities(),
-                                    available_capacities=available_delegated_capacity,
+                                    available_capacities=delegated_capacity,
                                     existing_reservations=existing_reservations)
 
             # Check if Capacities can be satisfied by Capacities
