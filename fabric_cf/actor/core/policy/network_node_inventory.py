@@ -240,9 +240,9 @@ class NetworkNodeInventory(InventoryForType):
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
         :raises: BrokerException in case the request cannot be satisfied
         """
-        if graph_node.capacity_delegations is None or reservation is None:
+        if graph_node.get_capacity_delegations() is None or reservation is None:
             raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
-                                  msg=f"capacity_delegations: {graph_node.capacity_delegations}")
+                                  msg=f"capacity_delegations is missing or reservation is None")
 
         requested = reservation.get_requested_resources().get_sliver()
         if not isinstance(requested, NodeSliver):
