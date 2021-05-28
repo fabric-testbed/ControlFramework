@@ -131,7 +131,7 @@ class NetworkNodeInventory(InventoryForType):
         # Check labels
         # FIXME this isn't quite right - we will need to pick one of available labels, but OK to leave for now
         label_delegations = available_component.get_label_delegations()
-        delegation_id, deleg = capacity_delegations.get_sole_delegation()
+        delegation_id, deleg = label_delegations.get_sole_delegation()
         self.logger.debug(f"Available label_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
         # ignore pool definitions and references for now
         if deleg.get_format() != DelegationFormat.SinglePool:
