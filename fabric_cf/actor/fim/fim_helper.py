@@ -30,8 +30,8 @@ from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGrap
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph, Neo4jCBMFactory
 from fim.graph.slices.neo4j_asm import Neo4jASMFactory, Neo4jASM
-from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities
+from fim.slivers.delegations import Delegations
 from fim.slivers.network_node import NodeSliver
 from fim.user import ExperimentTopology
 
@@ -160,7 +160,18 @@ class FimHelper:
         neo4j_graph_importer.delete_graph(graph_id=graph_id)
 
     @staticmethod
-    def update_node(*, graph_id: str, sliver: BaseSliver):
+    def get_delegation(delegated_capacities: Delegations, delegation_name: str) -> Capacities:
+        """
+        Get Delegated capacity given delegation name
+        :param delegated_capacities: list of delegated capacities
+        :param delegation_name: delegation name
+        :return: capacity for specified delegation
+        """
+        delegation = delegated_capacities.get_by_delegation_id(delegation_name)
+        return delegation.get_details() if delegation is not None else None
+
+    @staticmethod
+    def update_node(*, graph_id: str, sliver: NodeSliver):
         """
         Update Sliver Node in ASM
         :param graph_id:
@@ -175,19 +186,17 @@ class FimHelper:
 
             node_name = sliver.get_name()
             node = neo4j_topo.nodes[node_name]
-            node.set_properties(capacity_allocations=sliver.capacity_allocations,
+            node.set_properties(label_allocations=sliver.label_allocations,
+                                capacity_allocations=sliver.capacity_allocations,
                                 reservation_info=sliver.reservation_info,
                                 node_map=sliver.node_map,
                                 management_ip=sliver.management_ip)
-            if sliver.label_allocations is not None:
-                node.set_properties(label_allocations=sliver.label_allocations)
             if sliver.attached_components_info is not None:
                 for component in sliver.attached_components_info.devices.values():
                     cname = component.get_name()
-                    node.components[cname].set_properties(capacity_allocations=component.capacity_allocations,
+                    node.components[cname].set_properties(label_allocations=component.label_allocations,
+                                                          capacity_allocations=component.capacity_allocations,
                                                           node_map=component.node_map)
-                    if component.label_allocations is not None:
-                        node.components[cname].set_properties(label_allocations=component.label_allocations)
 
     @staticmethod
     def get_neo4j_asm_graph(*, slice_graph: str) -> Neo4jASM:
