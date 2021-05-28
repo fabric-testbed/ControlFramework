@@ -164,7 +164,7 @@ class NetworkNodeControl(ResourceControl):
         :raises: AuthorityException in case the request cannot be satisfied
         """
 
-        if graph_node.capacity_delegations is None or len(graph_node.capacity_delegations) < 1 or reservation is None:
+        if graph_node.capacity_delegations is None or reservation is None:
             raise AuthorityException(Constants.INVALID_ARGUMENT)
 
         delegated_capacities = graph_node.get_capacity_delegations()

@@ -1,6 +1,6 @@
 import unittest
 
-from fim.graph.abc_property_graph import ABCPropertyGraph
+from fim.graph.abc_property_graph import ABCPropertyGraph, GraphFormat
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMFactory, Neo4jCBMGraph
@@ -79,5 +79,10 @@ class ABQM_Test(unittest.TestCase):
         print('Writing ABQM to abqm.graphml')
         with open('abqm.graphml', 'w') as f:
             f.write(abqm_string)
+
+        abqm_json = abqm.serialize_graph(format=GraphFormat.JSON_NODELINK)
+        print('Writing ABQM to abqm.json')
+        with open('abqm.json', 'w') as f:
+            f.write(abqm_json)
 
         self.n4j_imp.delete_all_graphs()

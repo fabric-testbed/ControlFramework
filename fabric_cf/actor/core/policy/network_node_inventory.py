@@ -23,13 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import json
 from typing import Tuple, List
 
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver
-from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
-from fim.slivers.delegations import Delegation, Pool
+from fim.slivers.delegations import Delegations, DelegationFormat
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -55,8 +53,8 @@ class NetworkNodeInventory(InventoryForType):
         self.__dict__.update(state)
         self.logger = None
 
-    def __check_capacities(self, *, rid: ID, requested_capacities: Capacities, delegated_capacities: dict,
-                           existing_reservations: List[ABCReservationMixin]) -> str:
+    def __check_capacities(self, *, rid: ID, requested_capacities: Capacities, delegated_capacities: Delegations,
+                           existing_reservations: List[ABCReservationMixin]) -> str or None:
         """
         Check if the requested capacities can be satisfied with the available capacities
         :param rid: reservation id of the reservation being served
@@ -68,43 +66,41 @@ class NetworkNodeInventory(InventoryForType):
         """
         self.logger.debug(f"requested_capacities: {requested_capacities} for reservation# {rid}")
 
-        for delegation_id, delegated_list in delegated_capacities.items():
-            for delegated in delegated_list:
-                if Pool.ispoolmention(delegated) or Pool.ispooldefinition(delegated):
-                    # ignore pool mentions and definitions for now
+        delegation_id, deleg = delegated_capacities.get_sole_delegation()
+        self.logger.debug(f"Available_capacity_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            return None
+        # get the Capacities object
+        delegated_capacity = deleg.get_details()
+        # Remove allocated capacities to the reservations
+        if existing_reservations is not None:
+            for reservation in existing_reservations:
+                if rid == reservation.get_reservation_id():
                     continue
-                self.logger.debug(f"available_capacity_delegations: {delegated} {type(delegated)}")
-                delegated_capacity = Capacities().set_fields(**delegated)
+                # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+                resource_sliver = None
+                if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                    resource_sliver = reservation.get_approved_resources().get_sliver()
 
-                # Remove allocated capacities to the reservations
-                if existing_reservations is not None:
-                    for reservation in existing_reservations:
-                        if rid == reservation.get_reservation_id():
-                            continue
-                        # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-                        resource_sliver = None
-                        if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                            resource_sliver = reservation.get_approved_resources().get_sliver()
+                if (reservation.is_active() or reservation.is_ticketed()) and \
+                        reservation.get_resources() is not None:
+                    resource_sliver = reservation.get_resources().get_sliver()
 
-                        if (reservation.is_active() or reservation.is_ticketed()) and \
-                                reservation.get_resources() is not None:
-                            resource_sliver = reservation.get_resources().get_sliver()
+                if resource_sliver is not None:
+                    self.logger.debug(
+                        f"Excluding already assigned resources {resource_sliver.get_capacities()} to "
+                        f"reservation# {reservation.get_reservation_id()}")
+                    delegated_capacity = delegated_capacity - resource_sliver.get_capacities()
 
-                        if resource_sliver is not None:
-                            self.logger.debug(
-                                f"Excluding already assigned resources {resource_sliver.get_capacities()} to "
-                                f"reservation# {reservation.get_reservation_id()}")
-                            delegated_capacity = delegated_capacity - resource_sliver.get_capacities()
+        # Compare the requested against available
+        delegated_capacity = delegated_capacity - requested_capacities
+        negative_fields = delegated_capacity.negative_fields()
+        if len(negative_fields) > 0:
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"{negative_fields}")
 
-                # Compare the requested against available
-                delegated_capacity = delegated_capacity - requested_capacities
-                negative_fields = delegated_capacity.negative_fields()
-                if len(negative_fields) > 0:
-                    raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                          msg=f"{negative_fields}")
-
-                return delegation_id
-        return None
+        return delegation_id
 
     def __check_component_labels_and_capacities(self, *, available_component: ComponentSliver, graph_id: str,
                                                 requested_component: ComponentSliver) -> ComponentSliver:
@@ -121,29 +117,28 @@ class NetworkNodeInventory(InventoryForType):
 
         # Checking capacity for component
         capacity_delegations = available_component.get_capacity_delegations()
-        for delegation_id, delegation_list in capacity_delegations.items():
-            for delegated in delegation_list:
-                if Pool.ispoolmention(delegated) or Pool.ispooldefinition(delegated):
-                    # ignore pool mentions and definitions for now
-                    continue
-                self.logger.debug(f"available_capacity_delegations : {delegated} {type(delegated)} for component {available_component}")
-                delegated_capacity = Capacities().set_fields(**delegated)
-                requested_component.capacity_allocations = delegated_capacity
-                break
+        delegation_id, deleg = capacity_delegations.get_sole_delegation()
+        self.logger.debug(f"Available capacity_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            return None
+        # get the Capacities object
+        delegated_capacity = deleg.get_details()
+        self.logger.debug(f"available_capacity_delegations : {capacity_delegations} {type(capacity_delegations)} "
+                          f"for component {available_component}")
+        requested_component.capacity_allocations = delegated_capacity
 
         # Check labels
         # FIXME this isn't quite right - we will need to pick one of available labels, but OK to leave for now
         label_delegations = available_component.get_label_delegations()
-        for delegation_id, delegation_list in label_delegations.items():
-            for delegated in delegation_list:
-                if Pool.ispoolmention(delegated) or Pool.ispooldefinition(delegated):
-                    # ignore pool mentions and definitions for now
-                    continue
-                self.logger.debug(f"available_label_delegations : {delegated} {type(delegated)} for component "
-                                  f"{available_component}")
-                delegated_label = Labels().set_fields(**delegated)
-                requested_component.label_allocations = delegated_label
-                break
+        delegation_id, deleg = label_delegations.get_sole_delegation()
+        self.logger.debug(f"Available label_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            return None
+        # get the Labels object
+        delegated_label = deleg.get_details()
+        requested_component.label_allocations = delegated_label
 
         node_map = tuple([graph_id, available_component.node_id])
         requested_component.set_node_map(node_map=node_map)
@@ -243,9 +238,9 @@ class NetworkNodeInventory(InventoryForType):
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
         :raises: BrokerException in case the request cannot be satisfied
         """
-        if graph_node.capacity_delegations is None or len(graph_node.capacity_delegations) < 1 or reservation is None:
+        if graph_node.get_capacity_delegations() is None or reservation is None:
             raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
-                                  msg=f"capacity_delegations: {graph_node.capacity_delegations}")
+                                  msg=f"capacity_delegations is missing or reservation is None")
 
         requested = reservation.get_requested_resources().get_sliver()
         if not isinstance(requested, NodeSliver):
