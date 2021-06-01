@@ -23,13 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import json
 from typing import Tuple, List
 
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver
-from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
-from fim.slivers.delegations import Delegation, Delegations, DelegationFormat
+from fim.slivers.delegations import Delegations, DelegationFormat
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -133,7 +131,7 @@ class NetworkNodeInventory(InventoryForType):
         # Check labels
         # FIXME this isn't quite right - we will need to pick one of available labels, but OK to leave for now
         label_delegations = available_component.get_label_delegations()
-        delegation_id, deleg = capacity_delegations.get_sole_delegation()
+        delegation_id, deleg = label_delegations.get_sole_delegation()
         self.logger.debug(f"Available label_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
         # ignore pool definitions and references for now
         if deleg.get_format() != DelegationFormat.SinglePool:
@@ -240,9 +238,9 @@ class NetworkNodeInventory(InventoryForType):
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
         :raises: BrokerException in case the request cannot be satisfied
         """
-        if graph_node.capacity_delegations is None or reservation is None:
+        if graph_node.get_capacity_delegations() is None or reservation is None:
             raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
-                                  msg=f"capacity_delegations: {graph_node.capacity_delegations}")
+                                  msg=f"capacity_delegations is missing or reservation is None")
 
         requested = reservation.get_requested_resources().get_sliver()
         if not isinstance(requested, NodeSliver):
