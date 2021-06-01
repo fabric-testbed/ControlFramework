@@ -340,6 +340,8 @@ class IntegrationTest(unittest.TestCase):
             self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
                                                am_res_state=-1,
                                                broker_res_state=ReservationStates.Closed.value)
+            status, sliver_status = oh.sliver_status(slice_id=self.slice_id, sliver_id=s.reservation_id)
+            print(f"DEBUGGGG {sliver_status}")
 
         # Verify delete slice fails as slices is already closed
         status, response = oh.delete(self.slice_id)

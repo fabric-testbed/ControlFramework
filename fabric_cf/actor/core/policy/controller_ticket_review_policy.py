@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from enum import Enum
+
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.policy.controller_simple_policy import ControllerSimplePolicy
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.update_data import UpdateData
@@ -159,7 +161,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
 
                         update_data = UpdateData()
                         update_data.failed = True
-                        update_data.message = msg
+                        update_data.message = Constants.CLOSURE_BY_TICKET_REVIEW_POLICY
                         reservation.mark_close_by_ticket_review(update_data=update_data)
                         self.actor.close(reservation=reservation)
                         self.calendar.remove_pending(reservation=reservation)

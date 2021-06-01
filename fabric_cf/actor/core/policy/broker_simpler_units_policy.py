@@ -30,7 +30,7 @@ import threading
 import traceback
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Tuple, List
+from typing import TYPE_CHECKING, Tuple, List, Any
 
 from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
@@ -366,18 +366,24 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if not reservation.is_ticketing():
                     continue
 
-                status, node_id_to_reservations = self.ticket(reservation=reservation,
-                                                              node_id_to_reservations=node_id_to_reservations)
+                status, node_id_to_reservations, error_msg = self.ticket(reservation=reservation,
+                                                                         node_id_to_reservations=node_id_to_reservations)
                 if status:
                     continue
 
                 if self.queue is None and not reservation.is_failed():
-                    reservation.fail(message="Insufficient resources")
+                    fail_message = "Insufficient resources"
+                    if error_msg is not None:
+                        fail_message = error_msg
+                    reservation.fail(message=fail_message)
                     continue
 
                 if not reservation.is_failed():
-                    reservation.fail(message=f"Insufficient resources for specified start time, Failing reservation: "
-                                             f"{reservation.get_reservation_id()}")
+                    fail_message = f"Insufficient resources for specified start time, Failing reservation: " \
+                                   f"{reservation.get_reservation_id()}"
+                    if error_msg is not None:
+                        fail_message = error_msg
+                    reservation.fail(message=fail_message)
 
     def allocate_queue(self, *, start_cycle: int):
         if self.queue is None:
@@ -388,8 +394,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         # as the reservations are not updated in the database yet
         node_id_to_reservations = {}
         for reservation in self.queue.values():
-            status, node_id_to_reservations = self.ticket(reservation=reservation,
-                                                          node_id_to_reservations=node_id_to_reservations)
+            status, node_id_to_reservations, error_msg = self.ticket(reservation=reservation,
+                                                                     node_id_to_reservations=node_id_to_reservations)
             if not status:
                 # TODO
                 threshold = 100
@@ -401,10 +407,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             else:
                 self.queue.remove(reservation=reservation)
 
-    def ticket(self, *, reservation: ABCBrokerReservation, node_id_to_reservations: dict) -> Tuple[bool, dict]:
+    def ticket(self, *, reservation: ABCBrokerReservation, node_id_to_reservations: dict) -> Tuple[bool, dict, Any]:
         self.logger.debug(f"cycle: {self.actor.get_current_cycle()} new ticket request: "
                           f"{reservation}/{type(reservation).__name__}")
 
+        error_msg = None
         start = self.align_start(when=reservation.get_requested_term().get_new_start_time())
         end = self.align_end(when=reservation.get_requested_term().get_end_time())
 
@@ -427,7 +434,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         else:
             reservation.fail(message=Constants.NO_POOL)
 
-        return False, node_id_to_reservations
+        return False, node_id_to_reservations, error_msg
 
     def __candidate_nodes(self, sliver: NodeSliver) -> List[str]:
         """
@@ -445,7 +452,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return list()
 
     def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
-                         node_id_to_reservations: dict) -> Tuple[bool, dict]:
+                         node_id_to_reservations: dict) -> Tuple[bool, dict, Any]:
+        error_msg = None
         try:
             rset = reservation.get_requested_resources()
             needed = rset.get_units()
@@ -471,14 +479,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # no candidate nodes found
             if len(node_id_list) == 0:
                 self.logger.error(f'No candidates nodes found to serve {reservation}')
-                return False, node_id_to_reservations
+                return False, node_id_to_reservations, error_msg
 
             delegation_id = None
             sliver = None
             if self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.FirstFit.name.lower():
-                delegation_id, sliver = self.__find_first_fit(node_id_list=node_id_list,
-                                                              node_id_to_reservations=node_id_to_reservations,
-                                                              inv=inv, reservation=reservation)
+                delegation_id, sliver, error_msg = self.__find_first_fit(node_id_list=node_id_list,
+                                                                         node_id_to_reservations=node_id_to_reservations,
+                                                                         inv=inv, reservation=reservation)
             else:
                 raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
                                       msg=f"Broker currently only supports First Fit")
@@ -493,17 +501,18 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 if node_id_to_reservations.get(node_id, None) is None:
                     node_id_to_reservations[node_id] = ReservationSet()
                 node_id_to_reservations[node_id].add(reservation=reservation)
-                return True, node_id_to_reservations
+                return True, node_id_to_reservations, error_msg
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(e)
             reservation.fail(message=str(e))
-        return False, node_id_to_reservations
+        return False, node_id_to_reservations, error_msg
 
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
-                         reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver]:
+                         reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver, Any]:
         delegation_id = None
         sliver = None
+        error_msg = None
         self.logger.debug(f"Possible candidates to serve res# {reservation} candidates# {node_id_list}")
         for node_id in node_id_list:
             try:
@@ -522,10 +531,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             except BrokerException as e:
                 if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:
                     self.logger.error(f"Exception occurred: {e}")
+                    error_msg = e.msg
                 else:
+                    error_msg = None
                     raise e
 
-        return delegation_id, sliver
+        return delegation_id, sliver, error_msg
 
     def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term):
         try:
