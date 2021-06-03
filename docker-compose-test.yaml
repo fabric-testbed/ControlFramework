@@ -171,6 +171,7 @@ services:
     image: controlframework:latest
     container_name: site1-am
     restart: always
+    user: ${CF_UID:-1000}:${CF_GID:-1000}
     depends_on:
       - database
       - neo4j1
@@ -189,6 +190,7 @@ services:
     image: controlframework:latest
     container_name: broker
     restart: always
+    user: ${CF_UID:-1000}:${CF_GID:-1000}
     depends_on:
       - database
       - neo4j2
@@ -206,6 +208,7 @@ services:
     image: controlframework:latest
     container_name: orchestrator
     restart: always
+    user: ${CF_UID:-1000}:${CF_GID:-1000}
     depends_on:
       - database
       - neo4j3

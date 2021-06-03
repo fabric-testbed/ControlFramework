@@ -58,6 +58,7 @@ services:
     image: broker:latest
     container_name: broker
     restart: always
+    user: ${CF_UID:-1000}:${CF_GID:-1000}
     depends_on:
       - database
       - neo4j
