@@ -38,9 +38,8 @@ from fim.slivers.capacities_labels import Capacities
 from fim.slivers.delegations import DelegationFormat
 from fim.slivers.network_node import CompositeNodeSliver, NodeType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
-from fim.slivers.switch_fabric import SFType
 from fim.slivers.interface_info import InterfaceType
-
+from fim.slivers.network_service import ServiceType
 
 class AggregatedBQMPlugin:
     """
@@ -125,7 +124,7 @@ class AggregatedBQMPlugin:
                                     logger=self.logger)
 
         site_to_composite_node_id = dict()
-        site_to_sf_node_id = dict()
+        site_to_ns_node_id = dict()
         for s, ls in slivers_by_site.items():
             # add up capacities and delegated capacities, skip labels for now
             # count up components and figure out links between site
@@ -187,13 +186,13 @@ class AggregatedBQMPlugin:
             site_props = abqm.node_sliver_to_graph_properties_dict(site_sliver)
             abqm.add_node(node_id=site_sliver.node_id, label=ABCPropertyGraph.CLASS_CompositeNode,
                           props=site_props)
-            # add a switch fabric
-            sf_id = str(uuid.uuid4())
-            site_to_sf_node_id[s] = sf_id
-            sf_props = {ABCPropertyGraph.PROP_NAME: s + '_sf',
-                        ABCBQMPropertyGraph.PROP_TYPE: str(SFType.SwitchFabric)}
-            abqm.add_node(node_id=sf_id, label=ABCPropertyGraph.CLASS_SwitchFabric, props=sf_props)
-            abqm.add_link(node_a=site_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=sf_id)
+            # add a network service
+            ns_id = str(uuid.uuid4())
+            site_to_ns_node_id[s] = ns_id
+            ns_props = {ABCPropertyGraph.PROP_NAME: s + '_ns',
+                        ABCBQMPropertyGraph.PROP_TYPE: str(ServiceType.MPLS)}
+            abqm.add_node(node_id=ns_id, label=ABCPropertyGraph.CLASS_NetworkService, props=ns_props)
+            abqm.add_link(node_a=site_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=ns_id)
 
             # create a component sliver for every component type/model pairing
             # and add a node for it linking back to site node
@@ -230,9 +229,9 @@ class AggregatedBQMPlugin:
             _, cbm_source_cp_props = cbm.get_node_properties(node_id=source_cp)
             _, cbm_sink_cp_props = cbm.get_node_properties(node_id=sink_cp)
             _, cbm_link_props = cbm.get_node_properties(node_id=link)
-            # add connection point, link, connection point between to SwitchFabrics
-            assert(site_to_sf_node_id.get(source_site, None) is not None and
-                   site_to_sf_node_id.get(sink_site, None) is not None)
+            # add connection point, link, connection point between two NetworkServices
+            assert(site_to_ns_node_id.get(source_site, None) is not None and
+                   site_to_ns_node_id.get(sink_site, None) is not None)
             source_cp_id = str(uuid.uuid4())
             sink_cp_id = str(uuid.uuid4())
             source_cp_props = {ABCPropertyGraph.PROP_NAME: "_".join([source_site, sink_site]),
@@ -256,13 +255,13 @@ class AggregatedBQMPlugin:
                               }
             abqm.add_node(node_id=link, label=ABCPropertyGraph.CLASS_Link, props=new_link_props)
             # connect them together
-            abqm.add_link(node_a=site_to_sf_node_id[source_site], rel=ABCPropertyGraph.REL_CONNECTS,
+            abqm.add_link(node_a=site_to_ns_node_id[source_site], rel=ABCPropertyGraph.REL_CONNECTS,
                           node_b=source_cp_id)
             abqm.add_link(node_a=source_cp_id, rel=ABCPropertyGraph.REL_CONNECTS,
                           node_b=link)
             abqm.add_link(node_a=link, rel=ABCPropertyGraph.REL_CONNECTS,
                           node_b=sink_cp_id)
             abqm.add_link(node_a=sink_cp_id, rel=ABCPropertyGraph.REL_CONNECTS,
-                          node_b=site_to_sf_node_id[sink_site])
+                          node_b=site_to_ns_node_id[sink_site])
 
         return abqm
