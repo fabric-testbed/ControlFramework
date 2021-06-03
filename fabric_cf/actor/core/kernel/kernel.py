@@ -492,7 +492,6 @@ class Kernel:
             state_changed, slice_state = slice_obj.transition_slice(operation=SliceStateMachine.REEVALUATE)
             if state_changed:
                 slice_obj.set_dirty()
-            self.logger.debug(f"KOMAL {slice_obj.get_state()}")
             self.plugin.get_database().update_slice(slice_object=slice_obj)
         except Exception as e:
             self.logger.error(traceback.format_exc())

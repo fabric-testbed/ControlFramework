@@ -176,7 +176,6 @@ class ActorDatabase(ABCDatabase):
         try:
             self.lock.acquire()
             properties = pickle.dumps(slice_object)
-            print(f"KOMAL {slice_object.get_state()}")
             self.db.update_slice(slc_guid=str(slice_object.get_slice_id()),
                                  slc_name=slice_object.get_name(),
                                  slc_type=slice_object.get_slice_type().value,

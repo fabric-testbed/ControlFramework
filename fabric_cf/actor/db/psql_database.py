@@ -423,7 +423,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                slc_obj = session.query(Slices).filter(Slices.slc_guid == slc_guid)
+                slc_obj = session.query(Slices).filter(Slices.slc_guid == slc_guid).first()
                 if slc_obj is not None:
                     slc_obj.properties = properties
                     slc_obj.slc_name = slc_name
