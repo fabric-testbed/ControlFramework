@@ -15,8 +15,13 @@
   <key id="d1" for="node" attr.name="Class" attr.type="string" />
   <key id="d0" for="node" attr.name="GraphID" attr.type="string" />
   <graph edgedefault="undirected">
+<<<<<<< HEAD
     <node id="370">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="406">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">NetworkNode</data>
       <data key="d2">5B3BR53</data>
       <data key="d3">lbnl-w1</data>
@@ -27,8 +32,13 @@
       <data key="d8">LBNL</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 32, "ram": 512, "disk": 100000, "unit": 1}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="371">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="407">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">NetworkNode</data>
       <data key="d2">5B38R53</data>
       <data key="d3">lbnl-w2</data>
@@ -39,8 +49,13 @@
       <data key="d8">LBNL</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 32, "ram": 512, "disk": 4800, "unit": 1}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="372">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="408">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">NetworkNode</data>
       <data key="d2">5B39R53</data>
       <data key="d3">lbnl-w3</data>
@@ -51,8 +66,13 @@
       <data key="d8">LBNL</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 32, "ram": 512, "disk": 4800, "unit": 1}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="373">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="409">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301XE1P0FGN</data>
       <data key="d3">lbnl-w1-nvme1</data>
@@ -65,8 +85,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:21:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="374">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="410">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301K31P0FGN</data>
       <data key="d3">lbnl-w1-nvme2</data>
@@ -79,8 +104,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:22:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="375">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="411">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301LQ1P0FGN</data>
       <data key="d3">lbnl-w2-nvme1</data>
@@ -93,8 +123,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "000:21:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="376">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="412">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301LE1P0FGN</data>
       <data key="d3">lbnl-w2-nvme2</data>
@@ -107,8 +142,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:22:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="377">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="413">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301M31P0FGN</data>
       <data key="d3">lbnl-w2-nvme3</data>
@@ -121,8 +161,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:23:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="378">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="414">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301LS1P0FGN</data>
       <data key="d3">lbnl-w2-nvme4</data>
@@ -135,8 +180,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:24:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="379">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="415">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301KV1P0FGN</data>
       <data key="d3">lbnl-w3-nvme1</data>
@@ -149,8 +199,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:21:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="380">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="416">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301RL1P0FGN</data>
       <data key="d3">lbnl-w3-nvme2</data>
@@ -163,8 +218,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:22:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="381">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="417">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301L91P0FGN</data>
       <data key="d3">lbnl-w3-nvme3</data>
@@ -177,8 +237,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:23:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="382">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="418">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">PHLJ015301SK1P0FGN</data>
       <data key="d3">lbnl-w3-nvme4</data>
@@ -191,8 +256,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:24:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="383">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="419">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B3BR53-gpu1</data>
       <data key="d3">lbnl-w1-gpu1</data>
@@ -205,8 +275,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:25:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="384">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="420">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B3BR53-gpu2</data>
       <data key="d3">lbnl-w1-gpu2</data>
@@ -219,8 +294,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:81:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="385">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="421">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B38R53-gpu1</data>
       <data key="d3">lbnl-w2-gpu1</data>
@@ -233,8 +313,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:25:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="386">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="422">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B38R53-gpu2</data>
       <data key="d3">lbnl-w2-gpu2</data>
@@ -247,8 +332,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:81:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="387">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="423">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B39R53-gpu1</data>
       <data key="d3">lbnl-w3-gpu1</data>
@@ -261,8 +351,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:25:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="388">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="424">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B39R53-gpu2</data>
       <data key="d3">lbnl-w3-gpu2</data>
@@ -275,8 +370,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:81:00.0"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="389">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="425">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B3BR53-shnic</data>
       <data key="d3">lbnl-w1-shnic</data>
@@ -289,29 +389,49 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 4}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:a1:00.2", "0000:a1:00.3", "0000:a1:00.4", "0000:a1:00.5"]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="390">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">SwitchFabric</data>
+=======
+    <node id="426">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">NetworkService</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d2">5B3BR53-shnic-sf</data>
-      <data key="d3">lbnl-w1-shnic-l2sf</data>
-      <data key="d4">SwitchFabric</data>
+      <data key="d3">lbnl-w1-shnic-l2ovs</data>
+      <data key="d4">OVS</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="391">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-04-3F-72-B7-19-8C</data>
       <data key="d3">lbnl-w1-shnic-p1</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="427">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-04-3F-72-B7-19-8C</data>
+      <data key="d3">lbnl-w1-shnic-p1</data>
+      <data key="d4">SharedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 100, "unit": 4}</data>
       <data key="d10">{"bdf": ["0000:a1:00.2", "0000:a1:00.3", "0000:a1:00.4", "0000:a1:00.5"], "mac": ["04:3F:72:B7:19:8D", "04:3F:72:B7:19:8E", "04:3F:72:B7:19:8F", "04:3F:72:B7:19:8A"], "vlan": [1001, 1002, 1003, 1004]}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 4}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:a1:00.2", "0000:a1:00.3", "0000:a1:00.4", "0000:a1:00.5"], "mac": ["04:3F:72:B7:19:8D", "04:3F:72:B7:19:8E", "04:3F:72:B7:19:8F", "04:3F:72:B7:19:8A"], "vlan": [1001, 1002, 1003, 1004]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="392">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="428">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B38R53-shnic</data>
       <data key="d3">lbnl-w2-shnic</data>
@@ -324,29 +444,49 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 4}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="393">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">SwitchFabric</data>
+=======
+    <node id="429">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">NetworkService</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d2">5B38R53-shnic-sf</data>
-      <data key="d3">lbnl-w2-shnic-l2sf</data>
-      <data key="d4">SwitchFabric</data>
+      <data key="d3">lbnl-w2-shnic-l2ovs</data>
+      <data key="d4">OVS</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="394">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-04-3F-72-B7-15-8C</data>
       <data key="d3">lbnl-w2-shnic-p1</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="430">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-04-3F-72-B7-15-8C</data>
+      <data key="d3">lbnl-w2-shnic-p1</data>
+      <data key="d4">SharedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 100, "unit": 4}</data>
       <data key="d10">{"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"], "mac": ["04:3F:72:B7:15:8D", "04:3F:72:B7:15:8E", "04:3F:72:B7:15:8F", "04:3F:72:B7:15:8A"], "vlan": [1001, 1002, 1003, 1004]}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 4}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"], "mac": ["04:3F:72:B7:15:8D", "04:3F:72:B7:15:8E", "04:3F:72:B7:15:8F", "04:3F:72:B7:15:8A"], "vlan": [1001, 1002, 1003, 1004]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="395">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="431">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B39R53-shnic</data>
       <data key="d3">lbnl-w3-shnic</data>
@@ -359,29 +499,49 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 4}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="396">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">SwitchFabric</data>
+=======
+    <node id="432">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">NetworkService</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d2">5B39R53-shnic-sf</data>
-      <data key="d3">lbnl-w3-shnic-l2sf</data>
-      <data key="d4">SwitchFabric</data>
+      <data key="d3">lbnl-w3-shnic-l2ovs</data>
+      <data key="d4">OVS</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="397">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-04-3F-72-B7-15-7C</data>
       <data key="d3">lbnl-w3-shnic-p1</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="433">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-04-3F-72-B7-15-7C</data>
+      <data key="d3">lbnl-w3-shnic-p1</data>
+      <data key="d4">SharedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 100, "unit": 4}</data>
       <data key="d10">{"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"], "mac": ["04:3F:72:B7:15:7D", "04:3F:72:B7:15:7E", "04:3F:72:B7:15:7F", "04:3F:72:B7:15:7A"], "vlan": [1001, 1002, 1003, 1004]}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 4}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"], "mac": ["04:3F:72:B7:15:7D", "04:3F:72:B7:15:7E", "04:3F:72:B7:15:7F", "04:3F:72:B7:15:7A"], "vlan": [1001, 1002, 1003, 1004]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="398">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="434">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B38R53-nic1</data>
       <data key="d3">lbnl-w2-nic1</data>
@@ -394,41 +554,70 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:41:00.0", "0000:41:00.1"]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="399">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">SwitchFabric</data>
+=======
+    <node id="435">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">NetworkService</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d2">5B38R53-nic1-sf</data>
-      <data key="d3">lbnl-w2-nic1-l2sf</data>
-      <data key="d4">SwitchFabric</data>
+      <data key="d3">lbnl-w2-nic1-l2ovs</data>
+      <data key="d4">OVS</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="400">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-04-3F-72-B7-15-6C</data>
       <data key="d3">lbnl-w2-nic1-p1</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="436">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-04-3F-72-B7-15-6C</data>
+      <data key="d3">lbnl-w2-nic1-p1</data>
+      <data key="d4">DedicatedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 100, "unit": 1}</data>
       <data key="d10">{"mac": "04:3F:72:B7:15:6C", "vlan_range": "1-4096"}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "04:3F:72:B7:15:6C", "vlan_range": "1-4096"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="401">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-04-3F-72-B7-15-6D</data>
       <data key="d3">lbnl-w2-nic1-p2</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="437">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-04-3F-72-B7-15-6D</data>
+      <data key="d3">lbnl-w2-nic1-p2</data>
+      <data key="d4">DedicatedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 100, "unit": 1}</data>
       <data key="d10">{"mac": "04:3F:72:B7:15:6D", "vlan_range": "1-4096"}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "04:3F:72:B7:15:6D", "vlan_range": "1-4096"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="402">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="438">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B38R53-nic2</data>
       <data key="d3">lbnl-w2-nic2</data>
@@ -441,41 +630,70 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:a1:00.0", "0000:a1:00.1"]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="403">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">SwitchFabric</data>
+=======
+    <node id="439">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">NetworkService</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d2">5B38R53-nic2-sf</data>
-      <data key="d3">lbnl-w2-nic2-l2sf</data>
-      <data key="d4">SwitchFabric</data>
+      <data key="d3">lbnl-w2-nic2-l2ovs</data>
+      <data key="d4">OVS</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="404">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-04-3F-72-B7-18-AC</data>
       <data key="d3">lbnl-w2-nic2-p1</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="440">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-04-3F-72-B7-18-AC</data>
+      <data key="d3">lbnl-w2-nic2-p1</data>
+      <data key="d4">DedicatedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 100, "unit": 1}</data>
       <data key="d10">{"mac": "04:3F:72:B7:18:AC", "vlan_range": "1-4096"}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "04:3F:72:B7:18:AC", "vlan_range": "1-4096"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="405">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-04-3F-72-B7-18-AD</data>
       <data key="d3">lbnl-w2-nic2-p2</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="441">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-04-3F-72-B7-18-AD</data>
+      <data key="d3">lbnl-w2-nic2-p2</data>
+      <data key="d4">DedicatedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 100, "unit": 1}</data>
       <data key="d10">{"mac": "04:3F:72:B7:18:AD", "vlan_range": "1-4096"}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "04:3F:72:B7:18:AD", "vlan_range": "1-4096"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="406">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="442">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B39R53-nic1</data>
       <data key="d3">lbnl-w3-nic1</data>
@@ -488,41 +706,70 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:41:00.0", "0000:41:00.1"]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="407">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">SwitchFabric</data>
+=======
+    <node id="443">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">NetworkService</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d2">5B39R53-nic1-sf</data>
-      <data key="d3">lbnl-w3-nic1-l2sf</data>
-      <data key="d4">SwitchFabric</data>
+      <data key="d3">lbnl-w3-nic1-l2ovs</data>
+      <data key="d4">OVS</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="408">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-0C-42-A1-91-75-12</data>
       <data key="d3">lbnl-w3-nic1-p1</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="444">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-91-75-12</data>
+      <data key="d3">lbnl-w3-nic1-p1</data>
+      <data key="d4">DedicatedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 25, "unit": 1}</data>
       <data key="d10">{"mac": "0C:42:A1:91:75:12", "vlan_range": "1-4096"}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:91:75:12", "vlan_range": "1-4096"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="409">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-0C-42-A1-91-75-13</data>
       <data key="d3">lbnl-w3-nic1-p2</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="445">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-91-75-13</data>
+      <data key="d3">lbnl-w3-nic1-p2</data>
+      <data key="d4">DedicatedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 25, "unit": 1}</data>
       <data key="d10">{"mac": "0C:42:A1:91:75:13", "vlan_range": "1-4096"}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:91:75:13", "vlan_range": "1-4096"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="410">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="446">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Component</data>
       <data key="d2">5B39R53-nic2</data>
       <data key="d3">lbnl-w3-nic2</data>
@@ -535,41 +782,70 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:a1:00.0", "0000:a1:00.1"]}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="411">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">SwitchFabric</data>
+=======
+    <node id="447">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">NetworkService</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d2">5B39R53-nic2-sf</data>
-      <data key="d3">lbnl-w3-nic2-l2sf</data>
-      <data key="d4">SwitchFabric</data>
+      <data key="d3">lbnl-w3-nic2-l2ovs</data>
+      <data key="d4">OVS</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="412">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-0C-42-A1-91-75-0E</data>
       <data key="d3">lbnl-w3-nic2-p1</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="448">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-91-75-0E</data>
+      <data key="d3">lbnl-w3-nic2-p1</data>
+      <data key="d4">DedicatedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 25, "unit": 1}</data>
       <data key="d10">{"mac": "0C:42:A1:91:75:0E", "vlan_range": "1-4096"}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:91:75:0E", "vlan_range": "1-4096"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="413">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-0C-42-A1-91-75-0F</data>
       <data key="d3">lbnl-w3-nic2-p2</data>
       <data key="d4">TrunkPort</data>
+=======
+    <node id="449">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-91-75-0F</data>
+      <data key="d3">lbnl-w3-nic2-p2</data>
+      <data key="d4">DedicatedPort</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d6">{"bw": 25, "unit": 1}</data>
       <data key="d10">{"mac": "0C:42:A1:91:75:0F", "vlan_range": "1-4096"}</data>
       <data key="d7">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:91:75:0F", "vlan_range": "1-4096"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="414">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="450">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">NetworkNode</data>
       <data key="d2">3DB2R53</data>
       <data key="d3">nas</data>
@@ -580,8 +856,13 @@
       <data key="d8">LBNL</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 100000, "unit": 1}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="415">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="451">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">NetworkNode</data>
       <data key="d2">FOC2450R1AR</data>
       <data key="d3">LBNL-data-sw</data>
@@ -592,6 +873,7 @@
       <data key="d8">LBNL</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="416">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
       <data key="d1">SwitchFabric</data>
@@ -603,6 +885,19 @@
     </node>
     <node id="417">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="452">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+      <data key="d1">NetworkService</data>
+      <data key="d2">FOC2450R1AR-ns</data>
+      <data key="d3">LBNL-data-sw-ns</data>
+      <data key="d4">MPLS</data>
+      <data key="d7">false</data>
+      <data key="d13">L2</data>
+    </node>
+    <node id="453">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-00</data>
       <data key="d3">HundredGigE 0/0/0/5</data>
@@ -612,8 +907,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
       <data key="d12">{"primary": {"pool_id": "shared_pool", "labels": {"ipv4_range": "192.168.1.1-192.168.10.255", "vlan_range": "100-200"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="418">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="454">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-01</data>
       <data key="d3">HundredGigE 0/0/0/13</data>
@@ -623,8 +923,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
       <data key="d12">{"primary": {"pool": "shared_pool"}}</data>
     </node>
+<<<<<<< HEAD
     <node id="419">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="455">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-02</data>
       <data key="d3">HundredGigE 0/0/0/15</data>
@@ -634,8 +939,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
       <data key="d12">{"primary": {"pool_id": "datanic_pool", "labels": {"vlan_range": "1500-2000"}}}</data>
     </node>
+<<<<<<< HEAD
     <node id="420">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="456">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-03</data>
       <data key="d3">HundredGigE 0/0/0/9</data>
@@ -645,8 +955,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
       <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
     </node>
+<<<<<<< HEAD
     <node id="421">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="457">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-04</data>
       <data key="d3">HundredGigE 0/0/0/17</data>
@@ -656,8 +971,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
       <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
     </node>
+<<<<<<< HEAD
     <node id="422">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="458">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-05</data>
       <data key="d3">HundredGigE 0/0/0/19</data>
@@ -667,8 +987,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
       <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
     </node>
+<<<<<<< HEAD
     <node id="423">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="459">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-06</data>
       <data key="d3">HundredGigE 0/0/0/21</data>
@@ -678,8 +1003,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
       <data key="d12">{"primary": {"pool": "shared_pool"}}</data>
     </node>
+<<<<<<< HEAD
     <node id="424">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="460">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-07</data>
       <data key="d3">HundredGigE 0/0/0/25.1</data>
@@ -689,8 +1019,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
       <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
     </node>
+<<<<<<< HEAD
     <node id="425">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="461">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-08</data>
       <data key="d3">HundredGigE 0/0/0/25.2</data>
@@ -700,8 +1035,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
       <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
     </node>
+<<<<<<< HEAD
     <node id="426">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="462">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-09</data>
       <data key="d3">HundredGigE 0/0/0/25.3</data>
@@ -711,8 +1051,13 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
       <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
     </node>
+<<<<<<< HEAD
     <node id="427">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="463">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-20-00-00-00-00-0A</data>
       <data key="d3">HundredGigE 0/0/0/25.4</data>
@@ -722,328 +1067,383 @@
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
       <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
     </node>
+<<<<<<< HEAD
     <node id="428">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="464">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-00-DAC</data>
       <data key="d3">l1</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="429">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="465">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-01-DAC</data>
       <data key="d3">l2</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="430">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="466">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-02-DAC</data>
       <data key="d3">l3</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="431">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="467">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-03-DAC</data>
       <data key="d3">l4</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="432">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="468">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-04-DAC</data>
       <data key="d3">l5</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="433">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="469">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-05-DAC</data>
       <data key="d3">l6</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="434">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="470">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-06-DAC</data>
       <data key="d3">l7</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="435">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="471">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-07-DAC</data>
       <data key="d3">l8</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="436">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="472">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-08-DAC</data>
       <data key="d3">l9</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="437">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="473">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-09-DAC</data>
       <data key="d3">l10</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
+<<<<<<< HEAD
     <node id="438">
       <data key="d0">4cc4b1af-4494-40ad-b404-c36e50402d1d</data>
+=======
+    <node id="474">
+      <data key="d0">f7823c23-04f9-414b-81e5-e58451888300</data>
+>>>>>>> da161adee50ed44de4ae210fe1960e1b6ec9f63f
       <data key="d1">Link</data>
       <data key="d2">node_id-20-00-00-00-00-0A-DAC</data>
       <data key="d3">l11</data>
-      <data key="d4">DAC</data>
+      <data key="d4">Patch</data>
       <data key="d7">false</data>
       <data key="d13">L2</data>
     </node>
-    <edge source="370" target="373">
+    <edge source="406" target="409">
       <data key="d14">has</data>
     </edge>
-    <edge source="370" target="374">
+    <edge source="406" target="410">
       <data key="d14">has</data>
     </edge>
-    <edge source="370" target="383">
+    <edge source="406" target="419">
       <data key="d14">has</data>
     </edge>
-    <edge source="370" target="384">
+    <edge source="406" target="420">
       <data key="d14">has</data>
     </edge>
-    <edge source="370" target="389">
+    <edge source="406" target="425">
       <data key="d14">has</data>
     </edge>
-    <edge source="371" target="375">
+    <edge source="407" target="411">
       <data key="d14">has</data>
     </edge>
-    <edge source="371" target="376">
+    <edge source="407" target="412">
       <data key="d14">has</data>
     </edge>
-    <edge source="371" target="377">
+    <edge source="407" target="413">
       <data key="d14">has</data>
     </edge>
-    <edge source="371" target="378">
+    <edge source="407" target="414">
       <data key="d14">has</data>
     </edge>
-    <edge source="371" target="385">
+    <edge source="407" target="421">
       <data key="d14">has</data>
     </edge>
-    <edge source="371" target="386">
+    <edge source="407" target="422">
       <data key="d14">has</data>
     </edge>
-    <edge source="371" target="392">
+    <edge source="407" target="428">
       <data key="d14">has</data>
     </edge>
-    <edge source="371" target="398">
+    <edge source="407" target="434">
       <data key="d14">has</data>
     </edge>
-    <edge source="371" target="402">
+    <edge source="407" target="438">
       <data key="d14">has</data>
     </edge>
-    <edge source="372" target="379">
+    <edge source="408" target="415">
       <data key="d14">has</data>
     </edge>
-    <edge source="372" target="380">
+    <edge source="408" target="416">
       <data key="d14">has</data>
     </edge>
-    <edge source="372" target="381">
+    <edge source="408" target="417">
       <data key="d14">has</data>
     </edge>
-    <edge source="372" target="382">
+    <edge source="408" target="418">
       <data key="d14">has</data>
     </edge>
-    <edge source="372" target="387">
+    <edge source="408" target="423">
       <data key="d14">has</data>
     </edge>
-    <edge source="372" target="388">
+    <edge source="408" target="424">
       <data key="d14">has</data>
     </edge>
-    <edge source="372" target="395">
+    <edge source="408" target="431">
       <data key="d14">has</data>
     </edge>
-    <edge source="372" target="406">
+    <edge source="408" target="442">
       <data key="d14">has</data>
     </edge>
-    <edge source="372" target="410">
+    <edge source="408" target="446">
       <data key="d14">has</data>
     </edge>
-    <edge source="389" target="390">
+    <edge source="425" target="426">
       <data key="d14">has</data>
     </edge>
-    <edge source="390" target="391">
+    <edge source="426" target="427">
       <data key="d14">connects</data>
     </edge>
-    <edge source="391" target="428">
+    <edge source="427" target="464">
       <data key="d14">connects</data>
     </edge>
-    <edge source="392" target="393">
+    <edge source="428" target="429">
       <data key="d14">has</data>
     </edge>
-    <edge source="393" target="394">
+    <edge source="429" target="430">
       <data key="d14">connects</data>
     </edge>
-    <edge source="394" target="429">
+    <edge source="430" target="465">
       <data key="d14">connects</data>
     </edge>
-    <edge source="395" target="396">
+    <edge source="431" target="432">
       <data key="d14">has</data>
     </edge>
-    <edge source="396" target="397">
+    <edge source="432" target="433">
       <data key="d14">connects</data>
     </edge>
-    <edge source="397" target="434">
+    <edge source="433" target="470">
       <data key="d14">connects</data>
     </edge>
-    <edge source="398" target="399">
+    <edge source="434" target="435">
       <data key="d14">has</data>
     </edge>
-    <edge source="399" target="400">
+    <edge source="435" target="436">
       <data key="d14">connects</data>
     </edge>
-    <edge source="399" target="401">
+    <edge source="435" target="437">
       <data key="d14">connects</data>
     </edge>
-    <edge source="400" target="430">
+    <edge source="436" target="466">
       <data key="d14">connects</data>
     </edge>
-    <edge source="401" target="431">
+    <edge source="437" target="467">
       <data key="d14">connects</data>
     </edge>
-    <edge source="402" target="403">
+    <edge source="438" target="439">
       <data key="d14">has</data>
     </edge>
-    <edge source="403" target="404">
+    <edge source="439" target="440">
       <data key="d14">connects</data>
     </edge>
-    <edge source="403" target="405">
+    <edge source="439" target="441">
       <data key="d14">connects</data>
     </edge>
-    <edge source="404" target="432">
+    <edge source="440" target="468">
       <data key="d14">connects</data>
     </edge>
-    <edge source="405" target="433">
+    <edge source="441" target="469">
       <data key="d14">connects</data>
     </edge>
-    <edge source="406" target="407">
+    <edge source="442" target="443">
       <data key="d14">has</data>
     </edge>
-    <edge source="407" target="408">
+    <edge source="443" target="444">
       <data key="d14">connects</data>
     </edge>
-    <edge source="407" target="409">
+    <edge source="443" target="445">
       <data key="d14">connects</data>
     </edge>
-    <edge source="408" target="435">
+    <edge source="444" target="471">
       <data key="d14">connects</data>
     </edge>
-    <edge source="409" target="436">
+    <edge source="445" target="472">
       <data key="d14">connects</data>
     </edge>
-    <edge source="410" target="411">
+    <edge source="446" target="447">
       <data key="d14">has</data>
     </edge>
-    <edge source="411" target="412">
+    <edge source="447" target="448">
       <data key="d14">connects</data>
     </edge>
-    <edge source="411" target="413">
+    <edge source="447" target="449">
       <data key="d14">connects</data>
     </edge>
-    <edge source="412" target="437">
+    <edge source="448" target="473">
       <data key="d14">connects</data>
     </edge>
-    <edge source="413" target="438">
+    <edge source="449" target="474">
       <data key="d14">connects</data>
     </edge>
-    <edge source="415" target="416">
+    <edge source="451" target="452">
       <data key="d14">has</data>
     </edge>
-    <edge source="416" target="417">
+    <edge source="452" target="453">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="418">
+    <edge source="452" target="454">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="419">
+    <edge source="452" target="455">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="420">
+    <edge source="452" target="456">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="421">
+    <edge source="452" target="457">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="422">
+    <edge source="452" target="458">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="423">
+    <edge source="452" target="459">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="424">
+    <edge source="452" target="460">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="425">
+    <edge source="452" target="461">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="426">
+    <edge source="452" target="462">
       <data key="d14">connects</data>
     </edge>
-    <edge source="416" target="427">
+    <edge source="452" target="463">
       <data key="d14">connects</data>
     </edge>
-    <edge source="417" target="428">
+    <edge source="453" target="464">
       <data key="d14">connects</data>
     </edge>
-    <edge source="418" target="429">
+    <edge source="454" target="465">
       <data key="d14">connects</data>
     </edge>
-    <edge source="419" target="430">
+    <edge source="455" target="466">
       <data key="d14">connects</data>
     </edge>
-    <edge source="420" target="431">
+    <edge source="456" target="467">
       <data key="d14">connects</data>
     </edge>
-    <edge source="421" target="432">
+    <edge source="457" target="468">
       <data key="d14">connects</data>
     </edge>
-    <edge source="422" target="433">
+    <edge source="458" target="469">
       <data key="d14">connects</data>
     </edge>
-    <edge source="423" target="434">
+    <edge source="459" target="470">
       <data key="d14">connects</data>
     </edge>
-    <edge source="424" target="435">
+    <edge source="460" target="471">
       <data key="d14">connects</data>
     </edge>
-    <edge source="425" target="436">
+    <edge source="461" target="472">
       <data key="d14">connects</data>
     </edge>
-    <edge source="426" target="437">
+    <edge source="462" target="473">
       <data key="d14">connects</data>
     </edge>
-    <edge source="427" target="438">
+    <edge source="463" target="474">
       <data key="d14">connects</data>
     </edge>
   </graph>

@@ -3,11 +3,10 @@ cryptography==3.3.2
 psycopg2-binary
 sqlalchemy
 fabric-message-bus
-fabric-fim==0.47
+fabric-fim==0.49
 waitress
 prometheus_client
 connexion==2.7.0
 swagger-ui-bundle
-fabric_fss_utils==0.12
+fabric_fss_utils==0.15
 PyYAML==5.4
-readme-renderer==26.0

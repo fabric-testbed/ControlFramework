@@ -159,10 +159,11 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                               f"failure in slice {slice_obj.get_name()}"
                         self.logger.info(msg)
 
-                        update_data = UpdateData()
-                        update_data.failed = True
-                        update_data.message = Constants.CLOSURE_BY_TICKET_REVIEW_POLICY
-                        reservation.mark_close_by_ticket_review(update_data=update_data)
+                        if not reservation.is_failed():
+                            update_data = UpdateData()
+                            update_data.failed = True
+                            update_data.message = Constants.CLOSURE_BY_TICKET_REVIEW_POLICY
+                            reservation.mark_close_by_ticket_review(update_data=update_data)
                         self.actor.close(reservation=reservation)
                         self.calendar.remove_pending(reservation=reservation)
                         self.pending_notify.remove(reservation=reservation)

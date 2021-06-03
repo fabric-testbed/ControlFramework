@@ -28,7 +28,7 @@ from setuptools import setup, find_packages
 
 
 NAME = "fabric-cf"
-VERSION = "0.23"
+VERSION = "0.24"
 # To install the library, run the following
 #
 # python setup.py install
@@ -61,5 +61,5 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    python_requires='>=3.7'
+    python_requires='>=3.9'
 )

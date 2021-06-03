@@ -41,12 +41,14 @@ if TYPE_CHECKING:
 
 class ABCMgmtActor(ABCComponent):
     @abstractmethod
-    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None,
+                   email: str = None) -> List[SliceAvro]:
         """
         Obtains all slices.
         @param id_token id token
         @param slice_id slice id
         @param slice_name slice name
+        @param email email
         @return returns list of all the slices
         """
 
@@ -80,14 +82,15 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def get_reservations(self, *, id_token: str = None, state: int = None,
-                         slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, id_token: str = None, state: int = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None) -> List[ReservationMng]:
         """
         @param id_token id token
         @param state state
         @param slice_id slice ID
         @param rid reservation id
         @param oidc_claim_sub: oidc claim sub
+        @param email: user email
         Obtains all reservations
         @return returns list of the reservations
         """

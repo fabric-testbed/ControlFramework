@@ -51,11 +51,12 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         if not isinstance(manager, ActorManagementObject):
             raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
-    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None,
+                   email: str = None) -> List[SliceAvro]:
         self.clear_last()
         try:
             result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, id_token=id_token,
-                                             slice_name=slice_name)
+                                             slice_name=slice_name, email=email)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -77,12 +78,12 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def get_reservations(self, *, id_token: str = None, state: int = None,
-                         slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, id_token: str = None, state: int = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_reservations(caller=self.auth, state=state, slice_id=slice_id, rid=rid,
-                                                   id_token=id_token, oidc_claim_sub=oidc_claim_sub)
+                                                   id_token=id_token, oidc_claim_sub=oidc_claim_sub, email=email)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

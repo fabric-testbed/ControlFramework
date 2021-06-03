@@ -35,6 +35,7 @@ from fim.graph.slices.neo4j_asm import Neo4jASM
 from fim.slivers.capacities_labels import Labels
 from fim.user.topology import ExperimentTopology
 
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.util.id import ID
@@ -136,4 +137,4 @@ class OrchestratorSliceWrapper:
             return self.computed_reservations
         except Exception as e:
             self.logger.error("Exception occurred while generating reservations for slivers: {}".format(e))
-            raise e
+            raise OrchestratorException(message=f"Failure to build Slivers: {e}")

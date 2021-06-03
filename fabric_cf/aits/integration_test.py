@@ -179,7 +179,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(5)
+            time.sleep(1)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -199,7 +199,7 @@ class IntegrationTest(unittest.TestCase):
         status, response = oh.delete(self.slice_id)
         self.assertEqual(Status.OK, status)
 
-        time.sleep(5)
+        time.sleep(1)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -236,7 +236,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(5)
+            time.sleep(1)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -256,7 +256,7 @@ class IntegrationTest(unittest.TestCase):
         status, response = oh.delete(self.slice_id)
         self.assertEqual(Status.OK, status)
 
-        time.sleep(5)
+        time.sleep(1)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -288,7 +288,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(5)
+            time.sleep(1)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -303,6 +303,10 @@ class IntegrationTest(unittest.TestCase):
             self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
                                                am_res_state=-1,
                                                broker_res_state=ReservationStates.Closed.value)
+
+            status, sliver_status = oh.sliver_status(slice_id=self.slice_id, sliver_id=s.reservation_id)
+            self.assertEqual(Status.OK, status)
+            print(f"KOMAL {sliver_status.get_notices()}")
 
         # Verify delete slice fails as slices is already closed
         status, response = oh.delete(self.slice_id)
@@ -326,12 +330,15 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(5)
+            time.sleep(1)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
         self.assertEqual(Status.OK, status)
         self.assertTrue(isinstance(slivers, list))
+        error_messages = [Constants.CLOSURE_BY_TICKET_REVIEW_POLICY,
+                          "Insufficient resources: No candidates nodes found to serve res"]
+        i = 0
         for s in slivers:
             self.assertEqual(s.get_state(), ReservationStates.Closed.name)
             self.assertIsNone(s.management_ip)
@@ -341,7 +348,9 @@ class IntegrationTest(unittest.TestCase):
                                                am_res_state=-1,
                                                broker_res_state=ReservationStates.Closed.value)
             status, sliver_status = oh.sliver_status(slice_id=self.slice_id, sliver_id=s.reservation_id)
-            print(f"DEBUGGGG {sliver_status}")
+            self.assertEqual(Status.OK, status)
+            self.assertTrue(sliver_status.get_notices().__contains__(error_messages[i]))
+            i += 1
 
         # Verify delete slice fails as slices is already closed
         status, response = oh.delete(self.slice_id)
@@ -369,7 +378,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(5)
+            time.sleep(1)
 
         # check Slivers and verify there states at all 3 actors
         new_time_str_without_seconds = new_time.strftime(self.TIME_FORMAT_IN_SECONDS)
@@ -435,7 +444,7 @@ class IntegrationTest(unittest.TestCase):
         status, response = oh.delete(self.slice_id)
         self.assertEqual(Status.OK, status)
 
-        time.sleep(5)
+        time.sleep(1)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)

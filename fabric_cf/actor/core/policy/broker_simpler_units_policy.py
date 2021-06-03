@@ -478,7 +478,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             # no candidate nodes found
             if len(node_id_list) == 0:
-                self.logger.error(f'No candidates nodes found to serve {reservation}')
+                error_msg = f'Insufficient resources: No candidates nodes found to serve {reservation}'
+                self.logger.error(error_msg)
                 return False, node_id_to_reservations, error_msg
 
             delegation_id = None

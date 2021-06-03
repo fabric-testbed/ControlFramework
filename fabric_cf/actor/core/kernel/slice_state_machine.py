@@ -42,6 +42,12 @@ class SliceState(Enum):
     Closing = enum.auto()
     Dead = enum.auto()
 
+    def __repr__(self):
+        return self.name
+
+    def __str__(self):
+        return self.name
+
 
 class SliceCommand(Enum):
     Create = enum.auto()
@@ -135,6 +141,8 @@ class SliceStateMachine:
         @return Slice State
         @throws Exception in case of error
         """
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        logger = GlobalsSingleton.get().get_logger()
         state_changed = False
         prev_state = self.state
         if self.state not in operation.valid_from_states:
@@ -142,16 +150,21 @@ class SliceStateMachine:
 
         if operation.command == SliceCommand.Create:
             self.state = SliceState.Configuring
+            logger.debug(f"Operation: {operation.command} New State: {self.state}")
 
         elif operation.command == SliceCommand.Modify:
             self.state = SliceState.Configuring
+            logger.debug(f"Operation: {operation.command} New State: {self.state}")
 
         elif operation.command == SliceCommand.Delete:
             if self.state != SliceState.Dead:
                 self.state = SliceState.Closing
+            logger.debug(f"Operation: {operation.command} New State: {self.state}")
 
         elif operation.command == SliceCommand.Reevaluate:
+            logger.debug(f"Operation: {operation.command} Current State: {self.state}")
             if reservations is None or reservations.size() == 0:
+                logger.debug(f"Operation: {operation.command} No reservations New State: {self.state}")
                 return state_changed, self.state
 
             bins = StateBins()
@@ -161,28 +174,38 @@ class SliceStateMachine:
             if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
                 if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
                     self.state = SliceState.StableOK
+                    logger.debug(f"Operation: {operation.command} Only Active and Closed New State: {self.state}")
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
                                                   ReservationStates.Closed)) and \
                         bins.has_state(s=ReservationStates.Failed):
                     self.state = SliceState.StableError
+                    logger.debug(f"Operation: {operation.command} Only Active, Closed or Failed New State: {self.state}")
 
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
                                                  ReservationStates.Failed):
                     self.state = SliceState.Closing
+                    logger.debug(
+                        f"Operation: {operation.command} Only Closed, CloseWait, or Failed New State: {self.state}")
 
             elif self.state == SliceState.StableError or self.state == SliceState.StableOK:
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
                                                  ReservationStates.Failed):
                     self.state = SliceState.Dead
+                    logger.debug(
+                        f"Operation: {operation.command} Only Closed, CloseWait, or Failed New State: {self.state}")
 
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
                                                  ReservationPendingStates.Closing, ReservationStates.Failed):
                     self.state = SliceState.Closing
+                    logger.debug(
+                        f"Operation: {operation.command} Only Closed, CloseWait, Closing or Failed New State: {self.state}")
 
             elif self.state == SliceState.Closing and not bins.has_state_other_than(ReservationStates.CloseWait,
                                                                                     ReservationStates.Closed,
                                                                                     ReservationStates.Failed):
+                logger.debug(
+                    f"Operation: {operation.command} Only Closed, CloseWait, Failed New State: {self.state}")
                 self.state = SliceState.Dead
         if prev_state != self.state:
             state_changed = True

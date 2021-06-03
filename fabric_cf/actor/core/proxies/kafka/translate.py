@@ -115,6 +115,8 @@ class Translate:
         result = AuthAvro()
         result.name = auth.get_name()
         result.guid = str(auth.get_guid())
+        result.oidc_sub_claim = auth.get_oidc_sub_claim()
+        result.email = auth.get_email()
         return result
 
     @staticmethod
@@ -125,6 +127,7 @@ class Translate:
         result.name = auth_avro.name
         result.guid = auth_avro.guid
         result.oidc_sub_claim = auth_avro.oidc_sub_claim
+        result.email = auth_avro.email
         return result
 
     @staticmethod

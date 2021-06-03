@@ -859,6 +859,7 @@ class ActorMixin(ABCActorMixin):
         """
         Queue an event on Actor timer queue
         """
+        self.logger.debug("Waiting on main lock to add timer")
         with self.actor_main_lock:
             self.timer_queue.put_nowait(timer)
             self.logger.debug("Added timer to timer queue {}".format(timer.__class__.__name__))
@@ -868,6 +869,7 @@ class ActorMixin(ABCActorMixin):
         """
         Queue an even on Actor Event Queue
         """
+        self.logger.debug("Waiting on main lock to add event")
         with self.actor_main_lock:
             self.event_queue.put_nowait(incoming)
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))

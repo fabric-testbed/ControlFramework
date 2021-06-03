@@ -61,7 +61,8 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def prepare(self, *, callback_topic: str):
         self.callback_topic = callback_topic
 
-    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None) -> List[SliceAvro]:
+    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None,
+                   email: str = None) -> List[SliceAvro]:
         self.clear_last()
 
         status = ResultAvro()
@@ -74,6 +75,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
             request.callback_topic = self.callback_topic
             request.message_id = str(ID())
             request.id_token = id_token
+            request.email = email
             if slice_id is not None:
                 request.slice_id = str(slice_id)
             request.slice_name = slice_name
@@ -253,8 +255,8 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return status.code == 0
 
-    def get_reservations(self, *, id_token: str = None, state: int = None,
-                         slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, id_token: str = None, state: int = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None) -> List[ReservationMng]:
         self.clear_last()
         response = ResultReservationAvro()
         response.status = ResultAvro()
@@ -266,6 +268,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
             request.message_id = str(ID())
             request.reservation_state = state
             request.id_token = id_token
+            request.email = email
 
             if slice_id is not None:
                 request.slice_id = str(slice_id)

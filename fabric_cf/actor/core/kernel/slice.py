@@ -210,6 +210,10 @@ class Slice(ABCKernelSlice):
         msg = "{}({})".format(self.name, str(self.guid))
         if self.graph_id is not None:
             msg += " Graph Id:{}".format(self.graph_id)
+        if self.owner is not None:
+            msg += " Owner:{}".format(self.owner)
+        if self.state_machine is not None:
+            msg += " State:{}".format(self.state_machine.get_state())
         return msg
 
     def unregister(self, *, reservation: ABCKernelReservation):
