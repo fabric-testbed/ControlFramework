@@ -9,4 +9,4 @@ connexion==2.7.0
 swagger-ui-bundle
 fabric_fss_utils==0.15
 PyYAML==5.4
-fabric-fim==0.50
+fabric-fim==0.52
