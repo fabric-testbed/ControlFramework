@@ -330,16 +330,18 @@ class ConfigurationProcessor:
 
         for r in resources:
             descriptor = ResourceConfig()
-            descriptor.set_resource_type(rtype=ResourceType(resource_type=r.get_type()))
-            descriptor.set_resource_type_label(rtype_label=r.get_label())
+            for resource_type in r.get_type():
+                descriptor.set_resource_type(rtype=ResourceType(resource_type=resource_type))
+                descriptor.set_resource_type_label(rtype_label=r.get_label())
 
-            handler = r.get_handler()
-            if handler is not None:
-                descriptor.set_handler_class(handler_class=handler.get_class_name())
-                descriptor.set_handler_module(module=handler.get_module_name())
-                descriptor.set_handler_properties(properties=handler.get_properties())
+                handler = r.get_handler()
+                if handler is not None:
+                    descriptor.set_handler_class(handler_class=handler.get_class_name())
+                    descriptor.set_handler_module(module=handler.get_module_name())
+                    descriptor.set_handler_properties(properties=handler.get_properties())
 
-            result[descriptor.get_resource_type()] = descriptor
+                result[descriptor.get_resource_type()] = descriptor
+                print(f"Handler configured for {resource_type}")
         return result
 
     def initialize_actor(self):

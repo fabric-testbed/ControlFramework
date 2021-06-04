@@ -193,11 +193,16 @@ class ResourceConfig:
     """
     def __init__(self, *, config: dict):
         self.description = config.get(Constants.DESCRIPTION, None)
-        self.type = config.get(Constants.TYPE, None)
+        self.type = []
+        if Constants.TYPE in config:
+            value = config.get(Constants.TYPE)
+            values = value.split(',')
+            for v in values:
+                self.type.append(v.strip())
         self.label = config.get(Constants.LABEL, None)
         self.handler = HandlerConfig(config=config.get(Constants.HANDLER, None))
 
-    def get_type(self) -> str:
+    def get_type(self) -> List[str]:
         """
         Return type
         """
