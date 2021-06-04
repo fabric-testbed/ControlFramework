@@ -79,7 +79,6 @@ services:
     image: orchestrator:latest
     container_name: orchestrator
     restart: always
-    user: ${CF_UID:-1000}:${CF_GID:-1000}
     depends_on:
       - database
       - neo4j
