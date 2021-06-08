@@ -28,6 +28,7 @@ from typing import Tuple, List
 from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver
 from fim.slivers.capacities_labels import Capacities, Labels
 from fim.slivers.delegations import Delegations, DelegationFormat
+from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -89,9 +90,9 @@ class NetworkNodeInventory(InventoryForType):
 
                 if resource_sliver is not None:
                     self.logger.debug(
-                        f"Excluding already assigned resources {resource_sliver.get_capacities()} to "
+                        f"Excluding already assigned resources {resource_sliver.get_capacity_allocations()} to "
                         f"reservation# {reservation.get_reservation_id()}")
-                    delegated_capacity = delegated_capacity - resource_sliver.get_capacities()
+                    delegated_capacity = delegated_capacity - resource_sliver.get_capacity_allocations()
 
         # Compare the requested against available
         delegated_capacity = delegated_capacity - requested_capacities
@@ -247,9 +248,14 @@ class NetworkNodeInventory(InventoryForType):
             raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
                                   msg=f"resource type: {requested.get_type()}")
 
+        # Always use requested capacities to be mapped from flavor i.e. capacity hints
+        requested_capacity_hints = requested.get_capacity_hints()
+        catalog = InstanceCatalog()
+        requested_capacities = catalog.get_instance_capacities(instance_type=requested_capacity_hints.instance_type)
+
         # Check if Capacities can be satisfied
         delegation_id = self.__check_capacities(rid=reservation.get_reservation_id(),
-                                                requested_capacities=requested.get_capacities(),
+                                                requested_capacities=requested_capacities,
                                                 delegated_capacities=graph_node.get_capacity_delegations(),
                                                 existing_reservations=existing_reservations)
 
@@ -262,7 +268,7 @@ class NetworkNodeInventory(InventoryForType):
                 graph_node=graph_node,
                 existing_reservations=existing_reservations)
 
-        requested.capacity_allocations = requested.get_capacities()
+        requested.capacity_allocations = requested_capacities
         requested.label_allocations = Labels().set_fields(instance_parent=graph_node.get_name())
 
         node_map = tuple([graph_id, graph_node.node_id])
