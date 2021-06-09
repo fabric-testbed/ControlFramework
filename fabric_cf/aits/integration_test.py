@@ -74,7 +74,21 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
         self.assertEqual("Resource(s) not found!", response.json())
 
-    def test_b_claim_resources(self):
+    def test_b1_reclaim_resources(self):
+        KafkaProcessorSingleton.get().start()
+        manage_helper = ManageHelper(logger=self.logger)
+        manage_helper.reclaim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
+        am_delegations, status = manage_helper.do_get_delegations(actor_name=self.am_name,
+                                                                  callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
+                                                                      callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        self.assertEqual(0, len(broker_delegations))
+
+        KafkaProcessorSingleton.get().stop()
+
+    def test_b2_claim_resources(self):
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
         manage_helper.claim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
@@ -89,6 +103,33 @@ class IntegrationTest(unittest.TestCase):
         bd = broker_delegations[0]
         self.assertEqual(ad.delegation_id, bd.delegation_id)
         self.assertEqual(ad.slice.slice_name, bd.slice.slice_name)
+        KafkaProcessorSingleton.get().stop()
+
+    def test_b3_reclaim_resources(self):
+        KafkaProcessorSingleton.get().start()
+        manage_helper = ManageHelper(logger=self.logger)
+        manage_helper.reclaim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
+        am_delegations, status = manage_helper.do_get_delegations(actor_name=self.am_name,
+                                                                  callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
+                                                                      callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        self.assertEqual(0, len(broker_delegations))
+
+        manage_helper.claim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
+        am_delegations, status = manage_helper.do_get_delegations(actor_name=self.am_name,
+                                                                  callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
+                                                                      callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        self.assertEqual(len(am_delegations), len(broker_delegations))
+        ad = am_delegations[0]
+        bd = broker_delegations[0]
+        self.assertEqual(ad.delegation_id, bd.delegation_id)
+        self.assertEqual(ad.slice.slice_name, bd.slice.slice_name)
+
         KafkaProcessorSingleton.get().stop()
 
     def test_c_list_resources(self):
