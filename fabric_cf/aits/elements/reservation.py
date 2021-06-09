@@ -26,7 +26,7 @@
 import json
 from typing import List
 
-from fim.slivers.capacities_labels import JSONField, Capacities, Labels
+from fim.slivers.capacities_labels import JSONField, Capacities, Labels, CapacityHints
 
 from .constants import Constants
 
@@ -44,7 +44,10 @@ class Reservation(JSONField):
         self.reservation_id = None
         self.management_ip = None
         self.capacities = None
+        self.allocated_capacities = None
+        self.capacity_hints = None
         self.labels = None
+        self.allocated_labels = None
         self.join_state = None
         self.pending_state = None
         self.reservation_state = None
@@ -75,6 +78,15 @@ class Reservation(JSONField):
     def get_labels(self) -> Labels:
         return self.labels
 
+    def get_allocated_capacities(self) -> Capacities:
+        return self.allocated_capacities
+
+    def get_capacity_hints(self) -> CapacityHints:
+        return self.capacity_hints
+
+    def get_allocated_labels(self) -> Labels:
+        return self.labels
+
     def get_join_state(self) -> str:
         return self.join_state
 
@@ -99,12 +111,15 @@ class Reservation(JSONField):
             try:
                 # will toss an exception if field is not defined
                 self.__getattribute__(k)
-                if k == Constants.PROP_CAPACITIES:
+                if k == Constants.PROP_CAPACITIES or k == Constants.PROP_ALLOCATED_CAPACITIES:
                     c = Capacities()
                     v = c.from_json(json_string=v)
-                elif k == Constants.PROP_LABELS:
+                elif k == Constants.PROP_LABELS or k == Constants.PROP_ALLOCATED_LABELS:
                     l = Labels()
                     v = l.from_json(json_string=v)
+                elif k == Constants.PROP_CAPACITY_HINTS:
+                    ch = CapacityHints()
+                    v = ch.from_json(json_string=v)
                 self.__setattr__(k, v)
             except AttributeError:
                 raise RuntimeError(f"Unable to set field {k} of reservation, no such field available")
@@ -119,9 +134,11 @@ class Reservation(JSONField):
         """
         d = self.__dict__.copy()
         for k in self.__dict__:
-            if d[k] is None or d[k] == 0:
+            if d[k] is None:
                 d.pop(k)
-            elif k == Constants.PROP_CAPACITIES or k == Constants.PROP_LABELS:
+            elif k == Constants.PROP_CAPACITIES or k == Constants.PROP_LABELS or \
+                    k == Constants.PROP_ALLOCATED_CAPACITIES or k == Constants.PROP_ALLOCATED_LABELS or \
+                    k == Constants.PROP_CAPACITY_HINTS:
                 d[k] = d[k].to_json()
         if len(d) == 0:
             return ''

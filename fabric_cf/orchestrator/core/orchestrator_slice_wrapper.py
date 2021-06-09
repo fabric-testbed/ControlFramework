@@ -143,8 +143,6 @@ class OrchestratorSliceWrapper:
                     requested_capacity_hints = CapacityHints().set_fields(instance_type=instance_type)
                     sliver.set_capacity_hints(caphint=requested_capacity_hints)
 
-                print(f"KOMAL Hints {requested_capacity_hints} capacities {requested_capacities}")
-
                 slivers.append(sliver)
 
             self.computed_reservations = self.reservation_converter.compute_reservations(slivers=slivers,
