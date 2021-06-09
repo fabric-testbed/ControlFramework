@@ -34,7 +34,9 @@ from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
 from fim.graph.slices.neo4j_asm import Neo4jASM
 from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
+from fim.slivers.network_node import NodeSliver
 
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.util.id import ID
@@ -128,6 +130,8 @@ class OrchestratorSliceWrapper:
             for nn_id in slice_graph.get_all_network_nodes():
                 sliver = slice_graph.build_deep_node_sliver(node_id=nn_id)
 
+                self.__validate_node_sliver(sliver=sliver)
+
                 # Compute Requested Capacities from Capacity Hints
                 requested_capacities = sliver.get_capacities()
                 requested_capacity_hints = sliver.get_capacity_hints()
@@ -153,3 +157,9 @@ class OrchestratorSliceWrapper:
         except Exception as e:
             self.logger.error("Exception occurred while generating reservations for slivers: {}".format(e))
             raise e
+
+    @staticmethod
+    def __validate_node_sliver(sliver: NodeSliver):
+        if sliver.get_capacities() is None and sliver.get_capacity_hints() is None:
+            raise OrchestratorException(message="Either Capacity or Capacity Hints must be specified!",
+                                        http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
