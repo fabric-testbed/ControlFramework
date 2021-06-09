@@ -64,7 +64,10 @@ class ResponseBuilder:
     PROP_MANAGEMENT_IP = "management_ip"
     PROP_SITE = "site"
     PROP_CAPACITIES = "capacities"
+    PROP_ALLOCATED_CAPACITIES = "allocated_capacities"
     PROP_LABELS = "labels"
+    PROP_ALLOCATED_LABELS = "allocated_labels"
+    PROP_CAPACITY_HINTS = "capacity_hints"
 
     @staticmethod
     def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = False,
@@ -199,8 +202,14 @@ class ResponseBuilder:
                 result[ResponseBuilder.PROP_MANAGEMENT_IP] = sliver.get_management_ip()
             if sliver.get_capacities() is not None:
                 result[ResponseBuilder.PROP_CAPACITIES] = sliver.get_capacities().to_json()
+            if sliver.get_capacity_allocations() is not None:
+                result[ResponseBuilder.PROP_ALLOCATED_CAPACITIES] = sliver.get_capacity_allocations().to_json()
             if sliver.get_labels() is not None:
                 result[ResponseBuilder.PROP_LABELS] = sliver.get_labels().to_json()
+            if sliver.get_label_allocations() is not None:
+                result[ResponseBuilder.PROP_ALLOCATED_LABELS] = sliver.get_label_allocations().to_json()
+            if sliver.get_capacity_hints() is not None:
+                result[ResponseBuilder.PROP_CAPACITY_HINTS] = sliver.get_capacity_hints().to_json()
         return result
 
     @staticmethod

@@ -102,14 +102,15 @@ class IntegrationTest(unittest.TestCase):
         self.assertIsNotNone(json_obj.get(Constants.BROKER_QUERY_MODEL, None))
 
     def build_slice(self, include_components: bool = False, exceed_capacities: bool = False,
-                    exceed_components: bool = False) -> str:
+                    exceed_components: bool = False, use_hints: bool = True) -> str:
         t = fu.ExperimentTopology()
         n1 = t.add_node(name='n1', site='RENC')
         cap = fu.Capacities()
         if exceed_capacities:
             cap.set_fields(core=33, ram=64, disk=500)
         else:
-            cap.set_fields(core=4, ram=64, disk=500)
+            cap.set_fields(core=3, ram=61, disk=499)
+
         n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
 
         n2 = t.add_node(name='n2', site='RENC')
@@ -123,6 +124,12 @@ class IntegrationTest(unittest.TestCase):
                 n2.add_component(ctype=fu.ComponentType.GPU, model='Tesla T4', name='c3')
                 n2.add_component(ctype=fu.ComponentType.SmartNIC, model='ConnectX-6', name='nic1')
                 n2.add_component(ctype=fu.ComponentType.SmartNIC, model='ConnectX-5', name='nic2')
+
+        if use_hints:
+            cap_hints = fu.CapacityHints()
+            cap_hints.set_fields(instance_type="fabric.c8.m32.d500")
+            n1.set_properties(capacity_hints=cap_hints)
+            n2.set_properties(capacity_hints=cap_hints)
 
         return t.serialize()
 
@@ -223,7 +230,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertTrue(isinstance(response, list))
         self.assertEqual(len(response), 2)
         self.slice_id = response[0].slice_id
-        
+
         # Attempt creating the slice again with same name and verify it fails
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.FAILURE, status)
@@ -271,9 +278,9 @@ class IntegrationTest(unittest.TestCase):
                                                am_res_state=ReservationStates.Closed.value,
                                                broker_res_state=ReservationStates.Closed.value)
 
-    def test_f_create_delete_slice_with_capacities_exceeding_available_capacities(self):
+    def test_f_create_delete_slice_with_instance_type(self):
         # Create Slice
-        slice_graph = self.build_slice(exceed_capacities=True)
+        slice_graph = self.build_slice(use_hints=True)
         oh = OrchestratorHelper()
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.OK, status)
@@ -283,7 +290,7 @@ class IntegrationTest(unittest.TestCase):
 
         # Wait for the Slice to be closed
         slice_state = None
-        while slice_state != self.CLOSING:
+        while slice_state != self.STABLE_OK:
             status, slice_obj = oh.slice_status(slice_id=self.slice_id)
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
@@ -295,19 +302,33 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(Status.OK, status)
         self.assertTrue(isinstance(slivers, list))
         for s in slivers:
-            self.assertEqual(s.get_state(), ReservationStates.Closed.name)
-            self.assertIsNone(s.management_ip)
+            self.assertEqual(ReservationStates.Active.name, s.get_state())
+            self.assertIsNotNone(s.management_ip)
             self.assertIsNotNone(s.graph_node_id)
             self.assertEqual(self.slice_id, s.slice_id)
 
             self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
-                                               am_res_state=-1,
-                                               broker_res_state=ReservationStates.Closed.value)
+                                               am_res_state=ReservationStates.Active.value,
+                                               broker_res_state=ReservationStates.Ticketed.value)
 
-        # Verify delete slice fails as slices is already closed
+        # Delete Slice
         status, response = oh.delete(self.slice_id)
-        self.assertEqual(status, Status.FAILURE)
-        self.assertEqual(f"Slice# {self.slice_id} already closed", response.json())
+        self.assertEqual(Status.OK, status)
+
+        time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Closed.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+            self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
+                                               am_res_state=ReservationStates.Closed.value,
+                                               broker_res_state=ReservationStates.Closed.value)
 
     def test_g_create_delete_slice_two_vms_with_components_not_available(self):
         # Create Slice

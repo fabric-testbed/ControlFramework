@@ -36,3 +36,6 @@ class Constants:
     PROP_LABELS = "labels"
     PROP_SLIVER_NAME = "name"
     PROP_MANAGEMENT_IP = "management_ip"
+    PROP_CAPACITY_HINTS = "capacity_hints"
+    PROP_ALLOCATED_CAPACITIES = "allocated_capacities"
+    PROP_ALLOCATED_LABELS = "allocated_labels"
