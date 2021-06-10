@@ -37,7 +37,7 @@ from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 from fabric_cf.actor.core.apis.abc_database import ABCDatabase
-from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import AuthorityException
@@ -329,6 +329,8 @@ class AuthorityCalendarPolicyTest(BaseTestCase, unittest.TestCase):
         cycle += 1
 
         print("Redeeming request...")
+        # Force delegation to be in Delegated State
+        delegation.state = DelegationState.Delegated
         site.redeem(reservation=request, callback=proxy, caller=proxy.get_identity())
 
         for c in range(cycle, self.DonateEndCycle):
@@ -385,6 +387,9 @@ class AuthorityCalendarPolicyTest(BaseTestCase, unittest.TestCase):
         site.external_tick(cycle=cycle)
         cycle += 1
         print("Redeeming request")
+        # Force delegation to be in Delegated State
+        delegation.state = DelegationState.Delegated
+
         site.redeem(reservation=request, callback=proxy, caller=proxy.get_identity())
         for cycle in range(cycle, self.DonateEndCycle):
             if cycle == self.TicketEndCycle - 50:
@@ -440,6 +445,8 @@ class AuthorityCalendarPolicyTest(BaseTestCase, unittest.TestCase):
         site.external_tick(cycle=cycle)
         cycle += 1
         print("Redeeming request...")
+        # Force delegation to be in Delegated State
+        delegation.state = DelegationState.Delegated
         site.redeem(reservation=request, callback=proxy, caller=proxy.get_identity())
 
         for cycle in range(cycle, self.DonateEndCycle):
