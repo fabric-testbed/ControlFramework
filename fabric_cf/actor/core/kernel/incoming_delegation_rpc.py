@@ -47,7 +47,8 @@ class IncomingDelegationRPC(IncomingRPC):
         self.delegation = delegation
         self.update_data = update_data
 
-    def get_delegation(self) -> ABCDelegation:
+    #def get_delegation(self) -> ABCDelegation:
+    def get(self):
         """
         Get delegation
         @return delegation

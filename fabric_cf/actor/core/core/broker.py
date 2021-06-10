@@ -372,6 +372,12 @@ class Broker(ActorMixin, ABCBrokerMixin):
         self.bid(cycle=self.current_cycle)
         self.close_expiring(cycle=self.current_cycle)
 
+    def update_lease(self, *, reservation: ABCReservationMixin, update_data, caller: AuthToken):
+        if not self.is_recovered() or self.is_stopped():
+            raise BrokerException("This actor cannot receive calls")
+
+        self.wrapper.update_lease(reservation=reservation, update_data=update_data, caller=caller)
+
     def update_ticket(self, *, reservation: ABCReservationMixin, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")

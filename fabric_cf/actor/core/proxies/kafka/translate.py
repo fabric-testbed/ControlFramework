@@ -115,6 +115,8 @@ class Translate:
         result = AuthAvro()
         result.name = auth.get_name()
         result.guid = str(auth.get_guid())
+        result.oidc_sub_claim = auth.get_oidc_sub_claim()
+        result.email = auth.get_email()
         return result
 
     @staticmethod
@@ -125,6 +127,7 @@ class Translate:
         result.name = auth_avro.name
         result.guid = auth_avro.guid
         result.oidc_sub_claim = auth_avro.oidc_sub_claim
+        result.email = auth_avro.email
         return result
 
     @staticmethod
@@ -267,8 +270,9 @@ class Translate:
     def translate_delegation_to_avro(*, delegation: ABCDelegation) -> DelegationAvro:
         avro_delegation = DelegationAvro()
         avro_delegation.delegation_id = delegation.get_delegation_id()
+        avro_delegation.state = delegation.get_state().value
         avro_delegation.slice = Translate.translate_slice_to_avro(slice_obj=delegation.get_slice_object())
-        if delegation.get_graph() is not None:
+        if delegation.get_graph() is not None and not delegation.is_reclaimed():
             avro_delegation.graph = delegation.get_graph().serialize_graph()
         return avro_delegation
 

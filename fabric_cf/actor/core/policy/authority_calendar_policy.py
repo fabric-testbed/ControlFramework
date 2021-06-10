@@ -26,10 +26,13 @@
 import threading
 import traceback
 from datetime import datetime
+from typing import Tuple
+
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
+from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.authority_policy import AuthorityPolicy
@@ -409,7 +412,8 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
 
-                delegation_name = self.get_delegation_name(delegation_id=requested.get_resources().get_delegation_id())
+                delegation_name, broker_callback = self.get_delegation_name_and_callback(
+                    delegation_id=requested.get_resources().get_delegation_id())
 
                 rset = rc.assign(reservation=reservation, delegation_name=delegation_name,
                                  graph_node=graph_node, existing_reservations=existing_reservations)
@@ -417,6 +421,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                 if rset is None or rset.get_sliver() is None or rset.get_sliver().get_node_map() is None:
                     raise AuthorityException(f"Could not assign resources to reservation# {reservation}")
 
+                reservation.set_broker_callback(broker_callback=broker_callback)
                 return rset
             except Exception as e:
                 self.logger.error(traceback.format_exc())
@@ -561,12 +566,12 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
 
         return existing_reservations
 
-    def get_delegation_name(self, *, delegation_id: str) -> str:
+    def get_delegation_name_and_callback(self, *, delegation_id: str) -> Tuple[str, ABCCallbackProxy]:
         try:
             self.lock.acquire()
             delegation = self.delegations.get(delegation_id, None)
-            if delegation is not None:
-                return delegation.get_delegation_name()
+            if delegation is not None and delegation.is_delegated():
+                return delegation.get_delegation_name(), delegation.get_callback()
         finally:
             self.lock.release()
 

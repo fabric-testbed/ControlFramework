@@ -38,7 +38,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
     def get_unit(self, *, uid: ID):
         result = None
         try:
-            unit_dict = self.db.get_unit(act_id=self.actor_id, unt_uid=str(uid))
+            unit_dict = self.db.get_unit(unt_uid=str(uid))
             if unit_dict is not None:
                 pickled_unit = unit_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
                 return pickle.loads(pickled_unit)
@@ -65,7 +65,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
             res_id = str(u.get_reservation_id())
 
             properties = pickle.dumps(u)
-            self.db.add_unit(act_id=self.actor_id, slc_guid=slice_id, rsv_resid=res_id,
+            self.db.add_unit(slc_guid=slice_id, rsv_resid=res_id,
                              unt_uid=str(u.get_id()), unt_unt_id=parent_id,
                              unt_state=u.get_state().value, properties=properties)
         finally:
@@ -77,7 +77,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
         try:
             self.lock.acquire()
             result = []
-            unit_dict_list = self.db.get_units(act_id=self.actor_id, rsv_resid=str(rid))
+            unit_dict_list = self.db.get_units(rsv_resid=str(rid))
             if unit_dict_list is not None:
                 for u in unit_dict_list:
                     pickled_unit = u.get(Constants.PROPERTY_PICKLE_PROPERTIES)
@@ -103,7 +103,7 @@ class SubstrateActorDatabase(ServerActorDatabase, ABCSubstrateDatabase):
         try:
             self.lock.acquire()
             properties = pickle.dumps(u)
-            self.db.update_unit(act_id=self.actor_id, unt_uid=str(u.get_id()), properties=properties)
+            self.db.update_unit(unt_uid=str(u.get_id()), properties=properties)
         finally:
             if self.lock.locked():
                 self.lock.release()

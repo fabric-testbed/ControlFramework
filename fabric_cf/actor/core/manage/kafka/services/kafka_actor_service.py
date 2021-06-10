@@ -124,7 +124,7 @@ class KafkaActorService(KafkaService):
             if request.slice_id is not None:
                 slice_id = ID(uid=request.slice_id)
             result = mo.get_slices(slice_id=slice_id, caller=auth, id_token=request.get_id_token(),
-                                   slice_name=request.slice_name)
+                                   slice_name=request.slice_name, email=request.get_email())
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -249,10 +249,11 @@ class KafkaActorService(KafkaService):
                         request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
 
                     result = mo.get_reservations(caller=auth, state=request.get_reservation_state(),
-                                                 id_token=request.get_id_token())
+                                                 id_token=request.get_id_token(), email=request.get_email())
 
                 else:
-                    result = mo.get_reservations(caller=auth, id_token=request.get_id_token())
+                    result = mo.get_reservations(caller=auth, id_token=request.get_id_token(),
+                                                 email=request.get_email())
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

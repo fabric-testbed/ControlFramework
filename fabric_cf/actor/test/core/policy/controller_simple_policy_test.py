@@ -43,7 +43,7 @@ from fabric_cf.actor.test.core.policy.controller_test_wrapper import ControllerT
 
 class ControllerSimplePolicyTest(BaseTestCase, unittest.TestCase):
     from fabric_cf.actor.core.container.globals import Globals
-    Globals.config_file = "./config/config.test.yaml"
+    Globals.config_file = "./config/config.orchestrator.yaml"
     Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
 
     from fabric_cf.actor.core.container.globals import GlobalsSingleton

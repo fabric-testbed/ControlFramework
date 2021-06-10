@@ -120,3 +120,6 @@ class AuthorityPolicy(Policy, ABCAuthorityPolicy):
 
     def extend(self, *, reservation: ABCReservationMixin, resources: ResourceSet, term: Term):
         return False
+
+    def reclaim(self, *, delegation: ABCDelegation):
+        return

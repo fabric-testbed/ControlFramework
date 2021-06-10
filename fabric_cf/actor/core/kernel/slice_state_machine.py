@@ -42,6 +42,9 @@ class SliceState(Enum):
     Closing = enum.auto()
     Dead = enum.auto()
 
+    def __str__(self):
+        return self.name
+
 
 class SliceCommand(Enum):
     Create = enum.auto()

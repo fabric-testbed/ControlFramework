@@ -43,7 +43,7 @@ config=$3
 arm=$4
 
 
-mkdir -p $name/pg_data/data $name/pg_data/logs $name/neo4j/data $name/neo4j/imports $name/neo4j/logs $name/pdp/conf $name/pdp/policies
+mkdir -p $name/logs $name/pg_data/data $name/pg_data/logs $name/neo4j/data $name/neo4j/imports $name/neo4j/logs $name/pdp/conf $name/pdp/policies
 echo $neo4jpwd > $name/neo4j/password
 cp broker-yes.xml $name/pdp/policies
 cp env.template $name/.env

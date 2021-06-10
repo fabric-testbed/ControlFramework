@@ -128,16 +128,20 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.invoke_handler(unit=unit, operation=Constants.TARGET_DELETE)
 
     def handler_complete(self, future):
-        self.logger.debug(f"Handler Execution completed Result: {future.result()}")
-        if future.exception() is not None:
-            self.logger.error(f"Exception occurred while executing the handler: {future.exception()}")
-        properties, unit = future.result()
         try:
-            self.lock.acquire()
-            self.futures.remove(future)
-            self.plugin.configuration_complete(token=unit, properties=properties)
+            self.logger.debug(f"Handler Execution completed Result: {future.result()}")
+            if future.exception() is not None:
+                self.logger.error(f"Exception occurred while executing the handler: {future.exception()}")
+            properties, unit = future.result()
+            try:
+                self.lock.acquire()
+                self.futures.remove(future)
+                self.plugin.configuration_complete(token=unit, properties=properties)
+            except Exception as e:
+                self.logger.error(f"Exception occurred {e}")
+                self.logger.error(traceback.format_exc())
+            finally:
+                self.lock.release()
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
-        finally:
-            self.lock.release()

@@ -50,7 +50,7 @@ class ExceptionErrorCode(enum.Enum):
         if msg is None:
             return interpretations[self.value]
         else:
-            return str(msg) + ". " + interpretations[self.value]
+            return interpretations[self.value] + " : " + str(msg)
 
 
 class DelegationNotFoundException(Exception):

@@ -34,7 +34,7 @@ from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErr
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
 from fabric_cf.actor.core.apis.abc_broker_policy_mixin import ABCBrokerPolicyMixin
-from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory, ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_kernel_broker_reservation_mixin import ABCKernelBrokerReservationMixin
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
@@ -535,6 +535,11 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
 
     def set_authority(self, *, authority: ABCAuthorityProxy):
         self.authority = authority
+
+    def update_lease(self, *, incoming: ABCReservationMixin, update_data):
+        self.logger.info(f"Received Update Lease: {incoming} at Broker")
+        # TODO add any processing if needed
+        self.logger.info(f"Do Nothing!")
 
 
 class BrokerReservationFactory:

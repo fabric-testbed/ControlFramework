@@ -234,6 +234,18 @@ class ABCDelegation(ABC):
         """
 
     @abstractmethod
+    def is_delegated(self) -> bool:
+        """
+        Returns true if delegation is delegated; false otherwise
+        """
+
+    @abstractmethod
+    def is_reclaimed(self) -> bool:
+        """
+        Returns true if delegation is reclaimed; false otherwise
+        """
+
+    @abstractmethod
     def is_failed(self) -> bool:
         """
         Returns true if delegation is failed; false otherwise

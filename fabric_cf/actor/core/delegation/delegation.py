@@ -43,7 +43,7 @@ class Delegation(ABCDelegation):
     error_string_prefix = 'error for delegation: {} : {}'
     invalid_state_prefix = "Invalid state for {}. Did you already {} this Delegation?"
 
-    def __init__(self, dlg_graph_id: str, slice_id: ID, delegation_name: str):
+    def __init__(self, dlg_graph_id: str, slice_id: ID, delegation_name: str = None):
         self.dlg_graph_id = dlg_graph_id
         self.slice_id = slice_id
         self.state = DelegationState.Nascent
@@ -71,7 +71,6 @@ class Delegation(ABCDelegation):
         del state['slice_object']
         del state['logger']
         del state['policy']
-        del state['callback']
         return state
 
     def __setstate__(self, state):
@@ -81,13 +80,14 @@ class Delegation(ABCDelegation):
         self.slice_object = None
         self.logger = None
         self.policy = None
-        self.callback = None
 
     def restore(self, actor: ABCActorMixin, slice_obj: ABCSlice):
         self.actor = actor
         self.slice_object = slice_obj
         if actor is not None:
             self.logger = actor.get_logger()
+            if self.callback is not None:
+                self.callback.set_logger(logger=actor.get_logger())
         if actor.get_type() == ActorType.Authority:
             self.graph = FimHelper.get_arm_graph(graph_id=str(self.dlg_graph_id))
 
@@ -191,6 +191,12 @@ class Delegation(ABCDelegation):
 
     def is_closed(self) -> bool:
         return self.state == DelegationState.Closed
+
+    def is_delegated(self) -> bool:
+        return self.state == DelegationState.Delegated
+
+    def is_reclaimed(self) -> bool:
+        return self.state == DelegationState.Reclaimed
 
     def is_failed(self) -> bool:
         return self.state == DelegationState.Failed
@@ -400,10 +406,6 @@ class Delegation(ABCDelegation):
         if self.dlg_graph_id is None:
             self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("graph id")))
             raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("graph id"))
-
-        if self.graph is None:
-            self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("graph")))
-            raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("graph"))
 
     def validate_incoming(self):
         self.validate()

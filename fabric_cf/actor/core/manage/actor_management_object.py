@@ -109,7 +109,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             self.id = actor.get_guid()
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, id_token: str = None,
-                   slice_name: str = None) -> ResultSliceAvro:
+                   slice_name: str = None, email: str = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -119,6 +119,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         else:
             slice_list = None
             user_dn = None
+            user_email = email
             try:
                 if id_token is not None:
                     fabric_token = AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.slice,
@@ -126,6 +127,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                                                               actor_type=self.actor.get_type(),
                                                               resource_id=str(slice_id))
                     user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
+                    user_email = fabric_token.get_decoded_token().get(Constants.CLAIMS_EMAIL, None)
 
                     if user_dn is None:
                         result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
@@ -140,9 +142,12 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                             slice_list = [slice_obj]
 
                     elif slice_name is not None:
-                        slice_list = self.db.get_slice_by_name(slice_name=slice_name, oidc_claim_sub=user_dn)
+                        slice_list = self.db.get_slice_by_name(slice_name=slice_name, oidc_claim_sub=user_dn,
+                                                               email=user_email)
                     elif user_dn is not None:
                         slice_list = self.db.get_slice_by_oidc_claim_sub(oidc_claim_sub=user_dn)
+                    elif user_email is not None:
+                        slice_list = self.db.get_slice_by_email(email=user_email)
                     else:
                         slice_list = self.db.get_slices()
 
@@ -174,6 +179,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         else:
             try:
                 user_dn = None
+                user_email = None
                 if id_token is not None:
                     fabric_token = AccessChecker.check_access(action_id=ActionId.query,
                                                               resource_type=ResourceType.slice,
@@ -181,6 +187,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                                                               actor_type=self.actor.get_type(),
                                                               resource_id=str(slice_obj.slice_name))
                     user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
+                    user_email = fabric_token.get_decoded_token().get(Constants.CLAIMS_EMAIL, None)
 
                     if user_dn is None:
                         result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
@@ -192,6 +199,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.set_description(description=slice_obj.get_description())
                 slice_obj_new.set_owner(owner=self.actor.get_identity())
                 slice_obj_new.get_owner().set_oidc_sub_claim(oidc_sub_claim=user_dn)
+                slice_obj_new.get_owner().set_email(email=user_email)
                 slice_obj_new.set_graph_id(graph_id=slice_obj.graph_id)
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
 
@@ -306,7 +314,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return self.db.get_slice(slice_id=guid)
 
     def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: int = None,
-                         slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None) -> ResultReservationAvro:
+                         slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
+                         email: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -316,13 +325,15 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            user_dn = None
+            user_dn = oidc_claim_sub
+            user_email = email
             if id_token is not None:
                 fabric_token = AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
                                                           token=id_token, logger=self.logger,
                                                           actor_type=self.actor.get_type(),
                                                           resource_id=str(rid))
                 user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
+                user_email = fabric_token.get_decoded_token().get(Constants.CLAIMS_EMAIL, None)
 
                 if user_dn is None:
                     result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
@@ -344,6 +355,13 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     res_list = self.db.get_reservations_by_slice_id(slice_id=slice_id)
                 elif state is not None:
                     res_list = self.db.get_reservations_by_state(state=state)
+                elif user_dn is not None:
+                    res_list = self.db.get_reservations_by_oidc_claim_sub(oidc_claim_sub=user_dn)
+                elif user_email is not None:
+                    if state is None:
+                        res_list = self.db.get_reservations_by_email(email=user_email)
+                    else:
+                        res_list = self.db.get_reservations_by_email_state(email=user_email, state=state)
                 else:
                     res_list = self.db.get_reservations()
             except Exception as e:

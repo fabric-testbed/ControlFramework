@@ -26,6 +26,7 @@
 import time
 
 from fabric_cf.actor.core.apis.abc_controller_policy import ABCControllerPolicy
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceFactory
@@ -74,6 +75,7 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
             if i >= start and (i < (end - 1)):
                 self.assertTrue(r1.is_closed())
                 self.assertTrue(r2.is_closed())
+                self.assertTrue(r2.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
 
     def test_d_nascent(self):
         controller = self.get_controller()
@@ -168,8 +170,12 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
                 self.assertTrue(r1.is_closed())
                 self.assertTrue(r2.is_closed())
                 self.assertTrue(r3.is_closed())
+                self.assertTrue(r2.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
+                self.assertTrue(r3.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
 
             if i > end:
                 self.assertTrue(r1.is_closed())
                 self.assertTrue(r2.is_closed())
                 self.assertTrue(r3.is_closed())
+                self.assertTrue(r2.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
+                self.assertTrue(r3.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))

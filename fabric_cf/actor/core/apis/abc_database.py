@@ -165,7 +165,7 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_reservation(self, *, rid: ID, oidc_claim_sub: str = None) -> ABCReservationMixin:
+    def get_reservation(self, *, rid: ID, oidc_claim_sub: str = None) -> ABCReservationMixin or None:
         """
         Retrieves the specified reservation record.
 
@@ -236,7 +236,7 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_slice(self, *, slice_id: ID) -> ABCSlice:
+    def get_slice(self, *, slice_id: ID) -> ABCSlice or None:
         """
         Retrieves the specified slice record.
 
@@ -248,12 +248,13 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_slice_by_name(self, *, slice_name: str, oidc_claim_sub: str) -> List[ABCSlice]:
+    def get_slice_by_name(self, *, slice_name: str, oidc_claim_sub: str, email: str) -> List[ABCSlice] or None:
         """
         Retrieves the specified slice record.
 
         @param slice_name slice name
         @param oidc_claim_sub User OIDC Sub Claim
+        @param email User email
 
         @return dict of properties
 
@@ -261,7 +262,32 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_slice_by_resource_type(self, *, rtype: ResourceType) -> ABCSlice:
+    def get_slice_by_oidc_claim_sub(self, *, oidc_claim_sub: str) -> List[ABCSlice] or None:
+        """
+        Retrieves the specified slice record.
+
+        @param oidc_claim_sub User OIDC Sub Claim
+        @param email User email
+
+        @return dict of properties
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_slice_by_email(self, *, email: str) -> List[ABCSlice] or None:
+        """
+        Retrieves the specified slice record.
+
+        @param email User email
+
+        @return dict of properties
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def get_slice_by_resource_type(self, *, rtype: ResourceType) -> ABCSlice or None:
         """
         Retrieves the specified slice record.
 
@@ -273,7 +299,7 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_slices(self) -> List[ABCSlice]:
+    def get_slices(self) -> List[ABCSlice] or None:
         """
         Retrieves all slice records.
 
@@ -284,7 +310,7 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_inventory_slices(self) -> List[ABCSlice]:
+    def get_inventory_slices(self) -> List[ABCSlice] or None:
         """
         Retrieves all inventory slice records.
 
@@ -295,7 +321,7 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_client_slices(self) -> List[ABCSlice]:
+    def get_client_slices(self) -> List[ABCSlice] or None:
         """
         Retrieves all client slice records.
 
@@ -401,7 +427,7 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_delegation(self, *, dlg_graph_id: str) -> ABCDelegation:
+    def get_delegation(self, *, dlg_graph_id: str) -> ABCDelegation or None:
         """
         Get Delegation
         @params dlg_graph_id: dlg_graph_id
@@ -437,4 +463,10 @@ class ABCDatabase(ABC):
     def get_config_mappings(self) -> List[ConfigurationMapping]:
         """
         Return all config mappings
+        """
+
+    @abstractmethod
+    def get_brokers(self) -> List[ABCBrokerProxy] or None:
+        """
+        Return all brokers
         """

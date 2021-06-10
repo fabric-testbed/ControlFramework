@@ -29,7 +29,7 @@ from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
-from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
 from fabric_cf.actor.core.apis.abc_rpc_request_state import ABCRPCRequestState
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
@@ -117,5 +117,6 @@ class LocalReturn(LocalProxy, ABCControllerCallbackProxy):
                                                   slice_id=delegation.get_slice_id())
         delegation_new.set_slice_object(slice_object=slice_obj)
         # TODO
-        delegation_new.set_graph(delegation.get_graph())
+        if not delegation.is_reclaimed():
+            delegation_new.set_graph(delegation.get_graph())
         return delegation_new

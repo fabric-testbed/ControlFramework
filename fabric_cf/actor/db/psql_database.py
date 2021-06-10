@@ -240,7 +240,7 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def get_miscellaneous(self, *, name: str) -> dict:
+    def get_miscellaneous(self, *, name: str) -> dict or None:
         """
         Get Miscellaneous entry
         @param name name
@@ -385,11 +385,11 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_slice(self, *, act_id: int, slc_guid: str, slc_name: str, slc_type: int,
-                  slc_resource_type: str, properties, slc_graph_id: str = None, oidc_claim_sub: str = None):
+    def add_slice(self, *, slc_guid: str, slc_name: str, slc_type: int,
+                  slc_resource_type: str, properties, slc_graph_id: str = None, oidc_claim_sub: str = None,
+                  email: str = None):
         """
         Add a slice
-        @param act_id actor id
         @param slc_guid slice id
         @param slc_name slice name
         @param slc_type slice type
@@ -397,10 +397,11 @@ class PsqlDatabase:
         @param properties pickled instance
         @param slc_graph_id slice graph id
         @param oidc_claim_sub User OIDC Sub
+        @param email User Email
         """
         try:
             slc_obj = Slices(slc_guid=slc_guid, slc_name=slc_name, slc_type=slc_type, oidc_claim_sub=oidc_claim_sub,
-                             slc_resource_type=slc_resource_type, properties=properties, slc_act_id=act_id)
+                             email=email, slc_resource_type=slc_resource_type, properties=properties)
             if slc_graph_id is not None:
                 slc_obj.slc_graph_id = slc_graph_id
             with session_scope(self.db_engine) as session:
@@ -409,11 +410,10 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def update_slice(self, *, act_id: int, slc_guid: str, slc_name: str, slc_type: int,
+    def update_slice(self, *, slc_guid: str, slc_name: str, slc_type: int,
                      slc_resource_type: str, properties, slc_graph_id: str = None):
         """
         Update a slice
-        @param act_id actor id
         @param slc_guid slice id
         @param slc_name slice name
         @param slc_type slice type
@@ -423,8 +423,7 @@ class PsqlDatabase:
         """
         try:
             with session_scope(self.db_engine) as session:
-                slc_obj = session.query(Slices).filter(Slices.slc_guid == slc_guid).filter(
-                    Slices.slc_act_id == act_id).first()
+                slc_obj = session.query(Slices).filter(Slices.slc_guid == slc_guid).first()
                 if slc_obj is not None:
                     slc_obj.properties = properties
                     slc_obj.slc_name = slc_name
@@ -460,22 +459,21 @@ class PsqlDatabase:
 
         slice_obj = {'slc_id': row.slc_id, 'slc_guid': row.slc_guid, 'slc_name': row.slc_name,
                      'slc_type': row.slc_type, 'slc_resource_type': row.slc_resource_type,
-                     'properties': row.properties, 'slc_act_id': row.slc_act_id}
+                     'properties': row.properties}
         if row.slc_graph_id is not None:
             slice_obj['slc_graph_id'] = row.slc_graph_id
 
         return slice_obj
 
-    def get_slices(self, *, act_id: int) -> list:
+    def get_slices(self) -> list:
         """
         Get slices for an actor
-        @param act_id actor id
         @return list of slices
         """
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Slices).filter(Slices.slc_act_id == act_id):
+                for row in session.query(Slices):
                     slice_obj = self.generate_slice_dict_from_row(row)
                     result.append(slice_obj.copy())
                     slice_obj.clear()
@@ -484,7 +482,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slice_ids(self, *, act_id: int) -> list:
+    def get_slice_ids(self) -> list:
         """
         Get slice ids for an actor
         @param act_id actor id
@@ -493,25 +491,23 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Slices).filter(Slices.slc_act_id == act_id):
+                for row in session.query(Slices):
                     result.append(row.slc_id)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
         return result
 
-    def get_slice(self, *, act_id: int, slice_guid: str) -> dict:
+    def get_slice(self, *, slice_guid: str) -> dict:
         """
         Get slice for an actor
-        @param act_id actor id
         @param slice_guid slice guid
         @return slice dictionary
         """
         result = {}
         try:
             with session_scope(self.db_engine) as session:
-                slc_obj = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
-                    Slices.slc_guid == slice_guid).first()
+                slc_obj = session.query(Slices).filter(Slices.slc_guid == slice_guid).first()
                 if slc_obj is not None:
                     result = self.generate_slice_dict_from_row(slc_obj)
                 else:
@@ -521,12 +517,12 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slice_by_name(self, *, act_id: int, slice_name: str, oidc_claim_sub: str = None) -> list:
+    def get_slice_by_name(self, *, slice_name: str, oidc_claim_sub: str = None, email: str = None) -> list:
         """
         Get slice for an actor
-        @param act_id actor id
         @param slice_name slice name
         @param oidc_claim_sub User OIDC Sub claim
+        @param email User email
         @return slice dictionary
         """
         result = []
@@ -534,11 +530,12 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 rows = []
                 if oidc_claim_sub is not None:
-                    rows = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
-                        Slices.slc_name == slice_name).filter(Slices.oidc_claim_sub == oidc_claim_sub)
+                    rows = session.query(Slices).filter(Slices.slc_name == slice_name).filter(
+                        Slices.oidc_claim_sub == oidc_claim_sub)
+                elif email is not None:
+                    rows = session.query(Slices).filter(Slices.slc_name == slice_name).filter(Slices.email == email)
                 else:
-                    rows = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
-                        Slices.slc_name == slice_name)
+                    rows = session.query(Slices).filter(Slices.slc_name == slice_name)
                 for row in rows:
                     slice_obj = self.generate_slice_dict_from_row(row)
                     result.append(slice_obj.copy())
@@ -566,17 +563,34 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slice_by_id(self, *, act_id: int, slc_id: int) -> dict:
+    def get_slice_by_email(self, *, email: str) -> list:
+        """
+        Get slice for an user
+        @param email User email
+        @return slice dictionary
+        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Slices).filter(Slices.email == email):
+                    slice_obj = self.generate_slice_dict_from_row(row)
+                    result.append(slice_obj.copy())
+                    slice_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_slice_by_id(self, *, slc_id: int) -> dict:
         """
         Get slice by id for an actor
-        @param act_id actor id
         @param slc_id slice id
         @return slice dictionary
         """
         result = {}
         try:
             with session_scope(self.db_engine) as session:
-                slc_obj = session.query(Slices).filter(Slices.slc_act_id == act_id).filter(Slices.slc_id == slc_id).first()
+                slc_obj = session.query(Slices).filter(Slices.slc_id == slc_id).first()
                 if slc_obj is not None:
                     result = self.generate_slice_dict_from_row(slc_obj)
                 else:
@@ -586,18 +600,16 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slices_by_type(self, *, act_id: int, slc_type: int) -> list:
+    def get_slices_by_type(self, *, slc_type: int) -> list:
         """
         Get slices by type
-        @param act_id actor id
         @param slc_type slice type
         @return list of slices
         """
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
-                        Slices.slc_type == slc_type):
+                for row in session.query(Slices).filter(Slices.slc_type == slc_type):
                     slice_obj = self.generate_slice_dict_from_row(row)
                     result.append(slice_obj.copy())
                     slice_obj.clear()
@@ -606,10 +618,9 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slices_by_types(self, *, act_id: int, slc_type1: int, slc_type2: int):
+    def get_slices_by_types(self, *, slc_type1: int, slc_type2: int):
         """
         Get slices by types
-        @param act_id actor id
         @param slc_type1 slice type1
         @param slc_type2 slice type2
         @return list of slices
@@ -617,7 +628,7 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Slices).filter(Slices.slc_act_id == act_id):
+                for row in session.query(Slices):
                     if row.slc_type == slc_type1 or row.slc_type == slc_type2:
                         slice_obj = self.generate_slice_dict_from_row(row)
                         result.append(slice_obj.copy())
@@ -627,18 +638,16 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_slices_by_resource_type(self, *, act_id: int, slc_resource_type: str) -> list:
+    def get_slices_by_resource_type(self, *, slc_resource_type: str) -> list:
         """
         Get slices by resource type
-        @param act_id actor id
         @param slc_resource_type slice resource type
         @return list of slices
         """
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Slices).filter(Slices.slc_act_id == act_id).filter(
-                        Slices.slc_resource_type == slc_resource_type):
+                for row in session.query(Slices).filter(Slices.slc_resource_type == slc_resource_type):
                     slice_obj = self.generate_slice_dict_from_row(row)
                     result.append(slice_obj.copy())
                     slice_obj.clear()
@@ -647,12 +656,11 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_reservation(self, *, act_id: int, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
+    def add_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                         rsv_pending: int, rsv_joining: int, properties, rsv_graph_node_id: str = None,
-                        oidc_claim_sub: str = None):
+                        oidc_claim_sub: str = None, email: str = None):
         """
         Add a reservation
-        @param act_id actor id
         @param slc_guid slice guid
         @param rsv_resid reservation guid
         @param rsv_category category
@@ -662,12 +670,13 @@ class PsqlDatabase:
         @param properties pickled instance
         @param rsv_graph_node_id graph id
         @param oidc_claim_sub OIDC Sub claim
+        @param email User email
         """
         try:
-            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
+            slc_obj = self.get_slice(slice_guid=slc_guid)
             rsv_obj = Reservations(rsv_slc_id=slc_obj['slc_id'], rsv_resid=rsv_resid, rsv_category=rsv_category,
                                    rsv_state=rsv_state, rsv_pending=rsv_pending, rsv_joining=rsv_joining,
-                                   properties=properties, oidc_claim_sub=oidc_claim_sub)
+                                   properties=properties, oidc_claim_sub=oidc_claim_sub, email=email)
             if rsv_graph_node_id is not None:
                 rsv_obj.rsv_graph_node_id = rsv_graph_node_id
             with session_scope(self.db_engine) as session:
@@ -676,11 +685,10 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def update_reservation(self, *, act_id: int, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
+    def update_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                            rsv_pending: int, rsv_joining: int, properties, rsv_graph_node_id: str = None):
         """
         Update a reservation
-        @param act_id actor id
         @param slc_guid slice guid
         @param rsv_resid reservation guid
         @param rsv_category category
@@ -691,7 +699,7 @@ class PsqlDatabase:
         @param rsv_graph_node_id graph id
         """
         try:
-            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
+            slc_obj = self.get_slice(slice_guid=slc_guid)
             with session_scope(self.db_engine) as session:
                 rsv_obj = session.query(Reservations).filter(Reservations.rsv_slc_id == slc_obj['slc_id']).filter(
                     Reservations.rsv_resid == rsv_resid).first()
@@ -706,7 +714,6 @@ class PsqlDatabase:
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
         except Exception as e:
-            print("Exception occurred while updating reservation {}".format(self.get_slices(act_id=act_id)))
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
@@ -737,7 +744,7 @@ class PsqlDatabase:
 
         return rsv_obj
 
-    def get_reservations(self, *, act_id: int) -> list:
+    def get_reservations(self) -> list:
         """
         Get Reservations for an actor
         @param act_id actor id
@@ -745,9 +752,9 @@ class PsqlDatabase:
         """
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id=act_id)
+            slc_id_list = self.get_slice_ids()
             if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
+                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice"))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(Reservations.rsv_slc_id.in_(slc_id_list)):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
@@ -776,6 +783,24 @@ class PsqlDatabase:
             raise e
         return result
 
+    def get_reservations_by_email(self, *, email: str) -> list:
+        """
+        Get Reservations for an actor
+        @param email User email
+        @return list of reservations
+        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Reservations).filter(Reservations.email == email):
+                    rsv_obj = self.generate_reservation_dict_from_row(row)
+                    result.append(rsv_obj.copy())
+                    rsv_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
     def get_reservations_by_graph_node_id(self, *, graph_node_id: str) -> list:
         """
         Get Reservations by graph_node_id
@@ -794,16 +819,15 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id(self, *, act_id: int, slc_guid: str) -> list:
+    def get_reservations_by_slice_id(self, *, slc_guid: str) -> list:
         """
         Get Reservations by slice id
-        @param act_id actor id
         @param slc_guid slice guid
         @return list of reservations
         """
         result = []
         try:
-            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
+            slc_obj = self.get_slice(slice_guid=slc_guid)
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
@@ -816,7 +840,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_state(self, *, act_id: int, rsv_state: int) -> list:
+    def get_reservations_by_state(self, *, rsv_state: int) -> list:
         """
         Get Reservations for an actor by stats
         @param act_id actor id
@@ -825,12 +849,8 @@ class PsqlDatabase:
         """
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id=act_id)
-            if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(
-                        Reservations.rsv_state == rsv_state).filter(Reservations.rsv_slc_id.in_(slc_id_list)):
+                for row in session.query(Reservations).filter(Reservations.rsv_state == rsv_state):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
@@ -839,17 +859,16 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id_state(self, *, act_id: int, slc_guid: str, rsv_state: int) -> list:
+    def get_reservations_by_slice_id_state(self, *, slc_guid: str, rsv_state: int) -> list:
         """
         Get Reservations for an actor by slice id and state
-        @param act_id actor id
         @param slc_guid slice guid
         @param rsv_state state
         @return list of reservations
         """
         result = []
         try:
-            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
+            slc_obj = self.get_slice(slice_guid=slc_guid)
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
@@ -863,23 +882,38 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_2_category(self, *, act_id: int, rsv_cat1: int, rsv_cat2: int) -> list:
+    def get_reservations_by_email_state(self, *, email: str, rsv_state: int) -> list:
+        """
+        Get Reservations for an actor by slice id and state
+        @param email email
+        @param rsv_state state
+        @return list of reservations
+        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Reservations).filter(Reservations.rsv_state == rsv_state).filter(
+                        Reservations.email == email):
+                    rsv_obj = self.generate_reservation_dict_from_row(row)
+                    result.append(rsv_obj.copy())
+                    rsv_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_reservations_by_2_category(self, *, rsv_cat1: int, rsv_cat2: int) -> list:
         """
         Get Reservations for an actor by categories
-        @param act_id actor id
         @param rsv_cat1 category 1
         @param rsv_cat2 category 2
         @return list of reservations
         """
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id=act_id)
-            if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(
-                        Reservations.rsv_category == rsv_cat1 or Reservations.rsv_category == rsv_cat2).filter(
-                            Reservations.rsv_slc_id.in_(slc_id_list)):
+                        Reservations.rsv_category == rsv_cat1 or Reservations.rsv_category == rsv_cat2):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
@@ -888,22 +922,16 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_category(self, *, act_id: int, rsv_cat: int) -> list:
+    def get_reservations_by_category(self, *, rsv_cat: int) -> list:
         """
         Get Reservations for an actor by category
-        @param act_id actor id
         @param rsv_cat category
         @return list of reservations
         """
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id=act_id)
-            if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(
-                        Reservations.rsv_category == rsv_cat).filter(
-                            Reservations.rsv_slc_id.in_(slc_id_list)):
+                for row in session.query(Reservations).filter(Reservations.rsv_category == rsv_cat):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
@@ -912,11 +940,10 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id_by_2_category(self, *, act_id: int, slc_guid: str, rsv_cat1: int,
+    def get_reservations_by_slice_id_by_2_category(self, *, slc_guid: str, rsv_cat1: int,
                                                    rsv_cat2: int) -> list:
         """
         Get Reservations for an actor by slice id and categories
-        @param act_id actor id
         @param slc_guid slice guid
         @param rsv_cat1 category 1
         @param rsv_cat2 category 2
@@ -924,7 +951,7 @@ class PsqlDatabase:
         """
         result = []
         try:
-            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
+            slc_obj = self.get_slice(slice_guid=slc_guid)
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
@@ -939,17 +966,16 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id_by_category(self, *, act_id: int, slc_guid: str, rsv_cat: int) -> list:
+    def get_reservations_by_slice_id_by_category(self, *, slc_guid: str, rsv_cat: int) -> list:
         """
         Get Reservations for an actor by slice id and category
-        @param act_id actor id
-        @param slc_guid slice guid
+         @param slc_guid slice guid
         @param rsv_cat category
         @return list of reservations
         """
         result = []
         try:
-            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
+            slc_obj = self.get_slice(slice_guid=slc_guid)
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
@@ -963,29 +989,29 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservation(self, *, act_id: int, rsv_resid: str, oidc_claim_sub: str = None) -> dict:
+    def get_reservation(self, *,  rsv_resid: str, oidc_claim_sub: str = None, email: str = None) -> dict:
         """
         Get Reservation for an actor
         @param act_id actor id
         @param rsv_resid reservation guid
         @param oidc_claim_sub oidc claim sub
+        @param email User email
         @return list of reservations
         """
         result = None
         try:
-            slc_id_list = self.get_slice_ids(act_id=act_id)
-            if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
                 rsv_obj = None
-                if oidc_claim_sub is None:
-                    rsv_obj = session.query(Reservations).filter(
-                        Reservations.rsv_resid == rsv_resid).filter(Reservations.rsv_slc_id.in_(slc_id_list)).first()
-                else:
+                if oidc_claim_sub is None and email is None:
+                    rsv_obj = session.query(Reservations).filter(Reservations.rsv_resid == rsv_resid).first()
+                elif oidc_claim_sub is not None:
                     rsv_obj = session.query(Reservations).filter(
                         Reservations.rsv_resid == rsv_resid).filter(
-                        Reservations.oidc_claim_sub == oidc_claim_sub).filter(
-                        Reservations.rsv_slc_id.in_(slc_id_list)).first()
+                        Reservations.oidc_claim_sub == oidc_claim_sub).first()
+                elif email is not None:
+                    rsv_obj = session.query(Reservations).filter(
+                        Reservations.rsv_resid == rsv_resid).filter(
+                        Reservations.email == email).first()
                 if rsv_obj is None:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
                 result = self.generate_reservation_dict_from_row(rsv_obj)
@@ -996,7 +1022,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_rids(self, *, act_id: int, rsv_resid_list: list) -> list:
+    def get_reservations_by_rids(self, *, rsv_resid_list: list) -> list:
         """
         Get Reservations for an actor by reservation ids
         @param act_id actor id
@@ -1005,12 +1031,8 @@ class PsqlDatabase:
         """
         result = []
         try:
-            slc_id_list = self.get_slice_ids(act_id=act_id)
-            if slc_id_list is None or len(slc_id_list) == 0:
-                raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", act_id))
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(
-                        Reservations.rsv_resid.in_(rsv_resid_list)).filter(Reservations.rsv_slc_id.in_(slc_id_list)):
+                for row in session.query(Reservations).filter(Reservations.rsv_resid.in_(rsv_resid_list)):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
@@ -1258,7 +1280,7 @@ class PsqlDatabase:
             raise e
 
     @staticmethod
-    def generate_client_dict_from_row(clt_obj) -> dict:
+    def generate_client_dict_from_row(clt_obj) -> dict or None:
         """
         Generate dictionary representing a client row read from database
         """
@@ -1328,7 +1350,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_unit(self, *, act_id: int, slc_guid: str, rsv_resid: str, unt_uid: str, unt_unt_id: int,
+    def add_unit(self, *, slc_guid: str, rsv_resid: str, unt_uid: str, unt_unt_id: int,
                  unt_state: int, properties):
         """
         Add Unit
@@ -1341,17 +1363,17 @@ class PsqlDatabase:
         @param properties properties
         """
         try:
-            slc_obj = self.get_slice(act_id=act_id, slice_guid=slc_guid)
+            slc_obj = self.get_slice(slice_guid=slc_guid)
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
-            rsv_obj = self.get_reservation(act_id=act_id, rsv_resid=rsv_resid)
+            rsv_obj = self.get_reservation(rsv_resid=rsv_resid)
             if rsv_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
             if slc_obj['slc_id'] != rsv_obj['rsv_slc_id']:
                 raise DatabaseException("Inconsistent Database, slice and reservation do not match Slice:{} "
                                         "Reservation:{}".format(slc_obj, rsv_obj))
 
-            unt_obj = Units(unt_uid=unt_uid, unt_act_id=slc_obj['slc_act_id'],
+            unt_obj = Units(unt_uid=unt_uid,
                             unt_slc_id=rsv_obj['rsv_slc_id'],
                             unt_rsv_id=rsv_obj['rsv_id'],
                             unt_state=unt_state, properties=properties)
@@ -1372,12 +1394,12 @@ class PsqlDatabase:
             return None
 
         result = {'unt_id': row.unt_id, 'unt_uid': row.unt_uid, 'unt_unt_id': row.unt_unt_id,
-                  'unt_act_id': row.unt_act_id, 'unt_slc_id': row.unt_slc_id,
-                  'unt_rsv_id': row.unt_rsv_id, 'unt_state': row.unt_state, 'properties': row.properties}
+                  'unt_slc_id': row.unt_slc_id, 'unt_rsv_id': row.unt_rsv_id, 'unt_state': row.unt_state,
+                  'properties': row.properties}
 
         return result
 
-    def get_unit(self, *, act_id: int, unt_uid: str) -> dict:
+    def get_unit(self, *, unt_uid: str) -> dict or None:
         """
         Get Unit
         @param act_id actor id
@@ -1387,8 +1409,7 @@ class PsqlDatabase:
         result = None
         try:
             with session_scope(self.db_engine) as session:
-                unt_obj = session.query(Units).filter(Units.unt_uid == unt_uid).filter(
-                    Units.unt_act_id == act_id).first()
+                unt_obj = session.query(Units).filter(Units.unt_uid == unt_uid).first()
                 if unt_obj is None:
                     self.logger.error("Unit with guid {} not found".format(unt_uid))
                     return result
@@ -1398,7 +1419,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_units(self, *, act_id: int, rsv_resid: str):
+    def get_units(self, *, rsv_resid: str):
         """
         Get Units
         @param act_id actor id
@@ -1407,7 +1428,7 @@ class PsqlDatabase:
         """
         result = []
         try:
-            rsv_obj = self.get_reservation(act_id=act_id, rsv_resid=rsv_resid)
+            rsv_obj = self.get_reservation(rsv_resid=rsv_resid)
             if rsv_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
 
@@ -1433,18 +1454,16 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def update_unit(self, *, act_id: int, unt_uid: str, properties):
+    def update_unit(self, *, unt_uid: str, properties):
         """
         Add Unit
-        @param act_id actor id
         @param unt_uid unit id
         @param properties properties
         """
         result = None
         try:
             with session_scope(self.db_engine) as session:
-                unt_obj = session.query(Units).filter(Units.unt_uid == unt_uid).filter(
-                    Units.unt_act_id == act_id).first()
+                unt_obj = session.query(Units).filter(Units.unt_uid == unt_uid).first()
                 if unt_obj is None:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Unit", unt_uid))
                 unt_obj.properties = properties
@@ -1534,17 +1553,16 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_delegation(self, *, dlg_act_id: int, dlg_slc_id: int, dlg_graph_id: str, dlg_state: int, properties):
+    def add_delegation(self, *, dlg_slc_id: int, dlg_graph_id: str, dlg_state: int, properties):
         """
         Add delegation
-        @param dlg_act_id actor id
         @param dlg_slc_id slice id
         @param dlg_graph_id graph id
         @param dlg_state state
         @param properties properties
         """
         try:
-            dlg_obj = Delegations(dlg_act_id=dlg_act_id, dlg_slc_id=dlg_slc_id, dlg_graph_id=dlg_graph_id,
+            dlg_obj = Delegations(dlg_slc_id=dlg_slc_id, dlg_graph_id=dlg_graph_id,
                                   dlg_state=dlg_state, properties=properties)
             with session_scope(self.db_engine) as session:
                 session.add(dlg_obj)
@@ -1552,18 +1570,16 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def update_delegation(self, *, dlg_act_id: int, dlg_graph_id: str, dlg_state: int, properties):
+    def update_delegation(self, *, dlg_graph_id: str, dlg_state: int, properties):
         """
         Update delegation
-        @param dlg_act_id actor id
         @param dlg_graph_id graph id
         @param dlg_state state
         @param properties properties
         """
         try:
             with session_scope(self.db_engine) as session:
-                dlg_obj = session.query(Delegations).filter(Delegations.dlg_graph_id == dlg_graph_id).filter(
-                    Delegations.dlg_act_id == dlg_act_id).first()
+                dlg_obj = session.query(Delegations).filter(Delegations.dlg_graph_id == dlg_graph_id).first()
                 if dlg_obj is not None:
                     dlg_obj.dlg_state = dlg_state
                     dlg_obj.properties = properties
@@ -1593,12 +1609,12 @@ class PsqlDatabase:
         if row is None:
             return None
 
-        dlg_obj = {'dlg_id': row.dlg_id, 'dlg_slc_id': row.dlg_slc_id, 'dlg_act_id': row.dlg_act_id,
+        dlg_obj = {'dlg_id': row.dlg_id, 'dlg_slc_id': row.dlg_slc_id,
                    'dlg_graph_id':row.dlg_graph_id, 'dlg_state': row.dlg_state, 'properties': row.properties}
 
         return dlg_obj
 
-    def get_delegations(self, *, dlg_act_id: int, state: int = None) -> list:
+    def get_delegations(self, *, state: int = None) -> list:
         """
         Get delegations
         @param dlg_act_id actor id
@@ -1609,13 +1625,12 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 if state is None:
-                    for row in session.query(Delegations).filter(Delegations.dlg_act_id == dlg_act_id):
+                    for row in session.query(Delegations):
                         dlg_obj = self.generate_delegation_dict_from_row(row)
                         result.append(dlg_obj.copy())
                         dlg_obj.clear()
                 else:
-                    for row in session.query(Delegations).filter(Delegations.dlg_act_id == dlg_act_id).filter(
-                            Delegations.dlg_state == state):
+                    for row in session.query(Delegations).filter(Delegations.dlg_state == state):
                         dlg_obj = self.generate_delegation_dict_from_row(row)
                         result.append(dlg_obj.copy())
                         dlg_obj.clear()
@@ -1624,18 +1639,16 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_delegation(self, *, dlg_act_id: int, dlg_graph_id: str) -> dict:
+    def get_delegation(self, *, dlg_graph_id: str) -> dict:
         """
         Get delegation
-        @param dlg_act_id actor id
         @param dlg_graph_id delegation graph id
         @return delegation
         """
         result = {}
         try:
             with session_scope(self.db_engine) as session:
-                dlg_obj = session.query(Delegations).filter(Delegations.dlg_act_id == dlg_act_id).filter(
-                    Delegations.dlg_graph_id == dlg_graph_id).first()
+                dlg_obj = session.query(Delegations).filter(Delegations.dlg_graph_id == dlg_graph_id).first()
                 if dlg_obj is not None:
                     result = self.generate_delegation_dict_from_row(dlg_obj)
                 else:
@@ -1645,17 +1658,16 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_delegations_by_slice_id(self, *, dlg_act_id: int, slc_guid: str, state: int = None) -> list:
+    def get_delegations_by_slice_id(self, *, slc_guid: str, state: int = None) -> list:
         """
         Get delegations
-        @param dlg_act_id actor id
         @param slc_guid slice id
         @param state delegation state
         @return list of delegations
         """
         result = []
         try:
-            slc_obj = self.get_slice(act_id=dlg_act_id, slice_guid=slc_guid)
+            slc_obj = self.get_slice(slice_guid=slc_guid)
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
@@ -1715,41 +1727,38 @@ def test():
     print("After removing MO by actor {}".format(db.get_manager_objects()))
 
     # Slice operations
-    db.add_slice(act_id=actor_id, slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
+    db.add_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
                  properties=pickle.dumps(prop))
-    print("Slices after add slice {}".format(db.get_slices(act_id=actor_id)))
+    print("Slices after add slice {}".format(db.get_slices()))
     prop['fabric'] = 'testbed'
-    db.update_slice(act_id=actor_id, slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
+    db.update_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
                     properties=pickle.dumps(prop))
-    print("Get slice after update {}".format(db.get_slice(act_id=actor_id, slice_guid="1234")))
+    print("Get slice after update {}".format(db.get_slice(slice_guid="1234")))
 
-    print("Get slice by type after update {}".format(db.get_slices_by_type(act_id=actor_id, slc_type=1)))
-    print("Get slice by type after update {}".format(db.get_slices_by_resource_type(act_id=actor_id,
-                                                                                    slc_resource_type="def")))
+    print("Get slice by type after update {}".format(db.get_slices_by_type(slc_type=1)))
+    print("Get slice by type after update {}".format(db.get_slices_by_resource_type(slc_resource_type="def")))
     db.remove_slice(slc_guid="1234")
-    print("Get all slices {} after delete".format(db.get_slices(act_id=actor_id)))
+    print("Get all slices {} after delete".format(db.get_slices()))
 
     # Reservation operations
-    db.add_slice(act_id=actor_id, slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
+    db.add_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
                  properties=pickle.dumps(prop))
-    print("Get all slices {} after add".format(db.get_slices(act_id=actor_id)))
+    print("Get all slices {} after add".format(db.get_slices()))
     prop['rsv'] = 'test'
-    db.add_reservation(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
+    db.add_reservation(slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
                        rsv_pending=3, rsv_joining=4, properties=pickle.dumps(prop))
-    print("Reservations after add {}".format(db.get_reservations(act_id=actor_id)))
+    print("Reservations after add {}".format(db.get_reservations()))
     prop['update'] = 'test'
-    db.update_reservation(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
+    db.update_reservation(slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
                           rsv_pending=3, rsv_joining=5, properties=pickle.dumps(prop))
-    print("Reservations after update {}".format(db.get_reservations(act_id=actor_id)))
-    print("Reservations after by state {}".format(db.get_reservations_by_slice_id_state(act_id=actor_id,
-                                                                                        slc_guid="1234", rsv_state=2)))
+    print("Reservations after update {}".format(db.get_reservations()))
+    print("Reservations after by state {}".format(db.get_reservations_by_slice_id_state(slc_guid="1234", rsv_state=2)))
 
-    print("Reservations after by rid {}".format(db.get_reservation(act_id=actor_id, rsv_resid="rsv_567")))
-    print("Reservations after by rid list {}".format(db.get_reservations_by_rids(act_id=actor_id,
-                                                                                 rsv_resid_list=["rsv_567"])))
+    print("Reservations after by rid {}".format(db.get_reservation(rsv_resid="rsv_567")))
+    print("Reservations after by rid list {}".format(db.get_reservations_by_rids(rsv_resid_list=["rsv_567"])))
 
     db.remove_reservation(rsv_resid="rsv_567")
-    print("Reservations after delete {}".format(db.get_reservations(act_id=actor_id)))
+    print("Reservations after delete {}".format(db.get_reservations()))
 
     # Proxy operations
     db.add_proxy(act_id=actor_id, prx_name="prx-123", properties=pickle.dumps(prop))
@@ -1781,17 +1790,17 @@ def test():
     print("Clients after remove {}".format(db.get_clients(act_id=actor_id)))
 
     # Unit operations
-    db.add_reservation(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
+    db.add_reservation(slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
                        rsv_pending=3, rsv_joining=4, properties=pickle.dumps(prop))
 
-    db.add_unit(act_id=actor_id, slc_guid="1234", rsv_resid="rsv_567", unt_uid="unt_123", unt_unt_id=None,
+    db.add_unit(slc_guid="1234", rsv_resid="rsv_567", unt_uid="unt_123", unt_unt_id=None,
                 unt_state=2, properties=pickle.dumps(prop))
-    print("Unit after add {}".format(db.get_units(act_id=actor_id, rsv_resid="rsv_567")))
+    print("Unit after add {}".format(db.get_units(rsv_resid="rsv_567")))
     prop['update_unit'] = 'done'
-    db.update_unit(act_id=actor_id, unt_uid="unt_123", properties=pickle.dumps(prop))
-    print("Unit after update {}".format(db.get_unit(act_id=actor_id, unt_uid="unt_123")))
+    db.update_unit(unt_uid="unt_123", properties=pickle.dumps(prop))
+    print("Unit after update {}".format(db.get_unit(unt_uid="unt_123")))
     db.remove_unit(unt_uid="unt_123")
-    print("Unit after remove {}".format(db.get_units(act_id=actor_id, rsv_resid="rsv_567")))
+    print("Unit after remove {}".format(db.get_units(rsv_resid="rsv_567")))
 
     db.remove_reservation(rsv_resid="rsv_567")
     db.reset_db()

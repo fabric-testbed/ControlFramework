@@ -236,7 +236,10 @@ class Constants:
 
     UNSUPPORTED_RESOURCE_TYPE = "Unsupported resource type: {}"
 
+    CLOSURE_BY_TICKET_REVIEW_POLICY = "TicketReviewPolicy: Closing reservation due to failure in slice"
+
     CLAIMS_SUB = "sub"
+    CLAIMS_EMAIL = "email"
 
     PROPERTY_EXCEPTION_MESSAGE = "exception.message"
     PROPERTY_TARGET_NAME = "target.name"

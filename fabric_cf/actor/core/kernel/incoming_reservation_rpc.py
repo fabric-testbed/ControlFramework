@@ -47,7 +47,8 @@ class IncomingReservationRPC(IncomingRPC):
         self.reservation = reservation
         self.update_data = update_data
 
-    def get_reservation(self) -> ABCReservationMixin:
+    #def get_reservation(self) -> ABCReservationMixin:
+    def get(self):
         """
         Get Reservation
         @return reservation
