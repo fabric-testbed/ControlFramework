@@ -37,7 +37,7 @@ from fabric_mb.message_bus.messages.term_avro import TermAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fabric_mb.message_bus.messages.update_data_avro import UpdateDataAvro
 from fabric_mb.message_bus.messages.ticket import Ticket as AvroTicket
-from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.core.ticket import Ticket
@@ -270,6 +270,7 @@ class Translate:
     def translate_delegation_to_avro(*, delegation: ABCDelegation) -> DelegationAvro:
         avro_delegation = DelegationAvro()
         avro_delegation.delegation_id = delegation.get_delegation_id()
+        avro_delegation.state = delegation.get_state().value
         avro_delegation.slice = Translate.translate_slice_to_avro(slice_obj=delegation.get_slice_object())
         if delegation.get_graph() is not None and not delegation.is_reclaimed():
             avro_delegation.graph = delegation.get_graph().serialize_graph()

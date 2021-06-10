@@ -200,7 +200,8 @@ class ManageHelper:
 
         return None, actor.get_last_error()
 
-    def reclaim_delegations(self, *, broker: str, am: str, callback_topic: str, did: str = None, id_token: str = None):
+    def reclaim_delegations(self, *, broker: str, am: str, callback_topic: str, did: str = None,
+                            id_token: str = None) -> bool:
         """
         ReClaim delegations
         @param broker broker name
@@ -228,7 +229,7 @@ class ManageHelper:
                 self.logger.debug("No delegations to be reclaimed from {} by {}:".format(am, broker))
                 return
 
-            reclaimed = False
+            reclaim_failed = False
             for d in delegations:
                 if d.get_slice_object().get_slice_name() == broker:
                     self.logger.debug("Reclaiming Delegation# {}".format(d.get_delegation_id()))
@@ -236,13 +237,13 @@ class ManageHelper:
                                                                     did=d.get_delegation_id(),
                                                                     callback_topic=callback_topic,
                                                                     id_token=id_token)
-                    reclaimed = True
                     if delegation is not None:
-                        self.logger.debug("Delegation claimed: {} ".format(delegation.get_delegation_id()))
+                        self.logger.debug("Delegation reclaimed: {} ".format(delegation.get_delegation_id()))
                     else:
+                        reclaim_failed = True
                         self.print_result(status=error.get_status())
-            if not reclaimed:
-                self.logger.error(f"No delegations found for Broker# {broker}")
+            return not reclaim_failed
         except Exception as e:
             self.logger.error(f"Exception occurred e: {e}")
             self.logger.error(traceback.format_exc())
+        return False
