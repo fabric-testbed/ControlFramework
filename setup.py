@@ -25,10 +25,10 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from setuptools import setup, find_packages
-
+from fabric_cf import __VERSION__
 
 NAME = "fabric-cf"
-VERSION = "0.26"
+VERSION = __VERSION__
 # To install the library, run the following
 #
 # python setup.py install

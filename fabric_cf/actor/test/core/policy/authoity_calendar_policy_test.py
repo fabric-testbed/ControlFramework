@@ -28,7 +28,8 @@ import time
 import unittest
 
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import Capacities
+from fim.slivers.capacities_labels import Capacities, CapacityHints
+from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeType, NodeSliver
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -98,8 +99,13 @@ class AuthorityCalendarPolicyTest(BaseTestCase, unittest.TestCase):
         node_sliver.node_id = "test-slice-node-1"
         cap = Capacities()
         cap.set_fields(core=4, ram=64, disk=500)
+        catalog = InstanceCatalog()
+        instance_type = catalog.map_capacities_to_instance(cap=cap)
+        cap_hints = CapacityHints().set_fields(instance_type=instance_type)
         node_sliver.set_properties(name="node-1", type=NodeType.VM, site="RENC",
-                                   capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+                                   capacities=cap, image_type='qcow2', image_ref='default_centos_8',
+                                   capacity_hints=cap_hints)
+        node_sliver.set_capacity_allocations(cap=catalog.get_instance_capacities(instance_type=instance_type))
         node_map = tuple([self.arm.graph_id, 'HX6VQ53'])
         node_sliver.set_node_map(node_map=node_map)
         return node_sliver

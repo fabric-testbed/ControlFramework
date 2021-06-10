@@ -32,8 +32,9 @@ from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReserva
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
 from fim.graph.slices.neo4j_asm import Neo4jASM
-from fim.slivers.capacities_labels import Labels
-from fim.user.topology import ExperimentTopology
+from fim.slivers.capacities_labels import CapacityHints
+from fim.slivers.instance_catalog import InstanceCatalog
+from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
@@ -128,13 +129,37 @@ class OrchestratorSliceWrapper:
             slivers = []
             for nn_id in slice_graph.get_all_network_nodes():
                 sliver = slice_graph.build_deep_node_sliver(node_id=nn_id)
+
+                self.__validate_node_sliver(sliver=sliver)
+
+                # Compute Requested Capacities from Capacity Hints
+                requested_capacities = sliver.get_capacities()
+                requested_capacity_hints = sliver.get_capacity_hints()
+                catalog = InstanceCatalog()
+                if requested_capacities is None and requested_capacity_hints is not None:
+                    requested_capacities = catalog.get_instance_capacities(
+                        instance_type=requested_capacity_hints.instance_type)
+                    sliver.set_capacities(cap=requested_capacities)
+
+                # Compute Capacity Hints from Requested Capacities
+                if requested_capacity_hints is None and requested_capacities is not None:
+                    instance_type = catalog.map_capacities_to_instance(cap=requested_capacities)
+                    requested_capacity_hints = CapacityHints().set_fields(instance_type=instance_type)
+                    sliver.set_capacity_hints(caphint=requested_capacity_hints)
+
                 slivers.append(sliver)
 
-            self.computed_reservations = self.reservation_converter.get_tickets(slivers=slivers,
-                                                                                slice_id=self.slice_obj.get_slice_id(),
-                                                                                end_time=end_time)
+            self.computed_reservations = self.reservation_converter.compute_reservations(slivers=slivers,
+                                                                                         slice_id=self.slice_obj.get_slice_id(),
+                                                                                         end_time=end_time)
 
             return self.computed_reservations
         except Exception as e:
             self.logger.error("Exception occurred while generating reservations for slivers: {}".format(e))
             raise OrchestratorException(message=f"Failure to build Slivers: {e}")
+
+    @staticmethod
+    def __validate_node_sliver(sliver: NodeSliver):
+        if sliver.get_capacities() is None and sliver.get_capacity_hints() is None:
+            raise OrchestratorException(message="Either Capacity or Capacity Hints must be specified!",
+                                        http_error_code=OrchestratorException.HTTP_BAD_REQUEST)

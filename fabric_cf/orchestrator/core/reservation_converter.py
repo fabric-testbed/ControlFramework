@@ -44,8 +44,8 @@ class ReservationConverter:
         self.controller = controller
         self.broker = broker
 
-    def get_tickets(self, *, slivers: List[NodeSliver], slice_id: str,
-                    end_time: datetime) -> List[TicketReservationAvro]:
+    def compute_reservations(self, *, slivers: List[NodeSliver], slice_id: str,
+                             end_time: datetime) -> List[TicketReservationAvro]:
         """
         Responsible to generate reservations from the slivers; Adds the reservation Orchestrator
         :param slivers list of slivers computed from the ASM (Slice graph)

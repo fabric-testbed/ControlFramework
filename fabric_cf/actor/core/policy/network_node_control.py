@@ -59,9 +59,6 @@ class NetworkNodeControl(ResourceControl):
         """
         self.logger.debug(f"available_capacities: {available_capacities}")
         self.logger.debug(f"requested_capacities: {requested_capacities} for reservation# {rid}")
-        available_core = available_capacities.core
-        available_ram = available_capacities.ram
-        available_disk = available_capacities.disk
 
         # Remove allocated capacities to the reservations
         if existing_reservations is not None:
@@ -77,19 +74,17 @@ class NetworkNodeControl(ResourceControl):
                     resource_sliver = reservation.get_resources().get_sliver()
 
                 if resource_sliver is not None:
-                    self.logger.debug(f"Excluding already allocated resources {resource_sliver.get_capacities()} to "
+                    self.logger.debug(f"Excluding already allocated resources "
+                                      f"{resource_sliver.get_capacity_allocations()} to "
                                       f"reservation# {reservation.get_reservation_id()}")
-                    available_core -= resource_sliver.get_capacities().core
-                    available_ram -= resource_sliver.get_capacities().ram
-                    available_disk -= resource_sliver.get_capacities().disk
+                    # Compare the requested against available
+                    available_capacities = available_capacities - resource_sliver.get_capacity_allocations()
 
         # Compare the requested against available
-        if requested_capacities.core > available_core or requested_capacities.ram > available_ram or \
-                requested_capacities.disk > available_disk:
-            raise AuthorityException(f"Insufficient resources "
-                                  f"Cores: [{requested_capacities.core}/{available_core}] "
-                                  f"RAM: [{requested_capacities.ram}/{available_ram}] "
-                                  f"Disk: [{requested_capacities.disk}/{available_disk}]")
+        available_capacities = available_capacities - requested_capacities
+        negative_fields = available_capacities.negative_fields()
+        if len(negative_fields) > 0:
+            raise AuthorityException(f"Insufficient resources: {negative_fields}")
 
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_node: BaseSliver,
                            existing_reservations: List[ABCReservationMixin]):
@@ -197,13 +192,13 @@ class NetworkNodeControl(ResourceControl):
         if current is None:
             # Check if Capacities can be satisfied by Delegated Capacities
             self.__check_capacities(rid=reservation.get_reservation_id(),
-                                    requested_capacities=requested.get_capacities(),
-                                    available_capacities=delegated_capacity,
+                                    requested_capacities=requested.get_capacity_allocations(),
+                                    available_capacities=available_delegated_capacity,
                                     existing_reservations=existing_reservations)
 
             # Check if Capacities can be satisfied by Capacities
             self.__check_capacities(rid=reservation.get_reservation_id(),
-                                    requested_capacities=requested.get_capacities(),
+                                    requested_capacities=requested.get_capacity_allocations(),
                                     available_capacities=graph_node.get_capacities(),
                                     existing_reservations=existing_reservations)
 
