@@ -75,7 +75,6 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
             if i >= start and (i < (end - 1)):
                 self.assertTrue(r1.is_closed())
                 self.assertTrue(r2.is_closed())
-                self.assertTrue(r1.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
                 self.assertTrue(r2.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
 
     def test_d_nascent(self):
@@ -171,7 +170,6 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
                 self.assertTrue(r1.is_closed())
                 self.assertTrue(r2.is_closed())
                 self.assertTrue(r3.is_closed())
-                self.assertTrue(r1.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
                 self.assertTrue(r2.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
                 self.assertTrue(r3.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
 
@@ -179,6 +177,5 @@ class ControllerTicketReviewPolicyTest(ControllerSimplePolicyTest):
                 self.assertTrue(r1.is_closed())
                 self.assertTrue(r2.is_closed())
                 self.assertTrue(r3.is_closed())
-                self.assertTrue(r1.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
                 self.assertTrue(r2.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
                 self.assertTrue(r3.get_notices().__contains__(Constants.CLOSURE_BY_TICKET_REVIEW_POLICY))
