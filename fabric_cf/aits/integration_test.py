@@ -28,6 +28,7 @@ import time
 import unittest
 from datetime import datetime, timedelta
 
+from fabric_cf.actor.core.apis.abc_delegation import DelegationState
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -77,58 +78,113 @@ class IntegrationTest(unittest.TestCase):
     def test_b1_reclaim_resources(self):
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
-        manage_helper.reclaim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
+
+        # Get AM Delegations
         am_delegations, status = manage_helper.do_get_delegations(actor_name=self.am_name,
                                                                   callback_topic=self.kafka_topic)
         self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(am_delegations)
+
+        # Reclaim Delegations and verify it fails
+        reclaim_status = manage_helper.reclaim_delegations(broker=self.broker_name, am=self.am_name,
+                                                           callback_topic=self.kafka_topic)
+        self.assertEqual(False, reclaim_status)
+
+        # Get Broker Delegations
         broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
                                                                       callback_topic=self.kafka_topic)
+
         self.assertEqual(0, status.get_status().code)
-        self.assertEqual(0, len(broker_delegations))
+        self.assertIsNone(broker_delegations)
 
         KafkaProcessorSingleton.get().stop()
 
     def test_b2_claim_resources(self):
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
+
+        # Claim Delegations
         manage_helper.claim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
+
+        # Get AM Delegations
         am_delegations, status = manage_helper.do_get_delegations(actor_name=self.am_name,
                                                                   callback_topic=self.kafka_topic)
         self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(am_delegations)
+
+        # Get Broker Delegations
         broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
                                                                       callback_topic=self.kafka_topic)
         self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(broker_delegations)
+
+        # Verify AM and Broker Delegations
         self.assertEqual(len(am_delegations), len(broker_delegations))
         ad = am_delegations[0]
         bd = broker_delegations[0]
         self.assertEqual(ad.delegation_id, bd.delegation_id)
         self.assertEqual(ad.slice.slice_name, bd.slice.slice_name)
+
         KafkaProcessorSingleton.get().stop()
 
     def test_b3_reclaim_resources(self):
+        # This test requires the previous test:test_b2_claim_resources to be executed before this
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
-        manage_helper.reclaim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
-        am_delegations, status = manage_helper.do_get_delegations(actor_name=self.am_name,
-                                                                  callback_topic=self.kafka_topic)
-        self.assertEqual(0, status.get_status().code)
-        broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
-                                                                      callback_topic=self.kafka_topic)
-        self.assertEqual(0, status.get_status().code)
-        self.assertEqual(0, len(broker_delegations))
 
-        manage_helper.claim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
+        # Reclaim Delegations
+        reclaim_status = manage_helper.reclaim_delegations(broker=self.broker_name, am=self.am_name,
+                                                           callback_topic=self.kafka_topic)
+
+        # Verify reclaim is successful
+        self.assertEqual(True, reclaim_status)
+        time.sleep(10)
+
+        # Get AM Delegations
         am_delegations, status = manage_helper.do_get_delegations(actor_name=self.am_name,
                                                                   callback_topic=self.kafka_topic)
         self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(am_delegations)
+
+        # Get Broker Delegations
         broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
                                                                       callback_topic=self.kafka_topic)
+
         self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(broker_delegations)
+        self.assertEqual(DelegationState.Reclaimed.value, broker_delegations[0].get_state())
+
         self.assertEqual(len(am_delegations), len(broker_delegations))
         ad = am_delegations[0]
         bd = broker_delegations[0]
         self.assertEqual(ad.delegation_id, bd.delegation_id)
         self.assertEqual(ad.slice.slice_name, bd.slice.slice_name)
+        self.assertEqual(ad.state, bd.state)
+
+        # Claim Delegations
+        manage_helper.claim_delegations(broker=self.broker_name, am=self.am_name, callback_topic=self.kafka_topic)
+        time.sleep(10)
+
+        # Get AM Delegations
+        am_delegations, status = manage_helper.do_get_delegations(actor_name=self.am_name,
+                                                                  callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(am_delegations)
+
+        # Get Broker Delegations
+        broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
+                                                                      callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(broker_delegations)
+        self.assertEqual(DelegationState.Delegated.value, broker_delegations[0].get_state())
+
+        # Verify Broker and AM have same delegations
+        self.assertEqual(len(am_delegations), len(broker_delegations))
+        ad = am_delegations[0]
+        bd = broker_delegations[0]
+        self.assertEqual(ad.delegation_id, bd.delegation_id)
+        self.assertEqual(ad.slice.slice_name, bd.slice.slice_name)
+        self.assertEqual(ad.state, bd.state)
 
         KafkaProcessorSingleton.get().stop()
 
@@ -143,19 +199,24 @@ class IntegrationTest(unittest.TestCase):
         self.assertIsNotNone(json_obj.get(Constants.BROKER_QUERY_MODEL, None))
 
     def build_slice(self, include_components: bool = False, exceed_capacities: bool = False,
-                    exceed_components: bool = False, use_hints: bool = True) -> str:
+                    exceed_components: bool = False, use_hints: bool = False, no_cap: bool = False,
+                    instance_type: str = "fabric.c8.m32.d500") -> str:
         t = fu.ExperimentTopology()
         n1 = t.add_node(name='n1', site='RENC')
-        cap = fu.Capacities()
-        if exceed_capacities:
-            cap.set_fields(core=33, ram=64, disk=500)
-        else:
-            cap.set_fields(core=3, ram=61, disk=499)
 
-        n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n1.set_properties(image_type='qcow2', image_ref='default_centos_8')
 
         n2 = t.add_node(name='n2', site='RENC')
-        n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n2.set_properties(image_type='qcow2', image_ref='default_centos_8')
+
+        if not no_cap:
+            cap = fu.Capacities()
+            if exceed_capacities:
+                cap.set_fields(core=33, ram=64, disk=500)
+            else:
+                cap.set_fields(core=3, ram=61, disk=499)
+            n1.set_properties(capacities=cap)
+            n2.set_properties(capacities=cap)
 
         if include_components:
             n1.add_component(ctype=fu.ComponentType.SmartNIC, model='ConnectX-6', name='nic1')
@@ -168,7 +229,7 @@ class IntegrationTest(unittest.TestCase):
 
         if use_hints:
             cap_hints = fu.CapacityHints()
-            cap_hints.set_fields(instance_type="fabric.c8.m32.d500")
+            cap_hints.set_fields(instance_type=instance_type)
             n1.set_properties(capacity_hints=cap_hints)
             n2.set_properties(capacity_hints=cap_hints)
 
@@ -227,7 +288,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(1)
+            time.sleep(5)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -247,7 +308,7 @@ class IntegrationTest(unittest.TestCase):
         status, response = oh.delete(self.slice_id)
         self.assertEqual(Status.OK, status)
 
-        time.sleep(1)
+        time.sleep(5)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -284,7 +345,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(1)
+            time.sleep(5)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -304,7 +365,7 @@ class IntegrationTest(unittest.TestCase):
         status, response = oh.delete(self.slice_id)
         self.assertEqual(Status.OK, status)
 
-        time.sleep(1)
+        time.sleep(5)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -321,8 +382,17 @@ class IntegrationTest(unittest.TestCase):
 
     def test_f_create_delete_slice_with_instance_type(self):
         # Create Slice
-        slice_graph = self.build_slice(use_hints=True)
+        slice_graph = self.build_slice(no_cap=True)
         oh = OrchestratorHelper()
+
+        # Create Slice with no capacities and hints
+        status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
+        self.assertEqual(Status.FAILURE, status)
+        print(response)
+        self.assertEqual(OrchestratorException.HTTP_BAD_REQUEST, response.status_code)
+
+        # Create Slice with exceeding capacities
+        slice_graph = self.build_slice(use_hints=True, instance_type="fabric.c64.m384.d4000")
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.OK, status)
         self.assertTrue(isinstance(response, list))
@@ -331,12 +401,47 @@ class IntegrationTest(unittest.TestCase):
 
         # Wait for the Slice to be closed
         slice_state = None
+        while slice_state != self.CLOSING:
+            status, slice_obj = oh.slice_status(slice_id=self.slice_id)
+            self.assertEqual(Status.OK, status)
+            self.assertTrue(isinstance(slice_obj, Slice))
+            slice_state = slice_obj.slice_state
+            time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        error_messages = "Insufficient resources : ['core']"
+        for s in slivers:
+            self.assertEqual(s.get_state(), ReservationStates.Closed.name)
+            self.assertIsNone(s.management_ip)
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+            self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
+                                               am_res_state=-1,
+                                               broker_res_state=ReservationStates.Closed.value)
+            status, sliver_status = oh.sliver_status(slice_id=self.slice_id, sliver_id=s.reservation_id)
+
+            self.assertEqual(Status.OK, status)
+            self.assertTrue(sliver_status.get_notices().__contains__(error_messages))
+
+        # Create Slice with capacities and hints
+        slice_graph = self.build_slice(use_hints=True)
+        status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(response, list))
+        self.assertEqual(len(response), 2)
+        self.slice_id = response[0].slice_id
+
+        # Wait for the Slice to be Stable
+        slice_state = None
         while slice_state != self.STABLE_OK:
             status, slice_obj = oh.slice_status(slice_id=self.slice_id)
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(1)
+            time.sleep(5)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -389,7 +494,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(1)
+            time.sleep(5)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)
@@ -437,7 +542,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertEqual(Status.OK, status)
             self.assertTrue(isinstance(slice_obj, Slice))
             slice_state = slice_obj.slice_state
-            time.sleep(1)
+            time.sleep(5)
 
         # check Slivers and verify there states at all 3 actors
         new_time_str_without_seconds = new_time.strftime(self.TIME_FORMAT_IN_SECONDS)
@@ -503,7 +608,7 @@ class IntegrationTest(unittest.TestCase):
         status, response = oh.delete(self.slice_id)
         self.assertEqual(Status.OK, status)
 
-        time.sleep(1)
+        time.sleep(5)
 
         # check Slivers and verify there states at all 3 actors
         status, slivers = oh.slivers(slice_id=self.slice_id)

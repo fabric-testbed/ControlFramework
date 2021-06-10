@@ -154,6 +154,9 @@ class OrchestratorSliceWrapper:
                                                                                          end_time=end_time)
 
             return self.computed_reservations
+        except OrchestratorException as e:
+            self.logger.error("Exception occurred while generating reservations for slivers: {}".format(e))
+            raise e
         except Exception as e:
             self.logger.error("Exception occurred while generating reservations for slivers: {}".format(e))
             raise OrchestratorException(message=f"Failure to build Slivers: {e}")

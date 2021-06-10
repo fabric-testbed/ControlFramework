@@ -553,7 +553,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         except Exception as e:
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
-            reservation.fail(exception=e)
+            reservation.fail(message="", exception=e)
 
     def issue_ticket(self, *, reservation: ABCBrokerReservation, units: int, rtype: ResourceType,
                      term: Term, source: ABCDelegation, sliver: BaseSliver) -> ABCBrokerReservation:
