@@ -36,10 +36,13 @@ from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD,
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
-def resources_get(level: int):  # noqa: E501
+def resources_get(level: int, graph_format):  # noqa: E501
     """Retrieve a listing and description of available resources
 
-    Retrieve a listing and description of available resources # noqa: E501
+    :param level: Level of details
+    :type level: int
+    :param graph_format: Graph format
+    :type graph_format: str
 
 
     :rtype: Success
@@ -49,7 +52,7 @@ def resources_get(level: int):  # noqa: E501
     received_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
     try:
         token = get_token()
-        value = handler.list_resources(token=token, level=level)
+        value = handler.list_resources(token=token, level=level, graph_format=graph_format)
         response = Success()
         response.value = value
         success_counter.labels(GET_METHOD, RESOURCES_PATH).inc()

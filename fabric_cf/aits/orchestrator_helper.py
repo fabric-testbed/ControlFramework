@@ -28,6 +28,7 @@ from datetime import datetime
 from typing import Tuple, Union, List
 
 import requests
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.common.constants import Constants as CFConstants
 from fabric_cf.aits.elements.constants import Constants
@@ -59,9 +60,12 @@ class OrchestratorHelper:
         }
         self.ssh_key = "empty ssh string"
 
-    def resources(self, level: int = 1):
-        url = f"{self.host}/resources?level={level}"
-        return requests.get(url, headers=self.headers, verify=False)
+    def resources(self, level: int = 1, graph_format: GraphFormat = GraphFormat.GRAPHML, token: bool = True):
+        url = f"{self.host}/resources?level={level}&graphFormat={graph_format.name}"
+        headers = self.headers.copy()
+        if not token:
+            headers = {'accept': 'application/json'}
+        return requests.get(url, headers=headers, verify=False)
 
     def create(self, slice_graph: str, slice_name: str,
                lease_end_time: str = None) -> Tuple[Status, Union[List[Reservation], requests.Response]]:
@@ -97,8 +101,9 @@ class OrchestratorHelper:
         else:
             return Status.FAILURE, response
 
-    def slices(self, slice_id: str = None) -> Tuple[Status, Union[List[Slice], str, requests.Response]]:
-        url = f"{self.host}/slices"
+    def slices(self, slice_id: str = None,
+               state: str = "Active") -> Tuple[Status, Union[List[Slice], str, requests.Response]]:
+        url = f"{self.host}/slices?state={state}"
         if slice_id is not None:
             url = f"{self.host}/slices/{slice_id}"
 

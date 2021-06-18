@@ -33,6 +33,7 @@ class OrchestratorException(Exception):
     HTTP_5XX_ERROR = 500
     HTTP_NOT_FOUND = 404
     HTTP_BAD_REQUEST = 400
+    HTTP_UNAUTHORIZED = 401
 
     def __init__(self, message: str, http_error_code: int = HTTP_5XX_ERROR):
         super().__init__(message)

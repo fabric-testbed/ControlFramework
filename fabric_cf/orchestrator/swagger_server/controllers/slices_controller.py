@@ -22,7 +22,6 @@ def slices_create_post(body, slice_name, ssh_key, lease_end_time=None):  # noqa:
 
     :rtype: Success
     """
-
     return rc.slices_create_post(body, slice_name, ssh_key, lease_end_time)
 
 
@@ -39,15 +38,17 @@ def slices_delete_slice_iddelete(slice_id):  # noqa: E501
     return rc.slices_delete_slice_iddelete(slice_id)
 
 
-def slices_get():  # noqa: E501
+def slices_get(state):  # noqa: E501
     """Retrieve a listing of user slices
 
     Retrieve a listing of user slices # noqa: E501
 
+    :param state: Slice state
+    :type state: str
 
     :rtype: Success
     """
-    return rc.slices_get()
+    return rc.slices_get(state)
 
 
 def slices_modify_slice_idput(body, slice_id):  # noqa: E501

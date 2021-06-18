@@ -17,7 +17,8 @@ class TestResourcesController(BaseTestCase):
 
         Retrieve a listing and description of available resources
         """
-        query_string = [('level', 1)]
+        query_string = [('level', 1),
+                        ('graph_format', 'GRAPHML')]
         response = self.client.open(
             '//resources',
             method='GET',

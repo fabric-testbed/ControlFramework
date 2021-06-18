@@ -24,11 +24,6 @@
       "description": "SwaggerHub API Auto Mocking"
     }
   ],
-  "security": [
-    {
-      "bearerAuth": []
-    }
-  ],
   "tags": [
     {
       "name": "slices",
@@ -88,6 +83,23 @@
               "type": "integer",
               "default": 1
             }
+          },
+          {
+            "name": "graphFormat",
+            "in": "query",
+            "description": "Graph format",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "GRAPHML",
+              "enum": [
+                "GRAPHML",
+                "JSON_NODELINK",
+                "CYTOSCAPE"
+              ]
+            }
           }
         ],
         "responses": {
@@ -123,6 +135,25 @@
         ],
         "summary": "Retrieve a listing of user slices",
         "description": "Retrieve a listing of user slices",
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "description": "Slice state",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "Active",
+              "enum": [
+                "Active",
+                "Closed",
+                "All"
+              ]
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -146,7 +177,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slices/{sliceID}": {
@@ -192,7 +228,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slices/status/{sliceID}": {
@@ -238,7 +279,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slices/create": {
@@ -309,7 +355,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slices/redeem/{sliceID}": {
@@ -355,7 +406,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slices/renew/{sliceID}": {
@@ -412,7 +468,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slices/modify/{sliceID}": {
@@ -461,7 +522,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slices/delete/{sliceID}": {
@@ -507,7 +573,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slivers": {
@@ -553,7 +624,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slivers/{sliverID}": {
@@ -610,7 +686,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slivers/status/{sliverID}": {
@@ -667,7 +748,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slivers/poa/{sliverID}": {
@@ -716,7 +802,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     },
     "/slivers/modify/{sliverID}": {
@@ -776,7 +867,12 @@
           "5XX": {
             "description": "Unexpected error"
           }
-        }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
       }
     }
   },
@@ -868,6 +964,40 @@
         "schema": {
           "type": "integer",
           "default": 1
+        }
+      },
+      "graphFormat": {
+        "name": "graphFormat",
+        "in": "query",
+        "description": "Graph format",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "default": "GRAPHML",
+          "enum": [
+            "GRAPHML",
+            "JSON_NODELINK",
+            "CYTOSCAPE"
+          ]
+        }
+      },
+      "state": {
+        "name": "state",
+        "in": "query",
+        "description": "Slice state",
+        "required": true,
+        "style": "form",
+        "explode": true,
+        "schema": {
+          "type": "string",
+          "default": "Active",
+          "enum": [
+            "Active",
+            "Closed",
+            "All"
+          ]
         }
       }
     },

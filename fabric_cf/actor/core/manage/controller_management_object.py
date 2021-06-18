@@ -31,6 +31,8 @@ from typing import TYPE_CHECKING, List
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fim.user import GraphFormat
+
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric_cf.actor.core.manage.client_actor_management_object_helper import ClientActorManagementObjectHelper
@@ -94,8 +96,9 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
         return self.client_helper.add_broker(broker=broker, caller=caller)
 
     def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str,
-                               level: int) -> ResultBrokerQueryModelAvro:
-        return self.client_helper.get_broker_query_model(broker=broker, caller=caller, id_token=id_token, level=level)
+                               level: int, graph_format: GraphFormat) -> ResultBrokerQueryModelAvro:
+        return self.client_helper.get_broker_query_model(broker=broker, caller=caller, id_token=id_token, level=level,
+                                                         graph_format=graph_format)
 
     def add_reservation(self, *, reservation: TicketReservationAvro, caller: AuthToken) -> ResultStringAvro:
         return self.client_helper.add_reservation(reservation=reservation, caller=caller)

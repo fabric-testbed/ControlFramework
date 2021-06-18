@@ -38,6 +38,7 @@ from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.exceptions import ManageException
@@ -109,7 +110,8 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
 
         return rret_val
 
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> BrokerQueryModelAvro:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
+                               graph_format: GraphFormat) -> BrokerQueryModelAvro:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:

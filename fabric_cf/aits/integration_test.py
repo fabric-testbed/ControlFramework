@@ -198,6 +198,17 @@ class IntegrationTest(unittest.TestCase):
         self.assertIsNotNone(json_obj)
         self.assertIsNotNone(json_obj.get(Constants.BROKER_QUERY_MODEL, None))
 
+        response = oh.resources(token=False)
+        self.assertEqual(OrchestratorException.HTTP_UNAUTHORIZED, response.status_code)
+
+        response = oh.resources(graph_format=fu.GraphFormat.JSON_NODELINK, token=False)
+        self.assertEqual(OrchestratorException.HTTP_OK, response.status_code)
+        status = response.json()[self.VALUE][self.STATUS]
+        self.assertEqual(status, self.STATUS_OK)
+        json_obj = response.json()[self.VALUE]
+        self.assertIsNotNone(json_obj)
+        self.assertIsNotNone(json_obj.get(Constants.BROKER_QUERY_MODEL, None))
+
     def build_slice(self, include_components: bool = False, exceed_capacities: bool = False,
                     exceed_components: bool = False, use_hints: bool = False, no_cap: bool = False,
                     instance_type: str = "fabric.c8.m32.d500") -> str:
@@ -476,6 +487,17 @@ class IntegrationTest(unittest.TestCase):
             self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
                                                am_res_state=ReservationStates.Closed.value,
                                                broker_res_state=ReservationStates.Closed.value)
+
+        # Check Slices API
+        status, slices = oh.slices()
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slices, list))
+        self.assertEqual(0, len(slices))
+
+        status, slices = oh.slices(state="All")
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slices, list))
+        self.assertTrue(len(slices) > 0)
 
     def test_g_create_delete_slice_two_vms_with_components_not_available(self):
         # Create Slice

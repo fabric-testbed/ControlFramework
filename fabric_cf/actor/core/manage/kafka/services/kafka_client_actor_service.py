@@ -42,6 +42,7 @@ from fabric_mb.message_bus.messages.demand_reservation_avro import DemandReserva
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.constants import ErrorCodes
@@ -215,7 +216,10 @@ class KafkaClientActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_broker_query_model(broker=ID(uid=request.broker_id), caller=auth, id_token=request.get_id_token())
+            graph_format = GraphFormat(request.graph_format)
+
+            result = mo.get_broker_query_model(broker=ID(uid=request.broker_id), caller=auth,
+                                               id_token=request.get_id_token(), graph_format=graph_format)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

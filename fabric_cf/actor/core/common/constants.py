@@ -112,6 +112,7 @@ class Constants:
     HANDLER = "handler"
     CREDMGR_HOST = "credmgr-host"
     PUBLISH_INTERVAL = "publish-interval"
+    REFRESH_INTERVAL = "refresh-interval"
     DELEGATION = "delegation"
 
     PROPERTY_CLASS_NAME = "ObjectClassName"
@@ -164,6 +165,7 @@ class Constants:
     PROPERTY_CONF_DB_HOST = "db-host"
 
     CONFIG_SECTION_NEO4J = "neo4j"
+    CONFIG_SECTION_BQM = "bqm"
 
     PROPERTY_CONF_MODULE_NAME = 'module'
     PROPERTY_CONF_CLASS_NAME = 'class'
@@ -264,3 +266,6 @@ class Constants:
     DEFAULT_MAX_DURATION = TWO_WEEKS
     RENEW_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
     DEFAULT_LEASE_IN_HOURS = 24
+
+    STATE_ACTIVE = "ACTIVE"
+    STATE_ALL = "ALL"

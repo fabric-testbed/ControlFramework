@@ -33,6 +33,7 @@ from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
@@ -47,7 +48,6 @@ if TYPE_CHECKING:
 
     from fabric_cf.actor.core.manage.management_object import ManagementObject
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
 class LocalController(LocalActor, ABCMgmtControllerMixin):
@@ -81,11 +81,12 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
         return None
 
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> BrokerQueryModelAvro:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
+                               graph_format: GraphFormat) -> BrokerQueryModelAvro:
         self.clear_last()
         try:
             result = self.manager.get_broker_query_model(broker=broker, caller=self.auth, id_token=id_token,
-                                                         level=level)
+                                                         level=level, graph_format=graph_format)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

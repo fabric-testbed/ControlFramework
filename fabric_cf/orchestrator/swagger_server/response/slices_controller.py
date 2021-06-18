@@ -89,10 +89,13 @@ def slices_delete_slice_iddelete(slice_id):  # noqa: E501
         return str(e), INTERNAL_SERVER_ERROR
 
 
-def slices_get():  # noqa: E501
+def slices_get(state):  # noqa: E501
     """Retrieve a listing of user slices
 
     Retrieve a listing of user slices # noqa: E501
+
+    :param state: Slice state
+    :type state: str
 
 
     :rtype: Success
@@ -102,7 +105,7 @@ def slices_get():  # noqa: E501
     received_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
     try:
         token = get_token()
-        value = handler.get_slices(token=token)
+        value = handler.get_slices(token=token, state=state)
         response = Success()
         response.value = value
         success_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()

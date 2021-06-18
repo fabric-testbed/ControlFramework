@@ -15,8 +15,6 @@ servers:
   description: local development
 - url: https://virtserver.swaggerhub.com/kthare10/orchestrator/1.0.0
   description: SwaggerHub API Auto Mocking
-security:
-- bearerAuth: []
 tags:
 - name: slices
   description: Slices in FABRIC
@@ -59,6 +57,19 @@ paths:
         schema:
           type: integer
           default: 1
+      - name: graphFormat
+        in: query
+        description: Graph format
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - GRAPHML
+          - JSON_NODELINK
+          - CYTOSCAPE
+          default: GRAPHML
       responses:
         "200":
           description: OK
@@ -82,6 +93,20 @@ paths:
       summary: Retrieve a listing of user slices
       description: Retrieve a listing of user slices
       operationId: slices_get
+      parameters:
+      - name: state
+        in: query
+        description: Slice state
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - Active
+          - Closed
+          - All
+          default: Active
       responses:
         "200":
           description: OK
@@ -97,6 +122,8 @@ paths:
           description: Slice(s) not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
   /slices/{sliceID}:
     get:
@@ -129,6 +156,8 @@ paths:
           description: A Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
   /slices/status/{sliceID}:
     get:
@@ -162,6 +191,8 @@ paths:
           description: A Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
   /slices/create:
     post:
@@ -220,6 +251,8 @@ paths:
           description: A Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
   /slices/redeem/{sliceID}:
     post:
@@ -253,6 +286,8 @@ paths:
           description: A Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
   /slices/renew/{sliceID}:
     post:
@@ -294,6 +329,8 @@ paths:
           description: A Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
   /slices/modify/{sliceID}:
     put:
@@ -329,6 +366,8 @@ paths:
           description: A Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
   /slices/delete/{sliceID}:
     delete:
@@ -362,6 +401,8 @@ paths:
           description: A Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slices_controller
   /slivers:
     get:
@@ -394,6 +435,8 @@ paths:
           description: Sliver(s) not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
   /slivers/{sliverID}:
     get:
@@ -434,6 +477,8 @@ paths:
           description: A Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
   /slivers/status/{sliverID}:
     get:
@@ -475,6 +520,8 @@ paths:
           description: A Sliver/Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
   /slivers/poa/{sliverID}:
     post:
@@ -511,6 +558,8 @@ paths:
           description: A Sliver/Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
   /slivers/modify/{sliverID}:
     put:
@@ -554,6 +603,8 @@ paths:
           description: A Slice with the specified ID was not found
         "5XX":
           description: Unexpected error
+      security:
+      - bearerAuth: []
       x-openapi-router-controller: fabric_cf.orchestrator.swagger_server.controllers.slivers_controller
 components:
   schemas:
@@ -630,6 +681,34 @@ components:
       schema:
         type: integer
         default: 1
+    graphFormat:
+      name: graphFormat
+      in: query
+      description: Graph format
+      required: true
+      style: form
+      explode: true
+      schema:
+        type: string
+        enum:
+        - GRAPHML
+        - JSON_NODELINK
+        - CYTOSCAPE
+        default: GRAPHML
+    state:
+      name: state
+      in: query
+      description: Slice state
+      required: true
+      style: form
+      explode: true
+      schema:
+        type: string
+        enum:
+        - Active
+        - Closed
+        - All
+        default: Active
   requestBodies:
     Request:
       content:

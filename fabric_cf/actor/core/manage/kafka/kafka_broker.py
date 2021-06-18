@@ -44,6 +44,7 @@ from fabric_mb.message_bus.messages.reclaim_resources_avro import ReclaimResourc
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -296,7 +297,8 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
 
         return rret_val
 
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> BrokerQueryModelAvro:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
+                               graph_format: GraphFormat) -> BrokerQueryModelAvro:
         self.clear_last()
         status = ResultAvro()
         rret_val = None
@@ -310,6 +312,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
             request.callback_topic = self.callback_topic
             request.broker_id = str(broker)
             request.level = level
+            request.graph_format = graph_format.value
 
             ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
 
