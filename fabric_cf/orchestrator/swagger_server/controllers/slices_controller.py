@@ -11,7 +11,7 @@ def slices_create_post(body, slice_name, ssh_key, lease_end_time=None):  # noqa:
 
     Request to create slice as described in the request. Request would be a graph ML describing the requested resources. Resources may be requested to be created now or in future. On success, one or more slivers are allocated, containing resources satisfying the request, and assigned to the given slice. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke get slice API to get the latest state of the requested resources.   # noqa: E501
 
-    :param body: 
+    :param body:
     :type body: dict | bytes
     :param slice_name: Slice Name
     :type slice_name: str
@@ -56,7 +56,7 @@ def slices_modify_slice_idput(body, slice_id):  # noqa: E501
 
     Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice.  # noqa: E501
 
-    :param body: 
+    :param body:
     :type body: dict | bytes
     :param slice_id: Slice identifier as UUID
     :type slice_id: str

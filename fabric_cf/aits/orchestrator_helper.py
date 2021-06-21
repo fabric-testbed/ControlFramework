@@ -60,11 +60,13 @@ class OrchestratorHelper:
         }
         self.ssh_key = "empty ssh string"
 
-    def resources(self, level: int = 1, graph_format: GraphFormat = GraphFormat.GRAPHML, token: bool = True):
-        url = f"{self.host}/resources?level={level}&graphFormat={graph_format.name}"
-        headers = self.headers.copy()
-        if not token:
-            headers = {'accept': 'application/json'}
+    def resources(self, level: int = 1):
+        url = f"{self.host}/resources?level={level}"
+        return requests.get(url, headers=self.headers, verify=False)
+
+    def portal_resources(self, graph_format: GraphFormat = GraphFormat.JSON_NODELINK):
+        url = f"{self.host}/portalresources?graphFormat={graph_format.name}"
+        headers = {'accept': 'application/json'}
         return requests.get(url, headers=headers, verify=False)
 
     def create(self, slice_graph: str, slice_name: str,

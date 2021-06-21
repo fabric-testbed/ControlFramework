@@ -75,6 +75,10 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
         self.assertEqual("Resource(s) not found!", response.json())
 
+        response = oh.portal_resources()
+        self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
+        self.assertEqual("Resource(s) not found!", response.json())
+
     def test_b1_reclaim_resources(self):
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
@@ -198,10 +202,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertIsNotNone(json_obj)
         self.assertIsNotNone(json_obj.get(Constants.BROKER_QUERY_MODEL, None))
 
-        response = oh.resources(token=False)
-        self.assertEqual(OrchestratorException.HTTP_UNAUTHORIZED, response.status_code)
-
-        response = oh.resources(graph_format=fu.GraphFormat.JSON_NODELINK, token=False)
+        response = oh.portal_resources()
         self.assertEqual(OrchestratorException.HTTP_OK, response.status_code)
         status = response.json()[self.VALUE][self.STATUS]
         self.assertEqual(status, self.STATUS_OK)

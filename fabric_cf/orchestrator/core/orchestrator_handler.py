@@ -97,7 +97,7 @@ class OrchestratorHandler:
 
         return None
 
-    def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str,
+    def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, delete_graph: bool = True,
                                     ignore_validation: bool = True,
                                     graph_format: GraphFormat = GraphFormat.GRAPHML) -> Tuple[str, Any]:
@@ -121,18 +121,19 @@ class OrchestratorHandler:
         if model is None:
             raise OrchestratorException(f"Could not discover types: {controller.get_last_error()}")
 
-        graph_ml = model.get_model()
-        if graph_format != GraphFormat.GRAPHML:
-            return graph_ml, None
+        graph_str = model.get_model()
 
         try:
-            if graph_ml is not None and graph_ml != '':
-                graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=graph_ml,
-                                                                         ignore_validation=ignore_validation)
-                if delete_graph:
-                    FimHelper.delete_graph(graph_id=graph.get_graph_id())
-                    graph = None
-                return graph_ml, graph
+            if graph_str is not None and graph_str != '':
+                graph = None
+                # Load graph only when GraphML
+                if graph_format == GraphFormat.GRAPHML:
+                    graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=graph_str,
+                                                                             ignore_validation=ignore_validation)
+                    if delete_graph:
+                        FimHelper.delete_graph(graph_id=graph.get_graph_id())
+                        graph = None
+                return graph_str, graph
             else:
                 raise OrchestratorException(http_error_code=OrchestratorException.HTTP_NOT_FOUND,
                                             message="Resource(s) not found!")
@@ -140,12 +141,11 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             raise e
 
-    def list_resources(self, *, token: str, level: int, graph_format: str) -> dict:
+    def list_resources(self, *, token: str, level: int) -> dict:
         """
         List Resources
         :param token Fabric Identity Token
         :param level: level of details (default set to 1)
-        :param graph_format: Graph format
         :raises Raises an exception in case of failure
         :returns Broker Query Model on success
         """
@@ -153,27 +153,47 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
-            broker_query_model = None
-            g_format = self.__translate_graph_format(graph_format=graph_format)
-            if g_format == GraphFormat.JSON_NODELINK:
-                saved_bqm = self.controller_state.get_saved_bqm(graph_format=g_format)
-                if saved_bqm is not None and not saved_bqm.can_refresh():
-                    broker_query_model = saved_bqm.get_bqm()
-            else:
-                if token is None:
-                    raise OrchestratorException(message="No authorization token provided",
-                                                http_error_code=OrchestratorException.HTTP_UNAUTHORIZED)
-
-            if broker_query_model is None:
-                broker_query_model, graph = self.discover_broker_query_model(controller=controller, token=token,
-                                                                             level=level, ignore_validation=True,
-                                                                             graph_format=g_format)
+            broker_query_model, graph = self.discover_broker_query_model(controller=controller, token=token,
+                                                                         level=level, ignore_validation=True)
 
             return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing list_resources e: {e}")
+            raise e
+
+    def portal_list_resources(self, *, graph_format_str: str) -> dict:
+        """
+        List Resources
+        :param graph_format_str: Graph format
+        :raises Raises an exception in case of failure
+        :returns Broker Query Model on success
+        """
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"portal_list_resources invoked controller:{controller}")
+
+            broker_query_model = None
+            graph_format = self.__translate_graph_format(graph_format=graph_format_str)
+
+            saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
+            if saved_bqm is not None and not saved_bqm.can_refresh():
+                broker_query_model = saved_bqm.get_bqm()
+
+            if broker_query_model is None:
+                broker_query_model, graph = self.discover_broker_query_model(controller=controller,
+                                                                             ignore_validation=True,
+                                                                             level=1,
+                                                                             graph_format=graph_format)
+                if broker_query_model is not None:
+                    self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format)
+
+            return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing portal_list_resources e: {e}")
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
@@ -385,7 +405,7 @@ class OrchestratorHandler:
         Get User Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
-=       :raises Raises an exception in case of failure
+        :raises Raises an exception in case of failure
         :returns Slice Graph on success
         """
         try:

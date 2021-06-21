@@ -30,6 +30,7 @@ PUT_METHOD = 'put'
 DELETE_METHOD = 'delete'
 
 RESOURCES_PATH = '/resources'
+PORTAL_RESOURCES_PATH = '/portalresources'
 
 SLICES_CREATE_PATH = '/slices/create'
 SLICES_DELETE_PATH = '/slices/delete'
