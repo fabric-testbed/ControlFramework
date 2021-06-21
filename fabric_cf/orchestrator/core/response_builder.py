@@ -122,11 +122,13 @@ class ResponseBuilder:
         return response
 
     @staticmethod
-    def get_slice_summary(*, slice_list: List[SliceAvro], slice_id: str = None) -> dict:
+    def get_slice_summary(*, slice_list: List[SliceAvro], slice_id: str = None,
+                          slice_states: List[SliceState] = None) -> dict:
         """
         Get slice summary
         :param slice_list:
         :param slice_id:
+        :param slice_states:
         :return:
         """
         slices = []
@@ -136,7 +138,7 @@ class ResponseBuilder:
         if slice_list is not None:
             for s in slice_list:
                 slice_state = SliceState(s.get_state())
-                if slice_id is None and (slice_state == SliceState.Dead or slice_state == SliceState.Closing):
+                if slice_id is None and slice_states is not None and slice_state not in slice_states:
                     continue
                 s_dict = {ResponseBuilder.PROP_SLICE_ID: s.get_slice_id(),
                           ResponseBuilder.PROP_SLICE_NAME: s.get_slice_name(),

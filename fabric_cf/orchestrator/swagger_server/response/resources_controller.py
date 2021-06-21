@@ -23,23 +23,50 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import traceback
-
-import connexion
-import six
-
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
-from fabric_cf.orchestrator.swagger_server import util, received_counter, success_counter, failure_counter
-from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, RESOURCES_PATH
+from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
+from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, RESOURCES_PATH, PORTAL_RESOURCES_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
+
+
+def portalresources_get(graph_format):  # noqa: E501
+    """Retrieve a listing and description of available resources for portal
+
+    Retrieve a listing and description of available resources for portal # noqa: E501
+
+    :param graph_format: Graph format
+    :type graph_format: str
+
+    :rtype: Success
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
+    try:
+        value = handler.portal_list_resources(graph_format_str=graph_format)
+        response = Success()
+        response.value = value
+        success_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
+        return response
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
+        return str(e), e.get_http_error_code()
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
+        return str(e), 500
 
 
 def resources_get(level: int):  # noqa: E501
     """Retrieve a listing and description of available resources
 
-    Retrieve a listing and description of available resources # noqa: E501
+    :param level: Level of details
+    :type level: int
+    :param graph_format: Graph format
+    :type graph_format: str
 
 
     :rtype: Success

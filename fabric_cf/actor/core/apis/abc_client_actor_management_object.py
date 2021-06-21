@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, List
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fim.user import GraphFormat
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
@@ -115,13 +116,14 @@ class ABCClientActorManagementObject(ABC):
 
     @abstractmethod
     def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str,
-                               level: int) -> ResultBrokerQueryModelAvro:
+                               level: int, graph_format: GraphFormat) -> ResultBrokerQueryModelAvro:
         """
         Get Pool Info
         @param broker : broker ID
         @param caller: caller
         @param id_token: str
         @param level: level of details
+        @param graph_format: Graph Format
         @return pool information
         """
 

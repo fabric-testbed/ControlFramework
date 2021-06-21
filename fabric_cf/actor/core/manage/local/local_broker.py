@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, List
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
@@ -79,11 +80,13 @@ class LocalBroker(LocalServerActor, ABCMgmtBrokerMixin):
 
         return None
 
-    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int) -> BrokerQueryModelAvro:
+    def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
+                               graph_format: GraphFormat) -> BrokerQueryModelAvro:
         self.clear_last()
         try:
             result = self.manager.get_broker_query_model(broker=broker, caller=self.auth, level=level,
-                                                         id_token=id_token, ignore_broker_check=True)
+                                                         id_token=id_token, ignore_broker_check=True,
+                                                         graph_format=graph_format)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

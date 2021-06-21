@@ -66,8 +66,8 @@ class GlobalConfig:
             self.pdp = config[Constants.CONFIG_SECTION_PDP]
 
         self.bqm = {}
-        if Constants.BROKER_QUERY_MODEL in config:
-            self.bqm = config[Constants.BROKER_QUERY_MODEL]
+        if Constants.CONFIG_SECTION_BQM in config:
+            self.bqm = config[Constants.CONFIG_SECTION_BQM]
 
     def get_runtime(self) -> dict:
         """

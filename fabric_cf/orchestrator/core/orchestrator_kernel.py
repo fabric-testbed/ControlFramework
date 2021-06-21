@@ -25,9 +25,13 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 
+from fim.user import GraphFormat
+
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.orchestrator.core.bqm_wrapper import BqmWrapper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_status_update_thread import ReservationStatusUpdateThread
 from fabric_cf.orchestrator.core.slice_defer_thread import SliceDeferThread
@@ -45,6 +49,34 @@ class OrchestratorKernel:
         self.broker = None
         self.logger = None
         self.controller = None
+        self.lock = threading.Lock()
+        self.bqm_cache = {}
+        
+    def get_saved_bqm(self, *, graph_format: GraphFormat) -> BqmWrapper:
+        """
+        Get Saved BQM from cache
+        """
+        try:
+            self.lock.acquire()
+            saved_bqm = self.bqm_cache.get(graph_format, None)
+            return saved_bqm
+        finally:
+            self.lock.release()
+
+    def save_bqm(self, *, bqm: str, graph_format: GraphFormat):
+        try:
+            self.lock.acquire()
+            saved_bqm = self.bqm_cache.get(graph_format, None)
+            if saved_bqm is None:
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                refresh_interval = GlobalsSingleton.get().get_config().get_global_config().get_bqm_config().get(
+                    Constants.REFRESH_INTERVAL, None)
+                saved_bqm = BqmWrapper()
+                saved_bqm.set_refresh_interval(refresh_interval=refresh_interval)
+            saved_bqm.save(bqm=bqm, graph_format=graph_format)
+            self.bqm_cache[graph_format] = saved_bqm
+        finally:
+            self.lock.release()
 
     def set_broker(self, *, broker: ID):
         """

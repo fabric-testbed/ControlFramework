@@ -25,10 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 from datetime import datetime, timedelta
-from typing import Tuple
+from typing import Tuple, List, Any
 
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -96,9 +97,10 @@ class OrchestratorHandler:
 
         return None
 
-    def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str,
+    def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, delete_graph: bool = True,
-                                    ignore_validation: bool = True) -> Tuple[str, Neo4jCBMGraph]:
+                                    ignore_validation: bool = True,
+                                    graph_format: GraphFormat = GraphFormat.GRAPHML) -> Tuple[str, Any]:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
@@ -106,25 +108,32 @@ class OrchestratorHandler:
         :param level: level of details
         :param delete_graph flag indicating if the loaded graph should be deleted or not
         :param ignore_validation flag indicating to ignore validating the graph (only needed for ADs)
-        :return tuple of dictionary containing the BQM and fim graph (if delete_graph = False)
+        :param graph_format: Graph format
+        :return tuple of dictionary containing the BQM and Neo4jCBMGraph (if delete_graph = False)
         """
         broker = self.get_broker(controller=controller)
         if broker is None:
             raise OrchestratorException("Unable to determine broker proxy for this controller. "
                                         "Please check Orchestrator container configuration and logs.")
 
-        model = controller.get_broker_query_model(broker=broker, id_token=token, level=level)
+        model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
+                                                  graph_format=graph_format)
         if model is None:
             raise OrchestratorException(f"Could not discover types: {controller.get_last_error()}")
 
-        graph_ml = model.get_model()
+        graph_str = model.get_model()
+
         try:
-            if graph_ml is not None and graph_ml != '':
-                graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=graph_ml,
-                                                                         ignore_validation=ignore_validation)
-                if delete_graph:
-                    FimHelper.delete_graph(graph_id=graph.get_graph_id())
-                return graph_ml, graph
+            if graph_str is not None and graph_str != '':
+                graph = None
+                # Load graph only when GraphML
+                if graph_format == GraphFormat.GRAPHML:
+                    graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=graph_str,
+                                                                             ignore_validation=ignore_validation)
+                    if delete_graph:
+                        FimHelper.delete_graph(graph_id=graph.get_graph_id())
+                        graph = None
+                return graph_str, graph
             else:
                 raise OrchestratorException(http_error_code=OrchestratorException.HTTP_NOT_FOUND,
                                             message="Resource(s) not found!")
@@ -152,6 +161,39 @@ class OrchestratorHandler:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing list_resources e: {e}")
+            raise e
+
+    def portal_list_resources(self, *, graph_format_str: str) -> dict:
+        """
+        List Resources
+        :param graph_format_str: Graph format
+        :raises Raises an exception in case of failure
+        :returns Broker Query Model on success
+        """
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"portal_list_resources invoked controller:{controller}")
+
+            broker_query_model = None
+            graph_format = self.__translate_graph_format(graph_format=graph_format_str)
+
+            saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
+            if saved_bqm is not None and not saved_bqm.can_refresh():
+                broker_query_model = saved_bqm.get_bqm()
+
+            if broker_query_model is None:
+                broker_query_model, graph = self.discover_broker_query_model(controller=controller,
+                                                                             ignore_validation=True,
+                                                                             level=1,
+                                                                             graph_format=graph_format)
+                if broker_query_model is not None:
+                    self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format)
+
+            return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
+
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing portal_list_resources e: {e}")
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
@@ -285,11 +327,12 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")
             raise e
 
-    def get_slices(self, *, token: str, slice_id: str = None) -> dict:
+    def get_slices(self, *, token: str, slice_id: str = None, state: str = None) -> dict:
         """
         Get User Slices
         :param token Fabric Identity Token
         :param slice_id Slice Id
+        :param state Slice state
 =       :raises Raises an exception in case of failure
         :returns List of Slices on success
         """
@@ -301,6 +344,8 @@ class OrchestratorHandler:
             if slice_id is not None:
                 slice_guid = ID(uid=slice_id)
 
+            slice_states = self.__translate_slice_state(state=state)
+
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
             if slice_list is None or len(slice_list) == 0:
                 if controller.get_last_error() is not None:
@@ -308,7 +353,8 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"User# has no Slices",
                                             http_error_code=OrchestratorException.HTTP_NOT_FOUND)
 
-            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id)
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
+                                                     slice_states=slice_states)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slices e: {e}")
@@ -359,7 +405,7 @@ class OrchestratorHandler:
         Get User Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
-=       :raises Raises an exception in case of failure
+        :raises Raises an exception in case of failure
         :returns Slice Graph on success
         """
         try:
@@ -488,3 +534,35 @@ class OrchestratorHandler:
             new_end_time = now + Constants.DEFAULT_MAX_DURATION
 
         return new_end_time
+
+    @staticmethod
+    def __translate_graph_format(*, graph_format: str) -> GraphFormat:
+        if graph_format == GraphFormat.GRAPHML.name:
+            return GraphFormat.GRAPHML
+        elif graph_format == GraphFormat.JSON_NODELINK.name:
+            return GraphFormat.JSON_NODELINK
+        elif graph_format == GraphFormat.CYTOSCAPE.name:
+            return GraphFormat.CYTOSCAPE
+        else:
+            return GraphFormat.GRAPHML
+
+    @staticmethod
+    def __translate_slice_state(*, state: str) -> List[SliceState]:
+        ret_val = []
+        if state is not None:
+            if state.upper() == SliceState.Dead.name.upper():
+                ret_val.append(SliceState.Dead)
+            elif state.upper() == Constants.STATE_ACTIVE:
+                ret_val.append(SliceState.StableOK)
+                ret_val.append(SliceState.StableError)
+            elif state.upper() == Constants.STATE_ALL:
+                ret_val.append(SliceState.StableOK)
+                ret_val.append(SliceState.StableError)
+                ret_val.append(SliceState.Dead)
+                ret_val.append(SliceState.Closing)
+                ret_val.append(SliceState.Configuring)
+                ret_val.append(SliceState.Nascent)
+        if len(ret_val) == 0:
+            ret_val.append(SliceState.StableOK)
+            ret_val.append(SliceState.StableError)
+        return ret_val

@@ -28,6 +28,7 @@ from datetime import datetime
 from typing import Tuple, Union, List
 
 import requests
+from fim.user import GraphFormat
 
 from fabric_cf.actor.core.common.constants import Constants as CFConstants
 from fabric_cf.aits.elements.constants import Constants
@@ -63,6 +64,11 @@ class OrchestratorHelper:
         url = f"{self.host}/resources?level={level}"
         return requests.get(url, headers=self.headers, verify=False)
 
+    def portal_resources(self, graph_format: GraphFormat = GraphFormat.JSON_NODELINK):
+        url = f"{self.host}/portalresources?graphFormat={graph_format.name}"
+        headers = {'accept': 'application/json'}
+        return requests.get(url, headers=headers, verify=False)
+
     def create(self, slice_graph: str, slice_name: str,
                lease_end_time: str = None) -> Tuple[Status, Union[List[Reservation], requests.Response]]:
         if lease_end_time is None:
@@ -97,8 +103,9 @@ class OrchestratorHelper:
         else:
             return Status.FAILURE, response
 
-    def slices(self, slice_id: str = None) -> Tuple[Status, Union[List[Slice], str, requests.Response]]:
-        url = f"{self.host}/slices"
+    def slices(self, slice_id: str = None,
+               state: str = "Active") -> Tuple[Status, Union[List[Slice], str, requests.Response]]:
+        url = f"{self.host}/slices?state={state}"
         if slice_id is not None:
             url = f"{self.host}/slices/{slice_id}"
 

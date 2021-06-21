@@ -75,6 +75,10 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
         self.assertEqual("Resource(s) not found!", response.json())
 
+        response = oh.portal_resources()
+        self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
+        self.assertEqual("Resource(s) not found!", response.json())
+
     def test_b1_reclaim_resources(self):
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
@@ -191,6 +195,14 @@ class IntegrationTest(unittest.TestCase):
     def test_c_list_resources(self):
         oh = OrchestratorHelper()
         response = oh.resources()
+        self.assertEqual(OrchestratorException.HTTP_OK, response.status_code)
+        status = response.json()[self.VALUE][self.STATUS]
+        self.assertEqual(status, self.STATUS_OK)
+        json_obj = response.json()[self.VALUE]
+        self.assertIsNotNone(json_obj)
+        self.assertIsNotNone(json_obj.get(Constants.BROKER_QUERY_MODEL, None))
+
+        response = oh.portal_resources()
         self.assertEqual(OrchestratorException.HTTP_OK, response.status_code)
         status = response.json()[self.VALUE][self.STATUS]
         self.assertEqual(status, self.STATUS_OK)
@@ -476,6 +488,17 @@ class IntegrationTest(unittest.TestCase):
             self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
                                                am_res_state=ReservationStates.Closed.value,
                                                broker_res_state=ReservationStates.Closed.value)
+
+        # Check Slices API
+        status, slices = oh.slices()
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slices, list))
+        self.assertEqual(0, len(slices))
+
+        status, slices = oh.slices(state="All")
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slices, list))
+        self.assertTrue(len(slices) > 0)
 
     def test_g_create_delete_slice_two_vms_with_components_not_available(self):
         # Create Slice
