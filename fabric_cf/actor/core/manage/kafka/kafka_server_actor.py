@@ -83,56 +83,14 @@ class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
         return None
 
     def get_inventory_slices(self, *, id_token: str = None) -> List[SliceAvro]:
-        self.clear_last()
+        request = GetReservationsRequestAvro()
+        request = self.fill_request_by_id_message(request=request, id_token=id_token)
+        request.type = SliceTypes.InventorySlice.name
+        status, response = self.send_request(request)
 
-        status = ResultAvro()
-        rret_val = None
-
-        try:
-            request = GetSlicesRequestAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.callback_topic = self.callback_topic
-            request.message_id = str(ID())
-            request.type = SliceTypes.InventorySlice.name
-            request.id_token = id_token
-
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
-
-            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
-
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
-
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = message_wrapper.response.slices
-
-            else:
-                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
-                    request.name, self.kafka_topic))
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.interpret()
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
+        if status.code == 0:
+            return response.slices
+        return None
 
     def get_client_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         request = GetSlicesRequestAvro()

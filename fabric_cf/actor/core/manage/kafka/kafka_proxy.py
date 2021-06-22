@@ -26,11 +26,13 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING, List, Tuple, Any
+from typing import List, Tuple, Any
 
 from fabric_mb.message_bus.messages.message import IMessageAvro
 from fabric_mb.message_bus.messages.request_by_id_record import RequestByIdRecord
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fabric_mb.message_bus.messages.auth_avro import AuthAvro
+from fabric_mb.message_bus.producer import AvroProducerApi
 
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
@@ -38,11 +40,7 @@ from fabric_cf.actor.core.manage.error import Error
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
 from fabric_cf.actor.core.manage.kafka.kafka_mgmt_message_processor import KafkaMgmtMessageProcessor
 from fabric_cf.actor.core.manage.messages.protocol_proxy_mng import ProtocolProxyMng
-
-if TYPE_CHECKING:
-    from fabric_mb.message_bus.messages.auth_avro import AuthAvro
-    from fabric_mb.message_bus.producer import AvroProducerApi
-    from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.id import ID
 
 
 class KafkaProxy(ABCComponent):
