@@ -103,7 +103,7 @@ class Globals:
         log = logging.getLogger(log_config.get(Constants.PROPERTY_CONF_LOGGER, None))
         log.setLevel(log_level)
         log_format = \
-            '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s:%(thread)d] - %(levelname)s - %(message)s'
+            '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
 
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
