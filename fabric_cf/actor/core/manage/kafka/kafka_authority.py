@@ -42,9 +42,9 @@ from fabric_cf.actor.core.util.id import ID
 class KafkaAuthority(KafkaServerActor, ABCMgmtAuthority):
     def get_authority_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token)
         request.reservation_type = ReservationCategory.Authority.name
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.reservations
@@ -52,8 +52,8 @@ class KafkaAuthority(KafkaServerActor, ABCMgmtAuthority):
 
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         request = GetReservationUnitsRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token, rid=rid)
-        status, response = self.__send_request(request)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token, rid=rid)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.units
@@ -61,8 +61,8 @@ class KafkaAuthority(KafkaServerActor, ABCMgmtAuthority):
 
     def get_reservation_unit(self, *, uid: ID, id_token: str = None) -> UnitAvro:
         request = GetUnitRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token, rid=uid)
-        status, response = self.__send_request(request)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token, rid=uid)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.units

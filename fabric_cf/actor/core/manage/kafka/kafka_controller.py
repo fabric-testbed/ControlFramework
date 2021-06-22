@@ -59,9 +59,9 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
 
     def get_brokers(self, *, broker: ID = None, id_token: str = None) -> List[ProxyAvro]:
         request = GetActorsRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token, broker_id=broker)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token, broker_id=broker)
         request.type = ActorType.Broker.name
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.proxies
@@ -79,8 +79,8 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
 
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
         request = GetReservationUnitsRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token, rid=rid)
-        status, response = self.__send_request(request)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token, rid=rid)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.units

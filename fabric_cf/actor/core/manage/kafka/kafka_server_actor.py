@@ -54,9 +54,9 @@ if TYPE_CHECKING:
 class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
     def get_broker_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token)
         request.reservation_type = ReservationCategory.Broker.name
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.reservations
@@ -64,9 +64,9 @@ class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
 
     def get_inventory_reservations(self, *, slice_id: ID = None, id_token: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token)
         request.reservation_type = ReservationCategory.Inventory.name
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.reservations
@@ -74,9 +74,9 @@ class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
 
     def get_client_reservations(self, *, slice_id: ID = None, id_token: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token)
         request.reservation_type = ReservationCategory.Client.name
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.reservations
@@ -136,10 +136,10 @@ class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
 
     def get_client_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         request = GetSlicesRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token)
         request.type = SliceTypes.ClientSlice.name
 
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
         if response is not None:
             return response.slices
 
@@ -154,7 +154,7 @@ class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
         request.message_id = str(ID())
         request.slice_obj = slice_mng
 
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             ret_val = ID(uid=response.get_result())

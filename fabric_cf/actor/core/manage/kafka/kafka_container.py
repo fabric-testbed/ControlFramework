@@ -50,9 +50,9 @@ class KafkaContainer(KafkaProxy, ABCMgmtContainer):
 
     def do_get_actors(self, *, type: int) -> List[ActorAvro]:
         request = GetActorsRequestAvro()
-        request = self.__fill_request_by_id_message(request=request)
+        request = self.fill_request_by_id_message(request=request)
         request.type = type
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.actors

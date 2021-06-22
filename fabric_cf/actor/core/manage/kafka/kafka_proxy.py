@@ -92,9 +92,9 @@ class KafkaProxy(ABCComponent):
     def get_type_id(self) -> str:
         raise ManageException("Not implemented")
 
-    def __fill_request_by_id_message(self, request: RequestByIdRecord, id_token: str = None, email: str = None,
-                                     slice_id: ID = None, slice_name: str = None, reservation_state: int = None,
-                                     rid: ID = None, delegation_id: str = None, broker_id: ID = None):
+    def fill_request_by_id_message(self, request: RequestByIdRecord, id_token: str = None, email: str = None,
+                                   slice_id: ID = None, slice_name: str = None, reservation_state: int = None,
+                                   rid: ID = None, delegation_id: str = None, broker_id: ID = None):
         request.guid = str(self.management_id)
         request.auth = self.auth
         request.callback_topic = self.callback_topic
@@ -113,7 +113,7 @@ class KafkaProxy(ABCComponent):
 
         return request
 
-    def __send_request(self, request: IMessageAvro) -> Tuple[ResultAvro, Any]:
+    def send_request(self, request: IMessageAvro) -> Tuple[ResultAvro, Any]:
         self.clear_last()
 
         status = ResultAvro()

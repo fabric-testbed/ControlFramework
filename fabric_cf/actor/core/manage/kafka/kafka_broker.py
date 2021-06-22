@@ -59,7 +59,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.message_id = str(ID())
         request.callback_topic = self.callback_topic
         request.reservation_obj = reservation
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.result_str
@@ -71,7 +71,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.message_id = str(ID())
         request.callback_topic = self.callback_topic
         request.reservation_list = reservations
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.result
@@ -85,7 +85,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.message_id = str(ID())
         request.callback_topic = self.callback_topic
         request.reservation_obj = reservation
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         return status.code == 0
 
@@ -96,14 +96,14 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.message_id = str(ID())
         request.callback_topic = self.callback_topic
         request.reservation_id = str(rid)
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         return status.code == 0
 
     def get_brokers(self, *, broker: ID = None, id_token: str = None) -> List[ProxyAvro]:
         request = GetActorsRequestAvro()
-        request = self.__fill_request_by_id_message(request=request, id_token=id_token, broker_id=broker)
-        status, response = self.__send_request(request)
+        request = self.fill_request_by_id_message(request=request, id_token=id_token, broker_id=broker)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.proxies
@@ -120,7 +120,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.broker_id = str(broker)
         request.level = level
         request.graph_format = graph_format.value
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0:
             return response.model
@@ -135,7 +135,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.rid = str(reservation)
         request.new_units = Constants.EXTEND_SAME_UNITS
 
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         return status.code == 0
 
@@ -150,7 +150,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.callback_topic = self.callback_topic
         request.id_token = id_token
 
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0 and response.delegations is not None and len(response.delegations) > 0:
             return next(iter(response.delegations))
@@ -167,7 +167,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.callback_topic = self.callback_topic
         request.id_token = id_token
 
-        status, response = self.__send_request(request)
+        status, response = self.send_request(request)
 
         if status.code == 0 and response.delegations is not None and len(response.delegations) > 0:
             return next(iter(response.delegations))
