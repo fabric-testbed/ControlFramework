@@ -277,7 +277,7 @@ class PdpAuth:
 
     def check_access(self, *, fabric_token: dict, actor_type: ActorType,
                      action_id: ActionId, resource_type: ResourceType,
-                     resource_id: str = None) -> bool:
+                     resource_id: str = None):
         """
         Check Access
         @param fabric_token fabric token
@@ -285,12 +285,11 @@ class PdpAuth:
         @param action_id action id
         @param resource_type resource type
         @param resource_id resource id
-        @return true for success and failure otherwise
         @raises PdpAuthException in case of denied access or failure
         """
         if not self.config['enable']:
             self.logger.debug("Skipping PDP Authorization check as configured")
-            return True
+            return
 
         pdp_request = self.build_pdp_request(fabric_token=fabric_token, actor_type=actor_type,
                                              action_id=action_id, resource_type=resource_type, resource_id=resource_id)
@@ -305,7 +304,6 @@ class PdpAuth:
         if response.json()["Response"][0]["Decision"] == "Permit":
             if self.logger is not None:
                 self.logger.debug("PDP response: {}".format(response.json()))
-            return True
         else:
             if self.logger is not None:
                 self.logger.debug("PDP response: {}".format(response.json()))

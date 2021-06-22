@@ -72,9 +72,6 @@ class KafkaProxy(Proxy, ABCCallbackProxy):
         self.logger = logger
         self.proxy_type = Constants.PROTOCOL_KAFKA
         self.type = self.TypeDefault
-        '''
-        self.producer = self.create_kafka_producer()
-        '''
 
     def __getstate__(self):
         state = self.__dict__.copy()

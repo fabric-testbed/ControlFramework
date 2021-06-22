@@ -424,9 +424,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             inv = self.inventory.get(resource_type=resource_type)
 
             if inv is not None:
-                if term is None:
-                    term = Term(start=start, end=end)
-
+                term = Term(start=start, end=end)
                 return self.ticket_inventory(reservation=reservation, inv=inv, term=term,
                                              node_id_to_reservations=node_id_to_reservations)
             else:

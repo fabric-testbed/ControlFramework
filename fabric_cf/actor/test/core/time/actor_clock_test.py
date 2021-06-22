@@ -90,7 +90,6 @@ class ActorClockTest(unittest.TestCase):
             end += length
 
     def test_misc(self):
-        offset = 1000
         length = 10
         clock = self._get_clock(1000, 10)
 
