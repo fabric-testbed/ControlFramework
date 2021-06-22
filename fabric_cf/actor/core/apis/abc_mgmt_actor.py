@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None,
-                   email: str = None) -> List[SliceAvro]:
+                   email: str = None) -> List[SliceAvro] or None:
         """
         Obtains all slices.
         @param id_token id token

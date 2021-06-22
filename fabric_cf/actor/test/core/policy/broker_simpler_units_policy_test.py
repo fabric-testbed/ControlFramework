@@ -506,7 +506,6 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         broker.external_tick(cycle=cycle)
         cycle += 1
 
-        units = 1
         start = clock.cycle_start_date(cycle=self.DonateStartCycle)
         end = clock.cycle_end_date(cycle=self.DonateEndCycle - 1)
         sliver = self.build_sliver_with_components()

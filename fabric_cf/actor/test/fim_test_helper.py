@@ -24,9 +24,6 @@ class FimTestHelper:
         site_ads = ['../../../neo4j/RENCI-ad.graphml', '../../../neo4j/UKY-ad.graphml',
                     '../../../neo4j/LBNL-ad.graphml', '../../../neo4j/Network-ad.graphml']
 
-        cbm = Neo4jCBMGraph(importer=FimTestHelper.n4j_imp)
-
-        adm_ids = dict()
         result = []
 
         for ad in site_ads:

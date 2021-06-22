@@ -53,156 +53,34 @@ if TYPE_CHECKING:
 
 class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
     def get_broker_reservations(self, *, id_token: str = None) -> List[ReservationMng]:
-        self.clear_last()
-        status = ResultAvro()
-        rret_val = None
+        request = GetReservationsRequestAvro()
+        request = self.__fill_request_by_id_message(request=request, id_token=id_token)
+        request.reservation_type = ReservationCategory.Broker.name
+        status, response = self.__send_request(request)
 
-        try:
-            request = GetReservationsRequestAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.message_id = str(ID())
-            request.callback_topic = self.callback_topic
-            request.type = ReservationCategory.Broker.name
-            request.id_token = id_token
-
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
-
-            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
-
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
-
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = message_wrapper.response.reservations
-            else:
-                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
-                    request.name, self.kafka_topic))
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.interpret()
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
+        if status.code == 0:
+            return response.reservations
+        return None
 
     def get_inventory_reservations(self, *, slice_id: ID = None, id_token: str = None) -> List[ReservationMng]:
-        self.clear_last()
-        status = ResultAvro()
-        rret_val = None
+        request = GetReservationsRequestAvro()
+        request = self.__fill_request_by_id_message(request=request, id_token=id_token)
+        request.reservation_type = ReservationCategory.Inventory.name
+        status, response = self.__send_request(request)
 
-        try:
-            request = GetReservationsRequestAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.message_id = str(ID())
-            request.callback_topic = self.callback_topic
-            request.type = ReservationCategory.Inventory.name
-            request.id_token = None
-            request.slice_id = slice_id
-
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
-
-            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
-
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
-
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = message_wrapper.response.reservations
-            else:
-                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
-                    request.name, self.kafka_topic))
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.interpret()
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
+        if status.code == 0:
+            return response.reservations
+        return None
 
     def get_client_reservations(self, *, slice_id: ID = None, id_token: str = None) -> List[ReservationMng]:
-        self.clear_last()
-        status = ResultAvro()
-        rret_val = None
+        request = GetReservationsRequestAvro()
+        request = self.__fill_request_by_id_message(request=request, id_token=id_token)
+        request.reservation_type = ReservationCategory.Client.name
+        status, response = self.__send_request(request)
 
-        try:
-            request = GetReservationsRequestAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.message_id = str(ID())
-            request.callback_topic = self.callback_topic
-            request.type = ReservationCategory.Client.name
-            request.id_token = None
-            request.slice_id = slice_id
-
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
-
-            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
-
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
-
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = message_wrapper.response.reservations
-            else:
-                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
-                    request.name, self.kafka_topic))
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.interpret()
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
+        if status.code == 0:
+            return response.reservations
+        return None
 
     def get_inventory_slices(self, *, id_token: str = None) -> List[SliceAvro]:
         self.clear_last()
@@ -257,104 +135,31 @@ class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
         return rret_val
 
     def get_client_slices(self, *, id_token: str = None) -> List[SliceAvro]:
-        self.clear_last()
+        request = GetSlicesRequestAvro()
+        request = self.__fill_request_by_id_message(request=request, id_token=id_token)
+        request.type = SliceTypes.ClientSlice.name
 
-        status = ResultAvro()
-        rret_val = None
+        status, response = self.__send_request(request)
+        if response is not None:
+            return response.slices
 
-        try:
-            request = GetSlicesRequestAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.callback_topic = self.callback_topic
-            request.message_id = str(ID())
-            request.type = SliceTypes.ClientSlice.name
-            request.id_token = id_token
-
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
-
-            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
-
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
-
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = message_wrapper.response.slices
-
-            else:
-                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
-                    request.name, self.kafka_topic))
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.interpret()
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
+        return None
 
     def add_client_slice(self, *, slice_mng: SliceAvro) -> ID:
-        rret_val = None
-        self.clear_last()
-        status = ResultAvro()
+        ret_val = None
+        request = AddSliceAvro()
+        request.guid = str(self.management_id)
+        request.auth = self.auth
+        request.callback_topic = self.callback_topic
+        request.message_id = str(ID())
+        request.slice_obj = slice_mng
 
-        try:
-            request = AddSliceAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.callback_topic = self.callback_topic
-            request.message_id = str(ID())
-            request.slice_obj = slice_mng
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
+        status, response = self.__send_request(request)
 
-            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
+        if status.code == 0:
+            ret_val = ID(uid=response.get_result())
 
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
-
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = ID(uid=message_wrapper.response.get_result())
-            else:
-                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
-                    request.name, self.kafka_topic))
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.interpret()
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
+        return ret_val
 
     def advertise_resources(self, *, delegation: ABCPropertyGraph, delegation_name: str, client: AuthToken) -> ID:
         raise ManageException(Constants.NOT_IMPLEMENTED)

@@ -30,7 +30,6 @@ from typing import List
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.actor_avro import ActorAvro
 from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
 
 from fabric_cf.actor.core.apis.abc_mgmt_authority import ABCMgmtAuthority
 from fabric_cf.actor.core.apis.abc_mgmt_broker_mixin import ABCMgmtBrokerMixin
@@ -39,7 +38,7 @@ from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
 from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
 from fabric_cf.actor.core.apis.abc_mgmt_container import ABCMgmtContainer
-from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.kafka.kafka_proxy import KafkaProxy
 from fabric_cf.actor.core.util.id import ID
@@ -50,53 +49,14 @@ class KafkaContainer(KafkaProxy, ABCMgmtContainer):
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def do_get_actors(self, *, type: int) -> List[ActorAvro]:
-        self.clear_last()
-        status = ResultAvro()
-        rret_val = None
+        request = GetActorsRequestAvro()
+        request = self.__fill_request_by_id_message(request=request)
+        request.type = type
+        status, response = self.__send_request(request)
 
-        try:
-            request = GetActorsRequestAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.message_id = str(ID())
-            request.callback_topic = self.callback_topic
-            request.type = type
-
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
-
-            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
-
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
-
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = message_wrapper.response.actors
-            else:
-                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
-                    request.name, self.kafka_topic))
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.interpret()
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
+        if status.code == 0:
+            return response.actors
+        return None
 
     def get_actor(self, *, guid: ID) -> ABCMgmtActor:
         raise ManageException(Constants.NOT_IMPLEMENTED)

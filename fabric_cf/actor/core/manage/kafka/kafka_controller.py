@@ -25,7 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import traceback
 from datetime import datetime
 from typing import List
 
@@ -36,14 +35,13 @@ from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryMo
 from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
-from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.util.id import ID
 
@@ -60,55 +58,14 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_brokers(self, *, broker: ID = None, id_token: str = None) -> List[ProxyAvro]:
-        self.clear_last()
-        status = ResultAvro()
-        rret_val = None
+        request = GetActorsRequestAvro()
+        request = self.__fill_request_by_id_message(request=request, id_token=id_token, broker_id=broker)
+        request.type = ActorType.Broker.name
+        status, response = self.__send_request(request)
 
-        try:
-            request = GetActorsRequestAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.message_id = str(ID())
-            request.callback_topic = self.callback_topic
-            request.type = ActorType.Broker.name
-            request.id_token = id_token
-            request.broker_id = broker
-
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
-
-            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
-
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
-
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = message_wrapper.response.proxies
-            else:
-                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
-                    request.name, self.kafka_topic))
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.interpret()
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
+        if status.code == 0:
+            return response.proxies
+        return None
 
     def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
                                graph_format: GraphFormat) -> BrokerQueryModelAvro:
@@ -121,54 +78,13 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:
-        self.clear_last()
-        status = ResultAvro()
-        rret_val = None
+        request = GetReservationUnitsRequestAvro()
+        request = self.__fill_request_by_id_message(request=request, id_token=id_token, rid=rid)
+        status, response = self.__send_request(request)
 
-        try:
-            request = GetReservationUnitsRequestAvro()
-            request.guid = str(self.management_id)
-            request.auth = self.auth
-            request.message_id = str(ID())
-            request.callback_topic = self.callback_topic
-            request.reservation_id = str(rid)
-            request.id_token = id_token
-
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
-
-            self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.name, self.kafka_topic))
-
-            if ret_val:
-                message_wrapper = self.message_processor.add_message(message=request)
-
-                with message_wrapper.condition:
-                    message_wrapper.condition.wait(Constants.MANAGEMENT_API_TIMEOUT_IN_SECONDS)
-
-                if not message_wrapper.done:
-                    self.logger.debug(Constants.MANAGEMENT_API_TIMEOUT_OCCURRED)
-                    self.message_processor.remove_message(msg_id=request.get_message_id())
-                    status.code = ErrorCodes.ErrorTransportTimeout.value
-                    status.message = ErrorCodes.ErrorTransportTimeout.interpret()
-                else:
-                    self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_INBOUND_MESSAGE.format(message_wrapper.response))
-                    status = message_wrapper.response.status
-                    if status.code == 0:
-                        rret_val = message_wrapper.response.units
-            else:
-                self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_MESSAGE_FAILED.format(
-                    request.name, self.kafka_topic))
-                status.code = ErrorCodes.ErrorTransportFailure.value
-                status.message = ErrorCodes.ErrorTransportFailure.interpret()
-
-        except Exception as e:
-            self.last_exception = e
-            status.code = ErrorCodes.ErrorInternalError.value
-            status.message = ErrorCodes.ErrorInternalError.interpret(exception=e)
-            status.details = traceback.format_exc()
-
-        self.last_status = status
-
-        return rret_val
+        if status.code == 0:
+            return response.units
+        return None
 
     def add_reservation(self, *, reservation: TicketReservationAvro) -> ID:
         raise ManageException(Constants.NOT_IMPLEMENTED)
