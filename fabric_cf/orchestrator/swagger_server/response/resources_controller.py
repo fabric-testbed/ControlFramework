@@ -23,6 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from http.client import INTERNAL_SERVER_ERROR
+
+from fss_utils.http_errors import cors_response
+
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
@@ -53,11 +57,11 @@ def portalresources_get(graph_format):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
-        return str(e), e.get_http_error_code()
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
-        return str(e), 500
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
 
 
 def resources_get(level: int):  # noqa: E501
@@ -84,9 +88,9 @@ def resources_get(level: int):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
-        return str(e), e.get_http_error_code()
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
-        return str(e), 500
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
 

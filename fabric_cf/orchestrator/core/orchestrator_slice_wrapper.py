@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 from datetime import datetime
+from http.client import BAD_REQUEST
 from typing import List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -165,4 +166,4 @@ class OrchestratorSliceWrapper:
     def __validate_node_sliver(sliver: NodeSliver):
         if sliver.get_capacities() is None and sliver.get_capacity_hints() is None:
             raise OrchestratorException(message="Either Capacity or Capacity Hints must be specified!",
-                                        http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+                                        http_error_code=BAD_REQUEST)

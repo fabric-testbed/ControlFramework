@@ -1,5 +1,8 @@
+from http.client import INTERNAL_SERVER_ERROR
+
 import connexion
 import six
+from fss_utils.http_errors import cors_response
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
@@ -33,11 +36,11 @@ def slivers_get(slice_id):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
-        return str(e), e.get_http_error_code()
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
-        return str(e), 500
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
 
 
 def slivers_modify_sliver_idput(body, sliver_id, slice_id):  # noqa: E501
@@ -105,11 +108,11 @@ def slivers_sliver_idget(slice_id, sliver_id):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
-        return str(e), e.get_http_error_code()
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
-        return str(e), 500
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
 
 
 def slivers_status_sliver_idget(slice_id, sliver_id):  # noqa: E501
@@ -140,8 +143,8 @@ def slivers_status_sliver_idget(slice_id, sliver_id):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_STATUS_SLIVER_ID_PATH).inc()
-        return str(e), e.get_http_error_code()
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_STATUS_SLIVER_ID_PATH).inc()
-        return str(e), 500
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
