@@ -27,6 +27,7 @@ import logging
 import time
 import unittest
 from datetime import datetime, timedelta
+from http.client import OK, NOT_FOUND, BAD_REQUEST
 
 from fabric_cf.actor.core.apis.abc_delegation import DelegationState
 from fabric_cf.actor.core.common.constants import Constants
@@ -72,11 +73,11 @@ class IntegrationTest(unittest.TestCase):
     def test_a_list_resources(self):
         oh = OrchestratorHelper()
         response = oh.resources()
-        self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
+        self.assertEqual(NOT_FOUND, response.status_code)
         self.assertEqual("Resource(s) not found!", response.json())
 
         response = oh.portal_resources()
-        self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
+        self.assertEqual(NOT_FOUND, response.status_code)
         self.assertEqual("Resource(s) not found!", response.json())
 
     def test_b1_reclaim_resources(self):
@@ -195,7 +196,7 @@ class IntegrationTest(unittest.TestCase):
     def test_c_list_resources(self):
         oh = OrchestratorHelper()
         response = oh.resources()
-        self.assertEqual(OrchestratorException.HTTP_OK, response.status_code)
+        self.assertEqual(OK, response.status_code)
         status = response.json()[self.VALUE][self.STATUS]
         self.assertEqual(status, self.STATUS_OK)
         json_obj = response.json()[self.VALUE]
@@ -203,7 +204,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertIsNotNone(json_obj.get(Constants.BROKER_QUERY_MODEL, None))
 
         response = oh.portal_resources()
-        self.assertEqual(OrchestratorException.HTTP_OK, response.status_code)
+        self.assertEqual(OK, response.status_code)
         status = response.json()[self.VALUE][self.STATUS]
         self.assertEqual(status, self.STATUS_OK)
         json_obj = response.json()[self.VALUE]
@@ -401,7 +402,7 @@ class IntegrationTest(unittest.TestCase):
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.FAILURE, status)
         print(response)
-        self.assertEqual(OrchestratorException.HTTP_BAD_REQUEST, response.status_code)
+        self.assertEqual(BAD_REQUEST, response.status_code)
 
         # Create Slice with exceeding capacities
         slice_graph = self.build_slice(use_hints=True, instance_type="fabric.c64.m384.d4000")
@@ -594,13 +595,13 @@ class IntegrationTest(unittest.TestCase):
         new_time_str = new_time.strftime(self.TIME_FORMAT_IN_SECONDS)
         status, response = oh.renew(slice_id=self.slice_id, new_lease_end_time=new_time_str)
         self.assertEqual(Status.FAILURE, status)
-        self.assertEqual(OrchestratorException.HTTP_BAD_REQUEST, response.status_code)
+        self.assertEqual(BAD_REQUEST, response.status_code)
 
         new_time_str = new_time.strftime(Constants.RENEW_TIME_FORMAT)
 
         status, response = oh.renew(slice_id="Slice_not-exists", new_lease_end_time=new_time_str)
         self.assertEqual(Status.FAILURE, status)
-        self.assertEqual(OrchestratorException.HTTP_NOT_FOUND, response.status_code)
+        self.assertEqual(NOT_FOUND, response.status_code)
 
         status, response = oh.renew(slice_id=self.slice_id, new_lease_end_time=new_time_str)
         self.assertEqual(Status.OK, status)

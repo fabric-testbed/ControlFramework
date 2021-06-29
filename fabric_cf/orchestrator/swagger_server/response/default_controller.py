@@ -23,9 +23,12 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from http.client import INTERNAL_SERVER_ERROR, OK
+
 import connexion
 import requests
 import six
+from fss_utils.http_errors import cors_response
 
 from fabric_cf.orchestrator.swagger_server.models.version import Version  # noqa: E501
 from fabric_cf.orchestrator.swagger_server import util, received_counter, success_counter, failure_counter
@@ -63,5 +66,5 @@ def version_get():  # noqa: E501
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, VERSIONS_PATH).inc()
-        return str(e), 500
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
     return response

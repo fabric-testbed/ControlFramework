@@ -23,19 +23,14 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from http.client import INTERNAL_SERVER_ERROR
 
 
 class OrchestratorException(Exception):
     """
     Orchestrator Exception
     """
-    HTTP_OK = 200
-    HTTP_5XX_ERROR = 500
-    HTTP_NOT_FOUND = 404
-    HTTP_BAD_REQUEST = 400
-    HTTP_UNAUTHORIZED = 401
-
-    def __init__(self, message: str, http_error_code: int = HTTP_5XX_ERROR):
+    def __init__(self, message: str, http_error_code: int = INTERNAL_SERVER_ERROR):
         super().__init__(message)
         self.http_error_code = http_error_code
 
