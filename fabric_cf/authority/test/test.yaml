@@ -30,11 +30,11 @@
 runtime:
   kafka-server: 152.54.14.213:29092
   kafka-schema-registry-url: http://152.54.14.213:8081
-  kafka-key-schema: ../../schema/key.avsc
-  kafka-value-schema: ../../schema/message.avsc
-  kafka-ssl-ca-location:  ../../secrets/snakeoil-ca-1.crt
-  kafka-ssl-certificate-location:  ../../secrets/kafkacat1-ca1-signed.pem
-  kafka-ssl-key-location:  ../../secrets/kafkacat1.client.key
+  kafka-key-schema: ../../../schema/key.avsc
+  kafka-value-schema: ../../../schema/message.avsc
+  kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
+  kafka-ssl-certificate-location:  ../../../secrets/kafkacat1-ca1-signed.pem
+  kafka-ssl-key-location:  ../../../secrets/kafkacat1.client.key
   kafka-ssl-key-password:  fabric
   kafka-security-protocol: SSL
   kafka-group-id: fabric-cf
@@ -51,7 +51,7 @@ logging:
   log-directory: .
 
   ## The filename to be used for actor's log file.
-  log-file: actor.log
+  log-file: site_actor.log
 
   ## The default log level for actor.
   log-level: DEBUG
@@ -75,7 +75,7 @@ database:
   db-user: fabric
   db-password: fabric
   db-name: am
-  db-host: localhost:5432
+  db-host: 152.54.14.213:5432
 
 container:
   container.guid: site1-am-conainer
@@ -107,7 +107,7 @@ neo4j:
   url: bolt://localhost:7687
   user: neo4j
   pass: password
-  import_host_dir: ../../neo4j1/imports/
+  import_host_dir: ../../../neo4j1/imports/
   import_dir: /imports
 
 actor:
@@ -116,7 +116,7 @@ actor:
   guid: site1-am-guid
   description: Site AM
   kafka-topic: site1-am-topic
-  substrate.file: ../../neo4j/RENCI-ad.graphml
+  substrate.file: ../../../neo4j/RENCI-ad.graphml
   policy:
       module: fabric_cf.actor.core.policy.authority_calendar_policy
       class: AuthorityCalendarPolicy

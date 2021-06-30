@@ -26,6 +26,7 @@
 import logging
 import pickle
 from contextlib import contextmanager
+from datetime import datetime
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -385,15 +386,17 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_slice(self, *, slc_guid: str, slc_name: str, slc_type: int,
-                  slc_resource_type: str, properties, slc_graph_id: str = None, oidc_claim_sub: str = None,
-                  email: str = None):
+    def add_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, lease_start: datetime = None,
+                  lease_end: datetime = None, slc_resource_type: str, properties, slc_graph_id: str = None,
+                  oidc_claim_sub: str = None, email: str = None):
         """
         Add a slice
         @param slc_guid slice id
         @param slc_name slice name
         @param slc_type slice type
         @param slc_resource_type slice resource type
+        @param lease_start Lease Start time
+        @param lease_end Lease End time
         @param properties pickled instance
         @param slc_graph_id slice graph id
         @param oidc_claim_sub User OIDC Sub
@@ -401,7 +404,8 @@ class PsqlDatabase:
         """
         try:
             slc_obj = Slices(slc_guid=slc_guid, slc_name=slc_name, slc_type=slc_type, oidc_claim_sub=oidc_claim_sub,
-                             email=email, slc_resource_type=slc_resource_type, properties=properties)
+                             email=email, slc_resource_type=slc_resource_type, lease_start=lease_start,
+                             lease_end=lease_end, properties=properties)
             if slc_graph_id is not None:
                 slc_obj.slc_graph_id = slc_graph_id
             with session_scope(self.db_engine) as session:
@@ -410,14 +414,16 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def update_slice(self, *, slc_guid: str, slc_name: str, slc_type: int,
-                     slc_resource_type: str, properties, slc_graph_id: str = None):
+    def update_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, slc_resource_type: str,
+                     properties, slc_graph_id: str = None, lease_start: datetime = None, lease_end: datetime = None):
         """
         Update a slice
         @param slc_guid slice id
         @param slc_name slice name
         @param slc_type slice type
         @param slc_resource_type slice resource type
+        @param lease_start Lease Start time
+        @param lease_end Lease End time
         @param properties pickled instance
         @param slc_graph_id slice graph id
         """
@@ -429,6 +435,8 @@ class PsqlDatabase:
                     slc_obj.slc_name = slc_name
                     slc_obj.slc_type = slc_type
                     slc_obj.slc_resource_type = slc_resource_type
+                    slc_obj.lease_start = lease_start
+                    slc_obj.lease_end = lease_end
                     if slc_graph_id is not None:
                         slc_obj.slc_graph_id = slc_graph_id
                 else:
@@ -657,8 +665,9 @@ class PsqlDatabase:
         return result
 
     def add_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
-                        rsv_pending: int, rsv_joining: int, properties, rsv_graph_node_id: str = None,
-                        oidc_claim_sub: str = None, email: str = None):
+                        rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
+                        lease_end: datetime = None, rsv_graph_node_id: str = None, oidc_claim_sub: str = None,
+                        email: str = None):
         """
         Add a reservation
         @param slc_guid slice guid
@@ -668,6 +677,8 @@ class PsqlDatabase:
         @param rsv_pending pending state
         @param rsv_joining join state
         @param properties pickled instance
+        @param lease_start Lease start time
+        @param lease_end Lease end time
         @param rsv_graph_node_id graph id
         @param oidc_claim_sub OIDC Sub claim
         @param email User email
@@ -676,6 +687,7 @@ class PsqlDatabase:
             slc_obj = self.get_slice(slice_guid=slc_guid)
             rsv_obj = Reservations(rsv_slc_id=slc_obj['slc_id'], rsv_resid=rsv_resid, rsv_category=rsv_category,
                                    rsv_state=rsv_state, rsv_pending=rsv_pending, rsv_joining=rsv_joining,
+                                   lease_start=lease_start, lease_end=lease_end,
                                    properties=properties, oidc_claim_sub=oidc_claim_sub, email=email)
             if rsv_graph_node_id is not None:
                 rsv_obj.rsv_graph_node_id = rsv_graph_node_id
@@ -686,7 +698,8 @@ class PsqlDatabase:
             raise e
 
     def update_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
-                           rsv_pending: int, rsv_joining: int, properties, rsv_graph_node_id: str = None):
+                           rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
+                           lease_end: datetime = None, rsv_graph_node_id: str = None):
         """
         Update a reservation
         @param slc_guid slice guid
@@ -696,6 +709,8 @@ class PsqlDatabase:
         @param rsv_pending pending state
         @param rsv_joining join state
         @param properties pickled instance
+        @param lease_start Lease start time
+        @param lease_end Lease end time
         @param rsv_graph_node_id graph id
         """
         try:
@@ -709,6 +724,8 @@ class PsqlDatabase:
                     rsv_obj.rsv_pending = rsv_pending
                     rsv_obj.rsv_joining = rsv_joining
                     rsv_obj.properties = properties
+                    rsv_obj.lease_end = lease_end
+                    rsv_obj.lease_start = lease_start
                     if rsv_graph_node_id is not None:
                         rsv_obj.rsv_graph_node_id = rsv_graph_node_id
                 else:
@@ -1728,11 +1745,11 @@ def test():
 
     # Slice operations
     db.add_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
-                 properties=pickle.dumps(prop))
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow())
     print("Slices after add slice {}".format(db.get_slices()))
     prop['fabric'] = 'testbed'
     db.update_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
-                    properties=pickle.dumps(prop))
+                    properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow())
     print("Get slice after update {}".format(db.get_slice(slice_guid="1234")))
 
     print("Get slice by type after update {}".format(db.get_slices_by_type(slc_type=1)))
@@ -1742,7 +1759,7 @@ def test():
 
     # Reservation operations
     db.add_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
-                 properties=pickle.dumps(prop))
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow())
     print("Get all slices {} after add".format(db.get_slices()))
     prop['rsv'] = 'test'
     db.add_reservation(slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,

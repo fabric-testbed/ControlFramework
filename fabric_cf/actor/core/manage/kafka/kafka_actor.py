@@ -104,7 +104,8 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         return status.code == 0
 
     def get_reservations(self, *, id_token: str = None, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None) -> List[ReservationMng]:
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
+                         rid_list: List[str] = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
         request = self.fill_request_by_id_message(request=request, id_token=id_token, slice_id=slice_id,
                                                   reservation_state=state, email=email, rid=rid)
@@ -158,7 +159,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return status.code == 0
 
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID],
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[str],
                                                id_token: str = None) -> List[ReservationStateAvro]:
         request = GetReservationsStateRequestAvro()
         request.guid = str(self.management_id)

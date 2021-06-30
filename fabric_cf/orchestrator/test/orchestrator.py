@@ -43,6 +43,8 @@ def main():
 
     try:
         from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
+        Globals.config_file = './test.yaml'
+        Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
 
             GlobalsSingleton.get().start(force_fresh=False)
@@ -67,7 +69,7 @@ def main():
 
             print("Starting REST")
             # start swagger
-            app = connexion.App(__name__, specification_dir='swagger_server/swagger/')
+            app = connexion.App(__name__, specification_dir='../swagger_server/swagger/')
             app.app.json_encoder = encoder.JSONEncoder
             app.add_api('swagger.yaml', arguments={'title': 'Fabric Orchestrator API'}, pythonic_params=True)
 

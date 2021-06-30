@@ -329,8 +329,8 @@ class ConfigurationProcessor:
             return result
 
         for r in resources:
-            descriptor = ResourceConfig()
             for resource_type in r.get_type():
+                descriptor = ResourceConfig()
                 descriptor.set_resource_type(rtype=ResourceType(resource_type=resource_type))
                 descriptor.set_resource_type_label(rtype_label=r.get_label())
 
@@ -341,7 +341,6 @@ class ConfigurationProcessor:
                     descriptor.set_handler_properties(properties=handler.get_properties())
 
                 result[descriptor.get_resource_type()] = descriptor
-                print(f"Handler configured for {resource_type}")
         return result
 
     def initialize_actor(self):

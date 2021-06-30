@@ -79,11 +79,13 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         return False
 
     def get_reservations(self, *, id_token: str = None, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None) -> List[ReservationMng]:
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
+                         rid_list: List[str] = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_reservations(caller=self.auth, state=state, slice_id=slice_id, rid=rid,
-                                                   id_token=id_token, oidc_claim_sub=oidc_claim_sub, email=email)
+                                                   id_token=id_token, oidc_claim_sub=oidc_claim_sub, email=email,
+                                                   rid_list=rid_list)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -185,7 +187,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[ID],
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[str],
                                                id_token: str = None) -> List[ReservationStateAvro]:
         self.clear_last()
         try:

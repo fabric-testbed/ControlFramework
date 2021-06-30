@@ -128,7 +128,7 @@ class Constants:
 
     PROPERTY_CONF_PROMETHEUS_REST_PORT = "prometheus.port"
     PROPERTY_CONF_CONTROLLER_REST_PORT = "orchestrator.rest.port"
-    PROPERTY_CONF_CONTROLLER_CREATE_WAIT_TIME_MS = "orchestrator.create.wait.time.ms"
+    PROPERTY_CONF_CONTROLLER_CREATE_WAIT_TIME = "orchestrator.create.wait.time"
 
     PROPERTY_SUBSTRATE_FILE = "substrate.file"
     PROPERTY_AGGREGATE_RESOURCE_MODEL = "AggregateResourceModel"

@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+from datetime import datetime
 from enum import Enum
 from typing import Dict, Tuple
 
@@ -84,6 +85,8 @@ class Slice(ABCKernelSlice):
         self.dirty = False
         self.config_properties = None
         self.lock = threading.Lock()
+        self.lease_end = None
+        self.lease_start = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -119,13 +122,19 @@ class Slice(ABCKernelSlice):
         result.guid = self.guid
         return result
 
-    def get_description(self):
+    def get_lease_end(self) -> datetime:
+        return self.lease_end
+
+    def get_lease_start(self) -> datetime:
+        return self.lease_start
+
+    def get_description(self) -> str:
         return self.description
 
-    def get_name(self):
+    def get_name(self) -> str:
         return self.name
 
-    def get_owner(self):
+    def get_owner(self) -> AuthToken:
         return self.owner
 
     def get_reservations(self) -> ReservationSet:
@@ -137,19 +146,19 @@ class Slice(ABCKernelSlice):
     def get_reservations_list(self) -> list:
         return self.reservations.values()
 
-    def get_resource_type(self):
+    def get_resource_type(self) -> ResourceType:
         return self.resource_type
 
     def get_slice_id(self) -> ID:
         return self.guid
 
-    def is_broker_client(self):
+    def is_broker_client(self) -> bool:
         return self.type == SliceTypes.BrokerClientSlice
 
-    def is_client(self):
+    def is_client(self) -> bool:
         return not self.is_inventory()
 
-    def is_inventory(self):
+    def is_inventory(self) -> bool:
         return self.type == SliceTypes.InventorySlice
 
     def is_empty(self) -> bool:
@@ -172,6 +181,12 @@ class Slice(ABCKernelSlice):
             raise SliceException("Delegation #{} already exists in slice".format(delegation.get_delegation_id()))
 
         self.delegations[delegation.get_delegation_id()] = delegation
+
+    def set_lease_end(self, *, lease_end: datetime):
+        self.lease_end = lease_end
+
+    def set_lease_start(self, *, lease_start: datetime):
+        self.lease_start = lease_start
 
     def set_broker_client(self):
         self.type = SliceTypes.BrokerClientSlice

@@ -27,6 +27,9 @@ import queue
 import threading
 import traceback
 from datetime import datetime
+import time
+
+from fim.user import ServiceType
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -37,11 +40,11 @@ from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorS
 
 class SliceDeferThread:
     """
-    This runs as a standalone thread started by OrchestratorState and deals with slices that have to wait for other
-    slices to complete.
+    This runs as a standalone thread started by Orchestrator and deals with slices that have
+    NetworkService reservations which have to wait for NetworkNode reservations to be ticketed
     """
-    THREAD_SLEEP_TIME = 10000
-    DEFAULT_MAX_CREATE_TIME_IN_MS = 600000
+    THREAD_SLEEP_TIME_IN_SECONDS = 5
+    DEFAULT_MAX_CREATE_TIME_IN_SECONDS = 600
 
     def __init__(self):
         self.deferred_slices = queue.Queue()
@@ -57,12 +60,17 @@ class SliceDeferThread:
         self.stopped = False
 
         wait_time = GlobalsSingleton.get().get_config().get_runtime_config().get(
-            Constants.PROPERTY_CONF_CONTROLLER_CREATE_WAIT_TIME_MS, None)
+            Constants.PROPERTY_CONF_CONTROLLER_CREATE_WAIT_TIME, None)
 
         if wait_time is None:
-            self.max_create_wait_time = self.DEFAULT_MAX_CREATE_TIME_IN_MS
+            self.max_create_wait_time = self.DEFAULT_MAX_CREATE_TIME_IN_SECONDS
         else:
             self.max_create_wait_time = wait_time
+
+        self.delay_resource_types = []
+        self.delay_resource_types.append(str(ServiceType.L2STS))
+        self.delay_resource_types.append(str(ServiceType.L2Bridge))
+        self.delay_resource_types.append(str(ServiceType.L2PTP))
 
     def queue_slice(self, *, controller_slice: OrchestratorSliceWrapper):
         """
@@ -73,6 +81,7 @@ class SliceDeferThread:
         with self.defer_slice_avail_condition:
             self.deferred_slices.put_nowait(controller_slice)
             self.logger.debug(f"Added slice to deferred slices queue {controller_slice.__class__.__name__}")
+            time.sleep(self.THREAD_SLEEP_TIME_IN_SECONDS)
             self.defer_slice_avail_condition.notify_all()
 
     def update_last(self, *, controller_slice: OrchestratorSliceWrapper):
@@ -98,20 +107,14 @@ class SliceDeferThread:
         if controller_slice is None:
             return
 
-        if controller_slice != self.last_slice and \
-                self.check_computed_reservations(controller_slice=controller_slice) and \
-                self.delay_not_done(controller_slice=self.last_slice):
-            self.logger.info(f"Putting slice {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} "
-                             f"on wait queue")
+        self.logger.info(f"Processing slice {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} "
+                         f"immediately")
+        if self.check_computed_reservations(controller_slice=controller_slice):
+            self.update_last(controller_slice=controller_slice)
 
+        if self.demand_slice(controller_slice=controller_slice):
+            # Slice has pending reservations
             self.queue_slice(controller_slice=controller_slice)
-        else:
-            self.logger.info(f"Processing slice {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} "
-                             f"immediately")
-            if self.check_computed_reservations(controller_slice=controller_slice):
-                self.update_last(controller_slice=controller_slice)
-
-            self.demand_slice(controller_slice=controller_slice)
 
     def start(self):
         """
@@ -170,9 +173,12 @@ class SliceDeferThread:
                 try:
                     self.last_slice.lock()
                     if self.delay_not_done(controller_slice=self.last_slice):
-                        if Term.delta(self.last_slice_time, datetime.utcnow()) > self.max_create_wait_time:
+                        current_time = datetime.utcnow()
+                        if (current_time - self.last_slice_time).seconds > self.max_create_wait_time:
                             self.logger.info(f"Maximum wait time exceeded for slice: {self.last_slice.get_slice_name()}/"
                                              f"{self.last_slice.get_slice_id()}, proceeding anyway")
+                            # This shall trigger failure
+                            self.demand_slice(controller_slice=self.last_slice, force=True)
                         else:
                             continue
                 except Exception as e:
@@ -212,7 +218,9 @@ class SliceDeferThread:
             self.update_last(controller_slice=controller_slice)
             try:
                 controller_slice.lock()
-                self.demand_slice(controller_slice=controller_slice)
+                if self.demand_slice(controller_slice=controller_slice):
+                    self.logger.debug("Adding slice back to the queue!")
+                    self.queue_slice(controller_slice=controller_slice)
             except Exception as e:
                 self.logger.error(f"Exception while demanding slice: {self.last_slice.get_slice_name()}/"
                                   f"{self.last_slice.get_slice_id()} e: {e}")
@@ -221,56 +229,72 @@ class SliceDeferThread:
 
         self.logger.debug("SliceDeferThread exited")
 
-    def demand_slice(self, *, controller_slice: OrchestratorSliceWrapper):
+    def demand_slice(self, *, controller_slice: OrchestratorSliceWrapper, force: bool = False) -> bool:
         """
-        Demand slice
+        Demand slice reservations. If any of the reservations have predecessors which are not ticketed yet;
+        those reservations are not demanded yet i.e. no Ticket request to broker is triggered for them.
         :param controller_slice:
-        :return:
+        :param force:
+        :return: True if slice should be added to deferred queue to demand the delayed reservations; False otherwise
         """
+        ret_val = False
         if controller_slice is None:
             self.logger.error("demand slice was given a None slice")
-            return
+            return ret_val
 
         computed_reservations = controller_slice.get_computed_reservations()
 
         if computed_reservations is None:
-            return
+            return ret_val
 
         try:
             from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
             controller = OrchestratorKernelSingleton.get().get_management_actor()
             for reservation in computed_reservations:
+                if reservation.get_reservation_id() in controller_slice.demanded_reservations():
+                    self.logger.debug(f"Reservation: {reservation.get_reservation_id()} already demanded")
+                    continue
+
                 self.logger.debug(f"Issuing demand for reservation: {reservation.get_reservation_id()}")
 
                 if reservation.get_state() != ReservationStates.Unknown.value:
                     self.logger.debug(f"Reservation not in {reservation.get_state()} state, ignoring it")
                     continue
 
+                if not controller_slice.check_predecessors_ticketed(reservation=reservation) and not force:
+                    self.logger.info(f"Reservation waiting for predecessors to be ticketed, ignoring it")
+                    ret_val = True
+                    continue
+
                 if not controller.demand_reservation(reservation=reservation):
                     raise OrchestratorException(f"Could not demand resources: {controller.get_last_error()}")
+                controller_slice.mark_demanded(rid=reservation.get_reservation_id())
                 self.logger.debug(f"Reservation #{reservation.get_reservation_id()} demanded successfully")
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Unable to get orchestrator or demand reservation: {}".format(e))
-            return
+
+        return ret_val
 
     def check_computed_reservations(self, *, controller_slice: OrchestratorSliceWrapper) -> bool:
         """
-        Check computed reservations
+        Check computed reservations to see if there are any network sliver reservations
         :param controller_slice:
-        :return:
+        :return: True if slice has network sliver reservations
         """
-        if controller_slice is None or controller_slice.get_computed_reservations() is None:
-            self.logger.info("Empty slice or no computed reservations")
-            return False
+        for r in controller_slice.get_computed_reservations():
+            if r.get_resource_type() in self.delay_resource_types:
+                self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} "
+                                 f" has delayed resource type: {r.get_resource_type()}")
+            return True
 
-        return True
+        return False
 
     def delay_not_done(self, *, controller_slice: OrchestratorSliceWrapper) -> bool:
         """
-        Check if delay is done
+        Check if predecessors for network sliver reservations have been ticketed
         :param controller_slice:
-        :return:
+        :return: True if Predecessors for Network Sliver Reservations have not been ticketed; False otherwise
         """
         if controller_slice is None:
             return False
@@ -289,25 +313,36 @@ class SliceDeferThread:
         if all_reservations is None:
             self.logger.info(f"Slice: {controller_slice.get_slice_name()}/"
                              f"{controller_slice.get_slice_id()} has None reservations in delay_not_done")
-
+            # slice has not been submitted
             return self.check_computed_reservations(controller_slice=controller_slice)
         else:
             if len(all_reservations) <= 0:
                 self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} "
                                  f"has empty reservations in delay_not_done")
+                # slice has not been submitted
                 return self.check_computed_reservations(controller_slice=controller_slice)
 
             for reservation in all_reservations:
-                reservation_state = ReservationStates(reservation.get_state())
-                if reservation_state != ReservationStates.Active and reservation_state != ReservationStates.Closed and \
-                        reservation_state != ReservationStates.CloseWait and \
-                        reservation_state != ReservationStates.Failed:
-                    self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()}"
-                                     f" has resource type: {reservation.get_resource_type()}"
-                                     f" with reservation: {reservation.get_reservation_id()} "
-                                     f"in state: {reservation_state.name} "
-                                     f"that is not yet done")
-                    return True
+                if reservation.get_resource_type() in self.delay_resource_types:
+                    # Reservation is Network Sliver Reservation;
+                    # Reservation is not in a final state, we need to wait
+                    reservation_state = ReservationStates(reservation.get_state())
+                    if reservation_state != ReservationStates.Active and \
+                            reservation_state != ReservationStates.Closed and \
+                            reservation_state != ReservationStates.CloseWait and \
+                            reservation_state != ReservationStates.Failed:
+                        self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()}"
+                                         f" has resource type: {reservation.get_resource_type()}"
+                                         f" with reservation: {reservation.get_reservation_id()} "
+                                         f"in state: {reservation_state.name} "
+                                         f"that is not yet done")
+
+                        # Use reservation from computed reservation as reservation has not been demanded yet
+                        if controller_slice.check_predecessors_ticketed_by_rid(rid=reservation.get_reservation_id()):
+                            self.logger.info("Predecessors ticketed, reservation can be demanded now!")
+                            return False
+
+                        return True
             self.logger.info(f"Slice: {controller_slice.get_slice_name()}/{controller_slice.get_slice_id()} "
                              f"has no non-final reservations ({len(all_reservations)})")
 

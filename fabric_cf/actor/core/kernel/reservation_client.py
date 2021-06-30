@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 from datetime import datetime
 
@@ -408,7 +408,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
             if pred_state.get_reservation() is None or \
                     pred_state.get_reservation().is_failed() or \
                     pred_state.get_reservation().is_closed():
-                self.logger.error("redeem predecessor reservation is in a terminal state or reservatio is null."
+                self.logger.error("redeem predecessor reservation is in a terminal state or reservation is null."
                                   " ignoring it: {}".format(pred_state.get_reservation()))
                 continue
             if pred_state.get_reservation().is_active_joined():
@@ -1212,7 +1212,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         if self.term is None:
             self.error(err=Constants.NOT_SPECIFIED_PREFIX.format("term"))
 
-    def add_redeem_predecessor(self, *, reservation, filters: dict = None):
+    def add_redeem_predecessor(self, *, reservation: ABCReservationMixin, filters: dict = None):
         if reservation.get_reservation_id() not in self.redeem_predecessors:
             state = PredecessorState(reservation=reservation, filters=filters)
             self.redeem_predecessors[reservation.get_reservation_id()] = state
@@ -1222,13 +1222,13 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
             state = PredecessorState(reservation=predecessor, filters=filters)
             self.join_predecessors[predecessor.get_reservation_id()] = state
 
-    def get_redeem_predecessors(self) -> list:
+    def get_redeem_predecessors(self) -> List[PredecessorState]:
         result = []
         for v in self.redeem_predecessors.values():
             result.append(v)
         return result
 
-    def get_join_predecessors(self) -> list:
+    def get_join_predecessors(self) -> List[PredecessorState]:
         result = []
         for v in self.join_predecessors.values():
             result.append(v)

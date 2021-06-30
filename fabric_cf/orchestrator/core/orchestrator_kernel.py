@@ -72,7 +72,7 @@ class OrchestratorKernel:
                 refresh_interval = GlobalsSingleton.get().get_config().get_global_config().get_bqm_config().get(
                     Constants.REFRESH_INTERVAL, None)
                 saved_bqm = BqmWrapper()
-                saved_bqm.set_refresh_interval(refresh_interval=refresh_interval)
+                saved_bqm.set_refresh_interval(refresh_interval=int(refresh_interval))
             saved_bqm.save(bqm=bqm, graph_format=graph_format)
             self.bqm_cache[graph_format] = saved_bqm
         finally:
@@ -146,9 +146,9 @@ class OrchestratorKernel:
         self.sdt = SliceDeferThread()
         self.sdt.start()
 
-        self.get_logger().debug("Starting ReservationStatusUpdateThread")
-        self.sut = ReservationStatusUpdateThread()
-        self.sut.start()
+        #self.get_logger().debug("Starting ReservationStatusUpdateThread")
+        #self.sut = ReservationStatusUpdateThread()
+        #self.sut.start()
 
 
 class OrchestratorKernelSingleton:

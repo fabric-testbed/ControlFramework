@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod, ABC
+from datetime import datetime
 from typing import TYPE_CHECKING, Tuple
 
 if TYPE_CHECKING:
@@ -312,4 +313,24 @@ class ABCSlice(ABC):
         """
         Is Slice in state Dead
         @return True if Slice state is Dead, false otherwise
+        """
+
+    def get_lease_end(self) -> datetime:
+        """
+        Return lease end time
+        """
+
+    def get_lease_start(self) -> datetime:
+        """
+        Return lease start time
+        """
+
+    def set_lease_end(self, *, lease_end: datetime):
+        """
+        Return lease end time
+        """
+
+    def set_lease_start(self, *, lease_start: datetime):
+        """
+        Return lease start time
         """

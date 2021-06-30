@@ -25,7 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from typing import Tuple, List
 
-from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver
+from fim.slivers.attached_components import AttachedComponentsInfo, ComponentSliver, ComponentType
+from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
 from fim.slivers.delegations import Delegations, DelegationFormat
 from fim.slivers.instance_catalog import InstanceCatalog
@@ -88,7 +89,7 @@ class NetworkNodeInventory(InventoryForType):
                         reservation.get_resources() is not None:
                     resource_sliver = reservation.get_resources().get_sliver()
 
-                if resource_sliver is not None:
+                if resource_sliver is not None and isinstance(resource_sliver, NodeSliver):
                     self.logger.debug(
                         f"Excluding already assigned resources {resource_sliver.get_capacity_allocations()} to "
                         f"reservation# {reservation.get_reservation_id()}")
@@ -182,7 +183,9 @@ class NetworkNodeInventory(InventoryForType):
                 if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
                     allocated_sliver = reservation.get_resources().get_sliver()
 
-                if allocated_sliver is not None and allocated_sliver.attached_components_info is not None:
+                if allocated_sliver is not None and isinstance(allocated_sliver, NodeSliver) and \
+                        allocated_sliver.attached_components_info is not None:
+
                     for allocated in allocated_sliver.attached_components_info.devices.values():
                         if allocated.get_node_map() is not None:
                             self.logger.debug(f"Already allocated components {allocated} of resource_type "
@@ -190,6 +193,9 @@ class NetworkNodeInventory(InventoryForType):
 
                             for av in available_components:
                                 node_map = allocated.get_node_map()
+                                if av.get_type() == ComponentType.SharedNIC:
+                                    self.logger.debug()
+
                                 if node_map is not None and av.node_id == node_map[1]:
                                     self.logger.debug(f"Excluding component {allocated} assigned to "
                                                       f"res# {reservation.get_reservation_id()}")
@@ -228,56 +234,59 @@ class NetworkNodeInventory(InventoryForType):
 
         return requested_components
 
-    def allocate(self, *, reservation: ABCReservationMixin, graph_id: str, graph_node: NodeSliver,
-                 existing_reservations: List[ABCReservationMixin]) -> Tuple[str, NodeSliver]:
+    def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
+                 existing_reservations: List[ABCReservationMixin]) -> Tuple[str, BaseSliver]:
         """
         Allocate an extending or ticketing reservation
-        :param reservation: reservation to be allocated
+        :param rid: reservation id of the reservation to be allocated
+        :param requested_sliver: requested sliver
         :param graph_id: BQM graph id
         :param graph_node: BQM graph node identified to serve the reservation
         :param existing_reservations: Existing Reservations served by the same BQM node
         :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
         :raises: BrokerException in case the request cannot be satisfied
         """
-        if graph_node.get_capacity_delegations() is None or reservation is None:
+        if graph_node.get_capacity_delegations() is None or rid is None:
             raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
                                   msg=f"capacity_delegations is missing or reservation is None")
 
-        requested = reservation.get_requested_resources().get_sliver()
-        if not isinstance(requested, NodeSliver):
+        if not isinstance(requested_sliver, NodeSliver):
             raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
-                                  msg=f"resource type: {requested.get_type()}")
+                                  msg=f"resource type: {requested_sliver.get_type()}")
+
+        if not isinstance(graph_node, NodeSliver):
+            raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
+                                  msg=f"resource type: {graph_node.get_type()}")
 
         # Always use requested capacities to be mapped from flavor i.e. capacity hints
-        requested_capacity_hints = requested.get_capacity_hints()
+        requested_capacity_hints = requested_sliver.get_capacity_hints()
         catalog = InstanceCatalog()
         requested_capacities = catalog.get_instance_capacities(instance_type=requested_capacity_hints.instance_type)
 
         # Check if Capacities can be satisfied
-        delegation_id = self.__check_capacities(rid=reservation.get_reservation_id(),
+        delegation_id = self.__check_capacities(rid=rid,
                                                 requested_capacities=requested_capacities,
                                                 delegated_capacities=graph_node.get_capacity_delegations(),
                                                 existing_reservations=existing_reservations)
 
         # Check if Components can be allocated
-        if requested.attached_components_info is not None:
-            requested.attached_components_info = self.__check_components(
-                rid=reservation.get_reservation_id(),
-                requested_components=requested.attached_components_info,
+        if requested_sliver.attached_components_info is not None:
+            requested_sliver.attached_components_info = self.__check_components(
+                rid=rid,
+                requested_components=requested_sliver.attached_components_info,
                 graph_id=graph_id,
                 graph_node=graph_node,
                 existing_reservations=existing_reservations)
 
-        requested.capacity_allocations = requested_capacities
-        requested.label_allocations = Labels().set_fields(instance_parent=graph_node.get_name())
+        requested_sliver.capacity_allocations = requested_capacities
+        requested_sliver.label_allocations = Labels().set_fields(instance_parent=graph_node.get_name())
 
-        node_map = tuple([graph_id, graph_node.node_id])
-        requested.set_node_map(node_map=node_map)
+        requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))
 
-        self.logger.info(f"Reservation# {reservation} is being served by delegation# {delegation_id} "
+        self.logger.info(f"Reservation# {rid} is being served by delegation# {delegation_id} "
                          f"node# [{graph_id}/{graph_node.node_id}]")
 
-        return delegation_id, requested
+        return delegation_id, requested_sliver
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
         return

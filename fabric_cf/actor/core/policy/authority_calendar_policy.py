@@ -30,6 +30,7 @@ from typing import Tuple
 
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
@@ -406,7 +407,18 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                 if node_id is None:
                     raise AuthorityException(f"Unable to find node_id {node_id} for reservation# {reservation}")
 
-                graph_node = self.get_node_from_graph(node_id=node_id)
+                graph_node = None
+                if isinstance(ticketed_sliver, NodeSliver):
+                    graph_node = self.get_network_node_from_graph(node_id=node_id)
+
+                elif isinstance(ticketed_sliver, NetworkServiceSliver):
+                    graph_node = self.get_network_service_from_graph(node_id=node_id)
+
+                else:
+                    msg = f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver'
+                    self.logger.error(msg)
+                    raise AuthorityException(msg)
+
                 self.logger.debug(f"Node {graph_node} serving reservation# {reservation}")
 
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
@@ -536,12 +548,21 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                     break
             raise e
 
-    def get_node_from_graph(self, *, node_id: str) -> NodeSliver:
+    def get_network_node_from_graph(self, *, node_id: str) -> NodeSliver:
         try:
             self.lock.acquire()
             if self.aggregate_resource_model is None:
                 return None
             return self.aggregate_resource_model.build_deep_node_sliver(node_id=node_id)
+        finally:
+            self.lock.release()
+
+    def get_network_service_from_graph(self, *, node_id: str) -> NetworkServiceSliver:
+        try:
+            self.lock.acquire()
+            if self.aggregate_resource_model is None:
+                return None
+            return self.aggregate_resource_model.build_deep_ns_sliver(node_id=node_id)
         finally:
             self.lock.release()
 

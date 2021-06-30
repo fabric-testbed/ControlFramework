@@ -105,6 +105,7 @@ class AggregateResourceModelCreator:
         config_map.set_properties(properties=resource_config.get_handler_properties())
 
         self.substrate.handler_processor.add_config_mapping(mapping=config_map)
+        print(f"Added handler for  {resource_config.get_resource_type()} config_map: {config_map}")
 
     def get_arm_graph(self) -> Neo4jARMGraph:
         return self.arm_graph

@@ -26,18 +26,21 @@
 from __future__ import annotations
 
 import enum
+import json
 import threading
 import traceback
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Tuple, List, Any
+from typing import TYPE_CHECKING, Tuple, List, Any, Dict
 
-from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat
+from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat, ABCPropertyGraph
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
+from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.interface_info import InterfaceSliver
 from fim.slivers.network_node import NodeSliver, NodeType
-from fim.slivers.network_link import NetworkLinkSliver
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
@@ -50,6 +53,7 @@ from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.bids import Bids
+from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
@@ -434,7 +438,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return False, node_id_to_reservations, error_msg
 
-    def __candidate_nodes(self, sliver: NodeSliver) -> List[str]:
+    def __candidate_nodes(self, *, sliver: NodeSliver) -> List[str]:
         """
         Identify candidate worker nodes in this site that have at least
         as many needed components as in the sliver.
@@ -446,8 +450,74 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             props=node_props,
             comps=sliver.attached_components_info)
 
-    def __candidate_links(self, sliver: NetworkLinkSliver) -> List[str]:
-        return list()
+    def __allocate_services(self, *, rid: ID, inv: InventoryForType, sliver: NetworkServiceSliver,
+                            node_id_to_reservations: dict) -> Tuple[str, BaseSliver, Any]:
+        self.logger.debug(f"Processing Network Service sliver: {sliver}")
+        delegation_id = None
+        error_msg = None
+
+        # For each Interface Sliver;
+        for ifs in sliver.interface_info.interfaces.values():
+
+            # Fetch Network Node Id and BQM Component Id
+            node_id, bqm_component_id = ifs.get_node_map()
+            bqm_component = self.get_component_sliver(node_id=bqm_component_id)
+
+            # Get BQM Connection Point in Site Delegation (c)
+            site_cp = FimHelper.get_site_interface_sliver(component=bqm_component,
+                                                          local_name=ifs.get_labels().local_name)
+
+            self.logger.debug(f"Interface Sliver [Site Delegation] (C): {site_cp}")
+
+            # Get BQM Peer Connection Point in Site Delegation (a)
+            net_cp = self.get_net_interface_sliver(site_ifs_id=site_cp.node_id)
+
+            self.logger.debug(f"Peer Interface Sliver [Network Delegation] (A): {site_cp}")
+
+            existing_reservations = None
+            if bqm_component.get_type() == ComponentType.SharedNIC:
+                # FIXME - needs to be completed and tested
+                existing_reservations = self.get_existing_reservations(node_id=node_id,
+                                                                       node_id_to_reservations=node_id_to_reservations)
+
+            # Set vlan - source: (c)
+            ifs = inv.allocate(rid=rid, requested_sliver=ifs,
+                               graph_id=self.combined_broker_model_graph_id,
+                               graph_node=site_cp,
+                               existing_reservations=existing_reservations)
+
+            if net_cp is None:
+                error_msg = "Peer Connection Point not found from Network AM"
+                raise BrokerException(msg=error_msg)
+
+            # local_name source: (a)
+            ifs.get_labels().set_fields(local_name=net_cp.get_name())
+
+            # NSO device name source: (a) - need to find the owner switch of the network service in CBM
+            # and take its .name or labels.local_name
+            # Set the NSO device-name
+            owner_switch = self.get_owner_switch(node_id=net_cp.node_id)
+            ifs.get_labels().set_fields(device_name=owner_switch.get_name())
+            adm_ids = owner_switch.get_structural_info().adm_graph_ids
+            site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
+
+            net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
+            if len(net_adm_ids) != 1:
+                error_msg = f"More than 1 or 0 Network Delegations found! net_adm_ids: {net_adm_ids}"
+                self.logger.error(error_msg)
+                raise BrokerException(msg=error_msg)
+
+            # Update the Interface Sliver Node Map to map to (a)
+            ifs.set_node_map(node_map=(self.combined_broker_model_graph_id, net_cp.node_id))
+
+            delegation_id = net_adm_ids[0]
+
+            self.logger.debug(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
+
+            # Update the Network Service Sliver Node Map to map to parent of (a)
+            sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_switch.node_id))
+
+        return delegation_id, sliver, error_msg
 
     def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
                          node_id_to_reservations: dict) -> Tuple[bool, dict, Any]:
@@ -464,31 +534,34 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # intended link (and possibly interfaces connected to it)
 
             res_sliver = rset.get_sliver()
-
-            if isinstance(res_sliver, NodeSliver):
-                node_id_list = self.__candidate_nodes(res_sliver)
-            elif isinstance(res_sliver, NetworkLinkSliver):
-                node_id_list = self.__candidate_links(res_sliver)
-            else:
-                self.logger.error(f'Reservation {reservation} sliver type is neither Node, nor NetworkLink')
-                raise BrokerException(msg=f"Reservation sliver type is neither Node "
-                                      f"nor NetworkLink for reservation# {reservation}")
-
-            # no candidate nodes found
-            if len(node_id_list) == 0:
-                error_msg = f'Insufficient resources: No candidates nodes found to serve {reservation}'
-                self.logger.error(error_msg)
-                return False, node_id_to_reservations, error_msg
-
             delegation_id = None
             sliver = None
-            if self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.FirstFit.name.lower():
-                delegation_id, sliver, error_msg = self.__find_first_fit(node_id_list=node_id_list,
-                                                                         node_id_to_reservations=node_id_to_reservations,
-                                                                         inv=inv, reservation=reservation)
+
+            if isinstance(res_sliver, NodeSliver):
+                node_id_list = self.__candidate_nodes(sliver=res_sliver)
+
+                # no candidate nodes found
+                if len(node_id_list) == 0:
+                    error_msg = f'Insufficient resources: No candidates nodes found to serve {reservation}'
+                    self.logger.error(error_msg)
+                    return False, node_id_to_reservations, error_msg
+
+                if self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.FirstFit.name.lower():
+                    delegation_id, sliver, error_msg = self.__find_first_fit(node_id_list=node_id_list,
+                                                                             node_id_to_reservations=node_id_to_reservations,
+                                                                             inv=inv, reservation=reservation)
+                else:
+                    raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
+                                          msg=f"Broker currently only supports First Fit")
+
+            elif isinstance(res_sliver, NetworkServiceSliver):
+                delegation_id, sliver, error_msg = self.__allocate_services(rid=reservation.get_reservation_id(),
+                                                                            inv=inv, sliver=res_sliver,
+                                                                            node_id_to_reservations=node_id_to_reservations)
             else:
-                raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
-                                      msg=f"Broker currently only supports First Fit")
+                self.logger.error(f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver')
+                raise BrokerException(msg=f"Reservation sliver type is neither Node "
+                                      f"nor NetworkLink for reservation# {reservation}")
 
             if delegation_id is not None:
                 delegation = self.actor.get_delegation(did=delegation_id)
@@ -512,16 +585,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         delegation_id = None
         sliver = None
         error_msg = None
-        self.logger.debug(f"Possible candidates to serve res# {reservation} candidates# {node_id_list}")
+        self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
         for node_id in node_id_list:
             try:
-                self.logger.debug(f"Attempting to allocate res# {reservation} via graph_node# {node_id}")
-                graph_node = self.get_node_from_graph(node_id=node_id)
+                self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
+                graph_node = self.get_network_node_from_graph(node_id=node_id)
 
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
 
-                delegation_id, sliver = inv.allocate(reservation=reservation,
+                delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
+                                                     requested_sliver=reservation.get_requested_resources().get_sliver(),
                                                      graph_id=self.combined_broker_model_graph_id,
                                                      graph_node=graph_node, existing_reservations=existing_reservations)
 
@@ -751,7 +825,52 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug("Reclaim Delegation")
         self.remove_delegation(delegation=delegation)
 
-    def get_node_from_graph(self, *, node_id: str) -> NodeSliver:
+    def get_net_interface_sliver(self, *, site_ifs_id: str):
+        """
+        Get Peer Interface Sliver (child of Network Service Sliver) provided node id of Interface Sliver
+        (child of Component Sliver)
+
+        E.g: Provided Connection Point which is a child of Component i.e. renc-w3-nic2-p1,
+        return Peer Connection Point i.e. HundredGigE 0/0/0/25.3
+
+        renc-w3-nic2-p1      => l10  <= HundredGigE 0/0/0/25.3
+        [Connection Point]      Link    [Connection Point]
+
+        @param site_ifs_id Interface Sliver Id
+        @return Interface sliver
+        """
+        try:
+            self.lock.acquire()
+            return FimHelper.get_interface_sliver_by_id(ifs_node_id=site_ifs_id, graph=self.combined_broker_model)
+        finally:
+            self.lock.release()
+
+    def get_component_sliver(self, *, node_id: str) -> ComponentSliver:
+        """
+        Get Component Sliver from BQM
+        @param node_id: Node Id
+        @return Component Sliver
+        """
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model is None:
+                return None
+            return self.combined_broker_model.build_deep_component_sliver(node_id=node_id)
+        finally:
+            self.lock.release()
+
+    def get_owner_switch(self, *, node_id: str) -> NetworkServiceSliver:
+        """
+        Get owner switch name of a Connection Point from BQM
+        @param node_id Node Id of the Connection Point
+        """
+        try:
+            self.lock.acquire()
+            return FimHelper.get_owner_switch(bqm=self.combined_broker_model, node_id=node_id)
+        finally:
+            self.lock.release()
+
+    def get_network_node_from_graph(self, *, node_id: str) -> NodeSliver:
         """
         Get Node from CBM
         :param node_id:

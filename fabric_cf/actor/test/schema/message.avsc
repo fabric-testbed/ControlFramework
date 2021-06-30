@@ -50,6 +50,10 @@
 				"name": "name",
 				"type": "string"
 			},
+            {
+				"name": "rid",
+				"type": "string"
+			},
 		    {
 				"name": "state",
 				"type": "int"
@@ -280,6 +284,16 @@
 			{
 				"name": "inventory",
 				"type": ["null", "boolean"],
+				"default": null
+			},
+            {
+				"name": "lease_end",
+				"type": ["null", "int"],
+				"default": null
+			},
+            {
+				"name": "lease_start",
+				"type": ["null", "int"],
 				"default": null
 			}
         ]
@@ -1003,6 +1017,11 @@
             {
 				"name": "email",
 				"type": ["null", "string"],
+				"default": null
+			},
+            {
+				"name": "graph_format",
+				"type": ["null", "int"],
 				"default": null
 			}
 		]

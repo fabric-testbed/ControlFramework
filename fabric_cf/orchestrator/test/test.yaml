@@ -28,34 +28,29 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  kafka-server:
-  kafka-schema-registry-url:
-  kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
-  kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
-  kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
-  kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
-  kafka-ssl-key-password:
+  kafka-server: 152.54.14.213:29092
+  kafka-schema-registry-url: http://152.54.14.213:8081
+  kafka-key-schema: ../../../schema/key.avsc
+  kafka-value-schema: ../../../schema/message.avsc
+  kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
+  kafka-ssl-certificate-location:  ../../../secrets/kafkacat1-ca1-signed.pem
+  kafka-ssl-key-location:  ../../../secrets/kafkacat1.client.key
+  kafka-ssl-key-password:  fabric
   kafka-security-protocol: SSL
-  kafka-group-id:
-  kafka-sasl-mechanism:
-  kafka-sasl-producer-username:
-  kafka-sasl-producer-password:
-  kafka-sasl-consumer-username:
-  kafka-sasl-consumer-password:
+  kafka-group-id: fabric-cf
   orchestrator.rest.port: 8700
-  prometheus.port: 11000
+  prometheus.port: 11002
 
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  log-directory: /var/log/actor
+  log-directory: .
 
   ## The filename to be used for actor's log file.
   log-file: actor.log
 
   ## The default log level for actor.
-  log-level: DEBUG
+  log-level: TRACE
 
   ## actor rotates log files. You may specify how many archived log files to keep here.
   log-retain: 5
@@ -70,23 +65,23 @@ oauth:
   jwks-url: https://dev-2.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
-  verify-exp: True
+  verify-exp: False
 
 database:
   db-user: fabric
   db-password: fabric
   db-name: orchestrator
-  db-host: orchestrator-db:5432
+  db-host: 152.54.14.213:5432
 
 pdp:
-  url: http://orchestrator-pdp:8080/services/pdp
-  enable: True
+  url: http://localhost:8082/services/pdp
+  enable: False
 
 neo4j:
-  url: bolt://orchestrator-neo4j:9687
+  url: bolt://localhost:9687
   user: neo4j
   pass: password
-  import_host_dir: /usr/src/app/neo4j/imports/
+  import_host_dir: ../../../neo4j3/imports/
   import_dir: /imports
 
 container:

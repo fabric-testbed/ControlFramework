@@ -23,61 +23,36 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import os
-import signal
 import time
 import traceback
 
-import connexion
 import prometheus_client
-import waitress
-from flask import jsonify
 
 from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
 from fabric_cf.actor.core.util.graceful_interrupt_handler import GracefulInterruptHandler
-from fabric_cf.orchestrator.core.exceptions import OrchestratorException
-from fabric_cf.orchestrator.swagger_server import encoder
 
 
 def main():
-
+    """
+    Authority entry function
+    """
     try:
-        from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
+        # Uncomment when testing as app running
+        Globals.config_file = './test.yaml'
+        Constants.SUPERBLOCK_LOCATION = './site_state_recovery.lock'
         with GracefulInterruptHandler() as h:
-
             GlobalsSingleton.get().start(force_fresh=False)
 
-            while not GlobalsSingleton.get().start_completed:
-                time.sleep(0.001)
-
-            from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
-            OrchestratorKernelSingleton.get()
-            OrchestratorKernelSingleton.get().start_threads()
-
             runtime_config = GlobalsSingleton.get().get_config().get_runtime_config()
-
             # prometheus server
             prometheus_port = int(runtime_config.get(Constants.PROPERTY_CONF_PROMETHEUS_REST_PORT, None))
             prometheus_client.start_http_server(prometheus_port)
 
-            rest_port_str = runtime_config.get(Constants.PROPERTY_CONF_CONTROLLER_REST_PORT, None)
-
-            if rest_port_str is None:
-                raise OrchestratorException("Invalid configuration rest port not specified")
-
-            print("Starting REST")
-            # start swagger
-            app = connexion.App(__name__, specification_dir='swagger_server/swagger/')
-            app.app.json_encoder = encoder.JSONEncoder
-            app.add_api('swagger.yaml', arguments={'title': 'Fabric Orchestrator API'}, pythonic_params=True)
-
-            # Start up the server to expose the metrics.
-            waitress.serve(app, port=int(rest_port_str))
             while True:
                 time.sleep(0.0001)
                 if h.interrupted:
                     GlobalsSingleton.get().stop()
-                    OrchestratorKernelSingleton.get().stop_threads()
     except Exception:
         traceback.print_exc()
 
