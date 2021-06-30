@@ -450,8 +450,84 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             props=node_props,
             comps=sliver.attached_components_info)
 
+    def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
+                         reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver, Any]:
+        """
+        Find First Available Node which can serve the reservation
+        @param node_id_list: Candidate Nodes
+        @param node_id_to_reservations:
+        @param inv: Inventory
+        @param reservation: Reservation
+        @return tuple containing delegation id, sliver, error message if any
+        """
+        delegation_id = None
+        sliver = None
+        error_msg = None
+        self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
+        for node_id in node_id_list:
+            try:
+                self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
+                graph_node = self.get_network_node_from_graph(node_id=node_id)
+
+                existing_reservations = self.get_existing_reservations(node_id=node_id,
+                                                                       node_id_to_reservations=node_id_to_reservations)
+
+                delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
+                                                     requested_sliver=reservation.get_requested_resources().get_sliver(),
+                                                     graph_id=self.combined_broker_model_graph_id,
+                                                     graph_node=graph_node, existing_reservations=existing_reservations)
+
+                if delegation_id is not None and sliver is not None:
+                    break
+            except BrokerException as e:
+                if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:
+                    self.logger.error(f"Exception occurred: {e}")
+                    error_msg = e.msg
+                else:
+                    error_msg = None
+                    raise e
+
+        return delegation_id, sliver, error_msg
+
+    def __allocate_nodes(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, sliver: NodeSliver,
+                         node_id_to_reservations: dict) -> Tuple[str, BaseSliver, Any]:
+        """
+        Allocate Network Node Slivers
+        @param reservation Reservation
+        @param inv Inventory
+        @param sliver Requested sliver
+        @param node_id_to_reservations
+        @return tuple containing delegation id, sliver, error message if any
+        """
+        delegation_id = None
+        error_msg = None
+        node_id_list = self.__candidate_nodes(sliver=sliver)
+
+        # no candidate nodes found
+        if len(node_id_list) == 0:
+            error_msg = f'Insufficient resources: No candidates nodes found to serve {reservation}'
+            self.logger.error(error_msg)
+            return delegation_id, sliver, error_msg
+
+        if self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.FirstFit.name.lower():
+            return self.__find_first_fit(node_id_list=node_id_list,
+                                         node_id_to_reservations=node_id_to_reservations,
+                                         inv=inv, reservation=reservation)
+
+        else:
+            raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
+                                  msg=f"Broker currently only supports First Fit")
+
     def __allocate_services(self, *, rid: ID, inv: InventoryForType, sliver: NetworkServiceSliver,
                             node_id_to_reservations: dict) -> Tuple[str, BaseSliver, Any]:
+        """
+        Allocate Network Service Slivers
+        @param rid Reservation Id
+        @param inv Inventory
+        @param sliver Requested sliver
+        @param node_id_to_reservations
+        @return tuple containing delegation id, sliver, error message if any
+        """
         self.logger.debug(f"Processing Network Service sliver: {sliver}")
         delegation_id = None
         error_msg = None
@@ -538,21 +614,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             sliver = None
 
             if isinstance(res_sliver, NodeSliver):
-                node_id_list = self.__candidate_nodes(sliver=res_sliver)
-
-                # no candidate nodes found
-                if len(node_id_list) == 0:
-                    error_msg = f'Insufficient resources: No candidates nodes found to serve {reservation}'
-                    self.logger.error(error_msg)
-                    return False, node_id_to_reservations, error_msg
-
-                if self.get_algorithm_type().lower() == BrokerAllocationAlgorithm.FirstFit.name.lower():
-                    delegation_id, sliver, error_msg = self.__find_first_fit(node_id_list=node_id_list,
-                                                                             node_id_to_reservations=node_id_to_reservations,
-                                                                             inv=inv, reservation=reservation)
-                else:
-                    raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
-                                          msg=f"Broker currently only supports First Fit")
+                delegation_id, sliver, error_msg = self.__allocate_nodes(reservation=reservation, inv=inv,
+                                                                         sliver=res_sliver,
+                                                                         node_id_to_reservations=node_id_to_reservations)
 
             elif isinstance(res_sliver, NetworkServiceSliver):
                 delegation_id, sliver, error_msg = self.__allocate_services(rid=reservation.get_reservation_id(),
@@ -579,37 +643,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.error(e)
             reservation.fail(message=str(e))
         return False, node_id_to_reservations, error_msg
-
-    def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
-                         reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver, Any]:
-        delegation_id = None
-        sliver = None
-        error_msg = None
-        self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
-        for node_id in node_id_list:
-            try:
-                self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
-                graph_node = self.get_network_node_from_graph(node_id=node_id)
-
-                existing_reservations = self.get_existing_reservations(node_id=node_id,
-                                                                       node_id_to_reservations=node_id_to_reservations)
-
-                delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
-                                                     requested_sliver=reservation.get_requested_resources().get_sliver(),
-                                                     graph_id=self.combined_broker_model_graph_id,
-                                                     graph_node=graph_node, existing_reservations=existing_reservations)
-
-                if delegation_id is not None and sliver is not None:
-                    break
-            except BrokerException as e:
-                if e.error_code == ExceptionErrorCode.INSUFFICIENT_RESOURCES:
-                    self.logger.error(f"Exception occurred: {e}")
-                    error_msg = e.msg
-                else:
-                    error_msg = None
-                    raise e
-
-        return delegation_id, sliver, error_msg
 
     def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term):
         try:

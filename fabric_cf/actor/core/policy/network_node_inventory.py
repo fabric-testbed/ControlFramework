@@ -193,8 +193,6 @@ class NetworkNodeInventory(InventoryForType):
 
                             for av in available_components:
                                 node_map = allocated.get_node_map()
-                                if av.get_type() == ComponentType.SharedNIC:
-                                    self.logger.debug()
 
                                 if node_map is not None and av.node_id == node_map[1]:
                                     self.logger.debug(f"Excluding component {allocated} assigned to "
