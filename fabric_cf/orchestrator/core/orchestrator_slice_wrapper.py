@@ -25,6 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 from typing import List, Tuple, Dict
+from datetime import datetime
+from http.client import BAD_REQUEST
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -234,7 +236,7 @@ class OrchestratorSliceWrapper:
         """
         if sliver.get_capacities() is None and sliver.get_capacity_hints() is None:
             raise OrchestratorException(message="Either Capacity or Capacity Hints must be specified!",
-                                        http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+                                        http_error_code=BAD_REQUEST)
 
     def __build_network_service_reservations(self, slice_graph: Neo4jASM,
                                              node_res_mapping: Dict[str, str]) -> List[TicketReservationAvro]:
@@ -273,7 +275,7 @@ class OrchestratorSliceWrapper:
 
                         if ifs_mapping is None:
                             raise OrchestratorException(message=f"Peer connection point not found for ifs# {ifs}",
-                                                        http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+                                                        http_error_code=BAD_REQUEST)
 
                         # capacities (bw in Gbps, burst size is in Mbits) source: (b)
                         # Set Capacities
@@ -301,7 +303,7 @@ class OrchestratorSliceWrapper:
             else:
 
                 raise OrchestratorException(message="Not implemented",
-                                            http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+                                            http_error_code=BAD_REQUEST)
         return reservations
 
     def __build_network_node_reservations(self, slice_graph: Neo4jASM) -> Tuple[List[TicketReservationAvro], Dict[str, str]]:

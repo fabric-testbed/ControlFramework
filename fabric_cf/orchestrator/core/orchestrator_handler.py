@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 from datetime import datetime, timedelta
+from http.client import NOT_FOUND, BAD_REQUEST
 from typing import Tuple, List, Any
 
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
@@ -135,7 +136,7 @@ class OrchestratorHandler:
                         graph = None
                 return graph_str, graph
             else:
-                raise OrchestratorException(http_error_code=OrchestratorException.HTTP_NOT_FOUND,
+                raise OrchestratorException(http_error_code=NOT_FOUND,
                                             message="Resource(s) not found!")
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -312,13 +313,13 @@ class OrchestratorHandler:
                     self.logger.error(controller.get_last_error())
                     if controller.get_last_error().status.code == ErrorCodes.ErrorNoSuchSlice:
                         raise OrchestratorException(f"Slice# {slice_id} not found",
-                                                    http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+                                                    http_error_code=NOT_FOUND)
                     elif controller.get_last_error().status.code == ErrorCodes.ErrorNoSuchReservation:
                         raise OrchestratorException(f"Reservation# {rid} not found",
-                                                    http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+                                                    http_error_code=NOT_FOUND)
 
                 raise OrchestratorException(f"Slice# {slice_id} has no reservations",
-                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+                                            http_error_code=NOT_FOUND)
 
             return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices,
                                                            include_sliver=True)
@@ -351,7 +352,7 @@ class OrchestratorHandler:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
                 raise OrchestratorException(f"User# has no Slices",
-                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+                                            http_error_code=NOT_FOUND)
 
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
                                                      slice_states=slice_states)
@@ -379,14 +380,14 @@ class OrchestratorHandler:
 
             if slice_list is None or len(slice_list) == 0:
                 raise OrchestratorException(f"Slice# {slice_id} not found",
-                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+                                            http_error_code=NOT_FOUND)
 
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
             if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
                 raise OrchestratorException(f"Slice# {slice_id} already closed",
-                                            http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+                                            http_error_code=BAD_REQUEST)
 
             if slice_state != SliceState.StableOK and slice_state != SliceState.StableError:
                 self.logger.info(f"Unable to delete Slice# {slice_guid} that is not yet stable, try again later")
@@ -421,7 +422,7 @@ class OrchestratorHandler:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
                 raise OrchestratorException(f"User# has no Slices",
-                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+                                            http_error_code=NOT_FOUND)
 
             slice_obj = next(iter(slice_list))
 
@@ -461,14 +462,14 @@ class OrchestratorHandler:
 
             if slice_list is None or len(slice_list) == 0:
                 raise OrchestratorException(f"Slice# {slice_id} not found",
-                                            http_error_code=OrchestratorException.HTTP_NOT_FOUND)
+                                            http_error_code=NOT_FOUND)
 
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
             if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
                 raise OrchestratorException(f"Slice# {slice_id} already closed",
-                                            http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+                                            http_error_code=BAD_REQUEST)
 
             if slice_state != SliceState.StableOK and slice_state != SliceState.StableError:
                 self.logger.info(f"Unable to renew Slice# {slice_guid} that is not yet stable, try again later")
@@ -527,12 +528,12 @@ class OrchestratorHandler:
             new_end_time = datetime.strptime(lease_end_time, Constants.RENEW_TIME_FORMAT)
         except Exception as e:
             raise OrchestratorException(f"Lease End Time is not in format {Constants.RENEW_TIME_FORMAT}",
-                                        http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+                                        http_error_code=BAD_REQUEST)
 
         now = datetime.utcnow()
         if new_end_time <= now:
             raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
-                                        http_error_code=OrchestratorException.HTTP_BAD_REQUEST)
+                                        http_error_code=BAD_REQUEST)
 
         if (new_end_time - now) > Constants.DEFAULT_MAX_DURATION:
             self.logger.info(f"New term end time {new_end_time} exceeds system default "
