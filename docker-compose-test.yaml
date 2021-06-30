@@ -202,8 +202,26 @@ services:
     volumes:
       - ./authority.sh:/usr/src/app/docker-entrypoint.sh
       - ${NEO4DATA_HOST:-.}/neo4j1:/usr/src/app/neo4j
-      - ./fabric_cf/aits/config/config.am.yaml:/etc/fabric/actor/config/config.yaml
+      - ./fabric_cf/aits/config/config.siteam.yaml:/etc/fabric/actor/config/config.yaml
       - ./neo4j/RENCI-ad.graphml:/etc/fabric/actor/config/neo4j/arm.graphml
+      - ${AITS_LOG_DIR:-.}/fabric_cf/aits/am-logs/:/var/log/actor
+      - ./secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
+      - ./secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
+      - ./secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
+  netam:
+    image: controlframework:latest
+    container_name: net1-am
+    restart: always
+    depends_on:
+      - database
+      - neo4j4
+    ports:
+      - 11004:11000
+    volumes:
+      - ./authority.sh:/usr/src/app/docker-entrypoint.sh
+      - ${NEO4DATA_HOST:-.}/neo4j1:/usr/src/app/neo4j
+      - ./fabric_cf/aits/config/config.netam.yaml:/etc/fabric/actor/config/config.yaml
+      - ./neo4j/Network-ad.graphml:/etc/fabric/actor/config/neo4j/arm.graphml
       - ${AITS_LOG_DIR:-.}/fabric_cf/aits/am-logs/:/var/log/actor
       - ./secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
       - ./secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key

@@ -141,6 +141,7 @@ logs
 neo4j1/
 neo4j2/
 neo4j3/
+neo4j4/
 pdp/
 pg_data/
 schema/
