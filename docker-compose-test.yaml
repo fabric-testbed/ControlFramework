@@ -195,7 +195,6 @@ services:
     container_name: site1-am
     restart: always
     depends_on:
-      - database
       - neo4j1
     ports:
       - 11003:11000
@@ -213,7 +212,6 @@ services:
     container_name: net1-am
     restart: always
     depends_on:
-      - database
       - neo4j4
     ports:
       - 11004:11000
@@ -231,7 +229,6 @@ services:
     container_name: broker
     restart: always
     depends_on:
-      - database
       - neo4j2
     ports:
       - 11001:11000
@@ -248,7 +245,6 @@ services:
     container_name: orchestrator
     restart: always
     depends_on:
-      - database
       - neo4j3
     ports:
       - 8700:8700
