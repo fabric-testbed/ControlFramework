@@ -64,7 +64,7 @@ class BaseTestCase:
     db_user = 'fabric'
     db_pwd = 'fabric'
     db_name = 'test'
-    db_host = '127.0.0.1:5432'
+    db_host = '152.54.14.213:5432'
 
     logger = logging.getLogger('BaseTestCase')
     log_format = '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'

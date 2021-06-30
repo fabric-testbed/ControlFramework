@@ -217,7 +217,7 @@ services:
       - 11004:11000
     volumes:
       - ./authority.sh:/usr/src/app/docker-entrypoint.sh
-      - ${NEO4DATA_HOST:-.}/neo4j1:/usr/src/app/neo4j
+      - ${NEO4DATA_HOST:-.}/neo4j4:/usr/src/app/neo4j
       - ./fabric_cf/aits/config/config.netam.yaml:/etc/fabric/actor/config/config.yaml
       - ./neo4j/Network-ad.graphml:/etc/fabric/actor/config/neo4j/arm.graphml
       - ${AITS_LOG_DIR:-.}/fabric_cf/aits/netam-logs/:/var/log/actor
