@@ -106,7 +106,7 @@ pdp:
   enable: False
 
 neo4j:
-  url: bolt://neo4j1:7687
+  url: bolt://neo4j4:6687
   user: neo4j
   pass: password
   import_host_dir: /usr/src/app/neo4j/imports/
