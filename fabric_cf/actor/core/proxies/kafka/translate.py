@@ -88,6 +88,8 @@ class Translate:
         slice_obj = SliceFactory.create(slice_id=slice_avro.guid, name=slice_avro.slice_name)
         slice_obj.set_description(description=slice_avro.description)
         slice_obj.set_config_properties(value=slice_avro.config_properties)
+        slice_obj.set_lease_start(lease_start=slice_avro.get_lease_start())
+        slice_obj.set_lease_end(lease_end=slice_avro.get_lease_end())
         return slice_obj
 
     @staticmethod
@@ -99,6 +101,8 @@ class Translate:
         avro_slice.owner = Translate.translate_auth_to_avro(auth=slice_obj.get_owner())
         avro_slice.state = slice_obj.get_state().value
         avro_slice.config_properties = slice_obj.get_config_properties()
+        avro_slice.set_lease_end(lease_end=slice_obj.get_lease_end())
+        avro_slice.set_lease_start(lease_start=slice_obj.get_lease_start())
 
         if slice_obj.get_resource_type() is not None:
             avro_slice.set_resource_type(str(slice_obj.get_resource_type()))

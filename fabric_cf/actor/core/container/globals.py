@@ -46,6 +46,11 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_container import ABCActorContainer
     from fabric_cf.actor.boot.configuration import Configuration
 
+logging.TRACE = 5
+logging.addLevelName(logging.TRACE, "TRACE")
+logging.Logger.trace = lambda inst, msg, *args, **kwargs: inst.log(logging.TRACE, msg, *args, **kwargs)
+logging.trace = lambda msg, *args, **kwargs: logging.log(logging.TRACE, msg, *args, **kwargs)
+
 
 class Globals:
     config_file = Constants.CONFIGURATION_FILE

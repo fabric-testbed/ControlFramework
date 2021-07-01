@@ -58,6 +58,7 @@ class IntegrationTest(unittest.TestCase):
     logger.setLevel(logging.INFO)
 
     am_name = None
+    net_am_name = None
     broker_name = None
     orchestrator_name = None
     kafka_topic = None
@@ -65,6 +66,7 @@ class IntegrationTest(unittest.TestCase):
 
     def setUp(self) -> None:
         KafkaProcessorSingleton.get().set_logger(logger=self.logger)
+        self.net_am_name = KafkaProcessorSingleton.get().net_am_name
         self.am_name = KafkaProcessorSingleton.get().am_name
         self.broker_name = KafkaProcessorSingleton.get().broker_name
         self.orchestrator_name = KafkaProcessorSingleton.get().orchestrator_name
@@ -132,7 +134,35 @@ class IntegrationTest(unittest.TestCase):
 
         KafkaProcessorSingleton.get().stop()
 
-    def test_b3_reclaim_resources(self):
+    def test_b3_claim_resources(self):
+        KafkaProcessorSingleton.get().start()
+        manage_helper = ManageHelper(logger=self.logger)
+
+        # Claim Delegations
+        manage_helper.claim_delegations(broker=self.broker_name, am=self.net_am_name, callback_topic=self.kafka_topic)
+
+        # Get AM Delegations
+        am_delegations, status = manage_helper.do_get_delegations(actor_name=self.net_am_name,
+                                                                  callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(am_delegations)
+
+        # Get Broker Delegations
+        broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
+                                                                      callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(broker_delegations)
+
+        # Verify AM and Broker Delegations
+        self.assertEqual(len(am_delegations), len(broker_delegations))
+        ad = am_delegations[0]
+        bd = broker_delegations[0]
+        self.assertEqual(ad.delegation_id, bd.delegation_id)
+        self.assertEqual(ad.slice.slice_name, bd.slice.slice_name)
+
+        KafkaProcessorSingleton.get().stop()
+
+    def test_b4_reclaim_resources(self):
         # This test requires the previous test:test_b2_claim_resources to be executed before this
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
@@ -211,9 +241,10 @@ class IntegrationTest(unittest.TestCase):
         self.assertIsNotNone(json_obj)
         self.assertIsNotNone(json_obj.get(Constants.BROKER_QUERY_MODEL, None))
 
-    def build_slice(self, include_components: bool = False, exceed_capacities: bool = False,
-                    exceed_components: bool = False, use_hints: bool = False, no_cap: bool = False,
-                    instance_type: str = "fabric.c8.m32.d500") -> str:
+    @staticmethod
+    def build_slice_with_compute_only(include_components: bool = False, exceed_capacities: bool = False,
+                                      exceed_components: bool = False, use_hints: bool = False, no_cap: bool = False,
+                                      instance_type: str = "fabric.c8.m32.d500") -> str:
         t = fu.ExperimentTopology()
         n1 = t.add_node(name='n1', site='RENC')
 
@@ -248,11 +279,35 @@ class IntegrationTest(unittest.TestCase):
 
         return t.serialize()
 
+    @staticmethod
+    def build_slice() -> str:
+        t = fu.ExperimentTopology()
+        n1 = t.add_node(name='n1', site='RENC', ntype=fu.NodeType.VM)
+        n2 = t.add_node(name='n2', site='RENC')
+        n3 = t.add_node(name='n3', site='RENC')
+
+        cap = fu.Capacities()
+        cap.set_fields(core=2, ram=8, disk=100)
+        n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n3.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+
+        n1.add_component(model_type=fu.ComponentModelType.SharedNIC_ConnectX_6, name='n1-nic1')
+
+        n2.add_component(model_type=fu.ComponentModelType.SmartNIC_ConnectX_6, name='n2-nic1')
+        n2.add_component(ctype=fu.ComponentType.NVME, model='P4510', name='c1')
+
+        n3.add_component(model_type=fu.ComponentModelType.SmartNIC_ConnectX_5, name='n3-nic1')
+
+        t.add_network_service(name='bridge1', nstype=fu.ServiceType.L2Bridge, interfaces=t.interface_list)
+
+        return t.serialize()
+
     def assert_am_broker_reservations(self, slice_id: str, res_id: str, am_res_state: int, broker_res_state: int,
                                       new_time: str = None):
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
-        am_reservation, status = manage_helper.do_get_reservations(actor_name=KafkaProcessorSingleton.get().am_name,
+        am_reservation, status = manage_helper.do_get_reservations(actor_name=self.am_name,
                                                                    callback_topic=KafkaProcessorSingleton.get().kafka_topic,
                                                                    rid=res_id)
         if am_res_state == -1:
@@ -268,7 +323,7 @@ class IntegrationTest(unittest.TestCase):
                 lease_end_str = lease_end.strftime(self.TIME_FORMAT_IN_SECONDS)
                 self.assertEqual(new_time, lease_end_str)
 
-        broker_reservation, status = manage_helper.do_get_reservations(actor_name=KafkaProcessorSingleton.get().broker_name,
+        broker_reservation, status = manage_helper.do_get_reservations(actor_name=self.broker_name,
                                                                        callback_topic=KafkaProcessorSingleton.get().kafka_topic,
                                                                        rid=res_id)
         self.assertEqual(0, status.status.code)
@@ -286,7 +341,7 @@ class IntegrationTest(unittest.TestCase):
     def test_d_create_delete_slice_two_vms_with_components(self):
 
         # Create Slice
-        slice_graph = self.build_slice(include_components=True)
+        slice_graph = self.build_slice_with_compute_only(include_components=True)
         oh = OrchestratorHelper()
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.OK, status)
@@ -338,7 +393,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_e_create_delete_slice_two_vms_no_components(self):
         # Create Slice
-        slice_graph = self.build_slice()
+        slice_graph = self.build_slice_with_compute_only()
         oh = OrchestratorHelper()
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.OK, status)
@@ -395,7 +450,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_f_create_delete_slice_with_instance_type(self):
         # Create Slice
-        slice_graph = self.build_slice(no_cap=True)
+        slice_graph = self.build_slice_with_compute_only(no_cap=True)
         oh = OrchestratorHelper()
 
         # Create Slice with no capacities and hints
@@ -405,7 +460,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(BAD_REQUEST, response.status_code)
 
         # Create Slice with exceeding capacities
-        slice_graph = self.build_slice(use_hints=True, instance_type="fabric.c64.m384.d4000")
+        slice_graph = self.build_slice_with_compute_only(use_hints=True, instance_type="fabric.c64.m384.d4000")
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.OK, status)
         self.assertTrue(isinstance(response, list))
@@ -440,7 +495,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertTrue(sliver_status.get_notices().__contains__(error_messages))
 
         # Create Slice with capacities and hints
-        slice_graph = self.build_slice(use_hints=True)
+        slice_graph = self.build_slice_with_compute_only(use_hints=True)
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.OK, status)
         self.assertTrue(isinstance(response, list))
@@ -503,7 +558,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_g_create_delete_slice_two_vms_with_components_not_available(self):
         # Create Slice
-        slice_graph = self.build_slice(exceed_components=True, include_components=True)
+        slice_graph = self.build_slice_with_compute_only(exceed_components=True, include_components=True)
         oh = OrchestratorHelper()
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.OK, status)
@@ -547,7 +602,7 @@ class IntegrationTest(unittest.TestCase):
 
     def test_h_create_slice_with_lease_end_and_renew_slice(self):
         # Create Slice
-        slice_graph = self.build_slice(include_components=True)
+        slice_graph = self.build_slice_with_compute_only(include_components=True)
         oh = OrchestratorHelper()
         now = datetime.utcnow()
         new_time = now + timedelta(days=2)
@@ -646,3 +701,55 @@ class IntegrationTest(unittest.TestCase):
             self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
                                                am_res_state=ReservationStates.Closed.value,
                                                broker_res_state=ReservationStates.Closed.value)
+
+    def test_i_create_delete_slice_network_service(self):
+
+        # Create Slice
+        slice_graph = self.build_slice()
+        oh = OrchestratorHelper()
+        status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(response, list))
+        self.assertEqual(len(response), 2)
+        self.slice_id = response[0].slice_id
+
+        # wait for slice to be Stable
+        slice_state = None
+        while slice_state != self.STABLE_OK:
+            status, slice_obj = oh.slice_status(slice_id=self.slice_id)
+            self.assertEqual(Status.OK, status)
+            self.assertTrue(isinstance(slice_obj, Slice))
+            slice_state = slice_obj.slice_state
+            time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Active.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+            #self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
+            #                                   am_res_state=ReservationStates.Active.value,
+            #                                   broker_res_state=ReservationStates.Ticketed.value)
+
+        # Delete Slice
+        status, response = oh.delete(self.slice_id)
+        self.assertEqual(Status.OK, status)
+
+        time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Closed.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+            #self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
+            #                                   am_res_state=ReservationStates.Closed.value,
+            #                                   broker_res_state=ReservationStates.Closed.value)

@@ -28,8 +28,8 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  kafka-server: localhost:19092
-  kafka-schema-registry-url: http://localhost:8081
+  kafka-server: 152.54.14.213:29092
+  kafka-schema-registry-url: http://152.54.14.213:8081
   kafka-key-schema: ./schema/key.avsc
   kafka-value-schema: ./schema/message.avsc
   kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
@@ -75,10 +75,14 @@ database:
   db-user: fabric
   db-password: fabric
   db-name: test
-  db-host: localhost:5432
+  db-host: 152.54.14.213:5432
 
 container:
   container.guid: orchestrator-conainer
+
+bqm:
+  # in seconds (default set to 300 seconds)
+  refresh-interval: 300
 
 time:
   # This section controls settings, which are generally useful

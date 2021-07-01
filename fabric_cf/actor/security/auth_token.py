@@ -88,4 +88,4 @@ class AuthToken:
         return AuthToken(name=self.name, guid=self.guid)
 
     def __str__(self):
-        return f"name: {self.name} guid: {self.guid} oidc_sub_claim: {self.oidc_sub_claim} email: {self.email}"
+        return f"name: {self.name} guid: {self.guid} email: {self.email}"

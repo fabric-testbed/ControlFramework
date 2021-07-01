@@ -33,6 +33,8 @@ from fabric_cf.actor.core.kernel.reservation_states import JoinState
 if TYPE_CHECKING:
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+    from fabric_cf.actor.core.kernel.predecessor_state import PredecessorState
 
 
 class ABCControllerReservation(ABCClientReservation):
@@ -108,7 +110,7 @@ class ABCControllerReservation(ABCClientReservation):
         """
 
     @abstractmethod
-    def add_join_predecessor(self, *, predecessor, filters: dict = None):
+    def add_join_predecessor(self, *, predecessor: ABCReservationMixin, filters: dict = None):
         """
         Sets the join predecessor: the reservation, for which the kernel must
         issue a join before a join may be issued for the current reservation.
@@ -131,7 +133,7 @@ class ABCControllerReservation(ABCClientReservation):
         """
 
     @abstractmethod
-    def add_redeem_predecessor(self, *, reservation, filters: dict = None):
+    def add_redeem_predecessor(self, *, reservation: ABCReservationMixin, filters: dict = None):
         """
         Adds a redeem predecessor to this reservation: the passed in reservation
         must be redeemed before this reservation.
@@ -140,14 +142,14 @@ class ABCControllerReservation(ABCClientReservation):
         """
 
     @abstractmethod
-    def get_redeem_predecessors(self) -> List[ABCControllerReservation]:
+    def get_redeem_predecessors(self) -> List[PredecessorState]:
         """
         Returns the redeem predecessors list for the reservation.
         @returns redeem predecessors list for the reservation
         """
 
     @abstractmethod
-    def get_join_predecessors(self) -> List[ABCControllerReservation]:
+    def get_join_predecessors(self) -> List[PredecessorState]:
         """
         Returns the join predecessors list for the reservation.
         @returns join predecessors list for the reservation

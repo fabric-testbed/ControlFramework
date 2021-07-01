@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
+
+from datetime import date, datetime
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -202,6 +204,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.get_owner().set_email(email=user_email)
                 slice_obj_new.set_graph_id(graph_id=slice_obj.graph_id)
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
+                slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
+                slice_obj_new.set_lease_start(lease_start=datetime.utcnow())
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)
@@ -315,7 +319,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
     def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: int = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
-                         email: str = None) -> ResultReservationAvro:
+                         email: str = None, rid_list: List[str] = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -362,6 +366,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                         res_list = self.db.get_reservations_by_email(email=user_email)
                     else:
                         res_list = self.db.get_reservations_by_email_state(email=user_email, state=state)
+                elif rid_list is not None:
+                    res_list = self.db.get_reservations_by_rids(rid=rid_list)
                 else:
                     res_list = self.db.get_reservations()
             except Exception as e:
@@ -573,8 +579,10 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 return result
 
         try:
-            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
-                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+            if id_token is not None:
+                AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
+                                           token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+
             res_list = None
             try:
                 res_list = self.db.get_reservations_by_rids(rid=rids)
@@ -585,27 +593,10 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
                 return result
 
-            if len(res_list) == len(rids):
-                result.reservation_states = []
-                for r in res_list:
-                    result.reservation_states.append(Converter.fill_reservation_state(res=r))
-            elif len(res_list) > len(rids):
-                raise ManageException("The database provided too many records")
-            else:
-                i = 0
-                j = 0
-                result.reservation_states = []
-                while i < len(rids):
-                    reservation = res_list[j]
-                    if rids[i] == reservation.get_reservation_id():
-                        result.reservation_states.append(Converter.fill_reservation_state(res=reservation))
-                        j += 1
-                    else:
-                        state = ReservationStateAvro()
-                        state.set_state(ReservationStates.Unknown.value)
-                        state.set_pending_state(ReservationPendingStates.Unknown.value)
-                        result.reservation_states.append(state)
-                    i += 1
+            result.reservation_states = []
+            for r in res_list:
+                result.reservation_states.append(Converter.fill_reservation_state(res=r))
+
         except ReservationNotFoundException as e:
             self.logger.error("get_reservation_state_for_reservations: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)

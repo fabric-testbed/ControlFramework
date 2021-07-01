@@ -172,7 +172,12 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
         if reservation.get_broker() is not None:
             broker = ID(uid=reservation.get_broker())
 
-        rc = ClientReservationFactory.create(rid=ID(), resources=rset, term=term)
+        rid = None
+        if reservation.get_reservation_id() is not None:
+            rid = ID(uid=reservation.get_reservation_id())
+        else:
+            rid = ID()
+        rc = ClientReservationFactory.create(rid=rid, resources=rset, term=term)
         rc.set_renewable(renewable=reservation.is_renewable())
 
         if rc.get_state() != ReservationStates.Nascent or rc.get_pending_state() != ReservationPendingStates.None_:
@@ -354,7 +359,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                                                     "class={}".format(rid, type(pr)))
                                 continue
 
-                            ff = pred.get_filter()
+                            ff = pred.get_filter_properties()
                             if ff is not None:
                                 self.logger.debug("Setting redeem predecessor on reservation # {} pred={} filter={}".
                                                   format(r.get_reservation_id(), pr.get_reservation_id(), ff))

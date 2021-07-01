@@ -921,22 +921,23 @@ class ActorMixin(ABCActorMixin):
                 self.actor_main_lock.notify_all()
 
             if len(events) > 0:
-                self.logger.debug("Processing {} events".format(len(events)))
-                for e in events:
-                    self.logger.debug("Processing event of type {}".format(type(e)))
-                    self.logger.debug("Processing event {}".format(e))
+                self.logger.debug(f"Processing {len(events)} events")
+                for event in events:
+                    #self.logger.debug("Processing event of type {}".format(type(e)))
+                    #self.logger.debug("Processing event {}".format(e))
                     try:
-                        e.process()
+                        event.process()
                     except Exception as e:
-                        self.logger.error("Error while processing event {} {}".format(type(e), e))
+                        self.logger.error(f"Error while processing event {type(event)}, {e}")
                         self.logger.error(traceback.format_exc())
 
             if len(timers) > 0:
+                self.logger.debug(f"Processing {len(timers)} timers")
                 for t in timers:
                     try:
                         t.execute()
                     except Exception as e:
-                        self.logger.error("Error while processing a timer {}".format(e))
+                        self.logger.error(f"Error while processing a timer {type(t)}, {e}")
                         self.logger.error(traceback.format_exc())
 
     def setup_message_service(self):

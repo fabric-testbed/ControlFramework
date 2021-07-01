@@ -146,9 +146,9 @@ class OrchestratorKernel:
         self.sdt = SliceDeferThread()
         self.sdt.start()
 
-        self.get_logger().debug("Starting ReservationStatusUpdateThread")
-        self.sut = ReservationStatusUpdateThread()
-        self.sut.start()
+        #self.get_logger().debug("Starting ReservationStatusUpdateThread")
+        #self.sut = ReservationStatusUpdateThread()
+        #self.sut.start()
 
 
 class OrchestratorKernelSingleton:

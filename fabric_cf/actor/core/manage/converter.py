@@ -33,6 +33,7 @@ from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservati
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.lease_reservation_state_avro import LeaseReservationStateAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
@@ -42,6 +43,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.actor_identity import ActorIdentity
 from fabric_cf.actor.core.core.ticket import Ticket
 from fabric_cf.actor.core.core.unit import Unit
+from fabric_cf.actor.core.kernel.predecessor_state import PredecessorState
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.proxies.actor_location import ActorLocation
@@ -65,11 +67,23 @@ class Converter:
         return res_obj
 
     @staticmethod
+    def fill_reservation_predecessor(*, pred: PredecessorState) -> ReservationPredecessorAvro:
+        pred_avro = ReservationPredecessorAvro()
+        pred_avro.set_reservation_id(value=str(pred.get_reservation().get_reservation_id()))
+        pred_avro.set_filter_properties(value=pred.filters)
+        return pred_avro
+
+    @staticmethod
     def fill_reservation(*, reservation: ABCReservationMixin, full: bool) -> ReservationMng:
         rsv_mng = None
-
         if isinstance(reservation, ABCControllerReservation):
             rsv_mng = LeaseReservationAvro()
+            if reservation.get_redeem_predecessors() is not None and len(reservation.get_redeem_predecessors()) > 0:
+                rsv_mng.redeem_processors = []
+                for p in reservation.get_redeem_predecessors():
+                    pred = Converter.fill_reservation_predecessor(pred=p)
+                    rsv_mng.redeem_processors.append(pred)
+
         elif isinstance(reservation, ABCClientReservation):
             rsv_mng = TicketReservationAvro()
         else:
@@ -148,17 +162,19 @@ class Converter:
         return mng
 
     @staticmethod
-    def fill_reservation_state(*, res: dict) -> ReservationStateAvro:
+    def fill_reservation_state(*, res: ABCReservationMixin) -> ReservationStateAvro:
         result = None
-        if 'rsv_joining' in res:
+        if isinstance(res, ABCControllerReservation):
             result = LeaseReservationStateAvro()
-            result.set_joining(res['rsv_joining'])
-            result.set_state(res['rsv_state'])
-            result.set_pending_state(res['rsv_pending'])
+            result.set_reservation_id(rid=str(res.get_reservation_id()))
+            result.set_state(res.get_state().value)
+            result.set_pending_state(res.get_pending_state().value)
+            result.set_joining(res.get_join_state().value)
         else:
             result = ReservationStateAvro()
-            result.set_state(res['rsv_state'])
-            result.set_pending_state(res['rsv_pending'])
+            result.set_reservation_id(rid=str(res.get_reservation_id()))
+            result.set_state(res.get_state().value)
+            result.set_pending_state(res.get_pending_state().value)
 
         return result
 

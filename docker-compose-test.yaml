@@ -162,6 +162,29 @@ services:
       - NEO4J_dbms_connector_http_listen__address=0.0.0.0:9474
       - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:9473
       - NEO4J_dbms_connector_https_listen__address=0.0.0.0:9473
+  neo4j4:
+    image: fabrictestbed/neo4j-apoc:4.0.3
+    container_name: neo4j4
+    user: ${NEO4J_UID:-1000}:${NEO4J_GID:-1000}
+    restart: always
+    ports:
+      - 6474:6474  # for HTTP
+      - 6473:6473  # for HTTPS
+      - 6687:6687  # for Bolt
+    volumes:
+      - ${NEO4DATA_HOST:-.}/neo4j4/data:/data
+      - ${NEO4DATA_HOST:-.}/neo4j4/imports:/imports
+      - ${NEO4DATA_HOST:-.}/neo4j4/logs:/logs
+      - ./neo4j/certs/fullchain.pem:/ssl/neo4j.cert:ro  # SSL development certificate
+      - ./neo4j/certs/privkey.pem:/ssl/neo4j.key:ro     # SSL development key
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER:-neo4j}/${NEO4J_PASS:-password}
+      - NEO4J_dbms_connector_bolt_advertised__address=0.0.0.0:6687
+      - NEO4J_dbms_connector_bolt_listen__address=0.0.0.0:6687
+      - NEO4J_dbms_connector_http_advertised__address=0.0.0.0:6474
+      - NEO4J_dbms_connector_http_listen__address=0.0.0.0:6474
+      - NEO4J_dbms_connector_https_advertised__address=0.0.0.0:6473
+      - NEO4J_dbms_connector_https_listen__address=0.0.0.0:6473
   cf-base:
     build:
       context: .
@@ -172,16 +195,32 @@ services:
     container_name: site1-am
     restart: always
     depends_on:
-      - database
       - neo4j1
     ports:
       - 11003:11000
     volumes:
       - ./authority.sh:/usr/src/app/docker-entrypoint.sh
       - ${NEO4DATA_HOST:-.}/neo4j1:/usr/src/app/neo4j
-      - ./fabric_cf/aits/config/config.am.yaml:/etc/fabric/actor/config/config.yaml
+      - ./fabric_cf/aits/config/config.siteam.yaml:/etc/fabric/actor/config/config.yaml
       - ./neo4j/RENCI-ad.graphml:/etc/fabric/actor/config/neo4j/arm.graphml
-      - ${AITS_LOG_DIR:-.}/fabric_cf/aits/am-logs/:/var/log/actor
+      - ${AITS_LOG_DIR:-.}/fabric_cf/aits/siteam-logs/:/var/log/actor
+      - ./secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
+      - ./secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
+      - ./secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
+  netam:
+    image: controlframework:latest
+    container_name: net1-am
+    restart: always
+    depends_on:
+      - neo4j4
+    ports:
+      - 11004:11000
+    volumes:
+      - ./authority.sh:/usr/src/app/docker-entrypoint.sh
+      - ${NEO4DATA_HOST:-.}/neo4j4:/usr/src/app/neo4j
+      - ./fabric_cf/aits/config/config.netam.yaml:/etc/fabric/actor/config/config.yaml
+      - ./neo4j/Network-ad.graphml:/etc/fabric/actor/config/neo4j/arm.graphml
+      - ${AITS_LOG_DIR:-.}/fabric_cf/aits/netam-logs/:/var/log/actor
       - ./secrets/snakeoil-ca-1.crt:/etc/fabric/message_bus/ssl/cacert.pem
       - ./secrets/kafkacat1.client.key:/etc/fabric/message_bus/ssl/client.key
       - ./secrets/kafkacat1-ca1-signed.pem:/etc/fabric/message_bus/ssl/client.pem
@@ -190,7 +229,6 @@ services:
     container_name: broker
     restart: always
     depends_on:
-      - database
       - neo4j2
     ports:
       - 11001:11000
@@ -207,7 +245,6 @@ services:
     container_name: orchestrator
     restart: always
     depends_on:
-      - database
       - neo4j3
     ports:
       - 8700:8700

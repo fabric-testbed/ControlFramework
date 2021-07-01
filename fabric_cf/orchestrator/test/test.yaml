@@ -30,20 +30,16 @@
 runtime:
   kafka-server: 152.54.14.213:29092
   kafka-schema-registry-url: http://152.54.14.213:8081
-  kafka-key-schema: ../../schema/key.avsc
-  kafka-value-schema: ../../schema/message.avsc
-  kafka-ssl-ca-location:  ../../../../../secrets/snakeoil-ca-1.crt
-  kafka-ssl-certificate-location:  ../../../../../secrets/kafkacat1-ca1-signed.pem
-  kafka-ssl-key-location:  ../../../../../secrets/kafkacat1.client.key
+  kafka-key-schema: ../../../schema/key.avsc
+  kafka-value-schema: ../../../schema/message.avsc
+  kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
+  kafka-ssl-certificate-location:  ../../../secrets/kafkacat1-ca1-signed.pem
+  kafka-ssl-key-location:  ../../../secrets/kafkacat1.client.key
   kafka-ssl-key-password:  fabric
   kafka-security-protocol: SSL
   kafka-group-id: fabric-cf
-  kafka-sasl-mechanism:
-  kafka-sasl-producer-username:
-  kafka-sasl-producer-password:
-  kafka-sasl-consumer-username:
-  kafka-sasl-consumer-password:
-  prometheus.port: 11000
+  orchestrator.rest.port: 8700
+  prometheus.port: 11002
 
 logging:
   ## The directory in which actor should create log files.
@@ -54,7 +50,7 @@ logging:
   log-file: actor.log
 
   ## The default log level for actor.
-  log-level: DEBUG
+  log-level: TRACE
 
   ## actor rotates log files. You may specify how many archived log files to keep here.
   log-retain: 5
@@ -63,7 +59,7 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   log-size: 5000000
 
-  logger: site1-am
+  logger: orchestrator
 
 oauth:
   jwks-url: https://dev-2.fabric-testbed.net/certs
@@ -74,11 +70,26 @@ oauth:
 database:
   db-user: fabric
   db-password: fabric
-  db-name: test
+  db-name: orchestrator
   db-host: 152.54.14.213:5432
 
+pdp:
+  url: http://localhost:8082/services/pdp
+  enable: False
+
+neo4j:
+  url: bolt://localhost:9687
+  user: neo4j
+  pass: password
+  import_host_dir: ../../../neo4j3/imports/
+  import_dir: /imports
+
 container:
-  container.guid: site1-am-conainer
+  container.guid: orchestrator-conainer
+
+bqm:
+  # in seconds (default set to 300 seconds)
+  refresh-interval: 300
 
 time:
   # This section controls settings, which are generally useful
@@ -92,6 +103,7 @@ time:
 
   # Internal tick length (in milliseconds)
   time.cycleMillis: 1000
+
   # The number of the first tick
   time.firstTick: 0
 
@@ -99,50 +111,28 @@ time:
   # manually (true)
   time.manual: false
 
-pdp:
-  url: http://localhost:8082/services/pdp
-  enable: False
-
-neo4j:
-  url: bolt://localhost:7687
-  user: neo4j
-  pass: password
-  import_host_dir: ../../../../../neo4j1/imports/
-  import_dir: /imports
-
 actor:
-  type: authority
-  name: site1-am
-  guid: site1-am-guid
-  description: Site AM
-  kafka-topic: site1-am-topic
-  substrate.file: ../../../../../neo4j/RENCI-ad.graphml
+  type: orchestrator
+  name: orchestrator
+  guid: orchestrator-guid
+  description: orchestrator
+  kafka-topic: orchestrator-topic
   policy:
-      module: fabric_cf.actor.core.policy.authority_calendar_policy
-      class: AuthorityCalendarPolicy
-  resources:
-      - resource:
-            type: VM
-            label: VM AM
-            description: VM AM
-            handler:
-              module: fabric_cf.actor.handlers.no_op_handler
-              class: NoOpHandler
-  controls:
-      - control:
-          type: VM, Container, Baremetal
-          module: fabric_cf.actor.core.policy.network_node_control
-          class: NetworkNodeControl
-
+      module: fabric_cf.actor.core.policy.controller_ticket_review_policy
+      class: ControllerTicketReviewPolicy
 peers:
   - peer:
-        name: orchestrator
-        type: orchestrator
-        guid: orchestrator-guid
-        kafka-topic: orchestrator-topic
+      name: broker
+      type: broker
+      guid: broker-guid
+      kafka-topic: broker-topic
   - peer:
-        name: broker
-        type: broker
-        guid: broker-guid
-        kafka-topic: broker-topic
-        delegation: primary
+      name: net1-am
+      guid: net1-am-guid
+      type: authority
+      kafka-topic: net1-am-topic
+  - peer:
+      name: site1-am
+      guid: site1-am-guid
+      type: authority
+      kafka-topic: site1-am-topic

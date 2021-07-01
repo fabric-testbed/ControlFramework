@@ -28,15 +28,13 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  kafka-server: broker1:9092
-  kafka-schema-registry-url: http://schemaregistry:8081
-  #kafka-server: 152.54.14.213:29092
-  #kafka-schema-registry-url: http://152.54.14.213:8081
-  kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
-  kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
-  kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
-  kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
+  kafka-server: 152.54.14.213:29092
+  kafka-schema-registry-url: http://152.54.14.213:8081
+  kafka-key-schema: ../../../schema/key.avsc
+  kafka-value-schema: ../../../schema/message.avsc
+  kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
+  kafka-ssl-certificate-location:  ../../../secrets/kafkacat1-ca1-signed.pem
+  kafka-ssl-key-location:  ../../../secrets/kafkacat1.client.key
   kafka-ssl-key-password:  fabric
   kafka-security-protocol: SSL
   kafka-group-id: fabric-cf
@@ -45,15 +43,15 @@ runtime:
   kafka-sasl-producer-password:
   kafka-sasl-consumer-username:
   kafka-sasl-consumer-password:
-  prometheus.port: 11000
+  prometheus.port: 11006
 
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  log-directory: /var/log/actor
+  log-directory: .
 
   ## The filename to be used for actor's log file.
-  log-file: actor.log
+  log-file: net_actor.log
 
   ## The default log level for actor.
   log-level: DEBUG
@@ -65,7 +63,7 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   log-size: 5000000
 
-  logger: site1-am
+  logger: net1-am
 
 oauth:
   jwks-url: https://dev-2.fabric-testbed.net/certs
@@ -76,11 +74,11 @@ oauth:
 database:
   db-user: fabric
   db-password: fabric
-  db-name: am
-  db-host: database:5432
+  db-name: netam
+  db-host: 152.54.14.213:5432
 
 container:
-  container.guid: site1-am-conainer
+  container.guid: net1-am-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -106,35 +104,35 @@ pdp:
   enable: False
 
 neo4j:
-  url: bolt://neo4j1:7687
+  url: bolt://localhost:6687
   user: neo4j
   pass: password
-  import_host_dir: /usr/src/app/neo4j/imports/
+  import_host_dir: ../../../neo4j4/imports/
   import_dir: /imports
 
 actor:
   type: authority
-  name: site1-am
-  guid: site1-am-guid
-  description: Site AM
-  kafka-topic: site1-am-topic
-  substrate.file: /etc/fabric/actor/config/neo4j/arm.graphml
+  name: net1-am
+  guid: net1-am-guid
+  description: Net AM
+  kafka-topic: net1-am-topic
+  substrate.file: ../../../neo4j/Network-ad.graphml
   policy:
       module: fabric_cf.actor.core.policy.authority_calendar_policy
       class: AuthorityCalendarPolicy
   resources:
       - resource:
-          type: VM
-          label: VM AM
-          description: VM AM
+          type: L2STS, L2Bridge, L2PTP
+          label: NET AM
+          description: Net AM
           handler:
             module: fabric_cf.actor.handlers.no_op_handler
             class: NoOpHandler
   controls:
       - control:
-          type: VM, Container, Baremetal
-          module: fabric_cf.actor.core.policy.network_node_control
-          class: NetworkNodeControl
+          type: L2STS, L2Bridge, L2PTP
+          module: fabric_cf.actor.core.policy.network_service_control
+          class: NetworkServiceControl
 
 peers:
   - peer:

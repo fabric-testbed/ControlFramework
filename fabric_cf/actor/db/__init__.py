@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-from sqlalchemy import JSON, ForeignKey, LargeBinary
+from sqlalchemy import JSON, ForeignKey, LargeBinary, TIMESTAMP
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Integer, Sequence
 
@@ -117,6 +117,8 @@ class Reservations(Base):
     rsv_state = Column(Integer, nullable=False)
     rsv_pending = Column(Integer, nullable=False)
     rsv_joining = Column(Integer, nullable=False)
+    lease_start = Column(TIMESTAMP, nullable=True)
+    lease_end = Column(TIMESTAMP, nullable=True)
     properties = Column(LargeBinary)
 
 
@@ -133,6 +135,8 @@ class Slices(Base):
     slc_name = Column(String, nullable=False)
     slc_type = Column(Integer, nullable=False)
     slc_resource_type = Column(String)
+    lease_start = Column(TIMESTAMP, nullable=True)
+    lease_end = Column(TIMESTAMP, nullable=True)
     properties = Column(LargeBinary)
 
 

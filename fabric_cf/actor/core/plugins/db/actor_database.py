@@ -31,6 +31,7 @@ from typing import List
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
@@ -164,7 +165,8 @@ class ActorDatabase(ABCDatabase):
                               slc_resource_type=str(slice_object.get_resource_type()),
                               properties=properties,
                               slc_graph_id=slice_object.get_graph_id(),
-                              oidc_claim_sub=oidc_claim_sub, email=email)
+                              oidc_claim_sub=oidc_claim_sub, email=email,
+                              lease_end=slice_object.get_lease_end(), lease_start=slice_object.get_lease_start())
         finally:
             self.lock.release()
 
@@ -181,7 +183,8 @@ class ActorDatabase(ABCDatabase):
                                  slc_type=slice_object.get_slice_type().value,
                                  slc_resource_type=str(slice_object.get_resource_type()),
                                  properties=properties,
-                                 slc_graph_id=slice_object.get_graph_id())
+                                 slc_graph_id=slice_object.get_graph_id(),
+                                 lease_end=slice_object.get_lease_end(), lease_start=slice_object.get_lease_start())
         finally:
             self.lock.release()
 
@@ -380,6 +383,18 @@ class ActorDatabase(ABCDatabase):
             slice_obj = self.get_slice_by_id(slc_id=slice_id)
             result = pickle.loads(pickled_res)
             result.restore(actor=self.actor, slice_obj=slice_obj)
+
+            if isinstance(result, ABCControllerReservation) and result.get_redeem_predecessors() is not None:
+                for p in result.get_redeem_predecessors():
+                    if p.reservation_id is not None:
+                        parent = self.get_reservation(rid=p.reservation_id)
+                        p.set_reservation(reservation=parent)
+
+                for p in result.get_join_predecessors():
+                    if p.reservation_id is not None:
+                        parent = self.get_reservation(rid=p.reservation_id)
+                        p.set_reservation(reservation=parent)
+
             return result
         except Exception as e:
             self.logger.error(e)
@@ -653,7 +668,7 @@ class ActorDatabase(ABCDatabase):
                 result.append(res_obj)
         return result
 
-    def get_reservations_by_rids(self, *, rid: List[str]):
+    def get_reservations_by_rids(self, *, rid: List[str]) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:

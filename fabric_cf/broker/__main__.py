@@ -39,9 +39,6 @@ def main():
     Broker entry function
     """
     try:
-        # Uncomment when testing as app running
-        #Globals.config_file = './test.yaml'
-        #Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(force_fresh=False)
 

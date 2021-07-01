@@ -26,10 +26,10 @@
 import traceback
 from datetime import datetime, timedelta
 from http.client import NOT_FOUND, BAD_REQUEST
-from typing import Tuple, List, Any
+from typing import Tuple, List
 
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
+from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -101,7 +101,7 @@ class OrchestratorHandler:
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, delete_graph: bool = True,
                                     ignore_validation: bool = True,
-                                    graph_format: GraphFormat = GraphFormat.GRAPHML) -> Tuple[str, Any]:
+                                    graph_format: GraphFormat = GraphFormat.GRAPHML) -> Tuple[str, ABCCBMPropertyGraph or None]:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
@@ -110,7 +110,7 @@ class OrchestratorHandler:
         :param delete_graph flag indicating if the loaded graph should be deleted or not
         :param ignore_validation flag indicating to ignore validating the graph (only needed for ADs)
         :param graph_format: Graph format
-        :return tuple of dictionary containing the BQM and Neo4jCBMGraph (if delete_graph = False)
+        :return tuple of dictionary containing the BQM and ABCCBMPropertyGraph (if delete_graph = False)
         """
         broker = self.get_broker(controller=controller)
         if broker is None:
@@ -215,9 +215,7 @@ class OrchestratorHandler:
         bqm_graph = None
         asm_graph = None
         try:
-            end_time = None
-            if lease_end_time is not None:
-                end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
+            end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
 
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
@@ -232,8 +230,10 @@ class OrchestratorHandler:
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
 
-            bqm_string, bqm_graph = self.discover_broker_query_model(controller=controller, token=token,
-                                                                     delete_graph=False)
+            # FIXME : uncomment post testing
+            #bqm_string, bqm_graph = self.discover_broker_query_model(controller=controller, token=token,
+            #                                                         delete_graph=False)
+            bqm_graph = None
 
             broker = self.get_broker(controller=controller)
             if broker is None:
@@ -245,7 +245,8 @@ class OrchestratorHandler:
             slice_obj.set_client_slice(True)
             slice_obj.set_description("Description")
             slice_obj.graph_id = asm_graph.get_graph_id()
-            slice_obj.config_properties = {Constants.USER_SSH_KEY: ssh_key}
+            slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key})
+            slice_obj.set_lease_end(lease_end=end_time)
 
             self.logger.debug(f"Adding Slice {slice_name}")
             slice_id = controller.add_slice(slice_obj=slice_obj, id_token=token)
@@ -263,8 +264,7 @@ class OrchestratorHandler:
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
-            computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=asm_graph,
-                                                              end_time=end_time)
+            computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=asm_graph)
 
             # Process the Slice i.e. Demand the computed reservations i.e. Add them to the policy
             # Once added to the policy; Actor Tick Handler will do following asynchronously:
@@ -502,6 +502,10 @@ class OrchestratorHandler:
                                                        new_end_time=new_end_time)
                 if not result:
                     failed_to_extend_rid_list.append(r.get_reservation_id())
+                else:
+                    slice_object.set_lease_end(lease_end=new_end_time)
+                    if not controller.update_slice(slice_obj=slice_object):
+                        self.logger.error(f"Failed to update lease end time: {new_end_time} in Slice: {slice_object}")
 
             return ResponseBuilder.get_response_summary(rid_list=failed_to_extend_rid_list)
         except Exception as e:
@@ -517,6 +521,9 @@ class OrchestratorHandler:
         :raises Exception if new end time is in past
         """
         new_end_time = None
+        if lease_end_time is None:
+            new_end_time = datetime.utcnow() + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
+            return new_end_time
         try:
             new_end_time = datetime.strptime(lease_end_time, Constants.RENEW_TIME_FORMAT)
         except Exception as e:

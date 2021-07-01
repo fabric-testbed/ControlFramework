@@ -390,18 +390,18 @@ class ABCDatabase(ABC):
 
         @param state state
 
-        @return list of properties for reservations
+        @return list of reservations
 
         @throws Exception in case of error
         """
 
     @abstractmethod
-    def get_reservations_by_rids(self, *, rid: List[str]):
+    def get_reservations_by_rids(self, *, rid: List[str]) -> List[ABCReservationMixin]:
         """
         Retrieves the specified reservation records.
         The order in the return vector is the same order as @rids
         @param rid rids
-        @return list of properties
+        @return list of reservations
         @throws Exception in case of error
         """
 

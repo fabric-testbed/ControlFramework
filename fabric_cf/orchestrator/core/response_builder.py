@@ -30,6 +30,7 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
@@ -87,11 +88,10 @@ class ResponseBuilder:
             for reservation in res_list:
                 res_dict = {ResponseBuilder.PROP_SLICE_ID: reservation.get_slice_id(),
                             ResponseBuilder.PROP_RESERVATION_ID: reservation.get_reservation_id(),
-                            ResponseBuilder.PROP_RESOURCE_TYPE: reservation.get_resource_type(),
                             ResponseBuilder.PROP_RESERVATION_STATE: ReservationStates(reservation.get_state()).name}
 
                 if reservation.get_pending_state() is not None:
-                    res_dict[ResponseBuilder.PROP_RESERVATION_JOIN_STATE] = \
+                    res_dict[ResponseBuilder.PROP_RESERVATION_PENDING_STATE] = \
                         ReservationPendingStates(reservation.get_pending_state()).name
 
                 if isinstance(reservation, LeaseReservationAvro) and reservation.get_join_state() is not None:
@@ -143,7 +143,11 @@ class ResponseBuilder:
                 s_dict = {ResponseBuilder.PROP_SLICE_ID: s.get_slice_id(),
                           ResponseBuilder.PROP_SLICE_NAME: s.get_slice_name(),
                           ResponseBuilder.PROP_GRAPH_ID: s.get_graph_id(),
-                          ResponseBuilder.PROP_SLICE_STATE: slice_state.name}
+                          ResponseBuilder.PROP_SLICE_STATE: slice_state.name,
+                          }
+                end_time = s.get_lease_end()
+                if end_time is not None:
+                    s_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.RENEW_TIME_FORMAT)
                 slices.append(s_dict)
         else:
             status = ResponseBuilder.STATUS_FAILURE
@@ -197,21 +201,29 @@ class ResponseBuilder:
 
     @staticmethod
     def get_sliver_json(*, sliver: BaseSliver, result: dict) -> dict:
+        result[ResponseBuilder.PROP_NAME] = sliver.get_name()
+        result[ResponseBuilder.PROP_SITE] = sliver.get_site()
+        result[ResponseBuilder.PROP_RESOURCE_TYPE] = str(sliver.get_type())
+        if sliver.get_capacities() is not None:
+            result[ResponseBuilder.PROP_CAPACITIES] = sliver.get_capacities().to_json()
+        if sliver.get_capacity_allocations() is not None:
+            result[ResponseBuilder.PROP_ALLOCATED_CAPACITIES] = sliver.get_capacity_allocations().to_json()
+        if sliver.get_labels() is not None:
+            result[ResponseBuilder.PROP_LABELS] = sliver.get_labels().to_json()
+        if sliver.get_label_allocations() is not None:
+            result[ResponseBuilder.PROP_ALLOCATED_LABELS] = sliver.get_label_allocations().to_json()
+
+        # Network Node Specific Fields
         if isinstance(sliver, NodeSliver):
-            result[ResponseBuilder.PROP_NAME] = sliver.get_name()
-            result[ResponseBuilder.PROP_SITE] = sliver.get_site()
             if sliver.get_management_ip() is not None:
                 result[ResponseBuilder.PROP_MANAGEMENT_IP] = sliver.get_management_ip()
-            if sliver.get_capacities() is not None:
-                result[ResponseBuilder.PROP_CAPACITIES] = sliver.get_capacities().to_json()
-            if sliver.get_capacity_allocations() is not None:
-                result[ResponseBuilder.PROP_ALLOCATED_CAPACITIES] = sliver.get_capacity_allocations().to_json()
-            if sliver.get_labels() is not None:
-                result[ResponseBuilder.PROP_LABELS] = sliver.get_labels().to_json()
-            if sliver.get_label_allocations() is not None:
-                result[ResponseBuilder.PROP_ALLOCATED_LABELS] = sliver.get_label_allocations().to_json()
             if sliver.get_capacity_hints() is not None:
                 result[ResponseBuilder.PROP_CAPACITY_HINTS] = sliver.get_capacity_hints().to_json()
+
+        # Network Service Specific Fields
+        if isinstance(sliver, NetworkServiceSliver):
+            print("TODO")
+
         return result
 
     @staticmethod

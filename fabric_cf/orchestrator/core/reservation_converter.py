@@ -24,9 +24,12 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Tuple, Dict
 
+from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
@@ -44,34 +47,39 @@ class ReservationConverter:
         self.controller = controller
         self.broker = broker
 
-    def compute_reservations(self, *, slivers: List[NodeSliver], slice_id: str,
-                             end_time: datetime) -> List[TicketReservationAvro]:
+    def generate_reservation(self, *, sliver: BaseSliver, slice_id: str, end_time: datetime,
+                             pred_list: List[str] = None) -> TicketReservationAvro:
         """
-        Responsible to generate reservations from the slivers; Adds the reservation Orchestrator
-        :param slivers list of slivers computed from the ASM (Slice graph)
+        Responsible to generate reservation from the sliver
+        :param sliver Network Service or Network Node Sliver
         :param slice_id Slice Id
         :param end_time End Time
+        :param pred_list Predecessor Reservation Id List
         :returns list of tickets
         """
-        reservation_list = []
-        for sliver in slivers:
+        ticket = None
+        if pred_list is not None:
+            ticket = LeaseReservationAvro()
+            ticket.redeem_processors = []
+            for rid in pred_list:
+                pred = ReservationPredecessorAvro()
+                pred.set_reservation_id(value=rid)
+                ticket.redeem_processors.append(pred)
+        else:
             ticket = TicketReservationAvro()
-            ticket.set_slice_id(slice_id)
-            ticket.set_broker(str(self.broker))
-            ticket.set_units(1)
-            ticket.set_resource_type(str(sliver.get_type()))
-            start = datetime.utcnow()
-            end = start + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
-            if end_time is not None:
-                end = end_time
-            ticket.set_start(ActorClock.to_milliseconds(when=start))
-            ticket.set_end(ActorClock.to_milliseconds(when=end))
-            ticket.set_state(ReservationStates.Unknown.value)
-            ticket.set_pending_state(ReservationPendingStates.None_.value)
-            ticket.set_sliver(sliver)
+        ticket.set_slice_id(slice_id)
+        ticket.set_broker(str(self.broker))
+        ticket.set_units(1)
+        ticket.set_resource_type(str(sliver.get_type()))
+        start = datetime.utcnow()
+        end = start + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
+        if end_time is not None:
+            end = end_time
+        ticket.set_start(ActorClock.to_milliseconds(when=start))
+        ticket.set_end(ActorClock.to_milliseconds(when=end))
+        ticket.set_state(ReservationStates.Unknown.value)
+        ticket.set_pending_state(ReservationPendingStates.None_.value)
+        ticket.set_sliver(sliver)
+        ticket.set_reservation_id(value=str(ID()))
+        return ticket
 
-            # Add reservation to Orchestrator
-            reservation_id = self.controller.add_reservation(reservation=ticket)
-            ticket.set_reservation_id(str(reservation_id))
-            reservation_list.append(ticket)
-        return reservation_list
