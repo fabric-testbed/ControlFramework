@@ -24,8 +24,10 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-from fim.graph.abc_property_graph import ABCPropertyGraph
+from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
+from fim.graph.resources.abc_arm import ABCARMPropertyGraph
+from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph, Neo4jCBMFactory
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
@@ -95,7 +97,7 @@ class FimHelper:
     Provides methods to load Graph Models and perform various operations on them
     """
     @staticmethod
-    def get_neo4j_importer() -> Neo4jGraphImporter:
+    def get_neo4j_importer() -> ABCGraphImporter:
         """
         get fim graph importer
         :return: Neo4jGraphImporter
@@ -111,7 +113,7 @@ class FimHelper:
         return neo4j_graph_importer
 
     @staticmethod
-    def get_arm_graph_from_file(*, filename: str) -> Neo4jARMGraph:
+    def get_arm_graph_from_file(*, filename: str) -> ABCARMPropertyGraph:
         """
         Load specified file directly with no manipulations or validation
         :param filename:
@@ -127,7 +129,7 @@ class FimHelper:
         return site_arm
 
     @staticmethod
-    def get_arm_graph(*, graph_id: str) -> Neo4jARMGraph:
+    def get_arm_graph(*, graph_id: str) -> ABCARMPropertyGraph:
         """
         Load arm graph from fim
         :param graph_id: graph_id
@@ -141,7 +143,7 @@ class FimHelper:
         return arm_graph
 
     @staticmethod
-    def get_graph(*, graph_id: str) -> Neo4jPropertyGraph:
+    def get_graph(*, graph_id: str) -> ABCPropertyGraph:
         """
         Load arm graph from fim
         :param graph_id: graph_id
@@ -153,7 +155,7 @@ class FimHelper:
         return arm_graph
 
     @staticmethod
-    def get_neo4j_cbm_graph(graph_id: str) -> Neo4jCBMGraph:
+    def get_neo4j_cbm_graph(graph_id: str) -> ABCCBMPropertyGraph:
         """
         Load cbm graph from fim
         :param graph_id: graph_id
@@ -168,7 +170,7 @@ class FimHelper:
         return combined_broker_model
 
     @staticmethod
-    def get_neo4j_cbm_graph_from_string_direct(*, graph_str: str, ignore_validation: bool = False) -> Neo4jCBMGraph:
+    def get_neo4j_cbm_graph_from_string_direct(*, graph_str: str, ignore_validation: bool = False) -> ABCCBMPropertyGraph:
         """
         Load Broker Query model graph from string
         :param graph_str: graph_str
@@ -181,7 +183,7 @@ class FimHelper:
         return Neo4jCBMFactory.create(neo4_graph)
 
     @staticmethod
-    def get_graph_from_string_direct(*, graph_str: str) -> Neo4jPropertyGraph:
+    def get_graph_from_string_direct(*, graph_str: str) -> ABCPropertyGraph:
         """
         Load arm graph from fim
         :param graph_str: graph_str
@@ -193,7 +195,7 @@ class FimHelper:
         return graph
 
     @staticmethod
-    def get_graph_from_string(*, graph_str: str) -> Neo4jPropertyGraph:
+    def get_graph_from_string(*, graph_str: str) -> ABCPropertyGraph:
         """
         Load arm graph from fim
         :param graph_str: graph_str
@@ -264,7 +266,7 @@ class FimHelper:
 
 
     @staticmethod
-    def get_neo4j_asm_graph(*, slice_graph: str) -> Neo4jASM:
+    def get_neo4j_asm_graph(*, slice_graph: str) -> ABCASMPropertyGraph:
         """
         Load Slice in Neo4j
         :param slice_graph: slice graph string
@@ -275,7 +277,7 @@ class FimHelper:
         return asm
 
     @staticmethod
-    def get_interface_sliver_mapping(ifs_node_id: str, slice_graph: Neo4jASM) -> InterfaceSliverMapping:
+    def get_interface_sliver_mapping(ifs_node_id: str, slice_graph: ABCASMPropertyGraph) -> InterfaceSliverMapping:
         """
         Finds Peer Interface Sliver and parent information upto Network Node
         @param ifs_node_id node id of the Interface Sliver
@@ -301,7 +303,7 @@ class FimHelper:
         return ret_val
 
     @staticmethod
-    def get_interface_sliver_by_id(ifs_node_id: str, graph: Neo4jPropertyGraph) -> InterfaceSliver or None:
+    def get_interface_sliver_by_id(ifs_node_id: str, graph: ABCPropertyGraph) -> InterfaceSliver or None:
         """
         Finds Peer Interface Sliver and parent information upto Network Node
         @param ifs_node_id node id of the Interface Sliver
@@ -331,7 +333,7 @@ class FimHelper:
         return peer_ifs
 
     @staticmethod
-    def get_interface_sliver_by_component_id_local_name(component_id: str, bqm: Neo4jCBMGraph,
+    def get_interface_sliver_by_component_id_local_name(component_id: str, bqm: ABCCBMPropertyGraph,
                                                         local_name: str) -> InterfaceSliver or None:
         """
         Find Interface Sliver matching a local name when the parent component Id is provided
@@ -405,7 +407,7 @@ class FimHelper:
         return None
 
     @staticmethod
-    def get_owner_switch(*, bqm: Neo4jCBMGraph, node_id: str) -> NetworkServiceSliver:
+    def get_owner_switch(*, bqm: ABCCBMPropertyGraph, node_id: str) -> NetworkServiceSliver:
         """
         Get owner switch for a Connection Point
         @param bqm BQM graph

@@ -25,15 +25,13 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 from typing import List, Tuple, Dict
-from datetime import datetime
 from http.client import BAD_REQUEST
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
-from fim.graph.slices.neo4j_asm import Neo4jASM
+from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver
@@ -61,6 +59,8 @@ class OrchestratorSliceWrapper:
         self.computed_reservations = []
         self.demanded = []
         self.thread_lock = threading.Lock()
+        self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS]
+        self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP]
 
     def lock(self):
         """
@@ -187,10 +187,9 @@ class OrchestratorSliceWrapper:
         """
         return ID(uid=self.slice_obj.get_slice_id())
 
-    def create(self, *, bqm_graph: Neo4jCBMGraph, slice_graph: Neo4jASM) -> List[TicketReservationAvro]:
+    def create(self, *, slice_graph: ABCASMPropertyGraph) -> List[TicketReservationAvro]:
         """
         Create a slice
-        :param bqm_graph: BQM Graph
         :param slice_graph: Slice Graph
         :return: List of computed reservations
         """
@@ -238,7 +237,7 @@ class OrchestratorSliceWrapper:
             raise OrchestratorException(message="Either Capacity or Capacity Hints must be specified!",
                                         http_error_code=BAD_REQUEST)
 
-    def __build_network_service_reservations(self, slice_graph: Neo4jASM,
+    def __build_network_service_reservations(self, slice_graph: ABCASMPropertyGraph,
                                              node_res_mapping: Dict[str, str]) -> List[TicketReservationAvro]:
         """
         Build Network Service Reservations
@@ -255,12 +254,11 @@ class OrchestratorSliceWrapper:
             sliver_type = sliver.get_type()
 
             # Ignore Sliver types P4,OVS and MPLS
-            if sliver_type == ServiceType.P4 or sliver_type == ServiceType.OVS or sliver_type == ServiceType.MPLS:
+            if sliver_type in self.ignorable_ns:
                 continue
 
             # Process only the currently supported Network Sliver types L2STS, L2PTP and L2Bridge
-            elif sliver_type == ServiceType.L2STS or sliver_type == ServiceType.L2Bridge or \
-                    sliver_type == ServiceType.L2PTP:
+            elif sliver_type in self.supported_ns:
 
                 self.logger.trace(f"Network Service Sliver: {sliver}")
 
@@ -306,7 +304,8 @@ class OrchestratorSliceWrapper:
                                             http_error_code=BAD_REQUEST)
         return reservations
 
-    def __build_network_node_reservations(self, slice_graph: Neo4jASM) -> Tuple[List[TicketReservationAvro], Dict[str, str]]:
+    def __build_network_node_reservations(self, slice_graph: ABCASMPropertyGraph) \
+            -> Tuple[List[TicketReservationAvro], Dict[str, str]]:
         reservations = []
         sliver_to_res_mapping = {}
         for nn_id in slice_graph.get_all_network_nodes():

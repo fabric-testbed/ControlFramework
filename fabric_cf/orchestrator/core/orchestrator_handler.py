@@ -26,10 +26,10 @@
 import traceback
 from datetime import datetime, timedelta
 from http.client import NOT_FOUND, BAD_REQUEST
-from typing import Tuple, List, Any
+from typing import Tuple, List
 
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph
+from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -101,7 +101,7 @@ class OrchestratorHandler:
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
                                     level: int = 10, delete_graph: bool = True,
                                     ignore_validation: bool = True,
-                                    graph_format: GraphFormat = GraphFormat.GRAPHML) -> Tuple[str, Any]:
+                                    graph_format: GraphFormat = GraphFormat.GRAPHML) -> Tuple[str, ABCCBMPropertyGraph or None]:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
@@ -110,7 +110,7 @@ class OrchestratorHandler:
         :param delete_graph flag indicating if the loaded graph should be deleted or not
         :param ignore_validation flag indicating to ignore validating the graph (only needed for ADs)
         :param graph_format: Graph format
-        :return tuple of dictionary containing the BQM and Neo4jCBMGraph (if delete_graph = False)
+        :return tuple of dictionary containing the BQM and ABCCBMPropertyGraph (if delete_graph = False)
         """
         broker = self.get_broker(controller=controller)
         if broker is None:
@@ -504,7 +504,7 @@ class OrchestratorHandler:
                     failed_to_extend_rid_list.append(r.get_reservation_id())
                 else:
                     slice_object.set_lease_end(lease_end=new_end_time)
-                    if not controller.update_slice(slice_object=slice_object):
+                    if not controller.update_slice(slice_obj=slice_object):
                         self.logger.error(f"Failed to update lease end time: {new_end_time} in Slice: {slice_object}")
 
             return ResponseBuilder.get_response_summary(rid_list=failed_to_extend_rid_list)

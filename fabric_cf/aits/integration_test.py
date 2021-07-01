@@ -58,6 +58,7 @@ class IntegrationTest(unittest.TestCase):
     logger.setLevel(logging.INFO)
 
     am_name = None
+    net_am_name = None
     broker_name = None
     orchestrator_name = None
     kafka_topic = None
@@ -65,6 +66,7 @@ class IntegrationTest(unittest.TestCase):
 
     def setUp(self) -> None:
         KafkaProcessorSingleton.get().set_logger(logger=self.logger)
+        self.net_am_name = KafkaProcessorSingleton.get().net_am_name
         self.am_name = KafkaProcessorSingleton.get().am_name
         self.broker_name = KafkaProcessorSingleton.get().broker_name
         self.orchestrator_name = KafkaProcessorSingleton.get().orchestrator_name
@@ -132,7 +134,35 @@ class IntegrationTest(unittest.TestCase):
 
         KafkaProcessorSingleton.get().stop()
 
-    def test_b3_reclaim_resources(self):
+    def test_b3_claim_resources(self):
+        KafkaProcessorSingleton.get().start()
+        manage_helper = ManageHelper(logger=self.logger)
+
+        # Claim Delegations
+        manage_helper.claim_delegations(broker=self.broker_name, am=self.net_am_name, callback_topic=self.kafka_topic)
+
+        # Get AM Delegations
+        am_delegations, status = manage_helper.do_get_delegations(actor_name=self.net_am_name,
+                                                                  callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(am_delegations)
+
+        # Get Broker Delegations
+        broker_delegations, status = manage_helper.do_get_delegations(actor_name=self.broker_name,
+                                                                      callback_topic=self.kafka_topic)
+        self.assertEqual(0, status.get_status().code)
+        self.assertIsNotNone(broker_delegations)
+
+        # Verify AM and Broker Delegations
+        self.assertEqual(len(am_delegations), len(broker_delegations))
+        ad = am_delegations[0]
+        bd = broker_delegations[0]
+        self.assertEqual(ad.delegation_id, bd.delegation_id)
+        self.assertEqual(ad.slice.slice_name, bd.slice.slice_name)
+
+        KafkaProcessorSingleton.get().stop()
+
+    def test_b4_reclaim_resources(self):
         # This test requires the previous test:test_b2_claim_resources to be executed before this
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
@@ -277,7 +307,7 @@ class IntegrationTest(unittest.TestCase):
                                       new_time: str = None):
         KafkaProcessorSingleton.get().start()
         manage_helper = ManageHelper(logger=self.logger)
-        am_reservation, status = manage_helper.do_get_reservations(actor_name=KafkaProcessorSingleton.get().am_name,
+        am_reservation, status = manage_helper.do_get_reservations(actor_name=self.am_name,
                                                                    callback_topic=KafkaProcessorSingleton.get().kafka_topic,
                                                                    rid=res_id)
         if am_res_state == -1:
@@ -293,7 +323,7 @@ class IntegrationTest(unittest.TestCase):
                 lease_end_str = lease_end.strftime(self.TIME_FORMAT_IN_SECONDS)
                 self.assertEqual(new_time, lease_end_str)
 
-        broker_reservation, status = manage_helper.do_get_reservations(actor_name=KafkaProcessorSingleton.get().broker_name,
+        broker_reservation, status = manage_helper.do_get_reservations(actor_name=self.broker_name,
                                                                        callback_topic=KafkaProcessorSingleton.get().kafka_topic,
                                                                        rid=res_id)
         self.assertEqual(0, status.status.code)

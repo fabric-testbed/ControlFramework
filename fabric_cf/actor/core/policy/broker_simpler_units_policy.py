@@ -31,9 +31,9 @@ import threading
 import traceback
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Tuple, List, Any, Dict
+from typing import TYPE_CHECKING, Tuple, List, Any
 
-from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat, ABCPropertyGraph
+from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
@@ -858,7 +858,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug("Reclaim Delegation")
         self.remove_delegation(delegation=delegation)
 
-    def get_net_interface_sliver(self, *, site_ifs_id: str):
+    def get_net_interface_sliver(self, *, site_ifs_id: str) -> InterfaceSliver:
         """
         Get Peer Interface Sliver (child of Network Service Sliver) provided node id of Interface Sliver
         (child of Component Sliver)

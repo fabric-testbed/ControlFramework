@@ -58,6 +58,10 @@ class KafkaProcessor:
         self.am_name = "site1-am"
         self.am_guid = "site1-am-guid"
         self.am_topic = "site1-am-topic"
+        self.net_am_name = "net1-am"
+        self.net_am_guid = "net1-am-guid"
+        self.net_am_topic = "net1-am-topic"
+
         self.logger = None
 
     def set_logger(self, logger):

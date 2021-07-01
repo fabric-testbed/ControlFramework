@@ -80,6 +80,10 @@ database:
 container:
   container.guid: orchestrator-conainer
 
+bqm:
+  # in seconds (default set to 300 seconds)
+  refresh-interval: 300
+
 time:
   # This section controls settings, which are generally useful
   # when running under emulation. These settings allow you to
