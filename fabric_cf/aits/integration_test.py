@@ -76,11 +76,11 @@ class IntegrationTest(unittest.TestCase):
         oh = OrchestratorHelper()
         response = oh.resources()
         self.assertEqual(NOT_FOUND, response.status_code)
-        self.assertEqual("Resource(s) not found!", response.json())
+        self.assertEqual("Resource(s) not found!", response.content)
 
         response = oh.portal_resources()
         self.assertEqual(NOT_FOUND, response.status_code)
-        self.assertEqual("Resource(s) not found!", response.json())
+        self.assertEqual("Resource(s) not found!", response.content)
 
     def test_b1_reclaim_resources(self):
         KafkaProcessorSingleton.get().start()
@@ -404,7 +404,7 @@ class IntegrationTest(unittest.TestCase):
         # Attempt creating the slice again with same name and verify it fails
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
         self.assertEqual(Status.FAILURE, status)
-        self.assertEqual(f"Slice {self.TEST_SLICE_NAME} already exists", response.json())
+        self.assertEqual(f"Slice {self.TEST_SLICE_NAME} already exists", response.content)
 
         # Wait for Slice to be Stable
         slice_state = None
@@ -598,7 +598,7 @@ class IntegrationTest(unittest.TestCase):
         # Verify delete slice fails as slices is already closed
         status, response = oh.delete(self.slice_id)
         self.assertEqual(status, Status.FAILURE)
-        self.assertEqual(f"Slice# {self.slice_id} already closed", response.json())
+        self.assertEqual(f"Slice# {self.slice_id} already closed", response.content)
 
     def test_h_create_slice_with_lease_end_and_renew_slice(self):
         # Create Slice
