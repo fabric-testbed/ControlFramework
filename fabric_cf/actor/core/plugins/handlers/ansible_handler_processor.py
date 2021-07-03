@@ -69,7 +69,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.plugin = None
         self.initialized = False
         self.lock = threading.Lock()
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_WORKERS)
+        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.MAX_WORKERS)
         self.futures = []
         self.thread = None
         self.future_lock = threading.Condition()
