@@ -1,12 +1,12 @@
 <graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
   <key id="d13" for="edge" attr.name="Class" attr.type="string" />
   <key id="d12" for="node" attr.name="LabelDelegations" attr.type="string" />
-  <key id="d11" for="node" attr.name="Labels" attr.type="string" />
-  <key id="d10" for="node" attr.name="CapacityDelegations" attr.type="string" />
-  <key id="d9" for="node" attr.name="Layer" attr.type="string" />
-  <key id="d8" for="node" attr.name="Site" attr.type="string" />
-  <key id="d7" for="node" attr.name="StitchNode" attr.type="string" />
-  <key id="d6" for="node" attr.name="Capacities" attr.type="string" />
+  <key id="d11" for="node" attr.name="CapacityDelegations" attr.type="string" />
+  <key id="d10" for="node" attr.name="Layer" attr.type="string" />
+  <key id="d9" for="node" attr.name="StitchNode" attr.type="string" />
+  <key id="d8" for="node" attr.name="Labels" attr.type="string" />
+  <key id="d7" for="node" attr.name="Capacities" attr.type="string" />
+  <key id="d6" for="node" attr.name="Site" attr.type="string" />
   <key id="d5" for="node" attr.name="Model" attr.type="string" />
   <key id="d4" for="node" attr.name="Type" attr.type="string" />
   <key id="d3" for="node" attr.name="Name" attr.type="string" />
@@ -14,607 +14,850 @@
   <key id="d1" for="node" attr.name="Class" attr.type="string" />
   <key id="d0" for="node" attr.name="GraphID" attr.type="string" />
   <graph edgedefault="undirected">
-    <node id="475">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="1">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">NetworkNode</data>
-      <data key="d2">FOC2450R1BL</data>
-      <data key="d3">RENC-data-sw</data>
-      <data key="d4">Switch</data>
+      <data key="d2">node+lbnl-data-sw:ip+192.168.13.3</data>
+      <data key="d3">lbnl-data-sw</data>
+      <data key="d4">VM</data>
       <data key="d5">NCS 55A1-36H</data>
-      <data key="d6">{"unit": 1}</data>
-      <data key="d7">true</data>
-      <data key="d8">RENC</data>
+      <data key="d6">LBNL</data>
+      <data key="d7">{"unit": 1}</data>
+      <data key="d8">{"ipv4": "192.168.13.3", "local_name": "lbnl-data-sw"}</data>
+      <data key="d9">true</data>
     </node>
-    <node id="476">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="2">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">FOC2450R1BL-ns</data>
-      <data key="d3">RENC-data-sw-ns</data>
+      <data key="d2">node+lbnl-data-sw:ip+192.168.13.3-ns</data>
+      <data key="d3">lbnl-data-sw-ns</data>
       <data key="d4">MPLS</data>
-      <data key="d7">true</data>
-      <data key="d9">L2</data>
+      <data key="d9">true</data>
+      <data key="d10">L2</data>
     </node>
-    <node id="477">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="3">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-00</data>
-      <data key="d3">HundredGigE 0/0/0/5</data>
+      <data key="d2">port+lbnl-data-sw:HundredGigE0/0/0/1</data>
+      <data key="d3">HundredGigE0/0/0/1</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/1", "mac": "94:ae:f0:dc:a8:04"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:04", "local_name": "HundredGigE0/0/0/1"}}}</data>
     </node>
-    <node id="478">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="4">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-01</data>
-      <data key="d3">HundredGigE 0/0/0/13</data>
+      <data key="d2">port+lbnl-data-sw:HundredGigE0/0/0/13</data>
+      <data key="d3">HundredGigE0/0/0/13</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/13", "mac": "94:ae:f0:dc:a8:34"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:34", "local_name": "HundredGigE0/0/0/13"}}}</data>
     </node>
-    <node id="479">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="5">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-02</data>
-      <data key="d3">HundredGigE 0/0/0/15</data>
+      <data key="d2">port+lbnl-data-sw:HundredGigE0/0/0/15</data>
+      <data key="d3">HundredGigE0/0/0/15</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/15", "mac": "94:ae:f0:dc:a8:3c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:3c", "local_name": "HundredGigE0/0/0/15"}}}</data>
     </node>
-    <node id="480">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="6">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-03</data>
-      <data key="d3">HundredGigE 0/0/0/9</data>
+      <data key="d2">port+lbnl-data-sw:HundredGigE0/0/0/17</data>
+      <data key="d3">HundredGigE0/0/0/17</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/17", "mac": "94:ae:f0:dc:a8:44"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:44", "local_name": "HundredGigE0/0/0/17"}}}</data>
     </node>
-    <node id="481">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="7">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-04</data>
-      <data key="d3">HundredGigE 0/0/0/17</data>
+      <data key="d2">port+lbnl-data-sw:HundredGigE0/0/0/19</data>
+      <data key="d3">HundredGigE0/0/0/19</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/19", "mac": "94:ae:f0:dc:a8:4c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:4c", "local_name": "HundredGigE0/0/0/19"}}}</data>
     </node>
-    <node id="482">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="8">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-05</data>
-      <data key="d3">HundredGigE 0/0/0/19</data>
+      <data key="d2">port+lbnl-data-sw:HundredGigE0/0/0/21</data>
+      <data key="d3">HundredGigE0/0/0/21</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/21", "mac": "94:ae:f0:dc:a8:54"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:54", "local_name": "HundredGigE0/0/0/21"}}}</data>
     </node>
-    <node id="483">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="9">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-06</data>
-      <data key="d3">HundredGigE 0/0/0/21</data>
+      <data key="d2">port+lbnl-data-sw:HundredGigE0/0/0/3</data>
+      <data key="d3">HundredGigE0/0/0/3</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/3", "mac": "94:ae:f0:dc:a8:0c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:0c", "local_name": "HundredGigE0/0/0/3"}}}</data>
     </node>
-    <node id="484">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="10">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-07</data>
-      <data key="d3">HundredGigE 0/0/0/25.1</data>
+      <data key="d2">port+lbnl-data-sw:HundredGigE0/0/0/5</data>
+      <data key="d3">HundredGigE0/0/0/5</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/5", "mac": "94:ae:f0:dc:a8:14"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:14", "local_name": "HundredGigE0/0/0/5"}}}</data>
     </node>
-    <node id="485">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="11">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-08</data>
-      <data key="d3">HundredGigE 0/0/0/25.2</data>
+      <data key="d2">port+lbnl-data-sw:HundredGigE0/0/0/9</data>
+      <data key="d3">HundredGigE0/0/0/9</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/9", "mac": "94:ae:f0:dc:a8:24"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:24", "local_name": "HundredGigE0/0/0/9"}}}</data>
     </node>
-    <node id="486">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="12">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-09</data>
-      <data key="d3">HundredGigE 0/0/0/25.3</data>
+      <data key="d2">port+lbnl-data-sw:TenGigE0/0/0/6/0</data>
+      <data key="d3">TenGigE0/0/0/6/0</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 10}</data>
+      <data key="d8">{"local_name": "TenGigE0/0/0/6/0", "mac": "94:ae:f0:dc:a8:18"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 10}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:18", "local_name": "TenGigE0/0/0/6/0"}}}</data>
     </node>
-    <node id="487">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="13">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-0A</data>
-      <data key="d3">HundredGigE 0/0/0/25.4</data>
+      <data key="d2">port+lbnl-data-sw:TenGigE0/0/0/6/0.2400</data>
+      <data key="d3">TenGigE0/0/0/6/0.2400</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 10}</data>
+      <data key="d8">{"ipv4": "10.128.0.134", "ipv6": "2001:db8:293:293::6", "local_name": "TenGigE0/0/0/6/0.2400", "mac": "94:ae:f0:dc:a8:18"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 10}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:18", "ipv4": "10.128.0.134", "ipv6": "2001:db8:293:293::6", "local_name": "TenGigE0/0/0/6/0.2400"}}}</data>
     </node>
-    <node id="488">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="14">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-10</data>
-      <data key="d3">HundredGigE 0/0/0/26</data>
+      <data key="d2">port+lbnl-data-sw:TenGigE0/0/0/6/0.2401</data>
+      <data key="d3">TenGigE0/0/0/6/0.2401</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d10">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d7">{"bw": 10}</data>
+      <data key="d8">{"ipv4": "10.128.128.130", "ipv6": "2001:db8:293:293::e", "local_name": "TenGigE0/0/0/6/0.2401", "mac": "94:ae:f0:dc:a8:18"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 10}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:18", "ipv4": "10.128.128.130", "ipv6": "2001:db8:293:293::e", "local_name": "TenGigE0/0/0/6/0.2401"}}}</data>
     </node>
-    <node id="489">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="15">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-00-00-00-00-00-11</data>
-      <data key="d3">HundredGigE 0/0/0/27</data>
+      <data key="d2">port+lbnl-data-sw:TwentyFiveGigE0/0/0/23/0</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/0</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d10">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d7">{"bw": 25}</data>
+      <data key="d8">{"local_name": "TwentyFiveGigE0/0/0/23/0", "mac": "94:ae:f0:dc:a8:5c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:5c", "local_name": "TwentyFiveGigE0/0/0/23/0"}}}</data>
     </node>
-    <node id="490">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="16">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+lbnl-data-sw:TwentyFiveGigE0/0/0/23/1</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d7">{"bw": 25}</data>
+      <data key="d8">{"local_name": "TwentyFiveGigE0/0/0/23/1", "mac": "94:ae:f0:dc:a8:5d"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:5d", "local_name": "TwentyFiveGigE0/0/0/23/1"}}}</data>
+    </node>
+    <node id="17">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+lbnl-data-sw:TwentyFiveGigE0/0/0/23/2</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/2</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d7">{"bw": 25}</data>
+      <data key="d8">{"local_name": "TwentyFiveGigE0/0/0/23/2", "mac": "94:ae:f0:dc:a8:5e"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:5e", "local_name": "TwentyFiveGigE0/0/0/23/2"}}}</data>
+    </node>
+    <node id="18">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+lbnl-data-sw:TwentyFiveGigE0/0/0/23/3</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/3</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d7">{"bw": 25}</data>
+      <data key="d8">{"local_name": "TwentyFiveGigE0/0/0/23/3", "mac": "94:ae:f0:dc:a8:5f"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dc:a8:5f", "local_name": "TwentyFiveGigE0/0/0/23/3"}}}</data>
+    </node>
+    <node id="19">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">NetworkNode</data>
-      <data key="d2">FOC2451R0XZ</data>
-      <data key="d3">UKY-data-sw</data>
-      <data key="d4">Switch</data>
+      <data key="d2">node+renc-data-sw:ip+192.168.11.3</data>
+      <data key="d3">renc-data-sw</data>
+      <data key="d4">VM</data>
       <data key="d5">NCS 55A1-36H</data>
-      <data key="d6">{"unit": 1}</data>
-      <data key="d7">true</data>
-      <data key="d8">UKY</data>
+      <data key="d6">RENC</data>
+      <data key="d7">{"unit": 1}</data>
+      <data key="d8">{"ipv4": "192.168.11.3", "local_name": "renc-data-sw"}</data>
+      <data key="d9">true</data>
     </node>
-    <node id="491">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="20">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">FOC2451R0XZ-ns</data>
-      <data key="d3">UKY-data-sw-ns</data>
+      <data key="d2">node+renc-data-sw:ip+192.168.11.3-ns</data>
+      <data key="d3">renc-data-sw-ns</data>
       <data key="d4">MPLS</data>
-      <data key="d7">true</data>
-      <data key="d9">L2</data>
+      <data key="d9">true</data>
+      <data key="d10">L2</data>
     </node>
-    <node id="492">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="21">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-00</data>
-      <data key="d3">HundredGigE 0/0/0/5</data>
+      <data key="d2">port+renc-data-sw:HundredGigE0/0/0/1</data>
+      <data key="d3">HundredGigE0/0/0/1</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/1", "mac": "94:ae:f0:dd:9c:04"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:04", "local_name": "HundredGigE0/0/0/1"}}}</data>
     </node>
-    <node id="493">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="22">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-01</data>
-      <data key="d3">HundredGigE 0/0/0/13</data>
+      <data key="d2">port+renc-data-sw:HundredGigE0/0/0/13</data>
+      <data key="d3">HundredGigE0/0/0/13</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/13", "mac": "94:ae:f0:dd:9c:34"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:34", "local_name": "HundredGigE0/0/0/13"}}}</data>
     </node>
-    <node id="494">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="23">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-02</data>
-      <data key="d3">HundredGigE 0/0/0/15</data>
+      <data key="d2">port+renc-data-sw:HundredGigE0/0/0/15</data>
+      <data key="d3">HundredGigE0/0/0/15</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/15", "mac": "94:ae:f0:dd:9c:3c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:3c", "local_name": "HundredGigE0/0/0/15"}}}</data>
     </node>
-    <node id="495">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="24">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-03</data>
-      <data key="d3">HundredGigE 0/0/0/9</data>
+      <data key="d2">port+renc-data-sw:HundredGigE0/0/0/17</data>
+      <data key="d3">HundredGigE0/0/0/17</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/17", "mac": "94:ae:f0:dd:9c:44"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:44", "local_name": "HundredGigE0/0/0/17"}}}</data>
     </node>
-    <node id="496">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="25">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-04</data>
-      <data key="d3">HundredGigE 0/0/0/17</data>
+      <data key="d2">port+renc-data-sw:HundredGigE0/0/0/19</data>
+      <data key="d3">HundredGigE0/0/0/19</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/19", "mac": "94:ae:f0:dd:9c:4c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:4c", "local_name": "HundredGigE0/0/0/19"}}}</data>
     </node>
-    <node id="497">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="26">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-05</data>
-      <data key="d3">HundredGigE 0/0/0/19</data>
+      <data key="d2">port+renc-data-sw:HundredGigE0/0/0/21</data>
+      <data key="d3">HundredGigE0/0/0/21</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/21", "mac": "94:ae:f0:dd:9c:54"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:54", "local_name": "HundredGigE0/0/0/21"}}}</data>
     </node>
-    <node id="498">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="27">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-06</data>
-      <data key="d3">HundredGigE 0/0/0/21</data>
+      <data key="d2">port+renc-data-sw:HundredGigE0/0/0/3</data>
+      <data key="d3">HundredGigE0/0/0/3</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/3", "mac": "94:ae:f0:dd:9c:0c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:0c", "local_name": "HundredGigE0/0/0/3"}}}</data>
     </node>
-    <node id="499">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="28">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-07</data>
-      <data key="d3">HundredGigE 0/0/0/25.1</data>
+      <data key="d2">port+renc-data-sw:HundredGigE0/0/0/5</data>
+      <data key="d3">HundredGigE0/0/0/5</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/5", "mac": "94:ae:f0:dd:9c:14"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:14", "local_name": "HundredGigE0/0/0/5"}}}</data>
     </node>
-    <node id="500">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="29">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-08</data>
-      <data key="d3">HundredGigE 0/0/0/25.2</data>
+      <data key="d2">port+renc-data-sw:HundredGigE0/0/0/9</data>
+      <data key="d3">HundredGigE0/0/0/9</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/9", "mac": "94:ae:f0:dd:9c:24"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:24", "local_name": "HundredGigE0/0/0/9"}}}</data>
     </node>
-    <node id="501">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="30">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-09</data>
-      <data key="d3">HundredGigE 0/0/0/25.3</data>
+      <data key="d2">port+renc-data-sw:TenGigE0/0/0/2/0</data>
+      <data key="d3">TenGigE0/0/0/2/0</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 10}</data>
+      <data key="d8">{"local_name": "TenGigE0/0/0/2/0", "mac": "94:ae:f0:dd:9c:08"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 10}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:08", "local_name": "TenGigE0/0/0/2/0"}}}</data>
     </node>
-    <node id="502">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="31">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-0A</data>
-      <data key="d3">HundredGigE 0/0/0/25.4</data>
+      <data key="d2">port+renc-data-sw:TenGigE0/0/0/2/0.3981</data>
+      <data key="d3">TenGigE0/0/0/2/0.3981</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 10}</data>
+      <data key="d8">{"ipv4": "10.128.0.133", "ipv6": "2602:fcfb:0:1024::5", "local_name": "TenGigE0/0/0/2/0.3981", "mac": "94:ae:f0:dd:9c:08"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 10}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:08", "ipv4": "10.128.0.133", "ipv6": "2602:fcfb:0:1024::5", "local_name": "TenGigE0/0/0/2/0.3981"}}}</data>
     </node>
-    <node id="503">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="32">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-10</data>
-      <data key="d3">HundredGigE 0/0/0/26</data>
+      <data key="d2">port+renc-data-sw:TenGigE0/0/0/2/0.3999</data>
+      <data key="d3">TenGigE0/0/0/2/0.3999</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d10">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d7">{"bw": 10}</data>
+      <data key="d8">{"ipv4": "10.128.0.129", "ipv6": "2602:fcfb:0:1024::1", "local_name": "TenGigE0/0/0/2/0.3999", "mac": "94:ae:f0:dd:9c:08"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 10}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:dd:9c:08", "ipv4": "10.128.0.129", "ipv6": "2602:fcfb:0:1024::1", "local_name": "TenGigE0/0/0/2/0.3999"}}}</data>
     </node>
-    <node id="504">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-11</data>
-      <data key="d3">HundredGigE 0/0/0/27</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d10">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
-    </node>
-    <node id="505">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="33">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">NetworkNode</data>
-      <data key="d2">FOC2450R1AR</data>
-      <data key="d3">LBNL-data-sw</data>
-      <data key="d4">Switch</data>
+      <data key="d2">node+star-data-sw:ip+192.168.14.3</data>
+      <data key="d3">star-data-sw</data>
+      <data key="d4">VM</data>
       <data key="d5">NCS 55A1-36H</data>
-      <data key="d6">{"unit": 1}</data>
-      <data key="d7">true</data>
-      <data key="d8">LBNL</data>
+      <data key="d6">STAR</data>
+      <data key="d7">{"unit": 1}</data>
+      <data key="d8">{"ipv4": "192.168.14.3", "local_name": "star-data-sw"}</data>
+      <data key="d9">true</data>
     </node>
-    <node id="506">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="34">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">FOC2450R1AR-ns</data>
-      <data key="d3">LBNL-data-sw-ns</data>
+      <data key="d2">node+star-data-sw:ip+192.168.14.3-ns</data>
+      <data key="d3">star-data-sw-ns</data>
       <data key="d4">MPLS</data>
-      <data key="d7">true</data>
-      <data key="d9">L2</data>
+      <data key="d9">true</data>
+      <data key="d10">L2</data>
     </node>
-    <node id="507">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="35">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">NetworkNode</data>
+      <data key="d2">node+uky-data-sw:ip+192.168.12.3</data>
+      <data key="d3">uky-data-sw</data>
+      <data key="d4">VM</data>
+      <data key="d5">NCS 55A1-36H</data>
+      <data key="d6">UKY</data>
+      <data key="d7">{"unit": 1}</data>
+      <data key="d8">{"ipv4": "192.168.12.3", "local_name": "uky-data-sw"}</data>
+      <data key="d9">true</data>
+    </node>
+    <node id="36">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">NetworkService</data>
+      <data key="d2">node+uky-data-sw:ip+192.168.12.3-ns</data>
+      <data key="d3">uky-data-sw-ns</data>
+      <data key="d4">MPLS</data>
+      <data key="d9">true</data>
+      <data key="d10">L2</data>
+    </node>
+    <node id="37">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-00</data>
-      <data key="d3">HundredGigE 0/0/0/5</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/0</data>
+      <data key="d3">HundredGigE0/0/0/0</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/5", "mac": "20:00:00:00:00:00"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/0", "mac": "94:ae:f0:e3:58:00"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:00", "local_name": "HundredGigE0/0/0/0"}}}</data>
     </node>
-    <node id="508">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="38">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-01</data>
-      <data key="d3">HundredGigE 0/0/0/13</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/0.851</data>
+      <data key="d3">HundredGigE0/0/0/0.851</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/13", "mac": "20:00:00:00:00:01"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"ipv4": "10.128.128.129", "ipv6": "2001:db8:293:293::d", "local_name": "HundredGigE0/0/0/0.851", "mac": "94:ae:f0:e3:58:00"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:00", "ipv4": "10.128.128.129", "ipv6": "2001:db8:293:293::d", "local_name": "HundredGigE0/0/0/0.851"}}}</data>
     </node>
-    <node id="509">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="39">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-02</data>
-      <data key="d3">HundredGigE 0/0/0/15</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/0.859</data>
+      <data key="d3">HundredGigE0/0/0/0.859</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/15", "mac": "20:00:00:00:00:02"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"ipv4": "10.128.0.130", "ipv6": "2001:db8:293:293::2", "local_name": "HundredGigE0/0/0/0.859", "mac": "94:ae:f0:e3:58:00"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:00", "ipv4": "10.128.0.130", "ipv6": "2001:db8:293:293::2", "local_name": "HundredGigE0/0/0/0.859"}}}</data>
     </node>
-    <node id="510">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="40">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-03</data>
-      <data key="d3">HundredGigE 0/0/0/9</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/0.999</data>
+      <data key="d3">HundredGigE0/0/0/0.999</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/9", "mac": "20:00:00:00:00:03"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"ipv4": "10.128.128.133", "ipv6": "2602:fcfb:1:1024::5", "local_name": "HundredGigE0/0/0/0.999", "mac": "94:ae:f0:e3:58:00"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:00", "ipv4": "10.128.128.133", "ipv6": "2602:fcfb:1:1024::5", "local_name": "HundredGigE0/0/0/0.999"}}}</data>
     </node>
-    <node id="511">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="41">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-04</data>
-      <data key="d3">HundredGigE 0/0/0/17</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/1</data>
+      <data key="d3">HundredGigE0/0/0/1</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/17", "mac": "20:00:00:00:00:04"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/1", "mac": "94:ae:f0:e3:58:04"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:04", "local_name": "HundredGigE0/0/0/1"}}}</data>
     </node>
-    <node id="512">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="42">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-05</data>
-      <data key="d3">HundredGigE 0/0/0/19</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/13</data>
+      <data key="d3">HundredGigE0/0/0/13</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/19", "mac": "20:00:00:00:00:05"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/13", "mac": "94:ae:f0:e3:58:34"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:34", "local_name": "HundredGigE0/0/0/13"}}}</data>
     </node>
-    <node id="513">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="43">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-06</data>
-      <data key="d3">HundredGigE 0/0/0/21</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/15</data>
+      <data key="d3">HundredGigE0/0/0/15</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/21", "mac": "20:00:00:00:00:06"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/15", "mac": "94:ae:f0:e3:58:3c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:3c", "local_name": "HundredGigE0/0/0/15"}}}</data>
     </node>
-    <node id="514">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="44">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-07</data>
-      <data key="d3">HundredGigE 0/0/0/25.1</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/15.300</data>
+      <data key="d3">HundredGigE0/0/0/15.300</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/25.1", "mac": "20:00:00:00:00:07"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/15.300", "mac": "94:ae:f0:e3:58:3c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:3c", "local_name": "HundredGigE0/0/0/15.300"}}}</data>
     </node>
-    <node id="515">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="45">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-08</data>
-      <data key="d3">HundredGigE 0/0/0/25.2</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/17</data>
+      <data key="d3">HundredGigE0/0/0/17</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/25.2", "mac": "20:00:00:00:00:08"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/17", "mac": "94:ae:f0:e3:58:44"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:44", "local_name": "HundredGigE0/0/0/17"}}}</data>
     </node>
-    <node id="516">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="46">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-09</data>
-      <data key="d3">HundredGigE 0/0/0/25.3</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/19</data>
+      <data key="d3">HundredGigE0/0/0/19</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/25.3", "mac": "20:00:00:00:00:09"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/19", "mac": "94:ae:f0:e3:58:4c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:4c", "local_name": "HundredGigE0/0/0/19"}}}</data>
     </node>
-    <node id="517">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="47">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-0A</data>
-      <data key="d3">HundredGigE 0/0/0/25.4</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/19.0</data>
+      <data key="d3">HundredGigE0/0/0/19.0</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/25.4", "mac": "20:00:00:00:00:0A"}</data>
-      <data key="d7">true</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/19.0", "mac": "94:ae:f0:e3:58:4c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:4c", "local_name": "HundredGigE0/0/0/19.0"}}}</data>
     </node>
-    <node id="518">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="48">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-10</data>
-      <data key="d3">HundredGigE 0/0/0/26</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/21</data>
+      <data key="d3">HundredGigE0/0/0/21</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/26", "mac": "20:00:00:00:00:10"}</data>
-      <data key="d7">false</data>
-      <data key="d10">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "20:00:00:00:00:10", "local_name": "HundredGigE 0/0/0/26"}}}</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/21", "mac": "94:ae:f0:e3:58:54"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:54", "local_name": "HundredGigE0/0/0/21"}}}</data>
     </node>
-    <node id="519">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="49">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-20-00-00-00-00-11</data>
-      <data key="d3">HundredGigE 0/0/0/27</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/3</data>
+      <data key="d3">HundredGigE0/0/0/3</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d11">{"local_name": "HundredGigE 0/0/0/27", "mac": "20:00:00:00:00:11"}</data>
-      <data key="d7">false</data>
-      <data key="d10">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "20:00:00:00:00:11", "local_name": "HundredGigE 0/0/0/27"}}}</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/3", "mac": "94:ae:f0:e3:58:0c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:0c", "local_name": "HundredGigE0/0/0/3"}}}</data>
     </node>
-    <node id="520">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="50">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/5</data>
+      <data key="d3">HundredGigE0/0/0/5</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/5", "mac": "94:ae:f0:e3:58:14"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:14", "local_name": "HundredGigE0/0/0/5"}}}</data>
+    </node>
+    <node id="51">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/9</data>
+      <data key="d3">HundredGigE0/0/0/9</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d7">{"bw": 100}</data>
+      <data key="d8">{"local_name": "HundredGigE0/0/0/9", "mac": "94:ae:f0:e3:58:24"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:24", "local_name": "HundredGigE0/0/0/9"}}}</data>
+    </node>
+    <node id="52">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/0</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/0</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d7">{"bw": 25}</data>
+      <data key="d8">{"local_name": "TwentyFiveGigE0/0/0/23/0", "mac": "94:ae:f0:e3:58:5c"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:5c", "local_name": "TwentyFiveGigE0/0/0/23/0"}}}</data>
+    </node>
+    <node id="53">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/1</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d7">{"bw": 25}</data>
+      <data key="d8">{"local_name": "TwentyFiveGigE0/0/0/23/1", "mac": "94:ae:f0:e3:58:5d"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:5d", "local_name": "TwentyFiveGigE0/0/0/23/1"}}}</data>
+    </node>
+    <node id="54">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/2</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/2</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d7">{"bw": 25}</data>
+      <data key="d8">{"local_name": "TwentyFiveGigE0/0/0/23/2", "mac": "94:ae:f0:e3:58:5e"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:5e", "local_name": "TwentyFiveGigE0/0/0/23/2"}}}</data>
+    </node>
+    <node id="55">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/3</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/3</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d7">{"bw": 25}</data>
+      <data key="d8">{"local_name": "TwentyFiveGigE0/0/0/23/3", "mac": "94:ae:f0:e3:58:5f"}</data>
+      <data key="d9">false</data>
+      <data key="d11">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "94:ae:f0:e3:58:5f", "local_name": "TwentyFiveGigE0/0/0/23/3"}}}</data>
+    </node>
+    <node id="56">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-00-00-00-00-00-10-Wave</data>
-      <data key="d3">l1</data>
+      <data key="d2">link:local-port+lbnl-data-sw:TenGigE0/0/0/6/0:remote-port+renc-data-sw:TenGigE0/0/0/2/0</data>
+      <data key="d3">port+lbnl-data-sw:TenGigE0/0/0/6/0-link</data>
       <data key="d4">L2Path</data>
-      <data key="d7">false</data>
-      <data key="d9">L2</data>
+      <data key="d9">false</data>
+      <data key="d10">L2</data>
     </node>
-    <node id="521">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="57">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-11-Wave</data>
-      <data key="d3">l2</data>
+      <data key="d2">link:local-port+lbnl-data-sw:TenGigE0/0/0/6/0.2400:remote-port+uky-data-sw:HundredGigE0/0/0/0</data>
+      <data key="d3">port+lbnl-data-sw:TenGigE0/0/0/6/0.2400-link</data>
       <data key="d4">L2Path</data>
-      <data key="d7">false</data>
-      <data key="d9">L2</data>
+      <data key="d9">false</data>
+      <data key="d10">L2</data>
     </node>
-    <node id="522">
-      <data key="d0">68cc49de-fcb8-4a77-b618-dcb197be8788</data>
+    <node id="58">
+      <data key="d0">1d3923fe-a6c1-4d15-892a-a0254149c4e4</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-00-00-00-00-00-11-Wave</data>
-      <data key="d3">l3</data>
+      <data key="d2">link:local-port+renc-data-sw:TenGigE0/0/0/2/0.3981:remote-port+uky-data-sw:HundredGigE0/0/0/0.851</data>
+      <data key="d3">port+renc-data-sw:TenGigE0/0/0/2/0.3981-link</data>
       <data key="d4">L2Path</data>
-      <data key="d7">false</data>
-      <data key="d9">L2</data>
+      <data key="d9">false</data>
+      <data key="d10">L2</data>
     </node>
-    <edge source="475" target="476">
+    <edge source="1" target="2">
       <data key="d13">has</data>
     </edge>
-    <edge source="476" target="477">
+    <edge source="2" target="3">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="478">
+    <edge source="2" target="4">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="479">
+    <edge source="2" target="5">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="480">
+    <edge source="2" target="6">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="481">
+    <edge source="2" target="7">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="482">
+    <edge source="2" target="8">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="483">
+    <edge source="2" target="9">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="484">
+    <edge source="2" target="10">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="485">
+    <edge source="2" target="11">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="486">
+    <edge source="2" target="12">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="487">
+    <edge source="2" target="13">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="488">
+    <edge source="2" target="14">
       <data key="d13">connects</data>
     </edge>
-    <edge source="476" target="489">
+    <edge source="2" target="15">
       <data key="d13">connects</data>
     </edge>
-    <edge source="488" target="520">
+    <edge source="2" target="16">
       <data key="d13">connects</data>
     </edge>
-    <edge source="489" target="522">
+    <edge source="2" target="17">
       <data key="d13">connects</data>
     </edge>
-    <edge source="490" target="491">
+    <edge source="2" target="18">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="12" target="56">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="13" target="57">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="19" target="20">
       <data key="d13">has</data>
     </edge>
-    <edge source="491" target="492">
+    <edge source="20" target="21">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="493">
+    <edge source="20" target="22">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="494">
+    <edge source="20" target="23">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="495">
+    <edge source="20" target="24">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="496">
+    <edge source="20" target="25">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="497">
+    <edge source="20" target="26">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="498">
+    <edge source="20" target="27">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="499">
+    <edge source="20" target="28">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="500">
+    <edge source="20" target="29">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="501">
+    <edge source="20" target="30">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="502">
+    <edge source="20" target="31">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="503">
+    <edge source="20" target="32">
       <data key="d13">connects</data>
     </edge>
-    <edge source="491" target="504">
+    <edge source="30" target="56">
       <data key="d13">connects</data>
     </edge>
-    <edge source="503" target="520">
+    <edge source="31" target="58">
       <data key="d13">connects</data>
     </edge>
-    <edge source="504" target="521">
-      <data key="d13">connects</data>
-    </edge>
-    <edge source="505" target="506">
+    <edge source="33" target="34">
       <data key="d13">has</data>
     </edge>
-    <edge source="506" target="507">
+    <edge source="35" target="36">
+      <data key="d13">has</data>
+    </edge>
+    <edge source="36" target="37">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="508">
+    <edge source="36" target="38">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="509">
+    <edge source="36" target="39">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="510">
+    <edge source="36" target="40">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="511">
+    <edge source="36" target="41">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="512">
+    <edge source="36" target="42">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="513">
+    <edge source="36" target="43">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="514">
+    <edge source="36" target="44">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="515">
+    <edge source="36" target="45">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="516">
+    <edge source="36" target="46">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="517">
+    <edge source="36" target="47">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="518">
+    <edge source="36" target="48">
       <data key="d13">connects</data>
     </edge>
-    <edge source="506" target="519">
+    <edge source="36" target="49">
       <data key="d13">connects</data>
     </edge>
-    <edge source="518" target="522">
+    <edge source="36" target="50">
       <data key="d13">connects</data>
     </edge>
-    <edge source="519" target="521">
+    <edge source="36" target="51">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="36" target="52">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="36" target="53">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="36" target="54">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="36" target="55">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="37" target="57">
+      <data key="d13">connects</data>
+    </edge>
+    <edge source="38" target="58">
       <data key="d13">connects</data>
     </edge>
   </graph>
