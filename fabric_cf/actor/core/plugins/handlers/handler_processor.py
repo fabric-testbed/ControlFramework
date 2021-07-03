@@ -164,3 +164,6 @@ class HandlerProcessor:
 
     def shutdown(self):
         return
+
+    def start(self):
+        return

@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import concurrent.futures
 import threading
+import time
 import traceback
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -35,13 +36,18 @@ from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 
 
 class AnsibleHandlerProcessor(HandlerProcessor):
+    """
+    Ansible Handler Processor
+    """
     MAX_WORKERS = 10
 
     def __init__(self):
         super().__init__()
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_WORKERS,
-                                                              thread_name_prefix=self.__class__.__name__)
-        self.futures = set()
+        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.MAX_WORKERS)
+        self.futures = []
+        self.thread = None
+        self.future_lock = threading.Condition()
+        self.stopped = False
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -51,6 +57,9 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         del state['lock']
         del state['executor']
         del state['futures']
+        del state['thread']
+        del state['future_lock']
+        del state['stopped']
 
         return state
 
@@ -60,16 +69,45 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.plugin = None
         self.initialized = False
         self.lock = threading.Lock()
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_WORKERS,
-                                                              thread_name_prefix=self.__class__.__name__)
-        self.futures = set()
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_WORKERS)
+        self.futures = []
+        self.thread = None
+        self.future_lock = threading.Condition()
+        self.stopped = False
+
+    def start(self):
+        """
+        Start the Future Processor Thread
+        """
+        self.thread = threading.Thread(target=self.process_futures)
+        self.thread.setName("FutureProcessor")
+        self.thread.setDaemon(True)
+        self.thread.start()
 
     def shutdown(self):
+        """
+        Shutdown Process Pool, Future Processor
+        """
         try:
             self.lock.acquire()
             self.executor.shutdown(wait=True)
-            for f in self.futures:
+            self.stopped = True
+            for f, u in self.futures:
                 f.cancel()
+
+            temp = self.thread
+            self.thread = None
+            if temp is not None:
+                self.logger.warning("It seems that the future thread is running. Interrupting it")
+                try:
+                    with self.future_lock:
+                        self.future_lock.notify_all()
+                    temp.join()
+                except Exception as e:
+                    self.logger.error("Could not join future thread {}".format(e))
+                    self.logger.error(traceback.format_exc())
+                finally:
+                    self.lock.release()
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
@@ -78,6 +116,17 @@ class AnsibleHandlerProcessor(HandlerProcessor):
 
     def set_logger(self, *, logger):
         self.logger = logger
+
+    def queue_future(self, future: concurrent.futures.Future, unit: ConfigToken):
+        """
+        Queue an future on Future Processor timer queue
+        @param future
+        @param unit Unit being processed; This is needed
+        """
+        with self.future_lock:
+            self.futures.append((future, unit))
+            self.logger.debug("Added future to Future queue")
+            self.future_lock.notify_all()
 
     def invoke_handler(self, unit: ConfigToken, operation: str):
         try:
@@ -89,7 +138,6 @@ class AnsibleHandlerProcessor(HandlerProcessor):
                                                                         class_name=handler.get_class_name())
             handler_obj = handler_class(self.logger, handler.get_properties())
 
-            self.lock.acquire()
             future = None
             if operation == Constants.TARGET_CREATE:
                 future = self.executor.submit(handler_obj.create, unit)
@@ -100,8 +148,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             else:
                 raise AuthorityException("Invalid operation")
 
-            future.add_done_callback(self.handler_complete)
-            self.futures.add(future)
+            self.queue_future(future=future, unit=unit)
             self.logger.debug(f"Handler operation {operation} scheduled for Resource Type: {unit.get_resource_type()} "
                               f"Unit: {unit.get_id()} Reservation: {unit.get_reservation_id()}")
 
@@ -112,10 +159,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
 
-            self.plugin.configuration_complete(token=unit, properties=result)
+            self.handler_complete(unit=unit, properties=result, old_unit=unit)
         finally:
-            if self.lock.locked():
-                self.lock.release()
             self.logger.info(f"Executing {operation} completed")
 
     def create(self, unit: ConfigToken):
@@ -127,21 +172,70 @@ class AnsibleHandlerProcessor(HandlerProcessor):
     def delete(self, unit: ConfigToken):
         self.invoke_handler(unit=unit, operation=Constants.TARGET_DELETE)
 
-    def handler_complete(self, future):
+    def handler_complete(self, properties: dict, unit: ConfigToken, old_unit: ConfigToken):
+        try:
+            self.lock.acquire()
+            self.logger.debug(f"Properties: {properties} Unit: {unit}")
+            # Copy the sliver from the Unit to
+            old_unit.set_sliver(sliver=unit.get_sliver())
+            self.plugin.configuration_complete(token=old_unit, properties=properties)
+        except Exception as e:
+            self.logger.error(f"Exception occurred {e}")
+            self.logger.error(traceback.format_exc())
+        finally:
+            self.lock.release()
+
+    def process(self, future: concurrent.futures.Future, old_unit: ConfigToken):
         try:
             self.logger.debug(f"Handler Execution completed Result: {future.result()}")
             if future.exception() is not None:
                 self.logger.error(f"Exception occurred while executing the handler: {future.exception()}")
             properties, unit = future.result()
-            try:
-                self.lock.acquire()
-                self.futures.remove(future)
-                self.plugin.configuration_complete(token=unit, properties=properties)
-            except Exception as e:
-                self.logger.error(f"Exception occurred {e}")
-                self.logger.error(traceback.format_exc())
-            finally:
-                self.lock.release()
+            self.handler_complete(properties=properties, unit=unit, old_unit=old_unit)
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
+
+    def process_futures(self):
+        while True:
+            done = []
+
+            with self.future_lock:
+
+                while len(self.futures) == 0 and not self.stopped:
+                    try:
+                        self.future_lock.wait()
+                    except InterruptedError as e:
+                        self.logger.info("Future Processor thread interrupted. Exiting")
+                        return
+
+                if self.stopped:
+                    self.logger.info("Future Processor exiting")
+                    return
+
+                if len(self.futures) > 0:
+                    try:
+                        for f, u in self.futures:
+                            if f.done():
+                                done.append((f, u))
+
+                        for x in done:
+                            self.futures.remove(x)
+                    except Exception as e:
+                        self.logger.error(f"Error while adding future to future queue! e: {e}")
+                        self.logger.error(traceback.format_exc())
+
+                self.future_lock.notify_all()
+
+            if len(done) > 0:
+                self.logger.debug(f"Processing {len(done)} futures")
+                for f, u in done:
+                    try:
+                        self.process(future=f, old_unit=u)
+                    except Exception as e:
+                        self.logger.error(f"Error while processing event {type(f)}, {e}")
+                        self.logger.error(traceback.format_exc())
+
+                done.clear()
+
+            time.sleep(5)

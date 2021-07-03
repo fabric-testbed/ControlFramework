@@ -25,6 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from abc import abstractmethod, ABC
 
+from fim.slivers.base_sliver import BaseSliver
+
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
@@ -74,4 +76,16 @@ class ConfigToken(ABC):
     def activate(self):
         """
         Mark the unit as active
+        """
+
+    @abstractmethod
+    def get_sliver(self) -> BaseSliver:
+        """
+        Get Sliver
+        """
+
+    @abstractmethod
+    def set_sliver(self, *, sliver: BaseSliver):
+        """
+        Set sliver
         """

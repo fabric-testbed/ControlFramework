@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import threading
 from enum import Enum
 
 from fim.slivers.base_sliver import BaseSliver
@@ -74,13 +75,14 @@ class Unit(ConfigToken):
         self.modified = None
         self.transfer_out_started = False
         self.sliver = sliver
-        self.worker_node_name = None
+        self.lock = threading.Lock()
 
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['transfer_out_started']
         del state['modified']
         del state['reservation']
+        del state['lock']
 
         return state
 
@@ -89,6 +91,7 @@ class Unit(ConfigToken):
         self.transfer_out_started = False
         self.modified = False
         self.reservation = None
+        self.lock = threading.Lock()
 
     def transition(self, *, to_state: UnitState):
         """
@@ -110,8 +113,12 @@ class Unit(ConfigToken):
         @param message
         @param exception exception
         """
-        self.notices.add(msg=message, ex=exception)
-        self.transition(to_state=UnitState.FAILED)
+        try:
+            self.lock.acquire()
+            self.notices.add(msg=message, ex=exception)
+            self.transition(to_state=UnitState.FAILED)
+        finally:
+            self.lock.release()
 
     def fail_on_modify(self, *, message: str, exception: Exception = None):
         """
@@ -119,53 +126,81 @@ class Unit(ConfigToken):
         @param message message
         @param exception exception
         """
-        self.notices.add(msg=message, ex=exception)
-        self.transition(to_state=UnitState.ACTIVE)
-        self.merge_properties(incoming=self.modified.properties)
+        try:
+            self.lock.acquire()
+            self.notices.add(msg=message, ex=exception)
+            self.transition(to_state=UnitState.ACTIVE)
+            self.merge_properties(incoming=self.modified.properties)
+        finally:
+            self.lock.release()
 
     def set_state(self, *, state: UnitState):
         """
         Set state
         @param state state
         """
-        self.transition(to_state=state)
+        try:
+            self.lock.acquire()
+            self.transition(to_state=state)
+        finally:
+            self.lock.release()
 
     def start_close(self):
         """
         Start close on a unit
         """
-        self.transition(to_state=UnitState.CLOSING)
-        self.transfer_out_started = True
+        try:
+            self.lock.acquire()
+            self.transition(to_state=UnitState.CLOSING)
+            self.transfer_out_started = True
+        finally:
+            self.lock.release()
 
     def start_prime(self) -> bool:
         """
         Start priming the unit
         """
-        if self.state == UnitState.DEFAULT or self.state == UnitState.PRIMING:
-            self.transition(to_state=UnitState.PRIMING)
-            return True
+        try:
+            self.lock.acquire()
+            if self.state == UnitState.DEFAULT or self.state == UnitState.PRIMING:
+                self.transition(to_state=UnitState.PRIMING)
+                return True
+        finally:
+            self.lock.release()
         return False
 
     def start_modify(self) -> bool:
         """
         Start modifying
         """
-        if self.state == UnitState.ACTIVE or self.state == UnitState.MODIFYING:
-            self.transition(to_state=UnitState.MODIFYING)
-            return True
+        try:
+            self.lock.acquire()
+            if self.state == UnitState.ACTIVE or self.state == UnitState.MODIFYING:
+                self.transition(to_state=UnitState.MODIFYING)
+                return True
+        finally:
+            self.lock.release()
         return False
 
     def activate(self):
         """
         Mark the unit as active
         """
-        self.state = UnitState.ACTIVE
+        try:
+            self.lock.acquire()
+            self.state = UnitState.ACTIVE
+        finally:
+            self.lock.release()
 
     def close(self):
         """
         Mark the unit as closed
         """
-        self.state = UnitState.CLOSED
+        try:
+            self.lock.acquire()
+            self.state = UnitState.CLOSED
+        finally:
+            self.lock.release()
 
     def get_id(self) -> ID:
         """
@@ -187,7 +222,11 @@ class Unit(ConfigToken):
         @param name name
         @param value value
         """
-        self.properties[name] = value
+        try:
+            self.lock.acquire()
+            self.properties[name] = value
+        finally:
+            self.lock.release()
 
     def get_property(self, *, name: str) -> str:
         """
@@ -196,8 +235,12 @@ class Unit(ConfigToken):
         @return value
         """
         ret_val = None
-        if name in self.properties:
-            ret_val = self.properties[name]
+        try:
+            self.lock.acquire()
+            if name in self.properties:
+                ret_val = self.properties[name]
+        finally:
+            self.lock.release()
         return ret_val
 
     def get_state(self) -> UnitState:
@@ -222,20 +265,16 @@ class Unit(ConfigToken):
         """
         return self.sequence
 
-    def get_sequence_increment(self) -> int:
-        """
-        Get Sequence number and increment it
-        @return sequence number and increment it
-        """
-        self.sequence += 1
-        ret_val = self.sequence
-        return ret_val
-
     def increment_sequence(self) -> int:
         """
         Increment sequence number
         """
-        self.sequence += 1
+        try:
+            self.lock.acquire()
+            self.sequence += 1
+        finally:
+            self.lock.release()
+
         ret_val = self.sequence
         return ret_val
 
@@ -243,7 +282,11 @@ class Unit(ConfigToken):
         """
         Decrement sequence number
         """
-        self.sequence -= 1
+        try:
+            self.lock.acquire()
+            self.sequence -= 1
+        finally:
+            self.lock.release()
         ret_val = self.sequence
         return ret_val
 
@@ -252,22 +295,34 @@ class Unit(ConfigToken):
         Set Reservation
         @param reservation reservation
         """
-        self.reservation = reservation
-        self.reservation_id = reservation.get_reservation_id()
+        try:
+            self.lock.acquire()
+            self.reservation = reservation
+            self.reservation_id = reservation.get_reservation_id()
+        finally:
+            self.lock.release()
 
     def set_slice_id(self, *, slice_id: ID):
         """
         Set slice id
         @param slice_id slice id
         """
-        self.slice_id = slice_id
+        try:
+            self.lock.acquire()
+            self.slice_id = slice_id
+        finally:
+            self.lock.release()
 
     def set_actor_id(self, *, actor_id: ID):
         """
         Set actor id
         @param actor_id actor id
         """
-        self.actor_id = actor_id
+        try:
+            self.lock.acquire()
+            self.actor_id = actor_id
+        finally:
+            self.lock.release()
 
     def is_failed(self) -> bool:
         """
@@ -305,7 +360,11 @@ class Unit(ConfigToken):
         Set modified unit
         @param modified modified
         """
-        self.modified = modified
+        try:
+            self.lock.acquire()
+            self.modified = modified
+        finally:
+            self.lock.release()
 
     def get_modified(self):
         """
@@ -348,14 +407,22 @@ class Unit(ConfigToken):
         Set Parent id
         @param parent_id parent id
         """
-        self.parent_id = parent_id
+        try:
+            self.lock.acquire()
+            self.parent_id = parent_id
+        finally:
+            self.lock.release()
 
     def complete_modify(self):
         """
         Complete Modify operation
         """
-        self.transition(to_state=UnitState.ACTIVE)
-        self.merge_properties(incoming=self.modified.properties)
+        try:
+            self.lock.acquire()
+            self.transition(to_state=UnitState.ACTIVE)
+            self.merge_properties(incoming=self.modified.properties)
+        finally:
+            self.lock.release()
 
     def get_actor_id(self) -> ID:
         """
@@ -397,7 +464,11 @@ class Unit(ConfigToken):
         Add a notice
         @param notice notice
         """
-        self.notices.add(msg=notice)
+        try:
+            self.lock.acquire()
+            self.notices.add(msg=notice)
+        finally:
+            self.lock.release()
 
     def __str__(self):
         return f"[unit: {self.reservation_id} actor: {self.actor_id} state: {self.state} " \
@@ -419,4 +490,8 @@ class Unit(ConfigToken):
         :param sliver: sliver
         :return:
         """
-        self.sliver = sliver
+        try:
+            self.lock.acquire()
+            self.sliver = sliver
+        finally:
+            self.lock.release()
