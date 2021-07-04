@@ -177,7 +177,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             self.lock.acquire()
             self.logger.debug(f"Properties: {properties} Unit: {unit}")
             # Copy the sliver from the Unit to
-            old_unit.set_sliver(sliver=unit.get_sliver())
+            old_unit.update_sliver(sliver=unit.get_sliver())
             self.plugin.configuration_complete(token=old_unit, properties=properties)
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")

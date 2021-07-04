@@ -89,3 +89,9 @@ class ConfigToken(ABC):
         """
         Set sliver
         """
+
+    @abstractmethod
+    def update_sliver(self, *, sliver:BaseSliver):
+        """
+        Update Sliver
+        """

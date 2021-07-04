@@ -27,6 +27,7 @@ import threading
 from enum import Enum
 
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
@@ -493,5 +494,22 @@ class Unit(ConfigToken):
         try:
             self.lock.acquire()
             self.sliver = sliver
+        finally:
+            self.lock.release()
+
+    def update_sliver(self, *, sliver:BaseSliver):
+        """
+        Update the sliver associated with the Unit
+        Handler Process and AM process have different memory space
+        So it requires explicit updates to AM process object with the values updated by Handler Processes
+        Side effect of multi-processing in Python
+
+        :param sliver Sliver returned by Handler
+        """
+        try:
+            self.lock.acquire()
+            self.sliver.set_label_allocations(sliver.get_label_allocations())
+            if isinstance(self.sliver, NodeSliver) and isinstance(sliver, NodeSliver):
+                self.sliver.management_ip = sliver.management_ip
         finally:
             self.lock.release()
