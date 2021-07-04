@@ -36,11 +36,13 @@ def slivers_get(slice_id):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
 def slivers_modify_sliver_idput(body, sliver_id, slice_id):  # noqa: E501
@@ -108,11 +110,13 @@ def slivers_sliver_idget(slice_id, sliver_id):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
 def slivers_status_sliver_idget(slice_id, sliver_id):  # noqa: E501
@@ -143,8 +147,10 @@ def slivers_status_sliver_idget(slice_id, sliver_id):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_STATUS_SLIVER_ID_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_STATUS_SLIVER_ID_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
