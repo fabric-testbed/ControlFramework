@@ -23,7 +23,7 @@
       <data key="d4">Server</data>
       <data key="d5">R7525</data>
       <data key="d6">UKY</data>
-      <data key="d7">{"core": 64, "cpu": 2, "ram": 512, "unit": 1}</data>
+      <data key="d7">{"core": 64, "cpu": 2, "ram": 512, "disk": 4800, "unit": 1}</data>
       <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 64, "ram": 512, "disk": 4800, "unit": 1}}}</data>
     </node>
