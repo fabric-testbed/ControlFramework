@@ -303,6 +303,78 @@ class IntegrationTest(unittest.TestCase):
 
         return t.serialize()
 
+    @staticmethod
+    def build_2_site_ptp_slice() -> str:
+        """
+        2-site for PTP service between two dedicated card ports
+        """
+        t = fu.ExperimentTopology()
+        n1 = t.add_node(name='n1', site='RENC', ntype=fu.NodeType.VM)
+        n2 = t.add_node(name='n2', site='UKY')
+
+        cap = fu.Capacities()
+        cap.set_fields(core=2, ram=8, disk=100)
+        n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+
+        n1.add_component(model_type=fu.ComponentModelType.SmartNIC_ConnectX_6, name='n1-nic1')
+        n2.add_component(model_type=fu.ComponentModelType.SmartNIC_ConnectX_6, name='n2-nic1')
+        n2.add_component(ctype=fu.ComponentType.NVME, model='P4510', name='c1')
+
+        t.add_network_service(name='ptp1', nstype=fu.ServiceType.L2PTP,
+                              interfaces=[n1.interface_list[0], n2.interface_list[0]])
+
+        return t.serialize()
+
+    @staticmethod
+    def build_2_site_ptp_slice_sriov() -> str:
+        """
+        2-site for PTP service between two shared card ports
+        """
+        t = fu.ExperimentTopology()
+        n1 = t.add_node(name='n1', site='RENC', ntype=fu.NodeType.VM)
+        n2 = t.add_node(name='n2', site='UKY')
+
+        cap = fu.Capacities()
+        cap.set_fields(core=2, ram=8, disk=100)
+        n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+
+        n1.add_component(model_type=fu.ComponentModelType.SharedNIC_ConnectX_6, name='n1-nic1')
+        n2.add_component(model_type=fu.ComponentModelType.SharedNIC_ConnectX_6, name='n2-nic1')
+        n2.add_component(ctype=fu.ComponentType.NVME, model='P4510', name='c1')
+
+        t.add_network_service(name='ptp1', nstype=fu.ServiceType.L2PTP,
+                              interfaces=[n1.interface_list[0], n2.interface_list[0]])
+
+        return t.serialize()
+
+    @staticmethod
+    def build_2_site_sts_slice() -> str:
+        """
+        2-site for STS service between shared and smart card ports
+        """
+        t = fu.ExperimentTopology()
+        n1 = t.add_node(name='n1', site='RENC', ntype=fu.NodeType.VM)
+        n2 = t.add_node(name='n2', site='UKY')
+        n3 = t.add_node(name='n3', site='UKY')
+
+        cap = fu.Capacities()
+        cap.set_fields(core=2, ram=8, disk=100)
+        n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+        n3.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
+
+        n1.add_component(model_type=fu.ComponentModelType.SharedNIC_ConnectX_6, name='n1-nic1')
+        n2.add_component(model_type=fu.ComponentModelType.SharedNIC_ConnectX_6, name='n2-nic1')
+        n2.add_component(ctype=fu.ComponentType.NVME, model='P4510', name='c1')
+        n3.add_component(model_type=fu.ComponentModelType.SmartNIC_ConnectX_6, name='n3-nic1')
+
+        t.add_network_service(name='sts1', nstype=fu.ServiceType.L2STS,
+                              interfaces=[n1.interface_list[0], n2.interface_list[0], n3.interface_list[0]])
+
+        return t.serialize()
+
     def assert_am_broker_reservations(self, slice_id: str, res_id: str, am_res_state: int, broker_res_state: int,
                                       new_time: str = None):
         KafkaProcessorSingleton.get().start()
@@ -753,3 +825,135 @@ class IntegrationTest(unittest.TestCase):
             #self.assert_am_broker_reservations(slice_id=self.slice_id, res_id=s.reservation_id,
             #                                   am_res_state=ReservationStates.Closed.value,
             #                                   broker_res_state=ReservationStates.Closed.value)
+
+    def test_create_delete_slice_ptp_network_service(self):
+
+        # Create Slice
+        slice_graph = self.build_2_site_ptp_slice()
+        oh = OrchestratorHelper()
+        status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(response, list))
+        self.assertEqual(len(response), 2)
+        self.slice_id = response[0].slice_id
+
+        # wait for slice to be Stable
+        slice_state = None
+        while slice_state != self.STABLE_OK:
+            status, slice_obj = oh.slice_status(slice_id=self.slice_id)
+            self.assertEqual(Status.OK, status)
+            self.assertTrue(isinstance(slice_obj, Slice))
+            slice_state = slice_obj.slice_state
+            time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Active.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+        # Delete Slice
+        status, response = oh.delete(self.slice_id)
+        self.assertEqual(Status.OK, status)
+
+        time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Closed.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+    def test_create_delete_slice_ptp_sriov_network_service(self):
+
+        # Create Slice
+        slice_graph = self.build_2_site_ptp_slice_sriov()
+        oh = OrchestratorHelper()
+        status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(response, list))
+        self.assertEqual(len(response), 2)
+        self.slice_id = response[0].slice_id
+
+        # wait for slice to be Stable
+        slice_state = None
+        while slice_state != self.STABLE_OK:
+            status, slice_obj = oh.slice_status(slice_id=self.slice_id)
+            self.assertEqual(Status.OK, status)
+            self.assertTrue(isinstance(slice_obj, Slice))
+            slice_state = slice_obj.slice_state
+            time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Active.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+        # Delete Slice
+        status, response = oh.delete(self.slice_id)
+        self.assertEqual(Status.OK, status)
+
+        time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Closed.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+    def test_create_delete_slice_sts_network_service(self):
+
+        # Create Slice
+        slice_graph = self.build_2_site_sts_slice()
+        oh = OrchestratorHelper()
+        status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(response, list))
+        self.assertEqual(len(response), 2)
+        self.slice_id = response[0].slice_id
+
+        # wait for slice to be Stable
+        slice_state = None
+        while slice_state != self.STABLE_OK:
+            status, slice_obj = oh.slice_status(slice_id=self.slice_id)
+            self.assertEqual(Status.OK, status)
+            self.assertTrue(isinstance(slice_obj, Slice))
+            slice_state = slice_obj.slice_state
+            time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Active.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
+
+        # Delete Slice
+        status, response = oh.delete(self.slice_id)
+        self.assertEqual(Status.OK, status)
+
+        time.sleep(5)
+
+        # check Slivers and verify there states at all 3 actors
+        status, slivers = oh.slivers(slice_id=self.slice_id)
+        self.assertEqual(Status.OK, status)
+        self.assertTrue(isinstance(slivers, list))
+        for s in slivers:
+            self.assertEqual(ReservationStates.Closed.name, s.get_state())
+            self.assertIsNotNone(s.graph_node_id)
+            self.assertEqual(self.slice_id, s.slice_id)
