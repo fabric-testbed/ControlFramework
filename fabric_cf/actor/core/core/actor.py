@@ -786,6 +786,9 @@ class ActorMixin(ABCActorMixin):
 
         self.message_service.start()
 
+        if self.plugin.get_handler_processor() is not None:
+            self.plugin.get_handler_processor().start()
+
     def stop(self):
         """
         Stop an actor

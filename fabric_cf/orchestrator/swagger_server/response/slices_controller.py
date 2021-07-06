@@ -53,11 +53,13 @@ def slices_create_post(body, slice_name, ssh_key, lease_end_time):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
 def slices_delete_slice_iddelete(slice_id):  # noqa: E501
@@ -83,11 +85,13 @@ def slices_delete_slice_iddelete(slice_id):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
 def slices_get(state):  # noqa: E501
@@ -114,11 +118,13 @@ def slices_get(state):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
 def slices_modify_slice_idput(body, slice_id):  # noqa: E501
@@ -185,11 +191,13 @@ def slices_renew_slice_idpost(slice_id, new_lease_end_time):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_RENEW_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
 def slices_slice_idget(slice_id):  # noqa: E501
@@ -215,11 +223,13 @@ def slices_slice_idget(slice_id):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
 def slices_status_slice_idget(slice_id):  # noqa: E501
@@ -248,8 +258,10 @@ def slices_status_slice_idget(slice_id):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICE_STATUS_SLICE_ID_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICE_STATUS_SLICE_ID_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)

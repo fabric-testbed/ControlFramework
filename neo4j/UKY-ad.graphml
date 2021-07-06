@@ -5,9 +5,9 @@
   <key id="d11" for="node" attr.name="Details" attr.type="string" />
   <key id="d10" for="node" attr.name="Labels" attr.type="string" />
   <key id="d9" for="node" attr.name="CapacityDelegations" attr.type="string" />
-  <key id="d8" for="node" attr.name="Site" attr.type="string" />
-  <key id="d7" for="node" attr.name="StitchNode" attr.type="string" />
-  <key id="d6" for="node" attr.name="Capacities" attr.type="string" />
+  <key id="d8" for="node" attr.name="StitchNode" attr.type="string" />
+  <key id="d7" for="node" attr.name="Capacities" attr.type="string" />
+  <key id="d6" for="node" attr.name="Site" attr.type="string" />
   <key id="d5" for="node" attr.name="Model" attr.type="string" />
   <key id="d4" for="node" attr.name="Type" attr.type="string" />
   <key id="d3" for="node" attr.name="Name" attr.type="string" />
@@ -15,1035 +15,993 @@
   <key id="d1" for="node" attr.name="Class" attr.type="string" />
   <key id="d0" for="node" attr.name="GraphID" attr.type="string" />
   <graph edgedefault="undirected">
-    <node id="592">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="1">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">NetworkNode</data>
       <data key="d2">3JB2R53</data>
-      <data key="d3">uky-w1</data>
+      <data key="d3">uky-w1.fabric-testbed.net</data>
       <data key="d4">Server</data>
       <data key="d5">R7525</data>
-      <data key="d6">{"core": 32, "cpu": 2, "disk": 100000, "ram": 512, "unit": 1}</data>
-      <data key="d7">false</data>
-      <data key="d8">UKY</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 32, "ram": 512, "disk": 100000, "unit": 1}}}</data>
+      <data key="d6">UKY</data>
+      <data key="d7">{"core": 64, "cpu": 2, "ram": 512, "disk": 4800, "unit": 1}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 64, "ram": 512, "disk": 4800, "unit": 1}}}</data>
     </node>
-    <node id="593">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">NetworkNode</data>
-      <data key="d2">3JB0R53</data>
-      <data key="d3">uky-w2</data>
-      <data key="d4">Server</data>
-      <data key="d5">R7525</data>
-      <data key="d6">{"core": 32, "cpu": 2, "disk": 4800, "ram": 512, "unit": 1}</data>
-      <data key="d7">false</data>
-      <data key="d8">UKY</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 32, "ram": 512, "disk": 4800, "unit": 1}}}</data>
-    </node>
-    <node id="594">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">NetworkNode</data>
-      <data key="d2">3JB1R53</data>
-      <data key="d3">uky-w3</data>
-      <data key="d4">Server</data>
-      <data key="d5">R7525</data>
-      <data key="d6">{"core": 32, "cpu": 2, "disk": 4800, "ram": 512, "unit": 1}</data>
-      <data key="d7">false</data>
-      <data key="d8">UKY</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 32, "ram": 512, "disk": 4800, "unit": 1}}}</data>
-    </node>
-    <node id="595">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="2">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
       <data key="d2">PHLJ0160046A1P0FGN</data>
-      <data key="d3">uky-w1-nvme1</data>
+      <data key="d3">uky-w1.fabric-testbed.net-nvme-1</data>
       <data key="d4">NVME</data>
       <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
       <data key="d10">{"bdf": "0000:21:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 22 in Bay 2 (0000:21:00.0)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:21:00.0"}}}</data>
     </node>
-    <node id="596">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="3">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
       <data key="d2">PHLJ016003SU1P0FGN</data>
-      <data key="d3">uky-w1-nvme2</data>
+      <data key="d3">uky-w1.fabric-testbed.net-nvme-2</data>
       <data key="d4">NVME</data>
       <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
       <data key="d10">{"bdf": "0000:22:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 23 in Bay 2 (0000:22:00.0)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:22:00.0"}}}</data>
     </node>
-    <node id="597">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="4">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB2R53-gpu-1</data>
+      <data key="d3">uky-w1.fabric-testbed.net-gpu-1</data>
+      <data key="d4">GPU</data>
+      <data key="d5">RTX6000</data>
+      <data key="d7">{"unit": 1}</data>
+      <data key="d10">{"bdf": "0000:25:00.0"}</data>
+      <data key="d11">NVIDIA Corporation TU102GL [Quadro RTX 6000/8000] (rev a1)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:25:00.0"}}}</data>
+    </node>
+    <node id="5">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB2R53-gpu-2</data>
+      <data key="d3">uky-w1.fabric-testbed.net-gpu-2</data>
+      <data key="d4">GPU</data>
+      <data key="d5">RTX6000</data>
+      <data key="d7">{"unit": 1}</data>
+      <data key="d10">{"bdf": "0000:81:00.0"}</data>
+      <data key="d11">NVIDIA Corporation TU102GL [Quadro RTX 6000/8000] (rev a1)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:81:00.0"}}}</data>
+    </node>
+    <node id="6">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB2R53-slot6</data>
+      <data key="d3">uky-w1.fabric-testbed.net-slot6</data>
+      <data key="d4">SharedNIC</data>
+      <data key="d5">ConnectX-6</data>
+      <data key="d7">{"unit": 127}</data>
+      <data key="d11">Mellanox Technologies MT28908 Family [ConnectX-6] in PCIe Slot 6 (0000:a1:00.1)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 127}}}</data>
+    </node>
+    <node id="7">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">NetworkService</data>
+      <data key="d2">3JB2R53-slot6-ns</data>
+      <data key="d3">uky-w1.fabric-testbed.net-uky-w1.fabric-testbed.net-slot6-l2ovs</data>
+      <data key="d4">OVS</data>
+      <data key="d8">false</data>
+      <data key="d13">L2</data>
+    </node>
+    <node id="8">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-EA-C7-61</data>
+      <data key="d3">uky-w1.fabric-testbed.net-slot6-p1</data>
+      <data key="d4">SharedPort</data>
+      <data key="d7">{"bw": 100, "unit": 127}</data>
+      <data key="d10">{"bdf": ["0000:a1:16.4", "0000:a1:15.2", "0000:a1:1b.5", "0000:a1:10.1", "0000:a1:18.2", "0000:a1:14.2", "0000:a1:16.7", "0000:a1:1e.7", "0000:a1:1a.6", "0000:a1:12.4", "0000:a1:12.5", "0000:a1:14.0", "0000:a1:1e.2", "0000:a1:1e.5", "0000:a1:1a.0", "0000:a1:1b.7", "0000:a1:17.4", "0000:a1:1b.0", "0000:a1:1c.4", "0000:a1:13.5", "0000:a1:13.7", "0000:a1:13.1", "0000:a1:1b.3", "0000:a1:12.6", "0000:a1:1b.4", "0000:a1:12.2", "0000:a1:1d.1", "0000:a1:1e.4", "0000:a1:14.3", "0000:a1:16.6", "0000:a1:16.1", "0000:a1:15.6", "0000:a1:15.1", "0000:a1:1d.7", "0000:a1:1a.7", "0000:a1:19.4", "0000:a1:11.6", "0000:a1:1d.5", "0000:a1:18.0", "0000:a1:19.5", "0000:a1:14.1", "0000:a1:11.1", "0000:a1:11.5", "0000:a1:11.4", "0000:a1:13.0", "0000:a1:1f.0", "0000:a1:15.4", "0000:a1:1c.7", "0000:a1:16.3", "0000:a1:1d.4", "0000:a1:1f.6", "0000:a1:16.0", "0000:a1:1c.6", "0000:a1:14.6", "0000:a1:1f.7", "0000:a1:1f.1", "0000:a1:15.3", "0000:a1:13.2", "0000:a1:1e.3", "0000:a1:14.5", "0000:a1:1a.2", "0000:a1:10.4", "0000:a1:1d.2", "0000:a1:15.0", "0000:a1:1d.3", "0000:a1:17.2", "0000:a1:17.0", "0000:a1:10.6", "0000:a1:17.5", "0000:a1:18.4", "0000:a1:12.1", "0000:a1:11.7", "0000:a1:19.7", "0000:a1:10.7", "0000:a1:12.3", "0000:a1:1b.2", "0000:a1:15.5", "0000:a1:18.7", "0000:a1:1a.5", "0000:a1:1f.3", "0000:a1:18.3", "0000:a1:17.1", "0000:a1:14.4", "0000:a1:13.4", "0000:a1:1d.6", "0000:a1:11.0", "0000:a1:10.3", "0000:a1:1d.0", "0000:a1:1a.3", "0000:a1:1a.4", "0000:a1:1b.1", "0000:a1:1c.2", "0000:a1:19.2", "0000:a1:1c.5", "0000:a1:19.0", "0000:a1:11.2", "0000:a1:16.5", "0000:a1:10.2", "0000:a1:17.6", "0000:a1:12.0", "0000:a1:1c.1", "0000:a1:17.3", "0000:a1:1f.4", "0000:a1:13.3", "0000:a1:10.5", "0000:a1:14.7", "0000:a1:18.1", "0000:a1:17.7", "0000:a1:1f.2", "0000:a1:1c.0", "0000:a1:1e.6", "0000:a1:19.6", "0000:a1:1c.3", "0000:a1:19.1", "0000:a1:1a.1", "0000:a1:1e.1", "0000:a1:11.3", "0000:a1:19.3", "0000:a1:18.5", "0000:a1:1e.0", "0000:a1:12.7", "0000:a1:16.2", "0000:a1:1f.5", "0000:a1:18.6", "0000:a1:13.6", "0000:a1:1b.6", "0000:a1:15.7"], "local_name": ["p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1"], "mac": ["02:A8:53:AD:CA:D8", "06:12:FC:F2:54:75", "06:40:8C:D6:22:47", "06:64:A9:8D:B7:24", "06:8D:F5:E6:F2:C8", "06:A5:50:3D:63:11", "06:D4:20:05:7D:59", "0A:06:D8:7C:7D:F0", "0A:8D:86:0C:38:71", "0A:8E:8F:8F:DE:3A", "0A:DF:1D:50:29:85", "0A:E8:FB:5C:D1:0E", "0E:5E:84:0D:29:AA", "0E:D0:BF:CA:70:C6", "12:09:C2:10:09:44", "12:63:72:FB:43:ED", "12:A8:79:F7:5E:BB", "12:C4:27:98:C2:64", "16:32:37:FE:30:A5", "16:63:76:8C:B5:41", "16:E2:74:ED:E9:62", "16:E5:74:FA:21:6D", "1E:B8:50:98:70:32", "22:F0:F6:DF:B9:02", "26:FA:29:32:26:BC", "2A:84:A9:EE:F8:19", "2A:B0:22:1C:6A:C4", "2E:03:01:65:EC:1A", "2E:0C:FF:0E:4D:7D", "2E:3F:C6:AE:B5:85", "36:EB:BB:7A:8E:19", "36:FB:90:8F:E4:56", "3A:04:A1:BB:7E:48", "3A:D7:3A:14:A0:F4", "42:06:E0:A4:F8:61", "42:51:B9:4B:79:69", "42:F6:EA:72:A5:DA", "46:0B:8C:47:73:F8", "46:35:29:FA:A6:3A", "4A:07:91:08:DA:DC", "4A:20:A6:EB:57:71", "4A:62:78:4F:CF:8F", "4A:E4:7B:53:B7:DE", "4E:97:D6:79:26:E9", "52:0D:86:17:94:69", "52:55:C3:10:82:60", "56:17:52:5E:43:BF", "56:93:43:D9:7E:9B", "56:B2:46:C5:80:BE", "5A:2E:5D:2C:8F:99", "5E:04:28:3D:65:02", "5E:96:96:0D:02:C6", "5E:CD:9C:F9:1E:3D", "62:BE:09:1F:59:7C", "66:B2:E3:5F:01:77", "6E:F3:9E:1D:2B:01", "72:4B:FF:26:FA:64", "72:AB:5A:00:74:D8", "72:CE:1F:1E:3A:B9", "72:E8:D8:45:D5:FA", "72:ED:AD:71:5C:C2", "76:7A:52:24:09:CD", "7A:7C:FE:4E:CF:93", "7A:A5:9D:1F:5F:86", "7A:E3:49:05:30:A9", "7E:3E:DE:13:64:24", "7E:B4:8B:EA:CE:A2", "82:1B:6C:9E:66:98", "82:B1:A8:5A:71:D9", "8A:01:EB:B4:D9:1F", "8A:EC:B7:A1:4E:CA", "92:CA:9E:50:95:37", "96:0B:54:8E:DB:84", "96:3C:98:B7:5B:45", "96:FD:50:7C:F2:C9", "9A:58:8F:8F:C5:25", "9A:87:BD:04:E2:4A", "9A:A7:33:6D:FE:65", "9E:73:06:C8:D2:1C", "A2:7F:CD:1F:0E:E7", "A2:AC:50:56:8A:CD", "A6:2F:BC:5B:66:CB", "A6:A8:B7:22:EA:83", "AA:61:3C:E6:66:2A", "AA:8F:8B:33:0F:54", "AA:9C:CD:9C:D4:08", "AA:BA:2C:9C:01:48", "AE:82:AE:82:0A:F9", "B2:84:BB:97:10:9A", "B2:91:01:A7:84:00", "B2:D3:AA:A7:65:4E", "B6:13:E9:85:FC:F5", "B6:23:E9:DD:94:50", "B6:2E:57:F8:52:4A", "BA:0F:31:02:71:7F", "BE:2A:76:D6:28:90", "BE:40:43:8B:C8:58", "C2:28:D7:68:A6:4D", "C2:61:EC:46:CA:30", "C2:F4:39:C4:44:27", "C6:D8:9C:76:BD:80", "D2:0B:87:6B:3F:56", "D2:0B:E9:41:26:57", "D2:E6:EB:B0:03:CD", "D6:50:99:08:1F:5A", "D6:81:7B:81:76:43", "D6:86:24:04:6A:01", "D6:8E:78:C5:F9:E0", "DE:59:4F:9D:AB:E0", "DE:8D:29:2F:59:A5", "E2:49:2C:E4:83:B0", "E2:75:6E:53:BA:FD", "E2:AD:03:79:E5:C7", "E2:AD:DC:87:74:B5", "E2:E2:39:2B:A8:BA", "E6:26:46:4E:02:55", "E6:2F:E5:C5:87:DC", "EA:40:31:FA:44:75", "EA:FC:BC:83:F6:58", "EE:E2:02:BC:FF:70", "F6:91:74:97:65:A3", "FE:08:A8:EB:65:D6", "FE:1A:52:F7:B1:58", "FE:3F:02:AF:36:F8", "FE:6A:2D:04:10:48", "FE:88:BF:2D:2F:38", "FE:A3:6A:CB:14:79"], "vlan": ["2051", "2041", "2092", "2000", "2065", "2033", "2054", "2118", "2085", "2019", "2020", "2031", "2113", "2116", "2079", "2094", "2059", "2087", "2099", "2028", "2030", "2024", "2090", "2021", "2091", "2017", "2104", "2115", "2034", "2053", "2048", "2045", "2040", "2110", "2086", "2075", "2013", "2108", "2063", "2076", "2032", "2008", "2012", "2011", "2023", "2119", "2043", "2102", "2050", "2107", "2125", "2047", "2101", "2037", "2126", "2120", "2042", "2025", "2114", "2036", "2081", "2003", "2105", "2039", "2106", "2057", "2055", "2005", "2060", "2067", "2016", "2014", "2078", "2006", "2018", "2089", "2044", "2070", "2084", "2122", "2066", "2056", "2035", "2027", "2109", "2007", "2002", "2103", "2082", "2083", "2088", "2097", "2073", "2100", "2071", "2009", "2052", "2001", "2061", "2015", "2096", "2058", "2123", "2026", "2004", "2038", "2064", "2062", "2121", "2095", "2117", "2077", "2098", "2072", "2080", "2112", "2010", "2074", "2068", "2111", "2022", "2049", "2124", "2069", "2029", "2093", "2046"]}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 127}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:a1:16.4", "0000:a1:15.2", "0000:a1:1b.5", "0000:a1:10.1", "0000:a1:18.2", "0000:a1:14.2", "0000:a1:16.7", "0000:a1:1e.7", "0000:a1:1a.6", "0000:a1:12.4", "0000:a1:12.5", "0000:a1:14.0", "0000:a1:1e.2", "0000:a1:1e.5", "0000:a1:1a.0", "0000:a1:1b.7", "0000:a1:17.4", "0000:a1:1b.0", "0000:a1:1c.4", "0000:a1:13.5", "0000:a1:13.7", "0000:a1:13.1", "0000:a1:1b.3", "0000:a1:12.6", "0000:a1:1b.4", "0000:a1:12.2", "0000:a1:1d.1", "0000:a1:1e.4", "0000:a1:14.3", "0000:a1:16.6", "0000:a1:16.1", "0000:a1:15.6", "0000:a1:15.1", "0000:a1:1d.7", "0000:a1:1a.7", "0000:a1:19.4", "0000:a1:11.6", "0000:a1:1d.5", "0000:a1:18.0", "0000:a1:19.5", "0000:a1:14.1", "0000:a1:11.1", "0000:a1:11.5", "0000:a1:11.4", "0000:a1:13.0", "0000:a1:1f.0", "0000:a1:15.4", "0000:a1:1c.7", "0000:a1:16.3", "0000:a1:1d.4", "0000:a1:1f.6", "0000:a1:16.0", "0000:a1:1c.6", "0000:a1:14.6", "0000:a1:1f.7", "0000:a1:1f.1", "0000:a1:15.3", "0000:a1:13.2", "0000:a1:1e.3", "0000:a1:14.5", "0000:a1:1a.2", "0000:a1:10.4", "0000:a1:1d.2", "0000:a1:15.0", "0000:a1:1d.3", "0000:a1:17.2", "0000:a1:17.0", "0000:a1:10.6", "0000:a1:17.5", "0000:a1:18.4", "0000:a1:12.1", "0000:a1:11.7", "0000:a1:19.7", "0000:a1:10.7", "0000:a1:12.3", "0000:a1:1b.2", "0000:a1:15.5", "0000:a1:18.7", "0000:a1:1a.5", "0000:a1:1f.3", "0000:a1:18.3", "0000:a1:17.1", "0000:a1:14.4", "0000:a1:13.4", "0000:a1:1d.6", "0000:a1:11.0", "0000:a1:10.3", "0000:a1:1d.0", "0000:a1:1a.3", "0000:a1:1a.4", "0000:a1:1b.1", "0000:a1:1c.2", "0000:a1:19.2", "0000:a1:1c.5", "0000:a1:19.0", "0000:a1:11.2", "0000:a1:16.5", "0000:a1:10.2", "0000:a1:17.6", "0000:a1:12.0", "0000:a1:1c.1", "0000:a1:17.3", "0000:a1:1f.4", "0000:a1:13.3", "0000:a1:10.5", "0000:a1:14.7", "0000:a1:18.1", "0000:a1:17.7", "0000:a1:1f.2", "0000:a1:1c.0", "0000:a1:1e.6", "0000:a1:19.6", "0000:a1:1c.3", "0000:a1:19.1", "0000:a1:1a.1", "0000:a1:1e.1", "0000:a1:11.3", "0000:a1:19.3", "0000:a1:18.5", "0000:a1:1e.0", "0000:a1:12.7", "0000:a1:16.2", "0000:a1:1f.5", "0000:a1:18.6", "0000:a1:13.6", "0000:a1:1b.6", "0000:a1:15.7"], "mac": ["02:A8:53:AD:CA:D8", "06:12:FC:F2:54:75", "06:40:8C:D6:22:47", "06:64:A9:8D:B7:24", "06:8D:F5:E6:F2:C8", "06:A5:50:3D:63:11", "06:D4:20:05:7D:59", "0A:06:D8:7C:7D:F0", "0A:8D:86:0C:38:71", "0A:8E:8F:8F:DE:3A", "0A:DF:1D:50:29:85", "0A:E8:FB:5C:D1:0E", "0E:5E:84:0D:29:AA", "0E:D0:BF:CA:70:C6", "12:09:C2:10:09:44", "12:63:72:FB:43:ED", "12:A8:79:F7:5E:BB", "12:C4:27:98:C2:64", "16:32:37:FE:30:A5", "16:63:76:8C:B5:41", "16:E2:74:ED:E9:62", "16:E5:74:FA:21:6D", "1E:B8:50:98:70:32", "22:F0:F6:DF:B9:02", "26:FA:29:32:26:BC", "2A:84:A9:EE:F8:19", "2A:B0:22:1C:6A:C4", "2E:03:01:65:EC:1A", "2E:0C:FF:0E:4D:7D", "2E:3F:C6:AE:B5:85", "36:EB:BB:7A:8E:19", "36:FB:90:8F:E4:56", "3A:04:A1:BB:7E:48", "3A:D7:3A:14:A0:F4", "42:06:E0:A4:F8:61", "42:51:B9:4B:79:69", "42:F6:EA:72:A5:DA", "46:0B:8C:47:73:F8", "46:35:29:FA:A6:3A", "4A:07:91:08:DA:DC", "4A:20:A6:EB:57:71", "4A:62:78:4F:CF:8F", "4A:E4:7B:53:B7:DE", "4E:97:D6:79:26:E9", "52:0D:86:17:94:69", "52:55:C3:10:82:60", "56:17:52:5E:43:BF", "56:93:43:D9:7E:9B", "56:B2:46:C5:80:BE", "5A:2E:5D:2C:8F:99", "5E:04:28:3D:65:02", "5E:96:96:0D:02:C6", "5E:CD:9C:F9:1E:3D", "62:BE:09:1F:59:7C", "66:B2:E3:5F:01:77", "6E:F3:9E:1D:2B:01", "72:4B:FF:26:FA:64", "72:AB:5A:00:74:D8", "72:CE:1F:1E:3A:B9", "72:E8:D8:45:D5:FA", "72:ED:AD:71:5C:C2", "76:7A:52:24:09:CD", "7A:7C:FE:4E:CF:93", "7A:A5:9D:1F:5F:86", "7A:E3:49:05:30:A9", "7E:3E:DE:13:64:24", "7E:B4:8B:EA:CE:A2", "82:1B:6C:9E:66:98", "82:B1:A8:5A:71:D9", "8A:01:EB:B4:D9:1F", "8A:EC:B7:A1:4E:CA", "92:CA:9E:50:95:37", "96:0B:54:8E:DB:84", "96:3C:98:B7:5B:45", "96:FD:50:7C:F2:C9", "9A:58:8F:8F:C5:25", "9A:87:BD:04:E2:4A", "9A:A7:33:6D:FE:65", "9E:73:06:C8:D2:1C", "A2:7F:CD:1F:0E:E7", "A2:AC:50:56:8A:CD", "A6:2F:BC:5B:66:CB", "A6:A8:B7:22:EA:83", "AA:61:3C:E6:66:2A", "AA:8F:8B:33:0F:54", "AA:9C:CD:9C:D4:08", "AA:BA:2C:9C:01:48", "AE:82:AE:82:0A:F9", "B2:84:BB:97:10:9A", "B2:91:01:A7:84:00", "B2:D3:AA:A7:65:4E", "B6:13:E9:85:FC:F5", "B6:23:E9:DD:94:50", "B6:2E:57:F8:52:4A", "BA:0F:31:02:71:7F", "BE:2A:76:D6:28:90", "BE:40:43:8B:C8:58", "C2:28:D7:68:A6:4D", "C2:61:EC:46:CA:30", "C2:F4:39:C4:44:27", "C6:D8:9C:76:BD:80", "D2:0B:87:6B:3F:56", "D2:0B:E9:41:26:57", "D2:E6:EB:B0:03:CD", "D6:50:99:08:1F:5A", "D6:81:7B:81:76:43", "D6:86:24:04:6A:01", "D6:8E:78:C5:F9:E0", "DE:59:4F:9D:AB:E0", "DE:8D:29:2F:59:A5", "E2:49:2C:E4:83:B0", "E2:75:6E:53:BA:FD", "E2:AD:03:79:E5:C7", "E2:AD:DC:87:74:B5", "E2:E2:39:2B:A8:BA", "E6:26:46:4E:02:55", "E6:2F:E5:C5:87:DC", "EA:40:31:FA:44:75", "EA:FC:BC:83:F6:58", "EE:E2:02:BC:FF:70", "F6:91:74:97:65:A3", "FE:08:A8:EB:65:D6", "FE:1A:52:F7:B1:58", "FE:3F:02:AF:36:F8", "FE:6A:2D:04:10:48", "FE:88:BF:2D:2F:38", "FE:A3:6A:CB:14:79"], "vlan": ["2051", "2041", "2092", "2000", "2065", "2033", "2054", "2118", "2085", "2019", "2020", "2031", "2113", "2116", "2079", "2094", "2059", "2087", "2099", "2028", "2030", "2024", "2090", "2021", "2091", "2017", "2104", "2115", "2034", "2053", "2048", "2045", "2040", "2110", "2086", "2075", "2013", "2108", "2063", "2076", "2032", "2008", "2012", "2011", "2023", "2119", "2043", "2102", "2050", "2107", "2125", "2047", "2101", "2037", "2126", "2120", "2042", "2025", "2114", "2036", "2081", "2003", "2105", "2039", "2106", "2057", "2055", "2005", "2060", "2067", "2016", "2014", "2078", "2006", "2018", "2089", "2044", "2070", "2084", "2122", "2066", "2056", "2035", "2027", "2109", "2007", "2002", "2103", "2082", "2083", "2088", "2097", "2073", "2100", "2071", "2009", "2052", "2001", "2061", "2015", "2096", "2058", "2123", "2026", "2004", "2038", "2064", "2062", "2121", "2095", "2117", "2077", "2098", "2072", "2080", "2112", "2010", "2074", "2068", "2111", "2022", "2049", "2124", "2069", "2029", "2093", "2046"], "local_name": ["p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1"]}}}</data>
+    </node>
+    <node id="9">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">NetworkNode</data>
+      <data key="d2">3JB0R53</data>
+      <data key="d3">uky-w2.fabric-testbed.net</data>
+      <data key="d4">Server</data>
+      <data key="d5">R7525</data>
+      <data key="d6">UKY</data>
+      <data key="d7">{"core": 64, "cpu": 2, "disk": 4800, "ram": 512, "unit": 1}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 64, "ram": 512, "disk": 4800, "unit": 1}}}</data>
+    </node>
+    <node id="10">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
       <data key="d2">PHLJ0160047A1P0FGN</data>
-      <data key="d3">uky-w2-nvme1</data>
+      <data key="d3">uky-w2.fabric-testbed.net-nvme-1</data>
       <data key="d4">NVME</data>
       <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
-      <data key="d10">{"bdf": "000:21:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "000:21:00.0"}}}</data>
-    </node>
-    <node id="598">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">PHLJ0160041X1P0FGN</data>
-      <data key="d3">uky-w2-nvme2</data>
-      <data key="d4">NVME</data>
-      <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
-      <data key="d10">{"bdf": "0000:22:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:22:00.0"}}}</data>
-    </node>
-    <node id="599">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">PHLJ016100981P0FGN</data>
-      <data key="d3">uky-w2-nvme3</data>
-      <data key="d4">NVME</data>
-      <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
-      <data key="d10">{"bdf": "0000:23:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:23:00.0"}}}</data>
-    </node>
-    <node id="600">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">PHLJ0161008L1P0FGN</data>
-      <data key="d3">uky-w2-nvme4</data>
-      <data key="d4">NVME</data>
-      <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
-      <data key="d10">{"bdf": "0000:24:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:24:00.0"}}}</data>
-    </node>
-    <node id="601">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">PHLJ016100951P0FGN</data>
-      <data key="d3">uky-w3-nvme1</data>
-      <data key="d4">NVME</data>
-      <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
       <data key="d10">{"bdf": "0000:21:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 22 in Bay 2 (0000:21:00.0)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:21:00.0"}}}</data>
     </node>
-    <node id="602">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="11">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
-      <data key="d2">PHLJ0160046F1P0FGN</data>
-      <data key="d3">uky-w3-nvme2</data>
+      <data key="d2">PHLJ0160041X1P0FGN</data>
+      <data key="d3">uky-w2.fabric-testbed.net-nvme-2</data>
       <data key="d4">NVME</data>
       <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
       <data key="d10">{"bdf": "0000:22:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 23 in Bay 2 (0000:22:00.0)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:22:00.0"}}}</data>
     </node>
-    <node id="603">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="12">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
-      <data key="d2">PHLJ0161000L1P0FGN</data>
-      <data key="d3">uky-w3-nvme3</data>
+      <data key="d2">PHLJ016100981P0FGN</data>
+      <data key="d3">uky-w2.fabric-testbed.net-nvme-3</data>
       <data key="d4">NVME</data>
       <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
       <data key="d10">{"bdf": "0000:23:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 20 in Bay 2 (0000:23:00.0)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:23:00.0"}}}</data>
     </node>
-    <node id="604">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="13">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
-      <data key="d2">PHLJ015301VG1P0FGN</data>
-      <data key="d3">uky-w3-nvme4</data>
+      <data key="d2">PHLJ0161008L1P0FGN</data>
+      <data key="d3">uky-w2.fabric-testbed.net-nvme-4</data>
       <data key="d4">NVME</data>
       <data key="d5">P4510</data>
-      <data key="d6">{"disk": 1000, "unit": 1}</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
       <data key="d10">{"bdf": "0000:24:00.0"}</data>
-      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF</data>
-      <data key="d7">false</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 21 in Bay 2 (0000:24:00.0)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:24:00.0"}}}</data>
     </node>
-    <node id="605">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="14">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
-      <data key="d2">3JB2R53-gpu1</data>
-      <data key="d3">uky-w1-gpu1</data>
+      <data key="d2">3JB0R53-gpu-1</data>
+      <data key="d3">uky-w2.fabric-testbed.net-gpu-1</data>
       <data key="d4">GPU</data>
-      <data key="d5">RTX6000</data>
-      <data key="d6">{"unit": 1}</data>
+      <data key="d5">Tesla T4</data>
+      <data key="d7">{"unit": 1}</data>
       <data key="d10">{"bdf": "0000:25:00.0"}</data>
-      <data key="d11">NVIDIA Corporation TU102GL [Quadro RTX 6000/8000] (rev a1)</data>
-      <data key="d7">false</data>
+      <data key="d11">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:25:00.0"}}}</data>
     </node>
-    <node id="606">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="15">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
-      <data key="d2">3JB2R53-gpu2</data>
-      <data key="d3">uky-w1-gpu2</data>
+      <data key="d2">3JB0R53-gpu-2</data>
+      <data key="d3">uky-w2.fabric-testbed.net-gpu-2</data>
       <data key="d4">GPU</data>
-      <data key="d5">RTX6000</data>
-      <data key="d6">{"unit": 1}</data>
+      <data key="d5">Tesla T4</data>
+      <data key="d7">{"unit": 1}</data>
       <data key="d10">{"bdf": "0000:81:00.0"}</data>
-      <data key="d11">NVIDIA Corporation TU102GL [Quadro RTX 6000/8000] (rev a1)</data>
-      <data key="d7">false</data>
+      <data key="d11">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:81:00.0"}}}</data>
     </node>
-    <node id="607">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="16">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
-      <data key="d2">3JB0R53-gpu1</data>
-      <data key="d3">uky-w2-gpu1</data>
-      <data key="d4">GPU</data>
-      <data key="d5">Tesla T4</data>
-      <data key="d6">{"unit": 1}</data>
-      <data key="d10">{"bdf": "0000:25:00.0"}</data>
-      <data key="d11">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:25:00.0"}}}</data>
-    </node>
-    <node id="608">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">3JB0R53-gpu2</data>
-      <data key="d3">uky-w2-gpu2</data>
-      <data key="d4">GPU</data>
-      <data key="d5">Tesla T4</data>
-      <data key="d6">{"unit": 1}</data>
-      <data key="d10">{"bdf": "0000:81:00.0"}</data>
-      <data key="d11">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:81:00.0"}}}</data>
-    </node>
-    <node id="609">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">3JB1R53-gpu1</data>
-      <data key="d3">uky-w3-gpu1</data>
-      <data key="d4">GPU</data>
-      <data key="d5">Tesla T4</data>
-      <data key="d6">{"unit": 1}</data>
-      <data key="d10">{"bdf": "0000:25:00.0"}</data>
-      <data key="d11">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:25:00.0"}}}</data>
-    </node>
-    <node id="610">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">3JB1R53-gpu2</data>
-      <data key="d3">uky-w3-gpu2</data>
-      <data key="d4">GPU</data>
-      <data key="d5">Tesla T4</data>
-      <data key="d6">{"unit": 1}</data>
-      <data key="d10">{"bdf": "0000:81:00.0"}</data>
-      <data key="d11">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:81:00.0"}}}</data>
-    </node>
-    <node id="611">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">3JB2R53-shnic</data>
-      <data key="d3">uky-w1-shnic</data>
+      <data key="d2">3JB0R53-slot7</data>
+      <data key="d3">uky-w2.fabric-testbed.net-slot7</data>
       <data key="d4">SharedNIC</data>
       <data key="d5">ConnectX-6</data>
-      <data key="d6">{"unit": 4}</data>
-      <data key="d10">{"bdf": ["0000:a1:00.2", "0000:a1:00.3", "0000:a1:00.4", "0000:a1:00.5"]}</data>
-      <data key="d11">Shared NIC: Mellanox Technologies MT28908 Family [ConnectX-6]</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 4}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:a1:00.2", "0000:a1:00.3", "0000:a1:00.4", "0000:a1:00.5"]}}}</data>
+      <data key="d7">{"unit": 127}</data>
+      <data key="d11">Mellanox Technologies MT28908 Family [ConnectX-6] in PCIe Slot 7 (0000:e2:00.1)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 127}}}</data>
     </node>
-    <node id="612">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="17">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">3JB2R53-shnic-sf</data>
-      <data key="d3">uky-w1-shnic-l2ovs</data>
+      <data key="d2">3JB0R53-slot7-ns</data>
+      <data key="d3">uky-w2.fabric-testbed.net-uky-w2.fabric-testbed.net-slot7-l2ovs</data>
       <data key="d4">OVS</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="613">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="18">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-0C-42-A1-EA-C7-60</data>
-      <data key="d3">uky-w1-shnic-p1</data>
+      <data key="d2">node_id-0C-42-A1-EA-C7-E9</data>
+      <data key="d3">uky-w2.fabric-testbed.net-slot7-p1</data>
       <data key="d4">SharedPort</data>
-      <data key="d6">{"bw": 100, "unit": 4}</data>
-      <data key="d10">{"bdf": ["0000:a1:00.2", "0000:a1:00.3", "0000:a1:00.4", "0000:a1:00.5"], "mac": ["0C:42:A1:EA:C7:61", "0C:42:A1:EA:C7:62", "0C:42:A1:EA:C7:63", "0C:42:A1:EA:C7:64"], "vlan": [1001, 1002, 1003, 1004]}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 4}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:a1:00.2", "0000:a1:00.3", "0000:a1:00.4", "0000:a1:00.5"], "mac": ["0C:42:A1:EA:C7:61", "0C:42:A1:EA:C7:62", "0C:42:A1:EA:C7:63", "0C:42:A1:EA:C7:64"], "vlan": [1001, 1002, 1003, 1004]}}}</data>
+      <data key="d7">{"bw": 100, "unit": 127}</data>
+      <data key="d10">{"bdf": ["0000:e2:17.6", "0000:e2:17.0", "0000:e2:11.6", "0000:e2:14.0", "0000:e2:1d.0", "0000:e2:10.1", "0000:e2:1d.2", "0000:e2:1d.3", "0000:e2:14.7", "0000:e2:16.4", "0000:e2:10.2", "0000:e2:12.6", "0000:e2:17.3", "0000:e2:13.4", "0000:e2:1a.6", "0000:e2:1a.7", "0000:e2:11.5", "0000:e2:12.7", "0000:e2:14.4", "0000:e2:10.7", "0000:e2:11.2", "0000:e2:13.5", "0000:e2:1b.7", "0000:e2:1b.4", "0000:e2:1a.5", "0000:e2:1b.0", "0000:e2:1f.0", "0000:e2:13.6", "0000:e2:19.2", "0000:e2:13.1", "0000:e2:17.5", "0000:e2:16.5", "0000:e2:12.5", "0000:e2:11.4", "0000:e2:17.7", "0000:e2:12.1", "0000:e2:14.6", "0000:e2:13.2", "0000:e2:16.3", "0000:e2:13.0", "0000:e2:1f.3", "0000:e2:1c.1", "0000:e2:1d.7", "0000:e2:1c.5", "0000:e2:12.4", "0000:e2:16.2", "0000:e2:17.4", "0000:e2:1a.1", "0000:e2:19.6", "0000:e2:15.3", "0000:e2:1e.4", "0000:e2:15.4", "0000:e2:10.5", "0000:e2:18.3", "0000:e2:1f.1", "0000:e2:1e.2", "0000:e2:1f.5", "0000:e2:16.6", "0000:e2:1b.1", "0000:e2:10.4", "0000:e2:16.0", "0000:e2:1d.6", "0000:e2:1d.5", "0000:e2:1a.4", "0000:e2:15.5", "0000:e2:1b.2", "0000:e2:15.1", "0000:e2:19.1", "0000:e2:1e.0", "0000:e2:18.5", "0000:e2:19.3", "0000:e2:1e.3", "0000:e2:18.1", "0000:e2:1f.6", "0000:e2:19.4", "0000:e2:1c.0", "0000:e2:11.3", "0000:e2:1a.0", "0000:e2:1e.5", "0000:e2:17.2", "0000:e2:14.1", "0000:e2:18.4", "0000:e2:18.6", "0000:e2:1c.4", "0000:e2:10.3", "0000:e2:19.5", "0000:e2:11.0", "0000:e2:19.7", "0000:e2:1f.4", "0000:e2:16.1", "0000:e2:1f.2", "0000:e2:19.0", "0000:e2:1a.2", "0000:e2:14.3", "0000:e2:15.7", "0000:e2:1c.3", "0000:e2:10.6", "0000:e2:1c.7", "0000:e2:1a.3", "0000:e2:17.1", "0000:e2:1e.1", "0000:e2:14.2", "0000:e2:12.3", "0000:e2:15.2", "0000:e2:1c.6", "0000:e2:13.3", "0000:e2:11.7", "0000:e2:1e.6", "0000:e2:12.0", "0000:e2:1f.7", "0000:e2:13.7", "0000:e2:12.2", "0000:e2:16.7", "0000:e2:1d.1", "0000:e2:15.0", "0000:e2:1b.6", "0000:e2:14.5", "0000:e2:1b.5", "0000:e2:18.7", "0000:e2:1b.3", "0000:e2:18.0", "0000:e2:1e.7", "0000:e2:15.6", "0000:e2:1c.2", "0000:e2:11.1", "0000:e2:1d.4", "0000:e2:18.2"], "local_name": ["p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1"], "mac": ["02:24:2E:3D:50:F5", "02:C0:F8:D3:A2:55", "06:04:7F:FA:B6:21", "06:0A:09:C5:FF:91", "06:36:F1:A7:A8:98", "06:4C:48:16:F3:C3", "06:81:F6:77:88:31", "06:B4:5C:EF:EF:6F", "06:FF:41:7F:66:88", "0E:41:75:EA:7B:3C", "0E:58:CD:E9:FA:08", "0E:CA:B3:66:EF:07", "0E:E8:3F:A6:BA:A5", "16:51:AF:C2:B8:B6", "16:F6:C8:2E:3C:E0", "1A:34:47:23:B9:61", "1A:62:28:F0:C8:F9", "1A:75:78:77:C5:CF", "1A:8F:A0:C2:CB:70", "1E:84:F5:82:31:40", "22:E0:97:9C:1A:03", "26:9C:CD:E9:E6:6F", "26:B1:5F:86:F4:07", "26:DC:BC:CC:57:FA", "26:E0:4F:CC:82:D8", "2E:9A:18:D8:91:89", "32:06:68:44:04:AF", "32:4B:EE:37:5C:35", "32:5C:E3:FC:55:A7", "32:FD:18:B0:84:38", "36:BA:89:4C:2C:DD", "3A:1A:C2:7C:9D:74", "3A:4A:D2:5A:BE:B7", "3E:B9:83:3B:94:C6", "3E:BE:BD:D2:3A:2D", "3E:DB:6D:61:21:D6", "3E:E4:16:81:D2:8C", "42:D3:D6:54:62:5E", "42:EB:B7:00:1E:2D", "46:71:B1:D6:A5:F4", "4E:29:FC:77:D5:59", "4E:85:67:23:78:63", "4E:C3:B8:0A:8B:B3", "56:10:DC:24:84:84", "56:38:4D:7F:04:C9", "56:3C:B7:28:B5:9B", "56:83:1F:76:C2:CB", "56:A3:E9:AE:34:B6", "5A:94:70:CF:EA:7A", "5A:BC:5C:E9:84:48", "5E:2D:C8:63:7F:73", "5E:32:03:06:B1:6E", "5E:64:CC:4C:7C:36", "62:FF:4D:76:24:6F", "66:4B:ED:12:6B:07", "6A:15:6F:79:71:53", "6A:2E:33:3E:D7:97", "6A:A5:17:E7:6F:52", "6E:60:3C:97:81:E0", "6E:C6:47:9A:2E:27", "72:30:80:5C:C3:2A", "72:CE:96:1D:74:E8", "76:36:E1:FD:3C:60", "76:46:97:58:D8:8F", "76:63:81:79:A2:82", "7A:D0:DA:BF:C7:53", "7A:EA:8B:92:D1:ED", "7E:25:82:13:6A:27", "82:27:EF:7D:82:7D", "82:4A:51:CC:D1:46", "82:81:F8:93:29:FB", "82:9E:43:1E:43:5A", "86:1C:8F:B3:A2:22", "86:40:26:37:C2:47", "86:73:B4:9C:8D:CE", "8A:15:9C:28:6A:46", "8A:16:45:AF:EE:89", "8A:18:B0:F0:C3:1C", "8A:43:20:7C:4F:E3", "8E:9A:59:E8:B3:63", "92:DB:99:71:84:4B", "92:E6:9E:D7:C7:7F", "96:D5:3A:38:70:8C", "9A:0A:83:DF:DB:1D", "9A:6D:01:E0:6C:38", "9E:3D:A1:78:AD:CF", "9E:DE:64:79:7E:34", "9E:E0:AE:8D:2A:19", "A6:D1:EC:64:B5:65", "A6:ED:52:93:B5:BE", "A6:EF:62:E7:DD:4B", "B6:AF:C5:1C:81:BD", "B6:F0:0E:87:F8:F6", "BA:49:DC:5F:FD:A9", "BA:A6:6A:7C:8D:41", "BE:96:32:E3:4D:C1", "BE:B3:CE:EE:36:D3", "C2:06:FB:B1:15:08", "C6:2E:AA:05:A3:C3", "C6:68:F9:A9:D1:D1", "C6:B0:24:40:31:92", "C6:D3:24:DA:2C:83", "CA:77:81:13:3C:1D", "CE:93:30:59:AF:20", "CE:D9:93:FF:63:B9", "D2:6A:D3:F0:6B:F0", "D6:56:7C:64:96:90", "DA:74:7F:D5:9F:FE", "DE:05:4E:4C:50:B9", "DE:58:83:68:37:81", "E6:21:46:48:B3:5C", "E6:78:3E:B7:40:1F", "E6:86:5C:A7:5B:73", "E6:B5:54:F2:82:79", "E6:BF:6C:51:E2:0A", "EA:00:4A:70:A0:23", "EA:27:04:09:7A:E9", "EA:78:11:A0:BE:99", "EA:B6:D7:DF:A5:DD", "EE:73:15:36:34:CB", "EE:FB:CA:CE:3D:00", "F6:2B:51:59:D5:5B", "F6:7F:38:2C:2A:A0", "F6:B9:4E:E7:D0:DE", "FA:6F:65:FD:ED:63", "FE:42:70:44:7D:2A", "FE:AB:EC:13:17:3A"], "vlan": ["2061", "2055", "2013", "2031", "2103", "2000", "2105", "2106", "2038", "2051", "2001", "2021", "2058", "2027", "2085", "2086", "2012", "2022", "2035", "2006", "2009", "2028", "2094", "2091", "2084", "2087", "2119", "2029", "2073", "2024", "2060", "2052", "2020", "2011", "2062", "2016", "2037", "2025", "2050", "2023", "2122", "2096", "2110", "2100", "2019", "2049", "2059", "2080", "2077", "2042", "2115", "2043", "2004", "2066", "2120", "2113", "2124", "2053", "2088", "2003", "2047", "2109", "2108", "2083", "2044", "2089", "2040", "2072", "2111", "2068", "2074", "2114", "2064", "2125", "2075", "2095", "2010", "2079", "2116", "2057", "2032", "2067", "2069", "2099", "2002", "2076", "2007", "2078", "2123", "2048", "2121", "2071", "2081", "2034", "2046", "2098", "2005", "2102", "2082", "2056", "2112", "2033", "2018", "2041", "2101", "2026", "2014", "2117", "2015", "2126", "2030", "2017", "2054", "2104", "2039", "2093", "2036", "2092", "2070", "2090", "2063", "2118", "2045", "2097", "2008", "2107", "2065"]}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 127}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:17.6", "0000:e2:17.0", "0000:e2:11.6", "0000:e2:14.0", "0000:e2:1d.0", "0000:e2:10.1", "0000:e2:1d.2", "0000:e2:1d.3", "0000:e2:14.7", "0000:e2:16.4", "0000:e2:10.2", "0000:e2:12.6", "0000:e2:17.3", "0000:e2:13.4", "0000:e2:1a.6", "0000:e2:1a.7", "0000:e2:11.5", "0000:e2:12.7", "0000:e2:14.4", "0000:e2:10.7", "0000:e2:11.2", "0000:e2:13.5", "0000:e2:1b.7", "0000:e2:1b.4", "0000:e2:1a.5", "0000:e2:1b.0", "0000:e2:1f.0", "0000:e2:13.6", "0000:e2:19.2", "0000:e2:13.1", "0000:e2:17.5", "0000:e2:16.5", "0000:e2:12.5", "0000:e2:11.4", "0000:e2:17.7", "0000:e2:12.1", "0000:e2:14.6", "0000:e2:13.2", "0000:e2:16.3", "0000:e2:13.0", "0000:e2:1f.3", "0000:e2:1c.1", "0000:e2:1d.7", "0000:e2:1c.5", "0000:e2:12.4", "0000:e2:16.2", "0000:e2:17.4", "0000:e2:1a.1", "0000:e2:19.6", "0000:e2:15.3", "0000:e2:1e.4", "0000:e2:15.4", "0000:e2:10.5", "0000:e2:18.3", "0000:e2:1f.1", "0000:e2:1e.2", "0000:e2:1f.5", "0000:e2:16.6", "0000:e2:1b.1", "0000:e2:10.4", "0000:e2:16.0", "0000:e2:1d.6", "0000:e2:1d.5", "0000:e2:1a.4", "0000:e2:15.5", "0000:e2:1b.2", "0000:e2:15.1", "0000:e2:19.1", "0000:e2:1e.0", "0000:e2:18.5", "0000:e2:19.3", "0000:e2:1e.3", "0000:e2:18.1", "0000:e2:1f.6", "0000:e2:19.4", "0000:e2:1c.0", "0000:e2:11.3", "0000:e2:1a.0", "0000:e2:1e.5", "0000:e2:17.2", "0000:e2:14.1", "0000:e2:18.4", "0000:e2:18.6", "0000:e2:1c.4", "0000:e2:10.3", "0000:e2:19.5", "0000:e2:11.0", "0000:e2:19.7", "0000:e2:1f.4", "0000:e2:16.1", "0000:e2:1f.2", "0000:e2:19.0", "0000:e2:1a.2", "0000:e2:14.3", "0000:e2:15.7", "0000:e2:1c.3", "0000:e2:10.6", "0000:e2:1c.7", "0000:e2:1a.3", "0000:e2:17.1", "0000:e2:1e.1", "0000:e2:14.2", "0000:e2:12.3", "0000:e2:15.2", "0000:e2:1c.6", "0000:e2:13.3", "0000:e2:11.7", "0000:e2:1e.6", "0000:e2:12.0", "0000:e2:1f.7", "0000:e2:13.7", "0000:e2:12.2", "0000:e2:16.7", "0000:e2:1d.1", "0000:e2:15.0", "0000:e2:1b.6", "0000:e2:14.5", "0000:e2:1b.5", "0000:e2:18.7", "0000:e2:1b.3", "0000:e2:18.0", "0000:e2:1e.7", "0000:e2:15.6", "0000:e2:1c.2", "0000:e2:11.1", "0000:e2:1d.4", "0000:e2:18.2"], "mac": ["02:24:2E:3D:50:F5", "02:C0:F8:D3:A2:55", "06:04:7F:FA:B6:21", "06:0A:09:C5:FF:91", "06:36:F1:A7:A8:98", "06:4C:48:16:F3:C3", "06:81:F6:77:88:31", "06:B4:5C:EF:EF:6F", "06:FF:41:7F:66:88", "0E:41:75:EA:7B:3C", "0E:58:CD:E9:FA:08", "0E:CA:B3:66:EF:07", "0E:E8:3F:A6:BA:A5", "16:51:AF:C2:B8:B6", "16:F6:C8:2E:3C:E0", "1A:34:47:23:B9:61", "1A:62:28:F0:C8:F9", "1A:75:78:77:C5:CF", "1A:8F:A0:C2:CB:70", "1E:84:F5:82:31:40", "22:E0:97:9C:1A:03", "26:9C:CD:E9:E6:6F", "26:B1:5F:86:F4:07", "26:DC:BC:CC:57:FA", "26:E0:4F:CC:82:D8", "2E:9A:18:D8:91:89", "32:06:68:44:04:AF", "32:4B:EE:37:5C:35", "32:5C:E3:FC:55:A7", "32:FD:18:B0:84:38", "36:BA:89:4C:2C:DD", "3A:1A:C2:7C:9D:74", "3A:4A:D2:5A:BE:B7", "3E:B9:83:3B:94:C6", "3E:BE:BD:D2:3A:2D", "3E:DB:6D:61:21:D6", "3E:E4:16:81:D2:8C", "42:D3:D6:54:62:5E", "42:EB:B7:00:1E:2D", "46:71:B1:D6:A5:F4", "4E:29:FC:77:D5:59", "4E:85:67:23:78:63", "4E:C3:B8:0A:8B:B3", "56:10:DC:24:84:84", "56:38:4D:7F:04:C9", "56:3C:B7:28:B5:9B", "56:83:1F:76:C2:CB", "56:A3:E9:AE:34:B6", "5A:94:70:CF:EA:7A", "5A:BC:5C:E9:84:48", "5E:2D:C8:63:7F:73", "5E:32:03:06:B1:6E", "5E:64:CC:4C:7C:36", "62:FF:4D:76:24:6F", "66:4B:ED:12:6B:07", "6A:15:6F:79:71:53", "6A:2E:33:3E:D7:97", "6A:A5:17:E7:6F:52", "6E:60:3C:97:81:E0", "6E:C6:47:9A:2E:27", "72:30:80:5C:C3:2A", "72:CE:96:1D:74:E8", "76:36:E1:FD:3C:60", "76:46:97:58:D8:8F", "76:63:81:79:A2:82", "7A:D0:DA:BF:C7:53", "7A:EA:8B:92:D1:ED", "7E:25:82:13:6A:27", "82:27:EF:7D:82:7D", "82:4A:51:CC:D1:46", "82:81:F8:93:29:FB", "82:9E:43:1E:43:5A", "86:1C:8F:B3:A2:22", "86:40:26:37:C2:47", "86:73:B4:9C:8D:CE", "8A:15:9C:28:6A:46", "8A:16:45:AF:EE:89", "8A:18:B0:F0:C3:1C", "8A:43:20:7C:4F:E3", "8E:9A:59:E8:B3:63", "92:DB:99:71:84:4B", "92:E6:9E:D7:C7:7F", "96:D5:3A:38:70:8C", "9A:0A:83:DF:DB:1D", "9A:6D:01:E0:6C:38", "9E:3D:A1:78:AD:CF", "9E:DE:64:79:7E:34", "9E:E0:AE:8D:2A:19", "A6:D1:EC:64:B5:65", "A6:ED:52:93:B5:BE", "A6:EF:62:E7:DD:4B", "B6:AF:C5:1C:81:BD", "B6:F0:0E:87:F8:F6", "BA:49:DC:5F:FD:A9", "BA:A6:6A:7C:8D:41", "BE:96:32:E3:4D:C1", "BE:B3:CE:EE:36:D3", "C2:06:FB:B1:15:08", "C6:2E:AA:05:A3:C3", "C6:68:F9:A9:D1:D1", "C6:B0:24:40:31:92", "C6:D3:24:DA:2C:83", "CA:77:81:13:3C:1D", "CE:93:30:59:AF:20", "CE:D9:93:FF:63:B9", "D2:6A:D3:F0:6B:F0", "D6:56:7C:64:96:90", "DA:74:7F:D5:9F:FE", "DE:05:4E:4C:50:B9", "DE:58:83:68:37:81", "E6:21:46:48:B3:5C", "E6:78:3E:B7:40:1F", "E6:86:5C:A7:5B:73", "E6:B5:54:F2:82:79", "E6:BF:6C:51:E2:0A", "EA:00:4A:70:A0:23", "EA:27:04:09:7A:E9", "EA:78:11:A0:BE:99", "EA:B6:D7:DF:A5:DD", "EE:73:15:36:34:CB", "EE:FB:CA:CE:3D:00", "F6:2B:51:59:D5:5B", "F6:7F:38:2C:2A:A0", "F6:B9:4E:E7:D0:DE", "FA:6F:65:FD:ED:63", "FE:42:70:44:7D:2A", "FE:AB:EC:13:17:3A"], "vlan": ["2061", "2055", "2013", "2031", "2103", "2000", "2105", "2106", "2038", "2051", "2001", "2021", "2058", "2027", "2085", "2086", "2012", "2022", "2035", "2006", "2009", "2028", "2094", "2091", "2084", "2087", "2119", "2029", "2073", "2024", "2060", "2052", "2020", "2011", "2062", "2016", "2037", "2025", "2050", "2023", "2122", "2096", "2110", "2100", "2019", "2049", "2059", "2080", "2077", "2042", "2115", "2043", "2004", "2066", "2120", "2113", "2124", "2053", "2088", "2003", "2047", "2109", "2108", "2083", "2044", "2089", "2040", "2072", "2111", "2068", "2074", "2114", "2064", "2125", "2075", "2095", "2010", "2079", "2116", "2057", "2032", "2067", "2069", "2099", "2002", "2076", "2007", "2078", "2123", "2048", "2121", "2071", "2081", "2034", "2046", "2098", "2005", "2102", "2082", "2056", "2112", "2033", "2018", "2041", "2101", "2026", "2014", "2117", "2015", "2126", "2030", "2017", "2054", "2104", "2039", "2093", "2036", "2092", "2070", "2090", "2063", "2118", "2045", "2097", "2008", "2107", "2065"], "local_name": ["p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1"]}}}</data>
     </node>
-    <node id="614">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="19">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
-      <data key="d2">3JB0R53-shnic</data>
-      <data key="d3">uky-w2-shnic</data>
-      <data key="d4">SharedNIC</data>
-      <data key="d5">ConnectX-6</data>
-      <data key="d6">{"unit": 4}</data>
-      <data key="d10">{"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"]}</data>
-      <data key="d11">Shared NIC: Mellanox Technologies MT28908 Family [ConnectX-6]</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 4}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"]}}}</data>
-    </node>
-    <node id="615">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">NetworkService</data>
-      <data key="d2">3JB0R53-shnic-sf</data>
-      <data key="d3">uky-w2-shnic-l2ovs</data>
-      <data key="d4">OVS</data>
-      <data key="d7">false</data>
-      <data key="d13">L2</data>
-    </node>
-    <node id="616">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-0C-42-A1-EA-C7-E8</data>
-      <data key="d3">uky-w2-shnic-p1</data>
-      <data key="d4">SharedPort</data>
-      <data key="d6">{"bw": 100, "unit": 4}</data>
-      <data key="d10">{"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"], "mac": ["0C:42:A1:EA:C7:E9", "0C:42:A1:EA:C7:EA", "0C:42:A1:EA:C7:EB", "0C:42:A1:EA:C7:EC"], "vlan": [1001, 1002, 1003, 1004]}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 4}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"], "mac": ["0C:42:A1:EA:C7:E9", "0C:42:A1:EA:C7:EA", "0C:42:A1:EA:C7:EB", "0C:42:A1:EA:C7:EC"], "vlan": [1001, 1002, 1003, 1004]}}}</data>
-    </node>
-    <node id="617">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">3JB1R53-shnic</data>
-      <data key="d3">uky-w3-shnic</data>
-      <data key="d4">SharedNIC</data>
-      <data key="d5">ConnectX-6</data>
-      <data key="d6">{"unit": 4}</data>
-      <data key="d10">{"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"]}</data>
-      <data key="d11">Shared NIC: Mellanox Technologies MT28908 Family [ConnectX-6]</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 4}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"]}}}</data>
-    </node>
-    <node id="618">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">NetworkService</data>
-      <data key="d2">3JB1R53-shnic-sf</data>
-      <data key="d3">uky-w3-shnic-l2ovs</data>
-      <data key="d4">OVS</data>
-      <data key="d7">false</data>
-      <data key="d13">L2</data>
-    </node>
-    <node id="619">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-0C-42-A1-78-F8-1C</data>
-      <data key="d3">uky-w3-shnic-p1</data>
-      <data key="d4">SharedPort</data>
-      <data key="d6">{"bw": 100, "unit": 4}</data>
-      <data key="d10">{"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"], "mac": ["0C:42:A1:78:F8:1D", "0C:42:A1:78:F8:1E", "0C:42:A1:78:F8:1F", "0C:42:A1:78:F8:20"], "vlan": [1001, 1002, 1003, 1004]}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 4}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:00.2", "0000:e2:00.3", "0000:e2:00.4", "0000:e2:00.5"], "mac": ["0C:42:A1:78:F8:1D", "0C:42:A1:78:F8:1E", "0C:42:A1:78:F8:1F", "0C:42:A1:78:F8:20"], "vlan": [1001, 1002, 1003, 1004]}}}</data>
-    </node>
-    <node id="620">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">3JB0R53-nic1</data>
-      <data key="d3">uky-w2-nic1</data>
+      <data key="d2">3JB0R53-slot6</data>
+      <data key="d3">uky-w2.fabric-testbed.net-slot6</data>
       <data key="d4">SmartNIC</data>
       <data key="d5">ConnectX-6</data>
-      <data key="d6">{"unit": 1}</data>
-      <data key="d10">{"bdf": ["0000:41:00.0", "0000:41:00.1"]}</data>
-      <data key="d11">Mellanox Technologies MT28908 Family [ConnectX-6]</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:41:00.0", "0000:41:00.1"]}}}</data>
-    </node>
-    <node id="621">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">NetworkService</data>
-      <data key="d2">3JB0R53-nic1-sf</data>
-      <data key="d3">uky-w2-nic1-l2ovs</data>
-      <data key="d4">OVS</data>
-      <data key="d7">false</data>
-      <data key="d13">L2</data>
-    </node>
-    <node id="622">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-0C-42-A1-EA-C7-50</data>
-      <data key="d3">uky-w2-nic1-p1</data>
-      <data key="d4">DedicatedPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d10">{"mac": "0C:42:A1:EA:C7:50", "vlan_range": "1-4096"}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:EA:C7:50", "vlan_range": "1-4096"}}}</data>
-    </node>
-    <node id="623">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-0C-42-A1-EA-C7-51</data>
-      <data key="d3">uky-w2-nic1-p2</data>
-      <data key="d4">DedicatedPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d10">{"mac": "0C:42:A1:EA:C7:51", "vlan_range": "1-4096"}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:EA:C7:51", "vlan_range": "1-4096"}}}</data>
-    </node>
-    <node id="624">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">Component</data>
-      <data key="d2">3JB0R53-nic2</data>
-      <data key="d3">uky-w2-nic2</data>
-      <data key="d4">SmartNIC</data>
-      <data key="d5">ConnectX-6</data>
-      <data key="d6">{"unit": 1}</data>
+      <data key="d7">{"unit": 1}</data>
       <data key="d10">{"bdf": ["0000:a1:00.0", "0000:a1:00.1"]}</data>
-      <data key="d11">Mellanox Technologies MT28908 Family [ConnectX-6]</data>
-      <data key="d7">false</data>
+      <data key="d11">Mellanox Technologies MT28908 Family [ConnectX-6] in PCIe Slot 6 (0000:a1:00.0)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:a1:00.0", "0000:a1:00.1"]}}}</data>
     </node>
-    <node id="625">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="20">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">3JB0R53-nic2-sf</data>
-      <data key="d3">uky-w2-nic2-l2ovs</data>
+      <data key="d2">3JB0R53-slot6-ns</data>
+      <data key="d3">uky-w2.fabric-testbed.net-uky-w2.fabric-testbed.net-slot6-l2ovs</data>
       <data key="d4">OVS</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="626">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="21">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-0C-42-A1-78-F8-04</data>
-      <data key="d3">uky-w2-nic2-p1</data>
+      <data key="d3">uky-w2.fabric-testbed.net-slot6-p1</data>
       <data key="d4">DedicatedPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d10">{"mac": "0C:42:A1:78:F8:04", "vlan_range": "1-4096"}</data>
-      <data key="d7">false</data>
+      <data key="d7">{"bw": 100, "unit": 1}</data>
+      <data key="d10">{"local_name": "p1", "mac": "0C:42:A1:78:F8:04", "vlan_range": "1-4096"}</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:78:F8:04", "vlan_range": "1-4096"}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:78:F8:04", "vlan_range": "1-4096", "local_name": "p1"}}}</data>
     </node>
-    <node id="627">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="22">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-0C-42-A1-78-F8-05</data>
-      <data key="d3">uky-w2-nic2-p2</data>
+      <data key="d3">uky-w2.fabric-testbed.net-slot6-p2</data>
       <data key="d4">DedicatedPort</data>
-      <data key="d6">{"bw": 100, "unit": 1}</data>
-      <data key="d10">{"mac": "0C:42:A1:78:F8:05", "vlan_range": "1-4096"}</data>
-      <data key="d7">false</data>
+      <data key="d7">{"bw": 100, "unit": 1}</data>
+      <data key="d10">{"local_name": "p2", "mac": "0C:42:A1:78:F8:05", "vlan_range": "1-4096"}</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:78:F8:05", "vlan_range": "1-4096"}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:78:F8:05", "vlan_range": "1-4096", "local_name": "p2"}}}</data>
     </node>
-    <node id="628">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="23">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
-      <data key="d2">3JB1R53-nic1</data>
-      <data key="d3">uky-w3-nic1</data>
+      <data key="d2">3JB0R53-slot3</data>
+      <data key="d3">uky-w2.fabric-testbed.net-slot3</data>
       <data key="d4">SmartNIC</data>
-      <data key="d5">ConnectX-5</data>
-      <data key="d6">{"unit": 1}</data>
+      <data key="d5">ConnectX-6</data>
+      <data key="d7">{"unit": 1}</data>
       <data key="d10">{"bdf": ["0000:41:00.0", "0000:41:00.1"]}</data>
-      <data key="d11">Mellanox Technologies MT27800 Family [ConnectX-5]</data>
-      <data key="d7">false</data>
+      <data key="d11">Mellanox Technologies MT28908 Family [ConnectX-6] in PCIe Slot 3 (0000:41:00.0)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:41:00.0", "0000:41:00.1"]}}}</data>
     </node>
-    <node id="629">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="24">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">3JB1R53-nic1-sf</data>
-      <data key="d3">uky-w3-nic1-l2ovs</data>
+      <data key="d2">3JB0R53-slot3-ns</data>
+      <data key="d3">uky-w2.fabric-testbed.net-uky-w2.fabric-testbed.net-slot3-l2ovs</data>
       <data key="d4">OVS</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="630">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="25">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-0C-42-A1-BE-8F-F8</data>
-      <data key="d3">uky-w3-nic1-p1</data>
+      <data key="d2">node_id-0C-42-A1-EA-C7-50</data>
+      <data key="d3">uky-w2.fabric-testbed.net-slot3-p1</data>
       <data key="d4">DedicatedPort</data>
-      <data key="d6">{"bw": 25, "unit": 1}</data>
-      <data key="d10">{"mac": "0C:42:A1:BE:8F:F8", "vlan_range": "1-4096"}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:BE:8F:F8", "vlan_range": "1-4096"}}}</data>
+      <data key="d7">{"bw": 100, "unit": 1}</data>
+      <data key="d10">{"local_name": "p1", "mac": "0C:42:A1:EA:C7:50", "vlan_range": "1-4096"}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:EA:C7:50", "vlan_range": "1-4096", "local_name": "p1"}}}</data>
     </node>
-    <node id="631">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="26">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-0C-42-A1-BE-8F-F9</data>
-      <data key="d3">uky-w3-nic1-p2</data>
+      <data key="d2">node_id-0C-42-A1-EA-C7-51</data>
+      <data key="d3">uky-w2.fabric-testbed.net-slot3-p2</data>
       <data key="d4">DedicatedPort</data>
-      <data key="d6">{"bw": 25, "unit": 1}</data>
-      <data key="d10">{"mac": "0C:42:A1:BE:8F:F9", "vlan_range": "1-4096"}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:BE:8F:F9", "vlan_range": "1-4096"}}}</data>
+      <data key="d7">{"bw": 100, "unit": 1}</data>
+      <data key="d10">{"local_name": "p2", "mac": "0C:42:A1:EA:C7:51", "vlan_range": "1-4096"}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:EA:C7:51", "vlan_range": "1-4096", "local_name": "p2"}}}</data>
     </node>
-    <node id="632">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="27">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">NetworkNode</data>
+      <data key="d2">3JB1R53</data>
+      <data key="d3">uky-w3.fabric-testbed.net</data>
+      <data key="d4">Server</data>
+      <data key="d5">R7525</data>
+      <data key="d6">UKY</data>
+      <data key="d7">{"core": 64, "cpu": 2, "disk": 4800, "ram": 512, "unit": 1}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"cpu": 2, "core": 64, "ram": 512, "disk": 4800, "unit": 1}}}</data>
+    </node>
+    <node id="28">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Component</data>
-      <data key="d2">3JB1R53-nic2</data>
-      <data key="d3">uky-w3-nic2</data>
+      <data key="d2">PHLJ016100951P0FGN</data>
+      <data key="d3">uky-w3.fabric-testbed.net-nvme-1</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
+      <data key="d10">{"bdf": "0000:21:00.0"}</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 22 in Bay 2 (0000:21:00.0)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:21:00.0"}}}</data>
+    </node>
+    <node id="29">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ0160046F1P0FGN</data>
+      <data key="d3">uky-w3.fabric-testbed.net-nvme-2</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
+      <data key="d10">{"bdf": "0000:22:00.0"}</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 23 in Bay 2 (0000:22:00.0)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:22:00.0"}}}</data>
+    </node>
+    <node id="30">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ0161000L1P0FGN</data>
+      <data key="d3">uky-w3.fabric-testbed.net-nvme-3</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
+      <data key="d10">{"bdf": "0000:23:00.0"}</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 20 in Bay 2 (0000:23:00.0)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:23:00.0"}}}</data>
+    </node>
+    <node id="31">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">PHLJ015301VG1P0FGN</data>
+      <data key="d3">uky-w3.fabric-testbed.net-nvme-4</data>
+      <data key="d4">NVME</data>
+      <data key="d5">P4510</data>
+      <data key="d7">{"disk": 1000, "unit": 1}</data>
+      <data key="d10">{"bdf": "0000:24:00.0"}</data>
+      <data key="d11">Dell Express Flash NVMe P4510 1TB SFF in PCIe SSD Slot 21 in Bay 2 (0000:24:00.0)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 1000, "unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:24:00.0"}}}</data>
+    </node>
+    <node id="32">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-gpu-1</data>
+      <data key="d3">uky-w3.fabric-testbed.net-gpu-1</data>
+      <data key="d4">GPU</data>
+      <data key="d5">Tesla T4</data>
+      <data key="d7">{"unit": 1}</data>
+      <data key="d10">{"bdf": "0000:25:00.0"}</data>
+      <data key="d11">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:25:00.0"}}}</data>
+    </node>
+    <node id="33">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-gpu-2</data>
+      <data key="d3">uky-w3.fabric-testbed.net-gpu-2</data>
+      <data key="d4">GPU</data>
+      <data key="d5">Tesla T4</data>
+      <data key="d7">{"unit": 1}</data>
+      <data key="d10">{"bdf": "0000:81:00.0"}</data>
+      <data key="d11">NVIDIA Corporation TU104GL [Tesla T4] (rev a1)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": "0000:81:00.0"}}}</data>
+    </node>
+    <node id="34">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-slot7</data>
+      <data key="d3">uky-w3.fabric-testbed.net-slot7</data>
+      <data key="d4">SharedNIC</data>
+      <data key="d5">ConnectX-6</data>
+      <data key="d7">{"unit": 127}</data>
+      <data key="d11">Mellanox Technologies MT28908 Family [ConnectX-6] in PCIe Slot 7 (0000:e2:00.1)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 127}}}</data>
+    </node>
+    <node id="35">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">NetworkService</data>
+      <data key="d2">3JB1R53-slot7-ns</data>
+      <data key="d3">uky-w3.fabric-testbed.net-uky-w3.fabric-testbed.net-slot7-l2ovs</data>
+      <data key="d4">OVS</data>
+      <data key="d8">false</data>
+      <data key="d13">L2</data>
+    </node>
+    <node id="36">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-78-F8-1D</data>
+      <data key="d3">uky-w3.fabric-testbed.net-slot7-p1</data>
+      <data key="d4">SharedPort</data>
+      <data key="d7">{"bw": 100, "unit": 127}</data>
+      <data key="d10">{"bdf": ["0000:e2:1e.4", "0000:e2:14.4", "0000:e2:1f.5", "0000:e2:1d.6", "0000:e2:16.1", "0000:e2:19.6", "0000:e2:1c.4", "0000:e2:11.2", "0000:e2:1c.6", "0000:e2:12.6", "0000:e2:1c.3", "0000:e2:15.6", "0000:e2:14.7", "0000:e2:1b.0", "0000:e2:13.4", "0000:e2:1c.2", "0000:e2:14.5", "0000:e2:18.7", "0000:e2:12.3", "0000:e2:10.3", "0000:e2:11.7", "0000:e2:1e.5", "0000:e2:1a.6", "0000:e2:13.6", "0000:e2:1f.1", "0000:e2:10.1", "0000:e2:1e.7", "0000:e2:13.5", "0000:e2:15.3", "0000:e2:18.4", "0000:e2:11.5", "0000:e2:14.6", "0000:e2:18.2", "0000:e2:12.5", "0000:e2:12.7", "0000:e2:1f.4", "0000:e2:1b.3", "0000:e2:13.7", "0000:e2:17.2", "0000:e2:13.2", "0000:e2:14.2", "0000:e2:12.0", "0000:e2:1e.1", "0000:e2:1a.4", "0000:e2:1e.6", "0000:e2:13.0", "0000:e2:1f.7", "0000:e2:13.1", "0000:e2:18.3", "0000:e2:17.1", "0000:e2:10.4", "0000:e2:1f.0", "0000:e2:19.3", "0000:e2:1c.0", "0000:e2:18.5", "0000:e2:16.2", "0000:e2:14.3", "0000:e2:1c.7", "0000:e2:17.7", "0000:e2:1d.7", "0000:e2:10.2", "0000:e2:10.7", "0000:e2:1d.1", "0000:e2:17.6", "0000:e2:1d.5", "0000:e2:1a.2", "0000:e2:15.7", "0000:e2:1e.0", "0000:e2:18.1", "0000:e2:1a.0", "0000:e2:12.1", "0000:e2:19.5", "0000:e2:11.3", "0000:e2:1b.1", "0000:e2:15.2", "0000:e2:15.1", "0000:e2:17.5", "0000:e2:11.0", "0000:e2:11.6", "0000:e2:1d.3", "0000:e2:1e.2", "0000:e2:10.5", "0000:e2:12.2", "0000:e2:1b.4", "0000:e2:19.0", "0000:e2:11.4", "0000:e2:16.3", "0000:e2:1e.3", "0000:e2:1b.2", "0000:e2:1b.5", "0000:e2:1b.7", "0000:e2:17.3", "0000:e2:11.1", "0000:e2:16.6", "0000:e2:15.4", "0000:e2:19.4", "0000:e2:1c.5", "0000:e2:1a.1", "0000:e2:1d.0", "0000:e2:18.0", "0000:e2:15.0", "0000:e2:1d.4", "0000:e2:18.6", "0000:e2:16.0", "0000:e2:1f.6", "0000:e2:1a.7", "0000:e2:10.6", "0000:e2:15.5", "0000:e2:13.3", "0000:e2:1a.3", "0000:e2:19.7", "0000:e2:1b.6", "0000:e2:1f.2", "0000:e2:19.2", "0000:e2:19.1", "0000:e2:17.4", "0000:e2:16.4", "0000:e2:1c.1", "0000:e2:1f.3", "0000:e2:1d.2", "0000:e2:16.5", "0000:e2:1a.5", "0000:e2:16.7", "0000:e2:17.0", "0000:e2:12.4", "0000:e2:14.0", "0000:e2:14.1"], "local_name": ["p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1"], "mac": ["02:DB:CA:74:E3:76", "06:3A:E0:5E:34:AE", "06:5E:81:96:D5:9A", "0A:9D:CD:A0:EA:25", "12:04:38:E1:8F:AC", "12:48:0C:D1:5E:63", "16:3F:3D:ED:C4:31", "16:DF:EE:4E:10:3F", "1E:2F:A2:C7:BE:F9", "1E:D6:A1:47:78:84", "22:0A:2D:FC:23:61", "22:3F:A6:BF:2F:37", "22:93:6D:C0:25:4D", "22:CB:98:B3:F8:E7", "26:04:74:5E:48:FE", "26:5A:C8:9A:21:55", "26:A4:FC:78:16:62", "2A:BA:02:11:4C:42", "2E:45:A6:12:AD:3E", "32:10:B3:28:E6:9D", "32:5A:4F:E5:51:9D", "32:66:8D:91:42:C2", "32:7B:E9:FF:1E:04", "36:BF:EA:94:A7:55", "3A:46:25:0D:E0:0A", "3A:63:9C:9C:E0:78", "3E:BD:C5:E3:DB:5A", "3E:BE:49:F4:14:0B", "42:C9:6B:49:4A:DC", "46:1F:85:F1:29:26", "46:96:99:DE:7B:0D", "46:9A:1E:E8:0F:3E", "46:A3:3D:13:82:01", "4A:2D:10:34:2A:90", "4A:5E:46:3D:60:38", "4A:9F:19:CA:42:53", "4E:04:27:EB:EC:BA", "4E:1F:1A:DC:BF:6E", "4E:9B:C8:9D:28:7E", "52:3C:59:B8:B2:25", "52:61:8A:1A:89:19", "52:BA:59:27:4D:20", "52:C3:57:F7:56:62", "52:E3:D6:05:32:EB", "52:F1:9C:41:57:D0", "52:FF:7F:E3:B5:40", "56:4F:1A:77:02:EB", "56:B3:7E:D5:99:C0", "56:C2:1A:5A:81:AE", "5A:4A:DF:3A:20:B7", "5A:6F:32:FB:8A:1C", "5A:95:E9:C2:66:D4", "5A:A6:4F:1E:88:27", "5A:C4:58:F5:82:4A", "5A:F0:D4:CF:FF:1D", "62:20:6E:14:88:BB", "62:64:90:1D:A6:30", "6A:43:F0:7C:7D:68", "6A:73:39:3B:9A:0B", "6E:BB:19:E6:27:E0", "72:7A:E5:33:4B:5A", "72:7E:85:4C:F4:E1", "76:B4:B6:3C:FF:32", "7A:DB:AD:F0:E4:20", "7E:5B:95:DC:A3:51", "7E:AA:02:7D:68:6F", "86:87:92:B2:1F:6B", "86:A5:01:D3:15:CB", "86:B3:13:36:6A:89", "86:CB:22:D2:A0:5F", "86:F6:76:32:E4:94", "8E:12:DF:D8:6F:E7", "8E:38:F6:89:14:44", "8E:62:A7:E9:3B:9C", "92:80:F2:45:03:44", "96:06:EA:54:89:86", "96:28:92:10:CB:00", "96:3B:DB:C2:36:17", "96:3E:87:78:E1:94", "96:72:68:70:76:D0", "9E:13:8E:28:6A:DD", "9E:14:D1:4B:CE:67", "9E:CB:F2:E1:55:32", "A2:1A:A4:67:58:86", "A2:81:D5:B2:0E:54", "A2:F1:F0:C6:1D:34", "A6:38:D2:06:ED:7F", "AA:F0:B2:4C:D7:91", "AE:50:7B:DC:7D:9B", "AE:E1:98:49:63:22", "B2:83:29:34:E0:E2", "B2:D4:D7:CD:29:29", "B6:5A:6D:B0:29:0D", "B6:8A:D1:AB:D0:D3", "B6:BF:3E:E4:D3:38", "BA:B6:17:F4:0C:91", "BE:03:0B:FE:0B:09", "BE:AA:F8:1B:1A:93", "C2:84:A0:01:A0:7B", "C2:C3:55:B6:AE:AB", "C6:73:50:12:EF:EF", "C6:91:A7:D2:C9:59", "C6:9C:40:C8:46:DE", "CE:3A:B9:AC:53:62", "CE:61:83:CE:5E:EC", "CE:9A:B2:A9:0B:8C", "D2:CC:1D:6E:45:48", "D6:08:5C:6C:B8:E2", "D6:4E:0B:76:6B:56", "D6:D7:26:88:4F:1A", "DA:0B:00:B7:E1:46", "DA:BA:51:9D:F2:AE", "E2:06:A7:C9:87:9E", "E2:CF:FE:48:12:2B", "E6:9A:04:43:B9:89", "E6:F9:49:22:B3:73", "E6:FC:1B:57:36:DA", "EA:90:E5:16:EC:84", "EE:25:41:CB:85:5F", "F2:36:CD:CF:C8:1C", "F2:6B:EA:9C:36:20", "F6:1E:5C:AC:FF:3A", "F6:4C:AE:07:64:33", "F6:87:A9:73:68:93", "F6:DB:4C:12:8C:E0", "FE:8A:5C:45:15:A2", "FE:ED:BD:0D:5D:23"], "vlan": ["2115", "2035", "2124", "2109", "2048", "2077", "2099", "2009", "2101", "2021", "2098", "2045", "2038", "2087", "2027", "2097", "2036", "2070", "2018", "2002", "2014", "2116", "2085", "2029", "2120", "2000", "2118", "2028", "2042", "2067", "2012", "2037", "2065", "2020", "2022", "2123", "2090", "2030", "2057", "2025", "2033", "2015", "2112", "2083", "2117", "2023", "2126", "2024", "2066", "2056", "2003", "2119", "2074", "2095", "2068", "2049", "2034", "2102", "2062", "2110", "2001", "2006", "2104", "2061", "2108", "2081", "2046", "2111", "2064", "2079", "2016", "2076", "2010", "2088", "2041", "2040", "2060", "2007", "2013", "2106", "2113", "2004", "2017", "2091", "2071", "2011", "2050", "2114", "2089", "2092", "2094", "2058", "2008", "2053", "2043", "2075", "2100", "2080", "2103", "2063", "2039", "2107", "2069", "2047", "2125", "2086", "2005", "2044", "2026", "2082", "2078", "2093", "2121", "2073", "2072", "2059", "2051", "2096", "2122", "2105", "2052", "2084", "2054", "2055", "2019", "2031", "2032"]}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100, "unit": 127}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:e2:1e.4", "0000:e2:14.4", "0000:e2:1f.5", "0000:e2:1d.6", "0000:e2:16.1", "0000:e2:19.6", "0000:e2:1c.4", "0000:e2:11.2", "0000:e2:1c.6", "0000:e2:12.6", "0000:e2:1c.3", "0000:e2:15.6", "0000:e2:14.7", "0000:e2:1b.0", "0000:e2:13.4", "0000:e2:1c.2", "0000:e2:14.5", "0000:e2:18.7", "0000:e2:12.3", "0000:e2:10.3", "0000:e2:11.7", "0000:e2:1e.5", "0000:e2:1a.6", "0000:e2:13.6", "0000:e2:1f.1", "0000:e2:10.1", "0000:e2:1e.7", "0000:e2:13.5", "0000:e2:15.3", "0000:e2:18.4", "0000:e2:11.5", "0000:e2:14.6", "0000:e2:18.2", "0000:e2:12.5", "0000:e2:12.7", "0000:e2:1f.4", "0000:e2:1b.3", "0000:e2:13.7", "0000:e2:17.2", "0000:e2:13.2", "0000:e2:14.2", "0000:e2:12.0", "0000:e2:1e.1", "0000:e2:1a.4", "0000:e2:1e.6", "0000:e2:13.0", "0000:e2:1f.7", "0000:e2:13.1", "0000:e2:18.3", "0000:e2:17.1", "0000:e2:10.4", "0000:e2:1f.0", "0000:e2:19.3", "0000:e2:1c.0", "0000:e2:18.5", "0000:e2:16.2", "0000:e2:14.3", "0000:e2:1c.7", "0000:e2:17.7", "0000:e2:1d.7", "0000:e2:10.2", "0000:e2:10.7", "0000:e2:1d.1", "0000:e2:17.6", "0000:e2:1d.5", "0000:e2:1a.2", "0000:e2:15.7", "0000:e2:1e.0", "0000:e2:18.1", "0000:e2:1a.0", "0000:e2:12.1", "0000:e2:19.5", "0000:e2:11.3", "0000:e2:1b.1", "0000:e2:15.2", "0000:e2:15.1", "0000:e2:17.5", "0000:e2:11.0", "0000:e2:11.6", "0000:e2:1d.3", "0000:e2:1e.2", "0000:e2:10.5", "0000:e2:12.2", "0000:e2:1b.4", "0000:e2:19.0", "0000:e2:11.4", "0000:e2:16.3", "0000:e2:1e.3", "0000:e2:1b.2", "0000:e2:1b.5", "0000:e2:1b.7", "0000:e2:17.3", "0000:e2:11.1", "0000:e2:16.6", "0000:e2:15.4", "0000:e2:19.4", "0000:e2:1c.5", "0000:e2:1a.1", "0000:e2:1d.0", "0000:e2:18.0", "0000:e2:15.0", "0000:e2:1d.4", "0000:e2:18.6", "0000:e2:16.0", "0000:e2:1f.6", "0000:e2:1a.7", "0000:e2:10.6", "0000:e2:15.5", "0000:e2:13.3", "0000:e2:1a.3", "0000:e2:19.7", "0000:e2:1b.6", "0000:e2:1f.2", "0000:e2:19.2", "0000:e2:19.1", "0000:e2:17.4", "0000:e2:16.4", "0000:e2:1c.1", "0000:e2:1f.3", "0000:e2:1d.2", "0000:e2:16.5", "0000:e2:1a.5", "0000:e2:16.7", "0000:e2:17.0", "0000:e2:12.4", "0000:e2:14.0", "0000:e2:14.1"], "mac": ["02:DB:CA:74:E3:76", "06:3A:E0:5E:34:AE", "06:5E:81:96:D5:9A", "0A:9D:CD:A0:EA:25", "12:04:38:E1:8F:AC", "12:48:0C:D1:5E:63", "16:3F:3D:ED:C4:31", "16:DF:EE:4E:10:3F", "1E:2F:A2:C7:BE:F9", "1E:D6:A1:47:78:84", "22:0A:2D:FC:23:61", "22:3F:A6:BF:2F:37", "22:93:6D:C0:25:4D", "22:CB:98:B3:F8:E7", "26:04:74:5E:48:FE", "26:5A:C8:9A:21:55", "26:A4:FC:78:16:62", "2A:BA:02:11:4C:42", "2E:45:A6:12:AD:3E", "32:10:B3:28:E6:9D", "32:5A:4F:E5:51:9D", "32:66:8D:91:42:C2", "32:7B:E9:FF:1E:04", "36:BF:EA:94:A7:55", "3A:46:25:0D:E0:0A", "3A:63:9C:9C:E0:78", "3E:BD:C5:E3:DB:5A", "3E:BE:49:F4:14:0B", "42:C9:6B:49:4A:DC", "46:1F:85:F1:29:26", "46:96:99:DE:7B:0D", "46:9A:1E:E8:0F:3E", "46:A3:3D:13:82:01", "4A:2D:10:34:2A:90", "4A:5E:46:3D:60:38", "4A:9F:19:CA:42:53", "4E:04:27:EB:EC:BA", "4E:1F:1A:DC:BF:6E", "4E:9B:C8:9D:28:7E", "52:3C:59:B8:B2:25", "52:61:8A:1A:89:19", "52:BA:59:27:4D:20", "52:C3:57:F7:56:62", "52:E3:D6:05:32:EB", "52:F1:9C:41:57:D0", "52:FF:7F:E3:B5:40", "56:4F:1A:77:02:EB", "56:B3:7E:D5:99:C0", "56:C2:1A:5A:81:AE", "5A:4A:DF:3A:20:B7", "5A:6F:32:FB:8A:1C", "5A:95:E9:C2:66:D4", "5A:A6:4F:1E:88:27", "5A:C4:58:F5:82:4A", "5A:F0:D4:CF:FF:1D", "62:20:6E:14:88:BB", "62:64:90:1D:A6:30", "6A:43:F0:7C:7D:68", "6A:73:39:3B:9A:0B", "6E:BB:19:E6:27:E0", "72:7A:E5:33:4B:5A", "72:7E:85:4C:F4:E1", "76:B4:B6:3C:FF:32", "7A:DB:AD:F0:E4:20", "7E:5B:95:DC:A3:51", "7E:AA:02:7D:68:6F", "86:87:92:B2:1F:6B", "86:A5:01:D3:15:CB", "86:B3:13:36:6A:89", "86:CB:22:D2:A0:5F", "86:F6:76:32:E4:94", "8E:12:DF:D8:6F:E7", "8E:38:F6:89:14:44", "8E:62:A7:E9:3B:9C", "92:80:F2:45:03:44", "96:06:EA:54:89:86", "96:28:92:10:CB:00", "96:3B:DB:C2:36:17", "96:3E:87:78:E1:94", "96:72:68:70:76:D0", "9E:13:8E:28:6A:DD", "9E:14:D1:4B:CE:67", "9E:CB:F2:E1:55:32", "A2:1A:A4:67:58:86", "A2:81:D5:B2:0E:54", "A2:F1:F0:C6:1D:34", "A6:38:D2:06:ED:7F", "AA:F0:B2:4C:D7:91", "AE:50:7B:DC:7D:9B", "AE:E1:98:49:63:22", "B2:83:29:34:E0:E2", "B2:D4:D7:CD:29:29", "B6:5A:6D:B0:29:0D", "B6:8A:D1:AB:D0:D3", "B6:BF:3E:E4:D3:38", "BA:B6:17:F4:0C:91", "BE:03:0B:FE:0B:09", "BE:AA:F8:1B:1A:93", "C2:84:A0:01:A0:7B", "C2:C3:55:B6:AE:AB", "C6:73:50:12:EF:EF", "C6:91:A7:D2:C9:59", "C6:9C:40:C8:46:DE", "CE:3A:B9:AC:53:62", "CE:61:83:CE:5E:EC", "CE:9A:B2:A9:0B:8C", "D2:CC:1D:6E:45:48", "D6:08:5C:6C:B8:E2", "D6:4E:0B:76:6B:56", "D6:D7:26:88:4F:1A", "DA:0B:00:B7:E1:46", "DA:BA:51:9D:F2:AE", "E2:06:A7:C9:87:9E", "E2:CF:FE:48:12:2B", "E6:9A:04:43:B9:89", "E6:F9:49:22:B3:73", "E6:FC:1B:57:36:DA", "EA:90:E5:16:EC:84", "EE:25:41:CB:85:5F", "F2:36:CD:CF:C8:1C", "F2:6B:EA:9C:36:20", "F6:1E:5C:AC:FF:3A", "F6:4C:AE:07:64:33", "F6:87:A9:73:68:93", "F6:DB:4C:12:8C:E0", "FE:8A:5C:45:15:A2", "FE:ED:BD:0D:5D:23"], "vlan": ["2115", "2035", "2124", "2109", "2048", "2077", "2099", "2009", "2101", "2021", "2098", "2045", "2038", "2087", "2027", "2097", "2036", "2070", "2018", "2002", "2014", "2116", "2085", "2029", "2120", "2000", "2118", "2028", "2042", "2067", "2012", "2037", "2065", "2020", "2022", "2123", "2090", "2030", "2057", "2025", "2033", "2015", "2112", "2083", "2117", "2023", "2126", "2024", "2066", "2056", "2003", "2119", "2074", "2095", "2068", "2049", "2034", "2102", "2062", "2110", "2001", "2006", "2104", "2061", "2108", "2081", "2046", "2111", "2064", "2079", "2016", "2076", "2010", "2088", "2041", "2040", "2060", "2007", "2013", "2106", "2113", "2004", "2017", "2091", "2071", "2011", "2050", "2114", "2089", "2092", "2094", "2058", "2008", "2053", "2043", "2075", "2100", "2080", "2103", "2063", "2039", "2107", "2069", "2047", "2125", "2086", "2005", "2044", "2026", "2082", "2078", "2093", "2121", "2073", "2072", "2059", "2051", "2096", "2122", "2105", "2052", "2084", "2054", "2055", "2019", "2031", "2032"], "local_name": ["p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1", "p1"]}}}</data>
+    </node>
+    <node id="37">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-slot6</data>
+      <data key="d3">uky-w3.fabric-testbed.net-slot6</data>
       <data key="d4">SmartNIC</data>
       <data key="d5">ConnectX-5</data>
-      <data key="d6">{"unit": 1}</data>
+      <data key="d7">{"unit": 1}</data>
       <data key="d10">{"bdf": ["0000:a1:00.0", "0000:a1:00.1"]}</data>
-      <data key="d11">Mellanox Technologies MT27800 Family [ConnectX-5]</data>
-      <data key="d7">false</data>
+      <data key="d11">Mellanox Technologies MT27800 Family [ConnectX-5] in PCIe Slot 6 (0000:a1:00.0)</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
       <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:a1:00.0", "0000:a1:00.1"]}}}</data>
     </node>
-    <node id="633">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="38">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">3JB1R53-nic2-sf</data>
-      <data key="d3">uky-w3-nic2-l2ovs</data>
+      <data key="d2">3JB1R53-slot6-ns</data>
+      <data key="d3">uky-w3.fabric-testbed.net-uky-w3.fabric-testbed.net-slot6-l2ovs</data>
       <data key="d4">OVS</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="634">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="39">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-0C-42-A1-BE-8F-DC</data>
-      <data key="d3">uky-w3-nic2-p1</data>
+      <data key="d3">uky-w3.fabric-testbed.net-slot6-p1</data>
       <data key="d4">DedicatedPort</data>
-      <data key="d6">{"bw": 25, "unit": 1}</data>
-      <data key="d10">{"mac": "0C:42:A1:BE:8F:DC", "vlan_range": "1-4096"}</data>
-      <data key="d7">false</data>
+      <data key="d7">{"bw": 25, "unit": 1}</data>
+      <data key="d10">{"local_name": "p1", "mac": "0C:42:A1:BE:8F:DC", "vlan_range": "1-4096"}</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:BE:8F:DC", "vlan_range": "1-4096"}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:BE:8F:DC", "vlan_range": "1-4096", "local_name": "p1"}}}</data>
     </node>
-    <node id="635">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="40">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">ConnectionPoint</data>
       <data key="d2">node_id-0C-42-A1-BE-8F-DD</data>
-      <data key="d3">uky-w3-nic2-p2</data>
+      <data key="d3">uky-w3.fabric-testbed.net-slot6-p2</data>
       <data key="d4">DedicatedPort</data>
-      <data key="d6">{"bw": 25, "unit": 1}</data>
-      <data key="d10">{"mac": "0C:42:A1:BE:8F:DD", "vlan_range": "1-4096"}</data>
-      <data key="d7">false</data>
+      <data key="d7">{"bw": 25, "unit": 1}</data>
+      <data key="d10">{"local_name": "p2", "mac": "0C:42:A1:BE:8F:DD", "vlan_range": "1-4096"}</data>
+      <data key="d8">false</data>
       <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
-      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:BE:8F:DD", "vlan_range": "1-4096"}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:BE:8F:DD", "vlan_range": "1-4096", "local_name": "p2"}}}</data>
     </node>
-    <node id="636">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="41">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">Component</data>
+      <data key="d2">3JB1R53-slot3</data>
+      <data key="d3">uky-w3.fabric-testbed.net-slot3</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d5">ConnectX-5</data>
+      <data key="d7">{"unit": 1}</data>
+      <data key="d10">{"bdf": ["0000:41:00.0", "0000:41:00.1"]}</data>
+      <data key="d11">Mellanox Technologies MT27800 Family [ConnectX-5] in PCIe Slot 3 (0000:41:00.0)</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"bdf": ["0000:41:00.0", "0000:41:00.1"]}}}</data>
+    </node>
+    <node id="42">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">NetworkService</data>
+      <data key="d2">3JB1R53-slot3-ns</data>
+      <data key="d3">uky-w3.fabric-testbed.net-uky-w3.fabric-testbed.net-slot3-l2ovs</data>
+      <data key="d4">OVS</data>
+      <data key="d8">false</data>
+      <data key="d13">L2</data>
+    </node>
+    <node id="43">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-BE-8F-F8</data>
+      <data key="d3">uky-w3.fabric-testbed.net-slot3-p1</data>
+      <data key="d4">DedicatedPort</data>
+      <data key="d7">{"bw": 25, "unit": 1}</data>
+      <data key="d10">{"local_name": "p1", "mac": "0C:42:A1:BE:8F:F8", "vlan_range": "1-4096"}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:BE:8F:F8", "vlan_range": "1-4096", "local_name": "p1"}}}</data>
+    </node>
+    <node id="44">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">node_id-0C-42-A1-BE-8F-F9</data>
+      <data key="d3">uky-w3.fabric-testbed.net-slot3-p2</data>
+      <data key="d4">DedicatedPort</data>
+      <data key="d7">{"bw": 25, "unit": 1}</data>
+      <data key="d10">{"local_name": "p2", "mac": "0C:42:A1:BE:8F:F9", "vlan_range": "1-4096"}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25, "unit": 1}}}</data>
+      <data key="d12">{"primary": {"pool_id": "_", "labels": {"mac": "0C:42:A1:BE:8F:F9", "vlan_range": "1-4096", "local_name": "p2"}}}</data>
+    </node>
+    <node id="45">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">NetworkNode</data>
       <data key="d2">3DB3R53</data>
-      <data key="d3">nas</data>
+      <data key="d3">uky-storage.fabric-testbed.net</data>
       <data key="d4">NAS</data>
       <data key="d5">ME4084</data>
-      <data key="d6">{"disk": 100000, "unit": 1}</data>
-      <data key="d7">false</data>
-      <data key="d8">UKY</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 100000, "unit": 1}}}</data>
+      <data key="d6">UKY</data>
+      <data key="d7">{"disk": 336000, "unit": 1}</data>
+      <data key="d8">false</data>
+      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"disk": 336000, "unit": 1}}}</data>
     </node>
-    <node id="637">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="46">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">NetworkNode</data>
-      <data key="d2">FOC2451R0XZ</data>
-      <data key="d3">UKY-data-sw</data>
+      <data key="d2">node+uky-data-sw:ip+192.168.12.3</data>
+      <data key="d3">uky-data-sw</data>
       <data key="d4">Switch</data>
-      <data key="d5">NCS 55A1-36H</data>
-      <data key="d6">{"unit": 1}</data>
-      <data key="d7">false</data>
-      <data key="d8">UKY</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"unit": 1}}}</data>
+      <data key="d6">UKY</data>
+      <data key="d8">true</data>
     </node>
-    <node id="638">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="47">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">NetworkService</data>
-      <data key="d2">FOC2451R0XZ-ns</data>
-      <data key="d3">UKY-data-sw-ns</data>
+      <data key="d2">node+uky-data-sw:ip+192.168.12.3-ns</data>
+      <data key="d3">uky-data-sw-ns</data>
       <data key="d4">MPLS</data>
-      <data key="d7">false</data>
+      <data key="d8">true</data>
       <data key="d13">L2</data>
     </node>
-    <node id="639">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="48">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-00</data>
-      <data key="d3">HundredGigE 0/0/0/5</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/5</data>
+      <data key="d3">HundredGigE0/0/0/5</data>
       <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
-      <data key="d12">{"primary": {"pool_id": "shared_pool", "labels": {"ipv4_range": "192.168.1.1-192.168.10.255", "vlan_range": "100-200"}}}</data>
+      <data key="d8">true</data>
     </node>
-    <node id="640">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-01</data>
-      <data key="d3">HundredGigE 0/0/0/13</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
-      <data key="d12">{"primary": {"pool": "shared_pool"}}</data>
-    </node>
-    <node id="641">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-02</data>
-      <data key="d3">HundredGigE 0/0/0/15</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
-      <data key="d12">{"primary": {"pool_id": "datanic_pool", "labels": {"vlan_range": "1500-2000"}}}</data>
-    </node>
-    <node id="642">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-03</data>
-      <data key="d3">HundredGigE 0/0/0/9</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
-      <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
-    </node>
-    <node id="643">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-04</data>
-      <data key="d3">HundredGigE 0/0/0/17</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
-      <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
-    </node>
-    <node id="644">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-05</data>
-      <data key="d3">HundredGigE 0/0/0/19</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
-      <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
-    </node>
-    <node id="645">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-06</data>
-      <data key="d3">HundredGigE 0/0/0/21</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 100}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 100}}}</data>
-      <data key="d12">{"primary": {"pool": "shared_pool"}}</data>
-    </node>
-    <node id="646">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-07</data>
-      <data key="d3">HundredGigE 0/0/0/25.1</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
-      <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
-    </node>
-    <node id="647">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-08</data>
-      <data key="d3">HundredGigE 0/0/0/25.2</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
-      <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
-    </node>
-    <node id="648">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-09</data>
-      <data key="d3">HundredGigE 0/0/0/25.3</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
-      <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
-    </node>
-    <node id="649">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
-      <data key="d1">ConnectionPoint</data>
-      <data key="d2">node_id-10-00-00-00-00-0A</data>
-      <data key="d3">HundredGigE 0/0/0/25.4</data>
-      <data key="d4">TrunkPort</data>
-      <data key="d6">{"bw": 25}</data>
-      <data key="d7">false</data>
-      <data key="d9">{"primary": {"pool_id": "_", "capacities": {"bw": 25}}}</data>
-      <data key="d12">{"primary": {"pool": "datanic_pool"}}</data>
-    </node>
-    <node id="650">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="49">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-00-DAC</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/5-DAC</data>
       <data key="d3">l1</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="651">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="50">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/9</data>
+      <data key="d3">HundredGigE0/0/0/9</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="51">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-01-DAC</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/9-DAC</data>
       <data key="d3">l2</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="652">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="52">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/19</data>
+      <data key="d3">HundredGigE0/0/0/19</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="53">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-02-DAC</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/19-DAC</data>
       <data key="d3">l3</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="653">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="54">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/17</data>
+      <data key="d3">HundredGigE0/0/0/17</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="55">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-03-DAC</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/17-DAC</data>
       <data key="d3">l4</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="654">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="56">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/13</data>
+      <data key="d3">HundredGigE0/0/0/13</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="57">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-04-DAC</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/13-DAC</data>
       <data key="d3">l5</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="655">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="58">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/15</data>
+      <data key="d3">HundredGigE0/0/0/15</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="59">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-05-DAC</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/15-DAC</data>
       <data key="d3">l6</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="656">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="60">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/21</data>
+      <data key="d3">HundredGigE0/0/0/21</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="61">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-06-DAC</data>
+      <data key="d2">port+uky-data-sw:HundredGigE0/0/0/21-DAC</data>
       <data key="d3">l7</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="657">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="62">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/2</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/2</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="63">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-07-DAC</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/2-DAC</data>
       <data key="d3">l8</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="658">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="64">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/3</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/3</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="65">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-08-DAC</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/3-DAC</data>
       <data key="d3">l9</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="659">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="66">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/0</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/0</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="67">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-09-DAC</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/0-DAC</data>
       <data key="d3">l10</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <node id="660">
-      <data key="d0">62d6beaf-78de-4f06-883e-556db6bd6479</data>
+    <node id="68">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
+      <data key="d1">ConnectionPoint</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/1</data>
+      <data key="d3">TwentyFiveGigE0/0/0/23/1</data>
+      <data key="d4">TrunkPort</data>
+      <data key="d8">true</data>
+    </node>
+    <node id="69">
+      <data key="d0">d6daa5a8-795c-4fd9-8b55-7421aa2c5bcc</data>
       <data key="d1">Link</data>
-      <data key="d2">node_id-10-00-00-00-00-0A-DAC</data>
+      <data key="d2">port+uky-data-sw:TwentyFiveGigE0/0/0/23/1-DAC</data>
       <data key="d3">l11</data>
       <data key="d4">Patch</data>
-      <data key="d7">false</data>
+      <data key="d8">false</data>
       <data key="d13">L2</data>
     </node>
-    <edge source="592" target="595">
+    <edge source="1" target="2">
       <data key="d14">has</data>
     </edge>
-    <edge source="592" target="596">
+    <edge source="1" target="3">
       <data key="d14">has</data>
     </edge>
-    <edge source="592" target="605">
+    <edge source="1" target="4">
       <data key="d14">has</data>
     </edge>
-    <edge source="592" target="606">
+    <edge source="1" target="5">
       <data key="d14">has</data>
     </edge>
-    <edge source="592" target="611">
+    <edge source="1" target="6">
       <data key="d14">has</data>
     </edge>
-    <edge source="593" target="597">
+    <edge source="6" target="7">
       <data key="d14">has</data>
     </edge>
-    <edge source="593" target="598">
+    <edge source="7" target="8">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="8" target="49">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="9" target="10">
       <data key="d14">has</data>
     </edge>
-    <edge source="593" target="599">
+    <edge source="9" target="11">
       <data key="d14">has</data>
     </edge>
-    <edge source="593" target="600">
+    <edge source="9" target="12">
       <data key="d14">has</data>
     </edge>
-    <edge source="593" target="607">
+    <edge source="9" target="13">
       <data key="d14">has</data>
     </edge>
-    <edge source="593" target="608">
+    <edge source="9" target="14">
       <data key="d14">has</data>
     </edge>
-    <edge source="593" target="614">
+    <edge source="9" target="15">
       <data key="d14">has</data>
     </edge>
-    <edge source="593" target="620">
+    <edge source="9" target="16">
       <data key="d14">has</data>
     </edge>
-    <edge source="593" target="624">
+    <edge source="9" target="19">
       <data key="d14">has</data>
     </edge>
-    <edge source="594" target="601">
+    <edge source="9" target="23">
       <data key="d14">has</data>
     </edge>
-    <edge source="594" target="602">
+    <edge source="16" target="17">
       <data key="d14">has</data>
     </edge>
-    <edge source="594" target="603">
+    <edge source="17" target="18">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="18" target="51">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="19" target="20">
       <data key="d14">has</data>
     </edge>
-    <edge source="594" target="604">
+    <edge source="20" target="21">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="20" target="22">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="21" target="53">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="22" target="55">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="23" target="24">
       <data key="d14">has</data>
     </edge>
-    <edge source="594" target="609">
+    <edge source="24" target="25">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="24" target="26">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="25" target="57">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="26" target="59">
+      <data key="d14">connects</data>
+    </edge>
+    <edge source="27" target="28">
       <data key="d14">has</data>
     </edge>
-    <edge source="594" target="610">
+    <edge source="27" target="29">
       <data key="d14">has</data>
     </edge>
-    <edge source="594" target="617">
+    <edge source="27" target="30">
       <data key="d14">has</data>
     </edge>
-    <edge source="594" target="628">
+    <edge source="27" target="31">
       <data key="d14">has</data>
     </edge>
-    <edge source="594" target="632">
+    <edge source="27" target="32">
       <data key="d14">has</data>
     </edge>
-    <edge source="611" target="612">
+    <edge source="27" target="33">
       <data key="d14">has</data>
     </edge>
-    <edge source="612" target="613">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="613" target="650">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="614" target="615">
+    <edge source="27" target="34">
       <data key="d14">has</data>
     </edge>
-    <edge source="615" target="616">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="616" target="651">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="617" target="618">
+    <edge source="27" target="37">
       <data key="d14">has</data>
     </edge>
-    <edge source="618" target="619">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="619" target="656">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="620" target="621">
+    <edge source="27" target="41">
       <data key="d14">has</data>
     </edge>
-    <edge source="621" target="622">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="621" target="623">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="622" target="652">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="623" target="653">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="624" target="625">
+    <edge source="34" target="35">
       <data key="d14">has</data>
     </edge>
-    <edge source="625" target="626">
+    <edge source="35" target="36">
       <data key="d14">connects</data>
     </edge>
-    <edge source="625" target="627">
+    <edge source="36" target="61">
       <data key="d14">connects</data>
     </edge>
-    <edge source="626" target="654">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="627" target="655">
-      <data key="d14">connects</data>
-    </edge>
-    <edge source="628" target="629">
+    <edge source="37" target="38">
       <data key="d14">has</data>
     </edge>
-    <edge source="629" target="630">
+    <edge source="38" target="39">
       <data key="d14">connects</data>
     </edge>
-    <edge source="629" target="631">
+    <edge source="38" target="40">
       <data key="d14">connects</data>
     </edge>
-    <edge source="630" target="657">
+    <edge source="39" target="65">
       <data key="d14">connects</data>
     </edge>
-    <edge source="631" target="658">
+    <edge source="40" target="63">
       <data key="d14">connects</data>
     </edge>
-    <edge source="632" target="633">
+    <edge source="41" target="42">
       <data key="d14">has</data>
     </edge>
-    <edge source="633" target="634">
+    <edge source="42" target="43">
       <data key="d14">connects</data>
     </edge>
-    <edge source="633" target="635">
+    <edge source="42" target="44">
       <data key="d14">connects</data>
     </edge>
-    <edge source="634" target="659">
+    <edge source="43" target="67">
       <data key="d14">connects</data>
     </edge>
-    <edge source="635" target="660">
+    <edge source="44" target="69">
       <data key="d14">connects</data>
     </edge>
-    <edge source="637" target="638">
+    <edge source="46" target="47">
       <data key="d14">has</data>
     </edge>
-    <edge source="638" target="639">
+    <edge source="47" target="48">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="640">
+    <edge source="47" target="50">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="641">
+    <edge source="47" target="52">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="642">
+    <edge source="47" target="54">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="643">
+    <edge source="47" target="56">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="644">
+    <edge source="47" target="58">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="645">
+    <edge source="47" target="60">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="646">
+    <edge source="47" target="62">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="647">
+    <edge source="47" target="64">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="648">
+    <edge source="47" target="66">
       <data key="d14">connects</data>
     </edge>
-    <edge source="638" target="649">
+    <edge source="47" target="68">
       <data key="d14">connects</data>
     </edge>
-    <edge source="639" target="650">
+    <edge source="48" target="49">
       <data key="d14">connects</data>
     </edge>
-    <edge source="640" target="651">
+    <edge source="50" target="51">
       <data key="d14">connects</data>
     </edge>
-    <edge source="641" target="652">
+    <edge source="52" target="53">
       <data key="d14">connects</data>
     </edge>
-    <edge source="642" target="653">
+    <edge source="54" target="55">
       <data key="d14">connects</data>
     </edge>
-    <edge source="643" target="654">
+    <edge source="56" target="57">
       <data key="d14">connects</data>
     </edge>
-    <edge source="644" target="655">
+    <edge source="58" target="59">
       <data key="d14">connects</data>
     </edge>
-    <edge source="645" target="656">
+    <edge source="60" target="61">
       <data key="d14">connects</data>
     </edge>
-    <edge source="646" target="657">
+    <edge source="62" target="63">
       <data key="d14">connects</data>
     </edge>
-    <edge source="647" target="658">
+    <edge source="64" target="65">
       <data key="d14">connects</data>
     </edge>
-    <edge source="648" target="659">
+    <edge source="66" target="67">
       <data key="d14">connects</data>
     </edge>
-    <edge source="649" target="660">
+    <edge source="68" target="69">
       <data key="d14">connects</data>
     </edge>
   </graph>

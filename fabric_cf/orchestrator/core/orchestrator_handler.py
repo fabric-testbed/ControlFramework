@@ -264,7 +264,7 @@ class OrchestratorHandler:
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
-            computed_reservations = orchestrator_slice.create(bqm_graph=bqm_graph, slice_graph=asm_graph)
+            computed_reservations = orchestrator_slice.create(slice_graph=asm_graph)
 
             # Process the Slice i.e. Demand the computed reservations i.e. Add them to the policy
             # Once added to the policy; Actor Tick Handler will do following asynchronously:

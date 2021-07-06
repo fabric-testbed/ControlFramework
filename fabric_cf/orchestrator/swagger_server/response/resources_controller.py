@@ -57,11 +57,13 @@ def portalresources_get(graph_format):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
 def resources_get(level: int):  # noqa: E501
@@ -88,9 +90,11 @@ def resources_get(level: int):  # noqa: E501
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=str(e))
+        msg = str(e).replace("\n", "")
+        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
