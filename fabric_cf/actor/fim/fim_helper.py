@@ -407,7 +407,7 @@ class FimHelper:
         return None
 
     @staticmethod
-    def get_owner_switch(*, bqm: ABCCBMPropertyGraph, node_id: str) -> NetworkServiceSliver:
+    def get_owner_switch(*, bqm: ABCCBMPropertyGraph, node_id: str) -> NodeSliver:
         """
         Get owner switch for a Connection Point
         @param bqm BQM graph
@@ -417,5 +417,8 @@ class FimHelper:
         ns_name, ns_id = bqm.get_parent(node_id=node_id, rel=ABCPropertyGraph.REL_CONNECTS,
                                         parent=ABCPropertyGraph.CLASS_NetworkService)
 
-        ns = bqm.build_deep_ns_sliver(node_id=ns_id)
-        return ns
+        sw_name, sw_id = bqm.get_parent(node_id=ns_id, rel=ABCPropertyGraph.REL_HAS,
+                                        parent=ABCPropertyGraph.CLASS_NetworkNode)
+
+        switch = bqm.build_deep_node_sliver(node_id=sw_id)
+        return switch

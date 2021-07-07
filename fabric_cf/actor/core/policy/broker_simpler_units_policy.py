@@ -576,6 +576,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             ifs.get_labels().set_fields(device_name=owner_switch.get_name())
             adm_ids = owner_switch.get_structural_info().adm_graph_ids
             site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
+            self.logger.debug(f"Owner Switch: {owner_switch}")
 
             net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
             if len(net_adm_ids) != 1:
@@ -892,7 +893,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_owner_switch(self, *, node_id: str) -> NetworkServiceSliver:
+    def get_owner_switch(self, *, node_id: str) -> NodeSliver:
         """
         Get owner switch name of a Connection Point from BQM
         @param node_id Node Id of the Connection Point
