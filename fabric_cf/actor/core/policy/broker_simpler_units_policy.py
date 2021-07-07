@@ -572,10 +572,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # NSO device name source: (a) - need to find the owner switch of the network service in CBM
             # and take its .name or labels.local_name
             # Set the NSO device-name
-            owner_switch = self.get_owner_switch(node_id=net_cp.node_id)
+            owner_switch, owner_ns = self.get_owners(node_id=net_cp.node_id)
             ifs.get_labels().set_fields(device_name=owner_switch.get_name())
             adm_ids = owner_switch.get_structural_info().adm_graph_ids
             site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
+
+            self.logger.debug(f"Owner Network Service: {owner_ns}")
             self.logger.debug(f"Owner Switch: {owner_switch}")
 
             net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
@@ -592,7 +594,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.debug(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
             # Update the Network Service Sliver Node Map to map to parent of (a)
-            sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_switch.node_id))
+            sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns.node_id))
 
         return delegation_id, sliver, error_msg
 
@@ -893,14 +895,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_owner_switch(self, *, node_id: str) -> NodeSliver:
+    def get_owners(self, *, node_id: str) -> Tuple[NodeSliver, NetworkServiceSliver]:
         """
-        Get owner switch name of a Connection Point from BQM
+        Get owner switch and network service of a Connection Point from BQM
         @param node_id Node Id of the Connection Point
         """
         try:
             self.lock.acquire()
-            return FimHelper.get_owner_switch(bqm=self.combined_broker_model, node_id=node_id)
+            return FimHelper.get_owners(bqm=self.combined_broker_model, node_id=node_id)
         finally:
             self.lock.release()
 

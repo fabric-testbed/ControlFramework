@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import Tuple
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
@@ -407,18 +408,20 @@ class FimHelper:
         return None
 
     @staticmethod
-    def get_owner_switch(*, bqm: ABCCBMPropertyGraph, node_id: str) -> NodeSliver:
+    def get_owners(*, bqm: ABCCBMPropertyGraph, node_id: str) -> Tuple[NodeSliver, NetworkServiceSliver]:
         """
-        Get owner switch for a Connection Point
+        Get owner switch and network service of a Connection Point from BQM
         @param bqm BQM graph
         @param node_id Connection Point Node Id
-        @return Owner NetworkServiceSliver i.e. Switch
+        @return Owner Switch and Network Service
         """
         ns_name, ns_id = bqm.get_parent(node_id=node_id, rel=ABCPropertyGraph.REL_CONNECTS,
                                         parent=ABCPropertyGraph.CLASS_NetworkService)
+
+        ns = bqm.build_deep_ns_sliver(node_id=ns_id)
 
         sw_name, sw_id = bqm.get_parent(node_id=ns_id, rel=ABCPropertyGraph.REL_HAS,
                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
 
         switch = bqm.build_deep_node_sliver(node_id=sw_id)
-        return switch
+        return switch, ns
