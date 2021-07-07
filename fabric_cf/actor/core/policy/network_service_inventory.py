@@ -57,14 +57,14 @@ class NetworkServiceInventory(InventoryForType):
 
     def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
                  existing_reservations: List[ABCReservationMixin]) -> BaseSliver:
-        self.logger.debug("I am in NetworkService Inventory")
 
         if existing_reservations is not None:
             # FIXME - needs to be completed and tested
             self.logger.debug("Shared NIC - Ignore")
         else:
             vlans = graph_node.get_labels().vlan_range.split("-")
-            requested_sliver.get_labels().set_fields(vlan=vlans[0])
+            vlan_tag = int(vlans[0]) + 10
+            requested_sliver.get_labels().set_fields(vlan=str(vlan_tag))
 
         return requested_sliver
 
