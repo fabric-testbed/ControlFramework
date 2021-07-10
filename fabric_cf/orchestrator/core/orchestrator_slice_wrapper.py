@@ -305,6 +305,9 @@ class OrchestratorSliceWrapper:
                         # capacities (bw in Gbps, burst size is in Mbits) source: (b)
                         # Set Capacities
                         ifs.set_capacities(cap=ifs_mapping.get_peer_ifs().get_capacities())
+                        # FIXME Forcefully set bw to 0 until FIM fix is available
+                        ifs.capacities.bw = 0
+
                         # Set Labels
                         ifs.set_labels(lab=ifs_mapping.get_peer_ifs().get_labels())
 
