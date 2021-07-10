@@ -256,10 +256,11 @@ class OrchestratorSliceWrapper:
         @raises exception for invalid slivers
         """
         for ifs in sliver.interface_info.interfaces.values():
-            vlan = ifs.get_labels().vlan
-            if vlan <= Constants.VLAN_START or vlan >= Constants.VLAN_END:
-                raise OrchestratorException(message=f"Allowed range for VLAN ({Constants.VLAN_START}-{Constants.VLAN_END})",
-                                            http_error_code=BAD_REQUEST)
+            if ifs.labels is not None:
+                vlan = ifs.get_labels().vlan
+                if vlan <= Constants.VLAN_START or vlan >= Constants.VLAN_END:
+                    raise OrchestratorException(message=f"Allowed range for VLAN ({Constants.VLAN_START}-{Constants.VLAN_END})",
+                                                http_error_code=BAD_REQUEST)
 
     def __build_network_service_reservations(self, slice_graph: ABCASMPropertyGraph,
                                              node_res_mapping: Dict[str, str]) -> List[TicketReservationAvro]:
