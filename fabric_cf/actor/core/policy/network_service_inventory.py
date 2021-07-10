@@ -62,7 +62,7 @@ class NetworkServiceInventory(InventoryForType):
         requested_vlan = requested_sliver.get_labels().vlan
         if requested_vlan is not None:
             # VLAN not in allowed range; Over-write with the valid default value from the range
-            if Constants.VLAN_START >= requested_vlan >= Constants.VLAN_END:
+            if Constants.VLAN_START >= int(requested_vlan) >= Constants.VLAN_END:
                 vlans = graph_node.get_labels().vlan_range.split("-")
                 vlan_tag = int(vlans[0]) + Constants.DEFAULT_VLAN_OFFSET
                 requested_sliver.get_labels().set_fields(vlan=str(vlan_tag))

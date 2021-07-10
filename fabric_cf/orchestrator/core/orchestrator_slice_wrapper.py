@@ -257,7 +257,7 @@ class OrchestratorSliceWrapper:
         """
         for ifs in sliver.interface_info.interfaces.values():
             if ifs.labels is not None:
-                vlan = ifs.get_labels().vlan
+                vlan = int(ifs.get_labels().vlan)
                 if vlan <= Constants.VLAN_START or vlan >= Constants.VLAN_END:
                     raise OrchestratorException(message=f"Allowed range for VLAN ({Constants.VLAN_START}-{Constants.VLAN_END})",
                                                 http_error_code=BAD_REQUEST)
