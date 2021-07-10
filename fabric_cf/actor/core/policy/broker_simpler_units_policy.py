@@ -550,17 +550,19 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             self.logger.debug(f"Peer Interface Sliver [Network Delegation] (A): {site_cp}")
 
-            existing_reservations = None
             if bqm_component.get_type() == ComponentType.SharedNIC:
-                # FIXME - needs to be completed and tested
-                existing_reservations = self.get_existing_reservations(node_id=node_id,
-                                                                       node_id_to_reservations=node_id_to_reservations)
-
-            # Set vlan - source: (c)
-            ifs = inv.allocate(rid=rid, requested_sliver=ifs,
-                               graph_id=self.combined_broker_model_graph_id,
-                               graph_node=site_cp,
-                               existing_reservations=existing_reservations)
+                # VLAN is already set by the Orchestrator using the information from the Node Sliver Parent Reservation
+                if ifs.get_labels().vlan is None:
+                    message = "Shared NIC VLAN cannot be None"
+                    self.logger.error(message)
+                    raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                          msg=f"{message}")
+            else:
+                # Set vlan - source: (c) - only for dedicated NICs
+                ifs = inv.allocate(rid=rid, requested_sliver=ifs,
+                                   graph_id=self.combined_broker_model_graph_id,
+                                   graph_node=site_cp,
+                                   existing_reservations=None)
 
             if net_cp is None:
                 error_msg = "Peer Connection Point not found from Network AM"

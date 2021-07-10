@@ -28,7 +28,7 @@ from typing import List
 from fim.slivers.attached_components import AttachedComponentsInfo
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
-from fim.user import Capacities
+from fim.user import Capacities, ComponentType
 
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -142,10 +142,15 @@ class NetworkNodeControl(ResourceControl):
                     for ac in allocated_components:
                         ac_node_map = ac.get_node_map()
                         if ac_node_map[1] == node_map[1]:
-                            raise AuthorityException(
-                                f"Component of type: {resource_type} BQM Node Id: {node_map[1]} "
-                                f"in graph {graph_node.node_id}"
-                                f"is already assigned to reservation# {reservation}")
+                            # For Shared NIC, make sure PCI devices are not same
+                            # For other components, having same node map is an error
+                            if (ac.get_type() == ComponentType.SharedNIC and
+                                ac.get_label_allocations().bdf == c.get_label_allocations()) or \
+                                    ac.get_type() != ComponentType.SharedNIC:
+                                raise AuthorityException(
+                                    f"Component of type: {resource_type} BQM Node Id: {node_map[1]} "
+                                    f"in graph {graph_node.node_id}"
+                                    f"is already assigned to reservation# {reservation}")
 
     def assign(self, *, reservation: ABCAuthorityReservation, delegation_name: str,
                graph_node: BaseSliver, existing_reservations: List[ABCReservationMixin]) -> ResourceSet:

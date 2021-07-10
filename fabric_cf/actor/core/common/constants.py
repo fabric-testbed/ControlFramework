@@ -269,3 +269,8 @@ class Constants:
 
     STATE_ACTIVE = "ACTIVE"
     STATE_ALL = "ALL"
+
+    # Default offset used to pick a VLAN from the range 1-4096
+    DEFAULT_VLAN_OFFSET = 10
+    VLAN_START = 1
+    VLAN_END = 4096

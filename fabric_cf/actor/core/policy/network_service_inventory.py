@@ -57,15 +57,16 @@ class NetworkServiceInventory(InventoryForType):
 
     def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
                  existing_reservations: List[ABCReservationMixin]) -> BaseSliver:
+        # This function is only invoked for Dedicated NICs
 
-        if existing_reservations is not None:
-            # FIXME - needs to be completed and tested
-            self.logger.debug("Shared NIC - Ignore")
-        else:
-            vlans = graph_node.get_labels().vlan_range.split("-")
-            vlan_tag = int(vlans[0]) + 10
-            requested_sliver.get_labels().set_fields(vlan=str(vlan_tag))
-
+        requested_vlan = requested_sliver.get_labels().vlan
+        if requested_vlan is not None:
+            # VLAN not in allowed range; Over-write with the valid default value from the range
+            if Constants.VLAN_START >= requested_vlan >= Constants.VLAN_END:
+                vlans = graph_node.get_labels().vlan_range.split("-")
+                vlan_tag = int(vlans[0]) + Constants.DEFAULT_VLAN_OFFSET
+                requested_sliver.get_labels().set_fields(vlan=str(vlan_tag))
+        # Otherwise, if the user does not specify VLAN, it is treated as an Untagged Scenario
         return requested_sliver
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:

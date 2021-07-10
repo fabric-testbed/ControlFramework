@@ -4,63 +4,86 @@ This section captures the complete flow of a simple Create Slice Request provisi
 devices.
 ### Orchestrator
 Complete Flow for all messages and processing at Orchestrator is described below:
-- OrchestratorHandler class:: create_slice processes incoming Create Slice as follows:
-  - Query Resources via Broker to get BQM by sending Query/QueryResponse exchange in OrchestratorHandler::discover_broker_query_model()
-  - Creates RequestWorkflow class (Place holder for any future embedding)
-  - Invokes RequestWorkflow::run responsible for translating ASM into individual reservations representing slivers using BQM
-  - Adds the computed reservations to queue of SliceDeferThread class
+- Incoming REST API for slice operations is handled by `slices_controller` which invokes `OrchestratorHandler::create_slice`
+- `OrchestratorHandler::create_slice` processes incoming Create Slice as follows:
+  - Validate the Lease End time; compute it to 24 hours if not specified
+  - Active Slice exists already with the same name for the user; Return failure
+  - Load Slice graph into Neo4j and validate; Return Failure if validation fails
+  - Add Slice to the Controller and create OrchestratorSliceWrapper object for the slice
+  - Invoke `OrchestratorSliceWrapper::create`
+    - Build Reservations for Node Slivers
+    - Build Reservations for Network Service Slivers and dependencies to the corresponding parent Node Reservations
+      - Get Mapping information for Interface Sliver from ASM i.e. [Peer IFS, Peer NS Id, Component Name, Node Id]
+      - Set capacities (bw in Gbps, burst size is in Mbits) source: (b)
+      - Set Labels  
+      - Save the parent component name and the parent reservation id in the Node Map
+    - Add Reservations to the Slice
+  - Process the Slice with Slice Deferred Thread by invoking `SliceDeferThread::process_slice`
+    - Demand the computed reservations(add them to policy) for NetworkNode Slivers
+      Once added to the policy; Actor Tick Handler will do following asynchronously:
+      - Ticket message exchange with broker
+      - Redeem message exchange with AM once ticket is granted by Broker  
+    - Add Slice to the deferred slice queue if it contains Network Service reservations which are pending to be demanded
   - Responds back to REST API with the list of computed reservations 
-- SliceDeferThread class waits for
-  - For each slice:
-    - For each reservation:
-      - Send Ticket Message to Broker
-      - On reciept of Ticket Response Message from Broker
-      - Send Redeem Message to AM
-      - On receipt of Redeem Response from AM, update the reservation status
-    - Update the Slice Status
+- SliceDeferThread
+  - For each slice in deferred slice queue:
+    - For each pending reservation (typically Network Service Sliver Reservations):
+      - If the parent reservations (Node Sliver) have been ticketed
+        - Parent reservations have been Ticketed; 
+          - Update BQM Node and Component Id in Node Map
+            `NOTE-1: This is Used by Broker to set vlan - source: (c), local_name source: (a), NSO device name source: (a) - need to find the owner switch of the network service in CBM and take its .name or labels.local_name`
+          - For shared NICs grab the MAC & VLAN from corresponding Interface Sliver maintained in the Parent Reservation Sliver and update Interface Slivers
+        - Demand the Network Service Reservation  
+      - Else add slice back to the deferred slice queue
+
 ### Broker
 Complete Flow for all messages and processing at Broker is described below:
-- Broker::ticket validates incoming message and adds it to bids_pending queue
-- Broker::tick_handler processes the messages from bids_pending queue
-  - Invokes KernelWrapper::ticket which does following
+- `Broker::ticket` validates the incoming message and adds it to bids_pending queue
+- `Broker::tick_handler` processes the messages from bids_pending queue
+  - Invokes `KernelWrapper::ticket` which does following
     - Registers Reservation
-    - Reserve the reservation by invoking BrokerSimplerUnitsPolicy::allocate which is responsible for annotating 
+    - Reserve the reservation by invoking `BrokerSimplerUnitsPolicy::ticket_inventory` which is responsible for annotating 
     the reservation by querying CBM and Relational Database and updating the reservation
+      - Node Slivers [`BrokerSimplerUnitsPolicy::____allocate_nodes`]
+        - Find candidate nodes from BQM for the site requested which have the requested components
+        - User First Fit Algorithm as follows to determine a BQM node which satisfies the request
+          - For each candidate
+            - Check requested capacities can be satisfied using the values in Capacity Delegations and excluding any values assigned to active Reservations
+            - Check requested components can be satisfied using the available components and excluding already assigned components
+              - For Shared NIC cards; also find the MAC, VLAN Tag and also update the Interface Sliver
+        - Grant a ticket by Sending Update Ticket Message to Orchestrator
+          - Update Ticket: Success if node found to satisfy request else with Failure indicating the Insufficient Resources
+        - Update ReservationInfo in the CBM for the Graph Node to include Reservation Id and Slice Id
+      - Network Service Slivers [`BrokerSimplerUnitsPolicy::__allocate_services`]
+        - For each Interface Sliver;
+          - Fetch Network Node Id and BQM Component Id
+          - Get BQM Connection Point in Site Delegation (c)
+          - Get BQM Peer Connection Point in Site Delegation (a)
+          - VLAN is already set by the Orchestrator using the information from the Node Sliver Parent Reservation
+          - Set vlan - source: (c) - only for dedicated NICs
+          - local_name source: (a)
+          - Set the NSO device-name: NSO device name source: (a) - need to find the owner switch of the network service in CBM and take its .name or labels.local_name.
+          - Update the Interface Sliver Node Map to map to (a)
+          - Update the Network Service Sliver Node Map to map to parent of (a)
     - Send Updated Reservation back to Orchestrator  
-#### Policy (Only doing compute; work for PCI devices in progress)
-- Lookup graph node in CBM using the graph_node_id received in the reservation
-- Fetch Capacity Delegations, Label Delegations from the graph Node
-- Fetch all the Ticketed Reservations from Database with the graph_node_id
-- Compute the available RAM, Disk and Cores by using the values in Capacity Delegations and excluding any values assigned to active Reservations
-- Verify that the requested RAM, Disk and Cores can be satisfied by the computed available RAM, Disk and Cores
-- Grant a ticket by Sending Update Ticket Message to Orchestrator
-- Update ReservationInfo in the CBM for the Graph Node to include Reservation Id and Slice Id
+
 ### Aggregate Manager
 Complete Flow for all messages and processing at AM is described below:
-- Incoming Add Slice Message results in invocation of core.Actor::register_slice method which creates a slice and 
-invokes the handler callback plugins.Config::create_slice to perform any site level initialization. 
-NOTE: plugins.Config class defines the various callback hooks that need to be implemented by Handler. 
-- Incoming Redeem Message is processed by core.Authority::redeem method which in turn results in following sequence 
-- kernel.KernelWrapper::redeem_request
+- Incoming Redeem Message is processed by `Authority::redeem` method which in turn results in following sequence 
+- `KernelWrapper::redeem_request`
   - validates the incoming message
   - registers the reservation
-  - reserves the reservation by invoking kernel.Kernel::reserve
-- kernel.Kernel::reserve
-  - Invokes the AuthorityCalendarPolicy::bind which validates the incoming reservation, leases, resources 
-    requested; if successful adds it to the redeeming queue and to the calendar
-- core.Authority::tick_handler periodically checks for the reservations which need to be assigned resources and performs 
-following action for each redeeming reservation:
+  - reserves the reservation by invoking `Kernel::reserve`
+    - Invokes the AuthorityCalendarPolicy::bind which validates the incoming reservation, leases, resources requested; if successful adds it to the redeeming queue and to the calendar
+- `Authority::tick_handler` periodically checks for the reservations which need to be assigned resources and invokes `AuthorityCalendarPolicy::assign_reservation`:
 - Looks the ResourceControl based on the resource type and invokes it's assign method
-  e.g. ResourceType=VM, policy.SimpleVmControl::assign is invoked
+  e.g. ResourceType=VM, `NetworkNodeControl::assign` is invoked
+  - Node Slivers
+    - Lookup graph node in ARM using the graph_node_id received in the reservation
+    - Check allocated node capacities can be satisfied
+    - Redeem Reservation
+  - Network Service Slivers
 - Assign method for each ResourceControl Looks up ARM and verifies the availability of the assigned resource
   for the specific resource type; Updates the Reservation in database
 - Invokes the Handler via Plugin to provision the resource on the Substrate
 - Handler on completion; updates the status of the reservation which in turn is passed to the Broker and Orchestrator
-#### Policy (Only doing compute; work for PCI devices in progress)
-- Lookup graph node in ARM using the graph_node_id received in the reservation
-- Fetch Capacities, Capacity Delegations, Labels, Label Delegations and Reservation Info from the graph Node
-- Verify that the Requested RAM, Disk and Cores can be satisfied by the Delegated RAM, Disk and Cores
-- Fetch all the Active Reservations from Database with the graph_node_id
-- Compute the available RAM, Disk and Cores by using the values in Capacities and excluding any values assigned to active reservations
-- Verify that the requested RAM, Disk and Cores can be satisfied by the computed available RAM, Disk and Cores
-- Redeem the reservation
