@@ -30,6 +30,7 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
 from fim.slivers.delegations import Delegations, DelegationFormat
 from fim.slivers.instance_catalog import InstanceCatalog
+from fim.slivers.interface_info import InterfaceSliver
 from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -104,6 +105,78 @@ class NetworkNodeInventory(InventoryForType):
 
         return delegation_id
 
+    def __check_shared_nic_labels_and_capacities(self, *, available_component: ComponentSliver,
+                                                 requested_component: ComponentSliver) -> ComponentSliver:
+
+        # Check labels
+        label_delegations = available_component.get_label_delegations()
+        delegation_id, deleg = label_delegations.get_sole_delegation()
+        self.logger.debug(f"Available label_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            return None
+        # get the Labels object
+        delegated_label = deleg.get_details()
+
+        if delegated_label.bdf is None or len(delegated_label.bdf) < 1:
+            message = "No PCI devices available in the delegation"
+            self.logger.error(message)
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"{message}")
+
+        labels = Labels()
+        labels.set_fields(bdf=delegated_label.bdf[0])
+        requested_component.label_allocations = labels
+
+        # Find the VLAN from the BQM Component
+        if available_component.network_service_info is None or \
+                len(available_component.network_service_info.network_services) != 1:
+            message = "Shared NIC Card must have one Network Service"
+            self.logger.error(message)
+            raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                  msg=f"{message}")
+
+        ns_name = next(iter(available_component.network_service_info.network_services))
+        ns = available_component.network_service_info.network_services[ns_name]
+
+        if ns.interface_info is None or len(ns.interface_info.interfaces) != 1:
+            message = "Shared NIC Card must have one Connection Point"
+            self.logger.error(message)
+            raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                  msg=f"{message}")
+
+        ifs_name = next(iter(ns.interface_info.interfaces))
+        ifs = ns.interface_info.interfaces[ifs_name]
+
+        ifs_label_delegations = ifs.get_label_delegations()
+        delegation_id, deleg = ifs_label_delegations.get_sole_delegation()
+        self.logger.debug(
+            f"Available Interface Sliver label_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            return None
+
+        ifs_delegated_labels = deleg.get_details()
+        i = 0
+        for pci_id in ifs_delegated_labels.bdf:
+            if pci_id == delegated_label.bdf[0]:
+                break
+            i += 1
+
+        # Updated the Requested component with VLAN, BDF, MAC
+        ns_name = next(iter(requested_component.network_service_info.network_services))
+        ns = requested_component.network_service_info.network_services[ns_name]
+        ifs_name = next(iter(ns.interface_info.interfaces))
+        ifs = ns.interface_info.interfaces[ifs_name]
+
+        lab = Labels()
+        lab.set_fields(bdf=ifs_delegated_labels.bdf[i], mac=ifs_delegated_labels.mac[i],
+                       vlan=ifs_delegated_labels.vlan[i], local_name=ifs_delegated_labels.local_name[i])
+        ifs.set_label_allocations(lab=lab)
+
+        self.logger.info(f"Assigned Interface Sliver: {ifs}")
+        return requested_component
+
     def __check_component_labels_and_capacities(self, *, available_component: ComponentSliver, graph_id: str,
                                                 requested_component: ComponentSliver) -> ComponentSliver:
         """
@@ -128,7 +201,19 @@ class NetworkNodeInventory(InventoryForType):
         delegated_capacity = deleg.get_details()
         self.logger.debug(f"available_capacity_delegations : {capacity_delegations} {type(capacity_delegations)} "
                           f"for component {available_component}")
+
+        # Delegated capacity would have been decremented already to exclude allocated shared NICs
+        if delegated_capacity.unit < 1:
+            message = f"Insufficient Capacities for component: {requested_component}"
+            self.logger.error(message)
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"{message}")
+
         requested_component.capacity_allocations = delegated_capacity
+
+        # Set number of units to 1 explicitly for SharedNIC
+        if requested_component.get_type() == ComponentType.SharedNIC:
+            requested_component.capacity_allocations.unit = 1
 
         # Check labels
         # FIXME this isn't quite right - we will need to pick one of available labels, but OK to leave for now
@@ -140,12 +225,68 @@ class NetworkNodeInventory(InventoryForType):
             return None
         # get the Labels object
         delegated_label = deleg.get_details()
-        requested_component.label_allocations = delegated_label
+
+        if requested_component.get_type() == ComponentType.SharedNIC:
+            requested_component = self.__check_shared_nic_labels_and_capacities(available_component=available_component,
+                                                                                requested_component=requested_component)
+        else:
+            requested_component.label_allocations = delegated_label
 
         node_map = tuple([graph_id, available_component.node_id])
         requested_component.set_node_map(node_map=node_map)
 
         return requested_component
+
+    def __exclude_allocated_pci_device_from_shared_nic(self, shared_nic: ComponentSliver,
+                                                       allocated_nic: ComponentSliver) -> ComponentSliver:
+        """
+        For Shared NIC cards, exclude the already assigned PCI addresses from the available PCI addresses in
+        BQM Component Sliver for the NIC Card
+        """
+
+        if shared_nic.get_type() != ComponentType.SharedNIC and allocated_nic.get_type() != ComponentType.SharedNIC:
+            raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
+                                  msg=f"shared_nic: {shared_nic} allocated_nic: {allocated_nic}")
+
+        # Reduce capacity for component
+        capacity_delegations = shared_nic.get_capacity_delegations()
+        delegation_id, deleg = capacity_delegations.get_sole_delegation()
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            return None
+        # get the Capacities object
+        delegated_capacity = deleg.get_details()
+
+        # Exclude already allocated Shared NIC cards
+        delegated_capacity -= allocated_nic.get_capacity_allocations()
+
+        self.logger.debug(f"Allocated NIC: {allocated_nic} labels: {allocated_nic.get_label_allocations()}")
+
+        # Get the Allocated PCI address
+        allocated_labels = allocated_nic.get_label_allocations()
+
+        label_delegations = shared_nic.get_label_delegations()
+        delegation_id, deleg = label_delegations.get_sole_delegation()
+
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            return None
+        # get the Labels object
+        delegated_label = deleg.get_details()
+
+        # Remove allocated PCI address from delegations
+        excluded_labels = []
+
+        if isinstance(allocated_labels.bdf, list):
+            excluded_labels = allocated_labels.bdf
+        else:
+            excluded_labels = [allocated_labels.bdf]
+
+        for e in excluded_labels:
+            self.logger.debug(f"Excluding PCI device {e}")
+            delegated_label.bdf.remove(e)
+
+        return shared_nic
 
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_id: str,
                            graph_node: NodeSliver, existing_reservations: List[ABCReservationMixin]) -> AttachedComponentsInfo:
@@ -195,10 +336,19 @@ class NetworkNodeInventory(InventoryForType):
                                 node_map = allocated.get_node_map()
 
                                 if node_map is not None and av.node_id == node_map[1]:
-                                    self.logger.debug(f"Excluding component {allocated} assigned to "
-                                                      f"res# {reservation.get_reservation_id()}")
-                                    # Exclude already allocated component from available components
-                                    graph_node.attached_components_info.remove_device(av.get_name())
+
+                                    if av.get_type() == ComponentType.SharedNIC:
+                                        self.logger.debug(f"Excluding component {allocated} assigned to "
+                                                          f"res# {reservation.get_reservation_id()}")
+                                        # Exclude already allocated PCI address from available PCI devices
+                                        av = self.__exclude_allocated_pci_device_from_shared_nic(shared_nic=av,
+                                                                                                 allocated_nic=allocated)
+
+                                    else:
+                                        self.logger.debug(f"Excluding component {allocated} assigned to "
+                                                          f"res# {reservation.get_reservation_id()}")
+                                        # Exclude already allocated component from available components
+                                        graph_node.attached_components_info.remove_device(av.get_name())
                                     break
 
             available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)

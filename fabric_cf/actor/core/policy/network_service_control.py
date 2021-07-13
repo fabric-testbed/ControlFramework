@@ -62,6 +62,7 @@ class NetworkServiceControl(ResourceControl):
         reservation.set_send_with_deficit(value=True)
 
         requested = reservation.get_requested_resources().get_sliver()
+        self.__dump_sliver(sliver=requested)
         if not isinstance(requested, NetworkServiceSliver):
             raise AuthorityException(f"Invalid resource type {requested.get_type()}")
 
@@ -97,3 +98,9 @@ class NetworkServiceControl(ResourceControl):
         if uset is not None:
             for u in uset.values():
                 self.logger.debug(f"Freeing 1 unit {u}")
+
+    def __dump_sliver(self, *, sliver: NetworkServiceSliver):
+        self.logger.debug(f"Network Service Sliver# {sliver}")
+        if sliver.interface_info is not None:
+            for ifs in sliver.interface_info.interfaces.values():
+                self.logger.debug(f"Ifs# {ifs}")

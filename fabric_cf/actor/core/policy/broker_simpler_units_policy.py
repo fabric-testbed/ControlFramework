@@ -550,17 +550,19 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             self.logger.debug(f"Peer Interface Sliver [Network Delegation] (A): {site_cp}")
 
-            existing_reservations = None
             if bqm_component.get_type() == ComponentType.SharedNIC:
-                # FIXME - needs to be completed and tested
-                existing_reservations = self.get_existing_reservations(node_id=node_id,
-                                                                       node_id_to_reservations=node_id_to_reservations)
-
-            # Set vlan - source: (c)
-            ifs = inv.allocate(rid=rid, requested_sliver=ifs,
-                               graph_id=self.combined_broker_model_graph_id,
-                               graph_node=site_cp,
-                               existing_reservations=existing_reservations)
+                # VLAN is already set by the Orchestrator using the information from the Node Sliver Parent Reservation
+                if ifs.get_labels().vlan is None:
+                    message = "Shared NIC VLAN cannot be None"
+                    self.logger.error(message)
+                    raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                          msg=f"{message}")
+            else:
+                # Set vlan - source: (c) - only for dedicated NICs
+                ifs = inv.allocate(rid=rid, requested_sliver=ifs,
+                                   graph_id=self.combined_broker_model_graph_id,
+                                   graph_node=site_cp,
+                                   existing_reservations=None)
 
             if net_cp is None:
                 error_msg = "Peer Connection Point not found from Network AM"
@@ -572,10 +574,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # NSO device name source: (a) - need to find the owner switch of the network service in CBM
             # and take its .name or labels.local_name
             # Set the NSO device-name
-            owner_switch = self.get_owner_switch(node_id=net_cp.node_id)
+            owner_switch, owner_ns = self.get_owners(node_id=net_cp.node_id)
             ifs.get_labels().set_fields(device_name=owner_switch.get_name())
             adm_ids = owner_switch.get_structural_info().adm_graph_ids
             site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
+
+            self.logger.debug(f"Owner Network Service: {owner_ns}")
+            self.logger.debug(f"Owner Switch: {owner_switch}")
 
             net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
             if len(net_adm_ids) != 1:
@@ -591,7 +596,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.debug(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
             # Update the Network Service Sliver Node Map to map to parent of (a)
-            sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_switch.node_id))
+            sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns.node_id))
 
         return delegation_id, sliver, error_msg
 
@@ -892,14 +897,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_owner_switch(self, *, node_id: str) -> NetworkServiceSliver:
+    def get_owners(self, *, node_id: str) -> Tuple[NodeSliver, NetworkServiceSliver]:
         """
-        Get owner switch name of a Connection Point from BQM
+        Get owner switch and network service of a Connection Point from BQM
         @param node_id Node Id of the Connection Point
         """
         try:
             self.lock.acquire()
-            return FimHelper.get_owner_switch(bqm=self.combined_broker_model, node_id=node_id)
+            return FimHelper.get_owners(bqm=self.combined_broker_model, node_id=node_id)
         finally:
             self.lock.release()
 
