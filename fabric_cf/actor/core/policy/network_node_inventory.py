@@ -201,7 +201,19 @@ class NetworkNodeInventory(InventoryForType):
         delegated_capacity = deleg.get_details()
         self.logger.debug(f"available_capacity_delegations : {capacity_delegations} {type(capacity_delegations)} "
                           f"for component {available_component}")
+
+        # Delegated capacity would have been decremented already to exclude allocated shared NICs
+        if delegated_capacity.unit < 1:
+            message = f"Insufficient Capacities for component: {requested_component}"
+            self.logger.error(message)
+            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                  msg=f"{message}")
+
         requested_component.capacity_allocations = delegated_capacity
+
+        # Set number of units to 1 explicitly for SharedNIC
+        if requested_component.get_type() == ComponentType.SharedNIC:
+            requested_component.capacity_allocations.unit = 1
 
         # Check labels
         # FIXME this isn't quite right - we will need to pick one of available labels, but OK to leave for now
@@ -235,6 +247,18 @@ class NetworkNodeInventory(InventoryForType):
         if shared_nic.get_type() != ComponentType.SharedNIC and allocated_nic.get_type() != ComponentType.SharedNIC:
             raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT,
                                   msg=f"shared_nic: {shared_nic} allocated_nic: {allocated_nic}")
+
+        # Reduce capacity for component
+        capacity_delegations = shared_nic.get_capacity_delegations()
+        delegation_id, deleg = capacity_delegations.get_sole_delegation()
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            return None
+        # get the Capacities object
+        delegated_capacity = deleg.get_details()
+
+        # Exclude already allocated Shared NIC cards
+        delegated_capacity -= allocated_nic.get_capacity_allocations()
 
         self.logger.debug(f"Allocated NIC: {allocated_nic} labels: {allocated_nic.get_label_allocations()}")
 
