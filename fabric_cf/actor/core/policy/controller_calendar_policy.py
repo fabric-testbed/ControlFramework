@@ -83,7 +83,7 @@ class ControllerCalendarPolicy(Policy, ABCControllerPolicy):
             elif reservation.is_no_pending() and not reservation.is_pending_recover():
                 # No pending operation and we are not about the reissue a recovery operation on this reservation.
                 self.logger.debug("Controller pending request completed {}".format(reservation))
-                if reservation.get_state() == ReservationStates.Closed.value:
+                if reservation.is_closed():
                     # do nothing handled by close(IReservation)
                     self.logger.debug("No op")
                 elif reservation.is_active_ticketed():
@@ -152,10 +152,10 @@ class ControllerCalendarPolicy(Policy, ABCControllerPolicy):
                             reservation.set_dirty()
                             self.calendar.add_renewing(reservation=reservation, cycle=reservation.get_renew_time())
 
-                    if not reservation.is_active_joined():
-                        # add to the pending notify list so that we can raise the event
-                        # when transfer in operations complete.
-                        self.pending_notify.add(reservation=reservation)
+                        if not reservation.is_active_joined():
+                            # add to the pending notify list so that we can raise the event
+                            # when transfer in operations complete.
+                            self.pending_notify.add(reservation=reservation)
                 elif reservation.get_state() == ReservationStates.CloseWait or \
                         reservation.get_state() == ReservationStates.Failed:
                     self.pending_notify.remove(reservation=reservation)
@@ -164,7 +164,7 @@ class ControllerCalendarPolicy(Policy, ABCControllerPolicy):
                         reservation))
                     continue
 
-                if self.pending_notify.contains(reservation=reservation):
+                if not self.pending_notify.contains(reservation=reservation):
                     self.logger.debug("Removing from pending: {}".format(reservation))
                     self.calendar.remove_pending(reservation=reservation)
 

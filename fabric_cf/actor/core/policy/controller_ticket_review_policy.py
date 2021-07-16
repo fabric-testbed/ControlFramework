@@ -174,5 +174,13 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                         .format(reservation.get_reservation_id(), slice_obj.get_name()))
                     self.pending_redeem.add(reservation=reservation)
                     self.calendar.remove_pending(reservation=reservation)
+                else:
+                    # we don't need to look at any other reservations in this slice
+                    self.logger.debug("Removing from pendingRedeem: {}".format(reservation))
+                    self.pending_redeem.remove(reservation=reservation)
+            else:
+                # Remove active or close reservations
+                self.logger.debug("Removing from pendingRedeem: {}".format(reservation))
+                self.pending_redeem.remove(reservation=reservation)
 
         super().check_pending()
