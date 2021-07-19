@@ -46,6 +46,7 @@ services:
       - ${PDP_NEW_CONF_PATH_HOST:-$(pwd)/newconf}:/conf
       - ${PDP_NEW_POLICIES_PATH_HOST:-$(pwd)/newpolicies}:/policies
   am:
+    init: true
     build:
       context: ../../../
       dockerfile: Dockerfile-auth

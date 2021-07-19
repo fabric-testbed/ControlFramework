@@ -50,6 +50,7 @@ logging.TRACE = 5
 logging.addLevelName(logging.TRACE, "TRACE")
 logging.Logger.trace = lambda inst, msg, *args, **kwargs: inst.log(logging.TRACE, msg, *args, **kwargs)
 logging.trace = lambda msg, *args, **kwargs: logging.log(logging.TRACE, msg, *args, **kwargs)
+log = logging.getLogger(__name__)
 
 
 class Globals:
@@ -105,7 +106,7 @@ class Globals:
             log_level = logging.INFO
 
         # Set up the root logger
-        log = logging.getLogger(log_config.get(Constants.PROPERTY_CONF_LOGGER, None))
+        #log = logging.getLogger(log_config.get(Constants.PROPERTY_CONF_LOGGER, None))
         log.setLevel(log_level)
         log_format = \
             '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'

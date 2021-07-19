@@ -24,16 +24,9 @@ Run the `setup.sh` script to set up a Broker. User is expected to specify follow
 - Neo4j Password to be used
 - Path to the config file for Broker
 
-
-#### Production
 ```
 ./setup.sh broker password ./config.broker.yaml
 ```
-#### Development
-```
-./setup.sh broker password ./config.broker.yaml dev
-```
-
 ### Environment and Configuration
 
 The script `setup.sh` generates directory for the Broker, which has `.env` file which contains Environment variables for `docker-compose.yml` to use

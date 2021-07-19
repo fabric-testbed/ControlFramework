@@ -131,14 +131,8 @@ Run the `setup.sh` script to set up a Orchestrator. User is expected to specify 
 - Neo4j Password to be used
 - Path to the config file for Orchestrator
 
-
-#### Production
 ```
 ./setup.sh orchestrator password ./config.orchestrator.yaml
-```
-#### Development
-```
-./setup.sh orchestrator password ./config.orchestrator.yaml dev
 ```
 
 ### Environment and Configuration
