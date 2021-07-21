@@ -8,7 +8,7 @@ VOLUME ["/usr/src/app"]
 EXPOSE 11000
 
 COPY requirements.txt /usr/src/app/
-COPY fabric_cf /usr/src/app/
+COPY fabric_cf /usr/src/app/fabric_cf
 RUN pip3 install --no-cache-dir -r requirements.txt
 RUN mkdir -p "/etc/fabric/message_bus/schema"
 RUN mkdir -p "/etc/fabric/actor/config"
