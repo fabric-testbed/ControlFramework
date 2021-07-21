@@ -69,22 +69,21 @@ class Globals:
         self.lock = threading.Lock()
         self.jwt_validator = None
 
-    def make_logger(self):
+    def make_logger(self, *, log_config: dict = None):
         """
         Detects the path and level for the log file from the actor config and sets
         up a logger. Instead of detecting the path and/or level from the
         config, a custom path and/or level for the log file can be passed as
         optional arguments.
 
-       :param log_path: Path to custom log file
-       :param log_level: Custom log level
+       :param log_config: Log config
        :return: logging.Logger object
         """
+        if log_config is None:
+            if self.config is None:
+                raise RuntimeError('No config information available')
 
-        # Get the log path
-        if self.config is None:
-            raise RuntimeError('No config information available')
-        log_config = self.config.get_global_config().get_logging()
+            log_config = self.config.get_global_config().get_logging()
         if log_config is None:
             raise RuntimeError('No logging  config information available')
 
@@ -197,6 +196,13 @@ class Globals:
         if not self.initialized:
             raise InitializationException(Constants.UNINITIALIZED_STATE)
         return self.config
+
+    def get_log_config(self) -> dict:
+        """
+        Get the Log configuration
+        @return dict
+        """
+        return self.get_config().get_log_config()
 
     def get_kafka_config_admin_client(self) -> dict:
         """

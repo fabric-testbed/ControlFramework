@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import time
 import traceback
 from typing import Tuple
 
@@ -33,17 +32,17 @@ from fabric_cf.actor.handlers.handler_base import HandlerBase
 
 
 class NoOpHandler(HandlerBase):
-    def __init__(self, logger, properties: dict):
-        self.logger = logger
-        self.properties = properties
+    def __init__(self, log_config: dict, properties: dict):
+        super().__init__(log_config=log_config, properties=properties)
 
     def create(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None
         try:
-            self.logger.info(f"Create invoked for unit: {unit}")
-            unit.sliver.state = 'active'
-            unit.sliver.instance_name = 'instance_001'
-            unit.sliver.management_ip = '1.2.3.4'
+            self.get_logger().info(f"Create invoked for unit: {unit}")
+            sliver = unit.get_sliver()
+            sliver.state = 'active'
+            sliver.instance_name = 'instance_001'
+            sliver.management_ip = '1.2.3.4'
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
@@ -51,17 +50,17 @@ class NoOpHandler(HandlerBase):
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
-            self.logger.error(e)
-            self.logger.error(traceback.format_exc())
+            self.get_logger().error(e)
+            self.get_logger().error(traceback.format_exc())
         finally:
 
-            self.logger.info(f"Create completed")
+            self.get_logger().info(f"Create completed")
         return result, unit
 
     def delete(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None
         try:
-            self.logger.info(f"Delete invoked for unit: {unit}")
+            self.get_logger().info(f"Delete invoked for unit: {unit}")
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_DELETE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
@@ -69,26 +68,26 @@ class NoOpHandler(HandlerBase):
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_DELETE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
-            self.logger.error(e)
-            self.logger.error(traceback.format_exc())
+            self.get_logger().error(e)
+            self.get_logger().error(traceback.format_exc())
         finally:
 
-            self.logger.info(f"Delete completed")
+            self.get_logger().info(f"Delete completed")
         return result, unit
 
     def modify(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None
         try:
-            self.logger.info(f"Modify invoked for unit: {unit}")
+            self.get_logger().info(f"Modify invoked for unit: {unit}")
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_MODIFY,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
         except Exception as e:
-            self.logger.error(e)
-            self.logger.error(traceback.format_exc())
+            self.get_logger().error(e)
+            self.get_logger().error(traceback.format_exc())
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_MODIFY,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,
                       Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
         finally:
-            self.logger.info(f"Modify completed")
+            self.get_logger().info(f"Modify completed")
         return result, unit

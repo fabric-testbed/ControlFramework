@@ -2,10 +2,28 @@
 An aggregate manager(AM) controls access to the substrate components. It controls some set of infrastructure resources in a particular site consisting of a set of servers, storage units, network elements or other components under common ownership and control. AMs inform brokers about available resources by passing to the resource advertisement information models. AMs may be associated with more than one broker and the partitioning of resources between brokers is the decision left to the AM. Oversubscription is possible, depending on the deployment needs.
 FABRIC enables a substrate provider to outsource resource arbitration and calendar scheduling to a broker. By delegating resources to the broker, the AM consents to the broker’s policies, and agrees to try to honor reservations issued by the broker if the user has authorization on the AM. 
 
-Besides common code, each AM type has specific plugins that determine its resource allocation behavior (Resource Management Policy) and the specific actions it takes to provision a sliver (Resource Handler). Both plugins are invoked by AM common core code based on the resource type or type of request being considered.
+Besides, common code each AM type has specific plugins that determine its resource allocation behavior (Resource Management Policy) and the specific actions it takes to provision a sliver (Resource Handler). Both plugins are invoked by AM common core code based on the resource type or type of request being considered. More information on AM handlers can be found [here](https://github.com/fabric-testbed/AMHandlers).
 
-NOTE: Authority container is still built on Pyhon3.8 because of an open BUG on Python 3.9 which causes ansible failures.
-https://github.com/dask/distributed/issues/4168
+AM runs as a set of four container depicted in the picture below.
+![AM Pod](../../images/am-pod.png)
+
+- AM: runs the Control Framework AM
+- Postgres: database maintains slices and reservation information
+- Neo4j: Aggregate Substrate information i.e. Aggregate Resource Model is maintained in Neo4j
+- PDP: Policy Definition point used by AM to authorize user requests
+
+An overview of AM thread model is shown below:
+![Thread Model](../../images/am.png)
+
+- Main : spawns all threads, loads config, starts prometheus exporter
+- Actor Clock : delivers a periodic event to Actor Main thread based on the time interval configured 
+- Actor : Kernel thread responsible for processing various requested operations on slices/reservaations
+- Kafka Producer : Thread pool responsible for sending outgoing messages from AM over Kafka
+- Timer : Timer thread to timeout requests such as claim
+- Kafka Consumer : Consumer thread responsible for processing incoming messages for AM over Kafka
+- Ansible Processor : Responsible for invoking Handler depending on the resource type
+- Handler Process pool : Process pool for running handler ansible scripts
+
 ## Configuration
 `config.site.am.yaml` depicts an example config file for an Aggregate Manager.
 ### Pre-requisites
@@ -31,13 +49,8 @@ Run the `setup.sh` script to set up an Aggregate Manager. User is expected to sp
 - Path to Aggregate Resource Model i.e. graphml
 - Path to Handler Config File
 
-#### Production
 ```
 ./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/RENCI-ad.graphml ./vm_handler_config.yml
-```
-#### Development
-```
-./setup.sh site1-am password ./config.site.am.yaml ../../neo4j/RENCI-ad.graphml dev
 ```
 
 ### Environment and Configuration

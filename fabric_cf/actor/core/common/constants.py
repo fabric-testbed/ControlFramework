@@ -274,3 +274,5 @@ class Constants:
     DEFAULT_VLAN_OFFSET = 10
     VLAN_START = 1
     VLAN_END = 4096
+
+    CONFIG_PROPERTIES_FILE = "config.properties.file"

@@ -48,6 +48,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.thread = None
         self.future_lock = threading.Condition()
         self.stopped = False
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        self.log_config = GlobalsSingleton.get().get_log_config()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -136,7 +138,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
 
             handler_class = ReflectionUtils.create_instance_with_params(module_name=handler.get_module_name(),
                                                                         class_name=handler.get_class_name())
-            handler_obj = handler_class(self.logger, handler.get_properties())
+            handler_obj = handler_class(self.log_config, handler.get_properties())
 
             future = None
             if operation == Constants.TARGET_CREATE:

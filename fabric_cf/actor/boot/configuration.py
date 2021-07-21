@@ -398,6 +398,12 @@ class Configuration:
         """
         return self.global_config
 
+    def get_log_config(self) -> dict:
+        """
+        Return Log config
+        """
+        return self.global_config.get_logging()
+
     def get_runtime_config(self) -> dict:
         """
         Return Runtime Config
