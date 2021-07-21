@@ -49,7 +49,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.future_lock = threading.Condition()
         self.stopped = False
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.log_config = GlobalsSingleton.get().get_config().get_global_config().get_logging()
+        self.log_config = GlobalsSingleton.get().get_log_config()
 
     def __getstate__(self):
         state = self.__dict__.copy()

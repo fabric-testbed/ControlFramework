@@ -197,6 +197,13 @@ class Globals:
             raise InitializationException(Constants.UNINITIALIZED_STATE)
         return self.config
 
+    def get_log_config(self) -> dict:
+        """
+        Get the Log configuration
+        @return dict
+        """
+        return self.get_config().get_log_config()
+
     def get_kafka_config_admin_client(self) -> dict:
         """
         Get Kafka Config Admin Client
