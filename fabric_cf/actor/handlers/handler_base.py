@@ -23,11 +23,13 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import logging
 from abc import ABC, abstractmethod
 from typing import Tuple
 
 import yaml
 
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 
 
@@ -36,18 +38,27 @@ class ConfigurationException(Exception):
 
 
 class HandlerBase(ABC):
-    @staticmethod
-    def load_config(path):
-        """
-        Read config file
-        """
-        if path is None:
-            raise ConfigurationException("No data source has been specified")
-        print("Reading config file: {}".format(path))
-        config_dict = None
-        with open(path) as f:
-            config_dict = yaml.safe_load(f)
-        return config_dict
+    def __init__(self, log_config: dict, properties: dict):
+        self.log_config = log_config
+        self.properties = properties
+        self.logger = None
+        self.config = None
+
+    def get_config(self) -> dict:
+        if self.config is None:
+            config_properties_file = self.properties.get(Constants.CONFIG_PROPERTIES_FILE, None)
+            if config_properties_file is None:
+                raise ConfigurationException("No data source has been specified")
+            self.get_logger().debug(f"Reading config file: {config_properties_file}")
+            with open(config_properties_file) as f:
+                self.config = yaml.safe_load(f)
+        return self.config
+
+    def get_logger(self) -> logging.Logger:
+        if self.logger is None:
+            from fabric_cf.actor.core.container.globals import GlobalsSingleton
+            self.logger = GlobalsSingleton.get().make_logger(log_config=self.log_config)
+        return self.logger
 
     @abstractmethod
     def create(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:

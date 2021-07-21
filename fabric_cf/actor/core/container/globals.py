@@ -50,7 +50,6 @@ logging.TRACE = 5
 logging.addLevelName(logging.TRACE, "TRACE")
 logging.Logger.trace = lambda inst, msg, *args, **kwargs: inst.log(logging.TRACE, msg, *args, **kwargs)
 logging.trace = lambda msg, *args, **kwargs: logging.log(logging.TRACE, msg, *args, **kwargs)
-log = logging.getLogger(__name__)
 
 
 class Globals:
@@ -70,22 +69,21 @@ class Globals:
         self.lock = threading.Lock()
         self.jwt_validator = None
 
-    def make_logger(self):
+    def make_logger(self, *, log_config: dict = None):
         """
         Detects the path and level for the log file from the actor config and sets
         up a logger. Instead of detecting the path and/or level from the
         config, a custom path and/or level for the log file can be passed as
         optional arguments.
 
-       :param log_path: Path to custom log file
-       :param log_level: Custom log level
+       :param log_config: Log config
        :return: logging.Logger object
         """
+        if log_config is None:
+            if self.config is None:
+                raise RuntimeError('No config information available')
 
-        # Get the log path
-        if self.config is None:
-            raise RuntimeError('No config information available')
-        log_config = self.config.get_global_config().get_logging()
+            log_config = self.config.get_global_config().get_logging()
         if log_config is None:
             raise RuntimeError('No logging  config information available')
 
@@ -106,7 +104,7 @@ class Globals:
             log_level = logging.INFO
 
         # Set up the root logger
-        #log = logging.getLogger(log_config.get(Constants.PROPERTY_CONF_LOGGER, None))
+        log = logging.getLogger(log_config.get(Constants.PROPERTY_CONF_LOGGER, None))
         log.setLevel(log_level)
         log_format = \
             '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
