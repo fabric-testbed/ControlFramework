@@ -142,6 +142,7 @@ class AggregatedBQMPlugin:
             # occupied component capacities organized by [type][model] into lists (by server)
             site_allocated_comps_caps_by_type = defaultdict(dict)
 
+            loc = None
             for sliver in ls:
                 if sliver.get_type() != NodeType.Server:
                     # skipping NAS and dataplane switches
@@ -153,6 +154,10 @@ class AggregatedBQMPlugin:
                     # query database for everything taken on this node
                     allocated_caps, allocated_comp_caps = self.__occupied_node_capacity(node_id=sliver.node_id)
                     site_sliver.capacity_allocations = site_sliver.capacity_allocations + allocated_caps
+
+                # get the location if available
+                if loc is None:
+                    loc = sliver.get_location()
 
                 # calculate available node capacities based on delegations
                 if sliver.get_capacity_delegations() is not None:
@@ -180,6 +185,10 @@ class AggregatedBQMPlugin:
                     if site_comps_by_type[rt].get(rm, None) is None:
                         site_comps_by_type[rt][rm] = list()
                     site_comps_by_type[rt][rm].append(comp)
+
+            # set location to whatever is available
+            site_sliver.set_location(loc)
+            site_sliver.set_site(s)
 
             # create a Composite node for every site
             site_to_composite_node_id[s] = site_sliver.node_id
