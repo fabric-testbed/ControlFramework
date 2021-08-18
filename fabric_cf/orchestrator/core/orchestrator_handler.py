@@ -328,12 +328,12 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")
             raise e
 
-    def get_slices(self, *, token: str, slice_id: str = None, state: str = None) -> dict:
+    def get_slices(self, *, token: str, slice_id: str = None, states: List[str] = None) -> dict:
         """
         Get User Slices
         :param token Fabric Identity Token
         :param slice_id Slice Id
-        :param state Slice state
+        :param states Slice states
 =       :raises Raises an exception in case of failure
         :returns List of Slices on success
         """
@@ -345,7 +345,7 @@ class OrchestratorHandler:
             if slice_id is not None:
                 slice_guid = ID(uid=slice_id)
 
-            slice_states = self.__translate_slice_state(state=state)
+            slice_states = self.__translate_slice_state(states=states)
 
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
             if slice_list is None or len(slice_list) == 0:
@@ -555,22 +555,18 @@ class OrchestratorHandler:
             return GraphFormat.GRAPHML
 
     @staticmethod
-    def __translate_slice_state(*, state: str) -> List[SliceState]:
-        ret_val = []
-        if state is not None:
-            if state.upper() == SliceState.Dead.name.upper():
-                ret_val.append(SliceState.Dead)
-            elif state.upper() == Constants.STATE_ACTIVE:
-                ret_val.append(SliceState.StableOK)
-                ret_val.append(SliceState.StableError)
-            elif state.upper() == Constants.STATE_ALL:
-                ret_val.append(SliceState.StableOK)
-                ret_val.append(SliceState.StableError)
-                ret_val.append(SliceState.Dead)
-                ret_val.append(SliceState.Closing)
-                ret_val.append(SliceState.Configuring)
-                ret_val.append(SliceState.Nascent)
-        if len(ret_val) == 0:
-            ret_val.append(SliceState.StableOK)
-            ret_val.append(SliceState.StableError)
+    def __translate_slice_state(*, states: List[str]) -> List[SliceState]:
+        ret_val = [SliceState.StableOK, SliceState.StableError, SliceState.Dead, SliceState.Closing,
+                   SliceState.Configuring, SliceState.Nascent]
+        # Return Slices in any state when no states are specified
+        if states is None or len(states) == 0:
+            return ret_val
+        else:
+            states_to_exclude = []
+            for s in ret_val:
+                if str(s) not in states:
+                    states_to_exclude.append(s)
+            for s in states_to_exclude:
+                ret_val.remove(s)
+
         return ret_val

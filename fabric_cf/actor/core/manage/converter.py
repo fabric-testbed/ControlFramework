@@ -70,7 +70,6 @@ class Converter:
     def fill_reservation_predecessor(*, pred: PredecessorState) -> ReservationPredecessorAvro:
         pred_avro = ReservationPredecessorAvro()
         pred_avro.set_reservation_id(value=str(pred.get_reservation().get_reservation_id()))
-        pred_avro.set_filter_properties(value=pred.filters)
         return pred_avro
 
     @staticmethod

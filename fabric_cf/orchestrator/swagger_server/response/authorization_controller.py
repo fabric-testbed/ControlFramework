@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from typing import List
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 
 """

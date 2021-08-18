@@ -24,7 +24,7 @@ def slivers_modify_sliver_idput(body, sliver_id, slice_id):  # noqa: E501
 
     Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice.  # noqa: E501
 
-    :param body:
+    :param body: 
     :type body: dict | bytes
     :param sliver_id: Sliver identifier as UUID
     :type sliver_id: str
@@ -41,7 +41,7 @@ def slivers_poa_sliver_idpost(body, sliver_id):  # noqa: E501
 
     Perform the named operational action on the named resources, possibly changing the operational status of the named resources. E.G. &#x27;reboot&#x27; a VM.   # noqa: E501
 
-    :param body:
+    :param body: 
     :type body: dict | bytes
     :param sliver_id: Sliver identifier as UUID
     :type sliver_id: str

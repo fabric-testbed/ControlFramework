@@ -31,7 +31,7 @@ import six
 from fss_utils.http_errors import cors_response
 
 from fabric_cf.orchestrator.swagger_server.models.version import Version  # noqa: E501
-from fabric_cf.orchestrator.swagger_server import util, received_counter, success_counter, failure_counter
+from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.response.constants import VERSIONS_PATH, GET_METHOD
 
 
