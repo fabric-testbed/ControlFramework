@@ -36,7 +36,7 @@ class TestSlicesController(BaseTestCase):
         Delete slice.
         """
         response = self.client.open(
-            '//slices/delete/{sliceID}'.format(slice_id='slice_id_example'),
+            '//slices/delete/{slice_id}'.format(slice_id='slice_id_example'),
             method='DELETE')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -61,7 +61,7 @@ class TestSlicesController(BaseTestCase):
         """
         body = 'body_example'
         response = self.client.open(
-            '//slices/modify/{sliceID}'.format(slice_id='slice_id_example'),
+            '//slices/modify/{slice_id}'.format(slice_id='slice_id_example'),
             method='PUT',
             data=json.dumps(body),
             content_type='text/plain')
@@ -74,7 +74,7 @@ class TestSlicesController(BaseTestCase):
         Redeem resources reserved via Create API
         """
         response = self.client.open(
-            '//slices/redeem/{sliceID}'.format(slice_id='slice_id_example'),
+            '//slices/redeem/{slice_id}'.format(slice_id='slice_id_example'),
             method='POST')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -86,7 +86,7 @@ class TestSlicesController(BaseTestCase):
         """
         query_string = [('new_lease_end_time', 'new_lease_end_time_example')]
         response = self.client.open(
-            '//slices/renew/{sliceID}'.format(slice_id='slice_id_example'),
+            '//slices/renew/{slice_id}'.format(slice_id='slice_id_example'),
             method='POST',
             query_string=query_string)
         self.assert200(response,
@@ -98,7 +98,7 @@ class TestSlicesController(BaseTestCase):
         slice properties
         """
         response = self.client.open(
-            '//slices/{sliceID}'.format(slice_id='slice_id_example'),
+            '//slices/{slice_id}'.format(slice_id='slice_id_example'),
             method='GET')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
@@ -109,7 +109,7 @@ class TestSlicesController(BaseTestCase):
         slice status
         """
         response = self.client.open(
-            '//slices/status/{sliceID}'.format(slice_id='slice_id_example'),
+            '//slices/status/{slice_id}'.format(slice_id='slice_id_example'),
             method='GET')
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
