@@ -345,7 +345,7 @@ class OrchestratorHandler:
             if slice_id is not None:
                 slice_guid = ID(uid=slice_id)
 
-            slice_states = self.__translate_slice_state(states=states)
+            slice_states = SliceState.str_list_to_state_list(states=states)
 
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
             if slice_list is None or len(slice_list) == 0:
@@ -553,20 +553,3 @@ class OrchestratorHandler:
             return GraphFormat.CYTOSCAPE
         else:
             return GraphFormat.GRAPHML
-
-    @staticmethod
-    def __translate_slice_state(*, states: List[str]) -> List[SliceState]:
-        ret_val = [SliceState.StableOK, SliceState.StableError, SliceState.Dead, SliceState.Closing,
-                   SliceState.Configuring, SliceState.Nascent]
-        # Return Slices in any state when no states are specified
-        if states is None or len(states) == 0:
-            return ret_val
-        else:
-            states_to_exclude = []
-            for s in ret_val:
-                if str(s) not in states:
-                    states_to_exclude.append(s)
-            for s in states_to_exclude:
-                ret_val.remove(s)
-
-        return ret_val
