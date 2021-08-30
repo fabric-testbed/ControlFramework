@@ -379,7 +379,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                 self.logger.error("join predecessor reservation is in a terminal state. ignoring it: {}".
                                   format(pred_state.get_reservation()))
                 continue
-            if pred_state.get_reservation().is_active_joined():
+            if not pred_state.get_reservation().is_active_joined():
                 approved = False
                 break
 
@@ -411,7 +411,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                 self.logger.error("redeem predecessor reservation is in a terminal state or reservation is null."
                                   " ignoring it: {}".format(pred_state.get_reservation()))
                 continue
-            if pred_state.get_reservation().is_active_joined():
+            if not pred_state.get_reservation().is_active_joined():
                 approved = False
                 break
 

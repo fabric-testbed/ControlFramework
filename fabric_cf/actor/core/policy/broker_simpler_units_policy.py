@@ -26,7 +26,6 @@
 from __future__ import annotations
 
 import enum
-import json
 import threading
 import traceback
 from datetime import datetime
@@ -227,9 +226,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         return False
 
     def formulate_bids(self, *, cycle: int) -> Bids:
-        pending = self.calendar.get_pending()
         renewing = self.calendar.get_renewing(cycle=cycle)
-        extending = self.process_renewing(renewing=renewing, pending=pending)
+        extending = self.process_renewing(renewing=renewing)
         return Bids(ticketing=ReservationSet(), extending=extending)
 
     def get_allocation(self, *, reservation: ABCBrokerReservation) -> int:
@@ -249,7 +247,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return start
 
-    def get_approved_term(self, *, reservation: ABCBrokerReservation) -> Term:
+    @staticmethod
+    def get_approved_term(*, reservation: ABCBrokerReservation) -> Term:
         return Term(start=reservation.get_requested_term().get_start_time(),
                     end=reservation.get_requested_term().get_end_time(),
                     new_start=reservation.get_requested_term().get_new_start_time())
@@ -277,7 +276,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         except Exception as e:
             self.logger.error("Exception in prepare {}".format(e))
 
-    def process_renewing(self, *, renewing: ReservationSet, pending: ReservationSet) -> ReservationSet:
+    def process_renewing(self, *, renewing: ReservationSet) -> ReservationSet:
         """
         Performs checks on renewing reservations. Updates the terms to
         suggest new terms, stores the extend on the pending list. Returns a
@@ -285,7 +284,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         bidding cycle.
 
         @param renewing collection of the renewing reservations
-        @param pending collection of reservations that are pending
 
         @return non-null set of renewals
         """
@@ -331,9 +329,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         self.logger.debug(f"allocating resources for cycle {start_cycle}")
 
-        self.allocate_extending_reservation_set(requests=requests, start_cycle=start_cycle)
+        self.allocate_extending_reservation_set(requests=requests)
         self.allocate_queue(start_cycle=start_cycle)
-        self.allocate_ticketing(requests=requests, start_cycle=start_cycle)
+        self.allocate_ticketing(requests=requests)
 
     def get_default_resource_type(self) -> ResourceType:
         result = None
@@ -343,7 +341,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return result
 
-    def allocate_extending_reservation_set(self, *, requests: ReservationSet, start_cycle: int):
+    def allocate_extending_reservation_set(self, *, requests: ReservationSet):
         if requests is not None:
             for reservation in requests.values():
                 if reservation.is_extending_ticket() and not reservation.is_closed():
@@ -360,7 +358,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     else:
                         reservation.fail(message=Constants.NO_POOL)
 
-    def allocate_ticketing(self, *, requests: ReservationSet, start_cycle: int):
+    def allocate_ticketing(self, *, requests: ReservationSet):
         if requests is not None:
             # Holds the Node Id to List of Reservation Ids allocated
             # This is used to check on the reservations allocated during this cycle to compute available resources
@@ -419,7 +417,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         start = self.align_start(when=reservation.get_requested_term().get_new_start_time())
         end = self.align_end(when=reservation.get_requested_term().get_end_time())
 
-        term = None
         resource_type = reservation.get_requested_resources().get_type()
         if resource_type is None or not self.inventory.contains_type(resource_type=resource_type):
             resource_type = self.get_default_resource_type()
@@ -484,13 +481,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     self.logger.error(f"Exception occurred: {e}")
                     error_msg = e.msg
                 else:
-                    error_msg = None
                     raise e
 
         return delegation_id, sliver, error_msg
 
     def __allocate_nodes(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, sliver: NodeSliver,
-                         node_id_to_reservations: dict) -> Tuple[str, BaseSliver, Any]:
+                         node_id_to_reservations: dict) -> Tuple[str or None, BaseSliver, Any]:
         """
         Allocate Network Node Slivers
         @param reservation Reservation
@@ -500,7 +496,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         @return tuple containing delegation id, sliver, error message if any
         """
         delegation_id = None
-        error_msg = None
         node_id_list = self.__candidate_nodes(sliver=sliver)
 
         # no candidate nodes found
@@ -518,14 +513,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
                                   msg=f"Broker currently only supports First Fit")
 
-    def __allocate_services(self, *, rid: ID, inv: InventoryForType, sliver: NetworkServiceSliver,
-                            node_id_to_reservations: dict) -> Tuple[str, BaseSliver, Any]:
+    def __allocate_services(self, *, rid: ID, inv: InventoryForType,
+                            sliver: NetworkServiceSliver) -> Tuple[str, BaseSliver, Any]:
         """
         Allocate Network Service Slivers
         @param rid Reservation Id
         @param inv Inventory
         @param sliver Requested sliver
-        @param node_id_to_reservations
         @return tuple containing delegation id, sliver, error message if any
         """
         self.logger.debug(f"Processing Network Service sliver: {sliver}")
@@ -625,8 +619,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             elif isinstance(res_sliver, NetworkServiceSliver):
                 delegation_id, sliver, error_msg = self.__allocate_services(rid=reservation.get_reservation_id(),
-                                                                            inv=inv, sliver=res_sliver,
-                                                                            node_id_to_reservations=node_id_to_reservations)
+                                                                            inv=inv, sliver=res_sliver)
             else:
                 self.logger.error(f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver')
                 raise BrokerException(msg=f"Reservation sliver type is neither Node "
@@ -695,35 +688,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         if isinstance(reservation, ABCBrokerReservation):
             self.logger.debug("Broker reservation")
             super().release(reservation=reservation)
-            if reservation.is_closed_in_priming():
-                self.logger.debug("Releasing resources (closed in priming)")
-                self.release_resources(rid=str(reservation.get_reservation_id()),
-                                       slice_id=str(reservation.get_slice_id()),
-                                       rset=reservation.get_approved_resources(),
-                                       term=reservation.get_approved_term())
-            else:
-                self.logger.debug("Releasing resources")
-                self.release_resources(rid=str(reservation.get_reservation_id()),
-                                       slice_id=str(reservation.get_slice_id()),
-                                       rset=reservation.get_resources(),
-                                       term=reservation.get_term())
         elif isinstance(reservation, ABCClientReservation):
             self.logger.debug("Client reservation")
             super().release(reservation=reservation)
             status = self.inventory.remove(source=reservation)
             self.logger.debug(f"Removing reservation: {reservation.get_reservation_id()} "
                               f"from inventory status: {status}")
-
-    def release_resources(self, *, rid: str, slice_id: str, rset: ResourceSet, term: Term):
-        try:
-            if rset is None or term is None or rset.get_resources() is None:
-                self.logger.warning("Reservation does not have resources to release")
-                return
-            inv = self.inventory.get(resource_type=rset.get_type())
-            if inv is None:
-                raise BrokerException(msg="Cannot release resources: missing inventory")
-        except Exception as e:
-            self.logger.error(f"release resources {e}")
 
     def align_end(self, *, when: datetime) -> datetime:
         """
@@ -883,7 +853,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_component_sliver(self, *, node_id: str) -> ComponentSliver:
+    def get_component_sliver(self, *, node_id: str) -> ComponentSliver or None:
         """
         Get Component Sliver from BQM
         @param node_id: Node Id
@@ -908,7 +878,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_network_node_from_graph(self, *, node_id: str) -> NodeSliver:
+    def get_network_node_from_graph(self, *, node_id: str) -> NodeSliver or None:
         """
         Get Node from CBM
         :param node_id:
