@@ -359,15 +359,9 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                                                     "class={}".format(rid, type(pr)))
                                 continue
 
-                            ff = pred.get_filter_properties()
-                            if ff is not None:
-                                self.logger.debug("Setting redeem predecessor on reservation # {} pred={} filter={}".
-                                                  format(r.get_reservation_id(), pr.get_reservation_id(), ff))
-                                r.add_redeem_predecessor(reservation=pr, filter=ff)
-                            else:
-                                self.logger.debug("Setting redeem predecessor on reservation # {} pred={} filter=none".
-                                                  format(r.get_reservation_id(), pr.get_reservation_id()))
-                                r.add_redeem_predecessor(reservation=pr)
+                            self.logger.debug("Setting redeem predecessor on reservation # {} pred={}".
+                                              format(r.get_reservation_id(), pr.get_reservation_id()))
+                            r.add_redeem_predecessor(reservation=pr)
 
                     try:
                         self.actor.get_plugin().get_database().update_reservation(reservation=r)

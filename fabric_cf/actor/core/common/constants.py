@@ -267,7 +267,6 @@ class Constants:
     RENEW_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
     DEFAULT_LEASE_IN_HOURS = 24
 
-    STATE_ACTIVE = "ACTIVE"
     STATE_ALL = "ALL"
 
     # Default offset used to pick a VLAN from the range 1-4096

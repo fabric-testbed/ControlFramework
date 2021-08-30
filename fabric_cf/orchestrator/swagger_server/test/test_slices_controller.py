@@ -46,7 +46,7 @@ class TestSlicesController(BaseTestCase):
 
         Retrieve a listing of user slices
         """
-        query_string = [('state', 'Active')]
+        query_string = [('state', 'All')]
         response = self.client.open(
             '//slices',
             method='GET',

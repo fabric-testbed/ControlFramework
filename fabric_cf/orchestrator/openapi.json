@@ -177,20 +177,25 @@
         "description": "Retrieve a listing of user slices",
         "parameters": [
           {
-            "name": "state",
+            "name": "states",
             "in": "query",
-            "description": "Slice state",
-            "required": true,
+            "description": "Slice states",
+            "required": false,
             "style": "form",
             "explode": true,
             "schema": {
-              "type": "string",
-              "default": "Active",
-              "enum": [
-                "Active",
-                "Closed",
-                "All"
-              ]
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Nascent",
+                  "Configuring",
+                  "StableError",
+                  "StableOK",
+                  "Closing",
+                  "Dead"
+                ]
+              }
             }
           }
         ],
@@ -1023,21 +1028,26 @@
           ]
         }
       },
-      "state": {
-        "name": "state",
+      "states": {
+        "name": "states",
         "in": "query",
-        "description": "Slice state",
-        "required": true,
+        "description": "Slice states",
+        "required": false,
         "style": "form",
         "explode": true,
         "schema": {
-          "type": "string",
-          "default": "Active",
-          "enum": [
-            "Active",
-            "Closed",
-            "All"
-          ]
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "Nascent",
+              "Configuring",
+              "StableError",
+              "StableOK",
+              "Closing",
+              "Dead"
+            ]
+          }
         }
       }
     },

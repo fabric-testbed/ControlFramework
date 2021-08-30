@@ -45,6 +45,34 @@ class SliceState(Enum):
     def __str__(self):
         return self.name
 
+    @staticmethod
+    def state_from_str(state: str):
+        if state is None:
+            return state
+
+        for t in SliceState:
+            if state == str(t):
+                return t
+
+        return None
+
+    @staticmethod
+    def str_list_to_state_list(states: list):
+        if states is None or len(states) == 0:
+            return states
+
+        result = [SliceState.StableOK, SliceState.StableError, SliceState.Dead, SliceState.Closing,
+                  SliceState.Configuring, SliceState.Nascent]
+        states_to_exclude = []
+        for s in result:
+            if str(s) not in states:
+                states_to_exclude.append(s)
+
+        for s in states_to_exclude:
+            result.remove(s)
+
+        return result
+
 
 class SliceCommand(Enum):
     Create = enum.auto()

@@ -45,7 +45,3 @@ SLIVERS_GET_SLIVER_ID_PATH = '/slivers/{sliverID}'
 SLIVERS_STATUS_SLIVER_ID_PATH = '/slivers/status/{sliverID}'
 
 VERSIONS_PATH = '/version'
-
-INTERNAL_SERVER_ERROR = 500
-BAD_REQUEST = 400
-HTTP_OK = 200

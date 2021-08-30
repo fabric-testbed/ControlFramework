@@ -1214,12 +1214,12 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
 
     def add_redeem_predecessor(self, *, reservation: ABCReservationMixin, filters: dict = None):
         if reservation.get_reservation_id() not in self.redeem_predecessors:
-            state = PredecessorState(reservation=reservation, filters=filters)
+            state = PredecessorState(reservation=reservation)
             self.redeem_predecessors[reservation.get_reservation_id()] = state
 
-    def add_join_predecessor(self, *, predecessor, filters: dict = None):
+    def add_join_predecessor(self, *, predecessor):
         if predecessor.get_reservation_id() not in self.redeem_predecessors:
-            state = PredecessorState(reservation=predecessor, filters=filters)
+            state = PredecessorState(reservation=predecessor)
             self.join_predecessors[predecessor.get_reservation_id()] = state
 
     def get_redeem_predecessors(self) -> List[PredecessorState]:

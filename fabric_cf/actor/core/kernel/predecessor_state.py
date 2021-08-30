@@ -38,7 +38,6 @@ class PredecessorState:
         self.reservation = reservation
         if reservation is not None:
             self.reservation_id = reservation.get_reservation_id()
-        self.filters = filters
 
     def set_reservation(self, reservation: ABCReservationMixin):
         self.reservation = reservation

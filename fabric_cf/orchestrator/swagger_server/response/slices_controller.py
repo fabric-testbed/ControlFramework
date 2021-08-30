@@ -2,16 +2,16 @@ from datetime import datetime
 
 import connexion
 import six
+from http.client import INTERNAL_SERVER_ERROR
 from fss_utils.http_errors import cors_response
 
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, SLICES_CREATE_PATH, \
     SLICES_GET_SLICE_ID_PATH, GET_METHOD, SLICES_GET_PATH, DELETE_METHOD, SLICES_DELETE_PATH, SLICES_RENEW_PATH, \
-    INTERNAL_SERVER_ERROR, BAD_REQUEST, SLICE_STATUS_SLICE_ID_PATH
+    SLICE_STATUS_SLICE_ID_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token
 
 
@@ -94,14 +94,13 @@ def slices_delete_slice_iddelete(slice_id):  # noqa: E501
         return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
-def slices_get(state):  # noqa: E501
+def slices_get(states):  # noqa: E501
     """Retrieve a listing of user slices
 
     Retrieve a listing of user slices # noqa: E501
 
-    :param state: Slice state
-    :type state: str
-
+    :param states: Slice states
+    :type states: List[str]
 
     :rtype: Success
     """
@@ -110,7 +109,7 @@ def slices_get(state):  # noqa: E501
     received_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
     try:
         token = get_token()
-        value = handler.get_slices(token=token, state=state)
+        value = handler.get_slices(token=token, states=states)
         response = Success()
         response.value = value
         success_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
