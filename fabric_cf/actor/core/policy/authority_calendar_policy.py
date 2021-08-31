@@ -450,7 +450,8 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         else:
             raise AuthorityException(Constants.UNSUPPORTED_RESOURCE_TYPE.format(token.get_resource_type()))
 
-    def is_expired(self, *, reservation: ABCReservationMixin) -> bool:
+    @staticmethod
+    def is_expired(*, reservation: ABCReservationMixin) -> bool:
         """
         See if a reservation has expired
 
@@ -548,7 +549,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                     break
             raise e
 
-    def get_network_node_from_graph(self, *, node_id: str) -> NodeSliver:
+    def get_network_node_from_graph(self, *, node_id: str) -> NodeSliver or None:
         try:
             self.lock.acquire()
             if self.aggregate_resource_model is None:
@@ -557,7 +558,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         finally:
             self.lock.release()
 
-    def get_network_service_from_graph(self, *, node_id: str) -> NetworkServiceSliver:
+    def get_network_service_from_graph(self, *, node_id: str) -> NetworkServiceSliver or None:
         try:
             self.lock.acquire()
             if self.aggregate_resource_model is None:

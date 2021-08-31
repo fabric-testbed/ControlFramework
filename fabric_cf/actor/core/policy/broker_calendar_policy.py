@@ -25,11 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import threading
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.time.calendar.broker_calendar import BrokerCalendar
