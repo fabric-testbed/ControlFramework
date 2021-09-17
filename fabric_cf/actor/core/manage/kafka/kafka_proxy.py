@@ -118,7 +118,7 @@ class KafkaProxy(ABCComponent):
         rret_val = None
 
         try:
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
+            ret_val = self.producer.produce(topic=self.kafka_topic, record=request)
 
             self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.get_message_name(),
                                                                                        self.kafka_topic))
