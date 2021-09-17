@@ -440,3 +440,9 @@ class Configuration:
             return self.global_config.get_neo4j_config()
 
         return None
+
+    def get_kafka_key_schema_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
+
+    def get_kafka_value_schema_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA, None)

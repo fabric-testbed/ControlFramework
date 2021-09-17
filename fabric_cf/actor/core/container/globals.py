@@ -299,8 +299,8 @@ class Globals:
         @return producer
         """
         conf = self.get_kafka_config_producer()
-        key_schema_file = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
-        value_schema_file = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA, None)
+        key_schema_file = self.config.get_kafka_key_schema_location()
+        value_schema_file = self.config.get_kafka_value_schema_location()
 
         from fabric_mb.message_bus.producer import AvroProducerApi
         producer = AvroProducerApi(producer_conf=conf, key_schema_location=key_schema_file,
