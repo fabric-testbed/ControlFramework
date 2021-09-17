@@ -114,7 +114,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def set_logger(self, *, logger):
         self.logger = logger

@@ -229,12 +229,6 @@ class OrchestratorHandler:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
-
-            # FIXME : uncomment post testing
-            #bqm_string, bqm_graph = self.discover_broker_query_model(controller=controller, token=token,
-            #                                                         delete_graph=False)
-            bqm_graph = None
-
             broker = self.get_broker(controller=controller)
             if broker is None:
                 raise OrchestratorException("Unable to determine broker proxy for this controller. "

@@ -26,6 +26,8 @@
 import traceback
 from typing import Tuple
 
+from fim.slivers.capacities_labels import Labels, ReservationInfo
+
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.handlers.handler_base import HandlerBase
@@ -40,8 +42,7 @@ class NoOpHandler(HandlerBase):
         try:
             self.get_logger().info(f"Create invoked for unit: {unit}")
             sliver = unit.get_sliver()
-            sliver.state = 'active'
-            sliver.instance_name = 'instance_001'
+            sliver.label_allocations.instance = 'instance_001'
             sliver.management_ip = '1.2.3.4'
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,

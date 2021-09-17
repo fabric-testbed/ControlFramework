@@ -46,6 +46,7 @@ class KafkaControllerService(KafkaClientActorService):
             result = self.get_reservation_units(request=message)
         else:
             super().process(message=message)
+            return
 
         if callback_topic is None:
             self.logger.debug("No callback specified, ignoring the message")

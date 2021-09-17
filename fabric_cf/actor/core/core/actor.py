@@ -242,7 +242,7 @@ class ActorMixin(ABCActorMixin):
         self.wrapper.extend_reservation(rid=rid, resources=resources, term=term)
 
     def external_tick(self, *, cycle: int):
-        self.logger.debug("External Tick start cycle: {}".format(cycle))
+        self.logger.info("External Tick start cycle: {}".format(cycle))
 
         class TickEvent(ABCActorEvent):
             def __init__(self, *, base, cycle: int):
@@ -256,7 +256,7 @@ class ActorMixin(ABCActorMixin):
                 self.base.actor_tick(cycle=self.cycle)
 
         self.queue_event(incoming=TickEvent(base=self, cycle=cycle))
-        self.logger.debug("External Tick end cycle: {}".format(cycle))
+        self.logger.info("External Tick end cycle: {}".format(cycle))
 
     def actor_tick(self, *, cycle: int):
         """
@@ -275,7 +275,7 @@ class ActorMixin(ABCActorMixin):
                 current_cycle = self.current_cycle + 1
 
             while current_cycle <= cycle:
-                self.logger.debug("actor_tick: {} start".format(current_cycle))
+                self.logger.info("actor_tick: {} start".format(current_cycle))
                 self.current_cycle = current_cycle
                 self.policy.prepare(cycle=self.current_cycle)
 
@@ -288,7 +288,7 @@ class ActorMixin(ABCActorMixin):
                 self.wrapper.tick()
 
                 self.first_tick = False
-                self.logger.debug("actor_tick: {} end".format(current_cycle))
+                self.logger.info("actor_tick: {} end".format(current_cycle))
                 current_cycle += 1
         except Exception as e:
             self.logger.debug(traceback.format_exc())

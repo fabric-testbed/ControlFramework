@@ -17,7 +17,7 @@ An overview of AM thread model is shown below:
 
 - Main : spawns all threads, loads config, starts prometheus exporter
 - Actor Clock : delivers a periodic event to Actor Main thread based on the time interval configured 
-- Actor : Kernel thread responsible for processing various requested operations on slices/reservaations
+- Actor : Kernel thread responsible for processing various requested operations on slices/reservations
 - Kafka Producer : Thread pool responsible for sending outgoing messages from AM over Kafka
 - Timer : Timer thread to timeout requests such as claim
 - Kafka Consumer : Consumer thread responsible for processing incoming messages for AM over Kafka
@@ -152,7 +152,7 @@ logging:
   logger: site1-am
 
 oauth:
-  jwks-url: https://dev-2.fabric-testbed.net/certs
+  jwks-url: https://cm.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
   verify-exp: True

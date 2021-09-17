@@ -1,6 +1,28 @@
 # Broker
 Broker(s) collect substrate advertisement information models (delegations) from AMs, aggregate them together and make them available to orchestrator(s) via a query interface. They also issue reservations for resources to orchestrators to be redeemed at appropriate AMs.
 
+Broker runs as a set of four container depicted in the picture below.
+![Broker Pod](../../images/broker-pod.png)
+
+- Broker: runs the Control Framework Broker
+- Postgres: database maintains slices and reservation information
+- Neo4j: Combined Substrate information from all the aggregates i.e. Combined Broker Model is maintained in Neo4j
+- PDP: Policy Definition point used by Broker to authorize user requests
+
+An overview of Broker thread model is shown below:
+![Thread Model](../../images/broker.png)
+
+- Main : spawns all threads, loads config, starts prometheus exporter
+- Actor Clock : delivers a periodic event to Actor Main thread based on the time interval configured 
+- Actor : Kernel thread responsible for processing various requested operations on slices/reservations
+- Kafka Producer : Thread pool responsible for sending outgoing messages from AM over Kafka
+- Timer : Timer thread to timeout requests such as claim
+- Kafka Consumer : Consumer thread responsible for processing incoming messages for AM over Kafka
+
+Broker is the core of the Control Framework and is responsible for allocating resources to the requested reservations. 
+This allocation is done by Broker policy i.e. `BrokerSimplerUnitsPolicy` based on the resource type i.e. NetworkNode or NetworkService.
+Allocation for each resource type is handled by the respective Inventory classes as indicated in the diagram.
+
 ## Configuration
 `config.site.broker.yaml` depicts an example config file for a Broker.
 ### Pre-requisites
@@ -126,7 +148,7 @@ logging:
   logger: broker
 
 oauth:
-  jwks-url: https://dev-2.fabric-testbed.net/certs
+  jwks-url: https://cm.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
   verify-exp: True

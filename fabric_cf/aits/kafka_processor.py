@@ -79,7 +79,7 @@ class KafkaProcessor:
         Set up Kafka Producer and Consumer
         """
         producer_conf = {
-                Constants.BOOTSTRAP_SERVERS: "152.54.14.213:29092",
+                Constants.BOOTSTRAP_SERVERS: "152.54.15.56:29092",
                 #Constants.BOOTSTRAP_SERVERS: "localhost:19092",
                 Constants.SECURITY_PROTOCOL: "SSL",
                 Constants.SSL_CA_LOCATION: "../../secrets/snakeoil-ca-1.crt",
@@ -87,7 +87,7 @@ class KafkaProcessor:
                 Constants.SSL_KEY_LOCATION: "../../secrets/kafkacat1.client.key",
                 Constants.SSL_KEY_PASSWORD: "fabric",
                 #Constants.SCHEMA_REGISTRY_URL: "http://localhost:8081"
-                Constants.SCHEMA_REGISTRY_URL: "http://152.54.14.213:8081"
+                Constants.SCHEMA_REGISTRY_URL: "http://152.54.15.56:8081"
         }
 
         self.key_schema = self.__load_schema(file_path="../actor/test/schema/key.avsc")
