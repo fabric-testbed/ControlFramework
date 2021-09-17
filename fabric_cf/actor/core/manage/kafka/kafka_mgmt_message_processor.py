@@ -23,8 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import logging
 import threading
 import traceback
+from typing import List
 
 from fabric_mb.message_bus.consumer import AvroConsumerApi
 from fabric_mb.message_bus.messages.message import IMessageAvro
@@ -41,9 +43,13 @@ class MessageWrapper:
 
 
 class KafkaMgmtMessageProcessor(AvroConsumerApi):
-    def __init__(self, *, conf: dict, key_schema, record_schema, topics, batch_size=5, logger=None):
-        super().__init__(conf=conf, key_schema=key_schema, record_schema=record_schema, topics=topics,
-                         batch_size=batch_size, logger=logger)
+    def __init__(self, *, consumer_conf: dict, key_schema_location, value_schema_location: str,
+                 topics: List[str], batch_size: int = 5, logger: logging.Logger = None, sync: bool = False):
+        super(KafkaMgmtMessageProcessor, self).__init__(consumer_conf=consumer_conf,
+                                                        key_schema_location=key_schema_location,
+                                                        value_schema_location=value_schema_location,
+                                                        topics=topics, batch_size=batch_size, logger=logger,
+                                                        sync=sync)
         self.thread_lock = threading.Lock()
         self.thread = None
         self.messages = {}
@@ -56,7 +62,7 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
             if self.thread is not None:
                 raise ManageException("KafkaMgmtMessageProcessor has already been started")
 
-            self.thread = threading.Thread(target=self.consume_auto)
+            self.thread = threading.Thread(target=self.consume)
             self.thread.setName("KafkaMgmtMessageProcessor")
             self.thread.setDaemon(True)
             self.thread.start()

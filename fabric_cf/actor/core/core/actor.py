@@ -969,7 +969,7 @@ class ActorMixin(ABCActorMixin):
             consumer_conf = GlobalsSingleton.get().get_kafka_config_consumer()
             key_schema, val_schema = GlobalsSingleton.get().get_kafka_schemas()
             self.message_service = MessageService(kafka_service=kafka_service, kafka_mgmt_service=kafka_mgmt_service,
-                                                  conf=consumer_conf, key_schema=key_schema, record_schema=val_schema,
+                                                  consumer_conf=consumer_conf, key_schema=key_schema, record_schema=val_schema,
                                                   topics=topics, logger=self.logger)
         except Exception as e:
             self.logger.error(traceback.format_exc())

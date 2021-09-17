@@ -25,8 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import logging
 import traceback
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
 import threading
 
@@ -41,10 +42,12 @@ if TYPE_CHECKING:
 
 
 class MessageService(AvroConsumerApi):
-    def __init__(self, *, kafka_service: ActorService, kafka_mgmt_service: KafkaActorService, conf: dict, key_schema,
-                 record_schema, topics, batch_size=5, logger=None):
-        super().__init__(conf=conf, key_schema=key_schema, record_schema=record_schema, topics=topics,
-                         batch_size=batch_size, logger=logger)
+    def __init__(self, *, kafka_service: ActorService, kafka_mgmt_service: KafkaActorService, consumer_conf: dict,
+                 key_schema_location, value_schema_location: str, topics: List[str], batch_size: int = 5,
+                 logger: logging.Logger = None, sync: bool = False):
+        super(MessageService, self).__init__(consumer_conf=consumer_conf, key_schema_location=key_schema_location,
+                                             value_schema_location=value_schema_location, topics=topics,
+                                             batch_size=batch_size, logger=logger, sync=sync)
         self.thread_lock = threading.Lock()
         self.thread = None
         self.kafka_service = kafka_service
@@ -56,7 +59,7 @@ class MessageService(AvroConsumerApi):
             if self.thread is not None:
                 raise KafkaServiceException("This Message Service has already been started")
 
-            self.thread = threading.Thread(target=self.consume_auto)
+            self.thread = threading.Thread(target=self.consume)
             self.thread.setName("MessageService")
             self.thread.setDaemon(True)
             self.thread.start()

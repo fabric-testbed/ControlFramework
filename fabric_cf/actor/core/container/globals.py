@@ -293,36 +293,18 @@ class Globals:
         conf[Constants.GROUP_ID] = group_id
         return conf
 
-    def get_kafka_schemas(self):
-        """
-        Get Avro schema
-        @return key and value schema
-        """
-        key_schema_file = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
-        value_schema_file = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA, None)
-
-        from confluent_kafka import avro
-        file = open(key_schema_file, "r")
-        kbytes = file.read()
-        file.close()
-        key_schema = avro.loads(kbytes)
-        file = open(value_schema_file, "r")
-        vbytes = file.read()
-        file.close()
-        val_schema = avro.loads(vbytes)
-
-        return key_schema, val_schema
-
     def get_kafka_producer(self):
         """
         Create and return a kafka producer
         @return producer
         """
         conf = self.get_kafka_config_producer()
-        key_schema, val_schema = self.get_kafka_schemas()
+        key_schema_file = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
+        value_schema_file = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA, None)
 
         from fabric_mb.message_bus.producer import AvroProducerApi
-        producer = AvroProducerApi(conf=conf, key_schema=key_schema, record_schema=val_schema, logger=self.get_logger())
+        producer = AvroProducerApi(producer_conf=conf, key_schema_location=key_schema_file,
+                                   value_schema_location=value_schema_file, logger=self.get_logger())
         return producer
 
     def get_simple_kafka_producer(self):
