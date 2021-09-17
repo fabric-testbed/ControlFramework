@@ -91,7 +91,7 @@ class KafkaClientActorService(KafkaActorService):
         if callback_topic is None:
             self.logger.debug("No callback specified, ignoring the message")
 
-        if self.producer.produce_sync(callback_topic, result):
+        if self.producer.produce(callback_topic, result):
             self.logger.debug("Successfully send back response: {}".format(result.to_dict()))
         else:
             self.logger.debug("Failed to send back response: {}".format(result.to_dict()))

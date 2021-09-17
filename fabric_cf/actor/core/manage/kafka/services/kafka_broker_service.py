@@ -98,7 +98,7 @@ class KafkaBrokerService(KafkaClientActorService, KafkaServerActorService):
             self.logger.error("No response generated {}".format(result))
             return
 
-        if self.producer.produce_sync(topic=callback_topic, record=result):
+        if self.producer.produce(topic=callback_topic, record=result):
             self.logger.debug("Successfully send back response: {}".format(result.to_dict()))
         else:
             self.logger.debug("Failed to send back response: {}".format(result.to_dict()))
