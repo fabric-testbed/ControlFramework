@@ -26,17 +26,12 @@
 import traceback
 from typing import Tuple
 
-from fim.slivers.capacities_labels import Labels, ReservationInfo
-
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.handlers.handler_base import HandlerBase
 
 
 class NoOpHandler(HandlerBase):
-    def __init__(self, log_config: dict, properties: dict):
-        super().__init__(log_config=log_config, properties=properties)
-
     def create(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None
         try:

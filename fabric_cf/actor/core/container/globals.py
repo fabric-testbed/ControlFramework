@@ -41,6 +41,7 @@ from fss_utils.jwt_validate import JWTValidator
 from fabric_cf.actor.core.common.exceptions import InitializationException
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.container import Container
+from fabric_cf.actor.core.util.log_helper import LogHelper
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_container import ABCActorContainer
@@ -69,56 +70,20 @@ class Globals:
         self.lock = threading.Lock()
         self.jwt_validator = None
 
-    def make_logger(self, *, log_config: dict = None):
+    def make_logger(self):
         """
         Detects the path and level for the log file from the actor config and sets
         up a logger. Instead of detecting the path and/or level from the
         config, a custom path and/or level for the log file can be passed as
         optional arguments.
 
-       :param log_config: Log config
        :return: logging.Logger object
         """
-        if log_config is None:
-            if self.config is None:
-                raise RuntimeError('No config information available')
-
-            log_config = self.config.get_global_config().get_logging()
+        log_config = self.config.get_global_config().get_logging()
         if log_config is None:
             raise RuntimeError('No logging  config information available')
 
-        log_path = None
-        if Constants.PROPERTY_CONF_LOG_DIRECTORY in log_config and Constants.PROPERTY_CONF_LOG_FILE in log_config:
-            log_path = log_config[Constants.PROPERTY_CONF_LOG_DIRECTORY] + '/' + \
-                       log_config[Constants.PROPERTY_CONF_LOG_FILE]
-
-        if log_path is None:
-            raise RuntimeError('The log file path must be specified in config or passed as an argument')
-
-        # Get the log level
-        log_level = None
-        if Constants.PROPERTY_CONF_LOG_LEVEL in log_config:
-            log_level = log_config.get(Constants.PROPERTY_CONF_LOG_LEVEL, None)
-
-        if log_level is None:
-            log_level = logging.INFO
-
-        # Set up the root logger
-        log = logging.getLogger(log_config.get(Constants.PROPERTY_CONF_LOGGER, None))
-        log.setLevel(log_level)
-        log_format = \
-            '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
-
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-
-        backup_count = log_config.get(Constants.PROPERTY_CONF_LOG_RETAIN, None)
-        max_log_size = log_config.get(Constants.PROPERTY_CONF_LOG_SIZE, None)
-
-        file_handler = RotatingFileHandler(log_path, backupCount=int(backup_count), maxBytes=int(max_log_size))
-
-        logging.basicConfig(handlers=[file_handler], format=log_format)
-
-        return log
+        return LogHelper.make_logger(log_config=log_config)
 
     @staticmethod
     def delete_super_block():
