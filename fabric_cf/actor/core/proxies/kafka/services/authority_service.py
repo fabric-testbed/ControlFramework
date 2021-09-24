@@ -31,7 +31,7 @@ from fabric_mb.message_bus.messages.extend_lease_avro import ExtendLeaseAvro
 from fabric_mb.message_bus.messages.modify_lease_avro import ModifyLeaseAvro
 from fabric_mb.message_bus.messages.redeem_avro import RedeemAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
-from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 
 from fabric_cf.actor.core.common.exceptions import ProxyException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservationFactory
@@ -115,18 +115,18 @@ class AuthorityService(BrokerService):
             raise e
         self.do_dispatch(rpc=rpc)
 
-    def process(self, *, message: IMessageAvro):
-        if message.get_message_name() == IMessageAvro.close:
+    def process(self, *, message: AbcMessageAvro):
+        if message.get_message_name() == AbcMessageAvro.close:
             self.close(request=message)
-        elif message.get_message_name() == IMessageAvro.redeem:
+        elif message.get_message_name() == AbcMessageAvro.redeem:
             self.redeem(request=message)
-        elif message.get_message_name() == IMessageAvro.extend_lease:
+        elif message.get_message_name() == AbcMessageAvro.extend_lease:
             self.extend_lease(request=message)
-        elif message.get_message_name() == IMessageAvro.modify_lease:
+        elif message.get_message_name() == AbcMessageAvro.modify_lease:
             self.modify_lease(request=message)
-        elif message.get_message_name() == IMessageAvro.result_reservation:
+        elif message.get_message_name() == AbcMessageAvro.result_reservation:
             self.logger.debug("Claim Resources Response receieved: {}".format(message))
-        elif message.get_message_name() == IMessageAvro.result_delegation:
+        elif message.get_message_name() == AbcMessageAvro.result_delegation:
             self.logger.debug("Claim Delegation Response receieved: {}".format(message))
         else:
             super().process(message=message)

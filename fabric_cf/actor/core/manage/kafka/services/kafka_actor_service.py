@@ -42,7 +42,7 @@ from fabric_mb.message_bus.messages.result_reservation_state_avro import ResultR
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.update_reservation_avro import UpdateReservationAvro
-from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
@@ -53,40 +53,40 @@ from fabric_cf.actor.core.util.id import ID
 
 
 class KafkaActorService(KafkaService):
-    def process(self, *, message: IMessageAvro):
+    def process(self, *, message: AbcMessageAvro):
         callback_topic = message.get_callback_topic()
         result = None
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
-        if message.get_message_name() == IMessageAvro.get_slices_request:
+        if message.get_message_name() == AbcMessageAvro.get_slices_request:
             result = self.get_slices(request=message)
 
-        elif message.get_message_name() == IMessageAvro.remove_slice:
+        elif message.get_message_name() == AbcMessageAvro.remove_slice:
             result = self.remove_slice(request=message)
 
-        elif message.get_message_name() == IMessageAvro.add_slice:
+        elif message.get_message_name() == AbcMessageAvro.add_slice:
             result = self.add_slice(request=message)
 
-        elif message.get_message_name() == IMessageAvro.update_slice:
+        elif message.get_message_name() == AbcMessageAvro.update_slice:
             result = self.update_slice(request=message)
 
-        elif message.get_message_name() == IMessageAvro.get_reservations_request:
+        elif message.get_message_name() == AbcMessageAvro.get_reservations_request:
             result = self.get_reservations(request=message)
 
-        elif message.get_message_name() == IMessageAvro.get_delegations:
+        elif message.get_message_name() == AbcMessageAvro.get_delegations:
             result = self.get_delegations(request=message)
 
-        elif message.get_message_name() == IMessageAvro.remove_reservation:
+        elif message.get_message_name() == AbcMessageAvro.remove_reservation:
             result = self.remove_reservation(request=message)
 
-        elif message.get_message_name() == IMessageAvro.close_reservations:
+        elif message.get_message_name() == AbcMessageAvro.close_reservations:
             result = self.close_reservations(request=message)
 
-        elif message.get_message_name() == IMessageAvro.update_reservation:
+        elif message.get_message_name() == AbcMessageAvro.update_reservation:
             result = self.update_reservation(request=message)
 
-        elif message.get_message_name() == IMessageAvro.get_reservations_state_request:
+        elif message.get_message_name() == AbcMessageAvro.get_reservations_state_request:
             result = self.get_reservation_state(request=message)
 
         else:

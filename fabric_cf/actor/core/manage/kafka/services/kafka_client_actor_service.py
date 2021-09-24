@@ -30,7 +30,7 @@ import traceback
 from fabric_mb.message_bus.messages.extend_reservation_avro import ExtendReservationAvro
 from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequestAvro
 from fabric_mb.message_bus.messages.get_broker_query_model_request_avro import GetBrokerQueryModelRequestAvro
-from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fabric_mb.message_bus.messages.reclaim_resources_avro import ReclaimResourcesAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_broker_query_model_avro import ResultBrokerQueryModelAvro
@@ -55,34 +55,34 @@ from fabric_cf.actor.core.util.id import ID
 
 
 class KafkaClientActorService(KafkaActorService):
-    def process(self, *, message: IMessageAvro):
+    def process(self, *, message: AbcMessageAvro):
         callback_topic = message.get_callback_topic()
         result = None
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
-        if message.get_message_name() == IMessageAvro.claim_resources:
+        if message.get_message_name() == AbcMessageAvro.claim_resources:
             result = self.claim(request=message)
 
-        elif message.get_message_name() == IMessageAvro.reclaim_resources:
+        elif message.get_message_name() == AbcMessageAvro.reclaim_resources:
             result = self.reclaim(request=message)
 
-        elif message.get_message_name() == IMessageAvro.add_reservation:
+        elif message.get_message_name() == AbcMessageAvro.add_reservation:
             result = self.add_reservation(request=message)
 
-        elif message.get_message_name() == IMessageAvro.add_reservations:
+        elif message.get_message_name() == AbcMessageAvro.add_reservations:
             result = self.add_reservations(request=message)
 
-        elif message.get_message_name() == IMessageAvro.demand_reservation:
+        elif message.get_message_name() == AbcMessageAvro.demand_reservation:
             result = self.demand_reservation(request=message)
 
-        elif message.get_message_name() == IMessageAvro.get_actors_request:
+        elif message.get_message_name() == AbcMessageAvro.get_actors_request:
             result = self.get_brokers(request=message)
 
-        elif message.get_message_name() == IMessageAvro.get_broker_query_model_request:
+        elif message.get_message_name() == AbcMessageAvro.get_broker_query_model_request:
             result = self.get_broker_query_model(request=message)
 
-        elif message.get_message_name() == IMessageAvro.extend_reservation:
+        elif message.get_message_name() == AbcMessageAvro.extend_reservation:
             result = self.extend_reservation(request=message)
         else:
             super().process(message=message)

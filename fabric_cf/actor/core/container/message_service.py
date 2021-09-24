@@ -32,7 +32,7 @@ from typing import TYPE_CHECKING, List
 import threading
 
 from fabric_mb.message_bus.consumer import AvroConsumerApi
-from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 
 from fabric_cf.actor.core.common.exceptions import KafkaServiceException
 
@@ -85,24 +85,24 @@ class MessageService(AvroConsumerApi):
             if self.thread_lock is not None and self.thread_lock.locked():
                 self.thread_lock.release()
 
-    def handle_message(self, message: IMessageAvro):
+    def handle_message(self, message: AbcMessageAvro):
         try:
-            if message.get_message_name() == IMessageAvro.claim_resources or \
-                    message.get_message_name() == IMessageAvro.reclaim_resources or \
-                    message.get_message_name() == IMessageAvro.get_slices_request or \
-                    message.get_message_name() == IMessageAvro.get_reservations_request or \
-                    message.get_message_name() == IMessageAvro.get_reservations_state_request or \
-                    message.get_message_name() == IMessageAvro.get_delegations or \
-                    message.get_message_name() == IMessageAvro.get_reservation_units_request or \
-                    message.get_message_name() == IMessageAvro.get_unit_request or \
-                    message.get_message_name() == IMessageAvro.get_broker_query_model_request or \
-                    message.get_message_name() == IMessageAvro.add_slice or \
-                    message.get_message_name() == IMessageAvro.update_slice or \
-                    message.get_message_name() == IMessageAvro.remove_slice or \
-                    message.get_message_name() == IMessageAvro.close_reservations or \
-                    message.get_message_name() == IMessageAvro.update_reservation or \
-                    message.get_message_name() == IMessageAvro.remove_reservation or \
-                    message.get_message_name() == IMessageAvro.extend_reservation:
+            if message.get_message_name() == AbcMessageAvro.claim_resources or \
+                    message.get_message_name() == AbcMessageAvro.reclaim_resources or \
+                    message.get_message_name() == AbcMessageAvro.get_slices_request or \
+                    message.get_message_name() == AbcMessageAvro.get_reservations_request or \
+                    message.get_message_name() == AbcMessageAvro.get_reservations_state_request or \
+                    message.get_message_name() == AbcMessageAvro.get_delegations or \
+                    message.get_message_name() == AbcMessageAvro.get_reservation_units_request or \
+                    message.get_message_name() == AbcMessageAvro.get_unit_request or \
+                    message.get_message_name() == AbcMessageAvro.get_broker_query_model_request or \
+                    message.get_message_name() == AbcMessageAvro.add_slice or \
+                    message.get_message_name() == AbcMessageAvro.update_slice or \
+                    message.get_message_name() == AbcMessageAvro.remove_slice or \
+                    message.get_message_name() == AbcMessageAvro.close_reservations or \
+                    message.get_message_name() == AbcMessageAvro.update_reservation or \
+                    message.get_message_name() == AbcMessageAvro.remove_reservation or \
+                    message.get_message_name() == AbcMessageAvro.extend_reservation:
                 self.kafka_mgmt_service.process(message=message)
             else:
                 self.kafka_service.process(message=message)
