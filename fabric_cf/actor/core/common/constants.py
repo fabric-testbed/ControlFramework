@@ -102,6 +102,7 @@ class Constants:
     PROPERTY_CONF_KAFKA_SASL_CONSUMER_USERNAME = "kafka-sasl-consumer-username"
     PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD = "kafka-sasl-consumer-password"
     PROPERTY_CONF_KAFKA_SASL_MECHANISM = "kafka-sasl-mechanism"
+    PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS = "request.timeout.ms"
 
     KAFKA_TOPIC = "kafka-topic"
     NAME = "name"
@@ -207,6 +208,7 @@ class Constants:
     SSL_KEY_LOCATION = 'ssl.key.location'
     SSL_KEY_PASSWORD = 'ssl.key.password'
     SCHEMA_REGISTRY_URL = 'schema.registry.url'
+    RPC_RETRIES = 'rpc.retries'
 
     INVALID_ARGUMENT = "Invalid argument"
     UNINITIALIZED_STATE = "Uninitialized state"

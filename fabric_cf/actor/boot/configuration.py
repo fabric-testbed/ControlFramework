@@ -446,3 +446,50 @@ class Configuration:
 
     def get_kafka_value_schema_location(self) -> str or None:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA, None)
+
+    def get_kafka_server(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SERVER, None)
+
+    def get_kafka_schema_registry(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SCHEMA_REGISTRY, None)
+
+    def get_kafka_security_protocol(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL, None)
+
+    def get_kafka_ssl_ca_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_S_SL_CA_LOCATION, None)
+
+    def get_kafka_ssl_cert_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SSL_CERTIFICATE_LOCATION, None)
+
+    def get_kafka_ssl_key_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_LOCATION, None)
+
+    def get_kafka_ssl_key_password(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_PASSWORD, None)
+
+    def get_kafka_prod_user_name(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_USERNAME, None)
+
+    def get_kafka_prod_user_pwd(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_PASSWORD, None)
+
+    def get_kafka_sasl_mechanism(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_MECHANISM, None)
+
+    def get_kafka_cons_group_id(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_GROUP_ID, None)
+
+    def get_kafka_cons_user_name(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_USERNAME, None)
+
+    def get_kafka_cons_user_pwd(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD, None)
+
+    def get_kafka_request_timeout_ms(self) -> int:
+        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS, 120)
+        return int(value)
+
+    def get_message_retries(self) -> int:
+        value = self.global_config.runtime.get(Constants.RPC_RETRIES, 3)
+        return int(value)

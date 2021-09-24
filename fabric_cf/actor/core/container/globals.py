@@ -211,23 +211,17 @@ class Globals:
         """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
-        bootstrap_server = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SERVER, None)
-        security_protocol = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL, None)
-        ssl_ca_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_S_SL_CA_LOCATION, None)
-        ssl_certificate_location = self.config.get_runtime_config().get(
-            Constants.PROPERTY_CONF_KAFKA_SSL_CERTIFICATE_LOCATION, None)
-        ssl_key_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_LOCATION, None)
-        ssl_key_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_PASSWORD, None)
-        sasl_username = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_USERNAME, None)
-        sasl_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_PASSWORD, None)
-        sasl_mechanism = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_MECHANISM, None)
 
-        conf = {Constants.BOOTSTRAP_SERVERS: bootstrap_server,
-                Constants.SECURITY_PROTOCOL: security_protocol,
-                Constants.SSL_CA_LOCATION: ssl_ca_location,
-                Constants.SSL_CERTIFICATE_LOCATION: ssl_certificate_location,
-                Constants.SSL_KEY_LOCATION: ssl_key_location,
-                Constants.SSL_KEY_PASSWORD: ssl_key_password}
+        sasl_username = self.config.get_runtime_config().get_kafka_prod_user_name()
+        sasl_password = self.config.get_runtime_config().get_kafka_prod_user_pwd()
+        sasl_mechanism = self.config.get_runtime_config().get_kafka_sasl_mechanism()
+
+        conf = {Constants.BOOTSTRAP_SERVERS: self.config.get_kafka_server(),
+                Constants.SECURITY_PROTOCOL: self.config.get_kafka_security_protocol(),
+                Constants.SSL_CA_LOCATION: self.config.get_kafka_ssl_ca_location(),
+                Constants.SSL_CERTIFICATE_LOCATION: self.config.get_kafka_ssl_cert_location(),
+                Constants.SSL_KEY_LOCATION: self.config.get_kafka_ssl_key_location(),
+                Constants.SSL_KEY_PASSWORD: self.config.get_kafka_ssl_key_password()}
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf[Constants.SASL_USERNAME] = sasl_username
@@ -243,26 +237,19 @@ class Globals:
         """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
-        bootstrap_server = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SERVER, None)
-        schema_registry = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SCHEMA_REGISTRY, None)
-        security_protocol = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL, None)
-        ssl_ca_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_S_SL_CA_LOCATION, None)
-        ssl_certificate_location = self.config.get_runtime_config().get(
-            Constants.PROPERTY_CONF_KAFKA_SSL_CERTIFICATE_LOCATION, None)
-        ssl_key_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_LOCATION, None)
-        ssl_key_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_PASSWORD, None)
 
-        sasl_username = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_USERNAME, None)
-        sasl_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_PASSWORD, None)
-        sasl_mechanism = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_MECHANISM, None)
+        sasl_username = self.config.get_runtime_config().get_kafka_prod_user_name()
+        sasl_password = self.config.get_runtime_config().get_kafka_prod_user_pwd()
+        sasl_mechanism = self.config.get_runtime_config().get_kafka_sasl_mechanism()
 
-        conf = {Constants.BOOTSTRAP_SERVERS: bootstrap_server,
-                Constants.SECURITY_PROTOCOL: security_protocol,
-                Constants.SSL_CA_LOCATION: ssl_ca_location,
-                Constants.SSL_CERTIFICATE_LOCATION: ssl_certificate_location,
-                Constants.SSL_KEY_LOCATION: ssl_key_location,
-                Constants.SSL_KEY_PASSWORD: ssl_key_password,
-                Constants.SCHEMA_REGISTRY_URL: schema_registry}
+        conf = {Constants.BOOTSTRAP_SERVERS: self.config.get_kafka_server(),
+                Constants.SECURITY_PROTOCOL: self.config.get_kafka_security_protocol(),
+                Constants.SSL_CA_LOCATION: self.config.get_kafka_ssl_ca_location(),
+                Constants.SSL_CERTIFICATE_LOCATION: self.config.get_kafka_ssl_cert_location(),
+                Constants.SSL_KEY_LOCATION: self.config.get_kafka_ssl_key_location(),
+                Constants.SSL_KEY_PASSWORD: self.config.get_kafka_ssl_key_password(),
+                Constants.SCHEMA_REGISTRY_URL: self.config.get_kafka_schema_registry(),
+                Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS: self.config.get_kafka_request_timeout_ms()}
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf[Constants.SASL_USERNAME] = sasl_username
@@ -280,12 +267,12 @@ class Globals:
             return None
         conf = self.get_kafka_config_producer()
 
-        group_id = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_GROUP_ID, None)
+        group_id = self.config.get_kafka_cons_group_id()
 
         conf['auto.offset.reset'] = 'earliest'
 
-        sasl_username = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_USERNAME, None)
-        sasl_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD, None)
+        sasl_username = self.config.get_kafka_cons_user_name()
+        sasl_password = self.config.get_kafka_cons_user_pwd()
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf[Constants.SASL_USERNAME] = sasl_username
@@ -301,10 +288,12 @@ class Globals:
         conf = self.get_kafka_config_producer()
         key_schema_file = self.config.get_kafka_key_schema_location()
         value_schema_file = self.config.get_kafka_value_schema_location()
+        retries = self.config.get_message_retries()
 
         from fabric_mb.message_bus.producer import AvroProducerApi
         producer = AvroProducerApi(producer_conf=conf, key_schema_location=key_schema_file,
-                                   value_schema_location=value_schema_file, logger=self.get_logger())
+                                   value_schema_location=value_schema_file, logger=self.get_logger(),
+                                   retries=retries)
         return producer
 
     def get_simple_kafka_producer(self):

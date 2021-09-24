@@ -315,8 +315,7 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Slice# {slice_id} has no reservations",
                                             http_error_code=NOT_FOUND)
 
-            return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices,
-                                                           include_sliver=True)
+            return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")
