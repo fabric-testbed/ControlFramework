@@ -32,47 +32,38 @@ from fabric_cf.actor.core.common.constants import Constants
 
 class LogHelper:
     @staticmethod
-    def make_logger(*, log_config: dict = None):
+    def make_logger(*, log_dir: str, log_file: str, log_level, log_retain: int, log_size: int, logger: str):
         """
         Detects the path and level for the log file from the actor config and sets
         up a logger. Instead of detecting the path and/or level from the
         config, a custom path and/or level for the log file can be passed as
         optional arguments.
 
-       :param log_config: Log config
+       :param log_dir: Log directory
+       :param log_file
+       :param log_level
+       :param log_retain
+       :param log_size
+       :param logger
        :return: logging.Logger object
         """
-        if log_config is None:
-            raise RuntimeError('No config information available')
-
-        log_path = None
-        if Constants.PROPERTY_CONF_LOG_DIRECTORY in log_config and Constants.PROPERTY_CONF_LOG_FILE in log_config:
-            log_path = log_config[Constants.PROPERTY_CONF_LOG_DIRECTORY] + '/' + \
-                       log_config[Constants.PROPERTY_CONF_LOG_FILE]
+        log_path = f"{log_dir}/{log_file}"
 
         if log_path is None:
             raise RuntimeError('The log file path must be specified in config or passed as an argument')
-
-        # Get the log level
-        log_level = None
-        if Constants.PROPERTY_CONF_LOG_LEVEL in log_config:
-            log_level = log_config.get(Constants.PROPERTY_CONF_LOG_LEVEL, None)
 
         if log_level is None:
             log_level = logging.INFO
 
         # Set up the root logger
-        log = logging.getLogger(log_config.get(Constants.PROPERTY_CONF_LOGGER, None))
+        log = logging.getLogger(logger)
         log.setLevel(log_level)
         log_format = \
             '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
 
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
-        backup_count = log_config.get(Constants.PROPERTY_CONF_LOG_RETAIN, None)
-        max_log_size = log_config.get(Constants.PROPERTY_CONF_LOG_SIZE, None)
-
-        file_handler = RotatingFileHandler(log_path, backupCount=int(backup_count), maxBytes=int(max_log_size))
+        file_handler = RotatingFileHandler(log_path, backupCount=int(log_retain), maxBytes=int(log_size))
 
         logging.basicConfig(handlers=[file_handler], format=log_format)
 

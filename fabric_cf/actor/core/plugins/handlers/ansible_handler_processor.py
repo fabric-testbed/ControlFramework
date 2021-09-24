@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import concurrent.futures
+import logging
 import os
 import threading
 import time
@@ -49,9 +50,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         super().__init__()
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.log_config = GlobalsSingleton.get().get_log_config()
-        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.MAX_WORKERS,
-                                                               initializer=AnsibleHandlerProcessor.process_pool_initializer,
-                                                               initargs=self.log_config)
+        self.executor = None
+        self.__setup_process_pool()
         self.futures = []
         self.thread = None
         self.future_lock = threading.Condition()
@@ -77,13 +77,23 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.plugin = None
         self.initialized = False
         self.lock = threading.Lock()
-        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.MAX_WORKERS,
-                                                               initializer=AnsibleHandlerProcessor.process_pool_initializer,
-                                                               initargs=self.log_config)
+        self.__setup_process_pool()
         self.futures = []
         self.thread = None
         self.future_lock = threading.Condition()
         self.stopped = False
+
+    def __setup_process_pool(self):
+        log_dir = self.log_config.get(Constants.PROPERTY_CONF_LOG_DIRECTORY, ".")
+        log_file = self.log_config.get(Constants.PROPERTY_CONF_HANDLER_LOG_FILE, "handler.log")
+        log_level = self.log_config.get(Constants.PROPERTY_CONF_LOG_LEVEL, logging.DEBUG)
+        log_retain = int(self.log_config.get(Constants.PROPERTY_CONF_LOG_RETAIN, 50))
+        log_size = int(self.log_config.get(Constants.PROPERTY_CONF_LOG_SIZE, 5000000))
+        logger = self.log_config.get(Constants.PROPERTY_CONF_LOGGER, "handler")
+        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.MAX_WORKERS,
+                                                               initializer=AnsibleHandlerProcessor.process_pool_initializer,
+                                                               initargs=(log_dir, log_file, log_level, log_retain,
+                                                                         log_size, logger))
 
     def start(self):
         """
@@ -262,8 +272,10 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             return result, unit
 
     @staticmethod
-    def process_pool_initializer(log_config: dict):
+    def process_pool_initializer(log_dir: str, log_file: str, log_level, log_retain: int, log_size: int,
+                                 logger: str):
         global process_pool_logger
         if process_pool_logger is None:
-            log_config[Constants.PROPERTY_CONF_LOG_FILE] = f"{os.getpid()}-handler.log"
-            process_pool_logger = LogHelper.make_logger(log_config=log_config)
+            log_file = f"{os.getpid()}-{log_file}"
+            process_pool_logger = LogHelper.make_logger(log_dir=log_dir, log_file=log_file, log_level=log_level,
+                                                        log_retain=log_retain, log_size=log_size, logger=logger)

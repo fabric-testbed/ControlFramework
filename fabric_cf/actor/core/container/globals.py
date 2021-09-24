@@ -83,7 +83,15 @@ class Globals:
         if log_config is None:
             raise RuntimeError('No logging  config information available')
 
-        return LogHelper.make_logger(log_config=log_config)
+        log_dir = log_config.get(Constants.PROPERTY_CONF_LOG_DIRECTORY, ".")
+        log_file = log_config.get(Constants.PROPERTY_CONF_HANDLER_LOG_FILE, "actor.log")
+        log_level = log_config.get(Constants.PROPERTY_CONF_LOG_LEVEL, None)
+        log_retain = int(log_config.get(Constants.PROPERTY_CONF_LOG_RETAIN, 50))
+        log_size = int(log_config.get(Constants.PROPERTY_CONF_LOG_SIZE, 5000000))
+        logger = log_config.get(Constants.PROPERTY_CONF_LOGGER, "actor")
+
+        return LogHelper.make_logger(log_dir=log_dir, log_file=log_file, log_level=log_level, log_retain=log_retain,
+                                     log_size=log_size, logger=logger)
 
     @staticmethod
     def delete_super_block():
