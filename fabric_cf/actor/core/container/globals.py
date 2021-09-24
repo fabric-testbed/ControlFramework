@@ -212,9 +212,9 @@ class Globals:
         if self.config is None or self.config.get_runtime_config() is None:
             return None
 
-        sasl_username = self.config.get_runtime_config().get_kafka_prod_user_name()
-        sasl_password = self.config.get_runtime_config().get_kafka_prod_user_pwd()
-        sasl_mechanism = self.config.get_runtime_config().get_kafka_sasl_mechanism()
+        sasl_username = self.config.get_kafka_prod_user_name()
+        sasl_password = self.config.get_kafka_prod_user_pwd()
+        sasl_mechanism = self.config.get_kafka_sasl_mechanism()
 
         conf = {Constants.BOOTSTRAP_SERVERS: self.config.get_kafka_server(),
                 Constants.SECURITY_PROTOCOL: self.config.get_kafka_security_protocol(),
@@ -238,9 +238,9 @@ class Globals:
         if self.config is None or self.config.get_runtime_config() is None:
             return None
 
-        sasl_username = self.config.get_runtime_config().get_kafka_prod_user_name()
-        sasl_password = self.config.get_runtime_config().get_kafka_prod_user_pwd()
-        sasl_mechanism = self.config.get_runtime_config().get_kafka_sasl_mechanism()
+        sasl_username = self.config.get_kafka_prod_user_name()
+        sasl_password = self.config.get_kafka_prod_user_pwd()
+        sasl_mechanism = self.config.get_kafka_sasl_mechanism()
 
         conf = {Constants.BOOTSTRAP_SERVERS: self.config.get_kafka_server(),
                 Constants.SECURITY_PROTOCOL: self.config.get_kafka_security_protocol(),
