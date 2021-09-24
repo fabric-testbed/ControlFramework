@@ -50,6 +50,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.stopped = False
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.log_config = GlobalsSingleton.get().get_log_config()
+        handler_log_file = self.log_config.get(Constants.PROPERTY_CONF_HANDLER_LOG_FILE, "handler.log")
+        self.log_config[Constants.PROPERTY_CONF_LOG_FILE] = handler_log_file
 
     def __getstate__(self):
         state = self.__dict__.copy()

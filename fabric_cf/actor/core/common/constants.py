@@ -140,6 +140,7 @@ class Constants:
 
     CONFIG_LOGGING_SECTION = 'logging'
     PROPERTY_CONF_LOG_FILE = 'log-file'
+    PROPERTY_CONF_HANDLER_LOG_FILE = 'handler-log-file'
     PROPERTY_CONF_LOG_LEVEL = 'log-level'
     PROPERTY_CONF_LOG_RETAIN = 'log-retain'
     PROPERTY_CONF_LOG_SIZE = 'log-size'
