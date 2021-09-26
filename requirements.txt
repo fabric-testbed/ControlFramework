@@ -2,7 +2,7 @@ requests==2.25.1
 cryptography==3.3.2
 psycopg2-binary
 sqlalchemy
-fabric-message-bus==1.1b5
+fabric-message-bus==1.0.3
 fabric-fim==1.0.5
 waitress
 prometheus_client
