@@ -229,6 +229,12 @@ class OrchestratorHandler:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
+
+            # FIXME : uncomment post testing
+            #bqm_string, bqm_graph = self.discover_broker_query_model(controller=controller, token=token,
+            #                                                         delete_graph=False)
+            bqm_graph = None
+
             broker = self.get_broker(controller=controller)
             if broker is None:
                 raise OrchestratorException("Unable to determine broker proxy for this controller. "
@@ -315,7 +321,8 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Slice# {slice_id} has no reservations",
                                             http_error_code=NOT_FOUND)
 
-            return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices)
+            return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices,
+                                                           include_sliver=True)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")

@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
-#import concurrent.futures
+import concurrent.futures
 import traceback
 
 from fabric_mb.message_bus.producer import AvroProducerApi
@@ -77,8 +77,8 @@ class RPCManager:
         self.pending_lock = threading.Lock()
         self.stats_lock = threading.Condition()
         self.producer = None
-        #self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_THREADS,
-        #                                                         thread_name_prefix=self.__class__.__name__)
+        self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_THREADS,
+                                                                 thread_name_prefix=self.__class__.__name__)
 
     def set_producer(self, *, producer: AvroProducerApi):
         self.producer = producer
@@ -290,7 +290,7 @@ class RPCManager:
             self.pending_lock.release()
 
         self.producer.stop()
-        #self.thread_pool.shutdown(wait=True)
+        self.thread_pool.shutdown(wait=True)
 
     def do_claim_delegation(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, delegation: ABCDelegation,
                             callback: ABCClientCallbackProxy, caller: AuthToken, id_token: str = None):
@@ -609,8 +609,7 @@ class RPCManager:
 
         try:
             self.queued()
-            RPCExecutor.run(request=rpc, producer=self.producer)
-            #self.thread_pool.submit(RPCExecutor.run, rpc, self.producer)
+            self.thread_pool.submit(RPCExecutor.run, rpc, self.producer)
         except Exception as e:
             logger.error(traceback.format_exc())
             logger.error("Exception occurred while starting RPC Executor {}".format(e))
