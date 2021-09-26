@@ -44,7 +44,7 @@ runtime:
   kafka-sasl-consumer-username:
   kafka-sasl-consumer-password:
   prometheus.port: 11001
-  kafka.request.timeout.ms: 120
+  kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
 
 logging:

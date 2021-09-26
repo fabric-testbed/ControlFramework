@@ -40,7 +40,7 @@ runtime:
   kafka-group-id: fabric-cf
   orchestrator.rest.port: 8700
   prometheus.port: 11002
-  kafka.request.timeout.ms: 120
+  kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
 
 logging:
