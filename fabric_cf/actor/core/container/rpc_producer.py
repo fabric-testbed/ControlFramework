@@ -66,14 +66,14 @@ class RPCProducer(AvroProducerApi):
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
-                raise KafkaServiceException(f"{self.__name__} has already been started")
+                raise KafkaServiceException(f"{self.__class__.__name__} has already been started")
 
             self.running = True
             self.thread = threading.Thread(target=self.delivery_check)
-            self.thread.setName(self.__name__)
+            self.thread.setName(self.__class__.__name__)
             self.thread.setDaemon(True)
             self.thread.start()
-            self.logger.debug(f"{self.__name__} has been started")
+            self.logger.debug(f"{self.__class__.__name__} has been started")
         finally:
             self.thread_lock.release()
 
@@ -87,11 +87,11 @@ class RPCProducer(AvroProducerApi):
             self.thread = None
             self.running = False
             if temp is not None:
-                self.logger.warning(f"It seems that the {self.__name__} thread is running. Interrupting it")
+                self.logger.warning(f"It seems that the {self.__class__.__name__} thread is running. Interrupting it")
                 try:
                     temp.join()
                 except Exception as e:
-                    self.logger.error(f"Could not join {self.__name__} thread {e}")
+                    self.logger.error(f"Could not join {self.__class__.__name__} thread {e}")
                 finally:
                     self.thread_lock.release()
         finally:
@@ -113,7 +113,7 @@ class RPCProducer(AvroProducerApi):
                 self.logger.error(f"KAFKA: Error {e}")
                 continue
 
-        self.logger.debug(f"KAFKA: Shutting down {self.__name__}..")
+        self.logger.debug(f"KAFKA: Shutting down {self.__class__.__name__}..")
         self.producer.flush()
 
     def delivery_report(self, err, msg, obj: AbcMessageAvro):
@@ -122,20 +122,18 @@ class RPCProducer(AvroProducerApi):
             This callback takes an extra argument, obj.
             This allows the original contents to be included for debugging purposes.
         """
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        logger = GlobalsSingleton.get().get_logger()
         if err is not None:
-            logger.error(f"KAFKA: Message Delivery Failure! Error [{err}] MsgId: [{obj.id}] "
-                         f"Msg Name: [{obj.name}]")
+            self.logger.error(f"KAFKA: Message Delivery Failure! Error [{err}] MsgId: [{obj.id}] "
+                              f"Msg Name: [{obj.name}]")
             obj.set_kafka_error(kafka_error=err)
 
             exception = RPCException(message=err, error=RPCError.NetworkError)
 
-            if msg.name is not None and msg.name in self.AVRO_RPC_TYPE_MAP and msg.reservation is not None:
+            if obj.name is not None and obj.name in self.AVRO_RPC_TYPE_MAP and obj.reservation is not None:
                 # Fail the reservation
-                failed = FailedRPC(e=exception, request_type=self.AVRO_RPC_TYPE_MAP[msg.name],
-                                   rid=ID(uid=msg.reservation.reservation_id))
+                failed = FailedRPC(e=exception, request_type=self.AVRO_RPC_TYPE_MAP[obj.name],
+                                   rid=ID(uid=obj.reservation.reservation_id))
                 self.actor.queue_event(incoming=FailedRPCEvent(actor=self.actor, failed=failed))
         else:
-            logger.debug(f"KAFKA: Message Delivery Successful! MsgId: [{obj.id}] Msg Name: [{obj.name}] "
-                         f"Topic: [{msg.topic()}] Partition [{msg.partition()}] Offset [{msg.offset()}]")
+            self.logger.debug(f"KAFKA: Message Delivery Successful! MsgId: [{obj.id}] Msg Name: [{obj.name}] "
+                              f"Topic: [{msg.topic()}] Partition [{msg.partition()}] Offset [{msg.offset()}]")

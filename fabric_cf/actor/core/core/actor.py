@@ -148,7 +148,6 @@ class ActorMixin(ABCActorMixin):
         self.thread_lock = threading.Lock()
         self.actor_main_lock = threading.Condition()
         self.message_service = None
-        self.rpc_producer = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -162,7 +161,6 @@ class ActorMixin(ABCActorMixin):
         del state['initialized']
         del state['thread_lock']
         del state['thread']
-        del state['poll_thread']
         del state['timer_queue']
         del state['event_queue']
         del state['reservation_tracker']
@@ -170,7 +168,6 @@ class ActorMixin(ABCActorMixin):
         del state['actor_main_lock']
         del state['closing']
         del state['message_service']
-        del state['rpc_producer']
         return state
 
     def __setstate__(self, state):
@@ -192,7 +189,6 @@ class ActorMixin(ABCActorMixin):
         self.closing = ReservationSet()
         self.message_service = None
         self.policy.set_actor(actor=self)
-        self.rpc_producer = None
 
     def actor_added(self):
         self.plugin.actor_added()
@@ -391,10 +387,6 @@ class ActorMixin(ABCActorMixin):
             self.current_cycle = -1
 
             self.setup_message_service()
-
-            self.rpc_producer = GlobalsSingleton.get().get_kafka_producer_with_poller(actor=self)
-
-            RPCManagerSingleton.get().set_producer(producer=self.rpc_producer)
 
             self.initialized = True
 
@@ -780,7 +772,6 @@ class ActorMixin(ABCActorMixin):
         """
         Start an Actor
         """
-        RPCManagerSingleton.get().start()
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
@@ -826,8 +817,6 @@ class ActorMixin(ABCActorMixin):
 
         if self.plugin.get_handler_processor() is not None:
             self.plugin.get_handler_processor().shutdown()
-
-        RPCManagerSingleton.get().stop()
 
     def tick_handler(self):
         """

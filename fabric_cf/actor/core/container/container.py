@@ -424,6 +424,16 @@ class Container(ABCActorContainer):
         """
         self.ticker.remove_tickable(tickable=tickable)
 
+    def start_actor(self):
+        self.logger.debug("Starting the Actor")
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        producer = GlobalsSingleton.get().get_kafka_producer_with_poller(actor=self.actor)
+        from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
+        RPCManagerSingleton.get().set_producer(producer=producer)
+        RPCManagerSingleton.get().start()
+        self.actor.start()
+        self.logger.debug(f"Actor {self.actor.get_name()} started")
+
     def register_actor(self, *, actor: ABCActorMixin):
         """
         Registers a new actor: adds the actor to the database, registers actor proxies and callbacks. Must not
@@ -436,7 +446,7 @@ class Container(ABCActorContainer):
         self.register_management_object(actor=actor)
         self.register_common(actor=actor)
         self.actor = actor
-        actor.start()
+        self.start_actor()
 
     def unregister_actor(self, *, actor: ABCActorMixin):
         """
@@ -529,7 +539,7 @@ class Container(ABCActorContainer):
         self.register_common(actor=actor)
         self.management_object_manager.load_actor_manager_objects(actor_name=actor.get_name())
         self.actor = actor
-        actor.start()
+        self.start_actor()
 
     def stop(self):
         if self.ticker is not None:
@@ -548,6 +558,9 @@ class Container(ABCActorContainer):
             self.logger.info("Actor container shutting down")
             self.remove_state_file()
             self.stop()
+            self.logger.info("Stopping RPC Manager")
+            from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
+            RPCManagerSingleton.get().stop()
             self.logger.info("Stopping actors")
             actors = ActorRegistrySingleton.get().get_actors()
             for actor in actors:
