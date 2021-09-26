@@ -113,13 +113,22 @@ class MainClass:
             print(f"Exception occurred while fetching delegations: {e}")
             traceback.print_exc()
 
+    def remove_slice(self, slice_id: str):
+        try:
+            self.db.remove_slice(slice_id=ID(uid=slice_id))
+        except Exception as e:
+            print(f"Exception occurred while fetching delegations: {e}")
+            traceback.print_exc()
+
     def handle_command(self, args):
         if args.command == "slices":
-            self.get_slices(slice_id=args.slice_id, email=args.email, slice_name=args.slice_name)
+            if args.operation is not None and args.operation == "remove":
+                    self.remove_slice(slice_id=args.slice_id)
+            else:
+                self.get_slices(slice_id=args.slice_id, email=args.email, slice_name=args.slice_name)
         elif args.command == "slivers":
-            if args.operation is not None:
-                if args.operation == "remove":
-                    self.remove_reservation(sliver_id=args.sliver_id)
+            if args.operation is not None and args.operation == "remove":
+                self.remove_reservation(sliver_id=args.sliver_id)
             else:
                 self.get_reservations(slice_id=args.slice_id, res_id=args.sliver_id, email=args.email)
         elif args.command == "delegations":

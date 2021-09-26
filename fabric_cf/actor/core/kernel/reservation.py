@@ -136,6 +136,7 @@ class Reservation(ABCKernelReservation):
         self.state_transition = False
         # Scratch element to trigger post-actions on a probe.
         self.service_pending = ReservationPendingStates.None_
+        self.last_transition_time = None
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -605,6 +606,7 @@ class Reservation(ABCKernelReservation):
 
         self.set_dirty()
         self.state_transition = True
+        self.last_transition_time = datetime.utcnow()
 
     def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         self.internal_error(err="abstract update_lease trap")
@@ -663,3 +665,19 @@ class Reservation(ABCKernelReservation):
                 if node_map is not None:
                     return node_map[1]
         return None
+
+    def exceeds_timeout(self, timeout: int) -> bool:
+        """
+        Check if Reservation has been in the state for more than the timeout interval
+        @param timeout: timeout
+        @return True if reservation has been in the state for more than timeout; False otherwise
+        """
+        if self.last_transition_time is None:
+            return False
+
+        current_time = datetime.utcnow()
+        if (current_time - self.last_transition_time).seconds > timeout:
+            print("Return True")
+            return True
+
+        return False

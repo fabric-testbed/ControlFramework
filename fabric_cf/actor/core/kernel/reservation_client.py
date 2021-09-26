@@ -832,6 +832,41 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         # Process join state to complete or restart join-related operations for Controller
         if self.joinstate != JoinState.NoJoin:
             self.probe_join_state()
+        else:
+            # Handle pending response for a Redeem or Ticket from AM or broker respectively
+            # This happens usually in case of Kafka Message Timeout
+            # To avoid the slice from being stuck in Configuring state
+            # Close the reservation - send Close to AM and relinquish to Broker
+            # Timeout is configurable
+            if self.pending_state == ReservationPendingStates.Redeeming or \
+                    self.pending_state == ReservationPendingStates.Ticketing:
+                from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                if self.exceeds_timeout(timeout=GlobalsSingleton.get().RPC_TIMEOUT):
+                    self.logger.info(f"Res# {self.get_reservation_id()} Redeem/Ticket timeout! "
+                                     f"No response received in 900 seconds!")
+
+                    self.transition(prefix="Redeem/Ticket timeout", state=ReservationStates.CloseWait,
+                                    pending=ReservationPendingStates.None_)
+
+                    # Send close to Authority;
+                    try:
+                        self.sequence_lease_out += 1
+                        RPCManagerSingleton.get().close(reservation=self)
+                    except Exception as e:
+                        self.logger.error("authority reports close error: {}".format(e))
+                        self.logger.error(traceback.format_exc())
+
+                    # Send close to Broker;
+                    self.transition(prefix=self.CLOSE_COMPLETE, state=ReservationStates.Closed,
+                                    pending=ReservationPendingStates.None_)
+                    self.do_relinquish()
+
+                    # Update ASM with Reservation Info
+                    self.update_slice_graph(sliver=self.resources.sliver)
+                    update_data = UpdateData()
+                    update_data.failed = True
+                    update_data.message = "Redeem/Ticket timeout"
+                    self.mark_close_by_ticket_review(update_data=update_data)
 
         if self.leased_resources is None:
             return
@@ -1238,26 +1273,6 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         return self.callback
 
     def handle_failed_rpc(self, *, failed: FailedRPC):
-        remote_auth = failed.get_remote_auth()
-        if failed.get_request_type() == RPCRequestType.Ticket or \
-                failed.get_request_type() == RPCRequestType.ExtendTicket or \
-                failed.get_request_type() == RPCRequestType.Relinquish:
-
-            if self.broker is None or self.broker.get_identity() != remote_auth:
-                raise ReservationException("Unauthorized Failed reservation RPC: expected= {} but was: {}".
-                                           format(self.broker.get_identity(), remote_auth))
-
-        elif failed.get_request_type() == RPCRequestType.Redeem or \
-                failed.get_request_type() == RPCRequestType.ExtendLease or \
-                failed.get_request_type() == RPCRequestType.Close:
-            if self.authority is None or self.authority.get_identity() != remote_auth:
-                raise ReservationException("Unauthorized Failed reservation RPC: expected= {} but was {}".
-                                           format(self.authority.get_identity(), remote_auth))
-
-        else:
-            raise ReservationException("Unexpected FailedRPC for ReservationClient. RequestType= {}".
-                                       format(failed.get_request_type()))
-
         if failed.get_error_type() == RPCError.NetworkError:
             if self.is_failed() or self.is_closed():
                 return
@@ -1269,12 +1284,8 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                     self.do_relinquish()
                 return
 
-            assert failed.has_request()
-            RPCManagerSingleton.get().retry(request=failed.get_request())
-            return
-
-        self.fail(message="Failing reservation due to non-recoverable RPC error ({}) {}".
-                  format(failed.get_error_type(), failed.get_error()))
+        self.fail(message=f"Failing reservation due to non-recoverable RPC error {failed.get_error_type()}",
+                  exception=failed.get_error())
 
     def print_state(self):
         """

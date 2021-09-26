@@ -78,7 +78,7 @@ class MessageService(AvroConsumerApi):
                 try:
                     temp.join()
                 except Exception as e:
-                    self.logger.error("Could not join actor thread {}".format(e))
+                    self.logger.error("Could not join Message Service thread {}".format(e))
                 finally:
                     self.thread_lock.release()
         finally:

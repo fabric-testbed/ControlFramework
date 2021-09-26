@@ -174,12 +174,8 @@ class ReservationServer(Reservation, ABCKernelServerReservationMixin):
         if failed.get_error_type() == RPCError.NetworkError:
             if self.is_failed() or self.is_closed():
                 return
-            assert failed.has_request()
-            from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-            RPCManagerSingleton.get().retry(failed.get_request())
-            return
 
-        self.fail(message="Failing reservation due to non-recoverable RPC error {}".format(failed.get_error_type()),
+        self.fail(message=f"Failing reservation due to non-recoverable RPC error {failed.get_error_type()}",
                   exception=failed.get_error())
 
     def clear_notice(self):

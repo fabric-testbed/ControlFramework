@@ -47,36 +47,27 @@ class FailedRPCEvent(ABCActorEvent):
         """
         Process Failed RPC Event
         """
-        self.actor.get_logger().debug("Processing failed RPC ({})".format(self.failed.get_request_type()))
-        if self.failed.get_request_type() == RPCRequestType.Query:
-            handler = self.failed.get_request().get_handler()
-            if handler is not None:
-                handler.handle(status=self.failed.get_error(), result=None)
-            else:
-                self.actor.get_logger().warning("Query failed, but no handler is present")
-        elif self.failed.get_request_type() == RPCRequestType.QueryResult:
-            if self.failed.get_retry_count() < 10:
-                from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-                RPCManagerSingleton.get().retry(request=self.failed.get_request())
-            else:
-                self.actor.get_logger().warning("Cannot send query response. Giving up after 10 retries {}".format(
-                    self.failed.get_error()))
-        elif self.failed.get_request_type() == RPCRequestType.ClaimDelegation or \
-            self.failed.get_request_type() == RPCRequestType.ReclaimDelegation or \
-            self.failed.get_request_type() == RPCRequestType.Ticket or \
-            self.failed.get_request_type() == RPCRequestType.ExtendTicket or \
-            self.failed.get_request_type() == RPCRequestType.Relinquish or \
-            self.failed.get_request_type() == RPCRequestType.UpdateTicket or \
-            self.failed.get_request_type() == RPCRequestType.Redeem or \
-            self.failed.get_request_type() == RPCRequestType.ExtendLease or \
-            self.failed.get_request_type() == RPCRequestType.ModifyLease:
-            self.actor.get_logger().debug("Failed RPC for {}: in FailedRPCEvent.process()".format(
-                self.failed.get_request_type()))
-        elif self.failed.get_request_type() == RPCRequestType.Close:
+        self.actor.get_logger().debug(f"Processing failed RPC ({self.failed.get_request_type()})")
+        if self.failed.get_request_type() == RPCRequestType.Query or \
+                self.failed.get_request_type() == RPCRequestType.QueryResult or \
+                self.failed.get_request_type() == RPCRequestType.ClaimDelegation or \
+                self.failed.get_request_type() == RPCRequestType.ReclaimDelegation or \
+                self.failed.get_request_type() == RPCRequestType.Ticket or \
+                self.failed.get_request_type() == RPCRequestType.ExtendTicket or \
+                self.failed.get_request_type() == RPCRequestType.Relinquish or \
+                self.failed.get_request_type() == RPCRequestType.Redeem or \
+                self.failed.get_request_type() == RPCRequestType.ExtendLease or \
+                self.failed.get_request_type() == RPCRequestType.ModifyLease:
+            self.actor.get_logger().error(f"Failed RPC for {self.failed.get_request_type()}: "
+                                          f"in FailedRPCEvent.process()")
+        elif self.failed.get_request_type() == RPCRequestType.Close or \
+                self.failed.get_request_type() == RPCRequestType.UpdateTicket or \
+                self.failed.get_request_type() == RPCRequestType.UpdateLease:
             rid = self.failed.get_reservation_id()
             if rid is None:
                 self.actor.get_logger().error("Could not process failed RPC: reservation id is null")
-            self.actor.handle_failed_rpc(rid=rid, rpc=self.failed)
+            else:
+                self.actor.handle_failed_rpc(rid=rid, rpc=self.failed)
         else:
             raise RPCException(message="Unsupported RPC request type: {}".format(
                 self.failed.get_request().get_request_type()))

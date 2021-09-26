@@ -231,8 +231,6 @@ class Container(ABCActorContainer):
         self.logger.debug("Performing common boot tasks")
         self.define_protocols()
         self.management_object_manager.initialize(db=self.db)
-        from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-        RPCManagerSingleton.get().start()
 
     def define_protocols(self):
         """
@@ -337,7 +335,6 @@ class Container(ABCActorContainer):
         from fabric_cf.actor.core.manage.container_management_object import ContainerManagementObject
         management_object = ContainerManagementObject()
         self.management_object_manager.register_manager_object(manager=management_object)
-
 
     def recover_basic(self):
         """
@@ -551,9 +548,6 @@ class Container(ABCActorContainer):
             self.logger.info("Actor container shutting down")
             self.remove_state_file()
             self.stop()
-            self.logger.info("Stopping RPC Manager")
-            from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-            RPCManagerSingleton.get().stop()
             self.logger.info("Stopping actors")
             actors = ActorRegistrySingleton.get().get_actors()
             for actor in actors:

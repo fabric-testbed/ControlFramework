@@ -355,16 +355,6 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
         except Exception as e:
             self.logger.error("callback failed e:{}".format(e))
 
-    def handle_failed_rpc(self, *, failed: FailedRPC):
-        remote_auth = failed.get_remote_auth()
-        if failed.get_request_type() == RPCRequestType.UpdateLease:
-            if self.callback is None or self.callback.get_identity() != remote_auth:
-                raise AuthorityException("Unauthorized Failed reservation RPC: expected={}, but was: {}".format(
-                    self.callback.get_identity(), remote_auth))
-        else:
-            raise AuthorityException("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(
-                failed.get_request_type()))
-
     def prepare_extend_lease(self):
         self.requested_resources.validate_incoming_ticket(term=self.requested_term)
 

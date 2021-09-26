@@ -30,7 +30,6 @@ import sys
 import threading
 import traceback
 from datetime import datetime, timedelta
-from logging.handlers import RotatingFileHandler
 from typing import TYPE_CHECKING
 
 import logging
@@ -55,6 +54,7 @@ logging.trace = lambda msg, *args, **kwargs: logging.log(logging.TRACE, msg, *ar
 
 class Globals:
     config_file = Constants.CONFIGURATION_FILE
+    RPC_TIMEOUT = 0
 
     def __init__(self):
         self.config = None
@@ -146,6 +146,7 @@ class Globals:
             from fabric_cf.actor.boot.configuration_loader import ConfigurationLoader
             loader = ConfigurationLoader(path=self.config_file)
             self.config = loader.read_configuration()
+            self.RPC_TIMEOUT = self.config.get_rpc_request_timeout_seconds()
         except Exception as e:
             raise RuntimeError("Unable to parse configuration file {}".format(e))
 
@@ -261,12 +262,24 @@ class Globals:
         conf = self.get_kafka_config_producer()
         key_schema_file = self.config.get_kafka_key_schema_location()
         value_schema_file = self.config.get_kafka_value_schema_location()
-        retries = self.config.get_message_retries()
 
         from fabric_mb.message_bus.producer import AvroProducerApi
         producer = AvroProducerApi(producer_conf=conf, key_schema_location=key_schema_file,
-                                   value_schema_location=value_schema_file, logger=self.get_logger(),
-                                   retries=retries)
+                                   value_schema_location=value_schema_file, logger=self.get_logger())
+        return producer
+
+    def get_kafka_producer_with_poller(self, *, actor):
+        """
+        Create and return a kafka producer
+        @return producer
+        """
+        conf = self.get_kafka_config_producer()
+        key_schema_file = self.config.get_kafka_key_schema_location()
+        value_schema_file = self.config.get_kafka_value_schema_location()
+
+        from fabric_cf.actor.core.container.rpc_producer import RPCProducer
+        producer = RPCProducer(producer_conf=conf, key_schema_location=key_schema_file,
+                               value_schema_location=value_schema_file, logger=self.get_logger(), actor=actor)
         return producer
 
     def get_simple_kafka_producer(self):

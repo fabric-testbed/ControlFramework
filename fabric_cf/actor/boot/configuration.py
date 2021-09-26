@@ -487,9 +487,9 @@ class Configuration:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD, None)
 
     def get_kafka_request_timeout_ms(self) -> int:
-        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS, 120)
+        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS, 120000)
         return int(value)
 
-    def get_message_retries(self) -> int:
-        value = self.global_config.runtime.get(Constants.RPC_RETRIES, 3)
+    def get_rpc_request_timeout_seconds(self) -> int:
+        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_RPC_REQUEST_TIMEOUT_SECONDS, 900)
         return int(value)
