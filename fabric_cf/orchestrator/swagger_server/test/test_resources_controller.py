@@ -17,7 +17,7 @@ class TestResourcesController(BaseTestCase):
 
         Retrieve a listing and description of available resources for portal
         """
-        query_string = [('graph_format', 'JSON_NODELINK')]
+        query_string = [('graph_format', 'GRAPHML')]
         response = self.client.open(
             '//portalresources',
             method='GET',

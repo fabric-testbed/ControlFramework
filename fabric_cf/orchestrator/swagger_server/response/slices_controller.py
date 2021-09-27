@@ -199,7 +199,7 @@ def slices_renew_slice_idpost(slice_id, new_lease_end_time):  # noqa: E501
         return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
 
-def slices_slice_idget(slice_id):  # noqa: E501
+def slices_slice_idget(slice_id, graph_format):  # noqa: E501
     """slice properties
 
     Retrieve Slice properties # noqa: E501
@@ -214,7 +214,7 @@ def slices_slice_idget(slice_id):  # noqa: E501
     received_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
     try:
         token = get_token()
-        value = handler.get_slice_graph(token=token, slice_id=slice_id)
+        value = handler.get_slice_graph(token=token, slice_id=slice_id, graph_format_str=graph_format)
         response = Success()
         response.value = value
         success_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()

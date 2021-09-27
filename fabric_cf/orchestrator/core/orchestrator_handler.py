@@ -401,11 +401,12 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing delete_slice e: {e}")
             raise e
 
-    def get_slice_graph(self, *, token: str, slice_id: str) -> dict:
+    def get_slice_graph(self, *, token: str, slice_id: str, graph_format_str: str) -> dict:
         """
         Get User Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
+        :param graph_format_str
         :raises Raises an exception in case of failure
         :returns Slice Graph on success
         """
@@ -431,10 +432,15 @@ class OrchestratorHandler:
 
             slice_model = FimHelper.get_graph(graph_id=slice_obj.get_graph_id())
 
+            graph_format = self.__translate_graph_format(graph_format=graph_format_str)
+            if graph_format == GraphFormat.JSON_NODELINK:
+                slice_model_str = slice_model.serialize_graph()
+                slice_model = FimHelper.get_networkx_graph_from_string(graph_str=slice_model_str)
+
             if slice_model is None:
                 raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
 
-            return ResponseBuilder.get_slice_model_summary(slice_model=slice_model.serialize_graph())
+            return ResponseBuilder.get_slice_model_summary(slice_model=slice_model.serialize_graph(format=graph_format))
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")

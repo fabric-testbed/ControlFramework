@@ -137,6 +137,7 @@ class Reservation(ABCKernelReservation):
         # Scratch element to trigger post-actions on a probe.
         self.service_pending = ReservationPendingStates.None_
         self.last_transition_time = None
+        self.last_pending_state = ReservationPendingStates.None_
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -602,6 +603,7 @@ class Reservation(ABCKernelReservation):
                               f"{self.get_pending_state_name()} -> {pending.name}")
 
         self.state = state
+        self.last_pending_state = pending
         self.pending_state = pending
 
         self.set_dirty()

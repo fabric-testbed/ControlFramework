@@ -65,6 +65,6 @@ class LogHelper:
 
         file_handler = RotatingFileHandler(log_path, backupCount=int(log_retain), maxBytes=int(log_size))
 
-        logging.basicConfig(handlers=[file_handler], format=log_format)
+        logging.basicConfig(handlers=[file_handler], format=log_format, force=True)
 
         return log

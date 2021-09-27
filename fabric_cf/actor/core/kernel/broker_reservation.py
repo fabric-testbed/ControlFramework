@@ -41,6 +41,7 @@ from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation_server import ReservationServer
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
+from fabric_cf.actor.core.util.rpc_exception import RPCError
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -526,6 +527,12 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
         self.logger.info(f"Received Update Lease: {incoming} at Broker")
         # TODO add any processing if needed
         self.logger.info(f"Do Nothing!")
+
+    def handle_failed_rpc(self, *, failed: FailedRPC):
+        if failed.get_request_type() == RPCRequestType.UpdateTicket and \
+                self.last_pending_state == ReservationPendingStates.ExtendingTicket:
+            return
+        super().handle_failed_rpc(failed=failed)
 
 
 class BrokerReservationFactory:

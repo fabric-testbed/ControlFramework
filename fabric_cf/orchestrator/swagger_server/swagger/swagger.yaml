@@ -91,11 +91,11 @@ paths:
         explode: true
         schema:
           type: string
-          default: JSON_NODELINK
           enum:
           - GRAPHML
           - JSON_NODELINK
           - CYTOSCAPE
+          default: GRAPHML
       responses:
         "200":
           description: OK
@@ -171,6 +171,19 @@ paths:
         explode: false
         schema:
           type: string
+      - name: graphFormat
+        in: query
+        description: Graph format
+        required: true
+        style: form
+        explode: true
+        schema:
+          type: string
+          enum:
+          - GRAPHML
+          - JSON_NODELINK
+          - CYTOSCAPE
+          default: GRAPHML
       responses:
         "200":
           description: OK
@@ -194,8 +207,11 @@ paths:
       tags:
       - slices
       summary: slice status
-      description: |
-        Retrieve the status of a slice. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.
+      description: "Retrieve the status of a slice. Status would include dynamic reservation\
+        \ or instantiation information. This API is used to provide updates on the\
+        \ state of the resources after the completion of create, which began to asynchronously\
+        \ provision the resources. The response would contain relatively dynamic data,\
+        \ not descriptive data as returned in the Graph ML.\n"
       operationId: slices_status_slice_idget
       parameters:
       - name: sliceID
@@ -289,8 +305,11 @@ paths:
       tags:
       - slices
       summary: Redeem resources reserved via Create API
-      description: |
-        Request that the reserved resources be made provisioned, instantiating or otherwise realizing the resources, such that they have a valid operational status and may possibly be made ready for experimenter use. This operation is synchronous, but may start a longer process, such as creating and imaging a virtual machine.
+      description: "Request that the reserved resources be made provisioned, instantiating\
+        \ or otherwise realizing the resources, such that they have a valid operational\
+        \ status and may possibly be made ready for experimenter use. This operation\
+        \ is synchronous, but may start a longer process, such as creating and imaging\
+        \ a virtual machine.\n"
       operationId: slices_redeem_slice_idpost
       parameters:
       - name: sliceID
@@ -324,8 +343,9 @@ paths:
       tags:
       - slices
       summary: Renew slice
-      description: |
-        Request to extend slice be renewed with their expiration extended. If possible, the orchestrator should extend the slivers to the requested expiration time, or to a sooner time if policy limits apply.
+      description: "Request to extend slice be renewed with their expiration extended.\
+        \ If possible, the orchestrator should extend the slivers to the requested\
+        \ expiration time, or to a sooner time if policy limits apply.\n"
       operationId: slices_renew_slice_idpost
       parameters:
       - name: sliceID
@@ -367,8 +387,14 @@ paths:
       tags:
       - slices
       summary: Modify slice
-      description: |
-        Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice.
+      description: "Request to modify slice as described in the request. Request would\
+        \ be a Graph ML describing the requested resources for slice or a dictionary\
+        \ for sliver. On success, for one or more slivers are modified. This API returns\
+        \ list and description of the resources reserved for the slice in the form\
+        \ of Graph ML. Orchestrator would also trigger provisioning of the new resources\
+        \ on the appropriate sites either now or in the future based as requested.\
+        \ Modify operations may include add/delete/modify a container/VM/Baremetal\
+        \ server/network or other resources to the slice.\n"
       operationId: slices_modify_slice_idput
       parameters:
       - name: sliceID
@@ -404,8 +430,9 @@ paths:
       tags:
       - slices
       summary: Delete slice.
-      description: |
-        Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary, de-provisioned and un-allocated at the respective sites.
+      description: "Request to delete slice. On success, resources associated with\
+        \ slice or sliver are stopped if necessary, de-provisioned and un-allocated\
+        \ at the respective sites.\n"
       operationId: slices_delete_slice_iddelete
       parameters:
       - name: sliceID
@@ -515,8 +542,11 @@ paths:
       tags:
       - slivers
       summary: slivers status
-      description: |
-        Retrieve the status of a sliver. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.
+      description: "Retrieve the status of a sliver. Status would include dynamic\
+        \ reservation or instantiation information. This API is used to provide updates\
+        \ on the state of the resources after the completion of create, which began\
+        \ to asynchronously provision the resources. The response would contain relatively\
+        \ dynamic data, not descriptive data as returned in the Graph ML.\n"
       operationId: slivers_status_sliver_idget
       parameters:
       - name: sliceID
@@ -596,8 +626,14 @@ paths:
       tags:
       - slivers
       summary: Modify sliver
-      description: |
-        Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice.
+      description: "Request to modify slice as described in the request. Request would\
+        \ be a Graph ML describing the requested resources for slice or a dictionary\
+        \ for sliver. On success, for one or more slivers are modified. This API returns\
+        \ list and description of the resources reserved for the slice in the form\
+        \ of Graph ML. Orchestrator would also trigger provisioning of the new resources\
+        \ on the appropriate sites either now or in the future based as requested.\
+        \ Modify operations may include add/delete/modify a container/VM/Baremetal\
+        \ server/network or other resources to the slice.\n"
       operationId: slivers_modify_sliver_idput
       parameters:
       - name: sliverID
@@ -720,11 +756,11 @@ components:
       explode: true
       schema:
         type: string
-        default: JSON_NODELINK
         enum:
         - GRAPHML
         - JSON_NODELINK
         - CYTOSCAPE
+        default: GRAPHML
     states:
       name: states
       in: query

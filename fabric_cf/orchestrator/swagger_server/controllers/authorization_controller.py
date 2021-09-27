@@ -8,5 +8,3 @@ https://connexion.readthedocs.io/en/latest/security.html
 """
 def check_bearerAuth(token):
     return rc.check_bearerAuth(token=token)
-
-
