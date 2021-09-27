@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import concurrent.futures
+import logging
+import os
 import threading
 import time
 import traceback
@@ -32,7 +34,10 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.core.plugins.handlers.handler_processor import HandlerProcessor
+from fabric_cf.actor.core.util.log_helper import LogHelper
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
+
+process_pool_logger = None
 
 
 class AnsibleHandlerProcessor(HandlerProcessor):
@@ -43,13 +48,14 @@ class AnsibleHandlerProcessor(HandlerProcessor):
 
     def __init__(self):
         super().__init__()
-        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.MAX_WORKERS)
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        self.log_config = GlobalsSingleton.get().get_log_config()
+        self.executor = None
+        self.__setup_process_pool()
         self.futures = []
         self.thread = None
         self.future_lock = threading.Condition()
         self.stopped = False
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.log_config = GlobalsSingleton.get().get_log_config()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -71,11 +77,23 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.plugin = None
         self.initialized = False
         self.lock = threading.Lock()
-        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.MAX_WORKERS)
+        self.__setup_process_pool()
         self.futures = []
         self.thread = None
         self.future_lock = threading.Condition()
         self.stopped = False
+
+    def __setup_process_pool(self):
+        log_dir = self.log_config.get(Constants.PROPERTY_CONF_LOG_DIRECTORY, ".")
+        log_file = self.log_config.get(Constants.PROPERTY_CONF_HANDLER_LOG_FILE, "handler.log")
+        log_level = self.log_config.get(Constants.PROPERTY_CONF_LOG_LEVEL, logging.DEBUG)
+        log_retain = int(self.log_config.get(Constants.PROPERTY_CONF_LOG_RETAIN, 50))
+        log_size = int(self.log_config.get(Constants.PROPERTY_CONF_LOG_SIZE, 5000000))
+        logger = self.log_config.get(Constants.PROPERTY_CONF_LOGGER, "handler")
+        self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.MAX_WORKERS,
+                                                               initializer=AnsibleHandlerProcessor.process_pool_initializer,
+                                                               initargs=(log_dir, log_file, log_level, log_retain,
+                                                                         log_size, logger))
 
     def start(self):
         """
@@ -114,7 +132,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def set_logger(self, *, logger):
         self.logger = logger
@@ -136,19 +155,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             if handler is None:
                 raise AuthorityException(f"No handler found for resource type {unit.get_resource_type()}")
 
-            handler_class = ReflectionUtils.create_instance_with_params(module_name=handler.get_module_name(),
-                                                                        class_name=handler.get_class_name())
-            handler_obj = handler_class(self.log_config, handler.get_properties())
-
-            future = None
-            if operation == Constants.TARGET_CREATE:
-                future = self.executor.submit(handler_obj.create, unit)
-            elif operation == Constants.TARGET_DELETE:
-                future = self.executor.submit(handler_obj.delete, unit)
-            elif operation == Constants.TARGET_MODIFY:
-                future = self.executor.submit(handler_obj.modify, unit)
-            else:
-                raise AuthorityException("Invalid operation")
+            future = self.executor.submit(self.process_pool_main, operation, handler.get_class_name(),
+                                          handler.get_module_name(), handler.get_properties(), unit)
 
             self.queue_future(future=future, unit=unit)
             self.logger.debug(f"Handler operation {operation} scheduled for Resource Type: {unit.get_resource_type()} "
@@ -241,3 +249,33 @@ class AnsibleHandlerProcessor(HandlerProcessor):
                 done.clear()
 
             time.sleep(5)
+
+    @staticmethod
+    def process_pool_main(operation: str, handler_class: str, handler_module: str, properties: dict,
+                          unit: ConfigToken):
+        global process_pool_logger
+        handler_class = ReflectionUtils.create_instance_with_params(module_name=handler_module,
+                                                                    class_name=handler_class)
+        handler_obj = handler_class(process_pool_logger, properties)
+
+        if operation == Constants.TARGET_CREATE:
+            return handler_obj.create(unit)
+        elif operation == Constants.TARGET_DELETE:
+            return handler_obj.delete(unit)
+        elif operation == Constants.TARGET_MODIFY:
+            return handler_obj.modify(unit)
+        else:
+            process_pool_logger.error("Invalid operation")
+            result = {Constants.PROPERTY_TARGET_NAME: operation,
+                      Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,
+                      Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
+            return result, unit
+
+    @staticmethod
+    def process_pool_initializer(log_dir: str, log_file: str, log_level, log_retain: int, log_size: int,
+                                 logger: str):
+        global process_pool_logger
+        if process_pool_logger is None:
+            log_file = f"{os.getpid()}-{log_file}"
+            process_pool_logger = LogHelper.make_logger(log_dir=log_dir, log_file=log_file, log_level=log_level,
+                                                        log_retain=log_retain, log_size=log_size, logger=logger)

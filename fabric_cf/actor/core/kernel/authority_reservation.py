@@ -34,6 +34,7 @@ from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation_server import ReservationServer
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
+from fabric_cf.actor.core.util.rpc_exception import RPCError
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -355,16 +356,6 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
         except Exception as e:
             self.logger.error("callback failed e:{}".format(e))
 
-    def handle_failed_rpc(self, *, failed: FailedRPC):
-        remote_auth = failed.get_remote_auth()
-        if failed.get_request_type() == RPCRequestType.UpdateLease:
-            if self.callback is None or self.callback.get_identity() != remote_auth:
-                raise AuthorityException("Unauthorized Failed reservation RPC: expected={}, but was: {}".format(
-                    self.callback.get_identity(), remote_auth))
-        else:
-            raise AuthorityException("Unexpected FailedRPC for BrokerReservation. RequestType={}".format(
-                failed.get_request_type()))
-
     def prepare_extend_lease(self):
         self.requested_resources.validate_incoming_ticket(term=self.requested_term)
 
@@ -575,6 +566,16 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
 
     def get_ticket(self) -> ResourceSet:
         return self.ticket
+
+    def handle_failed_rpc(self, *, failed: FailedRPC):
+        if failed.get_error_type() == RPCError.NetworkError:
+            if self.is_failed() or self.is_closed():
+                return
+
+        # Resources were allocated successfully but Orchestrator could not be informed
+        if failed.get_request_type() == RPCRequestType.UpdateLease and self.resources is not None:
+            self.logger.error(f"Closing reservation due to non-recoverable RPC error {failed.get_error_type()}")
+            self.actor.close(reservation=self)
 
 
 class AuthorityReservationFactory:

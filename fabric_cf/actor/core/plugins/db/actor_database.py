@@ -58,7 +58,7 @@ class ActorDatabase(ABCDatabase):
         self.actor_name = None
         self.actor_id = None
         self.initialized = False
-        self.logger = None
+        self.logger = logger
         self.reset_state = False
         self.actor = None
         self.lock = threading.Lock()
@@ -210,7 +210,7 @@ class ActorDatabase(ABCDatabase):
             self.lock.acquire()
             result = []
             slice_dict_list = self.db.get_slice_by_name(slice_name=slice_name,
-                                                        oidc_claim_sub=oidc_claim_sub)
+                                                        oidc_claim_sub=oidc_claim_sub, email=email)
             if slice_dict_list is not None:
                 for s in slice_dict_list:
                     pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)

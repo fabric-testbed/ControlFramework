@@ -242,7 +242,7 @@ class ActorMixin(ABCActorMixin):
         self.wrapper.extend_reservation(rid=rid, resources=resources, term=term)
 
     def external_tick(self, *, cycle: int):
-        self.logger.debug("External Tick start cycle: {}".format(cycle))
+        self.logger.info("External Tick start cycle: {}".format(cycle))
 
         class TickEvent(ABCActorEvent):
             def __init__(self, *, base, cycle: int):
@@ -256,7 +256,7 @@ class ActorMixin(ABCActorMixin):
                 self.base.actor_tick(cycle=self.cycle)
 
         self.queue_event(incoming=TickEvent(base=self, cycle=cycle))
-        self.logger.debug("External Tick end cycle: {}".format(cycle))
+        self.logger.info("External Tick end cycle: {}".format(cycle))
 
     def actor_tick(self, *, cycle: int):
         """
@@ -275,7 +275,7 @@ class ActorMixin(ABCActorMixin):
                 current_cycle = self.current_cycle + 1
 
             while current_cycle <= cycle:
-                self.logger.debug("actor_tick: {} start".format(current_cycle))
+                self.logger.info("actor_tick: {} start".format(current_cycle))
                 self.current_cycle = current_cycle
                 self.policy.prepare(cycle=self.current_cycle)
 
@@ -288,7 +288,7 @@ class ActorMixin(ABCActorMixin):
                 self.wrapper.tick()
 
                 self.first_tick = False
-                self.logger.debug("actor_tick: {} end".format(current_cycle))
+                self.logger.info("actor_tick: {} end".format(current_cycle))
                 current_cycle += 1
         except Exception as e:
             self.logger.debug(traceback.format_exc())
@@ -862,7 +862,6 @@ class ActorMixin(ABCActorMixin):
         """
         Queue an event on Actor timer queue
         """
-        self.logger.debug("Waiting on main lock to add timer")
         with self.actor_main_lock:
             self.timer_queue.put_nowait(timer)
             self.logger.debug("Added timer to timer queue {}".format(timer.__class__.__name__))
@@ -872,7 +871,6 @@ class ActorMixin(ABCActorMixin):
         """
         Queue an even on Actor Event Queue
         """
-        self.logger.debug("Waiting on main lock to add event")
         with self.actor_main_lock:
             self.event_queue.put_nowait(incoming)
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
@@ -967,9 +965,10 @@ class ActorMixin(ABCActorMixin):
             topic = config.get_actor().get_kafka_topic()
             topics = [topic]
             consumer_conf = GlobalsSingleton.get().get_kafka_config_consumer()
-            key_schema, val_schema = GlobalsSingleton.get().get_kafka_schemas()
             self.message_service = MessageService(kafka_service=kafka_service, kafka_mgmt_service=kafka_mgmt_service,
-                                                  conf=consumer_conf, key_schema=key_schema, record_schema=val_schema,
+                                                  consumer_conf=consumer_conf,
+                                                  key_schema_location=GlobalsSingleton.get().get_config().get_kafka_key_schema_location(),
+                                                  value_schema_location=GlobalsSingleton.get().get_config().get_kafka_value_schema_location(),
                                                   topics=topics, logger=self.logger)
         except Exception as e:
             self.logger.error(traceback.format_exc())

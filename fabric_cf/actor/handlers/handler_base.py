@@ -38,10 +38,9 @@ class ConfigurationException(Exception):
 
 
 class HandlerBase(ABC):
-    def __init__(self, log_config: dict, properties: dict):
-        self.log_config = log_config
+    def __init__(self, logger: logging.Logger, properties: dict):
         self.properties = properties
-        self.logger = None
+        self.logger = logger
         self.config = None
 
     def get_config(self) -> dict:
@@ -55,9 +54,6 @@ class HandlerBase(ABC):
         return self.config
 
     def get_logger(self) -> logging.Logger:
-        if self.logger is None:
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            self.logger = GlobalsSingleton.get().make_logger(log_config=self.log_config)
         return self.logger
 
     @abstractmethod

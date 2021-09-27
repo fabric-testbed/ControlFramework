@@ -28,7 +28,6 @@ from setuptools import setup, find_packages
 from fabric_cf import __VERSION__
 
 NAME = "fabric-cf"
-VERSION = __VERSION__
 # To install the library, run the following
 #
 # python setup.py install
@@ -44,7 +43,7 @@ with open("requirements.txt", "r") as fh:
 
 setup(
     name=NAME,
-    version=VERSION,
+    version=__VERSION__,
     description="Fabric Control Framework",
     author="Komal Thareja, Ilya Baldin",
     author_email="kthare10@renci.org, ibaldin@renci.org",

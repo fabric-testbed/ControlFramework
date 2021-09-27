@@ -32,16 +32,12 @@ from fabric_cf.actor.handlers.handler_base import HandlerBase
 
 
 class NoOpHandler(HandlerBase):
-    def __init__(self, log_config: dict, properties: dict):
-        super().__init__(log_config=log_config, properties=properties)
-
     def create(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None
         try:
             self.get_logger().info(f"Create invoked for unit: {unit}")
             sliver = unit.get_sliver()
-            sliver.state = 'active'
-            sliver.instance_name = 'instance_001'
+            sliver.label_allocations.instance = 'instance_001'
             sliver.management_ip = '1.2.3.4'
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,

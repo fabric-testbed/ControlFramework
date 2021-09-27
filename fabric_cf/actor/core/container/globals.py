@@ -30,7 +30,6 @@ import sys
 import threading
 import traceback
 from datetime import datetime, timedelta
-from logging.handlers import RotatingFileHandler
 from typing import TYPE_CHECKING
 
 import logging
@@ -41,6 +40,7 @@ from fss_utils.jwt_validate import JWTValidator
 from fabric_cf.actor.core.common.exceptions import InitializationException
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.container.container import Container
+from fabric_cf.actor.core.util.log_helper import LogHelper
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_container import ABCActorContainer
@@ -54,6 +54,7 @@ logging.trace = lambda msg, *args, **kwargs: logging.log(logging.TRACE, msg, *ar
 
 class Globals:
     config_file = Constants.CONFIGURATION_FILE
+    RPC_TIMEOUT = 0
 
     def __init__(self):
         self.config = None
@@ -69,56 +70,28 @@ class Globals:
         self.lock = threading.Lock()
         self.jwt_validator = None
 
-    def make_logger(self, *, log_config: dict = None):
+    def make_logger(self):
         """
         Detects the path and level for the log file from the actor config and sets
         up a logger. Instead of detecting the path and/or level from the
         config, a custom path and/or level for the log file can be passed as
         optional arguments.
 
-       :param log_config: Log config
        :return: logging.Logger object
         """
-        if log_config is None:
-            if self.config is None:
-                raise RuntimeError('No config information available')
-
-            log_config = self.config.get_global_config().get_logging()
+        log_config = self.config.get_global_config().get_logging()
         if log_config is None:
             raise RuntimeError('No logging  config information available')
 
-        log_path = None
-        if Constants.PROPERTY_CONF_LOG_DIRECTORY in log_config and Constants.PROPERTY_CONF_LOG_FILE in log_config:
-            log_path = log_config[Constants.PROPERTY_CONF_LOG_DIRECTORY] + '/' + \
-                       log_config[Constants.PROPERTY_CONF_LOG_FILE]
+        log_dir = log_config.get(Constants.PROPERTY_CONF_LOG_DIRECTORY, ".")
+        log_file = log_config.get(Constants.PROPERTY_CONF_LOG_FILE, "actor.log")
+        log_level = log_config.get(Constants.PROPERTY_CONF_LOG_LEVEL, None)
+        log_retain = int(log_config.get(Constants.PROPERTY_CONF_LOG_RETAIN, 50))
+        log_size = int(log_config.get(Constants.PROPERTY_CONF_LOG_SIZE, 5000000))
+        logger = log_config.get(Constants.PROPERTY_CONF_LOGGER, "actor")
 
-        if log_path is None:
-            raise RuntimeError('The log file path must be specified in config or passed as an argument')
-
-        # Get the log level
-        log_level = None
-        if Constants.PROPERTY_CONF_LOG_LEVEL in log_config:
-            log_level = log_config.get(Constants.PROPERTY_CONF_LOG_LEVEL, None)
-
-        if log_level is None:
-            log_level = logging.INFO
-
-        # Set up the root logger
-        log = logging.getLogger(log_config.get(Constants.PROPERTY_CONF_LOGGER, None))
-        log.setLevel(log_level)
-        log_format = \
-            '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
-
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-
-        backup_count = log_config.get(Constants.PROPERTY_CONF_LOG_RETAIN, None)
-        max_log_size = log_config.get(Constants.PROPERTY_CONF_LOG_SIZE, None)
-
-        file_handler = RotatingFileHandler(log_path, backupCount=int(backup_count), maxBytes=int(max_log_size))
-
-        logging.basicConfig(handlers=[file_handler], format=log_format)
-
-        return log
+        return LogHelper.make_logger(log_dir=log_dir, log_file=log_file, log_level=log_level, log_retain=log_retain,
+                                     log_size=log_size, logger=logger)
 
     @staticmethod
     def delete_super_block():
@@ -173,6 +146,7 @@ class Globals:
             from fabric_cf.actor.boot.configuration_loader import ConfigurationLoader
             loader = ConfigurationLoader(path=self.config_file)
             self.config = loader.read_configuration()
+            self.RPC_TIMEOUT = self.config.get_rpc_request_timeout_seconds()
         except Exception as e:
             raise RuntimeError("Unable to parse configuration file {}".format(e))
 
@@ -211,23 +185,17 @@ class Globals:
         """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
-        bootstrap_server = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SERVER, None)
-        security_protocol = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL, None)
-        ssl_ca_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_S_SL_CA_LOCATION, None)
-        ssl_certificate_location = self.config.get_runtime_config().get(
-            Constants.PROPERTY_CONF_KAFKA_SSL_CERTIFICATE_LOCATION, None)
-        ssl_key_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_LOCATION, None)
-        ssl_key_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_PASSWORD, None)
-        sasl_username = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_USERNAME, None)
-        sasl_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_PASSWORD, None)
-        sasl_mechanism = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_MECHANISM, None)
 
-        conf = {Constants.BOOTSTRAP_SERVERS: bootstrap_server,
-                Constants.SECURITY_PROTOCOL: security_protocol,
-                Constants.SSL_CA_LOCATION: ssl_ca_location,
-                Constants.SSL_CERTIFICATE_LOCATION: ssl_certificate_location,
-                Constants.SSL_KEY_LOCATION: ssl_key_location,
-                Constants.SSL_KEY_PASSWORD: ssl_key_password}
+        sasl_username = self.config.get_kafka_prod_user_name()
+        sasl_password = self.config.get_kafka_prod_user_pwd()
+        sasl_mechanism = self.config.get_kafka_sasl_mechanism()
+
+        conf = {Constants.BOOTSTRAP_SERVERS: self.config.get_kafka_server(),
+                Constants.SECURITY_PROTOCOL: self.config.get_kafka_security_protocol(),
+                Constants.SSL_CA_LOCATION: self.config.get_kafka_ssl_ca_location(),
+                Constants.SSL_CERTIFICATE_LOCATION: self.config.get_kafka_ssl_cert_location(),
+                Constants.SSL_KEY_LOCATION: self.config.get_kafka_ssl_key_location(),
+                Constants.SSL_KEY_PASSWORD: self.config.get_kafka_ssl_key_password()}
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf[Constants.SASL_USERNAME] = sasl_username
@@ -243,26 +211,19 @@ class Globals:
         """
         if self.config is None or self.config.get_runtime_config() is None:
             return None
-        bootstrap_server = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SERVER, None)
-        schema_registry = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SCHEMA_REGISTRY, None)
-        security_protocol = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL, None)
-        ssl_ca_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_S_SL_CA_LOCATION, None)
-        ssl_certificate_location = self.config.get_runtime_config().get(
-            Constants.PROPERTY_CONF_KAFKA_SSL_CERTIFICATE_LOCATION, None)
-        ssl_key_location = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_LOCATION, None)
-        ssl_key_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_PASSWORD, None)
 
-        sasl_username = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_USERNAME, None)
-        sasl_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_PASSWORD, None)
-        sasl_mechanism = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_MECHANISM, None)
+        sasl_username = self.config.get_kafka_prod_user_name()
+        sasl_password = self.config.get_kafka_prod_user_pwd()
+        sasl_mechanism = self.config.get_kafka_sasl_mechanism()
 
-        conf = {Constants.BOOTSTRAP_SERVERS: bootstrap_server,
-                Constants.SECURITY_PROTOCOL: security_protocol,
-                Constants.SSL_CA_LOCATION: ssl_ca_location,
-                Constants.SSL_CERTIFICATE_LOCATION: ssl_certificate_location,
-                Constants.SSL_KEY_LOCATION: ssl_key_location,
-                Constants.SSL_KEY_PASSWORD: ssl_key_password,
-                Constants.SCHEMA_REGISTRY_URL: schema_registry}
+        conf = {Constants.BOOTSTRAP_SERVERS: self.config.get_kafka_server(),
+                Constants.SECURITY_PROTOCOL: self.config.get_kafka_security_protocol(),
+                Constants.SSL_CA_LOCATION: self.config.get_kafka_ssl_ca_location(),
+                Constants.SSL_CERTIFICATE_LOCATION: self.config.get_kafka_ssl_cert_location(),
+                Constants.SSL_KEY_LOCATION: self.config.get_kafka_ssl_key_location(),
+                Constants.SSL_KEY_PASSWORD: self.config.get_kafka_ssl_key_password(),
+                Constants.SCHEMA_REGISTRY_URL: self.config.get_kafka_schema_registry(),
+                Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS: self.config.get_kafka_request_timeout_ms()}
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf[Constants.SASL_USERNAME] = sasl_username
@@ -280,12 +241,12 @@ class Globals:
             return None
         conf = self.get_kafka_config_producer()
 
-        group_id = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_GROUP_ID, None)
+        group_id = self.config.get_kafka_cons_group_id()
 
         conf['auto.offset.reset'] = 'earliest'
 
-        sasl_username = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_USERNAME, None)
-        sasl_password = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD, None)
+        sasl_username = self.config.get_kafka_cons_user_name()
+        sasl_password = self.config.get_kafka_cons_user_pwd()
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf[Constants.SASL_USERNAME] = sasl_username
@@ -293,36 +254,32 @@ class Globals:
         conf[Constants.GROUP_ID] = group_id
         return conf
 
-    def get_kafka_schemas(self):
-        """
-        Get Avro schema
-        @return key and value schema
-        """
-        key_schema_file = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
-        value_schema_file = self.config.get_runtime_config().get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA, None)
-
-        from confluent_kafka import avro
-        file = open(key_schema_file, "r")
-        kbytes = file.read()
-        file.close()
-        key_schema = avro.loads(kbytes)
-        file = open(value_schema_file, "r")
-        vbytes = file.read()
-        file.close()
-        val_schema = avro.loads(vbytes)
-
-        return key_schema, val_schema
-
     def get_kafka_producer(self):
         """
         Create and return a kafka producer
         @return producer
         """
         conf = self.get_kafka_config_producer()
-        key_schema, val_schema = self.get_kafka_schemas()
+        key_schema_file = self.config.get_kafka_key_schema_location()
+        value_schema_file = self.config.get_kafka_value_schema_location()
 
         from fabric_mb.message_bus.producer import AvroProducerApi
-        producer = AvroProducerApi(conf=conf, key_schema=key_schema, record_schema=val_schema, logger=self.get_logger())
+        producer = AvroProducerApi(producer_conf=conf, key_schema_location=key_schema_file,
+                                   value_schema_location=value_schema_file, logger=self.get_logger())
+        return producer
+
+    def get_kafka_producer_with_poller(self, *, actor):
+        """
+        Create and return a kafka producer
+        @return producer
+        """
+        conf = self.get_kafka_config_producer()
+        key_schema_file = self.config.get_kafka_key_schema_location()
+        value_schema_file = self.config.get_kafka_value_schema_location()
+
+        from fabric_cf.actor.core.container.rpc_producer import RPCProducer
+        producer = RPCProducer(producer_conf=conf, key_schema_location=key_schema_file,
+                               value_schema_location=value_schema_file, logger=self.get_logger(), actor=actor)
         return producer
 
     def get_simple_kafka_producer(self):

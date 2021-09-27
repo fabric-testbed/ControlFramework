@@ -67,19 +67,12 @@ class KafkaProcessor:
     def set_logger(self, logger):
         self.logger = logger
 
-    def __load_schema(self, file_path: str):
-        from confluent_kafka import avro
-        file = open(file_path, "r")
-        file_bytes = file.read()
-        file.close()
-        return avro.loads(file_bytes)
-
     def setup_kafka(self):
         """
         Set up Kafka Producer and Consumer
         """
         producer_conf = {
-                Constants.BOOTSTRAP_SERVERS: "152.54.14.213:29092",
+                Constants.BOOTSTRAP_SERVERS: "152.54.15.56:29092",
                 #Constants.BOOTSTRAP_SERVERS: "localhost:19092",
                 Constants.SECURITY_PROTOCOL: "SSL",
                 Constants.SSL_CA_LOCATION: "../../secrets/snakeoil-ca-1.crt",
@@ -87,23 +80,24 @@ class KafkaProcessor:
                 Constants.SSL_KEY_LOCATION: "../../secrets/kafkacat1.client.key",
                 Constants.SSL_KEY_PASSWORD: "fabric",
                 #Constants.SCHEMA_REGISTRY_URL: "http://localhost:8081"
-                Constants.SCHEMA_REGISTRY_URL: "http://152.54.14.213:8081"
+                Constants.SCHEMA_REGISTRY_URL: "http://152.54.15.56:8081"
         }
 
-        self.key_schema = self.__load_schema(file_path="../actor/test/schema/key.avsc")
-        self.val_schema = self.__load_schema(file_path="../actor/test/schema/message.avsc")
+        self.key_schema = "../actor/test/schema/key.avsc"
+        self.val_schema = "../actor/test/schema/message.avsc"
 
         from fabric_mb.message_bus.producer import AvroProducerApi
-        self.producer = AvroProducerApi(conf=producer_conf, key_schema=self.key_schema,
-                                        record_schema=self.val_schema, logger=self.logger)
+        self.producer = AvroProducerApi(producer_conf=producer_conf, key_schema_location=self.key_schema,
+                                        value_schema_location=self.val_schema, logger=self.logger)
 
         consumer_conf = producer_conf
         consumer_conf['auto.offset.reset'] = 'earliest'
         consumer_conf[Constants.GROUP_ID] = 'ait'
         topics = [self.kafka_topic]
 
-        self.message_processor = KafkaMgmtMessageProcessor(conf=consumer_conf, key_schema=self.key_schema,
-                                                           record_schema=self.val_schema, topics=topics,
+        self.message_processor = KafkaMgmtMessageProcessor(consumer_conf=consumer_conf,
+                                                           key_schema_location=self.key_schema,
+                                                           value_schema_location=self.val_schema, topics=topics,
                                                            logger=self.logger)
 
     def initialize(self):

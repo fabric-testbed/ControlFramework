@@ -30,8 +30,8 @@
 runtime:
   #kafka-server: broker1:9092
   #kafka-schema-registry-url: http://schemaregistry:8081
-  kafka-server: 152.54.14.213:29092
-  kafka-schema-registry-url: http://152.54.14.213:8081
+  kafka-server: 152.54.15.56:29092
+  kafka-schema-registry-url: http://152.54.15.56:8081
   kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
   kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
   kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
@@ -68,7 +68,7 @@ logging:
   logger: site1-am
 
 oauth:
-  jwks-url: https://dev-2.fabric-testbed.net/certs
+  jwks-url: https://alpha-2.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
   verify-exp: False
@@ -77,7 +77,7 @@ database:
   db-user: fabric
   db-password: fabric
   db-name: am
-  db-host: 152.54.14.213:5432
+  db-host: 152.54.15.56:5432
 
 container:
   container.guid: site1-am-conainer

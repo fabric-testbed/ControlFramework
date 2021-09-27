@@ -36,7 +36,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 
 
 class ABCAuthority(ABCServerActor):

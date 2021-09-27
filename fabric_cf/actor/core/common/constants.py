@@ -102,6 +102,7 @@ class Constants:
     PROPERTY_CONF_KAFKA_SASL_CONSUMER_USERNAME = "kafka-sasl-consumer-username"
     PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD = "kafka-sasl-consumer-password"
     PROPERTY_CONF_KAFKA_SASL_MECHANISM = "kafka-sasl-mechanism"
+    PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS = "request.timeout.ms"
 
     KAFKA_TOPIC = "kafka-topic"
     NAME = "name"
@@ -129,6 +130,7 @@ class Constants:
     PROPERTY_CONF_PROMETHEUS_REST_PORT = "prometheus.port"
     PROPERTY_CONF_CONTROLLER_REST_PORT = "orchestrator.rest.port"
     PROPERTY_CONF_CONTROLLER_CREATE_WAIT_TIME = "orchestrator.create.wait.time"
+    PROPERTY_CONF_RPC_REQUEST_TIMEOUT_SECONDS = "rpc.request.timeout.seconds"
 
     PROPERTY_SUBSTRATE_FILE = "substrate.file"
     PROPERTY_AGGREGATE_RESOURCE_MODEL = "AggregateResourceModel"
@@ -139,6 +141,7 @@ class Constants:
 
     CONFIG_LOGGING_SECTION = 'logging'
     PROPERTY_CONF_LOG_FILE = 'log-file'
+    PROPERTY_CONF_HANDLER_LOG_FILE = 'handler-log-file'
     PROPERTY_CONF_LOG_LEVEL = 'log-level'
     PROPERTY_CONF_LOG_RETAIN = 'log-retain'
     PROPERTY_CONF_LOG_SIZE = 'log-size'

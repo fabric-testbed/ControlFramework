@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from typing import List
+from typing import List, Dict
 
 from fabric_cf.actor.core.common.constants import Constants
 
@@ -388,9 +388,12 @@ class Configuration:
         self.global_config = GlobalConfig(config=config)
         self.actor = ActorConfig(config=config['actor'])
         self.peers = []
+        self.topic_peer_map = {}
         if 'peers' in config:
             for e in config['peers']:
-                self.peers.append(Peer(config=e['peer']))
+                p = Peer(config=e['peer'])
+                self.peers.append(p)
+                self.topic_peer_map[p.get_kafka_topic()] = p
 
     def get_global_config(self) -> GlobalConfig:
         """
@@ -432,6 +435,9 @@ class Configuration:
         """
         return self.peers
 
+    def get_topic_peer_map(self) -> Dict[str, Peer]:
+        return self.topic_peer_map
+
     def get_neo4j_config(self) -> dict:
         """
         Return Neo4j config
@@ -440,3 +446,56 @@ class Configuration:
             return self.global_config.get_neo4j_config()
 
         return None
+
+    def get_kafka_key_schema_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
+
+    def get_kafka_value_schema_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_VALUE_SCHEMA, None)
+
+    def get_kafka_server(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SERVER, None)
+
+    def get_kafka_schema_registry(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SCHEMA_REGISTRY, None)
+
+    def get_kafka_security_protocol(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SECURITY_PROTOCOL, None)
+
+    def get_kafka_ssl_ca_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_S_SL_CA_LOCATION, None)
+
+    def get_kafka_ssl_cert_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SSL_CERTIFICATE_LOCATION, None)
+
+    def get_kafka_ssl_key_location(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_LOCATION, None)
+
+    def get_kafka_ssl_key_password(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SSL_KEY_PASSWORD, None)
+
+    def get_kafka_prod_user_name(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_USERNAME, None)
+
+    def get_kafka_prod_user_pwd(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_PRODUCER_PASSWORD, None)
+
+    def get_kafka_sasl_mechanism(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_MECHANISM, None)
+
+    def get_kafka_cons_group_id(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_GROUP_ID, None)
+
+    def get_kafka_cons_user_name(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_USERNAME, None)
+
+    def get_kafka_cons_user_pwd(self) -> str or None:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD, None)
+
+    def get_kafka_request_timeout_ms(self) -> int:
+        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS, 120000)
+        return int(value)
+
+    def get_rpc_request_timeout_seconds(self) -> int:
+        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_RPC_REQUEST_TIMEOUT_SECONDS, 900)
+        return int(value)

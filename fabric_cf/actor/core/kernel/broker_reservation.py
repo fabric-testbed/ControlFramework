@@ -203,20 +203,6 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
             raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE,
                                   msg=f"state={self.state}")
 
-    def handle_failed_rpc(self, *, failed: FailedRPC):
-        # make sure that the failed RPC came from the callback identity
-        remote_auth = failed.get_remote_auth()
-        if failed.get_request_type() == RPCRequestType.UpdateTicket:
-            if self.callback is None or self.callback.get_identity() != remote_auth:
-                raise BrokerException(msg=f"Unauthorized Failed reservation RPC: "
-                                          f"expected={self.callback.get_identity()}, but was: {remote_auth}")
-        else:
-            raise BrokerException(error_code=ExceptionErrorCode.NOT_SUPPORTED,
-                                  msg=f"Unexpected FailedRPC for BrokerReservation. "
-                                      f"RequestType={failed.get_request_type()}")
-
-        super().handle_failed_rpc(failed=failed)
-
     def prepare(self, *, callback: ABCCallbackProxy, logger):
         self.set_logger(logger=logger)
         self.callback = callback

@@ -27,6 +27,8 @@ import threading
 import concurrent.futures
 import traceback
 
+from fabric_mb.message_bus.producer import AvroProducerApi
+
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_actor_proxy import ABCActorProxy
 from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
@@ -45,10 +47,8 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.claim_timeout import ClaimTimeout, ReclaimTimeout
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.failed_rpc_event import FailedRPCEvent
-from fabric_cf.actor.core.kernel.incoming_failed_rpc import IncomingFailedRPC
 from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
 from fabric_cf.actor.core.kernel.incoming_rpc_event import IncomingRPCEvent
-from fabric_cf.actor.core.kernel.incoming_reservation_rpc import IncomingReservationRPC
 from fabric_cf.actor.core.kernel.query_timeout import QueryTimeout
 from fabric_cf.actor.core.kernel.rpc_executor import RPCExecutor
 from fabric_cf.actor.core.kernel.rpc_request import RPCRequest
@@ -76,10 +76,12 @@ class RPCManager:
         self.num_queued = 0
         self.pending_lock = threading.Lock()
         self.stats_lock = threading.Condition()
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.producer = GlobalsSingleton.get().get_kafka_producer()
+        self.producer = None
         self.thread_pool = concurrent.futures.ThreadPoolExecutor(max_workers=self.MAX_THREADS,
                                                                  thread_name_prefix=self.__class__.__name__)
+
+    def set_producer(self, *, producer: AvroProducerApi):
+        self.producer = producer
 
     @staticmethod
     def validate_delegation(*, delegation: ABCDelegation, check_requested: bool = False):
@@ -126,26 +128,6 @@ class RPCManager:
 
     def stop(self):
         self.do_stop()
-
-    def retry(self, *, request: RPCRequest):
-        if request is None:
-            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("request"))
-        self.do_retry(rpc=request)
-
-    def failed_rpc(self, *, actor: ABCActorMixin, rpc: IncomingRPC, e: Exception):
-        if actor is None:
-            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("actor"))
-
-        if rpc is None:
-            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("rpc"))
-
-        if rpc.get_callback() is None:
-            raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("callback"))
-
-        if isinstance(rpc, IncomingFailedRPC):
-            raise RPCException(message="Cannot reply to a FailedRPC with a FailedRPC")
-
-        self.do_failed_rpc(actor=actor, proxy=rpc.get_callback(), rpc=rpc, e=e, caller=actor.get_identity())
 
     def claim_delegation(self, *, delegation: ABCDelegation, id_token: str = None):
         self.validate_delegation(delegation=delegation)
@@ -289,10 +271,14 @@ class RPCManager:
 
     def do_start(self):
         try:
+            if self.producer is None:
+                raise RPCException(message="RPCManager started without the producer")
             self.pending_lock.acquire()
             self.pending.clear()
         finally:
             self.pending_lock.release()
+
+        self.producer.start()
         self.started = True
 
     def do_stop(self):
@@ -303,26 +289,8 @@ class RPCManager:
         finally:
             self.pending_lock.release()
 
+        self.producer.stop()
         self.thread_pool.shutdown(wait=True)
-
-    def do_failed_rpc(self, *, actor: ABCActorMixin, proxy: ABCCallbackProxy, rpc: IncomingRPC, e: Exception, caller: AuthToken):
-        proxy.get_logger().info("Outbound failedRPC request from <{}>: requestID={}".format(caller.get_name(),
-                                                                                            rpc.get_message_id()))
-        message = "RPC failed at remote actor."
-        if e is not None:
-            message += " message:{}".format(e)
-
-        rid = None
-        if isinstance(rpc, IncomingReservationRPC):
-            rid = rpc.get().get_reservation_id()
-
-        state = proxy.prepare_failed_request(request_id=str(rpc.get_message_id()),
-                                             failed_request_type=rpc.get_request_type(),
-                                             failed_reservation_id=rid, error=message, caller=caller)
-        state.set_caller(caller=caller)
-        state.set_type(rtype=RPCRequestType.FailedRPC)
-        outgoing = RPCRequest(request=state, actor=actor, proxy=proxy, reservation=None, sequence=0)
-        self.enqueue(rpc=outgoing)
 
     def do_claim_delegation(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, delegation: ABCDelegation,
                             callback: ABCClientCallbackProxy, caller: AuthToken, id_token: str = None):
@@ -589,14 +557,6 @@ class RPCManager:
         else:
             actor.get_logger().debug("Added to actor queue to be processed")
             actor.queue_event(incoming=IncomingRPCEvent(actor=actor, rpc=rpc))
-
-    def do_retry(self, *, rpc: RPCRequest):
-        rpc.retry_count += 1
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        logger = GlobalsSingleton.get().get_logger()
-        logger.debug("Retrying RPC({}) count={} actor={}".format(rpc.get_request_type(), rpc.retry_count,
-                                                                 rpc.get_actor().get_name()))
-        self.enqueue(rpc=rpc)
 
     def add_pending_request(self, *, guid: ID, request: RPCRequest):
         try:

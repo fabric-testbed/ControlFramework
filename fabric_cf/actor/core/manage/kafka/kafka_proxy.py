@@ -28,7 +28,7 @@ from __future__ import annotations
 import traceback
 from typing import List, Tuple, Any
 
-from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fabric_mb.message_bus.messages.request_by_id_record import RequestByIdRecord
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
@@ -111,14 +111,14 @@ class KafkaProxy(ABCComponent):
 
         return request
 
-    def send_request(self, request: IMessageAvro) -> Tuple[ResultAvro, Any]:
+    def send_request(self, request: AbcMessageAvro) -> Tuple[ResultAvro, Any]:
         self.clear_last()
 
         status = ResultAvro()
         rret_val = None
 
         try:
-            ret_val = self.producer.produce_sync(topic=self.kafka_topic, record=request)
+            ret_val = self.producer.produce(topic=self.kafka_topic, record=request)
 
             self.logger.debug(Constants.MANAGEMENT_INTER_ACTOR_OUTBOUND_MESSAGE.format(request.get_message_name(),
                                                                                        self.kafka_topic))

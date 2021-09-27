@@ -30,7 +30,7 @@ from fabric_mb.message_bus.messages.claim_delegation_avro import ClaimDelegation
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reclaim_delegation_avro import ReclaimDelegationAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
-from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
@@ -140,16 +140,16 @@ class BrokerService(ActorService):
             raise e
         self.do_dispatch(rpc=rpc)
 
-    def process(self, *, message: IMessageAvro):
-        if message.get_message_name() == IMessageAvro.ticket:
+    def process(self, *, message: AbcMessageAvro):
+        if message.get_message_name() == AbcMessageAvro.ticket:
             self.ticket(request=message)
-        elif message.get_message_name() == IMessageAvro.claim_delegation:
+        elif message.get_message_name() == AbcMessageAvro.claim_delegation:
             self.claim_delegation(request=message)
-        elif message.get_message_name() == IMessageAvro.reclaim_delegation:
+        elif message.get_message_name() == AbcMessageAvro.reclaim_delegation:
             self.reclaim_delegation(request=message)
-        elif message.get_message_name() == IMessageAvro.extend_ticket:
+        elif message.get_message_name() == AbcMessageAvro.extend_ticket:
             self.extend_ticket(request=message)
-        elif message.get_message_name() == IMessageAvro.relinquish:
+        elif message.get_message_name() == AbcMessageAvro.relinquish:
             self.relinquish(request=message)
         else:
             super().process(message=message)

@@ -115,7 +115,7 @@ class KafkaProxy(Proxy, ABCCallbackProxy):
         else:
             raise ProxyException("Unsupported RPC: type={}".format(request.get_type()))
 
-        if producer is not None and producer.produce_sync(topic=self.kafka_topic, record=avro_message):
+        if producer is not None and producer.produce(topic=self.kafka_topic, record=avro_message):
             self.logger.debug("Message {} written to {}".format(avro_message.name, self.kafka_topic))
         else:
             self.logger.error("Failed to send message {} to {} via producer {}".format(avro_message.name,

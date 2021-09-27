@@ -43,3 +43,4 @@ class RPCRequestType(Enum):
     UpdateDelegation = 16
     ClaimDelegation = 17
     ReclaimDelegation = 18
+    DeliveryAck = 19

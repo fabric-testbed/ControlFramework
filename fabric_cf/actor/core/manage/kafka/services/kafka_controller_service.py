@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 from fabric_mb.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
-from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
 
@@ -38,19 +38,20 @@ from fabric_cf.actor.core.util.id import ID
 
 
 class KafkaControllerService(KafkaClientActorService):
-    def process(self, *, message: IMessageAvro):
+    def process(self, *, message: AbcMessageAvro):
         callback_topic = message.get_callback_topic()
         result = None
 
-        if message.get_message_name() == IMessageAvro.get_reservation_units_request:
+        if message.get_message_name() == AbcMessageAvro.get_reservation_units_request:
             result = self.get_reservation_units(request=message)
         else:
             super().process(message=message)
+            return
 
         if callback_topic is None:
             self.logger.debug("No callback specified, ignoring the message")
 
-        if self.producer.produce_sync(topic=callback_topic, record=result):
+        if self.producer.produce(topic=callback_topic, record=result):
             self.logger.debug("Successfully send back response: {}".format(result.to_dict()))
         else:
             self.logger.debug("Failed to send back response: {}".format(result.to_dict()))

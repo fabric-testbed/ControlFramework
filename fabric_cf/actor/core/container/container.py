@@ -231,8 +231,6 @@ class Container(ABCActorContainer):
         self.logger.debug("Performing common boot tasks")
         self.define_protocols()
         self.management_object_manager.initialize(db=self.db)
-        from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
-        RPCManagerSingleton.get().start()
 
     def define_protocols(self):
         """
@@ -338,7 +336,6 @@ class Container(ABCActorContainer):
         management_object = ContainerManagementObject()
         self.management_object_manager.register_manager_object(manager=management_object)
 
-
     def recover_basic(self):
         """
         Recover Basic entities such as Container GUID and time
@@ -427,6 +424,16 @@ class Container(ABCActorContainer):
         """
         self.ticker.remove_tickable(tickable=tickable)
 
+    def start_actor(self):
+        self.logger.debug("Starting the Actor")
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        producer = GlobalsSingleton.get().get_kafka_producer_with_poller(actor=self.actor)
+        from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
+        RPCManagerSingleton.get().set_producer(producer=producer)
+        RPCManagerSingleton.get().start()
+        self.actor.start()
+        self.logger.debug(f"Actor {self.actor.get_name()} started")
+
     def register_actor(self, *, actor: ABCActorMixin):
         """
         Registers a new actor: adds the actor to the database, registers actor proxies and callbacks. Must not
@@ -439,7 +446,7 @@ class Container(ABCActorContainer):
         self.register_management_object(actor=actor)
         self.register_common(actor=actor)
         self.actor = actor
-        actor.start()
+        self.start_actor()
 
     def unregister_actor(self, *, actor: ABCActorMixin):
         """
@@ -532,7 +539,7 @@ class Container(ABCActorContainer):
         self.register_common(actor=actor)
         self.management_object_manager.load_actor_manager_objects(actor_name=actor.get_name())
         self.actor = actor
-        actor.start()
+        self.start_actor()
 
     def stop(self):
         if self.ticker is not None:

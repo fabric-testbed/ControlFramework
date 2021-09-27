@@ -29,7 +29,7 @@ from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
-from fabric_mb.message_bus.messages.message import IMessageAvro
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
 
 from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
@@ -201,16 +201,16 @@ class ActorService:
             raise e
         self.do_dispatch(rpc=rpc)
 
-    def process(self, *, message: IMessageAvro):
-        if message.get_message_name() == IMessageAvro.query:
+    def process(self, *, message: AbcMessageAvro):
+        if message.get_message_name() == AbcMessageAvro.query:
             self.query(request=message)
-        elif message.get_message_name() == IMessageAvro.query_result:
+        elif message.get_message_name() == AbcMessageAvro.query_result:
             self.query_result(request=message)
-        elif message.get_message_name() == IMessageAvro.update_lease:
+        elif message.get_message_name() == AbcMessageAvro.update_lease:
             self.update_lease(request=message)
-        elif message.get_message_name() == IMessageAvro.update_ticket:
+        elif message.get_message_name() == AbcMessageAvro.update_ticket:
             self.update_ticket(request=message)
-        elif message.get_message_name() == IMessageAvro.update_delegation:
+        elif message.get_message_name() == AbcMessageAvro.update_delegation:
             self.update_delegation(request=message)
         else:
             self.logger.error("Unsupported message {}".format(message))

@@ -44,6 +44,8 @@ runtime:
   kafka-sasl-consumer-username:
   kafka-sasl-consumer-password:
   prometheus.port: 11000
+  kafka.request.timeout.ms: 120000
+  rpc.request.timeout.seconds: 900
 
 logging:
   ## The directory in which actor should create log files.
@@ -52,6 +54,8 @@ logging:
 
   ## The filename to be used for actor's log file.
   log-file: actor.log
+
+  handler-log-file: handler.log
 
   ## The default log level for actor.
   log-level: DEBUG
@@ -66,7 +70,7 @@ logging:
   logger: site1-am
 
 oauth:
-  jwks-url: https://dev-2.fabric-testbed.net/certs
+  jwks-url: https://cm.fabric-testbed.net/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
   verify-exp: True
