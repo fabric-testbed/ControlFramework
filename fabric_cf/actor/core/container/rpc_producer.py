@@ -33,7 +33,8 @@ import threading
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fabric_mb.message_bus.producer import AvroProducerApi
 
-from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
+from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import KafkaServiceException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.failed_rpc_event import FailedRPCEvent
@@ -116,21 +117,47 @@ class RPCProducer(AvroProducerApi):
         self.logger.debug(f"KAFKA: Shutting down {self.__class__.__name__}..")
         self.producer.flush()
 
+    @staticmethod
+    def __is_update_lease_to_broker(*, topic: str, obj: AbcMessageAvro):
+        """
+        Check if the UpdateLease was sent to broker
+        :param topic
+        :param obj
+        :return True if message was sent to Broker; False otherwise
+        """
+        ret_val = False
+        if obj.name != AbcMessageAvro.update_lease:
+            return ret_val
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        topic_to_peer = GlobalsSingleton.get().get_config().get_topic_peer_map()
+        if topic_to_peer is None or topic_to_peer[topic]:
+            return ret_val
+        peer = topic_to_peer[topic]
+        peer_type = ActorType.get_actor_type_from_string(actor_type=peer.get_type())
+        return peer_type == ActorType.Broker
+
     def delivery_report(self, err, msg, obj: AbcMessageAvro):
         """
             Handle delivery reports served from producer.poll.
             This callback takes an extra argument, obj.
             This allows the original contents to be included for debugging purposes.
+            :param err
+            :param msg
+            :param obj
         """
         if err is not None:
             self.logger.error(f"KAFKA: Message Delivery Failure! Error [{err}] MsgId: [{obj.id}] "
-                              f"Msg Name: [{obj.name}]")
+                              f"Msg Name: [{obj.name}] Topic: [{msg.topic()}]")
             obj.set_kafka_error(kafka_error=err)
 
             exception = RPCException(message=err, error=RPCError.NetworkError)
 
             if obj.name is not None and obj.name in self.AVRO_RPC_TYPE_MAP and obj.reservation is not None:
-                # Fail the reservation
+                # Temporary hack
+                if RPCProducer.__is_update_lease_to_broker(topic=msg.topic, obj=obj):
+                    self.logger.debug("Ignoring failure of UpdateLease to broker")
+                    return
+                # Send FailedRPC to the Actor
                 failed = FailedRPC(e=exception, request_type=self.AVRO_RPC_TYPE_MAP[obj.name],
                                    rid=ID(uid=obj.reservation.reservation_id))
                 self.actor.queue_event(incoming=FailedRPCEvent(actor=self.actor, failed=failed))

@@ -34,6 +34,7 @@ from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation_server import ReservationServer
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
+from fabric_cf.actor.core.util.rpc_exception import RPCError
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -565,6 +566,16 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
 
     def get_ticket(self) -> ResourceSet:
         return self.ticket
+
+    def handle_failed_rpc(self, *, failed: FailedRPC):
+        if failed.get_error_type() == RPCError.NetworkError:
+            if self.is_failed() or self.is_closed():
+                return
+
+        # Resources were allocated successfully but Orchestrator could not be informed
+        if failed.get_request_type() == RPCRequestType.UpdateLease and self.resources is not None:
+            self.logger.error(f"Closing reservation due to non-recoverable RPC error {failed.get_error_type()}")
+            self.actor.close(reservation=self)
 
 
 class AuthorityReservationFactory:

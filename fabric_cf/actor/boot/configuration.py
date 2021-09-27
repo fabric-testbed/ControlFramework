@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from typing import List
+from typing import List, Dict
 
 from fabric_cf.actor.core.common.constants import Constants
 
@@ -388,9 +388,12 @@ class Configuration:
         self.global_config = GlobalConfig(config=config)
         self.actor = ActorConfig(config=config['actor'])
         self.peers = []
+        self.topic_peer_map = {}
         if 'peers' in config:
             for e in config['peers']:
-                self.peers.append(Peer(config=e['peer']))
+                p = Peer(config=e['peer'])
+                self.peers.append(p)
+                self.topic_peer_map[p.get_kafka_topic()] = p
 
     def get_global_config(self) -> GlobalConfig:
         """
@@ -431,6 +434,9 @@ class Configuration:
         Return Peer Config
         """
         return self.peers
+
+    def get_topic_peer_map(self) -> Dict[str, Peer]:
+        return self.topic_peer_map
 
     def get_neo4j_config(self) -> dict:
         """
