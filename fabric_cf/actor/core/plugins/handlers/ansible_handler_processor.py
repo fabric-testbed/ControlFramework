@@ -90,6 +90,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         log_retain = int(self.log_config.get(Constants.PROPERTY_CONF_LOG_RETAIN, 50))
         log_size = int(self.log_config.get(Constants.PROPERTY_CONF_LOG_SIZE, 5000000))
         logger = self.log_config.get(Constants.PROPERTY_CONF_LOGGER, "handler")
+        logger = f"{logger}-handler"
         self.executor = concurrent.futures.ProcessPoolExecutor(max_workers=self.MAX_WORKERS,
                                                                initializer=AnsibleHandlerProcessor.process_pool_initializer,
                                                                initargs=(log_dir, log_file, log_level, log_retain,

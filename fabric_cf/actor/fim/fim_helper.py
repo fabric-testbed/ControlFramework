@@ -27,12 +27,14 @@ from typing import Tuple
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
+from fim.graph.networkx_property_graph import NetworkXGraphImporter
 from fim.graph.resources.abc_arm import ABCARMPropertyGraph
 from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph, Neo4jCBMFactory
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.graph.slices.neo4j_asm import Neo4jASMFactory, Neo4jASM
+from fim.graph.slices.networkx_asm import NetworkxASM, NetworkXASMFactory
 from fim.slivers.attached_components import ComponentSliver
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities
@@ -112,6 +114,17 @@ class FimHelper:
                                                   import_host_dir=neo4j_config["import_host_dir"],
                                                   import_dir=neo4j_config["import_dir"], logger=logger)
         return neo4j_graph_importer
+
+    @staticmethod
+    def get_networkx_importer() -> ABCGraphImporter:
+        """
+        get fim graph importer
+        :return: Neo4jGraphImporter
+        """
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        logger = GlobalsSingleton.get().get_logger()
+
+        return NetworkXGraphImporter(logger=logger)
 
     @staticmethod
     def get_arm_graph_from_file(*, filename: str) -> ABCARMPropertyGraph:
@@ -208,6 +221,18 @@ class FimHelper:
         return graph
 
     @staticmethod
+    def get_networkx_graph_from_string(*, graph_str: str) -> ABCPropertyGraph:
+        """
+        Load arm graph from fim
+        :param graph_str: graph_str
+        :return: NetworkXPropertyGraph
+        """
+        networkx_graph_importer = FimHelper.get_networkx_importer()
+        graph = networkx_graph_importer.import_graph_from_string(graph_string=graph_str)
+
+        return graph
+
+    @staticmethod
     def delete_graph(*, graph_id: str):
         """
         Delete a graph
@@ -275,6 +300,17 @@ class FimHelper:
         """
         neo4j_graph = FimHelper.get_graph_from_string(graph_str=slice_graph)
         asm = Neo4jASMFactory.create(graph=neo4j_graph)
+        return asm
+
+    @staticmethod
+    def get_networkx_asm_graph(*, slice_graph: str) -> NetworkxASM:
+        """
+        Load Slice in NetworkX
+        :param slice_graph: slice graph string
+        :return: NetworkX ASM graph
+        """
+        networkx_graph = FimHelper.get_graph_from_string(graph_str=slice_graph)
+        asm = NetworkXASMFactory.create(graph=networkx_graph)
         return asm
 
     @staticmethod

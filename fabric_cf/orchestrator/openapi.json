@@ -133,7 +133,7 @@
             "explode": true,
             "schema": {
               "type": "string",
-              "default": "JSON_NODELINK",
+              "default": "GRAPHML",
               "enum": [
                 "GRAPHML",
                 "JSON_NODELINK",
@@ -247,6 +247,23 @@
             "explode": false,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "name": "graphFormat",
+            "in": "query",
+            "description": "Graph format",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "GRAPHML",
+              "enum": [
+                "GRAPHML",
+                "JSON_NODELINK",
+                "CYTOSCAPE"
+              ]
             }
           }
         ],
@@ -1020,7 +1037,7 @@
         "explode": true,
         "schema": {
           "type": "string",
-          "default": "JSON_NODELINK",
+          "default": "GRAPHML",
           "enum": [
             "GRAPHML",
             "JSON_NODELINK",

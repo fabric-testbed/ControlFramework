@@ -94,17 +94,19 @@ def slices_renew_slice_idpost(slice_id, new_lease_end_time):  # noqa: E501
     return rc.slices_renew_slice_idpost(slice_id, new_lease_end_time)
 
 
-def slices_slice_idget(slice_id):  # noqa: E501
+def slices_slice_idget(slice_id, graph_format):  # noqa: E501
     """slice properties
 
     Retrieve Slice properties # noqa: E501
 
     :param slice_id: Slice identifier as UUID
     :type slice_id: str
+    :param graph_format: Graph format
+    :type graph_format: str
 
     :rtype: Success
     """
-    return rc.slices_slice_idget(slice_id)
+    return rc.slices_slice_idget(slice_id, graph_format)
 
 
 def slices_status_slice_idget(slice_id):  # noqa: E501

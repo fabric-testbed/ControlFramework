@@ -573,7 +573,8 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
                 return
 
         # Resources were allocated successfully but Orchestrator could not be informed
-        if failed.get_request_type() == RPCRequestType.UpdateLease and self.resources is not None:
+        if failed.get_request_type() == RPCRequestType.UpdateLease and self.resources is not None and \
+                self.last_pending_state != ReservationPendingStates.ExtendingLease:
             self.logger.error(f"Closing reservation due to non-recoverable RPC error {failed.get_error_type()}")
             self.actor.close(reservation=self)
 
