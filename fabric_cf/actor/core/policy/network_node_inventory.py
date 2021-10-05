@@ -105,8 +105,8 @@ class NetworkNodeInventory(InventoryForType):
 
         return delegation_id
 
-    def __check_shared_nic_labels_and_capacities(self, *, available_component: ComponentSliver,
-                                                 requested_component: ComponentSliver) -> ComponentSliver:
+    def __update_shared_nic_labels_and_capacities(self, *, available_component: ComponentSliver,
+                                                  requested_component: ComponentSliver) -> ComponentSliver:
 
         # Check labels
         label_delegations = available_component.get_label_delegations()
@@ -124,6 +124,7 @@ class NetworkNodeInventory(InventoryForType):
             raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                                   msg=f"{message}")
 
+        # Assign the first PCI Id from the list of available PCI slots
         labels = Labels()
         labels.set_fields(bdf=delegated_label.bdf[0])
         requested_component.label_allocations = labels
@@ -157,6 +158,10 @@ class NetworkNodeInventory(InventoryForType):
             return None
 
         ifs_delegated_labels = deleg.get_details()
+
+        # Determine the index which points to the same PCI id as assigned above
+        # This index points to the other relevant information such as MAC Address,
+        # VLAN tag for that PCI device
         i = 0
         for pci_id in ifs_delegated_labels.bdf:
             if pci_id == delegated_label.bdf[0]:
@@ -175,6 +180,52 @@ class NetworkNodeInventory(InventoryForType):
         ifs.set_label_allocations(lab=lab)
 
         self.logger.info(f"Assigned Interface Sliver: {ifs}")
+        return requested_component
+
+    def __update_smart_nic_labels_and_capacities(self, *, available_component: ComponentSliver,
+                                                 requested_component: ComponentSliver) -> ComponentSliver:
+
+        # Find the VLAN from the BQM Component
+        if available_component.network_service_info is None or \
+                len(available_component.network_service_info.network_services) != 1:
+            message = "Smart NIC Card must have at one Network Service"
+            self.logger.error(message)
+            raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                  msg=f"{message}")
+
+        ns_name = next(iter(available_component.network_service_info.network_services))
+        ns = available_component.network_service_info.network_services[ns_name]
+
+        if ns.interface_info is None or len(ns.interface_info.interfaces) < 0:
+            message = "Smart NIC Card must have at least one Connection Point"
+            self.logger.error(message)
+            raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                  msg=f"{message}")
+
+        for ifs in ns.interface_info.interfaces.values():
+            ifs_label_delegations = ifs.get_label_delegations()
+            delegation_id, deleg = ifs_label_delegations.get_sole_delegation()
+            self.logger.debug(
+                f"Available Interface Sliver label_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+            # ignore pool definitions and references for now
+            if deleg.get_format() != DelegationFormat.SinglePool:
+                return None
+
+            ifs_delegated_labels = deleg.get_details()
+
+            for requested_ns in requested_component.network_service_info.network_services.values():
+                if requested_ns.interface_info is not None and requested_ns.interface_info.interfaces is not None:
+                    for requested_ifs in requested_ns.interface_info.interfaces.values():
+                        if requested_ifs.labels.local_name == ifs_delegated_labels.local_name:
+                            lab = Labels()
+                            lab.set_fields(mac=ifs_delegated_labels.mac,
+                                           local_name=ifs_delegated_labels.local_name)
+
+                            if requested_ifs.labels is not None and requested_ifs.labels.vlan is not None:
+                                lab.set_fields(vlan=requested_ifs.labels.vlan)
+
+                            requested_ifs.set_label_allocations(lab=lab)
+                        self.logger.info(f"Assigned Interface Sliver: {requested_ifs}")
         return requested_component
 
     def __check_component_labels_and_capacities(self, *, available_component: ComponentSliver, graph_id: str,
@@ -216,7 +267,6 @@ class NetworkNodeInventory(InventoryForType):
             requested_component.capacity_allocations.unit = 1
 
         # Check labels
-        # FIXME this isn't quite right - we will need to pick one of available labels, but OK to leave for now
         label_delegations = available_component.get_label_delegations()
         delegation_id, deleg = label_delegations.get_sole_delegation()
         self.logger.debug(f"Available label_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
@@ -227,10 +277,12 @@ class NetworkNodeInventory(InventoryForType):
         delegated_label = deleg.get_details()
 
         if requested_component.get_type() == ComponentType.SharedNIC:
-            requested_component = self.__check_shared_nic_labels_and_capacities(available_component=available_component,
-                                                                                requested_component=requested_component)
+            requested_component = self.__update_shared_nic_labels_and_capacities(available_component=available_component,
+                                                                                 requested_component=requested_component)
         else:
             requested_component.label_allocations = delegated_label
+            requested_component = self.__update_smart_nic_labels_and_capacities(available_component=available_component,
+                                                                                requested_component=requested_component)
 
         node_map = tuple([graph_id, available_component.node_id])
         requested_component.set_node_map(node_map=node_map)
