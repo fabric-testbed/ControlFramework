@@ -28,6 +28,8 @@ import logging
 import traceback
 from logging.handlers import RotatingFileHandler
 
+from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
+
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.core.util.id import ID
 
@@ -44,11 +46,17 @@ class MainClass:
                             handlers=[logging.StreamHandler(), file_handler])
 
         self.db = ActorDatabase(user=user, password=password, database=db, db_host=host, logger=self.logger)
+        self.neo4j_config = {"url": "neo4j://0.0.0.0:9687",
+                             "user": "neo4j",
+                             "pass": "password",
+                             "import_host_dir": "/Users/kthare10/renci/code/fabric/ControlFramework/neo4j1/imports/",
+                             "import_dir": "/imports"}
 
     def get_slices(self, email: str = None, slice_id: str = None, slice_name: str = None):
         try:
             if slice_id is not None:
-                slice_list = self.db.get_slice(slice_id=ID(uid=slice_id))
+                slice_obj = self.db.get_slice(slice_id=ID(uid=slice_id))
+                slice_list = [slice_obj]
             elif email is not None:
                 slice_list = self.db.get_slice_by_email(email=email)
             else:
@@ -64,6 +72,22 @@ class MainClass:
                         print()
             else:
                 print(f"No slices found: {slice_list}")
+        except Exception as e:
+            print(f"Exception occurred while fetching slices: {e}")
+            traceback.print_exc()
+
+    def get_slice_topology(self, graph_id: str):
+        try:
+            neo4j_graph_importer = Neo4jGraphImporter(url=self.neo4j_config["url"],
+                                                      user=self.neo4j_config["user"],
+                                                      pswd=self.neo4j_config["pass"],
+                                                      import_host_dir=self.neo4j_config["import_host_dir"],
+                                                      import_dir=self.neo4j_config["import_dir"],
+                                                      logger=self.logger)
+
+            slice_model = Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer)
+
+            print(f"Slice Model: {slice_model}")
         except Exception as e:
             print(f"Exception occurred while fetching slices: {e}")
             traceback.print_exc()
@@ -123,7 +147,9 @@ class MainClass:
     def handle_command(self, args):
         if args.command == "slices":
             if args.operation is not None and args.operation == "remove":
-                    self.remove_slice(slice_id=args.slice_id)
+                self.remove_slice(slice_id=args.slice_id)
+            elif args.operation is not None and args.operation == "topology":
+                self.get_slice_topology(graph_id=args.graph_id)
             else:
                 self.get_slices(slice_id=args.slice_id, email=args.email, slice_name=args.slice_name)
         elif args.command == "slivers":
@@ -144,6 +170,7 @@ if __name__ == '__main__':
     parser.add_argument("-d", dest='database', required=True, type=str)
     parser.add_argument("-c", dest='command', required=True, type=str)
     parser.add_argument("-s", dest='slice_id', required=False, type=str)
+    parser.add_argument("-g", dest='graph_id', required=False, type=str)
     parser.add_argument("-r", dest='sliver_id', required=False, type=str)
     parser.add_argument("-i", dest='delegation_id', required=False, type=str)
     parser.add_argument("-e", dest='email', required=False, type=str)

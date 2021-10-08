@@ -281,8 +281,9 @@ class NetworkNodeInventory(InventoryForType):
                                                                                  requested_component=requested_component)
         else:
             requested_component.label_allocations = delegated_label
-            requested_component = self.__update_smart_nic_labels_and_capacities(available_component=available_component,
-                                                                                requested_component=requested_component)
+            if requested_component.get_type() == ComponentType.SmartNIC:
+                requested_component = self.__update_smart_nic_labels_and_capacities(available_component=available_component,
+                                                                                    requested_component=requested_component)
 
         node_map = tuple([graph_id, available_component.node_id])
         requested_component.set_node_map(node_map=node_map)
