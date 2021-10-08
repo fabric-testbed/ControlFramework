@@ -65,8 +65,8 @@ class RPCManager:
     """
     Class responsible for message exchange across Kafka
     """
-    CLAIM_TIMEOUT_SECONDS = 120
-    QUERY_TIMEOUT_SECONDS = 120
+    CLAIM_TIMEOUT_SECONDS = 240
+    QUERY_TIMEOUT_SECONDS = 240
     MAX_THREADS = 5
 
     def __init__(self):

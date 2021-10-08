@@ -32,6 +32,7 @@ from fim.slivers.delegations import Delegations, DelegationFormat
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.interface_info import InterfaceSliver
 from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import NSLayer
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
@@ -105,9 +106,18 @@ class NetworkNodeInventory(InventoryForType):
 
         return delegation_id
 
-    def __check_shared_nic_labels_and_capacities(self, *, available_component: ComponentSliver,
-                                                 requested_component: ComponentSliver) -> ComponentSliver:
-
+    def __update_shared_nic_labels_and_capacities(self, *, available_component: ComponentSliver,
+                                                  requested_component: ComponentSliver) -> ComponentSliver:
+        """
+        Update the shared NIC Labels and Capacities. Assign the 1st available PCI address/bdf to the requested component
+        Traverse the available component's labels to find the index for bdf assigned
+        Using the found labels, assign BDF, MAC and VLAN address to the IFS on the Requested component
+        In case of L2 service, also copy the requested IP address so it can be used by the AMHandler to configure the
+        interface post VM creation
+        :param available_component: Available Component
+        :param requested_component: Requested Component
+        :return updated requested component with VLAN, MAC and IP information
+        """
         # Check labels
         label_delegations = available_component.get_label_delegations()
         delegation_id, deleg = label_delegations.get_sole_delegation()
@@ -124,6 +134,7 @@ class NetworkNodeInventory(InventoryForType):
             raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                                   msg=f"{message}")
 
+        # Assign the first PCI Id from the list of available PCI slots
         labels = Labels()
         labels.set_fields(bdf=delegated_label.bdf[0])
         requested_component.label_allocations = labels
@@ -157,6 +168,10 @@ class NetworkNodeInventory(InventoryForType):
             return None
 
         ifs_delegated_labels = deleg.get_details()
+
+        # Determine the index which points to the same PCI id as assigned above
+        # This index points to the other relevant information such as MAC Address,
+        # VLAN tag for that PCI device
         i = 0
         for pci_id in ifs_delegated_labels.bdf:
             if pci_id == delegated_label.bdf[0]:
@@ -164,17 +179,89 @@ class NetworkNodeInventory(InventoryForType):
             i += 1
 
         # Updated the Requested component with VLAN, BDF, MAC
-        ns_name = next(iter(requested_component.network_service_info.network_services))
-        ns = requested_component.network_service_info.network_services[ns_name]
-        ifs_name = next(iter(ns.interface_info.interfaces))
-        ifs = ns.interface_info.interfaces[ifs_name]
+        req_ns_name = next(iter(requested_component.network_service_info.network_services))
+        req_ns = requested_component.network_service_info.network_services[req_ns_name]
+        req_ifs_name = next(iter(req_ns.interface_info.interfaces))
+        req_ifs = req_ns.interface_info.interfaces[req_ifs_name]
 
         lab = Labels()
         lab.set_fields(bdf=ifs_delegated_labels.bdf[i], mac=ifs_delegated_labels.mac[i],
                        vlan=ifs_delegated_labels.vlan[i], local_name=ifs_delegated_labels.local_name[i])
-        ifs.set_label_allocations(lab=lab)
 
-        self.logger.info(f"Assigned Interface Sliver: {ifs}")
+        # For the Layer 2 copying the IP address to the label allocations
+        # This is to be used by AM Handler to configure Network Interface
+        if req_ns.layer == NSLayer.L2:
+            if req_ifs.labels is not None and req_ifs.labels.ipv4 is not None:
+                lab.ipv4 = req_ifs.labels.ipv4
+            if req_ifs.labels is not None and req_ifs.labels.ipv6 is not None:
+                lab.ipv6 = req_ifs.labels.ipv6
+
+        req_ifs.set_label_allocations(lab=lab)
+
+        self.logger.info(f"Assigned Interface Sliver: {req_ifs}")
+        return requested_component
+
+    def __update_smart_nic_labels_and_capacities(self, *, available_component: ComponentSliver,
+                                                 requested_component: ComponentSliver) -> ComponentSliver:
+        """
+        Update the IFS for the Smart NIC with VLAN, MAC and IP Address information
+        This is to enable AM handler to configure network interfaces at VM creation.
+        This is only done for Layer 2 services
+        :param available_component: Available Component
+        :param requested_component: Requested Component
+        :return updated requested component with VLAN, MAC and IP information
+        """
+
+        # Find the VLAN from the BQM Component
+        if available_component.network_service_info is None or \
+                len(available_component.network_service_info.network_services) != 1:
+            message = "Smart NIC Card must have at one Network Service"
+            self.logger.error(message)
+            raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                  msg=f"{message}")
+
+        ns_name = next(iter(available_component.network_service_info.network_services))
+        ns = available_component.network_service_info.network_services[ns_name]
+
+        if ns.interface_info is None or len(ns.interface_info.interfaces) < 0:
+            message = "Smart NIC Card must have at least one Connection Point"
+            self.logger.error(message)
+            raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                  msg=f"{message}")
+
+        for ifs in ns.interface_info.interfaces.values():
+            ifs_label_delegations = ifs.get_label_delegations()
+            delegation_id, deleg = ifs_label_delegations.get_sole_delegation()
+            self.logger.debug(
+                f"Available Interface Sliver label_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+            # ignore pool definitions and references for now
+            if deleg.get_format() != DelegationFormat.SinglePool:
+                return None
+
+            ifs_delegated_labels = deleg.get_details()
+
+            for requested_ns in requested_component.network_service_info.network_services.values():
+                if requested_ns.interface_info is not None and requested_ns.interface_info.interfaces is not None:
+                    for requested_ifs in requested_ns.interface_info.interfaces.values():
+                        if requested_ifs.labels.local_name == ifs_delegated_labels.local_name:
+                            lab = Labels()
+                            lab.mac = ifs_delegated_labels.mac
+                            lab.local_name = ifs_delegated_labels.local_name
+
+                            # Update the VLAN and IP address to be used for configuration at AM only for L2 services
+                            # Information for L3 services is updated later after NetworkService has been ticketed
+                            if requested_ns.layer == NSLayer.L2:
+                                if requested_ifs.labels is not None and requested_ifs.labels.vlan is not None:
+                                    lab.vlan = requested_ifs.labels.vlan
+
+                                if requested_ifs.labels.ipv4 is not None:
+                                    lab.ipv4 = requested_ifs.labels.ipv4
+
+                                if requested_ifs.labels.ipv6 is not None:
+                                    lab.ipv6 = requested_ifs.labels.ipv6
+
+                            requested_ifs.set_label_allocations(lab=lab)
+                        self.logger.info(f"Assigned Interface Sliver: {requested_ifs}")
         return requested_component
 
     def __check_component_labels_and_capacities(self, *, available_component: ComponentSliver, graph_id: str,
@@ -216,7 +303,6 @@ class NetworkNodeInventory(InventoryForType):
             requested_component.capacity_allocations.unit = 1
 
         # Check labels
-        # FIXME this isn't quite right - we will need to pick one of available labels, but OK to leave for now
         label_delegations = available_component.get_label_delegations()
         delegation_id, deleg = label_delegations.get_sole_delegation()
         self.logger.debug(f"Available label_delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
@@ -227,10 +313,13 @@ class NetworkNodeInventory(InventoryForType):
         delegated_label = deleg.get_details()
 
         if requested_component.get_type() == ComponentType.SharedNIC:
-            requested_component = self.__check_shared_nic_labels_and_capacities(available_component=available_component,
-                                                                                requested_component=requested_component)
+            requested_component = self.__update_shared_nic_labels_and_capacities(available_component=available_component,
+                                                                                 requested_component=requested_component)
         else:
             requested_component.label_allocations = delegated_label
+            if requested_component.get_type() == ComponentType.SmartNIC:
+                requested_component = self.__update_smart_nic_labels_and_capacities(available_component=available_component,
+                                                                                    requested_component=requested_component)
 
         node_map = tuple([graph_id, available_component.node_id])
         requested_component.set_node_map(node_map=node_map)
