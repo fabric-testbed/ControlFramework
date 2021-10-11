@@ -37,6 +37,7 @@ from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.capacities_labels import Labels
 from fim.slivers.interface_info import InterfaceSliver
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
@@ -563,13 +564,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 raise BrokerException(msg=error_msg)
 
             # local_name source: (a)
-            ifs.get_labels().set_fields(local_name=net_cp.get_name())
+            ifs_labels = ifs.get_labels()
+            ifs_labels = Labels.update(ifs_labels, local_name=net_cp.get_name())
 
             # NSO device name source: (a) - need to find the owner switch of the network service in CBM
             # and take its .name or labels.local_name
             # Set the NSO device-name
             owner_switch, owner_ns = self.get_owners(node_id=net_cp.node_id)
-            ifs.get_labels().set_fields(device_name=owner_switch.get_name())
+            ifs_labels = Labels.update(ifs_labels, device_name=owner_switch.get_name())
             adm_ids = owner_switch.get_structural_info().adm_graph_ids
             site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
 
@@ -586,6 +588,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             ifs.set_node_map(node_map=(self.combined_broker_model_graph_id, net_cp.node_id))
 
             delegation_id = net_adm_ids[0]
+
+            ifs.labels = ifs_labels
 
             self.logger.debug(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 

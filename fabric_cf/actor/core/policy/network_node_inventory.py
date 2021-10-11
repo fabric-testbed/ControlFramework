@@ -135,8 +135,7 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"{message}")
 
         # Assign the first PCI Id from the list of available PCI slots
-        labels = Labels()
-        labels.set_fields(bdf=delegated_label.bdf[0])
+        labels = Labels(bdf=delegated_label.bdf[0])
         requested_component.label_allocations = labels
 
         # Find the VLAN from the BQM Component
@@ -184,9 +183,8 @@ class NetworkNodeInventory(InventoryForType):
         req_ifs_name = next(iter(req_ns.interface_info.interfaces))
         req_ifs = req_ns.interface_info.interfaces[req_ifs_name]
 
-        lab = Labels()
-        lab.set_fields(bdf=ifs_delegated_labels.bdf[i], mac=ifs_delegated_labels.mac[i],
-                       vlan=ifs_delegated_labels.vlan[i], local_name=ifs_delegated_labels.local_name[i])
+        lab = Labels(bdf=ifs_delegated_labels.bdf[i], mac=ifs_delegated_labels.mac[i],
+                     vlan=ifs_delegated_labels.vlan[i], local_name=ifs_delegated_labels.local_name[i])
 
         # For the Layer 2 copying the IP address to the label allocations
         # This is to be used by AM Handler to configure Network Interface
@@ -516,7 +514,7 @@ class NetworkNodeInventory(InventoryForType):
                 existing_reservations=existing_reservations)
 
         requested_sliver.capacity_allocations = requested_capacities
-        requested_sliver.label_allocations = Labels().set_fields(instance_parent=graph_node.get_name())
+        requested_sliver.label_allocations = Labels(instance_parent=graph_node.get_name())
 
         requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))
 
