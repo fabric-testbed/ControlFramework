@@ -36,7 +36,7 @@ from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import ServiceType, ComponentType
+from fim.user import ServiceType, ComponentType, Labels
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -168,7 +168,7 @@ class OrchestratorSliceWrapper:
                                                                                         local_name=ifs.get_labels().local_name)
                             parent_labs = parent_res_ifs_sliver.get_label_allocations()
 
-                            ifs.labels.set_fields(mac=parent_labs.mac, vlan=parent_labs.vlan)
+                            ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
                 reservation.set_sliver(sliver=sliver)
 
@@ -356,7 +356,7 @@ class OrchestratorSliceWrapper:
             # Compute Capacity Hints from Requested Capacities
             if requested_capacity_hints is None and requested_capacities is not None:
                 instance_type = catalog.map_capacities_to_instance(cap=requested_capacities)
-                requested_capacity_hints = CapacityHints().set_fields(instance_type=instance_type)
+                requested_capacity_hints = CapacityHints(instance_type=instance_type)
                 sliver.set_capacity_hints(caphint=requested_capacity_hints)
 
             # Generate reservation for the sliver

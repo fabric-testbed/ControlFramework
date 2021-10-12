@@ -65,7 +65,9 @@ class NetworkServiceInventory(InventoryForType):
             if Constants.VLAN_START >= int(requested_vlan) >= Constants.VLAN_END:
                 vlans = graph_node.get_labels().vlan_range.split("-")
                 vlan_tag = int(vlans[0]) + Constants.DEFAULT_VLAN_OFFSET
-                requested_sliver.get_labels().set_fields(vlan=str(vlan_tag))
+                req_labels = requested_sliver.get_labels()
+                req_labels = Labels.update(req_labels, vlan=str(vlan_tag))
+                requested_sliver.set_labels(req_labels)
         # Otherwise, if the user does not specify VLAN, it is treated as an Untagged Scenario
         return requested_sliver
 

@@ -51,13 +51,12 @@ class AnsibleHandlerProcessorTest(unittest.TestCase):
     def create_sliver(self, name: str, pci_address: str, gpu_name: str) -> Unit:
         u = Unit(rid=ID(uid=name))
         sliver = NodeSliver()
-        cap = Capacities()
-        cap.set_fields(core=2, ram=6, disk=10)
+        cap = Capacities(core=2, ram=6, disk=10)
         sliver.set_properties(type=NodeType.VM, site="UKY", capacity_allocations=cap)
-        sliver.label_allocations = Labels().set_fields(instance_parent="uky-w2.fabric-testbed.net")
+        sliver.label_allocations = Labels(instance_parent="uky-w2.fabric-testbed.net")
         catalog = InstanceCatalog()
         instance_type = catalog.map_capacities_to_instance(cap=cap)
-        cap_hints = CapacityHints().set_fields(instance_type=instance_type)
+        cap_hints = CapacityHints(instance_type=instance_type)
         sliver.set_properties(capacity_hints=cap_hints,
                               capacity_allocations=catalog.get_instance_capacities(instance_type=instance_type))
 
@@ -66,8 +65,7 @@ class AnsibleHandlerProcessorTest(unittest.TestCase):
         sliver.set_properties(image_type='qcow2', image_ref='default_ubuntu_20')
 
         component = ComponentSliver()
-        labels = Labels()
-        labels.set_fields(bdf=pci_address)
+        labels = Labels(bdf=pci_address)
         component.set_properties(type=ComponentType.GPU, model='Tesla T4', name=gpu_name, label_allocations=labels)
         sliver.attached_components_info = AttachedComponentsInfo()
         sliver.attached_components_info.add_device(device_info=component)
