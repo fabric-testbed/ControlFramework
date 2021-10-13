@@ -462,16 +462,24 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         sliver = None
         error_msg = None
         self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
+        requested_sliver = reservation.get_requested_resources().get_sliver()
         for node_id in node_id_list:
             try:
                 self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
                 graph_node = self.get_network_node_from_graph(node_id=node_id)
 
+                if requested_sliver.labels is not None and requested_sliver.labels.instance_parent is not None:
+                    self.logger.info(f"Sliver {requested_sliver} is requested on worker: "
+                                     f"{requested_sliver.labels.instance_parent}")
+                    if graph_node.get_name() != requested_sliver.labels.instance_parent:
+                        self.logger.info(f"Skipping candidate node: {graph_node}")
+                        continue
+
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
 
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
-                                                     requested_sliver=reservation.get_requested_resources().get_sliver(),
+                                                     requested_sliver=requested_sliver,
                                                      graph_id=self.combined_broker_model_graph_id,
                                                      graph_node=graph_node, existing_reservations=existing_reservations)
 
@@ -483,6 +491,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     error_msg = e.msg
                 else:
                     raise e
+
+        if delegation_id is None and requested_sliver.labels is not None and requested_sliver.labels.instance_parent is not None:
+            error_msg = f"Insufficient Resources: {requested_sliver.labels.instance_parent} " \
+                        f"cannot serve the requested sliver"
 
         return delegation_id, sliver, error_msg
 
