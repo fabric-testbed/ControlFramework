@@ -1,0 +1,355 @@
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d11" for="edge" attr.name="Class" attr.type="string" />
+  <key id="d10" for="node" attr.name="Model" attr.type="string" />
+  <key id="d9" for="node" attr.name="Location" attr.type="string" />
+  <key id="d8" for="node" attr.name="Site" attr.type="string" />
+  <key id="d7" for="node" attr.name="StitchNode" attr.type="string" />
+  <key id="d6" for="node" attr.name="CapacityAllocations" attr.type="string" />
+  <key id="d5" for="node" attr.name="Capacities" attr.type="string" />
+  <key id="d4" for="node" attr.name="Type" attr.type="string" />
+  <key id="d3" for="node" attr.name="Name" attr.type="string" />
+  <key id="d2" for="node" attr.name="NodeID" attr.type="string" />
+  <key id="d1" for="node" attr.name="Class" attr.type="string" />
+  <key id="d0" for="node" attr.name="GraphID" attr.type="string" />
+  <graph edgedefault="undirected">
+    <node id="40">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">CompositeNode</data>
+      <data key="d2">21a2a70e-5086-452c-bd64-35098d633659</data>
+      <data key="d3">LBNL</data>
+      <data key="d4">Server</data>
+      <data key="d5">{"core": 192, "cpu": 6, "disk": 9600, "ram": 1536, "unit": 3}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+      <data key="d8">LBNL</data>
+      <data key="d9">{"postal": "1 Cyclotron Rd, Berkeley, CA 94720"}</data>
+    </node>
+    <node id="41">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">NetworkService</data>
+      <data key="d2">1ea3b3fe-cc4b-4a0b-a64f-50933cdeb6ee</data>
+      <data key="d3">LBNL_ns</data>
+      <data key="d4">MPLS</data>
+    </node>
+    <node id="42">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">5ea98236-5d27-4062-9edd-e29e24ef96c7</data>
+      <data key="d3">GPU-RTX6000</data>
+      <data key="d4">GPU</data>
+      <data key="d10">RTX6000</data>
+      <data key="d5">{"unit": 2}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="43">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">c985c4df-c1f9-4ba4-a6b7-6319e0589717</data>
+      <data key="d3">GPU-Tesla T4</data>
+      <data key="d4">GPU</data>
+      <data key="d10">Tesla T4</data>
+      <data key="d5">{"unit": 4}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="44">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">0b07799d-323d-415b-a231-ad1dbc8e57cd</data>
+      <data key="d3">SharedNIC-ConnectX-6</data>
+      <data key="d4">SharedNIC</data>
+      <data key="d10">ConnectX-6</data>
+      <data key="d5">{"unit": 381}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="45">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">1793808e-e9fb-4fef-858b-de27a46936cb</data>
+      <data key="d3">NVME-P4510</data>
+      <data key="d4">NVME</data>
+      <data key="d10">P4510</data>
+      <data key="d5">{"disk": 10000, "unit": 10}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="46">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">bb0a37db-49ac-4d85-9a1d-1307dfa43780</data>
+      <data key="d3">SmartNIC-ConnectX-6</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d10">ConnectX-6</data>
+      <data key="d5">{"unit": 2}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="47">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">87e6d828-ecf2-414b-a378-485db6e49bd4</data>
+      <data key="d3">SmartNIC-ConnectX-5</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d10">ConnectX-5</data>
+      <data key="d5">{"unit": 2}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="48">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">CompositeNode</data>
+      <data key="d2">1383cf71-9539-47ee-ac45-4acb00296604</data>
+      <data key="d3">UKY</data>
+      <data key="d4">Server</data>
+      <data key="d5">{"core": 192, "cpu": 6, "disk": 9600, "ram": 1536, "unit": 3}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+      <data key="d8">UKY</data>
+      <data key="d9">{"postal": "301 Hilltop Ave Lexington, KY 40506"}</data>
+    </node>
+    <node id="49">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">NetworkService</data>
+      <data key="d2">f466a10b-fa7f-4e57-8b05-7406b87c4686</data>
+      <data key="d3">UKY_ns</data>
+      <data key="d4">MPLS</data>
+    </node>
+    <node id="50">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">83d51c9a-169a-458c-804a-7c0290a69bda</data>
+      <data key="d3">NVME-P4510</data>
+      <data key="d4">NVME</data>
+      <data key="d10">P4510</data>
+      <data key="d5">{"disk": 10000, "unit": 10}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="51">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">0dce5bd4-d6f7-440f-b6d3-5f718040bf52</data>
+      <data key="d3">GPU-RTX6000</data>
+      <data key="d4">GPU</data>
+      <data key="d10">RTX6000</data>
+      <data key="d5">{"unit": 2}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="52">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">e5a74f8d-8dae-449f-8ce6-11cd245231e6</data>
+      <data key="d3">GPU-Tesla T4</data>
+      <data key="d4">GPU</data>
+      <data key="d10">Tesla T4</data>
+      <data key="d5">{"unit": 4}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="53">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">7b11cb8d-2ab7-46c8-ad76-a2fee11b60be</data>
+      <data key="d3">SharedNIC-ConnectX-6</data>
+      <data key="d4">SharedNIC</data>
+      <data key="d10">ConnectX-6</data>
+      <data key="d5">{"unit": 381}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="54">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">d46d2b6f-db6d-4973-bd0d-c09d995a7ba9</data>
+      <data key="d3">SmartNIC-ConnectX-6</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d10">ConnectX-6</data>
+      <data key="d5">{"unit": 2}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="55">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">4aef0578-d14c-43d5-bb4d-d01d56b04340</data>
+      <data key="d3">SmartNIC-ConnectX-5</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d10">ConnectX-5</data>
+      <data key="d5">{"unit": 2}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="56">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">CompositeNode</data>
+      <data key="d2">e3747ab5-a2fb-4e91-9a67-2d7d200900b4</data>
+      <data key="d3">RENC</data>
+      <data key="d4">Server</data>
+      <data key="d5">{"core": 192, "cpu": 6, "disk": 14400, "ram": 1536, "unit": 3}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+      <data key="d8">RENC</data>
+      <data key="d9">{"postal": "100 Europa Dr., Chapel Hill, NC 27517"}</data>
+    </node>
+    <node id="57">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">NetworkService</data>
+      <data key="d2">38851643-07d6-44d4-ae34-a746b053ea95</data>
+      <data key="d3">RENC_ns</data>
+      <data key="d4">MPLS</data>
+    </node>
+    <node id="58">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">e55ea085-54cd-45a1-805e-6ef32d85a07b</data>
+      <data key="d3">GPU-Tesla T4</data>
+      <data key="d4">GPU</data>
+      <data key="d10">Tesla T4</data>
+      <data key="d5">{"unit": 4}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="59">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">83f204cb-e754-458b-95b8-72871bb5c1a4</data>
+      <data key="d3">GPU-RTX6000</data>
+      <data key="d4">GPU</data>
+      <data key="d10">RTX6000</data>
+      <data key="d5">{"unit": 2}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="60">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">694e4c74-79ae-41d7-8aab-afa6554271ea</data>
+      <data key="d3">NVME-P4510</data>
+      <data key="d4">NVME</data>
+      <data key="d10">P4510</data>
+      <data key="d5">{"disk": 10000, "unit": 10}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="61">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">cb00fd62-fa57-4b10-8e4a-2a37efbbda57</data>
+      <data key="d3">SmartNIC-ConnectX-6</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d10">ConnectX-6</data>
+      <data key="d5">{"unit": 2}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="62">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">3de6cdff-3283-4c19-800e-09aee529e15b</data>
+      <data key="d3">SmartNIC-ConnectX-5</data>
+      <data key="d4">SmartNIC</data>
+      <data key="d10">ConnectX-5</data>
+      <data key="d5">{"unit": 2}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="63">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">Component</data>
+      <data key="d2">2b23101c-18fc-46ea-97ef-ad197e01cf5c</data>
+      <data key="d3">SharedNIC-ConnectX-6</data>
+      <data key="d4">SharedNIC</data>
+      <data key="d10">ConnectX-6</data>
+      <data key="d5">{"unit": 381}</data>
+      <data key="d6" />
+      <data key="d7">false</data>
+    </node>
+    <node id="64">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">CompositeNode</data>
+      <data key="d2">a2ef537d-4efb-460e-a465-c6be8ba7c8c4</data>
+      <data key="d3">STAR</data>
+      <data key="d4">Server</data>
+      <data key="d5" />
+      <data key="d6" />
+      <data key="d7">false</data>
+      <data key="d8">STAR</data>
+    </node>
+    <node id="65">
+      <data key="d0">903dba4c-9665-414c-a3e3-9d53e3105f32</data>
+      <data key="d1">NetworkService</data>
+      <data key="d2">9f07a474-bd21-499a-a9f3-4d0f42e080bb</data>
+      <data key="d3">STAR_ns</data>
+      <data key="d4">MPLS</data>
+    </node>
+    <edge source="40" target="41">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="40" target="42">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="40" target="43">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="40" target="44">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="40" target="45">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="40" target="46">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="40" target="47">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="48" target="49">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="48" target="50">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="48" target="51">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="48" target="52">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="48" target="53">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="48" target="54">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="48" target="55">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="56" target="57">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="56" target="58">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="56" target="59">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="56" target="60">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="56" target="61">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="56" target="62">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="56" target="63">
+      <data key="d11">has</data>
+    </edge>
+    <edge source="64" target="65">
+      <data key="d11">has</data>
+    </edge>
+  </graph>
+</graphml>
