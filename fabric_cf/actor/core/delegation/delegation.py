@@ -91,6 +91,9 @@ class Delegation(ABCDelegation):
         if actor.get_type() == ActorType.Authority:
             self.graph = FimHelper.get_arm_graph(graph_id=str(self.dlg_graph_id))
 
+        if actor.get_policy() is not None:
+            self.policy = actor.get_policy()
+
     def set_graph(self, graph: ABCPropertyGraph):
         self.graph = graph
 

@@ -29,10 +29,9 @@ from typing import TYPE_CHECKING
 
 from fim.graph.abc_property_graph import GraphFormat
 
-from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.ticket import Ticket
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.apis.abc_broker_policy_mixin import ABCBrokerPolicyMixin
 from fabric_cf.actor.core.core.policy import Policy
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
@@ -90,8 +89,8 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
         return
 
     def revisit_delegation(self, *, delegation: ABCDelegation):
-        if delegation.get_state() == ReservationStates.Ticketed:
-            self.donate_delegation(delegation=delegation)
+        if delegation.get_state() == DelegationState.Delegated:
+            self.bind_delegation(delegation=delegation)
 
     def ticket_satisfies(self, *, requested_resources: ResourceSet, actual_resources: ResourceSet,
                          requested_term: Term, actual_term: Term):
