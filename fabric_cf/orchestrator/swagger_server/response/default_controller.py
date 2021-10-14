@@ -34,6 +34,8 @@ from fabric_cf.orchestrator.swagger_server.models.version import Version  # noqa
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.response.constants import VERSIONS_PATH, GET_METHOD
 
+from fabric_cf import __VERSION__
+
 
 def version_get():  # noqa: E501
     """version
@@ -47,16 +49,16 @@ def version_get():  # noqa: E501
     from fabric_cf.actor.core.container.globals import GlobalsSingleton
     logger = GlobalsSingleton.get().get_logger()
     try:
-        version = '1.0.0'
-        tag = '1.0.0'
-        url = "https://api.github.com/repos/fabric-testbesd/ControlFramework/git/refs/tags/{}".format(tag)
+        version = __VERSION__
+        tag = f"rel{__VERSION__}"
+        url = "https://api.github.com/repos/fabric-testbed/ControlFramework/git/ref/tags/{}".format(tag)
 
         response = Version()
         response.version = version
         response.gitsha1 = 'Not Available'
 
         result = requests.get(url)
-        if result.status_code == 200 and result.json() is not None:
+        if result.status_code == OK and result.json() is not None:
             object_json = result.json().get("object", None)
             if object_json is not None:
                 sha = object_json.get("sha", None)
