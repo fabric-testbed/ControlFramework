@@ -37,7 +37,8 @@ from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.interface_info import InterfaceSliver
+from fim.slivers.capacities_labels import Labels
+from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
 
@@ -552,7 +553,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.debug(f"Interface Sliver [Site Delegation] (C): {site_cp}")
 
             # Get BQM Peer Connection Point in Site Delegation (a)
-            net_cp = self.get_net_interface_sliver(site_ifs_id=site_cp.node_id)
+            net_cp = self.get_net_interface_sliver(site_ifs_id=site_cp.node_id, itype=InterfaceType.TrunkPort)
 
             self.logger.debug(f"Peer Interface Sliver [Network Delegation] (A): {site_cp}")
 
@@ -575,13 +576,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 raise BrokerException(msg=error_msg)
 
             # local_name source: (a)
-            ifs.get_labels().set_fields(local_name=net_cp.get_name())
+            ifs_labels = ifs.get_labels()
+            ifs_labels = Labels.update(ifs_labels, local_name=net_cp.get_name())
 
             # NSO device name source: (a) - need to find the owner switch of the network service in CBM
             # and take its .name or labels.local_name
             # Set the NSO device-name
             owner_switch, owner_ns = self.get_owners(node_id=net_cp.node_id)
-            ifs.get_labels().set_fields(device_name=owner_switch.get_name())
+            ifs_labels = Labels.update(ifs_labels, device_name=owner_switch.get_name())
             adm_ids = owner_switch.get_structural_info().adm_graph_ids
             site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
 
@@ -598,6 +600,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             ifs.set_node_map(node_map=(self.combined_broker_model_graph_id, net_cp.node_id))
 
             delegation_id = net_adm_ids[0]
+
+            ifs.labels = ifs_labels
 
             self.logger.debug(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
@@ -847,7 +851,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug("Reclaim Delegation")
         self.remove_delegation(delegation=delegation)
 
-    def get_net_interface_sliver(self, *, site_ifs_id: str) -> InterfaceSliver:
+    def get_net_interface_sliver(self, *, site_ifs_id: str, itype: InterfaceType) -> InterfaceSliver:
         """
         Get Peer Interface Sliver (child of Network Service Sliver) provided node id of Interface Sliver
         (child of Component Sliver)
@@ -859,11 +863,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         [Connection Point]      Link    [Connection Point]
 
         @param site_ifs_id Interface Sliver Id
+        @param itype Interface Type
         @return Interface sliver
         """
         try:
             self.lock.acquire()
-            return FimHelper.get_interface_sliver_by_id(ifs_node_id=site_ifs_id, graph=self.combined_broker_model)
+            result = FimHelper.get_interface_sliver_by_id(ifs_node_id=site_ifs_id, graph=self.combined_broker_model,
+                                                          itype=itype)
+            if len(result) != 1:
+                raise BrokerException(msg=f"More than one Peer Interface Sliver of type {itype} found for "
+                                          f"IFS: {site_ifs_id}")
+            return next(iter(result))
         finally:
             self.lock.release()
 

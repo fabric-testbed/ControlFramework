@@ -23,13 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import logging
 import threading
 import traceback
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 
-from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor
 from fabric_cf.actor.core.manage.kafka.kafka_broker import KafkaBroker

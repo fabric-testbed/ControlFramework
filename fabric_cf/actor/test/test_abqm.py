@@ -28,8 +28,9 @@ class ABQM_Test(unittest.TestCase):
     def test_abqm(self):
         self.n4j_imp.delete_all_graphs()
         # these are produced by substrate tests
-        site_ads = ['../../../neo4j/RENCI-ad.graphml', '../../../neo4j/UKY-ad.graphml',
-                    '../../../neo4j/LBNL-ad.graphml', '../../../neo4j/Network-ad.graphml']
+        site_ads = ['../../../neo4j/Network-ad.graphml', '../../../neo4j/LBNL-ad.graphml',
+                    '../../../neo4j/RENCI-ad.graphml',
+                    '../../../neo4j/UKY-ad.graphml']
 
         cbm = Neo4jCBMGraph(importer=self.n4j_imp)
 
@@ -84,5 +85,45 @@ class ABQM_Test(unittest.TestCase):
         print('Writing ABQM to abqm.json')
         with open('abqm.json', 'w') as f:
             f.write(abqm_json)
+
+        print('Writing CBM to cbm.graphml')
+        cbm_string = cbm.serialize_graph()
+        with open('cbm.graphml', 'w') as f:
+            f.write(cbm_string)
+
+        self.n4j_imp.delete_all_graphs()
+
+    def test_cbm(self):
+        self.n4j_imp.delete_all_graphs()
+        # these are produced by substrate tests
+        cbm = '../../../neo4j/abqm-l2-cbm.graphml'
+
+        plain_cbm = self.n4j_imp.import_graph_from_file_direct(graph_file=cbm)
+        cbm = Neo4jCBMFactory.create(Neo4jPropertyGraph(graph_id=plain_cbm.graph_id,
+                                     importer=self.n4j_imp))
+        cbm.validate_graph()
+
+        print('CBM ID is ' + cbm.graph_id)
+
+        cbm_graph_id = cbm.graph_id
+        # turn on debug so we can test formation of ABQM without querying
+        # actor for reservations
+        AggregatedBQMPlugin.DEBUG_FLAG = True
+
+        n4j_pg = Neo4jPropertyGraph(graph_id=cbm_graph_id, importer=self.n4j_imp)
+
+        cbm = Neo4jCBMFactory.create(n4j_pg)
+
+        plugin = AggregatedBQMPlugin(actor=None, logger=None)
+
+        abqm = plugin.plug_produce_bqm(cbm=cbm, query_level=1)
+
+        abqm.validate_graph()
+
+        abqm_string = abqm.serialize_graph()
+
+        print('Writing ABQM to abqm-from-cbm.graphml')
+        with open('abqm-from-cbm.graphml', 'w') as f:
+            f.write(abqm_string)
 
         self.n4j_imp.delete_all_graphs()
