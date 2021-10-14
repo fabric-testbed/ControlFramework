@@ -801,7 +801,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.merge_adm(adm_graph=delegation.get_graph())
                 self.logger.debug(f"Donated Delegation: {delegation.get_delegation_id()}")
             else:
-                self.logger.warning("Delegation ignored")
+                self.logger.warning(f"Delegation ignored: {delegation.get_delegation_id()}")
+                self.logger.debug(f"Active delegations: {self.delegations}")
         except Exception as e:
             self.logger.error(f"Failed to merge ADM: {delegation}")
             self.logger.error(traceback.format_exc())
@@ -815,9 +816,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if delegation.get_delegation_id() in self.delegations:
                 self.unmerge_adm(graph_id=delegation.get_delegation_id())
                 self.delegations.pop(delegation.get_delegation_id())
-                self.logger.debug("Delegation unmerged from ADM")
+                self.logger.debug(f"Removed Delegation: {delegation.get_delegation_id()}")
             else:
-                self.logger.warning("Delegation ignored")
+                self.logger.warning(f"Delegation ignored: {delegation.get_delegation_id()}")
+                self.logger.debug(f"Active delegations: {self.delegations}")
         except Exception as e:
             self.logger.error(f"Failed to un-merge ADM: {delegation}")
             self.logger.error(traceback.format_exc())
