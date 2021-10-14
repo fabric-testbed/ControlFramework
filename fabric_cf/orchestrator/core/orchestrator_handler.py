@@ -286,7 +286,7 @@ class OrchestratorHandler:
             if orchestrator_slice is not None:
                 orchestrator_slice.unlock()
 
-    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None, include_notices: bool = False) -> dict:
+    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None, include_notices: bool = True) -> dict:
         """
         Get Slivers for a Slice
         :param token Fabric Identity Token
