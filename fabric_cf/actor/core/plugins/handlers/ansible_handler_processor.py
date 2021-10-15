@@ -163,7 +163,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
                 raise AuthorityException(f"No handler found for resource type {unit.get_resource_type()}")
 
             future = self.executor.submit(self.process_pool_main, operation, handler.get_class_name(),
-                                          handler.get_module_name(), handler.get_properties(), unit)
+                                          handler.get_module_name(), handler.get_properties(), unit,
+                                          self.process_pool_lock)
 
             self.queue_future(future=future, unit=unit)
             self.logger.debug(f"Handler operation {operation} scheduled for Resource Type: {unit.get_resource_type()} "
