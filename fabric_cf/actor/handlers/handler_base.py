@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-import threading
+import multiprocessing
 from abc import ABC, abstractmethod
 from typing import Tuple
 
@@ -39,7 +39,7 @@ class ConfigurationException(Exception):
 
 
 class HandlerBase(ABC):
-    def __init__(self, logger: logging.Logger, properties: dict, process_lock: threading.Lock):
+    def __init__(self, logger: logging.Logger, properties: dict, process_lock: multiprocessing.Lock):
         self.properties = properties
         self.logger = logger
         self.config = None
