@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import concurrent.futures
 import logging
+import multiprocessing
 import os
 import threading
 import time
@@ -39,7 +40,6 @@ from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 
 process_pool_logger = None
 
-
 class AnsibleHandlerProcessor(HandlerProcessor):
     """
     Ansible Handler Processor
@@ -51,6 +51,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.log_config = GlobalsSingleton.get().get_log_config()
         self.executor = None
+        self.process_pool_manager = None
+        self.process_pool_lock = None
         self.__setup_process_pool()
         self.futures = []
         self.thread = None
@@ -64,6 +66,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         del state['initialized']
         del state['lock']
         del state['executor']
+        del state['process_pool_manager']
+        del state['process_pool_lock']
         del state['futures']
         del state['thread']
         del state['future_lock']
@@ -95,6 +99,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
                                                                initializer=AnsibleHandlerProcessor.process_pool_initializer,
                                                                initargs=(log_dir, log_file, log_level, log_retain,
                                                                          log_size, logger))
+        self.process_pool_manager = multiprocessing.Manager()
+        self.process_pool_lock = self.process_pool_manager.Lock()
 
     def start(self):
         """
@@ -253,11 +259,11 @@ class AnsibleHandlerProcessor(HandlerProcessor):
 
     @staticmethod
     def process_pool_main(operation: str, handler_class: str, handler_module: str, properties: dict,
-                          unit: ConfigToken):
+                          unit: ConfigToken, process_lock: threading.Lock):
         global process_pool_logger
         handler_class = ReflectionUtils.create_instance_with_params(module_name=handler_module,
                                                                     class_name=handler_class)
-        handler_obj = handler_class(process_pool_logger, properties)
+        handler_obj = handler_class(process_pool_logger, properties, process_lock)
 
         if operation == Constants.TARGET_CREATE:
             return handler_obj.create(unit)
