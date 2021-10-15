@@ -260,7 +260,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
 
     @staticmethod
     def process_pool_main(operation: str, handler_class: str, handler_module: str, properties: dict,
-                          unit: ConfigToken, process_lock: threading.Lock):
+                          unit: ConfigToken, process_lock: multiprocessing.Lock):
         global process_pool_logger
         handler_class = ReflectionUtils.create_instance_with_params(module_name=handler_module,
                                                                     class_name=handler_class)
