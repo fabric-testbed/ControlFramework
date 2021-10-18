@@ -154,7 +154,7 @@ class RPCProducer(AvroProducerApi):
 
             if obj.name is not None and obj.name in self.AVRO_RPC_TYPE_MAP and obj.reservation is not None:
                 # Temporary hack
-                if RPCProducer.__is_update_lease_to_broker(topic=msg.topic, obj=obj):
+                if RPCProducer.__is_update_lease_to_broker(topic=msg.topic(), obj=obj):
                     self.logger.debug("Ignoring failure of UpdateLease to broker")
                     return
                 # Send FailedRPC to the Actor

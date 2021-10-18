@@ -202,6 +202,20 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
+    def get_reservations_by_graph_node_id_state(self, *, graph_node_id: str,
+                                                states: List[int]) -> List[ABCReservationMixin]:
+        """
+        Retrieves the specified reservations which correspond to a specific graph node
+
+        @param graph_node_id graph_node_id
+        @param states list of states
+
+        @return list of properties for reservations
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
     def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: int) -> List[ABCReservationMixin]:
         """
         Retrieves the specified reservations for a slice in a specific state

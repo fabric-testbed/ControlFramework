@@ -66,7 +66,7 @@ class ResponseBuilder:
     PROP_SLIVER_TYPE = "sliver_type"
 
     @staticmethod
-    def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = False,
+    def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = True,
                                 include_sliver: bool = False) -> dict:
         """
         Get Reservation summary

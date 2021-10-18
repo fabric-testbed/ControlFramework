@@ -27,6 +27,7 @@ import logging
 import pickle
 from contextlib import contextmanager
 from datetime import datetime
+from typing import List
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -828,6 +829,25 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Reservations).filter(Reservations.rsv_graph_node_id == graph_node_id):
+                    rsv_obj = self.generate_reservation_dict_from_row(row)
+                    result.append(rsv_obj.copy())
+                    rsv_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_reservations_by_graph_node_id_and_state(self, *, graph_node_id: str, states: List[int]) -> list:
+        """
+        Get Reservations by graph_node_id and in one of the states
+        @param graph_node_id graph node id
+        @param states list of reservation states
+        @return list of reservations
+        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Reservations).filter(Reservations.rsv_state.in_(states)).filter(Reservations.rsv_graph_node_id == graph_node_id):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
@@ -1826,7 +1846,16 @@ def test():
 
 def test2():
     logger = logging.getLogger('PsqlDatabase')
-    db = PsqlDatabase(user='fabric', password='fabric', database='am', db_host='127.0.0.1:8432', logger=logger)
+    db = PsqlDatabase(user='fabric', password='fabric', database='broker', db_host='152.54.15.56:5432', logger=logger)
+    from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+    states = [ReservationStates.Active.value,
+              ReservationStates.ActiveTicketed.value,
+              ReservationStates.Ticketed.value,
+              ReservationStates.Nascent.value]
+    res = db.get_reservations_by_graph_node_id_and_state(graph_node_id='node+renc-data-sw:ip+192.168.11.3-ns', states=states)
+    print(f"All {len(res)}")
+    for r in res:
+        print(r['rsv_state'])
     print("Get all actors after reset {}".format(db.get_actors()))
 
 

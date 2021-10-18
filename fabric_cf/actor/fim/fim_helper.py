@@ -416,15 +416,16 @@ class FimHelper:
         Get owner switch and network service of a Connection Point from BQM
         @param bqm BQM graph
         @param node_id Connection Point Node Id
-        @return Owner Switch and Network Service
+        @return Owner Switch and MPLS Network Service, MPLS Network Service
         """
-        ns_name, ns_id = bqm.get_parent(node_id=node_id, rel=ABCPropertyGraph.REL_CONNECTS,
-                                        parent=ABCPropertyGraph.CLASS_NetworkService)
+        mpls_ns_name, mpls_ns_id = bqm.get_parent(node_id=node_id, rel=ABCPropertyGraph.REL_CONNECTS,
+                                                  parent=ABCPropertyGraph.CLASS_NetworkService)
 
-        ns = bqm.build_deep_ns_sliver(node_id=ns_id)
+        mpls_ns = bqm.build_deep_ns_sliver(node_id=mpls_ns_id)
 
-        sw_name, sw_id = bqm.get_parent(node_id=ns_id, rel=ABCPropertyGraph.REL_HAS,
+        sw_name, sw_id = bqm.get_parent(node_id=mpls_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
 
         switch = bqm.build_deep_node_sliver(node_id=sw_id)
-        return switch, ns
+
+        return switch, mpls_ns
