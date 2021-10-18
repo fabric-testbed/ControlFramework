@@ -62,7 +62,8 @@ class OrchestratorSliceWrapper:
         self.demanded = []
         self.thread_lock = threading.Lock()
         self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS]
-        self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP]
+        self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
+                             ServiceType.FABNetv4]
 
     def lock(self):
         """
@@ -248,20 +249,6 @@ class OrchestratorSliceWrapper:
             raise OrchestratorException(message="Either Capacity or Capacity Hints must be specified!",
                                         http_error_code=BAD_REQUEST)
 
-    @staticmethod
-    def __validate_network_service_sliver(sliver: NetworkServiceSliver):
-        """
-        Validate Network Node Sliver
-        @param sliver Node Sliver
-        @raises exception for invalid slivers
-        """
-        for ifs in sliver.interface_info.interfaces.values():
-            if ifs.labels is not None:
-                vlan = int(ifs.get_labels().vlan)
-                if vlan <= Constants.VLAN_START or vlan >= Constants.VLAN_END:
-                    raise OrchestratorException(message=f"Allowed range for VLAN ({Constants.VLAN_START}-{Constants.VLAN_END})",
-                                                http_error_code=BAD_REQUEST)
-
     def __build_network_service_reservations(self, slice_graph: ABCASMPropertyGraph,
                                              node_res_mapping: Dict[str, str]) -> List[TicketReservationAvro]:
         """
@@ -286,8 +273,6 @@ class OrchestratorSliceWrapper:
             elif sliver_type in self.supported_ns:
 
                 self.logger.trace(f"Network Service Sliver: {sliver}")
-
-                self.__validate_network_service_sliver(sliver=sliver)
 
                 # Processing Interface Slivers
                 if sliver.interface_info is not None:
