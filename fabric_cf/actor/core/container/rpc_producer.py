@@ -29,6 +29,7 @@ import logging
 import time
 
 import threading
+import traceback
 
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fabric_mb.message_bus.producer import AvroProducerApi
@@ -105,17 +106,18 @@ class RPCProducer(AvroProducerApi):
         """
         while self.running:
             try:
-                num_msgs = self.producer.poll(timeout=0.0)
-                self.actor.get_logger().debug(f"KAFKA: Processed messages {num_msgs}")
+                num_msgs = self.poll(timeout=0.0)
+                self.logger.debug(f"KAFKA: Processed messages {num_msgs}")
                 time.sleep(10)
             except KeyboardInterrupt:
                 break
             except Exception as e:
                 self.logger.error(f"KAFKA: Error {e}")
+                self.logger.error(traceback.format_exc())
                 continue
 
         self.logger.debug(f"KAFKA: Shutting down {self.__class__.__name__}..")
-        self.producer.flush()
+        self.flush()
 
     @staticmethod
     def __is_update_lease_to_broker(*, topic: str, obj: AbcMessageAvro):

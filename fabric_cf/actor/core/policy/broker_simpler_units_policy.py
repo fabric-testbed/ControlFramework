@@ -466,16 +466,24 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         sliver = None
         error_msg = None
         self.logger.debug(f"Possible candidates to serve {reservation} candidates# {node_id_list}")
+        requested_sliver = reservation.get_requested_resources().get_sliver()
         for node_id in node_id_list:
             try:
                 self.logger.debug(f"Attempting to allocate {reservation} via graph_node# {node_id}")
                 graph_node = self.get_network_node_from_graph(node_id=node_id)
 
+                if requested_sliver.labels is not None and requested_sliver.labels.instance_parent is not None:
+                    self.logger.info(f"Sliver {requested_sliver} is requested on worker: "
+                                     f"{requested_sliver.labels.instance_parent}")
+                    if graph_node.get_name() != requested_sliver.labels.instance_parent:
+                        self.logger.info(f"Skipping candidate node: {graph_node}")
+                        continue
+
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
 
                 delegation_id, sliver = inv.allocate(rid=reservation.get_reservation_id(),
-                                                     requested_sliver=reservation.get_requested_resources().get_sliver(),
+                                                     requested_sliver=requested_sliver,
                                                      graph_id=self.combined_broker_model_graph_id,
                                                      graph_node=graph_node, existing_reservations=existing_reservations)
 
@@ -487,6 +495,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                     error_msg = e.msg
                 else:
                     raise e
+
+        if delegation_id is None and requested_sliver.labels is not None and requested_sliver.labels.instance_parent is not None:
+            error_msg = f"Insufficient Resources: {requested_sliver.labels.instance_parent} " \
+                        f"cannot serve the requested sliver"
 
         return delegation_id, sliver, error_msg
 
@@ -813,7 +825,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.merge_adm(adm_graph=delegation.get_graph())
                 self.logger.debug(f"Donated Delegation: {delegation.get_delegation_id()}")
             else:
-                self.logger.warning("Delegation ignored")
+                self.logger.warning(f"Delegation ignored: {delegation.get_delegation_id()}")
+                self.logger.debug(f"Active delegations: {self.delegations}")
         except Exception as e:
             self.logger.error(f"Failed to merge ADM: {delegation}")
             self.logger.error(traceback.format_exc())
@@ -827,9 +840,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if delegation.get_delegation_id() in self.delegations:
                 self.unmerge_adm(graph_id=delegation.get_delegation_id())
                 self.delegations.pop(delegation.get_delegation_id())
-                self.logger.debug("Delegation unmerged from ADM")
+                self.logger.debug(f"Removed Delegation: {delegation.get_delegation_id()}")
             else:
-                self.logger.warning("Delegation ignored")
+                self.logger.warning(f"Delegation ignored: {delegation.get_delegation_id()}")
+                self.logger.debug(f"Active delegations: {self.delegations}")
         except Exception as e:
             self.logger.error(f"Failed to un-merge ADM: {delegation}")
             self.logger.error(traceback.format_exc())
