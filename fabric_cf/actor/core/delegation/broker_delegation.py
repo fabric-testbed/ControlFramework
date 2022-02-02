@@ -120,7 +120,7 @@ class BrokerDelegation(Delegation):
             # to a client. Set mustSendUpdate so that the update will be sent
             # on the next probe.
             self.transition(prefix="reclaimed", state=DelegationState.Delegated)
-            self.policy.update_delegation_complete(delegation=self)
+            self.policy.update_delegation_complete(delegation=self, reclaim=True)
             self.service_reclaim(id_token=id_token)
         else:
             self.logger.error(

@@ -348,11 +348,6 @@ class OrchestratorHandler:
             slice_states = SliceState.str_list_to_state_list(states=states)
 
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
-            if slice_list is None or len(slice_list) == 0:
-                if controller.get_last_error() is not None:
-                    self.logger.error(controller.get_last_error())
-                raise OrchestratorException(f"User# has no Slices",
-                                            http_error_code=NOT_FOUND)
 
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
                                                      slice_states=slice_states)
@@ -440,7 +435,8 @@ class OrchestratorHandler:
             if slice_model is None:
                 raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
 
-            return ResponseBuilder.get_slice_model_summary(slice_model=slice_model.serialize_graph(format=graph_format))
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
+                                                     slice_model=slice_model.serialize_graph(format=graph_format))
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")

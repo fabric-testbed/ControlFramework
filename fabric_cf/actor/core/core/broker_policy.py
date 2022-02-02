@@ -96,8 +96,8 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
                          requested_term: Term, actual_term: Term):
         return
 
-    def update_delegation_complete(self, *, delegation: ABCDelegation):
-        if delegation.get_graph() is not None:
+    def update_delegation_complete(self, *, delegation: ABCDelegation, reclaim: bool = False):
+        if not reclaim:
             self.donate_delegation(delegation=delegation)
         else:
             self.reclaim_delegation(delegation=delegation)
