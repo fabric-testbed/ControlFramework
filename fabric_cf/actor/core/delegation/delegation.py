@@ -230,7 +230,6 @@ class Delegation(ABCDelegation):
     def reclaim(self, id_token: str = None):
         if self.state == DelegationState.Delegated:
             self.policy.reclaim(delegation=self)
-            self.must_send_update = True
             self.transition(prefix="reclaimed", state=DelegationState.Reclaimed)
         else:
             self.logger.error(self.error_string_prefix.format(self, self.invalid_state_prefix.format('reclaim',

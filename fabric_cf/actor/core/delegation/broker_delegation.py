@@ -119,7 +119,7 @@ class BrokerDelegation(Delegation):
             # We are an agent asked to return a pre-reserved "will call" ticket
             # to a client. Set mustSendUpdate so that the update will be sent
             # on the next probe.
-            self.transition(prefix="reclaimed", state=DelegationState.Delegated)
+            self.transition(prefix="reclaimed", state=DelegationState.Reclaimed)
             self.policy.update_delegation_complete(delegation=self, reclaim=True)
             self.service_reclaim(id_token=id_token)
         else:
