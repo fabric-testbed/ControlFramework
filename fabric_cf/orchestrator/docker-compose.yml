@@ -23,10 +23,6 @@ services:
     networks:
       - frontend
       - backend
-    ports:
-      - 0.0.0.0:9474:9474  # for HTTP
-      - 0.0.0.0:9473:9473  # for HTTPS
-      - 0.0.0.0:9687:9687  # for Bolt
     volumes:
       - ${NEO4J_DATA_PATH_HOST:-$(pwd)/neo4j/data}:${NEO4J_DATA_PATH_DOCKER:-/data}
       - ${NEO4J_IMPORTS_PATH_HOST:-$(pwd)/neo4j/imports}:${NEO4J_IMPORTS_PATH_DOCKER:-/imports}
