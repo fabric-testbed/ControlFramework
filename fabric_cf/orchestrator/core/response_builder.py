@@ -109,11 +109,11 @@ class ResponseBuilder:
 
                 if reservation.get_start() is not None:
                     start_time = ActorClock.from_milliseconds(milli_seconds=reservation.get_start())
-                    res_dict[ResponseBuilder.PROP_LEASE_START_TIME] = start_time.strftime(Constants.RENEW_TIME_FORMAT)
+                    res_dict[ResponseBuilder.PROP_LEASE_START_TIME] = start_time.strftime(Constants.LEASE_TIME_FORMAT)
 
                 if reservation.get_end() is not None:
                     end_time = ActorClock.from_milliseconds(milli_seconds=reservation.get_end())
-                    res_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.RENEW_TIME_FORMAT)
+                    res_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.LEASE_TIME_FORMAT)
 
                 reservations.append(res_dict)
         else:
@@ -153,7 +153,7 @@ class ResponseBuilder:
                           }
                 end_time = s.get_lease_end()
                 if end_time is not None:
-                    s_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.RENEW_TIME_FORMAT)
+                    s_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.LEASE_TIME_FORMAT)
 
                 if slice_id is not None and slice_model is not None:
                     s_dict[ResponseBuilder.RESPONSE_SLICE_MODEL]: slice_model

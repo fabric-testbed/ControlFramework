@@ -212,7 +212,6 @@ class OrchestratorHandler:
         slice_id = None
         controller = None
         orchestrator_slice = None
-        bqm_graph = None
         asm_graph = None
         try:
             end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
@@ -229,11 +228,6 @@ class OrchestratorHandler:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
-
-            # FIXME : uncomment post testing
-            #bqm_string, bqm_graph = self.discover_broker_query_model(controller=controller, token=token,
-            #                                                         delete_graph=False)
-            bqm_graph = None
 
             broker = self.get_broker(controller=controller)
             if broker is None:
@@ -281,8 +275,6 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
         finally:
-            if bqm_graph is not None:
-                FimHelper.delete_graph(graph_id=bqm_graph.get_graph_id())
             if orchestrator_slice is not None:
                 orchestrator_slice.unlock()
 
@@ -527,9 +519,9 @@ class OrchestratorHandler:
             new_end_time = datetime.utcnow() + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
             return new_end_time
         try:
-            new_end_time = datetime.strptime(lease_end_time, Constants.RENEW_TIME_FORMAT)
+            new_end_time = datetime.strptime(lease_end_time, Constants.LEASE_TIME_FORMAT)
         except Exception as e:
-            raise OrchestratorException(f"Lease End Time is not in format {Constants.RENEW_TIME_FORMAT}",
+            raise OrchestratorException(f"Lease End Time is not in format {Constants.LEASE_TIME_FORMAT}",
                                         http_error_code=BAD_REQUEST)
 
         now = datetime.utcnow()
