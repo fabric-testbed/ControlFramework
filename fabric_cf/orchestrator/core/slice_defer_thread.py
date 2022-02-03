@@ -33,7 +33,6 @@ from fim.user import ServiceType
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
-from fabric_cf.actor.core.time.term import Term
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
 
@@ -68,9 +67,9 @@ class SliceDeferThread:
             self.max_create_wait_time = wait_time
 
         self.delay_resource_types = []
-        self.delay_resource_types.append(str(ServiceType.L2STS))
-        self.delay_resource_types.append(str(ServiceType.L2Bridge))
-        self.delay_resource_types.append(str(ServiceType.L2PTP))
+        # self.delay_resource_types.append(str(ServiceType.L2STS))
+        # self.delay_resource_types.append(str(ServiceType.L2Bridge))
+        # self.delay_resource_types.append(str(ServiceType.L2PTP))
 
     def queue_slice(self, *, controller_slice: OrchestratorSliceWrapper):
         """

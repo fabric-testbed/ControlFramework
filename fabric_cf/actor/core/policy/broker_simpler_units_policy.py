@@ -425,6 +425,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             inv = self.inventory.get(resource_type=resource_type)
 
             if inv is not None:
+                self.logger.debug(f"Inventory type: {type(inv)}")
                 term = Term(start=start, end=end)
                 return self.ticket_inventory(reservation=reservation, inv=inv, term=term,
                                              node_id_to_reservations=node_id_to_reservations)
@@ -913,8 +914,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :param node_id_to_reservations:
         :return: list of reservations
         """
-        existing_reservations = self.actor.get_plugin().get_database().get_reservations_by_graph_node_id(
-            graph_node_id=node_id)
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        # Only get Active or Ticketing reservations
+        existing_reservations = self.actor.get_plugin().get_database().get_reservations_by_graph_node_id_state(
+            graph_node_id=node_id, states=states)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 
