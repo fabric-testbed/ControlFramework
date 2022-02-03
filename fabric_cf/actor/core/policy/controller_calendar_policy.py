@@ -368,7 +368,7 @@ class ControllerCalendarPolicy(Policy, ABCControllerPolicy):
     def update_ticket_complete(self, *, reservation: ABCClientReservation):
         return
 
-    def update_delegation_complete(self, *, delegation: ABCDelegation):
+    def update_delegation_complete(self, *, delegation: ABCDelegation, reclaim: bool = False):
         return
 
     def lease_satisfies(self, *, request_resources: ResourceSet, actual_resources: ResourceSet, requested_term: Term,

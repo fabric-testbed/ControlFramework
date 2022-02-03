@@ -117,11 +117,12 @@ class ABCClientPolicy(ABCPolicy):
         """
 
     @abstractmethod
-    def update_delegation_complete(self, *, delegation: ABCDelegation):
+    def update_delegation_complete(self, *, delegation: ABCDelegation, reclaim: bool = False):
         """
         Notifies the policy that a delegation update operation has completed. The
         policy may use this upcall to update its internal state.
 
-        @params delegation: delegation for which an update delegation operation has completed
+        @param delegation: delegation for which an update delegation operation has completed
+        @param reclaim: Indicates if delegation is being reclaimed
         @raises Exception in case of error
         """
