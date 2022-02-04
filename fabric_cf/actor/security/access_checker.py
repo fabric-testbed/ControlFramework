@@ -50,7 +50,9 @@ class AccessChecker:
         pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
 
         fabric_token = FabricToken(logger=logger, token=token)
-        fabric_token.validate()
+
+        if pdp_config['enable']:
+            fabric_token.validate()
 
         pdp_auth = PdpAuth(config=pdp_config, logger=logger)
         pdp_auth.check_access(fabric_token=fabric_token.get_decoded_token(),
