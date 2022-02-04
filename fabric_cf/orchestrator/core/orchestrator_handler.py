@@ -68,9 +68,6 @@ class OrchestratorHandler:
         :param token:
         :return:
         """
-        # for testing; disable token validation
-        if not self.pdp_config['enable']:
-            return {}
         try:
             fabric_token = FabricToken(logger=self.logger, token=token)
 
