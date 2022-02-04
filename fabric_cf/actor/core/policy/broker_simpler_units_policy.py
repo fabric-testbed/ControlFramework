@@ -47,6 +47,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
 from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -63,7 +64,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
     from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
     from fabric_cf.actor.core.util.resource_type import ResourceType
-    from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 
 
 class BrokerAllocationAlgorithm(Enum):
