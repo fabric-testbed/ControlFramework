@@ -260,10 +260,10 @@ class SliceDeferThread:
                     self.logger.debug(f"Reservation not in {reservation.get_state()} state, ignoring it")
                     continue
 
-                if not controller_slice.check_predecessors_ticketed(reservation=reservation) and not force:
-                    self.logger.info(f"Reservation waiting for predecessors to be ticketed, ignoring it")
-                    ret_val = True
-                    continue
+                #if not controller_slice.check_predecessors_ticketed(reservation=reservation) and not force:
+                #    self.logger.info(f"Reservation waiting for predecessors to be ticketed, ignoring it")
+                #    ret_val = True
+                #    continue
 
                 if not controller.demand_reservation(reservation=reservation):
                     raise OrchestratorException(f"Could not demand resources: {controller.get_last_error()}")
