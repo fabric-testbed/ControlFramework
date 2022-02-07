@@ -210,7 +210,7 @@ class ResponseBuilder:
 
         # Network Service Specific Fields
         if isinstance(sliver, NetworkServiceSliver):
-            print("TODO")
+            print("TODO: populate NetworkServiceSliver fields")
 
         return result
 

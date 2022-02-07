@@ -448,11 +448,11 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
 
         for ifs in self.resources.sliver.interface_info.interfaces.values():
             component_name, rid = ifs.get_node_map()
-            pred_state = self.redeem_predecessors.get(rid)
+            pred_state = self.redeem_predecessors.get(ID(uid=rid))
             parent_res = pred_state.get_reservation()
             if parent_res is not None and \
                     ReservationStates(parent_res.get_state()) == ReservationStates.Ticketed:
-                node_sliver = parent_res.get_sliver()
+                node_sliver = parent_res.get_resources().get_sliver()
                 component = node_sliver.attached_components_info.get_device(name=component_name)
                 graph_id, bqm_component_id = component.get_node_map()
                 graph_id, node_id = node_sliver.get_node_map()
@@ -500,7 +500,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         return approved
 
     def can_ticket(self) -> bool:
-        supported_ns = [ServiceType.L2STS.name, ServiceType.L2Bridge, ServiceType.L2PTP]
+        supported_ns = [ServiceType.L2STS.name, ServiceType.L2Bridge.name, ServiceType.L2PTP.name]
 
         ret_val = False
         if self.get_type() is not None:

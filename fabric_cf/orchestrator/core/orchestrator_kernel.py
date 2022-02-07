@@ -24,15 +24,18 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+import traceback
 
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.orchestrator.core.bqm_wrapper import BqmWrapper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
+from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
 from fabric_cf.orchestrator.core.reservation_status_update_thread import ReservationStatusUpdateThread
 from fabric_cf.orchestrator.core.slice_defer_thread import SliceDeferThread
 
@@ -77,6 +80,33 @@ class OrchestratorKernel:
             self.bqm_cache[graph_format] = saved_bqm
         finally:
             self.lock.release()
+
+    def demand_slice(self, *, controller_slice: OrchestratorSliceWrapper):
+        """
+        Demand slice reservations.
+        :param controller_slice:
+        """
+        computed_reservations = controller_slice.get_computed_reservations()
+
+        try:
+            for reservation in computed_reservations:
+                if reservation.get_reservation_id() in controller_slice.demanded_reservations():
+                    self.logger.debug(f"Reservation: {reservation.get_reservation_id()} already demanded")
+                    continue
+
+                self.logger.debug(f"Issuing demand for reservation: {reservation.get_reservation_id()}")
+
+                if reservation.get_state() != ReservationStates.Unknown.value:
+                    self.logger.debug(f"Reservation not in {reservation.get_state()} state, ignoring it")
+                    continue
+
+                if not self.controller.demand_reservation(reservation=reservation):
+                    raise OrchestratorException(f"Could not demand resources: {self.controller.get_last_error()}")
+                controller_slice.mark_demanded(rid=reservation.get_reservation_id())
+                self.logger.debug(f"Reservation #{reservation.get_reservation_id()} demanded successfully")
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error("Unable to get orchestrator or demand reservation: {}".format(e))
 
     def set_broker(self, *, broker: ID):
         """
@@ -142,9 +172,9 @@ class OrchestratorKernel:
         Start threads
         :return:
         """
-        self.get_logger().debug("Starting Slice Defer Thread")
-        self.sdt = SliceDeferThread()
-        self.sdt.start()
+        #self.get_logger().debug("Starting Slice Defer Thread")
+        #self.sdt = SliceDeferThread()
+        #self.sdt.start()
 
         #self.get_logger().debug("Starting ReservationStatusUpdateThread")
         #self.sut = ReservationStatusUpdateThread()
