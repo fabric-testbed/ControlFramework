@@ -25,7 +25,7 @@ Complete Flow for all messages and processing at Orchestrator is described below
    - Ticket message exchange with broker
      - For NetworkServices: 
        - check for any predecessors i.e. NetworkNode reservations to be Ticketed
-       - If ticketed, reservation is moved to BlockedTicket state
+       - If not ticketed, reservation is moved to BlockedTicket state
        - If failed, fail the reservation
        - Else, 
          - Update BQM Node and Component Id in Node Map
