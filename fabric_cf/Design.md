@@ -18,23 +18,26 @@ Complete Flow for all messages and processing at Orchestrator is described below
       - Set Labels  
       - Save the parent component name and the parent reservation id in the Node Map
     - Add Reservations to the Slice
-  - Process the Slice with Slice Deferred Thread by invoking `SliceDeferThread::process_slice`
-    - Demand the computed reservations(add them to policy) for NetworkNode Slivers
-      Once added to the policy; Actor Tick Handler will do following asynchronously:
-      - Ticket message exchange with broker
-      - Redeem message exchange with AM once ticket is granted by Broker  
-    - Add Slice to the deferred slice queue if it contains Network Service reservations which are pending to be demanded
+    - Demand the computed reservations(add them to policy) for NetworkNode/NetworkService Slivers
   - Responds back to REST API with the list of computed reservations 
-- SliceDeferThread
-  - For each slice in deferred slice queue:
-    - For each pending reservation (typically Network Service Sliver Reservations):
-      - If the parent reservations (Node Sliver) have been ticketed
-        - Parent reservations have been Ticketed; 
-          - Update BQM Node and Component Id in Node Map
-            `NOTE-1: This is Used by Broker to set vlan - source: (c), local_name source: (a), NSO device name source: (a) - need to find the owner switch of the network service in CBM and take its .name or labels.local_name`
-          - For shared NICs grab the MAC & VLAN from corresponding Interface Sliver maintained in the Parent Reservation Sliver and update Interface Slivers
-        - Demand the Network Service Reservation  
-      - Else add slice back to the deferred slice queue
+- Actor Tick Handler Thread 
+   - Checking for Pending Reservations
+   - Ticket message exchange with broker
+     - For NetworkServices: 
+       - check for any predecessors i.e. NetworkNode reservations to be Ticketed
+       - If ticketed, reservation is moved to BlockedTicket state
+       - If failed, fail the reservation
+       - Else, 
+         - Update BQM Node and Component Id in Node Map
+         `NOTE-1: This is Used by Broker to set vlan - source: (c), local_name source: (a), 
+          NSO device name source: (a) - need to find the owner switch of the network service in CBM and take its 
+         .name or labels.local_name`
+         - For shared NICs grab the MAC & VLAN from corresponding Interface Sliver maintained in the Parent 
+           Reservation Sliver and update Interface Slivers
+         - Trigger Kafka ticket exchange with broker
+     - For NetworkNode:
+       - Trigger Kafka ticket exchange with broker
+     - Redeem message exchange with AM once ticket is granted by Broker
 
 ### Broker
 Complete Flow for all messages and processing at Broker is described below:
