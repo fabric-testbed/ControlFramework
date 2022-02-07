@@ -89,24 +89,27 @@ class OrchestratorKernel:
         computed_reservations = controller_slice.get_computed_reservations()
 
         try:
+            self.lock.acquire()
             for reservation in computed_reservations:
                 if reservation.get_reservation_id() in controller_slice.demanded_reservations():
-                    self.logger.debug(f"Reservation: {reservation.get_reservation_id()} already demanded")
+                    self.get_logger().debug(f"Reservation: {reservation.get_reservation_id()} already demanded")
                     continue
 
-                self.logger.debug(f"Issuing demand for reservation: {reservation.get_reservation_id()}")
+                self.get_logger().debug(f"Issuing demand for reservation: {reservation.get_reservation_id()}")
 
                 if reservation.get_state() != ReservationStates.Unknown.value:
-                    self.logger.debug(f"Reservation not in {reservation.get_state()} state, ignoring it")
+                    self.get_logger().debug(f"Reservation not in {reservation.get_state()} state, ignoring it")
                     continue
 
                 if not self.controller.demand_reservation(reservation=reservation):
                     raise OrchestratorException(f"Could not demand resources: {self.controller.get_last_error()}")
                 controller_slice.mark_demanded(rid=reservation.get_reservation_id())
-                self.logger.debug(f"Reservation #{reservation.get_reservation_id()} demanded successfully")
+                self.get_logger().debug(f"Reservation #{reservation.get_reservation_id()} demanded successfully")
         except Exception as e:
-            self.logger.error(traceback.format_exc())
-            self.logger.error("Unable to get orchestrator or demand reservation: {}".format(e))
+            self.get_logger().error(traceback.format_exc())
+            self.get_logger().error("Unable to get orchestrator or demand reservation: {}".format(e))
+        finally:
+            self.lock.release()
 
     def set_broker(self, *, broker: ID):
         """

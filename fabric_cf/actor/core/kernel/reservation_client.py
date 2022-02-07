@@ -39,7 +39,6 @@ from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import AB
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.util.rpc_exception import RPCError
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
 from fabric_cf.actor.core.kernel.predecessor_state import PredecessorState
@@ -484,12 +483,16 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         """
         approved = True
         for pred_state in self.redeem_predecessors.values():
-            if pred_state.get_reservation() is None or \
-                    pred_state.get_reservation().is_failed() or \
-                    pred_state.get_reservation().is_closed() or pred_state.get_reservation().is_closing():
-                self.logger.error("redeem predecessor reservation is in a terminal state or reservation is null."
-                                  " ignoring it: {}".format(pred_state.get_reservation()))
+            if pred_state.get_reservation() is None:
+                self.logger.error(f"redeem predecessor reservation is null, ignoring it: {pred_state.get_reservation()}")
                 continue
+            if pred_state.get_reservation().is_failed() or pred_state.get_reservation().is_closed() or \
+                    pred_state.get_reservation().is_closing():
+                self.logger.error(f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"
+                                  f" is in a terminal state, failing the reservation# {self.get_reservation_id()}")
+                self.fail(message=f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"
+                                  f" is in a terminal state")
+
             if not (pred_state.get_reservation().is_ticketed() or pred_state.get_reservation().is_active_ticketed()):
                 approved = False
                 break
@@ -860,6 +863,9 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                 # This is a regular request for network resources to an upstream broker.
                 self.sequence_ticket_out += 1
                 RPCManagerSingleton.get().ticket(reservation=self)
+
+                # Update ASM with Reservation Info
+                self.update_slice_graph(sliver=self.resources.sliver)
 
         elif self.joinstate == JoinState.BlockedRedeem:
             # this reservation has a ticket to redeem, and the redeem is
