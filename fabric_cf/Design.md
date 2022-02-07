@@ -37,7 +37,7 @@ Complete Flow for all messages and processing at Orchestrator is described below
          - Trigger Kafka ticket exchange with broker
      - For NetworkNode:
        - Trigger Kafka ticket exchange with broker
-     - Redeem message exchange with AM once ticket is granted by Broker
+   - Redeem message exchange with AM once ticket is granted by Broker
 
 ### Broker
 Complete Flow for all messages and processing at Broker is described below:
