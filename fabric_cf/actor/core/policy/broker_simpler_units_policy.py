@@ -47,6 +47,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicketFactory
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.policy.broker_calendar_policy import BrokerCalendarPolicy
 from fabric_cf.actor.core.policy.fifo_queue import FIFOQueue
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -63,7 +64,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
     from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
     from fabric_cf.actor.core.util.resource_type import ResourceType
-    from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 
 
 class BrokerAllocationAlgorithm(Enum):
@@ -425,6 +425,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             inv = self.inventory.get(resource_type=resource_type)
 
             if inv is not None:
+                self.logger.debug(f"Inventory type: {type(inv)}")
                 term = Term(start=start, end=end)
                 return self.ticket_inventory(reservation=reservation, inv=inv, term=term,
                                              node_id_to_reservations=node_id_to_reservations)
@@ -913,8 +914,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         :param node_id_to_reservations:
         :return: list of reservations
         """
-        existing_reservations = self.actor.get_plugin().get_database().get_reservations_by_graph_node_id(
-            graph_node_id=node_id)
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        # Only get Active or Ticketing reservations
+        existing_reservations = self.actor.get_plugin().get_database().get_reservations_by_graph_node_id_state(
+            graph_node_id=node_id, states=states)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

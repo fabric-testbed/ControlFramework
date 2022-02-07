@@ -264,7 +264,8 @@ class OrchestratorHandler:
             # Once added to the policy; Actor Tick Handler will do following asynchronously:
             # 1. Ticket message exchange with broker and
             # 2. Redeem message exchange with AM once ticket is granted by Broker
-            self.controller_state.get_sdt().process_slice(controller_slice=orchestrator_slice)
+            self.controller_state.demand_slice(controller_slice=orchestrator_slice)
+            # self.controller_state.get_sdt().process_slice(controller_slice=orchestrator_slice)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:

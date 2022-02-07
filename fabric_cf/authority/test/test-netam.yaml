@@ -28,8 +28,8 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  kafka-server: 152.54.15.56:29092
-  kafka-schema-registry-url: http://152.54.15.56:8081
+  kafka-server: alpha-6.fabric-testbed.net:29092
+  kafka-schema-registry-url: http://alpha-6.fabric-testbed.net:8081
   kafka-key-schema: ../../../schema/key.avsc
   kafka-value-schema: ../../../schema/message.avsc
   kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
@@ -79,7 +79,7 @@ database:
   db-user: fabric
   db-password: fabric
   db-name: netam
-  db-host: 152.54.15.56:5432
+  db-host: alpha-6.fabric-testbed.net:5432
 
 container:
   container.guid: net1-am-conainer

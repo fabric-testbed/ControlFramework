@@ -452,6 +452,26 @@ class ActorDatabase(ABCDatabase):
                 result.append(res_obj)
         return result
 
+    def get_reservations_by_graph_node_id_state(self, *, graph_node_id: str,
+                                                states: List[int]) -> List[ABCReservationMixin]:
+        result = []
+        res_dict_list = None
+        try:
+            self.lock.acquire()
+            res_dict_list = self.db.get_reservations_by_graph_node_id_and_state(graph_node_id=graph_node_id,
+                                                                                states=states)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            self.lock.release()
+        if res_dict_list is not None:
+            for r in res_dict_list:
+                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+                slice_id = r.get(Constants.RSV_SLC_ID)
+                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
+                result.append(res_obj)
+        return result
+
     def get_reservations_by_oidc_claim_sub(self, *, oidc_claim_sub: str) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
