@@ -199,7 +199,7 @@ class AggregatedBQMPlugin:
             ns_id = str(uuid.uuid4())
             site_to_ns_node_id[s] = ns_id
             ns_props = {ABCPropertyGraph.PROP_NAME: s + '_ns',
-                        ABCBQMPropertyGraph.PROP_TYPE: str(ServiceType.MPLS)}
+                        ABCPropertyGraph.PROP_TYPE: str(ServiceType.MPLS)}
             abqm.add_node(node_id=ns_id, label=ABCPropertyGraph.CLASS_NetworkService, props=ns_props)
             abqm.add_link(node_a=site_sliver.node_id, rel=ABCPropertyGraph.REL_HAS, node_b=ns_id)
 
@@ -272,5 +272,59 @@ class AggregatedBQMPlugin:
                           node_b=sink_cp_id)
             abqm.add_link(node_a=sink_cp_id, rel=ABCPropertyGraph.REL_CONNECTS,
                           node_b=site_to_ns_node_id[sink_site])
+
+        # get all stitch ports and connect them to the CompositeNode
+        facility_ports = cbm.get_all_nodes_by_class_and_type(label=ABCPropertyGraph.CLASS_ConnectionPoint,
+                                                             ntype=str(InterfaceType.FacilityPort))
+        # figure out which composite node/site this connects to
+        for fac_port in facility_ports:
+            peers = cbm.find_peer_connection_points(node_id=fac_port)
+            _, fac_port_props = cbm.get_node_properties(node_id=fac_port)
+            for peer in peers:
+                _, peer_props = cbm.get_node_properties(node_id=peer)
+                # find matching trunk port
+                if peer_props[ABCPropertyGraph.PROP_TYPE] == str(InterfaceType.TrunkPort):
+                    # trace to its parent
+                    peer_parents = cbm.get_first_and_second_neighbor(node_id=peer,
+                                                                     rel1=ABCPropertyGraph.REL_CONNECTS,
+                                                                     node1_label=ABCPropertyGraph.CLASS_NetworkService,
+                                                                     rel2=ABCPropertyGraph.REL_HAS,
+                                                                     node2_label=ABCPropertyGraph.CLASS_NetworkNode)
+                    # link connecting peer to facility port
+                    peer_link = cbm.get_first_neighbor(node_id=peer, rel=ABCPropertyGraph.REL_CONNECTS,
+                                                       node_label=ABCPropertyGraph.CLASS_Link)[0]
+                    _, peer_link_props = cbm.get_node_properties(node_id=peer_link)
+                    if len(peer_parents) != 1:
+                        # something strange here, skip
+                        continue
+                    else:
+                        _, parent_props = cbm.get_node_properties(node_id=peer_parents[0][1])
+                        parent_site = parent_props[ABCPropertyGraph.PROP_SITE]
+                        fp_link_props = {ABCPropertyGraph.PROP_NAME: fac_port_props[ABCPropertyGraph.PROP_NAME],
+                                         ABCPropertyGraph.PROP_TYPE: peer_link_props[ABCPropertyGraph.PROP_TYPE]}
+                        fp_cpoint_props = {ABCPropertyGraph.PROP_NAME: parent_props[ABCPropertyGraph.PROP_NAME] + '-' +
+                                                                       fac_port_props[ABCPropertyGraph.PROP_NAME],
+                                           ABCPropertyGraph.PROP_TYPE: peer_props[ABCPropertyGraph.PROP_TYPE],
+                                           ABCPropertyGraph.PROP_CAPACITIES: peer_props[ABCPropertyGraph.PROP_CAPACITIES],
+                                           ABCPropertyGraph.PROP_LABELS: peer_props[ABCPropertyGraph.PROP_LABELS]}
+                        fp_props = {ABCPropertyGraph.PROP_NAME: fac_port_props[ABCPropertyGraph.PROP_NAME],
+                                    ABCPropertyGraph.PROP_TYPE: fac_port_props[ABCPropertyGraph.PROP_TYPE],
+                                    ABCPropertyGraph.PROP_LABELS: fac_port_props[ABCPropertyGraph.PROP_LABELS],
+                                    ABCPropertyGraph.PROP_CAPACITIES: fac_port_props[ABCPropertyGraph.PROP_CAPACITIES]}
+                        fp_link_id = str(uuid.uuid4())
+                        fp_cpoint_id = str(uuid.uuid4())
+                        fp_id = str(uuid.uuid4())
+                        abqm.add_node(node_id=fp_link_id, label=ABCPropertyGraph.CLASS_Link,
+                                      props=fp_link_props)
+                        abqm.add_node(node_id=fp_cpoint_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
+                                      props=fp_cpoint_props)
+                        abqm.add_node(node_id=fp_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
+                                      props=fp_props)
+                        abqm.add_link(node_a=site_to_ns_node_id[parent_site], rel=ABCPropertyGraph.REL_CONNECTS,
+                                      node_b=fp_cpoint_id)
+                        abqm.add_link(node_a=fp_cpoint_id, rel=ABCPropertyGraph.REL_CONNECTS,
+                                      node_b=fp_link_id)
+                        abqm.add_link(node_a=fp_link_id, rel=ABCPropertyGraph.REL_CONNECTS,
+                                      node_b=fp_id)
 
         return abqm

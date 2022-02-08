@@ -120,11 +120,10 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         node_sliver = NodeSliver()
         node_sliver.resource_type = NodeType.VM
         node_sliver.node_id = "test-slice-node-1"
-        cap = Capacities()
-        cap.set_fields(core=4, ram=64, disk=500)
+        cap = Capacities(core=4, ram=64, disk=500)
         catalog = InstanceCatalog()
         instance_type = catalog.map_capacities_to_instance(cap=cap)
-        cap_hints = CapacityHints().set_fields(instance_type=instance_type)
+        cap_hints = CapacityHints(instance_type=instance_type)
         node_sliver.set_properties(name="node-1", type=NodeType.VM, site="RENC",
                                    capacities=cap, image_type='qcow2', image_ref='default_centos_8',
                                    capacity_hints=cap_hints)
@@ -134,11 +133,10 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         node_sliver = NodeSliver()
         node_sliver.resource_type = NodeType.VM
         node_sliver.node_id = "test-slice-node-1"
-        cap = Capacities()
-        cap.set_fields(core=4, ram=64, disk=500)
+        cap = Capacities(core=4, ram=64, disk=500)
         catalog = InstanceCatalog()
         instance_type = catalog.map_capacities_to_instance(cap=cap)
-        cap_hints = CapacityHints().set_fields(instance_type=instance_type)
+        cap_hints = CapacityHints(instance_type=instance_type)
         node_sliver.set_properties(name="node-1", type=NodeType.VM, site="RENC",
                                    capacities=cap, image_type='qcow2', image_ref='default_centos_8',
                                    capacity_hints=cap_hints)
@@ -509,7 +507,7 @@ class BrokerSimplerUnitsPolicyTest(BaseTestCase, unittest.TestCase):
         start = clock.cycle_start_date(cycle=self.DonateStartCycle)
         end = clock.cycle_end_date(cycle=self.DonateEndCycle - 1)
         sliver = self.build_sliver_with_components()
-        caphint = CapacityHints().set_fields(instance_type="fabric.c64.m384.d4000")
+        caphint = CapacityHints(instance_type="fabric.c64.m384.d4000")
         sliver.set_capacity_hints(caphint=caphint)
 
         request = self.get_reservation_for_network_node(start, end, sliver=sliver)

@@ -29,6 +29,7 @@ from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservati
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.json import JSONSliver
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 
@@ -53,7 +54,6 @@ class ResponseBuilder:
     PROP_SLICE_NAME = "slice_name"
     PROP_SLICE_STATE = "slice_state"
     PROP_RESERVATION_ID = "reservation_id"
-    PROP_RESOURCE_TYPE = "resource_type"
     PROP_RESERVATION_STATE = "reservation_state"
     PROP_LEASE_START_TIME = "lease_start"
     PROP_LEASE_END_TIME = "lease_end"
@@ -63,16 +63,11 @@ class ResponseBuilder:
     PROP_GRAPH_NODE_ID = "graph_node_id"
     PROP_GRAPH_ID = "graph_id"
     PROP_NAME = "name"
-    PROP_MANAGEMENT_IP = "management_ip"
-    PROP_SITE = "site"
-    PROP_CAPACITIES = "capacities"
-    PROP_ALLOCATED_CAPACITIES = "allocated_capacities"
-    PROP_LABELS = "labels"
-    PROP_ALLOCATED_LABELS = "allocated_labels"
-    PROP_CAPACITY_HINTS = "capacity_hints"
+    PROP_SLIVER = "sliver"
+    PROP_SLIVER_TYPE = "sliver_type"
 
     @staticmethod
-    def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = False,
+    def get_reservation_summary(*, res_list: List[ReservationMng], include_notices: bool = True,
                                 include_sliver: bool = False) -> dict:
         """
         Get Reservation summary
@@ -102,7 +97,8 @@ class ResponseBuilder:
                 if sliver is not None:
                     res_dict[ResponseBuilder.PROP_GRAPH_NODE_ID] = sliver.node_id
                     if include_sliver:
-                        res_dict = ResponseBuilder.get_sliver_json(sliver=sliver, result=res_dict)
+                        res_dict[ResponseBuilder.PROP_SLIVER_TYPE] = type(sliver).__name__
+                        res_dict[ResponseBuilder.PROP_SLIVER] = JSONSliver.sliver_to_json(sliver=sliver)
 
                 if include_notices:
                     res_dict[ResponseBuilder.PROP_NOTICES] = reservation.get_notices()

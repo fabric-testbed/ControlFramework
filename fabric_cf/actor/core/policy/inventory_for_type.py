@@ -26,17 +26,40 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List, Tuple
+from ctypes import Union
+from typing import Tuple
 
-from fim.slivers.base_sliver import BaseSliver
-
-from fabric_cf.actor.core.util.id import ID
-
-if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fim.slivers.capacities_labels import Labels, Capacities
+from fim.slivers.delegations import DelegationFormat, Delegations
 
 
 class InventoryForType:
+    def __init__(self):
+        self.logger = None
+
+    def set_logger(self, *, logger):
+        self.logger = logger
+
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['logger']
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.logger = None
+
+    def _get_delegations(self, *, lab_cap_delegations: Delegations) -> Tuple[str, Union[Labels, Capacities]]:
+        # Grab Label Delegations
+        delegation_id, deleg = lab_cap_delegations.get_sole_delegation()
+        self.logger.debug(f"Available label/capacity delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+        # ignore pool definitions and references for now
+        if deleg.get_format() != DelegationFormat.SinglePool:
+            return None, None
+        # get the Labels/Capacities object
+        delegated_label_capacity = deleg.get_details()
+        return delegation_id, delegated_label_capacity
+
     @abstractmethod
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
         """
@@ -45,18 +68,4 @@ class InventoryForType:
         @param request request properties
         @param resource resource properties
         @return new resource properties
-        """
-
-    @abstractmethod
-    def allocate(self, *, rid: ID, requested_sliver: BaseSliver, graph_id: str, graph_node: BaseSliver,
-                 existing_reservations: List[ABCReservationMixin]) -> Tuple[str, BaseSliver]:
-        """
-        Allocate an extending or ticketing reservation
-        :param rid: reservation to be allocated
-        :param requested_sliver: requested sliver
-        :param graph_id: BQM graph id
-        :param graph_node: BQM graph node identified to serve the reservation
-        :param existing_reservations: Existing Reservations served by the same BQM node
-        :return: Tuple of Delegation Id and the Requested Sliver annotated with BQM Node Id and other properties
-        :raises: BrokerException in case the request cannot be satisfied
         """

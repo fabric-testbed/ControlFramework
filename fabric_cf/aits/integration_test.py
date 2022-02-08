@@ -254,11 +254,11 @@ class IntegrationTest(unittest.TestCase):
         n2.set_properties(image_type='qcow2', image_ref='default_centos_8')
 
         if not no_cap:
-            cap = fu.Capacities()
+            cap = None
             if exceed_capacities:
-                cap.set_fields(core=33, ram=64, disk=500)
+                cap = fu.Capacities(core=33, ram=64, disk=500)
             else:
-                cap.set_fields(core=3, ram=61, disk=499)
+                cap = fu.Capacities(core=3, ram=61, disk=499)
             n1.set_properties(capacities=cap)
             n2.set_properties(capacities=cap)
 
@@ -272,8 +272,7 @@ class IntegrationTest(unittest.TestCase):
                 n2.add_component(ctype=fu.ComponentType.SmartNIC, model='ConnectX-5', name='nic2')
 
         if use_hints:
-            cap_hints = fu.CapacityHints()
-            cap_hints.set_fields(instance_type=instance_type)
+            cap_hints = fu.CapacityHints(instance_type=instance_type)
             n1.set_properties(capacity_hints=cap_hints)
             n2.set_properties(capacity_hints=cap_hints)
 
@@ -286,8 +285,7 @@ class IntegrationTest(unittest.TestCase):
         n2 = t.add_node(name='n2', site='RENC')
         n3 = t.add_node(name='n3', site='RENC')
 
-        cap = fu.Capacities()
-        cap.set_fields(core=2, ram=8, disk=100)
+        cap = fu.Capacities(core=2, ram=8, disk=100)
         n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
         n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
         n3.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
@@ -312,8 +310,7 @@ class IntegrationTest(unittest.TestCase):
         n1 = t.add_node(name='n1', site='RENC', ntype=fu.NodeType.VM)
         n2 = t.add_node(name='n2', site='UKY')
 
-        cap = fu.Capacities()
-        cap.set_fields(core=2, ram=8, disk=100)
+        cap = fu.Capacities(core=2, ram=8, disk=100)
         n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
         n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
 
@@ -335,8 +332,7 @@ class IntegrationTest(unittest.TestCase):
         n1 = t.add_node(name='n1', site='RENC', ntype=fu.NodeType.VM)
         n2 = t.add_node(name='n2', site='UKY')
 
-        cap = fu.Capacities()
-        cap.set_fields(core=2, ram=8, disk=100)
+        cap = fu.Capacities(core=2, ram=8, disk=100)
         n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
         n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
 
@@ -359,8 +355,7 @@ class IntegrationTest(unittest.TestCase):
         n2 = t.add_node(name='n2', site='UKY')
         n3 = t.add_node(name='n3', site='UKY')
 
-        cap = fu.Capacities()
-        cap.set_fields(core=2, ram=8, disk=100)
+        cap = fu.Capacities(core=2, ram=8, disk=100)
         n1.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
         n2.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')
         n3.set_properties(capacities=cap, image_type='qcow2', image_ref='default_centos_8')

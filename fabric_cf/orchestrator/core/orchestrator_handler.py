@@ -273,7 +273,7 @@ class OrchestratorHandler:
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if slice_id is not None and controller is not None and asm_graph is not None:
-                FimHelper.delete_graph(graph_id=asm_graph.graph_id)
+                #FimHelper.delete_graph(graph_id=asm_graph.graph_id)
                 controller.remove_slice(slice_id=slice_id, id_token=token)
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
