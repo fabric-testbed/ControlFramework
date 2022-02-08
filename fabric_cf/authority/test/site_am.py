@@ -41,6 +41,7 @@ def main():
         # Uncomment when testing as app running
         Globals.config_file = './test.yaml'
         Constants.SUPERBLOCK_LOCATION = './site_state_recovery.lock'
+        Constants.MAINTENANCE_LOCATION = './site_maintenance.lock'
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(force_fresh=False)
 

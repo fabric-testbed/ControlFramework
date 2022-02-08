@@ -102,7 +102,8 @@ class MessageService(AvroConsumerApi):
                     message.get_message_name() == AbcMessageAvro.close_reservations or \
                     message.get_message_name() == AbcMessageAvro.update_reservation or \
                     message.get_message_name() == AbcMessageAvro.remove_reservation or \
-                    message.get_message_name() == AbcMessageAvro.extend_reservation:
+                    message.get_message_name() == AbcMessageAvro.extend_reservation or \
+                    message.get_message_name() == AbcMessageAvro.maintenance_request:
                 self.kafka_mgmt_service.process(message=message)
             else:
                 self.kafka_service.process(message=message)

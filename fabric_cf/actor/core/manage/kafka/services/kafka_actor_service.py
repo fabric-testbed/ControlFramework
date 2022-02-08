@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import json
 import traceback
 
 from fabric_mb.message_bus.messages.add_slice_avro import AddSliceAvro
@@ -33,6 +34,7 @@ from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAv
 from fabric_mb.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
 from fabric_mb.message_bus.messages.get_reservations_state_request_avro import GetReservationsStateRequestAvro
 from fabric_mb.message_bus.messages.get_slices_request_avro import GetSlicesRequestAvro
+from fabric_mb.message_bus.messages.maintenance_request_avro import MaintenanceRequestAvro
 from fabric_mb.message_bus.messages.remove_reservation_avro import RemoveReservationAvro
 from fabric_mb.message_bus.messages.remove_slice_avro import RemoveSliceAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
@@ -88,6 +90,9 @@ class KafkaActorService(KafkaService):
 
         elif message.get_message_name() == AbcMessageAvro.get_reservations_state_request:
             result = self.get_reservation_state(request=message)
+
+        elif message.get_message_name() == AbcMessageAvro.maintenance_request:
+            result = self.maintenance_request(request=message)
 
         else:
             self.logger.debug("Unsupported Message, discarding it!")
@@ -390,6 +395,28 @@ class KafkaActorService(KafkaService):
             else:
                 result = mo.get_delegations(caller=auth, id_token=request.get_id_token(),
                                             state=request.delegation_state)
+
+        except Exception as e:
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        result.message_id = request.message_id
+        return result
+
+    def maintenance_request(self, *, request: MaintenanceRequestAvro) -> ResultStringAvro:
+        result = ResultStringAvro()
+        result.status = ResultAvro()
+        try:
+            if request.actor_guid is None:
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+                return result
+
+            mo = self.get_actor_mo(guid=ID(uid=request.actor_guid))
+            mode_str = request.get_properties().get(Constants.MODE)
+            mode = json.loads(mode_str.lower())
+            mo.toggle_maintenance_mode(mode=mode)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

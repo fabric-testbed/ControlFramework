@@ -30,6 +30,7 @@ from typing import List
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
+from fabric_mb.message_bus.messages.maintenance_request_avro import MaintenanceRequestAvro
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric_mb.message_bus.messages.get_reservations_state_request_avro import GetReservationsStateRequestAvro
 from fabric_mb.message_bus.messages.add_slice_avro import AddSliceAvro
@@ -55,6 +56,14 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
     def prepare(self, *, callback_topic: str):
         self.callback_topic = callback_topic
+
+    def toggle_maintenance_mode(self, actor_guid: str, callback_topic: str, mode: bool, id_token: str = None, ):
+        props = {Constants.MODE: str(mode)}
+        request = MaintenanceRequestAvro(properties=props, actor_guid=actor_guid,
+                                         callback_topic=callback_topic, id_token=id_token)
+        status, response = self.send_request(request)
+
+        return response.status.code == 0
 
     def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None,
                    email: str = None) -> List[SliceAvro] or None:

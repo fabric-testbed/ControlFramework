@@ -50,10 +50,10 @@ class OrchestratorHandler:
     def __init__(self):
         self.controller_state = OrchestratorKernelSingleton.get()
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.logger = GlobalsSingleton.get().get_logger()
-        self.jwks_url = GlobalsSingleton.get().get_config().get_oauth_config().get(
-            Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
-        self.pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
+        self.globals = GlobalsSingleton.get()
+        self.logger = self.globals.get_logger()
+        self.jwks_url = self.globals.get_config().get_oauth_config().get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
+        self.pdp_config = self.globals.get_config().get_global_config().get_pdp_config()
 
     def get_logger(self):
         """
@@ -209,6 +209,9 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
+        if self.globals.is_maintenance_mode_on():
+            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
+
         slice_id = None
         controller = None
         orchestrator_slice = None
@@ -444,6 +447,9 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :return:
         """
+        if self.globals.is_maintenance_mode_on():
+            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
+
         failed_to_extend_rid_list = []
         try:
             controller = self.controller_state.get_management_actor()
