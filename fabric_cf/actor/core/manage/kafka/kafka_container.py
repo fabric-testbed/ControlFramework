@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-import traceback
 from typing import List
 
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
@@ -48,10 +47,10 @@ class KafkaContainer(KafkaProxy, ABCMgmtContainer):
     def get_management_object(self, *, key: ID) -> ABCComponent:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def do_get_actors(self, *, type: int) -> List[ActorAvro]:
+    def do_get_actors(self, *, actor_type: int) -> List[ActorAvro]:
         request = GetActorsRequestAvro()
         request = self.fill_request_by_id_message(request=request)
-        request.type = type
+        request.type = actor_type
         status, response = self.send_request(request)
 
         if status.code == 0:
@@ -62,19 +61,19 @@ class KafkaContainer(KafkaProxy, ABCMgmtContainer):
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_actors(self) -> List[ActorAvro]:
-        return self.do_get_actors(type=ActorType.All.value)
+        return self.do_get_actors(actor_type=ActorType.All.value)
 
     def get_actors_from_database(self) -> List[ActorAvro]:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_authorities(self) -> List[ActorAvro]:
-        return self.do_get_actors(type=ActorType.Authority.value)
+        return self.do_get_actors(actor_type=ActorType.Authority.value)
 
     def get_brokers(self) -> List[ActorAvro]:
-        return self.do_get_actors(type=ActorType.Broker.value)
+        return self.do_get_actors(actor_type=ActorType.Broker.value)
 
     def get_controllers(self) -> List[ActorAvro]:
-        return self.do_get_actors(type=ActorType.Orchestrator.value)
+        return self.do_get_actors(actor_type=ActorType.Orchestrator.value)
 
     def get_proxies(self, *, protocol: str) -> List[ProxyAvro]:
         raise ManageException(Constants.NOT_IMPLEMENTED)

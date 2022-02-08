@@ -305,14 +305,7 @@
         "fields": [{
 				"name": "reservation_id",
 				"type": "string"
-			},
-			{
-                "name": "filter",
-                "type": {
-                    "type": "map",
-                    "values": "string"
-                }
-            }
+			}
         ]
     },
     {
@@ -1144,6 +1137,62 @@
 				"type": ["null", "fabric.cf.model.AuthRecord"],
 				"default": null
 			},
+			{
+				"name": "id_token",
+				"type": ["null", "string"],
+				"default": null
+			}
+		]
+	},
+	{
+	    "namespace": "fabric.cf.model",
+		"name": "AddPeer",
+		"type": "record",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "callback_topic",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "peer",
+				"type": "fabric.cf.model.ProxyRecord"
+			}
+		]
+	},
+	{
+	    "namespace": "fabric.cf.model",
+		"name": "MaintenanceRequest",
+		"type": "record",
+		"fields": [{
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"name": "callback_topic",
+				"type": "string"
+			},
+			{
+				"name": "message_id",
+				"type": "string"
+			},
+			{
+				"name": "actor_guid",
+				"type": "string"
+			},
+			{
+                "name": "properties",
+                "type": {
+                    "type": "map",
+                    "values": "string"
+                }
+            },
 			{
 				"name": "id_token",
 				"type": ["null", "string"],

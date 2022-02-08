@@ -101,6 +101,35 @@ class Globals:
         if os.path.isfile(Constants.SUPERBLOCK_LOCATION):
             os.remove(Constants.SUPERBLOCK_LOCATION)
 
+    def create_maintenance_lock(self):
+        """
+        Create Super Block
+        """
+        self.get_logger().debug("Creating maintenance lock")
+        file = None
+        try:
+            file = open(Constants.MAINTENANCE_LOCATION, 'r')
+        except IOError:
+            file = open(Constants.MAINTENANCE_LOCATION, 'w')
+        finally:
+            if file is not None:
+                file.close()
+
+    @staticmethod
+    def delete_maintenance_lock():
+        """
+        Delete maintenance block file
+        """
+        if os.path.isfile(Constants.MAINTENANCE_LOCATION):
+            os.remove(Constants.MAINTENANCE_LOCATION)
+
+    @staticmethod
+    def is_maintenance_mode_on() -> bool:
+        if os.path.isfile(Constants.MAINTENANCE_LOCATION):
+            return True
+        return False
+
+
     def fail(self, *, e: Exception):
         """
         Fail the Actor
