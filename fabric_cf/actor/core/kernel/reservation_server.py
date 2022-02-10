@@ -269,11 +269,11 @@ class ReservationServer(Reservation, ABCKernelServerReservationMixin):
         s = super().get_notices()
         notices = self.update_data.get_events()
         if notices is not None:
-            s += "\n{}".format(notices)
+            s += " {}".format(notices)
 
         notices = self.update_data.get_message()
         if notices is not None:
-            s += "\n{}".format(notices)
+            s += " {}".format(notices)
 
         return s
 
