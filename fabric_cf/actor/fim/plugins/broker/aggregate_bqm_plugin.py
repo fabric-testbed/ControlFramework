@@ -246,14 +246,16 @@ class AggregatedBQMPlugin:
             source_cp_props = {ABCPropertyGraph.PROP_NAME: "_".join([source_site, sink_site]),
                                ABCPropertyGraph.PROP_TYPE: str(InterfaceType.TrunkPort),
                                ABCPropertyGraph.PROP_CLASS: ABCPropertyGraph.CLASS_ConnectionPoint,
-                               ABCPropertyGraph.PROP_CAPACITIES: cbm_source_cp_props[ABCPropertyGraph.PROP_CAPACITIES]}
+                               ABCPropertyGraph.PROP_CAPACITIES:
+                                   cbm_source_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)}
             abqm.add_node(node_id=source_cp_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
                           props=source_cp_props)
             # FIXME: CP names may not be unique if we are dealing with a multigraph
             sink_cp_props = {ABCPropertyGraph.PROP_NAME: "_".join([sink_site, source_site]),
                              ABCPropertyGraph.PROP_TYPE: str(InterfaceType.TrunkPort),
                              ABCPropertyGraph.PROP_CLASS: ABCPropertyGraph.CLASS_ConnectionPoint,
-                             ABCPropertyGraph.PROP_CAPACITIES: cbm_sink_cp_props[ABCPropertyGraph.PROP_CAPACITIES]}
+                             ABCPropertyGraph.PROP_CAPACITIES:
+                                 cbm_sink_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)}
             abqm.add_node(node_id=sink_cp_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
                           props=sink_cp_props)
             # selectively replicate link node and its properties from CBM
@@ -305,12 +307,14 @@ class AggregatedBQMPlugin:
                         fp_cpoint_props = {ABCPropertyGraph.PROP_NAME: parent_props[ABCPropertyGraph.PROP_NAME] + '-' +
                                                                        fac_port_props[ABCPropertyGraph.PROP_NAME],
                                            ABCPropertyGraph.PROP_TYPE: peer_props[ABCPropertyGraph.PROP_TYPE],
-                                           ABCPropertyGraph.PROP_CAPACITIES: peer_props[ABCPropertyGraph.PROP_CAPACITIES],
-                                           ABCPropertyGraph.PROP_LABELS: peer_props[ABCPropertyGraph.PROP_LABELS]}
+                                           ABCPropertyGraph.PROP_CAPACITIES:
+                                               peer_props.get(ABCPropertyGraph.PROP_CAPACITIES),
+                                           ABCPropertyGraph.PROP_LABELS: peer_props.get(ABCPropertyGraph.PROP_LABELS)}
                         fp_props = {ABCPropertyGraph.PROP_NAME: fac_port_props[ABCPropertyGraph.PROP_NAME],
                                     ABCPropertyGraph.PROP_TYPE: fac_port_props[ABCPropertyGraph.PROP_TYPE],
-                                    ABCPropertyGraph.PROP_LABELS: fac_port_props[ABCPropertyGraph.PROP_LABELS],
-                                    ABCPropertyGraph.PROP_CAPACITIES: fac_port_props[ABCPropertyGraph.PROP_CAPACITIES]}
+                                    ABCPropertyGraph.PROP_LABELS: fac_port_props.get(ABCPropertyGraph.PROP_LABELS),
+                                    ABCPropertyGraph.PROP_CAPACITIES:
+                                        fac_port_props.get(ABCPropertyGraph.PROP_CAPACITIES)}
                         fp_link_id = str(uuid.uuid4())
                         fp_cpoint_id = str(uuid.uuid4())
                         fp_id = str(uuid.uuid4())
