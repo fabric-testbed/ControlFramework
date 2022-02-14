@@ -108,8 +108,7 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"{message}")
 
         # Assign the first PCI Id from the list of available PCI slots
-        labels = Labels(bdf=delegated_label.bdf[0])
-        requested_component.label_allocations = labels
+        requested_component.label_allocations = Labels(bdf=delegated_label.bdf[0])
 
         # Find the VLAN from the BQM Component
         if available_component.network_service_info is None or \
@@ -220,18 +219,17 @@ class NetworkNodeInventory(InventoryForType):
         return requested_component
 
     def __check_component_labels_and_capacities(self, *, available_component: ComponentSliver, graph_id: str,
-                                                requested_component: ComponentSliver) -> Tuple[ComponentSliver, bool]:
+                                                requested_component: ComponentSliver) -> ComponentSliver:
         """
         Check if available component capacities, labels to match requested component
         :param available_component: available component
         :param graph_id: BQM graph id
         :param requested_component: requested component
-        :return: requested component annotated with properties in case of success, None otherwise, True/False
-        if the available component cannot be used to allocate more
+        :return: requested component annotated with properties in case of success, None otherwise
         """
         if requested_component.get_model() is not None and \
                 requested_component.get_model() != available_component.get_model():
-            return requested_component, True
+            return requested_component
 
         # Checking capacity for component
         delegation_id, delegated_capacity = self._get_delegations(
@@ -244,12 +242,7 @@ class NetworkNodeInventory(InventoryForType):
             raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                                   msg=f"{message}")
 
-        requested_component.capacity_allocations = delegated_capacity
-        delegated_capacity.unit -= 1
-
-        # Set number of units to 1 explicitly for SharedNIC
-        if requested_component.get_type() == ComponentType.SharedNIC:
-            requested_component.capacity_allocations.unit = 1
+        requested_component.capacity_allocations = Capacities(unit=1)
 
         # Check labels
         delegation_id, delegated_label = self._get_delegations(
@@ -267,7 +260,7 @@ class NetworkNodeInventory(InventoryForType):
         node_map = tuple([graph_id, available_component.node_id])
         requested_component.set_node_map(node_map=node_map)
 
-        return requested_component, (delegated_capacity.unit < 1)
+        return requested_component
 
     def __exclude_allocated_pci_device_from_shared_nic(self, shared_nic: ComponentSliver,
                                                        allocated_nic: ComponentSliver) -> Tuple[ComponentSliver, bool]:
@@ -288,9 +281,6 @@ class NetworkNodeInventory(InventoryForType):
         delegation_id, delegated_capacity = self._get_delegations(
             lab_cap_delegations=shared_nic.get_capacity_delegations())
 
-        # Exclude already allocated Shared NIC cards
-        delegated_capacity -= allocated_nic.get_capacity_allocations()
-
         self.logger.debug(f"Allocated NIC: {allocated_nic} labels: {allocated_nic.get_label_allocations()}")
 
         # Get the Allocated PCI address
@@ -306,14 +296,82 @@ class NetworkNodeInventory(InventoryForType):
         else:
             excluded_labels = [allocated_labels.bdf]
 
+        exists = False
         for e in excluded_labels:
-            self.logger.debug(f"Excluding PCI device {e}")
-            delegated_label.bdf.remove(e)
+            if e in delegated_label.bdf:
+                self.logger.debug(f"Excluding PCI device {e}")
+                delegated_label.bdf.remove(e)
+                exists = True
+
+        # Exclude already allocated Shared NIC cards
+        if exists:
+            delegated_capacity -= allocated_nic.get_capacity_allocations()
 
         return shared_nic, (delegated_capacity.unit < 1)
 
+    def __exclude_allocated_component(self, *, graph_node: NodeSliver, available_component: ComponentSliver,
+                                      allocated_component: ComponentSliver):
+        """
+        Remove the allocated component from the candidate Node. For dedicated components, the whole component is removed,
+        for Shared NIC, only the allocated PCI address is removed and the number of units is reduced by 1.
+        If all the PCIs are allocated for a Shared NIC, the complete Shared NIC is removed
+
+        @param graph_node candidate node identified to satisfy the reservation
+        @param available_component available component
+        @param allocated_component allocated component
+        """
+        exclude = True
+        if allocated_component.get_type() == ComponentType.SharedNIC:
+            available_component, exclude = self.__exclude_allocated_pci_device_from_shared_nic(
+                shared_nic=available_component, allocated_nic=allocated_component)
+        if exclude:
+            graph_node.attached_components_info.remove_device(name=available_component.get_name())
+
+    def __exclude_components_for_existing_reservations(self, *, rid: ID, graph_node: NodeSliver,
+                                                       existing_reservations: List[ABCReservationMixin]) -> NodeSliver:
+        """
+        Remove already assigned components to existing reservations from the candidate node
+        @param rid reservation ID
+        @param graph_node candidate node identified to satisfy the reservation
+        @param existing_reservations Existing Reservations
+        @return Return the updated candidate node
+        """
+        for reservation in existing_reservations:
+            if rid == reservation.get_reservation_id():
+                continue
+            # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+            allocated_sliver = None
+            if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                allocated_sliver = reservation.get_approved_resources().get_sliver()
+
+            if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
+                allocated_sliver = reservation.get_resources().get_sliver()
+
+            if allocated_sliver is None or not isinstance(allocated_sliver, NodeSliver) or \
+                    allocated_sliver.attached_components_info is None:
+                continue
+
+            for allocated in allocated_sliver.attached_components_info.devices.values():
+                allocated_node_map = allocated.get_node_map()
+
+                if allocated_node_map is None:
+                    continue
+
+                resource_type = allocated.get_type()
+
+                self.logger.debug(f"Already allocated components {allocated} of resource_type "
+                                  f"{resource_type} to reservation# {reservation.get_reservation_id()}")
+
+                for av in graph_node.attached_components_info.devices.values():
+                    if av.node_id == allocated_node_map[1]:
+                        self.__exclude_allocated_component(graph_node=graph_node, available_component=av,
+                                                           allocated_component=allocated)
+                        break
+        return graph_node
+
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_id: str,
-                           graph_node: NodeSliver, existing_reservations: List[ABCReservationMixin]) -> AttachedComponentsInfo:
+                           graph_node: NodeSliver,
+                           existing_reservations: List[ABCReservationMixin]) -> AttachedComponentsInfo:
         """
         Check if the requested capacities can be satisfied with the available capacities
         :param rid: reservation id of the reservation being served
@@ -324,63 +382,13 @@ class NetworkNodeInventory(InventoryForType):
         :return: Components updated with the corresponding BQM node ids
         :raises: BrokerException in case the request cannot be satisfied
         """
+        self.__exclude_components_for_existing_reservations(rid=rid, graph_node=graph_node,
+                                                            existing_reservations=existing_reservations)
 
         self.logger.debug(f"requested_components: {requested_components.devices.values()} for reservation# {rid}")
         for name, requested_component in requested_components.devices.items():
+            self.logger.debug(f"==========Allocating component: {requested_component}")
             resource_type = requested_component.get_type()
-            available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
-
-            self.logger.debug(f"Resource Type: {resource_type} available_components: {available_components}")
-
-            if available_components is None or len(available_components) == 0:
-                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                      msg=f"Component of type: {resource_type} not available in "
-                                          f"graph node: {graph_node.node_id}")
-
-            for reservation in existing_reservations:
-                if rid == reservation.get_reservation_id():
-                    continue
-                # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-                allocated_sliver = None
-                if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                    allocated_sliver = reservation.get_approved_resources().get_sliver()
-
-                if (reservation.is_active() or reservation.is_ticketed()) and reservation.get_resources() is not None:
-                    allocated_sliver = reservation.get_resources().get_sliver()
-
-                if allocated_sliver is None or not isinstance(allocated_sliver, NodeSliver) or \
-                        allocated_sliver.attached_components_info is None:
-                    continue
-
-                for allocated in allocated_sliver.attached_components_info.devices.values():
-                    allocated_node_map = allocated.get_node_map()
-
-                    if allocated_node_map is None:
-                        continue
-
-                    self.logger.debug(f"Already allocated components {allocated} of resource_type "
-                                      f"{resource_type} to reservation# {reservation.get_reservation_id()}")
-
-                    for av in available_components:
-                        remove_from_graph_node = True
-                        if av.node_id == allocated_node_map[1]:
-
-                            if av.get_type() == ComponentType.SharedNIC:
-                                self.logger.debug(f"Excluding Shared NIC {allocated.get_label_allocations()} assigned "
-                                                  f"to res# {reservation.get_reservation_id()}")
-                                # Exclude already allocated PCI address from available PCI devices
-                                av, remove_from_graph_node = self.__exclude_allocated_pci_device_from_shared_nic(
-                                    shared_nic=av, allocated_nic=allocated)
-
-                            else:
-                                self.logger.debug(f"Excluding component {allocated} assigned to "
-                                                  f"res# {reservation.get_reservation_id()}")
-
-                            # Exclude already allocated component from available components
-                            if remove_from_graph_node:
-                                graph_node.attached_components_info.remove_device(av.get_name())
-                            break
-
             available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
             self.logger.debug(f"available_components after excluding allocated components: {available_components}")
 
@@ -390,9 +398,8 @@ class NetworkNodeInventory(InventoryForType):
                                           f"graph node: {graph_node.node_id}")
 
             for component in available_components:
-                exclude = True
                 # check model matches the requested model
-                requested_component, exclude = self.__check_component_labels_and_capacities(
+                requested_component = self.__check_component_labels_and_capacities(
                     available_component=component, graph_id=graph_id, requested_component=requested_component)
 
                 if requested_component.get_node_map() is not None:
@@ -400,8 +407,8 @@ class NetworkNodeInventory(InventoryForType):
                                      f"{requested_component} in reservation# {rid} ")
 
                     # Remove the component from available components as it is assigned
-                    if exclude:
-                        graph_node.attached_components_info.remove_device(component.get_name())
+                    self.__exclude_allocated_component(graph_node=graph_node, available_component=component,
+                                                       allocated_component=requested_component)
                     break
 
             if requested_component.get_node_map() is None:
@@ -455,7 +462,8 @@ class NetworkNodeInventory(InventoryForType):
                 graph_node=graph_node,
                 existing_reservations=existing_reservations)
 
-        requested_sliver.capacity_allocations = requested_capacities
+        requested_sliver.capacity_allocations = Capacities()
+        requested_sliver.capacity_allocations.update(lab=requested_capacities)
         requested_sliver.label_allocations = Labels(instance_parent=graph_node.get_name())
 
         requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))
