@@ -57,6 +57,10 @@ class AggregatedBQMPlugin:
         self.actor = actor
         self.logger = logger
 
+    @staticmethod
+    def _remove_none_entries(d):
+        return {k: v for (k, v) in d.items() if v}
+
     def __occupied_node_capacity(self, *, node_id: str) -> Tuple[Capacities,
                                                                  Dict[ComponentType, Dict[str, Capacities]]]:
         """
@@ -91,7 +95,7 @@ class AggregatedBQMPlugin:
                         for allocated_component in allocated_sliver.attached_components_info.devices.values():
                             rt = allocated_component.resource_type
                             rm = allocated_component.resource_model
-                            if occupied_component_capacities[rt].get(rm, None) is None:
+                            if occupied_component_capacities[rt].get(rm) is None:
                                 occupied_component_capacities[rt][rm] = Capacities()
 
                             occupied_component_capacities[rt][rm] = occupied_component_capacities[rt][rm] + \
@@ -171,7 +175,7 @@ class AggregatedBQMPlugin:
                 # merge allocated component capacities
                 for kt, v in allocated_comp_caps.items():
                     for km, vcap in v.items():
-                        if site_allocated_comps_caps_by_type[kt].get(km, None) is None:
+                        if site_allocated_comps_caps_by_type[kt].get(km) is None:
                             site_allocated_comps_caps_by_type[kt][km] = Capacities()
                         site_allocated_comps_caps_by_type[kt][km] = site_allocated_comps_caps_by_type[kt][km] + \
                                                                     vcap
@@ -182,7 +186,7 @@ class AggregatedBQMPlugin:
                 for comp in sliver.attached_components_info.list_devices():
                     rt = comp.resource_type
                     rm = comp.resource_model
-                    if site_comps_by_type[rt].get(rm, None) is None:
+                    if site_comps_by_type[rt].get(rm) is None:
                         site_comps_by_type[rt][rm] = list()
                     site_comps_by_type[rt][rm].append(comp)
 
@@ -211,7 +215,7 @@ class AggregatedBQMPlugin:
                     # count what is available
                     comp_sliver.capacities = Capacities()
                     # count what is taken (ignore those type/model pairings that were unused)
-                    comp_sliver.capacity_allocations = site_allocated_comps_caps_by_type[ctype].get(cmodel, None) or \
+                    comp_sliver.capacity_allocations = site_allocated_comps_caps_by_type[ctype].get(cmodel) or \
                                                        Capacities()
                     comp_sliver.set_type(ctype)
                     comp_sliver.set_model(cmodel)
@@ -239,21 +243,25 @@ class AggregatedBQMPlugin:
             _, cbm_sink_cp_props = cbm.get_node_properties(node_id=sink_cp)
             _, cbm_link_props = cbm.get_node_properties(node_id=link)
             # add connection point, link, connection point between two NetworkServices
-            assert(site_to_ns_node_id.get(source_site, None) is not None and
-                   site_to_ns_node_id.get(sink_site, None) is not None)
+            assert(site_to_ns_node_id.get(source_site) is not None and
+                   site_to_ns_node_id.get(sink_site) is not None)
             source_cp_id = str(uuid.uuid4())
             sink_cp_id = str(uuid.uuid4())
             source_cp_props = {ABCPropertyGraph.PROP_NAME: "_".join([source_site, sink_site]),
                                ABCPropertyGraph.PROP_TYPE: str(InterfaceType.TrunkPort),
                                ABCPropertyGraph.PROP_CLASS: ABCPropertyGraph.CLASS_ConnectionPoint,
-                               ABCPropertyGraph.PROP_CAPACITIES: cbm_source_cp_props[ABCPropertyGraph.PROP_CAPACITIES]}
+                               ABCPropertyGraph.PROP_CAPACITIES:
+                                   cbm_source_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)}
+            source_cp_props = self._remove_none_entries(source_cp_props)
             abqm.add_node(node_id=source_cp_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
                           props=source_cp_props)
             # FIXME: CP names may not be unique if we are dealing with a multigraph
             sink_cp_props = {ABCPropertyGraph.PROP_NAME: "_".join([sink_site, source_site]),
                              ABCPropertyGraph.PROP_TYPE: str(InterfaceType.TrunkPort),
                              ABCPropertyGraph.PROP_CLASS: ABCPropertyGraph.CLASS_ConnectionPoint,
-                             ABCPropertyGraph.PROP_CAPACITIES: cbm_sink_cp_props[ABCPropertyGraph.PROP_CAPACITIES]}
+                             ABCPropertyGraph.PROP_CAPACITIES:
+                                 cbm_sink_cp_props.get(ABCPropertyGraph.PROP_CAPACITIES)}
+            sink_cp_props = self._remove_none_entries(sink_cp_props)
             abqm.add_node(node_id=sink_cp_id, label=ABCPropertyGraph.CLASS_ConnectionPoint,
                           props=sink_cp_props)
             # selectively replicate link node and its properties from CBM
@@ -305,12 +313,16 @@ class AggregatedBQMPlugin:
                         fp_cpoint_props = {ABCPropertyGraph.PROP_NAME: parent_props[ABCPropertyGraph.PROP_NAME] + '-' +
                                                                        fac_port_props[ABCPropertyGraph.PROP_NAME],
                                            ABCPropertyGraph.PROP_TYPE: peer_props[ABCPropertyGraph.PROP_TYPE],
-                                           ABCPropertyGraph.PROP_CAPACITIES: peer_props[ABCPropertyGraph.PROP_CAPACITIES],
-                                           ABCPropertyGraph.PROP_LABELS: peer_props[ABCPropertyGraph.PROP_LABELS]}
+                                           ABCPropertyGraph.PROP_CAPACITIES:
+                                               peer_props.get(ABCPropertyGraph.PROP_CAPACITIES),
+                                           ABCPropertyGraph.PROP_LABELS: peer_props.get(ABCPropertyGraph.PROP_LABELS)}
                         fp_props = {ABCPropertyGraph.PROP_NAME: fac_port_props[ABCPropertyGraph.PROP_NAME],
                                     ABCPropertyGraph.PROP_TYPE: fac_port_props[ABCPropertyGraph.PROP_TYPE],
-                                    ABCPropertyGraph.PROP_LABELS: fac_port_props[ABCPropertyGraph.PROP_LABELS],
-                                    ABCPropertyGraph.PROP_CAPACITIES: fac_port_props[ABCPropertyGraph.PROP_CAPACITIES]}
+                                    ABCPropertyGraph.PROP_LABELS: fac_port_props.get(ABCPropertyGraph.PROP_LABELS),
+                                    ABCPropertyGraph.PROP_CAPACITIES:
+                                        fac_port_props.get(ABCPropertyGraph.PROP_CAPACITIES)}
+                        fp_cpoint_props = self._remove_none_entries(fp_cpoint_props)
+                        fp_props = self._remove_none_entries(fp_props)
                         fp_link_id = str(uuid.uuid4())
                         fp_cpoint_id = str(uuid.uuid4())
                         fp_id = str(uuid.uuid4())
