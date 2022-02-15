@@ -55,6 +55,7 @@ class ResponseBuilder:
     PROP_SLICE_STATE = "slice_state"
     PROP_RESERVATION_ID = "reservation_id"
     PROP_RESERVATION_STATE = "reservation_state"
+    PROP_LEASE_START_TIME = "lease_start"
     PROP_LEASE_END_TIME = "lease_end"
     PROP_RESERVATION_PENDING_STATE = "pending_state"
     PROP_RESERVATION_JOIN_STATE = "join_state"
@@ -102,9 +103,13 @@ class ResponseBuilder:
                 if include_notices:
                     res_dict[ResponseBuilder.PROP_NOTICES] = reservation.get_notices()
 
+                if reservation.get_start() is not None:
+                    start_time = ActorClock.from_milliseconds(milli_seconds=reservation.get_start())
+                    res_dict[ResponseBuilder.PROP_LEASE_START_TIME] = start_time.strftime(Constants.LEASE_TIME_FORMAT)
+
                 if reservation.get_end() is not None:
                     end_time = ActorClock.from_milliseconds(milli_seconds=reservation.get_end())
-                    res_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.RENEW_TIME_FORMAT)
+                    res_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.LEASE_TIME_FORMAT)
 
                 reservations.append(res_dict)
         else:
@@ -119,12 +124,13 @@ class ResponseBuilder:
 
     @staticmethod
     def get_slice_summary(*, slice_list: List[SliceAvro], slice_id: str = None,
-                          slice_states: List[SliceState] = None) -> dict:
+                          slice_states: List[SliceState] = None, slice_model: str = None) -> dict:
         """
         Get slice summary
         :param slice_list:
         :param slice_id:
         :param slice_states:
+        :param slice_model:
         :return:
         """
         slices = []
@@ -143,10 +149,12 @@ class ResponseBuilder:
                           }
                 end_time = s.get_lease_end()
                 if end_time is not None:
-                    s_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.RENEW_TIME_FORMAT)
+                    s_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.LEASE_TIME_FORMAT)
+
+                if slice_id is not None and slice_model is not None:
+                    s_dict[ResponseBuilder.RESPONSE_SLICE_MODEL]: slice_model
                 slices.append(s_dict)
         else:
-            status = ResponseBuilder.STATUS_FAILURE
             message = "No slices were found"
 
         response = {ResponseBuilder.RESPONSE_STATUS: status,
@@ -176,24 +184,31 @@ class ResponseBuilder:
         return response
 
     @staticmethod
-    def get_slice_model_summary(*, slice_model: str):
-        """
-        Get Slice Model summary
-        :param slice_model:
-        :return:
-        """
-        status = ResponseBuilder.STATUS_OK
-        message = ""
+    def get_sliver_json(*, sliver: BaseSliver, result: dict) -> dict:
+        result[ResponseBuilder.PROP_NAME] = sliver.get_name()
+        result[ResponseBuilder.PROP_SITE] = sliver.get_site()
+        result[ResponseBuilder.PROP_RESOURCE_TYPE] = str(sliver.get_type())
+        if sliver.get_capacities() is not None:
+            result[ResponseBuilder.PROP_CAPACITIES] = sliver.get_capacities().to_json()
+        if sliver.get_capacity_allocations() is not None:
+            result[ResponseBuilder.PROP_ALLOCATED_CAPACITIES] = sliver.get_capacity_allocations().to_json()
+        if sliver.get_labels() is not None:
+            result[ResponseBuilder.PROP_LABELS] = sliver.get_labels().to_json()
+        if sliver.get_label_allocations() is not None:
+            result[ResponseBuilder.PROP_ALLOCATED_LABELS] = sliver.get_label_allocations().to_json()
 
-        if slice_model is None:
-            message = "No slice model found"
-            status = ResponseBuilder.STATUS_FAILURE
+        # Network Node Specific Fields
+        if isinstance(sliver, NodeSliver):
+            if sliver.get_management_ip() is not None:
+                result[ResponseBuilder.PROP_MANAGEMENT_IP] = sliver.get_management_ip()
+            if sliver.get_capacity_hints() is not None:
+                result[ResponseBuilder.PROP_CAPACITY_HINTS] = sliver.get_capacity_hints().to_json()
 
-        response = {ResponseBuilder.RESPONSE_STATUS: status,
-                    ResponseBuilder.RESPONSE_MESSAGE: message,
-                    ResponseBuilder.RESPONSE_SLICE_MODEL: slice_model}
+        # Network Service Specific Fields
+        if isinstance(sliver, NetworkServiceSliver):
+            print("TODO: populate NetworkServiceSliver fields")
 
-        return response
+        return result
 
     @staticmethod
     def get_response_summary(*, rid_list: List[str]) -> dict:

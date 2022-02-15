@@ -100,6 +100,7 @@ class JoinState(Enum):
     BlockedJoin = 33
     BlockedRedeem = 34
     Joining = 35
+    BlockedTicket = 36
 
     def __repr__(self):
         return self.name

@@ -70,6 +70,9 @@ class NoOpHandler(HandlerBase):
                                 if ns.interface_info is not None and ns.interface_info.interfaces is not None:
                                     for i in ns.interface_info.interfaces.values():
                                         self.get_logger().debug(f"ifs: {i}")
+                result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
+                          Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
+                          Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
 
             elif isinstance(sliver, NetworkServiceSliver):
                 assert (sliver.get_type() is not None)
@@ -95,9 +98,9 @@ class NoOpHandler(HandlerBase):
                         assert (sliver.get_gateway().lab.ipv6 is not None)
                         assert (interface.labels.vlan is not None)
 
-            result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
-                      Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
-                      Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
+                result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
+                          Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_OK,
+                          Constants.PROPERTY_ACTION_SEQUENCE_NUMBER: 0}
         except Exception as e:
             result = {Constants.PROPERTY_TARGET_NAME: Constants.TARGET_CREATE,
                       Constants.PROPERTY_TARGET_RESULT_CODE: Constants.RESULT_CODE_EXCEPTION,

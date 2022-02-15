@@ -50,10 +50,10 @@ class OrchestratorHandler:
     def __init__(self):
         self.controller_state = OrchestratorKernelSingleton.get()
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.logger = GlobalsSingleton.get().get_logger()
-        self.jwks_url = GlobalsSingleton.get().get_config().get_oauth_config().get(
-            Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
-        self.pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
+        self.globals = GlobalsSingleton.get()
+        self.logger = self.globals.get_logger()
+        self.jwks_url = self.globals.get_config().get_oauth_config().get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
+        self.pdp_config = self.globals.get_config().get_global_config().get_pdp_config()
 
     def get_logger(self):
         """
@@ -209,10 +209,12 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
+        if self.globals.is_maintenance_mode_on():
+            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
+
         slice_id = None
         controller = None
         orchestrator_slice = None
-        bqm_graph = None
         asm_graph = None
         try:
             end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
@@ -229,11 +231,6 @@ class OrchestratorHandler:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
-
-            # FIXME : uncomment post testing
-            #bqm_string, bqm_graph = self.discover_broker_query_model(controller=controller, token=token,
-            #                                                         delete_graph=False)
-            bqm_graph = None
 
             broker = self.get_broker(controller=controller)
             if broker is None:
@@ -270,19 +267,18 @@ class OrchestratorHandler:
             # Once added to the policy; Actor Tick Handler will do following asynchronously:
             # 1. Ticket message exchange with broker and
             # 2. Redeem message exchange with AM once ticket is granted by Broker
-            self.controller_state.get_sdt().process_slice(controller_slice=orchestrator_slice)
+            self.controller_state.demand_slice(controller_slice=orchestrator_slice)
+            # self.controller_state.get_sdt().process_slice(controller_slice=orchestrator_slice)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if slice_id is not None and controller is not None and asm_graph is not None:
-                #FimHelper.delete_graph(graph_id=asm_graph.graph_id)
+                FimHelper.delete_graph(graph_id=asm_graph.graph_id)
                 controller.remove_slice(slice_id=slice_id, id_token=token)
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
         finally:
-            if bqm_graph is not None:
-                FimHelper.delete_graph(graph_id=bqm_graph.get_graph_id())
             if orchestrator_slice is not None:
                 orchestrator_slice.unlock()
 
@@ -348,11 +344,6 @@ class OrchestratorHandler:
             slice_states = SliceState.str_list_to_state_list(states=states)
 
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
-            if slice_list is None or len(slice_list) == 0:
-                if controller.get_last_error() is not None:
-                    self.logger.error(controller.get_last_error())
-                raise OrchestratorException(f"User# has no Slices",
-                                            http_error_code=NOT_FOUND)
 
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
                                                      slice_states=slice_states)
@@ -440,7 +431,8 @@ class OrchestratorHandler:
             if slice_model is None:
                 raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
 
-            return ResponseBuilder.get_slice_model_summary(slice_model=slice_model.serialize_graph(format=graph_format))
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
+                                                     slice_model=slice_model.serialize_graph(format=graph_format))
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
@@ -455,6 +447,9 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :return:
         """
+        if self.globals.is_maintenance_mode_on():
+            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
+
         failed_to_extend_rid_list = []
         try:
             controller = self.controller_state.get_management_actor()
@@ -531,9 +526,9 @@ class OrchestratorHandler:
             new_end_time = datetime.utcnow() + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
             return new_end_time
         try:
-            new_end_time = datetime.strptime(lease_end_time, Constants.RENEW_TIME_FORMAT)
+            new_end_time = datetime.strptime(lease_end_time, Constants.LEASE_TIME_FORMAT)
         except Exception as e:
-            raise OrchestratorException(f"Lease End Time is not in format {Constants.RENEW_TIME_FORMAT}",
+            raise OrchestratorException(f"Lease End Time is not in format {Constants.LEASE_TIME_FORMAT}",
                                         http_error_code=BAD_REQUEST)
 
         now = datetime.utcnow()

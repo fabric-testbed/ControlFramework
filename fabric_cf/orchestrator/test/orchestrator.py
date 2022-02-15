@@ -45,6 +45,7 @@ def main():
         from fabric_cf.actor.core.container.globals import Globals, GlobalsSingleton
         Globals.config_file = './test.yaml'
         Constants.SUPERBLOCK_LOCATION = './state_recovery.lock'
+        Constants.MAINTENANCE_LOCATION = './maintenance.lock'
         with GracefulInterruptHandler() as h:
 
             GlobalsSingleton.get().start(force_fresh=False)

@@ -30,14 +30,17 @@ from typing import TYPE_CHECKING, List
 
 from datetime import datetime
 
+from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.capacities_labels import Labels
+from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import ServiceType, NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
 from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import ABCKernelControllerReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.util.rpc_exception import RPCError
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
 from fabric_cf.actor.core.kernel.predecessor_state import PredecessorState
@@ -47,6 +50,7 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingSta
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_state import ReservationState
 from fabric_cf.actor.core.util.update_data import UpdateData
+from fabric_cf.actor.fim.fim_helper import FimHelper
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
@@ -430,6 +434,90 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
             return True
         return False
 
+    def prepare_ticket(self):
+        # Parent reservations have been Ticketed; Update BQM Node and Component Id in Node Map
+        # Used by Broker to set vlan - source: (c)
+        # local_name source: (a)
+        # NSO device name source: (a) - need to find the owner switch of the network service in CBM
+        # and take its .name or labels.local_name
+
+        assert self.resources is not None
+        assert self.resources.sliver is not None
+
+        if not isinstance(self.resources.sliver, NetworkServiceSliver):
+            return
+
+        for ifs in self.resources.sliver.interface_info.interfaces.values():
+            component_name, rid = ifs.get_node_map()
+            pred_state = self.redeem_predecessors.get(ID(uid=rid))
+            parent_res = pred_state.get_reservation()
+            if parent_res is not None and \
+                    ReservationStates(parent_res.get_state()) == ReservationStates.Ticketed:
+                node_sliver = parent_res.get_resources().get_sliver()
+                component = node_sliver.attached_components_info.get_device(name=component_name)
+                graph_id, bqm_component_id = component.get_node_map()
+                graph_id, node_id = node_sliver.get_node_map()
+                ifs.set_node_map(node_map=(node_id, bqm_component_id))
+
+                # For shared NICs grab the MAC & VLAN from corresponding Interface Sliver
+                # maintained in the Parent Reservation Sliver
+                if component.get_type() == ComponentType.SharedNIC:
+                    parent_res_ifs_sliver = FimHelper.get_site_interface_sliver(component=component,
+                                                                                local_name=ifs.get_labels().local_name)
+                    parent_labs = parent_res_ifs_sliver.get_label_allocations()
+
+                    ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
+
+            self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {self.resources.sliver}")
+
+    def approve_ticket(self):
+        """
+        Ticket predicate: invoked internally to determine if the reservation
+        should be ticketed. This gives subclasses an opportunity sequence actions at the orchestrator side.
+
+        If false, the reservation enters a "BlockedTicket" sub-state until a subsequent approve_ticket returns true.
+        When true, the reservation can manipulate the current reservation's attributes to
+        facilitate ticketing from the broker. Note that approve_ticket may be polled multiple
+        times, and should be idempotent.
+
+
+        @return true if approved; false otherwise
+        """
+        approved = True
+        for pred_state in self.redeem_predecessors.values():
+            if pred_state.get_reservation() is None:
+                self.logger.error(f"redeem predecessor reservation is null, ignoring it: {pred_state.get_reservation()}")
+                continue
+            if pred_state.get_reservation().is_failed() or pred_state.get_reservation().is_closed() or \
+                    pred_state.get_reservation().is_closing():
+                self.logger.error(f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"
+                                  f" is in a terminal state, failing the reservation# {self.get_reservation_id()}")
+                self.fail(message=f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"
+                                  f" is in a terminal state")
+
+            if not (pred_state.get_reservation().is_ticketed() or pred_state.get_reservation().is_active_ticketed()):
+                approved = False
+                break
+
+        if approved:
+            self.prepare_ticket()
+
+        return approved
+
+    def can_ticket(self) -> bool:
+        supported_ns = [ServiceType.L2STS.name, ServiceType.L2Bridge.name, ServiceType.L2PTP.name,
+                        ServiceType.FABNetv4.name, ServiceType.FABNetv6.name]
+
+        ret_val = False
+        if self.get_type() is not None:
+            resource_type_str = str(self.get_type())
+            if resource_type_str in supported_ns:
+                ret_val = self.approve_ticket()
+            else:
+                ret_val = True
+
+        return ret_val
+
     def can_renew(self) -> bool:
         """
         The reservation cannot be renewed if a previous renew attempt failed, or
@@ -643,7 +731,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         s = super().get_notices()
         notices = self.get_update_notices()
         if notices is not None:
-            s += "\n{}".format(notices)
+            s += " {}".format(notices)
         return s
 
     def get_previous_lease_term(self) -> Term:
@@ -693,18 +781,18 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
     def get_update_notices(self) -> str:
         result = ""
         if self.last_ticket_update is not None:
-            if self.last_ticket_update.get_message() is not None:
-                result += "\nLast ticket update: {}".format(self.last_ticket_update.get_message())
+            if self.last_ticket_update.get_message() is not None and self.last_ticket_update.get_message() != "":
+                result += f" [Last ticket update: {self.last_ticket_update.get_message()}]"
             ev = self.last_ticket_update.get_events()
-            if ev is not None:
-                result += "\nTicket events: {}".format(ev)
+            if ev is not None and ev != "":
+                result += f" [Ticket events: {ev}]"
 
         if self.last_lease_update is not None:
-            if self.last_lease_update.get_message() is not None:
-                result += "\nLast ticket update: {}".format(self.last_lease_update.get_message())
+            if self.last_lease_update.get_message() is not None and self.last_lease_update.get_message() != "":
+                result += f" [Last ticket update: {self.last_lease_update.get_message()}]"
             ev = self.last_lease_update.get_events()
-            if ev is not None:
-                result += "\nTicket events: {}".format(ev)
+            if ev is not None and ev != "":
+                result += f" [Ticket events: {ev}]"
         return result
 
     def is_active(self) -> bool:
@@ -753,21 +841,47 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
             self.leased_resources.prepare_probe()
 
     def prepare_redeem(self):
-        return
+        assert self.resources is not None
+        assert self.resources.sliver is not None
+        sliver = self.resources.sliver
+
+        self.logger.info(f"Redeem prepared for Sliver: {sliver}")
+        if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info is not None:
+            for ifs in sliver.interface_info.interfaces.values():
+                self.logger.info(f"Interface Sliver: {ifs}")
+
+        if isinstance(sliver, NodeSliver) and sliver.attached_components_info is not None:
+            for c in sliver.attached_components_info.devices.values():
+                self.logger.info(f"Component: {c}")
 
     def probe_join_state(self):
         """
         Called from a probe to monitor asynchronous processing related to the joinstate for controller.
         @raises Exception passed through from prepareJoin or prepareRedeem
         """
-        if self.state == ReservationStates.Nascent or self.state == ReservationStates.Closed or\
-                self.state == ReservationStates.Failed:
+        if self.state == ReservationStates.Closed or self.state == ReservationStates.Failed:
             self.transition_with_join(prefix="clearing join state for terminal reservation", state=self.state,
                                       pending=self.pending_state,
                                       join_state=JoinState.NoJoin)
             return
 
-        if self.joinstate == JoinState.BlockedRedeem:
+        if self.joinstate == JoinState.BlockedTicket:
+            # this is new reservation, and the ticket is
+            # blocked for a predecessor: see if we can get it going now.
+            assert self.state == ReservationStates.Nascent
+
+            if self.approve_ticket():
+                self.transition_with_join(prefix="unblock ticket", state=ReservationStates.Nascent,
+                                          pending=ReservationPendingStates.Ticketing, join_state=JoinState.NoJoin)
+
+                # This is a regular request for network resources to an upstream broker.
+                self.sequence_ticket_out += 1
+                RPCManagerSingleton.get().ticket(reservation=self)
+
+                # Update ASM with Reservation Info
+                self.update_slice_graph(sliver=self.resources.sliver)
+
+        elif self.joinstate == JoinState.BlockedRedeem:
             # this reservation has a ticket to redeem, and the redeem is
             # blocked for a predecessor: see if we can get it going now.
             assert self.state == ReservationStates.Ticketed
@@ -920,10 +1034,13 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                             pending=ReservationPendingStates.Ticketing)
 
             if not self.exported:
-                # This is a regular request for new resources to an upstream
-                # broker.
-                self.sequence_ticket_out += 1
-                RPCManagerSingleton.get().ticket(reservation=self)
+                if not self.can_ticket():
+                    self.transition_with_join(prefix="ticket blocked", state=ReservationStates.Nascent,
+                                              pending=self.pending_state, join_state=JoinState.BlockedTicket)
+                else:
+                    # This is a regular request for new resources to an upstream broker.
+                    self.sequence_ticket_out += 1
+                    RPCManagerSingleton.get().ticket(reservation=self)
 
         elif self.state == ReservationStates.Ticketed:
             self.transition_with_join(prefix="redeem blocked", state=ReservationStates.Ticketed,

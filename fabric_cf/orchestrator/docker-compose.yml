@@ -23,10 +23,6 @@ services:
     networks:
       - frontend
       - backend
-    ports:
-      - 0.0.0.0:9474:9474  # for HTTP
-      - 0.0.0.0:9473:9473  # for HTTPS
-      - 0.0.0.0:9687:9687  # for Bolt
     volumes:
       - ${NEO4J_DATA_PATH_HOST:-$(pwd)/neo4j/data}:${NEO4J_DATA_PATH_DOCKER:-/data}
       - ${NEO4J_IMPORTS_PATH_HOST:-$(pwd)/neo4j/imports}:${NEO4J_IMPORTS_PATH_DOCKER:-/imports}
@@ -57,8 +53,6 @@ services:
        - POSTGRES_USER=${POSTGRES_USER:-postgres}
        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-orchestrator}
        - PGDATA=${PGDATA:-/var/lib/postgresql/data}
-    ports:
-        - 0.0.0.0:5432:5432
   pdp:
     image: fabrictestbed/authzforce-pdp:3.1.0
     container_name: orchestrator-pdp
@@ -66,9 +60,6 @@ services:
     user: ${PDP_UID:-1000}:${PDP_GID:-1000}
     networks:
       - backend
-    ports:
-      - 0.0.0.0:8080:8080
-      - 0.0.0.0:8443:8443
     volumes:
       - ${PDP_NEW_CONF_PATH_HOST:-$(pwd)/newconf}:/conf
       - ${PDP_NEW_POLICIES_PATH_HOST:-$(pwd)/newpolicies}:/policies
@@ -85,9 +76,6 @@ services:
     networks:
       - frontend
       - backend
-    ports:
-    - 0.0.0.0:8700:8700
-    - 0.0.0.0:11000:11000
     volumes:
       - ./neo4j:/usr/src/app/neo4j
       - ./config.yaml:/etc/fabric/actor/config/config.yaml

@@ -673,7 +673,7 @@ class IntegrationTest(unittest.TestCase):
         oh = OrchestratorHelper()
         now = datetime.utcnow()
         new_time = now + timedelta(days=2)
-        new_time_str = new_time.strftime(Constants.RENEW_TIME_FORMAT)
+        new_time_str = new_time.strftime(Constants.LEASE_TIME_FORMAT)
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME,
                                      lease_end_time=new_time_str)
         self.assertEqual(Status.OK, status)
@@ -701,7 +701,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertIsNotNone(s.management_ip)
             self.assertIsNotNone(s.graph_node_id)
             self.assertEqual(self.slice_id, s.slice_id)
-            lease_end = datetime.strptime(s.lease_end, Constants.RENEW_TIME_FORMAT)
+            lease_end = datetime.strptime(s.lease_end, Constants.LEASE_TIME_FORMAT)
             lease_end_without_seconds = lease_end.strftime(self.TIME_FORMAT_IN_SECONDS)
             self.assertEqual(new_time_str_without_seconds, lease_end_without_seconds)
 
@@ -719,7 +719,7 @@ class IntegrationTest(unittest.TestCase):
         self.assertEqual(Status.FAILURE, status)
         self.assertEqual(BAD_REQUEST, response.status_code)
 
-        new_time_str = new_time.strftime(Constants.RENEW_TIME_FORMAT)
+        new_time_str = new_time.strftime(Constants.LEASE_TIME_FORMAT)
 
         status, response = oh.renew(slice_id="Slice_not-exists", new_lease_end_time=new_time_str)
         self.assertEqual(Status.FAILURE, status)
@@ -741,7 +741,7 @@ class IntegrationTest(unittest.TestCase):
             self.assertIsNotNone(s.graph_node_id)
             self.assertEqual(self.slice_id, s.slice_id)
 
-            lease_end = datetime.strptime(s.lease_end, Constants.RENEW_TIME_FORMAT)
+            lease_end = datetime.strptime(s.lease_end, Constants.LEASE_TIME_FORMAT)
             lease_end_without_seconds = lease_end.strftime(self.TIME_FORMAT_IN_SECONDS)
             self.assertEqual(new_time_str_without_seconds, lease_end_without_seconds)
 

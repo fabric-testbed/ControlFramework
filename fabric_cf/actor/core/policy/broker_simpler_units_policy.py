@@ -67,7 +67,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
     from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
     from fabric_cf.actor.core.util.resource_type import ResourceType
-    from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 
 
 class BrokerAllocationAlgorithm(Enum):

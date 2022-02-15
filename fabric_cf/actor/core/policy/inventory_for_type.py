@@ -52,7 +52,7 @@ class InventoryForType:
     def _get_delegations(self, *, lab_cap_delegations: Delegations) -> Tuple[str, Union[Labels, Capacities]]:
         # Grab Label Delegations
         delegation_id, deleg = lab_cap_delegations.get_sole_delegation()
-        self.logger.debug(f"Available label/capacity delegations: {deleg} {type(deleg)} format {deleg.get_format()}")
+        #self.logger.debug(f"Available label/capacity delegations: {deleg} format {deleg.get_format()}")
         # ignore pool definitions and references for now
         if deleg.get_format() != DelegationFormat.SinglePool:
             return None, None

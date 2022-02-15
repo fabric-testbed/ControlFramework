@@ -663,3 +663,11 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
 
         return result
+
+    @staticmethod
+    def toggle_maintenance_mode(*, mode: bool):
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        if mode:
+            GlobalsSingleton.get().create_maintenance_lock()
+        else:
+            GlobalsSingleton.get().delete_maintenance_lock()

@@ -61,8 +61,11 @@ class NetworkServiceInventory(InventoryForType):
         """
         if requested_ns.get_layer() == NSLayer.L2:
             delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=mpls_ns.get_label_delegations())
-            vlans = delegated_label.vlan_range.split("-")
-            if requested_ifs.labels.vlan is not None and int(vlans[0]) > int(requested_ifs.labels.vlan) > int(vlans[1]):
+            vlans = None
+            if delegated_label.vlan_range is not None:
+                vlans = delegated_label.vlan_range.split("-")
+            if vlans is not None and requested_ifs.labels.vlan is not None and \
+                    int(vlans[0]) > int(requested_ifs.labels.vlan) > int(vlans[1]):
                 raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
                                       msg=f"Vlan for L2 service is outside the allowed range "
                                           f"{mpls_ns.label_delegations.vlan_range}")
@@ -75,8 +78,11 @@ class NetworkServiceInventory(InventoryForType):
                         lab_cap_delegations=ns.get_label_delegations())
 
                     # Get the VLAN range
-                    vlans = delegated_label.vlan_range.split("-")
-                    vlan_range = list(range(int(vlans[0]), int(vlans[1])))
+                    vlans = None
+                    vlan_range = None
+                    if delegated_label.vlan_range is not None:
+                        vlans = delegated_label.vlan_range.split("-")
+                        vlan_range = list(range(int(vlans[0]), int(vlans[1])))
 
                     # Exclude the already allocated VLANs and subnets
                     if existing_reservations is not None:
@@ -114,12 +120,13 @@ class NetworkServiceInventory(InventoryForType):
                                                   f"res# {reservation.get_reservation_id()}")
 
                                 # Exclude VLANs on the allocated on the same port
-                                if allocated_ifs.label_allocations.vlan in vlan_range:
+                                if vlan_range is not None and allocated_ifs.label_allocations.vlan in vlan_range:
                                     vlan_range.remove(int(allocated_sliver.label_allocations.vlan))
 
                     # Allocate the first available VLAN
-                    requested_ifs.labels.vlan = str(vlan_range[0])
-                    requested_ifs.label_allocations = Labels(vlan=str(vlan_range[0]))
+                    if vlan_range is not None:
+                        requested_ifs.labels.vlan = str(vlan_range[0])
+                        requested_ifs.label_allocations = Labels(vlan=str(vlan_range[0]))
                     break
         return requested_ifs
 
