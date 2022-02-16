@@ -124,13 +124,15 @@ class ResponseBuilder:
 
     @staticmethod
     def get_slice_summary(*, slice_list: List[SliceAvro], slice_id: str = None,
-                          slice_states: List[SliceState] = None, slice_model: str = None) -> dict:
+                          slice_states: List[SliceState] = None, slice_model: str = None,
+                          error_message: dict = None) -> dict:
         """
         Get slice summary
         :param slice_list:
         :param slice_id:
         :param slice_states:
         :param slice_model:
+        :param error_message:
         :return:
         """
         slices = []
@@ -151,8 +153,11 @@ class ResponseBuilder:
                 if end_time is not None:
                     s_dict[ResponseBuilder.PROP_LEASE_END_TIME] = end_time.strftime(Constants.LEASE_TIME_FORMAT)
 
-                if slice_id is not None and slice_model is not None:
-                    s_dict[ResponseBuilder.RESPONSE_SLICE_MODEL]: slice_model
+                if slice_model is not None:
+                    s_dict[ResponseBuilder.RESPONSE_SLICE_MODEL] = slice_model
+
+                if error_message is not None and s.get_slice_id() in error_message:
+                    s_dict[ResponseBuilder.PROP_NOTICES] = error_message.get(s.get_slice_id())
                 slices.append(s_dict)
         else:
             message = "No slices were found"

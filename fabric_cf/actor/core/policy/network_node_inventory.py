@@ -463,7 +463,7 @@ class NetworkNodeInventory(InventoryForType):
                 existing_reservations=existing_reservations)
 
         requested_sliver.capacity_allocations = Capacities()
-        requested_sliver.capacity_allocations.update(lab=requested_capacities)
+        requested_sliver.capacity_allocations = Labels.update(lab=requested_capacities)
         requested_sliver.label_allocations = Labels(instance_parent=graph_node.get_name())
 
         requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))
