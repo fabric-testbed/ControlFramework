@@ -782,17 +782,17 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         result = ""
         if self.last_ticket_update is not None:
             if self.last_ticket_update.get_message() is not None and self.last_ticket_update.get_message() != "":
-                result += f" [Last ticket update: {self.last_ticket_update.get_message()}]"
+                result += f" (Last ticket update: {self.last_ticket_update.get_message()})"
             ev = self.last_ticket_update.get_events()
             if ev is not None and ev != "":
-                result += f" [Ticket events: {ev}]"
+                result += f" (Ticket events: {ev})"
 
         if self.last_lease_update is not None:
             if self.last_lease_update.get_message() is not None and self.last_lease_update.get_message() != "":
-                result += f" [Last ticket update: {self.last_lease_update.get_message()}]"
+                result += f" (Last ticket update: {self.last_lease_update.get_message()})"
             ev = self.last_lease_update.get_events()
             if ev is not None and ev != "":
-                result += f" [Ticket events: {ev}]"
+                result += f" (Ticket events: {ev})"
         return result
 
     def is_active(self) -> bool:
