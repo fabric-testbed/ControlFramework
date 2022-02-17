@@ -471,6 +471,14 @@ class ActorMixin(ABCActorMixin):
                     raise e
 
     def recover_broker_slice(self, *, slice_obj: ABCSlice):
+        """
+        Recover broker slice at the AM, do the following if the model.reload file is detected
+        - Close the existing delegations
+        - Create the new delegations from the reloaded ARM
+        - Add the delegations to the Broker Slice
+
+        @param slice_obj Slice object
+        """
         if self.get_type() != ActorType.Authority:
             return False
 
