@@ -28,7 +28,7 @@ import threading
 import traceback
 from typing import List
 
-from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
@@ -40,6 +40,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.exceptions import ActorException
 from fabric_cf.actor.core.container.message_service import MessageService
+from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
@@ -451,6 +452,9 @@ class ActorMixin(ABCActorMixin):
         """
         self.plugin.recovery_ended()
         self.policy.recovery_ended()
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        if GlobalsSingleton.get().can_reload_model():
+            GlobalsSingleton.get().delete_reload_model_state_file()
 
     def recover_slices(self, *, slices: List[ABCSlice]):
         """
@@ -466,6 +470,66 @@ class ActorMixin(ABCActorMixin):
                 if s.is_inventory():
                     raise e
 
+    def recover_broker_slice(self, *, slice_obj: ABCSlice):
+        if self.get_type() != ActorType.Authority:
+            return False
+
+        if not slice_obj.is_broker_client():
+            return False
+
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        if not GlobalsSingleton.get().can_reload_model():
+            return False
+
+        self.logger.info(f"Closing old delegations and adding new delegations to the slice: {slice_obj}!")
+        delegation_names = []
+
+        try:
+            delegations = self.plugin.get_database().get_delegations_by_slice_id(slice_id=slice_obj.get_slice_id())
+        except Exception as e:
+            self.logger.error(e)
+            raise ActorException(f"Could not fetch delegations records for slice {slice_obj} from database")
+
+        for d in delegations:
+            self.logger.info(f"Closing delegation: {d}!")
+            d.set_graph(graph=None)
+            d.transition(prefix="closed as part of recovers", state=DelegationState.Closed)
+            delegation_names.append(d.get_delegation_name())
+            self.plugin.get_database().update_delegation(delegation=d)
+
+        adms = self.policy.aggregate_resource_model.generate_adms()
+
+        # Create new delegations and add to the broker slice; they will be re-registered with the policy in the recovery
+        for name in delegation_names:
+            new_delegation_graph = adms.get(name)
+            dlg_obj = DelegationFactory.create(did=new_delegation_graph.get_graph_id(),
+                                               slice_id=slice_obj.get_slice_id(),
+                                               delegation_name=name)
+            dlg_obj.set_slice_object(slice_object=slice_obj)
+            dlg_obj.set_graph(graph=new_delegation_graph)
+            dlg_obj.transition(prefix="Reload Model", state=DelegationState.Delegated)
+            self.plugin.get_database().add_delegation(delegation=dlg_obj)
+
+    def recover_inventory_slice(self, *, slice_obj: ABCSlice) -> bool:
+        """
+        Check and Reload ARM for an inventory slice for an AM
+        @param slice_obj slice object
+        @return True if ARM was reloaded; otherwise False
+        """
+        if self.get_type() != ActorType.Authority:
+            return False
+
+        if not slice_obj.is_inventory():
+            return False
+
+        # Check and Reload ARM if needed
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        arm_graph = GlobalsSingleton.get().check_and_reload_model(graph_id=slice_obj.get_graph_id())
+        if arm_graph is not None:
+            slice_obj.set_graph(graph=arm_graph)
+
+        return arm_graph is not None
+
     def recover_slice(self, *, slice_obj: ABCSlice):
         """
         Recover slice
@@ -477,6 +541,9 @@ class ActorMixin(ABCActorMixin):
             self.logger.debug("Found slice_id: {} slice:{}".format(slice_id, slice_obj))
         else:
             self.logger.info("Recovering slice: {}".format(slice_id))
+            self.recover_inventory_slice(slice_obj=slice_obj)
+
+            self.recover_broker_slice(slice_obj=slice_obj)
 
             self.logger.debug("Informing the plugin about the slice")
             self.plugin.revisit(slice_obj=slice_obj)
@@ -563,7 +630,6 @@ class ActorMixin(ABCActorMixin):
         """
         self.logger.info(
             "Starting to recover delegations in slice {}({})".format(slice_obj.get_name(), slice_obj.get_slice_id()))
-        delegations = None
         try:
             delegations = self.plugin.get_database().get_delegations_by_slice_id(slice_id=slice_obj.get_slice_id())
         except Exception as e:
