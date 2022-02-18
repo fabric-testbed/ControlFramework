@@ -35,6 +35,8 @@ from typing import TYPE_CHECKING
 import logging
 import os
 
+from fim.graph.neo4j_property_graph import Neo4jGraphImporter
+from fim.graph.resources.abc_arm import ABCARMPropertyGraph
 from fss_utils.jwt_validate import JWTValidator
 
 from fabric_cf.actor.core.common.exceptions import InitializationException
@@ -129,6 +131,46 @@ class Globals:
             return True
         return False
 
+    @staticmethod
+    def can_reload_model() -> bool:
+        if os.path.isfile(Constants.MODEL_RELOAD_LOCATION):
+            return True
+        return False
+
+    @staticmethod
+    def delete_reload_model_state_file():
+        """
+        Delete reload model state file
+        """
+        if os.path.isfile(Constants.MODEL_RELOAD_LOCATION):
+            os.remove(Constants.MODEL_RELOAD_LOCATION)
+
+    def cleanup_neo4j(self):
+        """
+        Cleanup Neo4j on clean restart
+        """
+        self.log.debug("Cleanup Neo4j database started")
+        config = self.get_config().get_neo4j_config()
+        neo4j_graph_importer = Neo4jGraphImporter(url=config["url"], user=config["user"],
+                                                  pswd=config["pass"],
+                                                  import_host_dir=config["import_host_dir"],
+                                                  import_dir=config["import_dir"])
+        neo4j_graph_importer.delete_all_graphs()
+        self.log.debug("Cleanup Neo4j database completed")
+
+    def check_and_reload_model(self, *, graph_id) -> ABCARMPropertyGraph or None:
+        """
+            Reload Neo4j on model restart
+        """
+        if not self.can_reload_model():
+            return None
+        self.cleanup_neo4j()
+        self.log.debug(f"Reload Neo4j database started {graph_id}")
+        from fabric_cf.actor.fim.fim_helper import FimHelper
+        arm_graph = FimHelper.get_arm_graph_from_file(filename=self.get_config().get_actor().get_substrate_file(),
+                                                      graph_id=graph_id)
+        self.log.debug(f"Reload Neo4j database completed {graph_id}")
+        return arm_graph
 
     def fail(self, *, e: Exception):
         """

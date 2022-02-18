@@ -127,14 +127,15 @@ class FimHelper:
         return NetworkXGraphImporter(logger=logger)
 
     @staticmethod
-    def get_arm_graph_from_file(*, filename: str) -> ABCARMPropertyGraph:
+    def get_arm_graph_from_file(*, filename: str, graph_id: str = None) -> ABCARMPropertyGraph:
         """
         Load specified file directly with no manipulations or validation
         :param filename:
+        :param graph_id:
         :return:
         """
         neo4j_graph_importer = FimHelper.get_neo4j_importer()
-        neo4_graph = neo4j_graph_importer.import_graph_from_file(graph_file=filename)
+        neo4_graph = neo4j_graph_importer.import_graph_from_file(graph_file=filename, graph_id=graph_id)
         site_arm = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=neo4_graph.graph_id,
                                                           importer=neo4j_graph_importer))
 

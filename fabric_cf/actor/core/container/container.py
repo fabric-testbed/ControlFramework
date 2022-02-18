@@ -33,8 +33,6 @@ from typing import TYPE_CHECKING
 import os
 from enum import Enum
 
-from fim.graph.neo4j_property_graph import Neo4jGraphImporter
-
 from fabric_cf.actor.core.common.exceptions import ContainerException
 from fabric_cf.actor.core.container.remote_actor_cache import RemoteActorCacheSingleton
 from fabric_cf.actor.core.container.db.container_database import ContainerDatabase
@@ -105,19 +103,6 @@ class Container(ABCActorContainer):
         @return actor
         """
         return self.actor
-
-    def cleanup_neo4j(self):
-        """
-        Cleanup Neo4j on clean restart
-        """
-        self.logger.debug("Cleanup Neo4j database started")
-        config = self.config.get_global_config().get_neo4j_config()
-        neo4j_graph_importer = Neo4jGraphImporter(url=config["url"], user=config["user"],
-                                                  pswd=config["pass"],
-                                                  import_host_dir=config["import_host_dir"],
-                                                  import_dir=config["import_dir"])
-        neo4j_graph_importer.delete_all_graphs()
-        self.logger.debug("Cleanup Neo4j database completed")
 
     def determine_boot_mode(self):
         """
@@ -201,7 +186,8 @@ class Container(ABCActorContainer):
 
             if self.is_fresh():
                 try:
-                    self.cleanup_neo4j()
+                    from fabric_cf.actor.core.container.globals import GlobalsSingleton
+                    GlobalsSingleton.get().cleanup_neo4j()
                     from fabric_cf.actor.boot.configuration_loader import ConfigurationLoader
                     loader = ConfigurationLoader()
                     loader.process(config=self.config)
