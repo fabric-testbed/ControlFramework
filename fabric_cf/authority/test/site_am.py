@@ -42,6 +42,7 @@ def main():
         Globals.config_file = './test.yaml'
         Constants.SUPERBLOCK_LOCATION = './site_state_recovery.lock'
         Constants.MAINTENANCE_LOCATION = './site_maintenance.lock'
+        Constants.MODEL_RELOAD_LOCATION = "./site_reload.model"
         with GracefulInterruptHandler() as h:
             GlobalsSingleton.get().start(force_fresh=False)
 

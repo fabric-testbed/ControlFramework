@@ -36,7 +36,7 @@ from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import ServiceType, ComponentType
+from fim.user import ServiceType, ComponentType, Labels
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -62,7 +62,8 @@ class OrchestratorSliceWrapper:
         self.demanded = []
         self.thread_lock = threading.Lock()
         self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS]
-        self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP]
+        self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
+                             ServiceType.FABNetv4]
 
     def lock(self):
         """
@@ -168,7 +169,7 @@ class OrchestratorSliceWrapper:
                                                                                         local_name=ifs.get_labels().local_name)
                             parent_labs = parent_res_ifs_sliver.get_label_allocations()
 
-                            ifs.labels.set_fields(mac=parent_labs.mac, vlan=parent_labs.vlan)
+                            ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
                 reservation.set_sliver(sliver=sliver)
 
@@ -248,20 +249,6 @@ class OrchestratorSliceWrapper:
             raise OrchestratorException(message="Either Capacity or Capacity Hints must be specified!",
                                         http_error_code=BAD_REQUEST)
 
-    @staticmethod
-    def __validate_network_service_sliver(sliver: NetworkServiceSliver):
-        """
-        Validate Network Node Sliver
-        @param sliver Node Sliver
-        @raises exception for invalid slivers
-        """
-        for ifs in sliver.interface_info.interfaces.values():
-            if ifs.labels is not None:
-                vlan = int(ifs.get_labels().vlan)
-                if vlan <= Constants.VLAN_START or vlan >= Constants.VLAN_END:
-                    raise OrchestratorException(message=f"Allowed range for VLAN ({Constants.VLAN_START}-{Constants.VLAN_END})",
-                                                http_error_code=BAD_REQUEST)
-
     def __build_network_service_reservations(self, slice_graph: ABCASMPropertyGraph,
                                              node_res_mapping: Dict[str, str]) -> List[TicketReservationAvro]:
         """
@@ -286,8 +273,6 @@ class OrchestratorSliceWrapper:
             elif sliver_type in self.supported_ns:
 
                 self.logger.trace(f"Network Service Sliver: {sliver}")
-
-                self.__validate_network_service_sliver(sliver=sliver)
 
                 # Processing Interface Slivers
                 if sliver.interface_info is not None:
@@ -356,7 +341,7 @@ class OrchestratorSliceWrapper:
             # Compute Capacity Hints from Requested Capacities
             if requested_capacity_hints is None and requested_capacities is not None:
                 instance_type = catalog.map_capacities_to_instance(cap=requested_capacities)
-                requested_capacity_hints = CapacityHints().set_fields(instance_type=instance_type)
+                requested_capacity_hints = CapacityHints(instance_type=instance_type)
                 sliver.set_capacity_hints(caphint=requested_capacity_hints)
 
             # Generate reservation for the sliver

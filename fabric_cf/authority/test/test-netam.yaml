@@ -126,7 +126,7 @@ actor:
       class: AuthorityCalendarPolicy
   resources:
       - resource:
-          type: L2STS, L2Bridge, L2PTP
+          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6
           label: NET AM
           description: Net AM
           handler:
@@ -134,7 +134,7 @@ actor:
             class: NoOpHandler
   controls:
       - control:
-          type: L2STS, L2Bridge, L2PTP
+          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6
           module: fabric_cf.actor.core.policy.network_service_control
           class: NetworkServiceControl
 

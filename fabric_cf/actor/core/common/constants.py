@@ -180,6 +180,7 @@ class Constants:
     HOME_DIRECTORY = '/usr/src/app/'
     SUPERBLOCK_LOCATION = HOME_DIRECTORY + "state_recovery.lock"
     MAINTENANCE_LOCATION = HOME_DIRECTORY + "maintenance.lock"
+    MODEL_RELOAD_LOCATION = HOME_DIRECTORY + "reload.model"
     CONFIGURATION_FILE = "/etc/fabric/actor/config/config.yaml"
     STATE_FILE_LOCATION = '/tmp/fabric_actor.tmp'
 

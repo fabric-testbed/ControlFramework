@@ -330,7 +330,7 @@ class OrchestratorHandler:
         :param token Fabric Identity Token
         :param slice_id Slice Id
         :param states Slice states
-=       :raises Raises an exception in case of failure
+        :raises Raises an exception in case of failure
         :returns List of Slices on success
         """
         try:
@@ -345,8 +345,23 @@ class OrchestratorHandler:
 
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
 
+            error_message = {}
+            reservations_states_to_peek = [ReservationStates.Failed, ReservationStates.Closed,
+                                           ReservationStates.CloseWait]
+            for s in slice_list:
+                slice_state = SliceState(s.get_state())
+                if slice_state != SliceState.StableOK:
+                    reservations = controller.get_reservations(id_token=token, slice_id=ID(uid=s.get_slice_id()))
+                    if reservations is not None:
+                        msg = ""
+                        for r in reservations:
+                            if ReservationStates(r.get_state()) in reservations_states_to_peek:
+                               msg += f"[{r.get_notices() }],"
+                        if msg != "":
+                            error_message[s.get_slice_id()] = msg[:-1]
+
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
-                                                     slice_states=slice_states)
+                                                     slice_states=slice_states, error_message=error_message)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slices e: {e}")
@@ -431,8 +446,9 @@ class OrchestratorHandler:
             if slice_model is None:
                 raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
 
+            slice_model_str = slice_model.serialize_graph(format=graph_format)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
-                                                     slice_model=slice_model.serialize_graph(format=graph_format))
+                                                     slice_model=slice_model_str)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")

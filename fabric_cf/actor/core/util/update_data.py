@@ -102,10 +102,12 @@ class UpdateData:
 
         @param event message describing event
         """
+        if event is None or event == "":
+            return
         if self.events is None:
             self.events = event
         else:
-            self.events = "{}\n{}".format(event, self.events)
+            self.events = f"({event}-{self.events})"
 
     def post_error(self, *, event: str):
         """

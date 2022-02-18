@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict
 
 from fabric_cf.actor.boot.configuration_exception import ConfigurationException
 from fabric_cf.actor.boot.inventory.aggregate_resource_model_creator import AggregateResourceModelCreator
@@ -317,7 +317,7 @@ class ConfigurationProcessor:
             self.resources = self.read_resource_config(config=config)
 
     @staticmethod
-    def read_resource_config(*, config: ActorConfig) -> dict:
+    def read_resource_config(*, config: ActorConfig) -> Dict[ResourceType, ResourceConfig]:
         """
         Read resource config and create ARM and inventory slices
         @param config actor config

@@ -32,6 +32,8 @@ from datetime import datetime
 
 from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.capacities_labels import Labels
+from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import ServiceType, NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
@@ -464,7 +466,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                                                                                 local_name=ifs.get_labels().local_name)
                     parent_labs = parent_res_ifs_sliver.get_label_allocations()
 
-                    ifs.labels.set_fields(mac=parent_labs.mac, vlan=parent_labs.vlan)
+                    ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {self.resources.sliver}")
 
@@ -503,7 +505,8 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         return approved
 
     def can_ticket(self) -> bool:
-        supported_ns = [ServiceType.L2STS.name, ServiceType.L2Bridge.name, ServiceType.L2PTP.name]
+        supported_ns = [ServiceType.L2STS.name, ServiceType.L2Bridge.name, ServiceType.L2PTP.name,
+                        ServiceType.FABNetv4.name, ServiceType.FABNetv6.name]
 
         ret_val = False
         if self.get_type() is not None:
@@ -728,7 +731,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         s = super().get_notices()
         notices = self.get_update_notices()
         if notices is not None:
-            s += "\n{}".format(notices)
+            s += " {}".format(notices)
         return s
 
     def get_previous_lease_term(self) -> Term:
@@ -778,18 +781,18 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
     def get_update_notices(self) -> str:
         result = ""
         if self.last_ticket_update is not None:
-            if self.last_ticket_update.get_message() is not None:
-                result += "Last ticket update: {}".format(self.last_ticket_update.get_message())
+            if self.last_ticket_update.get_message() is not None and self.last_ticket_update.get_message() != "":
+                result += f" (Last ticket update: {self.last_ticket_update.get_message()})"
             ev = self.last_ticket_update.get_events()
-            if ev is not None:
-                result += "Ticket events: {}".format(ev)
+            if ev is not None and ev != "":
+                result += f" (Ticket events: {ev})"
 
         if self.last_lease_update is not None:
-            if self.last_lease_update.get_message() is not None:
-                result += "Last ticket update: {}".format(self.last_lease_update.get_message())
+            if self.last_lease_update.get_message() is not None and self.last_lease_update.get_message() != "":
+                result += f" (Last ticket update: {self.last_lease_update.get_message()})"
             ev = self.last_lease_update.get_events()
-            if ev is not None:
-                result += "Ticket events: {}".format(ev)
+            if ev is not None and ev != "":
+                result += f" (Ticket events: {ev})"
         return result
 
     def is_active(self) -> bool:
@@ -838,7 +841,18 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
             self.leased_resources.prepare_probe()
 
     def prepare_redeem(self):
-        return
+        assert self.resources is not None
+        assert self.resources.sliver is not None
+        sliver = self.resources.sliver
+
+        self.logger.info(f"Redeem prepared for Sliver: {sliver}")
+        if isinstance(sliver, NetworkServiceSliver) and sliver.interface_info is not None:
+            for ifs in sliver.interface_info.interfaces.values():
+                self.logger.info(f"Interface Sliver: {ifs}")
+
+        if isinstance(sliver, NodeSliver) and sliver.attached_components_info is not None:
+            for c in sliver.attached_components_info.devices.values():
+                self.logger.info(f"Component: {c}")
 
     def probe_join_state(self):
         """

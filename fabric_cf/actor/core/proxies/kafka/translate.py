@@ -276,7 +276,7 @@ class Translate:
         avro_delegation.delegation_id = delegation.get_delegation_id()
         avro_delegation.state = delegation.get_state().value
         avro_delegation.slice = Translate.translate_slice_to_avro(slice_obj=delegation.get_slice_object())
-        if delegation.get_graph() is not None and not delegation.is_reclaimed():
+        if delegation.get_graph() is not None and not (delegation.is_reclaimed() or delegation.is_closed()):
             avro_delegation.graph = delegation.get_graph().serialize_graph()
         return avro_delegation
 

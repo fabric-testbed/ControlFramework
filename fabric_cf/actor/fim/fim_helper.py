@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from typing import Tuple
+from typing import Tuple, List
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
@@ -39,7 +39,7 @@ from fim.slivers.attached_components import ComponentSliver
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities
 from fim.slivers.delegations import Delegations
-from fim.slivers.interface_info import InterfaceSliver
+from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import ExperimentTopology, Labels
@@ -127,14 +127,15 @@ class FimHelper:
         return NetworkXGraphImporter(logger=logger)
 
     @staticmethod
-    def get_arm_graph_from_file(*, filename: str) -> ABCARMPropertyGraph:
+    def get_arm_graph_from_file(*, filename: str, graph_id: str = None) -> ABCARMPropertyGraph:
         """
         Load specified file directly with no manipulations or validation
         :param filename:
+        :param graph_id:
         :return:
         """
         neo4j_graph_importer = FimHelper.get_neo4j_importer()
-        neo4_graph = neo4j_graph_importer.import_graph_from_file(graph_file=filename)
+        neo4_graph = neo4j_graph_importer.import_graph_from_file(graph_file=filename, graph_id=graph_id)
         site_arm = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=neo4_graph.graph_id,
                                                           importer=neo4j_graph_importer))
 
@@ -322,8 +323,12 @@ class FimHelper:
         @returns Interface Sliver Mapping
         """
 
-        # Peer Connection point maps to Interface Sliver
-        peer_ifs = FimHelper.get_interface_sliver_by_id(ifs_node_id=ifs_node_id, graph=slice_graph)
+        # Peer Connection point maps to Interface Sliver in ASM
+        # This must always return only 1 IFS
+        result = FimHelper.get_interface_sliver_by_id(ifs_node_id=ifs_node_id, graph=slice_graph)
+        if len(result) != 1:
+            raise Exception(f"More than one Peer Interface Sliver found for IFS: {ifs_node_id}!")
+        peer_ifs = next(iter(result))
 
         peer_ns_node_name, peer_ns_id = slice_graph.get_parent(node_id=peer_ifs.node_id,
                                                                rel=ABCPropertyGraph.REL_CONNECTS,
@@ -340,66 +345,29 @@ class FimHelper:
         return ret_val
 
     @staticmethod
-    def get_interface_sliver_by_id(ifs_node_id: str, graph: ABCPropertyGraph) -> InterfaceSliver or None:
+    def get_interface_sliver_by_id(ifs_node_id: str, graph: ABCPropertyGraph,
+                                   itype: InterfaceType = None) -> List[InterfaceSliver]:
         """
         Finds Peer Interface Sliver and parent information upto Network Node
         @param ifs_node_id node id of the Interface Sliver
         @param graph Slice ASM
+        @param itype Interface Type
         @returns Interface Sliver Mapping
         """
-        peer_cp_node_id = None
+        result = []
+        candidates = graph.find_peer_connection_points(node_id=ifs_node_id)
+        for c in candidates:
+            clazzes, node_props = graph.get_node_properties(node_id=c)
 
-        candidates = graph.get_first_and_second_neighbor(node_id=ifs_node_id, rel1=ABCPropertyGraph.REL_CONNECTS,
-                                                         node1_label=ABCPropertyGraph.CLASS_Link,
-                                                         rel2=ABCPropertyGraph.REL_CONNECTS,
-                                                         node2_label=ABCPropertyGraph.CLASS_ConnectionPoint)
-
-        if len(candidates) == 0:
-            return None
-        if len(candidates) != 1:
-            raise Exception(f"Connection point is only expected to connect to one other"
-                            f"connection point, instead connects to {len(candidates)}")
-        peer_cp_node_id = candidates[0][1]
-
-        clazzes, node_props = graph.get_node_properties(node_id=peer_cp_node_id)
-
-        # Peer Connection point maps to Interface Sliver
-        # Build Interface Sliver
-        peer_ifs = FimHelper.build_ifs_from_props(node_props=node_props)
-
-        return peer_ifs
-
-    @staticmethod
-    def get_interface_sliver_by_component_id_local_name(component_id: str, bqm: ABCCBMPropertyGraph,
-                                                        local_name: str) -> InterfaceSliver or None:
-        """
-        Find Interface Sliver matching a local name when the parent component Id is provided
-        @param component_id node id of the parent component
-        @param bqm Broker Query Model
-        @param local_name local Name of the connection point
-        @returns Interface Sliver
-        """
-        cp_ids = bqm.get_first_and_second_neighbor(node_id=component_id,
-                                                   rel1=ABCPropertyGraph.REL_HAS,
-                                                   node1_label=ABCPropertyGraph.CLASS_NetworkService,
-                                                   rel2=ABCPropertyGraph.REL_CONNECTS,
-                                                   node2_label=ABCPropertyGraph.CLASS_ConnectionPoint)
-
-        cp = None
-        if len(cp_ids) == 0:
-            return None
-        elif len(cp_ids) == 1:
-            cp_id = cp_ids[0][1]
-            _, cp_props = bqm.get_node_properties(node_id=cp_id)
-            cp = FimHelper.build_ifs_from_props(node_props=cp_props)
-        else:
-            for c in cp_ids:
-                _, cp_props = bqm.get_node_properties(node_id=c[1])
-                if local_name in cp_props[ABCPropertyGraph.PROP_NAME]:
-                    cp = FimHelper.build_ifs_from_props(node_props=cp_props)
-                    break
-
-        return cp
+            # Peer Connection point maps to Interface Sliver
+            # Build Interface Sliver
+            peer_ifs = FimHelper.build_ifs_from_props(node_props=node_props)
+            if itype is not None and peer_ifs.get_type() == itype:
+                result.append(peer_ifs)
+                break
+            else:
+                result.append(peer_ifs)
+        return result
 
     @staticmethod
     def build_ifs_from_props(node_props: dict) -> InterfaceSliver:
@@ -449,15 +417,16 @@ class FimHelper:
         Get owner switch and network service of a Connection Point from BQM
         @param bqm BQM graph
         @param node_id Connection Point Node Id
-        @return Owner Switch and Network Service
+        @return Owner Switch and MPLS Network Service, MPLS Network Service
         """
-        ns_name, ns_id = bqm.get_parent(node_id=node_id, rel=ABCPropertyGraph.REL_CONNECTS,
-                                        parent=ABCPropertyGraph.CLASS_NetworkService)
+        mpls_ns_name, mpls_ns_id = bqm.get_parent(node_id=node_id, rel=ABCPropertyGraph.REL_CONNECTS,
+                                                  parent=ABCPropertyGraph.CLASS_NetworkService)
 
-        ns = bqm.build_deep_ns_sliver(node_id=ns_id)
+        mpls_ns = bqm.build_deep_ns_sliver(node_id=mpls_ns_id)
 
-        sw_name, sw_id = bqm.get_parent(node_id=ns_id, rel=ABCPropertyGraph.REL_HAS,
+        sw_name, sw_id = bqm.get_parent(node_id=mpls_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
 
         switch = bqm.build_deep_node_sliver(node_id=sw_id)
-        return switch, ns
+
+        return switch, mpls_ns
