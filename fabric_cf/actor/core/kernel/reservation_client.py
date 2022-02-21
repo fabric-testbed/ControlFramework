@@ -728,13 +728,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
     def get_lease_term(self) -> Term:
         return self.lease_term
 
-    def get_notices(self) -> str:
-        '''
-        s = super().get_notices()
-        notices = self.get_update_notices()
-        if notices is not None:
-            s += " {}".format(notices)
-        '''
+    def get_notices_dict(self) -> str:
         notices = {}
         if self.get_error_message() is not None and len(self.get_error_message()) > 0:
             notices["error_message"] = self.get_error_message()
@@ -746,6 +740,13 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
             notices["last_ticket_update"] = self.get_last_ticket_update()
 
         return json.dumps(notices)
+
+    def get_notices(self) -> str:
+        s = super().get_notices()
+        notices = self.get_update_notices()
+        if notices is not None:
+            s += " {}".format(notices)
+        return s
 
     def get_previous_lease_term(self) -> Term:
         return self.previous_lease_term

@@ -220,3 +220,9 @@ class ABCClientReservation(ABCReservationMixin):
         Returns the client callback proxy for this reservation.
         @returns IClientCallbackProxy
         """
+
+    @abstractmethod
+    def get_notices_dict(self) -> str:
+        """
+        Return Notices as JSON String
+        """
