@@ -365,7 +365,8 @@ class OrchestratorHandler:
                                 }
                                 if r.get_notices() is not None and len(r.get_notices()) > 0:
                                     res_notices = json.loads(r.get_notices())
-                                    status[ResponseBuilder.PROP_NOTICES] = res_notices[ResponseBuilder.PROP_NOTICES]
+                                    for k, v in res_notices.items():
+                                        status[k] = v
                                 reservations_status[r.get_reservation_id()] = status
                         if len(reservations_status) > 0:
                             error_message[s.get_slice_id()] = reservations_status
