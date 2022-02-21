@@ -259,15 +259,3 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
         """
         Return Error Message
         """
-
-    @abstractmethod
-    def get_last_ticket_update(self) -> str:
-        """
-        Return Last Ticket Update
-        """
-
-    @abstractmethod
-    def get_last_lease_update(self) -> str:
-        """
-        Return Last Lease update
-        """

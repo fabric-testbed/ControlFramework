@@ -33,7 +33,7 @@ from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.user import GraphFormat
 
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
@@ -356,13 +356,16 @@ class OrchestratorHandler:
                     if reservations is not None:
                         reservations_status = {}
                         for r in reservations:
-                            if ReservationStates(r.get_state()) in reservations_states_to_peek:
+                            res_state = ReservationStates(r.get_state())
+                            res_pending_state = ReservationPendingStates(r.get_pending_state())
+                            if res_state in reservations_states_to_peek:
                                 status = {
-                                    ResponseBuilder.PROP_RESERVATION_STATE: r.get_state(),
-                                    ResponseBuilder.PROP_RESERVATION_PENDING_STATE: r.get_pending_state()
+                                    ResponseBuilder.PROP_RESERVATION_STATE: str(res_state),
+                                    ResponseBuilder.PROP_RESERVATION_PENDING_STATE: str(res_pending_state)
                                 }
                                 if r.get_notices() is not None and len(r.get_notices()) > 0:
-                                    status[ResponseBuilder.PROP_NOTICES] = json.loads(r.get_notices())
+                                    res_notices = json.loads(r.get_notices())
+                                    status[ResponseBuilder.PROP_NOTICES] = res_notices[ResponseBuilder.PROP_NOTICES]
                                 reservations_status[r.get_reservation_id()] = status
                         if len(reservations_status) > 0:
                             error_message[s.get_slice_id()] = reservations_status
