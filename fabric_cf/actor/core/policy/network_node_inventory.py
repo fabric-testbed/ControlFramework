@@ -389,12 +389,13 @@ class NetworkNodeInventory(InventoryForType):
         for name, requested_component in requested_components.devices.items():
             self.logger.debug(f"==========Allocating component: {requested_component}")
             resource_type = requested_component.get_type()
+            resource_model = requested_component.get_model()
             available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
             self.logger.debug(f"available_components after excluding allocated components: {available_components}")
 
             if available_components is None or len(available_components) == 0:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                      msg=f"Component of type: {resource_type} not available in "
+                                      msg=f"Component of type: {resource_model} not available in "
                                           f"graph node: {graph_node.node_id}")
 
             for component in available_components:
@@ -413,7 +414,7 @@ class NetworkNodeInventory(InventoryForType):
 
             if requested_component.get_node_map() is None:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                      msg=f"Component of type: {resource_type} not available in "
+                                      msg=f"Component of type: {resource_model} not available in "
                                           f"graph node: {graph_node.node_id}")
 
         return requested_components

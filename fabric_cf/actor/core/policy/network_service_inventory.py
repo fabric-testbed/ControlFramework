@@ -60,6 +60,20 @@ class NetworkServiceInventory(InventoryForType):
         Return the sliver updated with the VLAN
         """
         if requested_ns.get_layer() == NSLayer.L2:
+            requested_vlan = None
+            if requested_ifs.labels is not None and requested_ifs.labels.vlan is not None:
+                requested_vlan = int(requested_ifs.labels.vlan)
+
+            if requested_vlan is None:
+                return requested_ifs
+
+            if mpls_ns.get_label_delegations() is None:
+                if 1 > requested_vlan > 4095:
+                    raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                          msg=f"Vlan for L2 service is outside the allowed range 1-4095")
+                else:
+                    return requested_ifs
+
             delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=mpls_ns.get_label_delegations())
             vlans = None
             if delegated_label.vlan_range is not None:

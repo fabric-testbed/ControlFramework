@@ -683,3 +683,6 @@ class Reservation(ABCKernelReservation):
             return True
 
         return False
+
+    def get_error_message(self) -> str:
+        return self.error_message

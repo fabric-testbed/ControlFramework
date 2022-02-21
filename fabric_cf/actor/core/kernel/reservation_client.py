@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import json
 import traceback
 from typing import TYPE_CHECKING, List
 
@@ -728,11 +729,23 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         return self.lease_term
 
     def get_notices(self) -> str:
+        '''
         s = super().get_notices()
         notices = self.get_update_notices()
         if notices is not None:
             s += " {}".format(notices)
-        return s
+        '''
+        notices = {}
+        if self.get_error_message() is not None and len(self.get_error_message()) > 0:
+            notices["error_message"] = self.get_error_message()
+
+        if self.get_last_lease_update() is not None and len(self.get_last_lease_update()) > 0:
+            notices["last_lease_update"] = self.get_last_lease_update()
+
+        if self.get_last_ticket_update() is not None and len(self.get_last_ticket_update()) > 0:
+            notices["last_ticket_update"] = self.get_last_ticket_update()
+
+        return json.dumps(notices)
 
     def get_previous_lease_term(self) -> Term:
         return self.previous_lease_term
@@ -789,10 +802,30 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
 
         if self.last_lease_update is not None:
             if self.last_lease_update.get_message() is not None and self.last_lease_update.get_message() != "":
-                result += f" (Last ticket update: {self.last_lease_update.get_message()})"
+                result += f" (Last lease update: {self.last_lease_update.get_message()})"
             ev = self.last_lease_update.get_events()
             if ev is not None and ev != "":
-                result += f" (Ticket events: {ev})"
+                result += f" (Lease events: {ev})"
+        return result
+
+    def get_last_ticket_update(self) -> str:
+        result = ""
+        if self.last_ticket_update is not None:
+            if self.last_ticket_update.get_message() is not None and self.last_ticket_update.get_message() != "":
+                result += f"(Update: {self.last_ticket_update.get_message()})"
+            ev = self.last_ticket_update.get_events()
+            if ev is not None and ev != "":
+                result += f"(events: {ev})"
+        return result
+
+    def get_last_lease_update(self) -> str:
+        result = ""
+        if self.last_lease_update is not None:
+            if self.last_lease_update.get_message() is not None and self.last_lease_update.get_message() != "":
+                result += f" (Update: {self.last_lease_update.get_message()})"
+            ev = self.last_lease_update.get_events()
+            if ev is not None and ev != "":
+                result += f" (Events: {ev})"
         return result
 
     def is_active(self) -> bool:

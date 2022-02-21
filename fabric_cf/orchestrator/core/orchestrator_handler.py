@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import json
 import traceback
 from datetime import datetime, timedelta
 from http.client import NOT_FOUND, BAD_REQUEST
@@ -353,12 +354,18 @@ class OrchestratorHandler:
                 if slice_state != SliceState.StableOK:
                     reservations = controller.get_reservations(id_token=token, slice_id=ID(uid=s.get_slice_id()))
                     if reservations is not None:
-                        msg = ""
+                        reservations_status = {}
                         for r in reservations:
                             if ReservationStates(r.get_state()) in reservations_states_to_peek:
-                               msg += f"[{r.get_notices() }],"
-                        if msg != "":
-                            error_message[s.get_slice_id()] = msg[:-1]
+                                status = {
+                                    ResponseBuilder.PROP_RESERVATION_STATE: r.get_state(),
+                                    ResponseBuilder.PROP_RESERVATION_PENDING_STATE: r.get_pending_state()
+                                }
+                                if r.get_notices() is not None and len(r.get_notices()) > 0:
+                                    status[ResponseBuilder.PROP_NOTICES] = json.loads(r.get_notices())
+                                reservations_status[r.get_reservation_id()] = status
+                        if len(reservations_status) > 0:
+                            error_message[s.get_slice_id()] = reservations_status
 
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
                                                      slice_states=slice_states, error_message=error_message)
