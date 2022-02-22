@@ -303,7 +303,7 @@ class Reservation(ABCKernelReservation):
 
         @return notices string
         """
-        msg = f"Reservation {self.rid} is in state ({self.get_state_name()}," \
+        msg = f"Reservation {self.rid} (Slice {self.slice}) is in state ({self.get_state_name()}," \
               f"{self.get_pending_state_name()})"
 
         if self.error_message is not None and self.error_message != "":

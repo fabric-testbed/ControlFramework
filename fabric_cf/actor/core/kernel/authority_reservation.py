@@ -576,6 +576,7 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
         if failed.get_request_type() == RPCRequestType.UpdateLease and self.resources is not None and \
                 self.last_pending_state != ReservationPendingStates.ExtendingLease:
             self.logger.error(f"Closing reservation due to non-recoverable RPC error {failed.get_error_type()}")
+            self.update_data.error(message=str(failed.get_error()))
             self.actor.close(reservation=self)
 
 
