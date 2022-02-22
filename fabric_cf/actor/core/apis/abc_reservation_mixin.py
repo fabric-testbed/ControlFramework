@@ -253,3 +253,9 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
         Returns the graph node id which represents the sliver for this reservation in the graph model
         @return graph node id
         """
+
+    @abstractmethod
+    def get_error_message(self) -> str:
+        """
+        Return Error Message
+        """

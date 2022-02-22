@@ -319,7 +319,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
     def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: int = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
-                         email: str = None, rid_list: List[str] = None) -> ResultReservationAvro:
+                         email: str = None, rid_list: List[str] = None,
+                         notices_as_dict: bool = False) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -382,7 +383,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     slice_id = r.get_slice_id()
                     slice_obj = self.get_slice_by_guid(guid=slice_id)
                     r.restore(actor=self.actor, slice_obj=slice_obj)
-                    rr = Converter.fill_reservation(reservation=r, full=True)
+                    rr = Converter.fill_reservation(reservation=r, full=True, notices_as_dict=notices_as_dict)
                     result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("getReservations: {}".format(e))

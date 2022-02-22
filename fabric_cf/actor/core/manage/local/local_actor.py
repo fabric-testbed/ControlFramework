@@ -85,7 +85,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         try:
             result = self.manager.get_reservations(caller=self.auth, state=state, slice_id=slice_id, rid=rid,
                                                    id_token=id_token, oidc_claim_sub=oidc_claim_sub, email=email,
-                                                   rid_list=rid_list)
+                                                   rid_list=rid_list, notices_as_dict=True)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

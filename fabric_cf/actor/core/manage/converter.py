@@ -73,7 +73,8 @@ class Converter:
         return pred_avro
 
     @staticmethod
-    def fill_reservation(*, reservation: ABCReservationMixin, full: bool) -> ReservationMng:
+    def fill_reservation(*, reservation: ABCReservationMixin, full: bool,
+                         notices_as_dict:bool = False) -> ReservationMng:
         rsv_mng = None
         if isinstance(reservation, ABCControllerReservation):
             rsv_mng = LeaseReservationAvro()
@@ -112,6 +113,8 @@ class Converter:
                 rsv_mng.set_broker(str(broker.get_guid()))
             rsv_mng.set_renewable(reservation.is_renewable())
             rsv_mng.set_renew_time(reservation.get_renew_time())
+            if notices_as_dict:
+                rsv_mng.set_notices(reservation.get_notices_dict())
 
         if reservation.get_term() is not None:
             rsv_mng.set_start(ActorClock.to_milliseconds(when=reservation.get_term().get_start_time()))
@@ -124,7 +127,8 @@ class Converter:
         if reservation.get_requested_term() is not None:
             rsv_mng.set_requested_end(ActorClock.to_milliseconds(when=reservation.get_requested_term().get_end_time()))
 
-        rsv_mng.set_notices(reservation.get_notices())
+        if rsv_mng.get_notices() is None:
+            rsv_mng.set_notices(reservation.get_notices())
 
         if full:
             rsv_mng = Converter.attach_res_properties(mng=rsv_mng, reservation=reservation)
