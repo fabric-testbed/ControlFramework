@@ -12,3 +12,5 @@ fabric_fss_utils==1.1.7
 PyYAML==5.4
 astroid==2.4.2
 typing-extensions==3.7.4.3
+six==1.15.0
+wrapt==1.12.1
