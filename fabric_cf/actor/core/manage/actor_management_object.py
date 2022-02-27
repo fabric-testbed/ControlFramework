@@ -317,7 +317,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
     def get_slice_by_guid(self, *, guid: str, id_token: str = None) -> ABCSlice:
         return self.db.get_slice(slice_id=guid)
 
-    def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: int = None,
+    def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
                          email: str = None, rid_list: List[str] = None,
                          notices_as_dict: bool = False) -> ResultReservationAvro:

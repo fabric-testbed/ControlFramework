@@ -877,7 +877,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_state(self, *, rsv_state: int) -> list:
+    def get_reservations_by_state(self, *, rsv_state: List[int]) -> list:
         """
         Get Reservations for an actor by stats
         @param act_id actor id
@@ -887,7 +887,7 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(Reservations.rsv_state == rsv_state):
+                for row in session.query(Reservations).filter(Reservations.rsv_state in rsv_state):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
@@ -896,7 +896,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id_state(self, *, slc_guid: str, rsv_state: int) -> list:
+    def get_reservations_by_slice_id_state(self, *, slc_guid: str, rsv_state: List[int]) -> list:
         """
         Get Reservations for an actor by slice id and state
         @param slc_guid slice guid
@@ -909,7 +909,7 @@ class PsqlDatabase:
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(Reservations.rsv_state == rsv_state).filter(
+                for row in session.query(Reservations).filter(Reservations.rsv_state in rsv_state).filter(
                         Reservations.rsv_slc_id == slc_obj['slc_id']):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
@@ -919,7 +919,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_email_state(self, *, email: str, rsv_state: int) -> list:
+    def get_reservations_by_email_state(self, *, email: str, rsv_state: List[int]) -> list:
         """
         Get Reservations for an actor by slice id and state
         @param email email
@@ -929,7 +929,7 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(Reservations.rsv_state == rsv_state).filter(
+                for row in session.query(Reservations).filter(Reservations.rsv_state in rsv_state).filter(
                         Reservations.email == email):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
@@ -1504,87 +1504,6 @@ class PsqlDatabase:
                 if unt_obj is None:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Unit", unt_uid))
                 unt_obj.properties = properties
-        except Exception as e:
-            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
-            raise e
-        return result
-
-    def add_plugin(self, *, plugin_id: str, plg_type: int, plg_actor_type: int, properties):
-        """
-        Add plugin
-        @param plugin_id plugin guid
-        @param plg_type plugin type
-        @param plg_actor_type actory type
-        @param properties properties
-        """
-        try:
-            plg_obj = Plugins(plg_local_id=plugin_id, plg_type=plg_type, plg_actor_type=plg_actor_type,
-                              properties=properties)
-            with session_scope(self.db_engine) as session:
-                session.add(plg_obj)
-        except Exception as e:
-            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
-            raise e
-
-    def remove_plugin(self, *, plugin_id: str):
-        """
-        Remove plugin
-        @param plugin_id plugin id
-        """
-
-        try:
-            with session_scope(self.db_engine) as session:
-                session.query(Plugins).filter(Plugins.plg_local_id == plugin_id).delete()
-        except Exception as e:
-            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
-            raise e
-
-    @staticmethod
-    def generate_plugin_dict_from_row(row) -> dict:
-        """
-        Generate dictionary representing a plugin row read from database
-        """
-        if row is None:
-            return None
-
-        plg_obj = {'plg_id': row.plg_id, 'plg_local_id': row.plg_local_id, 'plg_type': row.plg_type,
-                   'plg_actor_type': row.plg_actor_type, 'properties': row.properties}
-
-        return plg_obj
-
-    def get_plugins(self, *, plg_type: int, plg_actor_type: int) -> list:
-        """
-        Get Plugins
-        @param plg_type plugin type
-        @param plg_actor_type plugin actor type
-        @return list of plugins
-        """
-        result = []
-        try:
-            with session_scope(self.db_engine) as session:
-                for row in session.query(Plugins).filter(Plugins.plg_type == plg_type).filter(
-                        Plugins.plg_actor_type == plg_actor_type):
-                    plg_obj = self.generate_plugin_dict_from_row(row)
-                    result.append(plg_obj.copy())
-                    plg_obj.clear()
-        except Exception as e:
-            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
-            raise e
-        return result
-
-    def get_plugin(self, *, plugin_id: str) -> dict:
-        """
-        Get Plugin
-        @param plugin_id plugin id
-        @return plugin
-        """
-        result = None
-        try:
-            with session_scope(self.db_engine) as session:
-                plg_obj = session.query(Plugins).filter(Plugins.plg_local_id == plugin_id).first()
-                if plg_obj is None:
-                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Plugin", plugin_id))
-                result = self.generate_plugin_dict_from_row(plg_obj)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e

@@ -347,27 +347,27 @@ class OrchestratorHandler:
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
 
             error_message = {}
-            reservations_states_to_peek = [ReservationStates.Failed, ReservationStates.Closed,
-                                           ReservationStates.CloseWait]
+            reservations_states_to_peek = [ReservationStates.Failed.value, ReservationStates.Closed.value,
+                                           ReservationStates.CloseWait.value]
             for s in slice_list:
                 slice_state = SliceState(s.get_state())
                 if slice_state != SliceState.StableOK:
-                    reservations = controller.get_reservations(id_token=token, slice_id=ID(uid=s.get_slice_id()))
+                    reservations = controller.get_reservations(id_token=token, slice_id=ID(uid=s.get_slice_id()),
+                                                               state=reservations_states_to_peek)
                     if reservations is not None:
                         reservations_status = {}
                         for r in reservations:
                             res_state = ReservationStates(r.get_state())
                             res_pending_state = ReservationPendingStates(r.get_pending_state())
-                            if res_state in reservations_states_to_peek:
-                                status = {
-                                    ResponseBuilder.PROP_RESERVATION_STATE: str(res_state),
-                                    ResponseBuilder.PROP_RESERVATION_PENDING_STATE: str(res_pending_state)
-                                }
-                                if r.get_notices() is not None and len(r.get_notices()) > 0:
-                                    res_notices = json.loads(r.get_notices())
-                                    for k, v in res_notices.items():
-                                        status[k] = v
-                                reservations_status[r.get_reservation_id()] = status
+                            status = {
+                                ResponseBuilder.PROP_RESERVATION_STATE: str(res_state),
+                                ResponseBuilder.PROP_RESERVATION_PENDING_STATE: str(res_pending_state)
+                            }
+                            if r.get_notices() is not None and len(r.get_notices()) > 0:
+                                res_notices = json.loads(r.get_notices())
+                                for k, v in res_notices.items():
+                                    status[k] = v
+                            reservations_status[r.get_reservation_id()] = status
                         if len(reservations_status) > 0:
                             error_message[s.get_slice_id()] = reservations_status
 

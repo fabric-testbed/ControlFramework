@@ -374,6 +374,10 @@ class ActorDatabase(ABCDatabase):
         try:
             self.lock.acquire()
             self.logger.debug("Removing reservation {}".format(rid))
+            try:
+                self.db.remove_unit(unt_uid=str(rid))
+            except Exception as e:
+                self.logger.debug("No associated Unit associated with the reservation")
             self.db.remove_reservation(rsv_resid=str(rid))
         finally:
             self.lock.release()
@@ -508,7 +512,7 @@ class ActorDatabase(ABCDatabase):
                 result.append(res_obj)
         return result
 
-    def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: int) -> List[ABCReservationMixin]:
+    def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: List[int]) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -523,7 +527,7 @@ class ActorDatabase(ABCDatabase):
                 result.append(res_obj)
         return result
 
-    def get_reservations_by_email_state(self, *, email: str, state: int) -> List[ABCReservationMixin]:
+    def get_reservations_by_email_state(self, *, email: str, state: List[int]) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:
@@ -670,7 +674,7 @@ class ActorDatabase(ABCDatabase):
                 result.append(res_obj)
         return result
 
-    def get_reservations_by_state(self, *, state: int) -> List[ABCReservationMixin]:
+    def get_reservations_by_state(self, *, state: List[int]) -> List[ABCReservationMixin]:
         result = []
         res_dict_list = None
         try:

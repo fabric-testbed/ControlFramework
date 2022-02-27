@@ -242,7 +242,7 @@ class KafkaActorService(KafkaService):
                         request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
 
                     result = mo.get_reservations(caller=auth, slice_id=slice_id,
-                                                 state=request.get_reservation_state(),
+                                                 state=[request.get_reservation_state()],
                                                  id_token=request.get_id_token())
 
                 else:
@@ -253,7 +253,7 @@ class KafkaActorService(KafkaService):
                 if request.get_reservation_state() is not None and \
                         request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
 
-                    result = mo.get_reservations(caller=auth, state=request.get_reservation_state(),
+                    result = mo.get_reservations(caller=auth, state=[request.get_reservation_state()],
                                                  id_token=request.get_id_token(), email=request.get_email())
 
                 else:

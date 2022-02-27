@@ -78,7 +78,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def get_reservations(self, *, id_token: str = None, state: int = None, slice_id: ID = None,
+    def get_reservations(self, *, id_token: str = None, state: List[int] = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None,
                          rid_list: List[str] = None) -> List[ReservationMng]:
         self.clear_last()
