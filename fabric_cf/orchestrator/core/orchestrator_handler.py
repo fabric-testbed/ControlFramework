@@ -344,7 +344,7 @@ class OrchestratorHandler:
 
             slice_states = SliceState.str_list_to_state_list(states=states)
 
-            slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
+            slice_list = controller.get_slices(id_token=token, slice_id=slice_guid, state=slice_states)
 
             error_message = {}
             reservations_states_to_peek = [ReservationStates.Failed.value, ReservationStates.Closed.value,
@@ -371,8 +371,7 @@ class OrchestratorHandler:
                         if len(reservations_status) > 0:
                             error_message[s.get_slice_id()] = reservations_status
 
-            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
-                                                     slice_states=slice_states, error_message=error_message)
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list, error_message=error_message)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slices e: {e}")
@@ -458,8 +457,7 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
 
             slice_model_str = slice_model.serialize_graph(format=graph_format)
-            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_id=slice_id,
-                                                     slice_model=slice_model_str)
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")

@@ -52,11 +52,11 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
     def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None,
-                   email: str = None) -> List[SliceAvro]:
+                   email: str = None, state: List[int] = None) -> List[SliceAvro]:
         self.clear_last()
         try:
             result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, id_token=id_token,
-                                             slice_name=slice_name, email=email)
+                                             slice_name=slice_name, email=email, state=state)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

@@ -111,7 +111,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             self.id = actor.get_guid()
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, id_token: str = None,
-                   slice_name: str = None, email: str = None) -> ResultSliceAvro:
+                   slice_name: str = None, email: str = None, state: List[int] = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -149,7 +149,10 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     elif user_dn is not None:
                         slice_list = self.db.get_slice_by_oidc_claim_sub(oidc_claim_sub=user_dn)
                     elif user_email is not None:
-                        slice_list = self.db.get_slice_by_email(email=user_email)
+                        if state is None:
+                            slice_list = self.db.get_slice_by_email(email=user_email)
+                        else:
+                            slice_list = self.db.get_slice_by_email_state(email=user_email, state=state)
                     else:
                         slice_list = self.db.get_slices()
 

@@ -108,7 +108,7 @@ class Reservations(Base):
     """
     __tablename__ = 'Reservations'
     rsv_id = Column(Integer, Sequence('rsv_id', start=1, increment=1), autoincrement=True, primary_key=True)
-    rsv_graph_node_id = Column(String, nullable=True)
+    rsv_graph_node_id = Column(String, nullable=True, index=True)
     rsv_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID), index=True)
     rsv_resid = Column(String, nullable=False, index=True)
     oidc_claim_sub = Column(String, nullable=True, index=True)
@@ -125,6 +125,7 @@ class Reservations(Base):
     Index('idx_slc_guid_resid_email', rsv_slc_id, rsv_resid, email)
     Index('idx_resid_state', rsv_resid, rsv_state)
     Index('idx_slcid_state', rsv_slc_id, rsv_state)
+    Index('idx_graph_id_res_id', rsv_graph_node_id, rsv_resid)
 
 
 class Slices(Base):
@@ -135,7 +136,7 @@ class Slices(Base):
     slc_id = Column(Integer, Sequence('slc_id', start=1, increment=1), autoincrement=True, primary_key=True)
     slc_graph_id = Column(String, nullable=True)
     oidc_claim_sub = Column(String, nullable=True)
-    email = Column(String, nullable=True)
+    email = Column(String, nullable=True, index=True)
     slc_guid = Column(String, nullable=False, index=True)
     slc_name = Column(String, nullable=False, index=True)
     slc_type = Column(Integer, nullable=False)

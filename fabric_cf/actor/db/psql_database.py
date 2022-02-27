@@ -90,7 +90,6 @@ class PsqlDatabase:
                 session.query(Slices).delete()
                 session.query(ManagerObjects).delete()
                 session.query(Miscellaneous).delete()
-                session.query(Plugins).delete()
                 session.query(Actors).delete()
 
         except Exception as e:
@@ -387,7 +386,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, lease_start: datetime = None,
+    def add_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, slc_state: int, lease_start: datetime = None,
                   lease_end: datetime = None, slc_resource_type: str, properties, slc_graph_id: str = None,
                   oidc_claim_sub: str = None, email: str = None):
         """
@@ -395,6 +394,7 @@ class PsqlDatabase:
         @param slc_guid slice id
         @param slc_name slice name
         @param slc_type slice type
+        @param slc_state slice state
         @param slc_resource_type slice resource type
         @param lease_start Lease Start time
         @param lease_end Lease End time
@@ -404,9 +404,9 @@ class PsqlDatabase:
         @param email User Email
         """
         try:
-            slc_obj = Slices(slc_guid=slc_guid, slc_name=slc_name, slc_type=slc_type, oidc_claim_sub=oidc_claim_sub,
-                             email=email, slc_resource_type=slc_resource_type, lease_start=lease_start,
-                             lease_end=lease_end, properties=properties)
+            slc_obj = Slices(slc_guid=slc_guid, slc_name=slc_name, slc_type=slc_type, slc_state=slc_state,
+                             oidc_claim_sub=oidc_claim_sub, email=email, slc_resource_type=slc_resource_type,
+                             lease_start=lease_start, lease_end=lease_end, properties=properties)
             if slc_graph_id is not None:
                 slc_obj.slc_graph_id = slc_graph_id
             with session_scope(self.db_engine) as session:
@@ -415,7 +415,7 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def update_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, slc_resource_type: str,
+    def update_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, slc_state: int, slc_resource_type: str,
                      properties, slc_graph_id: str = None, lease_start: datetime = None, lease_end: datetime = None):
         """
         Update a slice
@@ -436,6 +436,7 @@ class PsqlDatabase:
                     slc_obj.slc_name = slc_name
                     slc_obj.slc_type = slc_type
                     slc_obj.slc_resource_type = slc_resource_type
+                    slc_obj.slc_state = slc_state
                     slc_obj.lease_start = lease_start
                     slc_obj.lease_end = lease_end
                     if slc_graph_id is not None:
@@ -582,6 +583,25 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Slices).filter(Slices.email == email):
+                    slice_obj = self.generate_slice_dict_from_row(row)
+                    result.append(slice_obj.copy())
+                    slice_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_slice_by_email_state(self, *, email: str, slc_state: List[int]) -> list:
+        """
+        Get slice for an user
+        @param email User email
+        @param slc_state slice state
+        @return slice dictionary
+        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Slices).filter(Slices.email == email).filter(Slices.slc_state.in_(slc_state)):
                     slice_obj = self.generate_slice_dict_from_row(row)
                     result.append(slice_obj.copy())
                     slice_obj.clear()
@@ -887,7 +907,7 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(Reservations.rsv_state in rsv_state):
+                for row in session.query(Reservations).filter(Reservations.rsv_state.in_(rsv_state)):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
@@ -909,7 +929,7 @@ class PsqlDatabase:
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(Reservations.rsv_state in rsv_state).filter(
+                for row in session.query(Reservations).filter(Reservations.rsv_state.in_(rsv_state)).filter(
                         Reservations.rsv_slc_id == slc_obj['slc_id']):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
@@ -929,7 +949,7 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(Reservations.rsv_state in rsv_state).filter(
+                for row in session.query(Reservations).filter(Reservations.rsv_state.in_(rsv_state)).filter(
                         Reservations.email == email):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
