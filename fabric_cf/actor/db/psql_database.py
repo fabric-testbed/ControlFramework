@@ -422,6 +422,7 @@ class PsqlDatabase:
         @param slc_guid slice id
         @param slc_name slice name
         @param slc_type slice type
+        @param slc_state slice state
         @param slc_resource_type slice resource type
         @param lease_start Lease Start time
         @param lease_end Lease End time
