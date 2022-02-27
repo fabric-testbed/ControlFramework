@@ -81,8 +81,9 @@ class AuthorityManagementObject(ServerActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
-            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
-                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+            self.validate_token(id_token=id_token, action_id=ActionId.query,
+                                resource_type=ResourceType.sliver, token=id_token)
+
             res_list = None
             try:
                 res_list = self.db.get_authority_reservations()
@@ -124,8 +125,10 @@ class AuthorityManagementObject(ServerActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
-            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
-                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+
+            self.validate_token(id_token=id_token, action_id=ActionId.query,
+                                resource_type=ResourceType.sliver, resource_id=str(rid))
+
             units_list = None
             try:
                 units_list = self.db.get_units(rid=rid)
@@ -155,8 +158,8 @@ class AuthorityManagementObject(ServerActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
-            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
-                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+            self.validate_token(id_token=id_token, action_id=ActionId.query,
+                                resource_type=ResourceType.sliver, resource_id=str(uid))
             units_list = None
             try:
                 unit = self.db.get_unit(uid=uid)

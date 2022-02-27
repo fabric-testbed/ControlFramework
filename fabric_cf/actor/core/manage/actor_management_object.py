@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
@@ -68,6 +68,23 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         self.db = None
         if actor is not None:
             self.set_actor(actor=actor)
+
+    def validate_token(self, *, id_token: str, action_id: ActionId, resource_type: ResourceType,
+                       resource_id: str = None) -> Tuple[str, str]:
+        user_dn = None
+        user_email = None
+        fabric_token = AccessChecker.check_access(action_id=action_id,
+                                                  resource_type=resource_type,
+                                                  token=id_token, logger=self.logger,
+                                                  actor_type=self.actor.get_type(),
+                                                  resource_id=resource_id)
+        if fabric_token is not None:
+            user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
+            user_email = fabric_token.get_decoded_token().get(Constants.CLAIMS_EMAIL, None)
+
+            if user_dn is None:
+                raise ManageException(ErrorCodes.ErrorInvalidToken)
+        return user_dn, user_email
 
     def register_protocols(self):
         from fabric_cf.actor.core.manage.local.local_actor import LocalActor
@@ -120,21 +137,11 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
         else:
             slice_list = None
-            user_dn = None
-            user_email = email
-            try:
-                if id_token is not None:
-                    fabric_token = AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.slice,
-                                                              token=id_token, logger=self.logger,
-                                                              actor_type=self.actor.get_type(),
-                                                              resource_id=str(slice_id))
-                    user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
-                    user_email = fabric_token.get_decoded_token().get(Constants.CLAIMS_EMAIL, None)
 
-                    if user_dn is None:
-                        result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
-                        result.status.set_message(ErrorCodes.ErrorInvalidToken.interpret())
-                        return result
+            try:
+                user_dn, user_email = self.validate_token(id_token=id_token, action_id=ActionId.query,
+                                                          resource_type=ResourceType.slice,
+                                                          resource_id=str(slice_id))
 
                 try:
                     slice_list = None
@@ -183,21 +190,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         else:
             try:
-                user_dn = None
-                user_email = None
-                if id_token is not None:
-                    fabric_token = AccessChecker.check_access(action_id=ActionId.query,
-                                                              resource_type=ResourceType.slice,
-                                                              token=id_token, logger=self.logger,
-                                                              actor_type=self.actor.get_type(),
-                                                              resource_id=str(slice_obj.slice_name))
-                    user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
-                    user_email = fabric_token.get_decoded_token().get(Constants.CLAIMS_EMAIL, None)
-
-                    if user_dn is None:
-                        result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
-                        result.status.set_message(ErrorCodes.ErrorInvalidToken.interpret())
-                        return result
+                user_dn, user_email = self.validate_token(id_token=id_token, action_id=ActionId.query,
+                                                          resource_type=ResourceType.slice,
+                                                          resource_id=str(slice_obj.slice_name))
 
                 slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name())
 
@@ -251,12 +246,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.delete,
-                                           resource_type=ResourceType.slice,
-                                           token=id_token, logger=self.logger,
-                                           actor_type=self.actor.get_type(),
-                                           resource_id=str(slice_id))
+            self.validate_token(id_token=id_token, action_id=ActionId.delete,
+                                resource_type=ResourceType.slice,
+                                resource_id=str(slice_id))
 
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
@@ -333,20 +325,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            user_dn = oidc_claim_sub
-            user_email = email
-            if id_token is not None:
-                fabric_token = AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
-                                                          token=id_token, logger=self.logger,
-                                                          actor_type=self.actor.get_type(),
-                                                          resource_id=str(rid))
-                user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
-                user_email = fabric_token.get_decoded_token().get(Constants.CLAIMS_EMAIL, None)
-
-                if user_dn is None:
-                    result.status.set_code(ErrorCodes.ErrorInvalidToken.value)
-                    result.status.set_message(ErrorCodes.ErrorInvalidToken.interpret())
-                    return result
+            user_dn, user_email = self.validate_token(id_token=id_token, action_id=ActionId.query,
+                                                      resource_type=ResourceType.sliver,
+                                                      resource_id=str(rid))
 
             res_list = None
             try:
@@ -409,12 +390,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.delete,
-                                           resource_type=ResourceType.sliver,
-                                           token=id_token, logger=self.logger,
-                                           actor_type=self.actor.get_type(),
-                                           resource_id=str(rid))
+            self.validate_token(id_token=id_token, action_id=ActionId.delete,
+                                resource_type=ResourceType.sliver,
+                                resource_id=str(rid))
 
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
@@ -446,12 +424,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.close,
-                                           resource_type=ResourceType.sliver,
-                                           token=id_token, logger=self.logger,
-                                           actor_type=self.actor.get_type(),
-                                           resource_id=str(rid))
+            self.validate_token(id_token=id_token, action_id=ActionId.close,
+                                resource_type=ResourceType.sliver,
+                                resource_id=str(rid))
 
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
@@ -483,12 +458,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.close,
-                                           resource_type=ResourceType.slice,
-                                           token=id_token, logger=self.logger,
-                                           actor_type=self.actor.get_type(),
-                                           resource_id=str(slice_id))
+            self.validate_token(id_token=id_token, action_id=ActionId.close,
+                                resource_type=ResourceType.slice,
+                                resource_id=str(slice_id))
 
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
@@ -583,9 +555,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 return result
 
         try:
-            if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.sliver,
-                                           token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+            self.validate_token(id_token=id_token, action_id=ActionId.query,
+                                resource_type=ResourceType.sliver)
 
             res_list = None
             try:
@@ -624,9 +595,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.delegation,
-                                           token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+            self.validate_token(id_token=id_token, action_id=ActionId.query,
+                                resource_type=ResourceType.delegation)
+
             dlg_list = None
             try:
                 if did is not None:

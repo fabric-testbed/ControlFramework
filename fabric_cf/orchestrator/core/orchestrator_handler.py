@@ -345,33 +345,7 @@ class OrchestratorHandler:
             slice_states = SliceState.str_list_to_state_list(states=states)
 
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid, state=slice_states)
-
-            error_message = {}
-            reservations_states_to_peek = [ReservationStates.Failed.value, ReservationStates.Closed.value,
-                                           ReservationStates.CloseWait.value]
-            for s in slice_list:
-                slice_state = SliceState(s.get_state())
-                if slice_state != SliceState.StableOK:
-                    reservations = controller.get_reservations(id_token=token, slice_id=ID(uid=s.get_slice_id()),
-                                                               state=reservations_states_to_peek)
-                    if reservations is not None:
-                        reservations_status = {}
-                        for r in reservations:
-                            res_state = ReservationStates(r.get_state())
-                            res_pending_state = ReservationPendingStates(r.get_pending_state())
-                            status = {
-                                ResponseBuilder.PROP_RESERVATION_STATE: str(res_state),
-                                ResponseBuilder.PROP_RESERVATION_PENDING_STATE: str(res_pending_state)
-                            }
-                            if r.get_notices() is not None and len(r.get_notices()) > 0:
-                                res_notices = json.loads(r.get_notices())
-                                for k, v in res_notices.items():
-                                    status[k] = v
-                            reservations_status[r.get_reservation_id()] = status
-                        if len(reservations_status) > 0:
-                            error_message[s.get_slice_id()] = reservations_status
-
-            return ResponseBuilder.get_slice_summary(slice_list=slice_list, error_message=error_message)
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slices e: {e}")

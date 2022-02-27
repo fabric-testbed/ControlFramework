@@ -1652,8 +1652,14 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         """
         self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                           f"Slice Graph# {self.slice.get_graph_id()}")
+        error_message = self.get_error_message()
+        if error_message is None:
+            error_message = self.get_last_ticket_update()
+        if error_message is None:
+            error_message = self.get_last_lease_update()
         self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
-                                      reservation_state=self.state.name)
+                                      reservation_state=self.state.name,
+                                      error_message=error_message)
         self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                           f"Slice Graph# {self.slice.get_graph_id()}")
 
