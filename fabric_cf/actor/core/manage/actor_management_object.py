@@ -143,6 +143,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                                                           resource_type=ResourceType.slice,
                                                           resource_id=str(slice_id))
 
+                if user_email is None:
+                    user_email = email
+
                 try:
                     slice_list = None
                     if slice_id is not None:
@@ -157,8 +160,10 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                         slice_list = self.db.get_slice_by_oidc_claim_sub(oidc_claim_sub=user_dn)
                     elif user_email is not None:
                         if state is None:
+                            print("I am here - no state")
                             slice_list = self.db.get_slice_by_email(email=user_email)
                         else:
+                            print("I am here - yes state")
                             slice_list = self.db.get_slice_by_email_state(email=user_email, state=state)
                     else:
                         slice_list = self.db.get_slices()
@@ -314,8 +319,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
     def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
-                         email: str = None, rid_list: List[str] = None,
-                         notices_as_dict: bool = False) -> ResultReservationAvro:
+                         email: str = None, rid_list: List[str] = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -328,6 +332,12 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             user_dn, user_email = self.validate_token(id_token=id_token, action_id=ActionId.query,
                                                       resource_type=ResourceType.sliver,
                                                       resource_id=str(rid))
+
+            if user_email is None:
+                user_email = email
+
+            if user_dn is None:
+                user_dn = oidc_claim_sub
 
             res_list = None
             try:
@@ -367,7 +377,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     slice_id = r.get_slice_id()
                     slice_obj = self.get_slice_by_guid(guid=slice_id)
                     r.restore(actor=self.actor, slice_obj=slice_obj)
-                    rr = Converter.fill_reservation(reservation=r, full=True, notices_as_dict=notices_as_dict)
+                    rr = Converter.fill_reservation(reservation=r, full=True)
                     result.reservations.append(rr)
         except ReservationNotFoundException as e:
             self.logger.error("getReservations: {}".format(e))

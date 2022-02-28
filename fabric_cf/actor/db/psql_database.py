@@ -470,7 +470,7 @@ class PsqlDatabase:
 
         slice_obj = {'slc_id': row.slc_id, 'slc_guid': row.slc_guid, 'slc_name': row.slc_name,
                      'slc_type': row.slc_type, 'slc_resource_type': row.slc_resource_type,
-                     'properties': row.properties}
+                     'properties': row.properties, 'slc_state': row.slc_state}
         if row.slc_graph_id is not None:
             slice_obj['slc_graph_id'] = row.slc_graph_id
 
@@ -1798,7 +1798,54 @@ def test2():
         print(r['rsv_state'])
     print("Get all actors after reset {}".format(db.get_actors()))
 
+def test3():
+    logger = logging.getLogger('PsqlDatabase')
+    db = PsqlDatabase(user='fabric', password='fabric', database='am', db_host='127.0.0.1:5432', logger=logger)
+    db.create_db()
+    db.reset_db()
+
+    # Actor Operations
+    prop = {'abc': 'def'}
+
+    # Slice operations
+    from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
+    db.add_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.Closing.value, email="kthare10@email.unc.edu")
+
+    db.add_slice(slc_guid="1234", slc_name="test-slice2", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.Dead.value, email="kthare10@email.unc.edu")
+
+    db.add_slice(slc_guid="1234", slc_name="test-slice3", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.StableOK.value, email="kthare10@email.unc.edu")
+
+    db.add_slice(slc_guid="1234", slc_name="test-slice4", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.StableError.value, email="kthare10@email.unc.edu")
+
+    db.add_slice(slc_guid="1234", slc_name="test-slice3", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.Configuring.value, email="kthare10@email.unc.edu")
+
+    ss = db.get_slice_by_email_state(slc_state=[SliceState.Dead.value, SliceState.Closing.value],
+                                     email="kthare10@email.unc.edu")
+
+    assert len(ss) == 2
+
+    ss = db.get_slice_by_email_state(slc_state=[SliceState.StableOK.value, SliceState.StableError.value],
+                                     email="kthare10@email.unc.edu")
+
+    assert len(ss) == 2
+
+    ss = db.get_slice_by_email_state(slc_state=[SliceState.Configuring.value],
+                                     email="kthare10@email.unc.edu")
+
+    assert len(ss) == 1
+
 
 if __name__ == '__main__':
     test2()
     test()
+    test3()

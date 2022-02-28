@@ -55,6 +55,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                    email: str = None, state: List[int] = None) -> List[SliceAvro]:
         self.clear_last()
         try:
+            print("I am here")
             result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, id_token=id_token,
                                              slice_name=slice_name, email=email, state=state)
             self.last_status = result.status
@@ -85,7 +86,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         try:
             result = self.manager.get_reservations(caller=self.auth, state=state, slice_id=slice_id, rid=rid,
                                                    id_token=id_token, oidc_claim_sub=oidc_claim_sub, email=email,
-                                                   rid_list=rid_list, notices_as_dict=True)
+                                                   rid_list=rid_list)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
