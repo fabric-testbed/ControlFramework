@@ -156,15 +156,13 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     elif slice_name is not None:
                         slice_list = self.db.get_slice_by_name(slice_name=slice_name, oidc_claim_sub=user_dn,
                                                                email=user_email)
-                    elif user_dn is not None:
-                        slice_list = self.db.get_slice_by_oidc_claim_sub(oidc_claim_sub=user_dn)
                     elif user_email is not None:
                         if state is None:
-                            print("I am here - no state")
                             slice_list = self.db.get_slice_by_email(email=user_email)
                         else:
-                            print("I am here - yes state")
                             slice_list = self.db.get_slice_by_email_state(email=user_email, state=state)
+                    elif user_dn is not None:
+                        slice_list = self.db.get_slice_by_oidc_claim_sub(oidc_claim_sub=user_dn)
                     else:
                         slice_list = self.db.get_slices()
 

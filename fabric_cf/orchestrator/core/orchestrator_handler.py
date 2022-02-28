@@ -343,7 +343,6 @@ class OrchestratorHandler:
                 slice_guid = ID(uid=slice_id)
 
             slice_states = SliceState.str_list_to_state_list(states=states)
-            print(slice_states)
 
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid, state=slice_states)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)

@@ -55,7 +55,6 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                    email: str = None, state: List[int] = None) -> List[SliceAvro]:
         self.clear_last()
         try:
-            print("I am here")
             result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, id_token=id_token,
                                              slice_name=slice_name, email=email, state=state)
             self.last_status = result.status
