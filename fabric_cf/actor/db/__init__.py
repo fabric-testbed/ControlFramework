@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 
-from sqlalchemy import JSON, ForeignKey, LargeBinary, TIMESTAMP
+from sqlalchemy import JSON, ForeignKey, LargeBinary, TIMESTAMP, Index
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, Integer, Sequence
 
@@ -108,18 +108,24 @@ class Reservations(Base):
     """
     __tablename__ = 'Reservations'
     rsv_id = Column(Integer, Sequence('rsv_id', start=1, increment=1), autoincrement=True, primary_key=True)
-    rsv_graph_node_id = Column(String, nullable=True)
-    rsv_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID))
-    rsv_resid = Column(String, nullable=False)
-    oidc_claim_sub = Column(String, nullable=True)
-    email = Column(String, nullable=True)
+    rsv_graph_node_id = Column(String, nullable=True, index=True)
+    rsv_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID), index=True)
+    rsv_resid = Column(String, nullable=False, index=True)
+    oidc_claim_sub = Column(String, nullable=True, index=True)
+    email = Column(String, nullable=True, index=True)
     rsv_category = Column(Integer, nullable=False)
-    rsv_state = Column(Integer, nullable=False)
+    rsv_state = Column(Integer, nullable=False, index=True)
     rsv_pending = Column(Integer, nullable=False)
     rsv_joining = Column(Integer, nullable=False)
     lease_start = Column(TIMESTAMP, nullable=True)
     lease_end = Column(TIMESTAMP, nullable=True)
     properties = Column(LargeBinary)
+
+    Index('idx_slc_guid_resid', rsv_slc_id, rsv_resid)
+    Index('idx_slc_guid_resid_email', rsv_slc_id, rsv_resid, email)
+    Index('idx_resid_state', rsv_resid, rsv_state)
+    Index('idx_slcid_state', rsv_slc_id, rsv_state)
+    Index('idx_graph_id_res_id', rsv_graph_node_id, rsv_resid)
 
 
 class Slices(Base):
@@ -130,14 +136,19 @@ class Slices(Base):
     slc_id = Column(Integer, Sequence('slc_id', start=1, increment=1), autoincrement=True, primary_key=True)
     slc_graph_id = Column(String, nullable=True)
     oidc_claim_sub = Column(String, nullable=True)
-    email = Column(String, nullable=True)
-    slc_guid = Column(String, nullable=False)
-    slc_name = Column(String, nullable=False)
+    email = Column(String, nullable=True, index=True)
+    slc_guid = Column(String, nullable=False, index=True)
+    slc_name = Column(String, nullable=False, index=True)
     slc_type = Column(Integer, nullable=False)
+    slc_state = Column(Integer, nullable=False, index=True)
     slc_resource_type = Column(String)
     lease_start = Column(TIMESTAMP, nullable=True)
     lease_end = Column(TIMESTAMP, nullable=True)
     properties = Column(LargeBinary)
+
+    Index('idx_slc_guid_name', slc_guid, slc_name)
+    Index('idx_slc_guid_name_email', slc_guid, slc_name, email)
+    Index('idx_slc_guid_state', slc_guid, slc_state)
 
 
 class Units(Base):
@@ -151,18 +162,6 @@ class Units(Base):
     unt_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID))
     unt_rsv_id = Column(Integer, ForeignKey(FOREIGN_KEY_RESERVATION_ID))
     unt_state = Column(Integer, nullable=False)
-    properties = Column(LargeBinary)
-
-
-class Plugins(Base):
-    """
-    Represents Plugins Database Table
-    """
-    __tablename__ = 'Plugins'
-    plg_id = Column(Integer, Sequence('plg_id', start=1, increment=1), autoincrement=True, primary_key=True)
-    plg_local_id = Column(String, nullable=False)
-    plg_type = Column(Integer, nullable=False)
-    plg_actor_type = Column(Integer)
     properties = Column(LargeBinary)
 
 

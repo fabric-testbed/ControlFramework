@@ -35,7 +35,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
-    Miscellaneous, Plugins, Actors, Delegations
+    Miscellaneous, Actors, Delegations
 
 
 @contextmanager
@@ -90,7 +90,6 @@ class PsqlDatabase:
                 session.query(Slices).delete()
                 session.query(ManagerObjects).delete()
                 session.query(Miscellaneous).delete()
-                session.query(Plugins).delete()
                 session.query(Actors).delete()
 
         except Exception as e:
@@ -387,7 +386,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, lease_start: datetime = None,
+    def add_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, slc_state: int, lease_start: datetime = None,
                   lease_end: datetime = None, slc_resource_type: str, properties, slc_graph_id: str = None,
                   oidc_claim_sub: str = None, email: str = None):
         """
@@ -395,6 +394,7 @@ class PsqlDatabase:
         @param slc_guid slice id
         @param slc_name slice name
         @param slc_type slice type
+        @param slc_state slice state
         @param slc_resource_type slice resource type
         @param lease_start Lease Start time
         @param lease_end Lease End time
@@ -404,9 +404,9 @@ class PsqlDatabase:
         @param email User Email
         """
         try:
-            slc_obj = Slices(slc_guid=slc_guid, slc_name=slc_name, slc_type=slc_type, oidc_claim_sub=oidc_claim_sub,
-                             email=email, slc_resource_type=slc_resource_type, lease_start=lease_start,
-                             lease_end=lease_end, properties=properties)
+            slc_obj = Slices(slc_guid=slc_guid, slc_name=slc_name, slc_type=slc_type, slc_state=slc_state,
+                             oidc_claim_sub=oidc_claim_sub, email=email, slc_resource_type=slc_resource_type,
+                             lease_start=lease_start, lease_end=lease_end, properties=properties)
             if slc_graph_id is not None:
                 slc_obj.slc_graph_id = slc_graph_id
             with session_scope(self.db_engine) as session:
@@ -415,13 +415,14 @@ class PsqlDatabase:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def update_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, slc_resource_type: str,
+    def update_slice(self, *, slc_guid: str, slc_name: str, slc_type: int, slc_state: int, slc_resource_type: str,
                      properties, slc_graph_id: str = None, lease_start: datetime = None, lease_end: datetime = None):
         """
         Update a slice
         @param slc_guid slice id
         @param slc_name slice name
         @param slc_type slice type
+        @param slc_state slice state
         @param slc_resource_type slice resource type
         @param lease_start Lease Start time
         @param lease_end Lease End time
@@ -436,6 +437,7 @@ class PsqlDatabase:
                     slc_obj.slc_name = slc_name
                     slc_obj.slc_type = slc_type
                     slc_obj.slc_resource_type = slc_resource_type
+                    slc_obj.slc_state = slc_state
                     slc_obj.lease_start = lease_start
                     slc_obj.lease_end = lease_end
                     if slc_graph_id is not None:
@@ -468,7 +470,7 @@ class PsqlDatabase:
 
         slice_obj = {'slc_id': row.slc_id, 'slc_guid': row.slc_guid, 'slc_name': row.slc_name,
                      'slc_type': row.slc_type, 'slc_resource_type': row.slc_resource_type,
-                     'properties': row.properties}
+                     'properties': row.properties, 'slc_state': row.slc_state}
         if row.slc_graph_id is not None:
             slice_obj['slc_graph_id'] = row.slc_graph_id
 
@@ -582,6 +584,25 @@ class PsqlDatabase:
         try:
             with session_scope(self.db_engine) as session:
                 for row in session.query(Slices).filter(Slices.email == email):
+                    slice_obj = self.generate_slice_dict_from_row(row)
+                    result.append(slice_obj.copy())
+                    slice_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_slice_by_email_state(self, *, email: str, slc_state: List[int]) -> list:
+        """
+        Get slice for an user
+        @param email User email
+        @param slc_state slice state
+        @return slice dictionary
+        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Slices).filter(Slices.email == email).filter(Slices.slc_state.in_(slc_state)):
                     slice_obj = self.generate_slice_dict_from_row(row)
                     result.append(slice_obj.copy())
                     slice_obj.clear()
@@ -877,7 +898,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_state(self, *, rsv_state: int) -> list:
+    def get_reservations_by_state(self, *, rsv_state: List[int]) -> list:
         """
         Get Reservations for an actor by stats
         @param act_id actor id
@@ -887,7 +908,7 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(Reservations.rsv_state == rsv_state):
+                for row in session.query(Reservations).filter(Reservations.rsv_state.in_(rsv_state)):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
                     rsv_obj.clear()
@@ -896,7 +917,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_slice_id_state(self, *, slc_guid: str, rsv_state: int) -> list:
+    def get_reservations_by_slice_id_state(self, *, slc_guid: str, rsv_state: List[int]) -> list:
         """
         Get Reservations for an actor by slice id and state
         @param slc_guid slice guid
@@ -909,7 +930,7 @@ class PsqlDatabase:
             if slc_obj is None:
                 raise DatabaseException(self.OBJECT_NOT_FOUND.format("Slice", slc_guid))
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(Reservations.rsv_state == rsv_state).filter(
+                for row in session.query(Reservations).filter(Reservations.rsv_state.in_(rsv_state)).filter(
                         Reservations.rsv_slc_id == slc_obj['slc_id']):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
@@ -919,7 +940,7 @@ class PsqlDatabase:
             raise e
         return result
 
-    def get_reservations_by_email_state(self, *, email: str, rsv_state: int) -> list:
+    def get_reservations_by_email_state(self, *, email: str, rsv_state: List[int]) -> list:
         """
         Get Reservations for an actor by slice id and state
         @param email email
@@ -929,7 +950,7 @@ class PsqlDatabase:
         result = []
         try:
             with session_scope(self.db_engine) as session:
-                for row in session.query(Reservations).filter(Reservations.rsv_state == rsv_state).filter(
+                for row in session.query(Reservations).filter(Reservations.rsv_state.in_(rsv_state)).filter(
                         Reservations.email == email):
                     rsv_obj = self.generate_reservation_dict_from_row(row)
                     result.append(rsv_obj.copy())
@@ -1509,87 +1530,6 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_plugin(self, *, plugin_id: str, plg_type: int, plg_actor_type: int, properties):
-        """
-        Add plugin
-        @param plugin_id plugin guid
-        @param plg_type plugin type
-        @param plg_actor_type actory type
-        @param properties properties
-        """
-        try:
-            plg_obj = Plugins(plg_local_id=plugin_id, plg_type=plg_type, plg_actor_type=plg_actor_type,
-                              properties=properties)
-            with session_scope(self.db_engine) as session:
-                session.add(plg_obj)
-        except Exception as e:
-            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
-            raise e
-
-    def remove_plugin(self, *, plugin_id: str):
-        """
-        Remove plugin
-        @param plugin_id plugin id
-        """
-
-        try:
-            with session_scope(self.db_engine) as session:
-                session.query(Plugins).filter(Plugins.plg_local_id == plugin_id).delete()
-        except Exception as e:
-            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
-            raise e
-
-    @staticmethod
-    def generate_plugin_dict_from_row(row) -> dict:
-        """
-        Generate dictionary representing a plugin row read from database
-        """
-        if row is None:
-            return None
-
-        plg_obj = {'plg_id': row.plg_id, 'plg_local_id': row.plg_local_id, 'plg_type': row.plg_type,
-                   'plg_actor_type': row.plg_actor_type, 'properties': row.properties}
-
-        return plg_obj
-
-    def get_plugins(self, *, plg_type: int, plg_actor_type: int) -> list:
-        """
-        Get Plugins
-        @param plg_type plugin type
-        @param plg_actor_type plugin actor type
-        @return list of plugins
-        """
-        result = []
-        try:
-            with session_scope(self.db_engine) as session:
-                for row in session.query(Plugins).filter(Plugins.plg_type == plg_type).filter(
-                        Plugins.plg_actor_type == plg_actor_type):
-                    plg_obj = self.generate_plugin_dict_from_row(row)
-                    result.append(plg_obj.copy())
-                    plg_obj.clear()
-        except Exception as e:
-            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
-            raise e
-        return result
-
-    def get_plugin(self, *, plugin_id: str) -> dict:
-        """
-        Get Plugin
-        @param plugin_id plugin id
-        @return plugin
-        """
-        result = None
-        try:
-            with session_scope(self.db_engine) as session:
-                plg_obj = session.query(Plugins).filter(Plugins.plg_local_id == plugin_id).first()
-                if plg_obj is None:
-                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Plugin", plugin_id))
-                result = self.generate_plugin_dict_from_row(plg_obj)
-        except Exception as e:
-            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
-            raise e
-        return result
-
     def add_delegation(self, *, dlg_slc_id: int, dlg_graph_id: str, dlg_state: int, properties):
         """
         Add delegation
@@ -1858,7 +1798,54 @@ def test2():
         print(r['rsv_state'])
     print("Get all actors after reset {}".format(db.get_actors()))
 
+def test3():
+    logger = logging.getLogger('PsqlDatabase')
+    db = PsqlDatabase(user='fabric', password='fabric', database='am', db_host='127.0.0.1:5432', logger=logger)
+    db.create_db()
+    db.reset_db()
+
+    # Actor Operations
+    prop = {'abc': 'def'}
+
+    # Slice operations
+    from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
+    db.add_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.Closing.value, email="kthare10@email.unc.edu")
+
+    db.add_slice(slc_guid="1234", slc_name="test-slice2", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.Dead.value, email="kthare10@email.unc.edu")
+
+    db.add_slice(slc_guid="1234", slc_name="test-slice3", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.StableOK.value, email="kthare10@email.unc.edu")
+
+    db.add_slice(slc_guid="1234", slc_name="test-slice4", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.StableError.value, email="kthare10@email.unc.edu")
+
+    db.add_slice(slc_guid="1234", slc_name="test-slice3", slc_type=1, slc_resource_type="def",
+                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 slc_state=SliceState.Configuring.value, email="kthare10@email.unc.edu")
+
+    ss = db.get_slice_by_email_state(slc_state=[SliceState.Dead.value, SliceState.Closing.value],
+                                     email="kthare10@email.unc.edu")
+
+    assert len(ss) == 2
+
+    ss = db.get_slice_by_email_state(slc_state=[SliceState.StableOK.value, SliceState.StableError.value],
+                                     email="kthare10@email.unc.edu")
+
+    assert len(ss) == 2
+
+    ss = db.get_slice_by_email_state(slc_state=[SliceState.Configuring.value],
+                                     email="kthare10@email.unc.edu")
+
+    assert len(ss) == 1
+
 
 if __name__ == '__main__':
     test2()
     test()
+    test3()

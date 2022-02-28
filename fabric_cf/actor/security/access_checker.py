@@ -46,6 +46,8 @@ class AccessChecker:
 
         :returns decoded fabric token on success; throws exception in case of failure
         """
+        if token is None:
+            return token
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
 

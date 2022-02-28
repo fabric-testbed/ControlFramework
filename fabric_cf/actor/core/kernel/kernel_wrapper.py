@@ -97,9 +97,8 @@ class KernelWrapper:
         if delegation is None or caller is None or callback is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        if id_token is not None:
-            AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
-                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+        AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
+                                   token=id_token, logger=self.logger, actor_type=self.actor.get_type())
 
         # Note: for claim we do not need the slice object, so we use
         # validate_delegation(delegation_id) instead of validate_delegation(delegation).
@@ -123,9 +122,8 @@ class KernelWrapper:
         if delegation is None or caller is None or callback is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        if id_token is not None:
-            AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
-                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+        AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
+                                   token=id_token, logger=self.logger, actor_type=self.actor.get_type())
 
         # Note: for claim we do not need the slice object, so we use
         # validate(ReservationID) instead of validate(Reservation).
@@ -598,9 +596,8 @@ class KernelWrapper:
         @param id_token id_token
         @return query response
         """
-        if id_token is not None:
-            AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.resources,
-                                       token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+        AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.resources,
+                                   token=id_token, logger=self.logger, actor_type=self.actor.get_type())
 
         return self.kernel.query(properties=properties)
 

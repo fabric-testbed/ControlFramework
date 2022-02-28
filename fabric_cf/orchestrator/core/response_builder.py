@@ -123,8 +123,7 @@ class ResponseBuilder:
         return response
 
     @staticmethod
-    def get_slice_summary(*, slice_list: List[SliceAvro], slice_id: str = None,
-                          slice_states: List[SliceState] = None, slice_model: str = None,
+    def get_slice_summary(*, slice_list: List[SliceAvro], slice_model: str = None,
                           error_message: dict = None) -> dict:
         """
         Get slice summary
@@ -141,13 +140,10 @@ class ResponseBuilder:
 
         if slice_list is not None:
             for s in slice_list:
-                slice_state = SliceState(s.get_state())
-                if slice_id is None and slice_states is not None and slice_state not in slice_states:
-                    continue
                 s_dict = {ResponseBuilder.PROP_SLICE_ID: s.get_slice_id(),
                           ResponseBuilder.PROP_SLICE_NAME: s.get_slice_name(),
                           ResponseBuilder.PROP_GRAPH_ID: s.get_graph_id(),
-                          ResponseBuilder.PROP_SLICE_STATE: slice_state.name,
+                          ResponseBuilder.PROP_SLICE_STATE: SliceState(s.get_state()).name,
                           }
                 end_time = s.get_lease_end()
                 if end_time is not None:

@@ -61,8 +61,8 @@ class SliceState(Enum):
         if states is None or len(states) == 0:
             return states
 
-        result = [SliceState.StableOK, SliceState.StableError, SliceState.Dead, SliceState.Closing,
-                  SliceState.Configuring, SliceState.Nascent]
+        result = [SliceState.StableOK, SliceState.StableError, SliceState.Dead,
+                  SliceState.Closing, SliceState.Configuring, SliceState.Nascent]
         states_to_exclude = []
         for s in result:
             if str(s) not in states:
@@ -71,7 +71,10 @@ class SliceState(Enum):
         for s in states_to_exclude:
             result.remove(s)
 
-        return result
+        ret_val = []
+        for x in result:
+            ret_val.append(x.value)
+        return ret_val
 
 
 class SliceCommand(Enum):

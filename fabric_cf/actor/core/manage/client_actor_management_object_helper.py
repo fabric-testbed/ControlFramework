@@ -27,7 +27,7 @@ from __future__ import annotations
 
 import traceback
 from datetime import datetime
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
@@ -140,9 +140,8 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.resources,
-                                           token=id_token, logger=self.logger, actor_type=self.client.get_type())
+            AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.resources,
+                                       token=id_token, logger=self.logger, actor_type=self.client.get_type())
 
             b = self.client.get_broker(guid=broker)
             if b is not None:
@@ -481,10 +480,9 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.delegation,
-                                           token=id_token, logger=self.logger, actor_type=self.client.get_type(),
-                                           resource_id=did)
+            AccessChecker.check_access(action_id=ActionId.claim, resource_type=AuthResourceType.delegation,
+                                       token=id_token, logger=self.logger, actor_type=self.client.get_type(),
+                                       resource_id=did)
 
             my_broker = self.client.get_broker(guid=broker)
 
@@ -519,7 +517,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
     def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
                             id_token: str = None) -> ResultDelegationAvro:
-        result = ResultReservationAvro()
+        result = ResultDelegationAvro()
         result.status = ResultAvro()
 
         if caller is None or did is None or broker is None:
@@ -528,10 +526,9 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            if id_token is not None:
-                AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.resources,
-                                           token=id_token, logger=self.logger, actor_type=self.client.get_type(),
-                                           resource_id=did)
+            AccessChecker.check_access(action_id=ActionId.reclaim, resource_type=AuthResourceType.delegation,
+                                       token=id_token, logger=self.logger, actor_type=self.client.get_type(),
+                                       resource_id=did)
 
             my_broker = self.client.get_broker(guid=broker)
 
