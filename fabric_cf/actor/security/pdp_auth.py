@@ -31,6 +31,7 @@ from typing import List
 import requests
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+from fim.authz.attribute_collector import ResourceAuthZAttributes
 
 
 class PdpAuthException(Exception):
@@ -139,152 +140,64 @@ class PdpAuth:
 
         return roles
 
-    def update_subject_category(self, *, subject: dict, token: dict) -> dict:
-        """
-        Update the Subject Category in PDP request
-        @param subject subject
-        @param token fabric token
-        @return updated subject category
-        """
-        attributes = subject.get(PdpAuth.attribute, None)
-        if attributes is None:
-            raise PdpAuthException(self.missing_parameter.format("attributes"))
-
-        roles = self.get_roles(fabric_token=token)
-
-        if len(attributes) > 1:
-            raise PdpAuthException("Should only have subject Id Attribute {}".format(subject))
-
-        if attributes[0][PdpAuth.attribute_id] != PdpAuth.subject_id_urn:
-            raise PdpAuthException("Should only have subject Id Attribute {}".format(subject))
-
-        attributes[0][PdpAuth.value] = [token[PdpAuth.email]]
-
-        if len(roles) < 1:
-            raise PdpAuthException("No roles available in Token")
-
-        for r in roles:
-            if r != PdpAuth.co_manage_project_leads_project:
-                attr = self.subject_fabric_role_attribute_json.copy()
-                attr['Value'] = self.project_member.format(r)
-                attributes.append(attr)
-            else:
-                attr = self.subject_fabric_role_attribute_json.copy()
-                attr['Value'] = "projectLead"
-                attributes.append(attr)
-
-        return subject
-
-    def update_resource_category(self, *, resource: dict, resource_type: ResourceType, resource_id: str = None) -> dict:
-        """
-        Update the Resource Category in PDP request
-        @param resource resource
-        @param resource_type resource type
-        @param resource_id resource id
-        @return updated Resource category
-        """
-        attributes = resource.get(PdpAuth.attribute, None)
-        if attributes is None:
-            raise PdpAuthException(self.missing_parameter.format("attributes"))
-
-        if len(attributes) > 1:
-            raise PdpAuthException("Should only have Resource Type Attribute {}".format(resource))
-
-        if attributes[0][PdpAuth.attribute_id] != PdpAuth.resource_type_urn:
-            raise PdpAuthException("Should only have Resource Type Attribute {}".format(resource))
-
-        attributes[0][PdpAuth.value] = [resource_type.name]
-
-        if resource_id is not None:
-            attr = self.resource_id_attribute_json.copy()
-            attr[PdpAuth.value] = resource_id
-            attributes.append(attr)
-
-        return resource
-
-    def update_action_category(self, *, action: dict, action_id: ActionId) -> dict:
-        """
-        Update the Action Category in PDP request
-        @param action action
-        @param action_id action id
-        @return updated Action category
-        """
-        attributes = action.get(PdpAuth.attribute, None)
-        if attributes is None:
-            raise PdpAuthException(self.missing_parameter.format("attributes"))
-
-        if len(attributes) > 1:
-            raise PdpAuthException("Should only have Action-Id Attribute {}".format(action))
-
-        if attributes[0][PdpAuth.attribute_id] != PdpAuth.action_id_urn:
-            raise PdpAuthException("Should only have Action-Id Attribute {}".format(action))
-
-        attributes[0][PdpAuth.value] = [action_id.name]
-
-        return action
-
     def build_pdp_request(self, *, fabric_token: dict, actor_type: ActorType,
                           action_id: ActionId, resource_type: ResourceType,
-                          resource_id: str = None) -> dict:
+                          resource) -> dict:
         """
         Build PDP Request
         @param fabric_token fabric token
         @param actor_type action type
         @param action_id Action id
         @param resource_type resource_type
-        @param resource_id resource_id
+        @param resource: sliver of any type or slice (ExperimentTopology)
         @return PDP request
         """
-        request_file = None
-        if actor_type == ActorType.Orchestrator:
-            request_file = os.path.dirname(__file__) + '/data/orchestrator-request.json'
-        elif actor_type == ActorType.Broker:
-            request_file = os.path.dirname(__file__) + '/data/broker-request.json'
-        elif actor_type == ActorType.Authority:
-            request_file = os.path.dirname(__file__) + '/data/am-request.json'
-        else:
-            raise PdpAuthException("Invalid Actor Type: {}".format(actor_type))
 
-        request_json = None
-        with open(request_file) as f:
-            request_json = json.load(f)
-            f.close()
+        #
+        # we ignore the actor type for now
+        #
 
-        ## Subject
-        categories = request_json[PdpAuth.request][PdpAuth.category]
-        for c in categories:
-            if c[PdpAuth.category_id] == PdpAuth.category_subject_urn:
-                c = self.update_subject_category(subject=c, token=fabric_token)
+        # policies only deal with slivers/slices and this is the type to use
+        assert resource_type == ResourceType.sliver
 
-            elif c[PdpAuth.category_id] == PdpAuth.category_resource_urn:
-                c = self.update_resource_category(resource=c, resource_type=resource_type, resource_id=resource_id)
+        attrs = ResourceAuthZAttributes()
+        # collect all resource attributes
+        attrs.collect_resource_attributes(source=resource)
 
-            elif c[PdpAuth.category_id] == PdpAuth.category_action_urn:
-                c = self.update_action_category(action=c, action_id=action_id)
+        # FIXME: Komal here we need more attributes that I don't know where to get
+        # FIXME: some of them not needed for anything other than create
 
-            elif c[PdpAuth.category_id] == PdpAuth.category_environment_urn:
-                if self.logger is None:
-                    print("Do nothing, ignore Environment category")
-                else:
-                    self.logger.debug("Do nothing, ignore Environment category")
+        # additional attributes (slice end date in datetime format)
+        # attrs.set_lifetime(end_date)
 
-            else:
-                raise PdpAuthException("Invalid Category: {}".format(c))
+        # next we need to set the owner of the resource and their projects
+        # generally only the id is needed. If action is create, it's not needed at all
+        # attrs.set_resource_subject_and_project(subject_id="user@gmail.com", project="Project1")
 
-        request_json[PdpAuth.request][PdpAuth.category] = categories
+        # next set subject attributes - their id, projects, project tags (tags should be collected
+        # from the token)
+        # attrs.set_subject_attributes(subject_id="user@gmail.com", project=["Project1", "Project2"],
+        # project_tag=["Tag1", "Tag2"])
+
+        # finally action
+        # action can be any string matching ActionId enum
+        attrs.set_action(action_id.name)
+
+        # now you can produce the json
+        request_json = attrs.transform_to_pdp_request()
 
         return request_json
 
     def check_access(self, *, fabric_token: dict, actor_type: ActorType,
                      action_id: ActionId, resource_type: ResourceType,
-                     resource_id: str = None):
+                     resource):
         """
         Check Access
         @param fabric_token fabric token
         @param actor_type actor type
         @param action_id action id
-        @param resource_type resource type
-        @param resource_id resource id
+        @param resource_type resource type (should only be ResourceType.sliver)
+        @param resource sliver (of any type) or slice (ExperimentTopology)
         @raises PdpAuthException in case of denied access or failure
         """
         if not self.config['enable']:
@@ -292,7 +205,8 @@ class PdpAuth:
             return
 
         pdp_request = self.build_pdp_request(fabric_token=fabric_token, actor_type=actor_type,
-                                             action_id=action_id, resource_type=resource_type, resource_id=resource_id)
+                                             action_id=action_id, resource_type=resource_type,
+                                             resource=resource)
 
         self.logger.debug("PDP Auth Request: {}".format(pdp_request))
 
@@ -319,10 +233,11 @@ if __name__ == '__main__':
              "token_id": "https://cilogon.org/oauth2/idToken/156747336e2a3fbc1d66cc8fe1571d91/1603986888019",
              "auth_time": "1603986887", "exp": 1603990493, "iat": 1603986893,
              "roles": ["CO:members:active", "CO:COU:Jupyterhub:members:active", "CO:COU:project-leads:members:active"],
+             "projects": ["Project1"],
              "scope": "all", "project": "all"}
 
     config = {'url': 'http://localhost:8080/services/pdp'}
     pdp = PdpAuth(config=config)
     RESULT = pdp.check_access(fabric_token=token, actor_type=ActorType.Orchestrator,
-                              action_id=ActionId.query, resource_type=ResourceType.resources)
+                              action_id=ActionId.query, resource_type=ResourceType.sliver)
     print(RESULT)
