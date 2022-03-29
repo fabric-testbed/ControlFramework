@@ -29,6 +29,7 @@ from http.client import BAD_REQUEST
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
@@ -64,6 +65,7 @@ class OrchestratorSliceWrapper:
         self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS]
         self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
                              ServiceType.FABNetv4]
+        self.l3_ns = [ServiceType.FABNetv6.name, ServiceType.FABNetv4.name]
 
     def lock(self):
         """
@@ -213,22 +215,17 @@ class OrchestratorSliceWrapper:
             network_service_reservations = self.__build_network_service_reservations(slice_graph=slice_graph,
                                                                                      node_res_mapping=node_res_mapping)
 
+            # Add dependency in Node reservations on Fabnetv4 and Fabnetv6
+            self.__update_dependencies(node_slivers=network_node_reservations,
+                                       network_service_slivers=network_service_reservations)
+
             # Add Network Node reservations
-            for r in network_node_reservations:
+            for r in network_node_reservations.values():
                 self.controller.add_reservation(reservation=r)
 
             # Add Network Node reservations
             for r in network_service_reservations:
                 self.controller.add_reservation(reservation=r)
-
-            # Add to computed reservations
-            for x in network_node_reservations:
-                self.computed_reservations.append(x)
-                self.rid_to_res[x.get_reservation_id()] = x
-
-            for x in network_service_reservations:
-                self.computed_reservations.append(x)
-                self.rid_to_res[x.get_reservation_id()] = x
 
             return self.computed_reservations
         except OrchestratorException as e:
@@ -250,7 +247,7 @@ class OrchestratorSliceWrapper:
                                         http_error_code=BAD_REQUEST)
 
     def __build_network_service_reservations(self, slice_graph: ABCASMPropertyGraph,
-                                             node_res_mapping: Dict[str, str]) -> List[TicketReservationAvro]:
+                                             node_res_mapping: Dict[str, str]) -> List[LeaseReservationAvro]:
         """
         Build Network Service Reservations
         @param slice_graph Slice graph
@@ -318,8 +315,8 @@ class OrchestratorSliceWrapper:
         return reservations
 
     def __build_network_node_reservations(self, slice_graph: ABCASMPropertyGraph) \
-            -> Tuple[List[TicketReservationAvro], Dict[str, str]]:
-        reservations = []
+            -> Tuple[Dict[str, LeaseReservationAvro], Dict[str, str]]:
+        reservations = {}
         sliver_to_res_mapping = {}
         for nn_id in slice_graph.get_all_network_nodes():
 
@@ -348,10 +345,24 @@ class OrchestratorSliceWrapper:
             reservation = self.reservation_converter.generate_reservation(sliver=sliver,
                                                                           slice_id=self.slice_obj.get_slice_id(),
                                                                           end_time=self.slice_obj.get_lease_end())
-            reservations.append(reservation)
+            reservations[reservation.get_reservation_id()] = reservation
 
             self.logger.trace(f"Mapped sliver: {sliver.node_id} to res: {reservation.get_reservation_id()}")
 
             # Maintain Sliver Id to Reservation Mapping
             sliver_to_res_mapping[sliver.node_id] = reservation.get_reservation_id()
         return reservations, sliver_to_res_mapping
+
+    def __update_dependencies(self, *, node_slivers: Dict[str, LeaseReservationAvro],
+                              network_service_slivers: List[LeaseReservationAvro]):
+        """
+        Updated Node Sliver dependencies if connected FABNetv4 or FABNetv6
+        :param node_slivers rid->Node Sliver Reservation map
+        :param network_service_slivers Network Service Reservation
+        """
+        for ns_res in network_service_slivers:
+            if ns_res.get_resource_type() in self.l3_ns:
+                for r in ns_res. get_redeem_predecessors():
+                    pred = ReservationPredecessorAvro()
+                    pred.set_reservation_id(value=ns_res.get_reservation_id())
+                    node_slivers[r.get_reservation_id()].redeem_processors = [pred]
