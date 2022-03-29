@@ -410,7 +410,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         """
         approved = True
         l3_ns = [ServiceType.FABNetv4.name, ServiceType.FABNetv6.name]
-        
+
         for pred_state in self.redeem_predecessors.values():
             if pred_state.get_reservation() is None or \
                     pred_state.get_reservation().is_failed() or \
