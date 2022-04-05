@@ -23,6 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import Tuple
+
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.util.id import ID
@@ -31,21 +35,8 @@ from fabric_cf.orchestrator.core.status_checker import StatusChecker, Status
 
 
 class ActiveStatusChecker(StatusChecker):
-    def __init__(self):
-        super().__init__()
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        self.logger = GlobalsSingleton.get().get_logger()
-
-    def check_(self, *, controller: ABCMgmtControllerMixin, rid) -> Status:
-        """
-        Check status
-        :param controller:
-        :param rid:
-        :return:
-        """
-        if not isinstance(rid, ID):
-            return Status.NOTREADY
-
+    def check(self, *, controller: ABCMgmtControllerMixin, rid: ID) -> Tuple[Status, ReservationMng or None]:
+        reservation = None
         try:
             reservations = controller.get_reservations(rid=rid)
             units = controller.get_reservation_units(rid=rid)
@@ -54,14 +45,18 @@ class ActiveStatusChecker(StatusChecker):
                 raise OrchestratorException("Unable to obtain reservation information for {}".format(rid))
             reservation = next(iter(reservations))
 
-            if reservation.get_state() == ReservationStates.Active:
-                if units is None or len(units) == 0:
-                    return Status.NOTREADY
-            elif reservation.get_state() == ReservationStates.Closed:
-                return Status.OK
-            elif reservation.get_state() == ReservationStates.Failed:
-                return Status.NOTOK
+            res_state = ReservationStates(reservation.get_state())
+            self.logger.debug(f"------State --- {res_state}     {units}")
 
+            if res_state == ReservationStates.Active:
+                if units is None or len(units) == 0:
+                    return Status.NOT_READY, reservation
+                else:
+                    return Status.OK, reservation
+            elif res_state == ReservationStates.Closed:
+                return Status.NOT_OK, reservation
+            elif res_state == ReservationStates.Failed:
+                return Status.NOT_OK, reservation
         except Exception as e:
             self.logger.error("Exception occurred e: {}".format(e))
-        return Status.NOTREADY
+        return Status.NOT_READY, reservation

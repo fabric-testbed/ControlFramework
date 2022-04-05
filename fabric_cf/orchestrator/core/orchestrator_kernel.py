@@ -37,7 +37,6 @@ from fabric_cf.orchestrator.core.bqm_wrapper import BqmWrapper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
 from fabric_cf.orchestrator.core.reservation_status_update_thread import ReservationStatusUpdateThread
-from fabric_cf.orchestrator.core.slice_defer_thread import SliceDeferThread
 
 
 class OrchestratorKernel:
@@ -47,7 +46,6 @@ class OrchestratorKernel:
 
     def __init__(self):
         self.lock = threading.Lock()
-        self.sdt = None
         self.sut = None
         self.broker = None
         self.logger = None
@@ -133,13 +131,6 @@ class OrchestratorKernel:
         """
         return self.sut
 
-    def get_sdt(self) -> SliceDeferThread:
-        """
-        Get SDT thread
-        :return:
-        """
-        return self.sdt
-
     def get_logger(self):
         """
         Get logger
@@ -164,9 +155,6 @@ class OrchestratorKernel:
         Stop threads
         :return:
         """
-        if self.sdt is not None:
-            self.sdt.stop()
-
         if self.sut is not None:
             self.sut.stop()
 
@@ -175,13 +163,9 @@ class OrchestratorKernel:
         Start threads
         :return:
         """
-        #self.get_logger().debug("Starting Slice Defer Thread")
-        #self.sdt = SliceDeferThread()
-        #self.sdt.start()
-
-        #self.get_logger().debug("Starting ReservationStatusUpdateThread")
-        #self.sut = ReservationStatusUpdateThread()
-        #self.sut.start()
+        self.get_logger().debug("Starting ReservationStatusUpdateThread")
+        self.sut = ReservationStatusUpdateThread()
+        self.sut.start()
 
 
 class OrchestratorKernelSingleton:

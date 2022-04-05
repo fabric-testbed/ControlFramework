@@ -419,6 +419,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                                   " ignoring it: {}".format(pred_state.get_reservation()))
                 continue
 
+            '''
             pred_type = pred_state.get_reservation().get_type()
             if pred_type is not None and str(pred_type) in l3_ns:
                 if pred_state.get_reservation().is_ticketed():
@@ -429,13 +430,14 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                     for d in node_sliver.attached_components_info.devices.values():
                         for ns in d.network_service_info.network_services.values():
                             for ifs_name, ifs in ns.interface_info.interfaces.items():
-                                lookup_name = f'{ns_sliver.name}-{ifs_name}'
+                                lookup_name = f'{ns_sliver.get_name()}-{ifs_name}'
                                 if lookup_name in ns_sliver.interface_info.interfaces:
                                     ns_ifs = ns_sliver.interface_info.interfaces[lookup_name]
                                     ifs.label_allocations = Labels.update(ifs.label_allocations,
                                                                           ipv4=ns_ifs.labels.ipv4,
                                                                           ipv6=ns_ifs.labels.ipv4)
                     break
+            '''
 
             if not pred_state.get_reservation().is_active_joined():
                 approved = False

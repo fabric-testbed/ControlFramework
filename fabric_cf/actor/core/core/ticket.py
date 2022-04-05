@@ -24,6 +24,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime
 
+from fim.slivers.base_sliver import BaseSliver
+
 from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
 from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
 from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
@@ -206,7 +208,7 @@ class Ticket(ABCConcreteSet):
         # valid tickets are always active, if anyone asks
         return True
 
-    def modify(self, *, concrete_set, configure: bool):
+    def modify(self, *, sliver: BaseSliver):
         raise TicketException("Not supported by TicketSet")
 
     def probe(self):

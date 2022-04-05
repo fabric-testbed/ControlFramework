@@ -57,10 +57,11 @@ class ReservationConverter:
         """
         ticket = LeaseReservationAvro()
         ticket.redeem_processors = []
-        for rid in pred_list:
-            pred = ReservationPredecessorAvro()
-            pred.set_reservation_id(value=rid)
-            ticket.redeem_processors.append(pred)
+        if pred_list is not None:
+            for rid in pred_list:
+                pred = ReservationPredecessorAvro()
+                pred.set_reservation_id(value=rid)
+                ticket.redeem_processors.append(pred)
         ticket.set_slice_id(slice_id)
         ticket.set_broker(str(self.broker))
         ticket.set_units(1)

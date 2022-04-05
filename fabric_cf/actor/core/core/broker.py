@@ -30,6 +30,7 @@ import threading
 from typing import TYPE_CHECKING
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
+from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
@@ -90,8 +91,6 @@ class Broker(ActorMixin, ABCBrokerMixin):
         del state['thread']
         del state['timer_queue']
         del state['event_queue']
-        del state['reservation_tracker']
-        del state['subscription_id']
         del state['actor_main_lock']
         del state['closing']
         del state['message_service']
@@ -116,8 +115,6 @@ class Broker(ActorMixin, ABCBrokerMixin):
         self.thread_lock = threading.Lock()
         self.timer_queue = queue.Queue()
         self.event_queue = queue.Queue()
-        self.reservation_tracker = None
-        self.subscription_id = None
         self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
@@ -424,7 +421,7 @@ class Broker(ActorMixin, ABCBrokerMixin):
 
         return ret_val
 
-    def modify(self, *, reservation_id: ID, modify_properties: dict):
+    def modify(self, *, reservation_id: ID, modified_sliver: BaseSliver):
         return
 
     @staticmethod

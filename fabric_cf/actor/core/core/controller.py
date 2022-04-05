@@ -30,6 +30,8 @@ import threading
 import traceback
 from typing import TYPE_CHECKING
 
+from fim.slivers.base_sliver import BaseSliver
+
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -42,6 +44,7 @@ from fabric_cf.actor.core.core.actor import ActorMixin
 from fabric_cf.actor.core.registry.peer_registry import PeerRegistry
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
+from fabric_cf.actor.core.util.utils import sliver_to_str
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -90,8 +93,6 @@ class Controller(ActorMixin, ABCController):
         del state['thread']
         del state['timer_queue']
         del state['event_queue']
-        del state['reservation_tracker']
-        del state['subscription_id']
         del state['actor_main_lock']
         del state['closing']
         del state['message_service']
@@ -118,8 +119,6 @@ class Controller(ActorMixin, ABCController):
         self.thread_lock = threading.Lock()
         self.timer_queue = queue.Queue()
         self.event_queue = queue.Queue()
-        self.reservation_tracker = None
-        self.subscription_id = None
         self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
@@ -328,30 +327,29 @@ class Controller(ActorMixin, ABCController):
     def update_delegation(self, *, delegation: ABCDelegation, update_data, caller: AuthToken):
         raise ControllerException("Not supported in controller")
 
-    def modify(self, *, reservation_id: ID, modify_properties: dict):
-        if reservation_id is None or modify_properties is None:
-            self.logger.error("modifyProperties argument is null or non-existing reservation")
+    def modify(self, *, reservation_id: ID, modified_sliver: BaseSliver):
+        if reservation_id is None or modified_sliver is None:
+            self.logger.error(f"rid {reservation_id} modified_sliver {modified_sliver}")
 
-        rc = None
+        reservation = None
         try:
-            rc = self.get_reservation(rid=reservation_id)
+            reservation = self.get_reservation(rid=reservation_id)
         except Exception as e:
             self.logger.error("Could not find reservation #{} e: {}".format(reservation_id, e))
 
-        if rc is None:
+        if reservation is None:
             raise ControllerException("Unknown reservation: {}".format(reservation_id))
 
-        if rc.get_resources() is not None:
-            # TODO
-            print("TODO")
+        if reservation.get_leased_resources() is not None:
+            reservation.get_resources().set_sliver(sliver=modified_sliver)
         else:
-            self.logger.warning("There are no approved resources for {}, no modify properties will be added".format(
-                reservation_id))
+            self.logger.warning(f"There are no approved resources for {reservation_id}, do nothin!")
+            return
 
         if not self.recovered:
-            self.modifying_lease.add(reservation=rc)
+            self.modifying_lease.add(reservation=reservation)
         else:
-            self.wrapper.modify_lease(reservation=rc)
+            self.wrapper.modify_lease(reservation=reservation)
 
     def save_extending_renewable(self):
         """

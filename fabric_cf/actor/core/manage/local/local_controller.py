@@ -33,6 +33,7 @@ from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -205,10 +206,10 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
     def clone(self):
         return LocalController(manager=self.manager, auth=self.auth)
 
-    def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:
+    def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver) -> bool:
         self.clear_last()
         try:
-            result = self.manager.modify_reservation(rid=rid, modify_properties=modify_properties, caller=self.auth)
+            result = self.manager.modify_reservation(rid=rid, modified_sliver=modified_sliver, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0

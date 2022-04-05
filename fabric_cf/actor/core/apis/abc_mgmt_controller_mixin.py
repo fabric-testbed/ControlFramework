@@ -28,6 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
+from fim.slivers.base_sliver import BaseSliver
+
 from fabric_cf.actor.core.apis.abc_mgmt_client_actor import ABCMgmtClientActor
 from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
 
@@ -50,10 +52,10 @@ class ABCMgmtControllerMixin(ABCMgmtActor, ABCMgmtClientActor):
         """
 
     @abstractmethod
-    def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:
+    def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver) -> bool:
         """
         Modify a reservation
         @params rid: reservation id
-        @params modify_properties: modify_properties
+        @params modified_sliver: modified_sliver
         @returns true for success and false for failure
         """
