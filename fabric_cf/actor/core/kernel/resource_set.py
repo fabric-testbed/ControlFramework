@@ -33,6 +33,7 @@ from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ResourcesException
+from fabric_cf.actor.core.util.utils import sliver_to_str
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.time.term import Term
@@ -443,7 +444,7 @@ class ResourceSet:
         if my_lost is not None:
             self.resources.remove(concrete_set=my_lost, configure=True)
         if my_modified is not None:
-            self.resources.modify(concrete_set=my_modified, configure=True)
+            self.resources.modify(sliver=self.sliver)
 
     def service_modify(self):
         """
@@ -451,7 +452,7 @@ class ResourceSet:
         @raises Exception in case of error
         """
         self.service_check()
-        self.resources.modify(concrete_set=self.resources, configure=True)
+        self.resources.modify(sliver=self.sliver)
 
     def service_reserve_site(self):
         cs = None
@@ -521,11 +522,9 @@ class ResourceSet:
             self.resources.setup(reservation=reservation)
 
     def __str__(self):
-        result = "rset: units=[{}] ".format(self.units)
+        result = f"rset: units=[{self.units}] "
         if self.resources is not None:
-            result += " concrete:[{}]".format(self.resources)
-        if self.sliver is not None:
-            result += " sliver: [{}]".format(self.sliver)
+            result += f" concrete:[{self.resources}]"
         return result
 
     def update(self, *, reservation: ABCReservationMixin, resource_set: ResourceSet):

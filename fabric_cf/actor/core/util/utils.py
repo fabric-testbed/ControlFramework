@@ -22,7 +22,13 @@
 # SOFTWARE.
 #
 # Author Komal Thareja (kthare10@renci.org)
+import logging
 from bisect import bisect_left
+
+from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import NetworkServiceSliver
+from fim.user import ComponentType
 
 
 def binary_search(*, a, x):
@@ -34,3 +40,35 @@ def binary_search(*, a, x):
         return i
     else:
         return -1
+
+
+def sliver_to_str(*, sliver: BaseSliver):
+    if isinstance(sliver, NodeSliver):
+        return node_sliver_to_str(sliver=sliver)
+
+    if isinstance(sliver, NetworkServiceSliver):
+        return ns_sliver_to_str(sliver=sliver)
+
+
+def node_sliver_to_str(*, sliver: NodeSliver):
+    result = str(sliver)
+    nic_types = [ComponentType.SharedNIC, ComponentType.SmartNIC]
+    if sliver.attached_components_info is not None:
+        for c in sliver.attached_components_info.devices.values():
+            result += f"\nComponent: {c}"
+            if c.get_type() not in nic_types:
+                continue
+            if c.network_service_info is not None and c.network_service_info.network_services is not None:
+                for ns in c.network_service_info.network_services.values():
+                    result += f"\nNS: {ns}"
+                    if ns.interface_info is not None and ns.interface_info.interfaces is not None:
+                        for i in ns.interface_info.interfaces.values():
+                            result += f"\nIFS: {i}"
+    return result
+
+
+def ns_sliver_to_str(*, sliver: NetworkServiceSliver):
+    result = str(sliver)
+    for interface in sliver.interface_info.interfaces.values():
+        result += f"\nIFS: {interface}"
+    return result

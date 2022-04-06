@@ -151,7 +151,7 @@ class NetworkServiceInventory(InventoryForType):
             - grab the /17 or /48 from BQM Site specific NetworkService
             - divide it into /24 or /64 subnets
             - exclude the 1st subnet (reserved for control plane)
-            - exclude the subnets already assigned to other V3/V4 NetworkService on the same owner switch
+            - exclude the subnets already assigned to other V4/V6 NetworkService on the same owner switch
             - allocate the first available subnet to the NetworkService
         :param requested_ns: Requested NetworkService
         :param owner_switch: BQM Owner site switch identified to serve the NetworkService
@@ -219,13 +219,28 @@ class NetworkServiceInventory(InventoryForType):
                             f" to res# {reservation.get_reservation_id()}")
 
                 gateway_labels = Labels()
+                hosts = list(subnet_list[0].hosts())
                 if requested_ns.get_type() == ServiceType.FABNetv4:
                     gateway_labels.ipv4_subnet = subnet_list[0].with_prefixlen
-                    gateway_labels.ipv4 = str(next(subnet_list[0].hosts()))
+                    gateway_labels.ipv4 = str(hosts[0])
+                    # Allocate IP address on the interfaces
+                    hosts.pop()
+                    idx = 1
+                    for ifs in requested_ns.interface_info.interfaces.values():
+                        ifs.labels = Labels.update(ifs.get_labels(), ipv4=str(hosts[idx]))
+                        idx += 1
+                        self.logger.info(f"Allocated FABNetv4 Interface Sliver ==== {ifs}")
 
                 elif requested_ns.get_type() == ServiceType.FABNetv6:
                     gateway_labels.ipv6_subnet = subnet_list[0].with_prefixlen
-                    gateway_labels.ipv6 = str(next(subnet_list[0].hosts()))
+                    gateway_labels.ipv6 = str(hosts[0])
+                    # Allocate IP address on the interfaces
+                    hosts.pop()
+                    idx = 1
+                    for ifs in requested_ns.interface_info.interfaces.values():
+                        ifs.labels = Labels.update(ifs.get_labels(), ipv6=str(hosts[idx]))
+                        idx += 1
+                        self.logger.info(f"Allocated FABNetv6 Interface Sliver ==== {ifs}")
 
                 requested_ns.gateway = Gateway(lab=gateway_labels)
                 break

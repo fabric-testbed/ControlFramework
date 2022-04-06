@@ -83,8 +83,6 @@ class Authority(ActorMixin, ABCAuthority):
         del state['thread']
         del state['timer_queue']
         del state['event_queue']
-        del state['reservation_tracker']
-        del state['subscription_id']
         del state['actor_main_lock']
         del state['closing']
         del state['message_service']
@@ -109,8 +107,6 @@ class Authority(ActorMixin, ABCAuthority):
         self.thread_lock = threading.Lock()
         self.timer_queue = queue.Queue()
         self.event_queue = queue.Queue()
-        self.reservation_tracker = None
-        self.subscription_id = None
         self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None

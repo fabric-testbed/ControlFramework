@@ -28,6 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fim.slivers.base_sliver import BaseSliver
+
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 
@@ -151,13 +153,13 @@ class ABCClientActor(ABCActorMixin):
         """
 
     @abstractmethod
-    def modify(self, *, reservation_id: ID, modify_properties: dict):
+    def modify(self, *, reservation_id: ID, modified_sliver: BaseSliver):
         """
         Issue modify request for given reservation. Note: the reservation
         must have already been registered with the actor.
 
         @param reservation_id reservationID for the reservation to modify
-        @param modify_properties property list for modify
+        @param modified_sliver modified_sliver
         @throws Exception in case of error
         """
 

@@ -35,11 +35,8 @@ from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver
-from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import ServiceType, ComponentType, Labels
+from fim.user import ServiceType
 
-from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
@@ -59,11 +56,13 @@ class OrchestratorSliceWrapper:
         self.reservation_converter = ReservationConverter(controller=controller, broker=broker)
         self.rid_to_res = {}
         self.computed_reservations = []
+        self.computed_l3_reservations = []
         self.demanded = []
         self.thread_lock = threading.Lock()
         self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS]
         self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
                              ServiceType.FABNetv4]
+        self.l3_ns = [ServiceType.FABNetv6.name, ServiceType.FABNetv4.name]
 
     def lock(self):
         """
@@ -102,80 +101,6 @@ class OrchestratorSliceWrapper:
         """
         return self.computed_reservations
 
-    def check_predecessors_ticketed_by_rid(self, *, rid: str) -> bool:
-        """
-        Check if all the parent reservations have been ticketed
-        @param rid: Reservation Id
-        @return True if parent reservations are ticketed; False otherwise
-        """
-        res = self.rid_to_res.get(rid, None)
-
-        if res is not None:
-            return self.check_predecessors_ticketed(reservation=res)
-
-        return True
-
-    def check_predecessors_ticketed(self, *, reservation: TicketReservationAvro) -> bool:
-        """
-        Check if all the parent reservations have been ticketed
-        @param reservation: Reservation
-        @return True if parent reservations are ticketed; False otherwise
-        """
-        ret_val = True
-        if isinstance(reservation, LeaseReservationAvro) and reservation.get_redeem_predecessors() is not None and \
-                len(reservation.get_redeem_predecessors()) > 0:
-
-            state_bin = [ReservationStates.Ticketed, ReservationStates.Failed, ReservationStates.Closed,
-                         ReservationStates.CloseWait]
-
-            rids = []
-            for r in reservation.get_redeem_predecessors():
-                rids.append(r.get_reservation_id())
-
-            reservations = self.controller.get_reservations(rid_list=rids)
-            rid_res_map = {}
-
-            for r in reservations:
-                rid_res_map[r.get_reservation_id()] = r
-                state = ReservationStates(r.get_state())
-                self.logger.trace(f"Parent Res# {r.get_reservation_id()} is in state# {state}")
-
-                if state not in state_bin:
-                    ret_val = False
-                    break
-
-            # Parent reservations have been Ticketed; Update BQM Node and Component Id in Node Map
-            # Used by Broker to set vlan - source: (c)
-            # local_name source: (a)
-            # NSO device name source: (a) - need to find the owner switch of the network service in CBM
-            # and take its .name or labels.local_name
-            if ret_val:
-                sliver = reservation.get_sliver()
-                for ifs in sliver.interface_info.interfaces.values():
-                    component_name, rid = ifs.get_node_map()
-                    parent_res = rid_res_map.get(rid)
-                    if parent_res is not None and \
-                            ReservationStates(parent_res.get_state()) == ReservationStates.Ticketed:
-                        node_sliver = parent_res.get_sliver()
-                        component = node_sliver.attached_components_info.get_device(name=component_name)
-                        graph_id, bqm_component_id = component.get_node_map()
-                        graph_id, node_id = node_sliver.get_node_map()
-                        ifs.set_node_map(node_map=(node_id, bqm_component_id))
-
-                        # For shared NICs grab the MAC & VLAN from corresponding Interface Sliver
-                        # maintained in the Parent Reservation Sliver
-                        if component.get_type() == ComponentType.SharedNIC:
-                            parent_res_ifs_sliver = FimHelper.get_site_interface_sliver(component=component,
-                                                                                        local_name=ifs.get_labels().local_name)
-                            parent_labs = parent_res_ifs_sliver.get_label_allocations()
-
-                            ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
-
-                reservation.set_sliver(sliver=sliver)
-
-        self.logger.trace(f"Res# {reservation.get_reservation_id()} {ret_val}")
-        return ret_val
-
     def get_all_reservations(self) -> List[ReservationMng]:
         """
         Get All reservations
@@ -199,7 +124,7 @@ class OrchestratorSliceWrapper:
         """
         return ID(uid=self.slice_obj.get_slice_id())
 
-    def create(self, *, slice_graph: ABCASMPropertyGraph) -> List[TicketReservationAvro]:
+    def create(self, *, slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
         """
         Create a slice
         :param slice_graph: Slice Graph
@@ -216,19 +141,12 @@ class OrchestratorSliceWrapper:
             # Add Network Node reservations
             for r in network_node_reservations:
                 self.controller.add_reservation(reservation=r)
+                self.computed_reservations.append(r)
 
             # Add Network Node reservations
             for r in network_service_reservations:
                 self.controller.add_reservation(reservation=r)
-
-            # Add to computed reservations
-            for x in network_node_reservations:
-                self.computed_reservations.append(x)
-                self.rid_to_res[x.get_reservation_id()] = x
-
-            for x in network_service_reservations:
-                self.computed_reservations.append(x)
-                self.rid_to_res[x.get_reservation_id()] = x
+                self.computed_reservations.append(r)
 
             return self.computed_reservations
         except OrchestratorException as e:
@@ -250,7 +168,7 @@ class OrchestratorSliceWrapper:
                                         http_error_code=BAD_REQUEST)
 
     def __build_network_service_reservations(self, slice_graph: ABCASMPropertyGraph,
-                                             node_res_mapping: Dict[str, str]) -> List[TicketReservationAvro]:
+                                             node_res_mapping: Dict[str, str]) -> List[LeaseReservationAvro]:
         """
         Build Network Service Reservations
         @param slice_graph Slice graph
@@ -310,15 +228,16 @@ class OrchestratorSliceWrapper:
                                                                                   slice_id=self.slice_obj.get_slice_id(),
                                                                                   end_time=self.slice_obj.get_lease_end(),
                                                                                   pred_list=predecessor_reservations)
+                    if reservation.get_resource_type() in self.l3_ns:
+                        self.computed_l3_reservations.append(reservation)
                     reservations.append(reservation)
             else:
-
                 raise OrchestratorException(message="Not implemented",
                                             http_error_code=BAD_REQUEST)
         return reservations
 
     def __build_network_node_reservations(self, slice_graph: ABCASMPropertyGraph) \
-            -> Tuple[List[TicketReservationAvro], Dict[str, str]]:
+            -> Tuple[List[LeaseReservationAvro], Dict[str, str]]:
         reservations = []
         sliver_to_res_mapping = {}
         for nn_id in slice_graph.get_all_network_nodes():

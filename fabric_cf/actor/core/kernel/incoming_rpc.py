@@ -116,7 +116,7 @@ class IncomingRPC:
         """
         self.request_id = request_id
 
-    def get_request_id(self) -> str:
+    def get_request_id(self) -> ID:
         """
         Get request_id
         @return request_id

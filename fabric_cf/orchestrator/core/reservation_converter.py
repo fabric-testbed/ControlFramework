@@ -24,13 +24,11 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime, timedelta
-from typing import List, Tuple, Dict
+from typing import List
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
-from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.network_node import NodeSliver
 
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.common.constants import Constants
@@ -48,7 +46,7 @@ class ReservationConverter:
         self.broker = broker
 
     def generate_reservation(self, *, sliver: BaseSliver, slice_id: str, end_time: datetime,
-                             pred_list: List[str] = None) -> TicketReservationAvro:
+                             pred_list: List[str] = None) -> LeaseReservationAvro:
         """
         Responsible to generate reservation from the sliver
         :param sliver Network Service or Network Node Sliver
@@ -57,16 +55,13 @@ class ReservationConverter:
         :param pred_list Predecessor Reservation Id List
         :returns list of tickets
         """
-        ticket = None
+        ticket = LeaseReservationAvro()
+        ticket.redeem_processors = []
         if pred_list is not None:
-            ticket = LeaseReservationAvro()
-            ticket.redeem_processors = []
             for rid in pred_list:
                 pred = ReservationPredecessorAvro()
                 pred.set_reservation_id(value=rid)
                 ticket.redeem_processors.append(pred)
-        else:
-            ticket = TicketReservationAvro()
         ticket.set_slice_id(slice_id)
         ticket.set_broker(str(self.broker))
         ticket.set_units(1)

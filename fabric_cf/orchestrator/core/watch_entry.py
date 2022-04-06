@@ -23,18 +23,14 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_cf.actor.core.util.id import ID
 from fabric_cf.orchestrator.core.i_status_update_callback import IStatusUpdateCallback
 
 
 class WatchEntry:
-    def __init__(self, *, watch: list, rids: list, callback: IStatusUpdateCallback):
-        self.watch = watch
-        self.act = rids
+    def __init__(self, *, watch: ID, callback: IStatusUpdateCallback):
+        self.reservation_to_watch = watch
         self.callback = callback
 
-
-class TriggeredWatchEntry(WatchEntry):
-    def __init__(self, *, watch: list, rids: list, callback: IStatusUpdateCallback, ok: list, no_ok: list):
-        super().__init__(watch=watch, rids=rids, callback=callback)
-        self.ok = ok
-        self.not_ok = no_ok
+    def __str__(self):
+        return f"watch: {self.reservation_to_watch} callback: {self.callback}"
