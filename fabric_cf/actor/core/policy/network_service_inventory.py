@@ -28,7 +28,7 @@ from typing import List
 
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.gateway import Gateway
-from fim.slivers.interface_info import InterfaceSliver
+from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, NSLayer, ServiceType
 
@@ -39,8 +39,52 @@ from fabric_cf.actor.core.util.id import ID
 
 
 class NetworkServiceInventory(InventoryForType):
+    def __exclude_allocated_vlans(self, *, available_vlan_range: List[int], bqm_ifs: InterfaceSliver,
+                                  existing_reservations: List[ABCReservationMixin]) -> List[int]:
+        # Exclude the already allocated VLANs and subnets
+        if existing_reservations is None:
+            return available_vlan_range
+
+        for reservation in existing_reservations:
+            # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+            allocated_sliver = None
+            if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                allocated_sliver = reservation.get_approved_resources().get_sliver()
+
+            if (reservation.is_active() or reservation.is_ticketed()) and \
+                    reservation.get_resources() is not None:
+                allocated_sliver = reservation.get_resources().get_sliver()
+
+            self.logger.debug(
+                f"Existing res# {reservation.get_reservation_id()} state:{reservation.get_state()} "
+                f"allocated: {allocated_sliver}")
+
+            if allocated_sliver is None:
+                continue
+
+            if allocated_sliver.interface_info is None:
+                continue
+
+            for allocated_ifs in allocated_sliver.interface_info.interfaces.values():
+                # Ignore the Interface Slivers not on the same port
+                if allocated_ifs.get_node_map()[1] != bqm_ifs.node_id:
+                    continue
+
+                self.logger.debug(f"Excluding already allocated VLAN: "
+                                  f"{allocated_ifs.label_allocations.vlan} to "
+                                  f"res# {reservation.get_reservation_id()}")
+
+                # Exclude VLANs on the allocated on the same port
+                if allocated_ifs.label_allocations.vlan is not None:
+                    allocated_vlan = int(allocated_ifs.label_allocations.vlan)
+
+                    if allocated_vlan in available_vlan_range:
+                        available_vlan_range.remove(allocated_vlan)
+
+        return available_vlan_range
+
     def allocate_ifs(self, *, requested_ns: NetworkServiceSliver, requested_ifs: InterfaceSliver,
-                     owner_switch: NodeSliver, mpls_ns: NetworkServiceSliver, bqm_ifs_id: str,
+                     owner_switch: NodeSliver, mpls_ns: NetworkServiceSliver, bqm_ifs: InterfaceSliver,
                      existing_reservations: List[ABCReservationMixin]) -> InterfaceSliver:
         """
         Allocate Interface Sliver
@@ -53,7 +97,7 @@ class NetworkServiceInventory(InventoryForType):
         :param requested_ifs: Requested Interface Sliver
         :param owner_switch: BQM Owner site switch identified to serve the InterfaceSliver
         :param mpls_ns: BQM MPLS NetworkService identified to serve the InterfaceSliver
-        :param bqm_ifs_id: BQM InterfaceSliver identified to serve the InterfaceSliver
+        :param bqm_ifs: BQM InterfaceSliver identified to serve the InterfaceSliver
         :param existing_reservations: Existing Reservations which also are served by the owner switch
         :return Interface Sliver updated with the allocated VLAN tag for FABNetv4 and FABNetv6 services
         :raises Exception if vlan tag range is not in the valid range for L2 services
@@ -67,22 +111,41 @@ class NetworkServiceInventory(InventoryForType):
             if requested_vlan is None:
                 return requested_ifs
 
-            if mpls_ns.get_label_delegations() is None:
-                if 1 > requested_vlan > 4095:
-                    raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
-                                          msg=f"Vlan for L2 service is outside the allowed range 1-4095")
-                else:
-                    return requested_ifs
+            # Validate the requested VLAN is in range specified on MPLS Network Service in BQM
+            # Only do this for Non FacilityPorts
+            if bqm_ifs.get_type() != InterfaceType.FacilityPort:
+                if mpls_ns.get_label_delegations() is None:
+                    if 1 > requested_vlan > 4095:
+                        raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                              msg=f"Vlan for L2 service {requested_vlan} "
+                                                  f"is outside the allowed range 1-4095")
+                    else:
+                        return requested_ifs
 
-            delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=mpls_ns.get_label_delegations())
-            vlans = None
-            if delegated_label.vlan_range is not None:
-                vlans = delegated_label.vlan_range.split("-")
-            if vlans is not None and requested_ifs.labels.vlan is not None and \
-                    int(vlans[0]) > int(requested_ifs.labels.vlan) > int(vlans[1]):
-                raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
-                                      msg=f"Vlan for L2 service is outside the allowed range "
-                                          f"{mpls_ns.label_delegations.vlan_range}")
+                delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=mpls_ns.get_label_delegations())
+                vlans = None
+                vlan_range = []
+                if delegated_label.vlan_range is not None:
+                    vlans = delegated_label.vlan_range.split("-")
+                    vlan_range = list(range(int(vlans[0]), int(vlans[1])))
+
+                if vlans is not None and requested_ifs.labels.vlan is not None and requested_vlan not in vlan_range:
+                    raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                          msg=f"Vlan for L2 service {requested_vlan} is outside the allowed range "
+                                              f"{vlan_range}")
+
+            # Validate the VLAN s
+            if bqm_ifs.labels is not None and bqm_ifs.labels.vlan_range is not None:
+                vlans = bqm_ifs.labels.vlan_range.split("-")
+                vlan_range = list(range(int(vlans[0]), int(vlans[1])))
+
+                vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
+                                                            existing_reservations=existing_reservations)
+
+                if requested_vlan not in vlan_range:
+                    raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                          msg=f"Vlan for L2 service {requested_vlan} is outside the available range "
+                                              f"{vlan_range}")
 
         else:
             for ns in owner_switch.network_service_info.network_services.values():
@@ -98,44 +161,8 @@ class NetworkServiceInventory(InventoryForType):
                         vlans = delegated_label.vlan_range.split("-")
                         vlan_range = list(range(int(vlans[0]), int(vlans[1])))
 
-                    # Exclude the already allocated VLANs and subnets
-                    if existing_reservations is not None:
-                        for reservation in existing_reservations:
-                            # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-                            allocated_sliver = None
-                            if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                                allocated_sliver = reservation.get_approved_resources().get_sliver()
-
-                            if (reservation.is_active() or reservation.is_ticketed()) and \
-                                    reservation.get_resources() is not None:
-                                allocated_sliver = reservation.get_resources().get_sliver()
-
-                            self.logger.debug(
-                                f"Existing res# {reservation.get_reservation_id()} allocated: {allocated_sliver}")
-
-                            if allocated_sliver is None:
-                                continue
-
-                            # Ignore reservations for L2 services
-                            if allocated_sliver.get_type() != ServiceType.FABNetv4 or \
-                                    allocated_sliver.get_type() != ServiceType.FABNetv6:
-                                continue
-
-                            if allocated_sliver.interface_info is None or allocated_sliver.interface_info.interfaces is None:
-                                continue
-
-                            for allocated_ifs in allocated_sliver.interface_info.interfaces.values():
-                                # Ignore the Interface Slivers not on the same port
-                                if allocated_ifs.get_node_map()[0] != bqm_ifs_id:
-                                    continue
-
-                                self.logger.debug(f"Excluding already allocated VLAN: "
-                                                  f"{allocated_ifs.label_allocations.vlan} to "
-                                                  f"res# {reservation.get_reservation_id()}")
-
-                                # Exclude VLANs on the allocated on the same port
-                                if vlan_range is not None and allocated_ifs.label_allocations.vlan in vlan_range:
-                                    vlan_range.remove(int(allocated_sliver.label_allocations.vlan))
+                    vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
+                                                                existing_reservations=existing_reservations)
 
                     # Allocate the first available VLAN
                     if vlan_range is not None:
@@ -181,7 +208,7 @@ class NetworkServiceInventory(InventoryForType):
                 # Exclude the 1st subnet as it is reserved for control plane
                 subnet_list.pop(0)
 
-                # Exclude the already allocated VLANs and subnets
+                # Exclude the already allocated subnets
                 for reservation in existing_reservations:
                     if rid == reservation.get_reservation_id():
                         continue

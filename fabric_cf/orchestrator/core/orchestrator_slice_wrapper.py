@@ -34,7 +34,7 @@ from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, NodeType
 from fim.user import ServiceType
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -57,12 +57,11 @@ class OrchestratorSliceWrapper:
         self.rid_to_res = {}
         self.computed_reservations = []
         self.computed_l3_reservations = []
-        self.demanded = []
         self.thread_lock = threading.Lock()
-        self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS]
+        self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS, ServiceType.VLAN]
         self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
                              ServiceType.FABNetv4]
-        self.l3_ns = [ServiceType.FABNetv6.name, ServiceType.FABNetv4.name]
+        self.l3_ns = [str(ServiceType.FABNetv6), str(ServiceType.FABNetv4)]
 
     def lock(self):
         """
@@ -78,21 +77,6 @@ class OrchestratorSliceWrapper:
         """
         if self.thread_lock.locked():
             self.thread_lock.release()
-
-    def demanded_reservations(self) -> List[str]:
-        """
-        Return list of reservations demanded from the Actor/Policy
-        @return list of demanded reservations
-        """
-        return self.demanded
-
-    def mark_demanded(self, *, rid: str):
-        """
-        Mark a reservation demanded
-        @param rid: Reservation id
-        """
-        if rid not in self.demanded:
-            self.demanded.append(rid)
 
     def get_computed_reservations(self) -> List[TicketReservationAvro]:
         """
@@ -183,6 +167,8 @@ class OrchestratorSliceWrapper:
             sliver = slice_graph.build_deep_ns_sliver(node_id=ns_id)
             sliver_type = sliver.get_type()
 
+            self.logger.trace(f"Network Service Sliver: {sliver}")
+
             # Ignore Sliver types P4,OVS and MPLS
             if sliver_type in self.ignorable_ns:
                 continue
@@ -190,8 +176,7 @@ class OrchestratorSliceWrapper:
             # Process only the currently supported Network Sliver types L2STS, L2PTP and L2Bridge
             elif sliver_type in self.supported_ns:
 
-                self.logger.trace(f"Network Service Sliver: {sliver}")
-
+                self.logger.trace(f"Network Service Sliver Interfaces: {sliver.interface_info}")
                 # Processing Interface Slivers
                 if sliver.interface_info is not None:
                     predecessor_reservations = []
@@ -212,16 +197,21 @@ class OrchestratorSliceWrapper:
                         # Set Labels
                         ifs.set_labels(lab=ifs_mapping.get_peer_ifs().get_labels())
 
-                        # Save the parent component name and the parent reservation id in the Node Map
-                        parent_res_id = node_res_mapping.get(ifs_mapping.get_node_id(), None)
+                        if not ifs_mapping.is_facility():
+                            # Save the parent component name and the parent reservation id in the Node Map
+                            parent_res_id = node_res_mapping.get(ifs_mapping.get_node_id(), None)
 
-                        node_map = tuple([ifs_mapping.get_component_name(), parent_res_id])
-                        ifs.set_node_map(node_map=node_map)
+                            node_map = tuple([ifs_mapping.get_component_name(), parent_res_id])
+                            ifs.set_node_map(node_map=node_map)
 
-                        self.logger.trace(f"Interface Sliver: {ifs}")
+                            self.logger.trace(f"Interface Sliver: {ifs}")
 
-                        if parent_res_id is not None and parent_res_id not in predecessor_reservations:
-                            predecessor_reservations.append(parent_res_id)
+                            if parent_res_id is not None and parent_res_id not in predecessor_reservations:
+                                predecessor_reservations.append(parent_res_id)
+                        else:
+                            # For Facility Ports, set Node Map [Facility, Facility Name] to help broker lookup
+                            node_map = tuple([str(NodeType.Facility), ifs_mapping.get_node_id()])
+                            ifs.set_node_map(node_map=node_map)
 
                     # Generate reservation for the sliver
                     reservation = self.reservation_converter.generate_reservation(sliver=sliver,
@@ -244,6 +234,9 @@ class OrchestratorSliceWrapper:
 
             # Build Network Node Sliver
             sliver = slice_graph.build_deep_node_sliver(node_id=nn_id)
+
+            if sliver.get_type() not in [NodeType.VM]:
+                continue
 
             # Validate Node Sliver
             self.__validate_node_sliver(sliver=sliver)

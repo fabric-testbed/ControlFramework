@@ -34,7 +34,7 @@ from datetime import datetime
 from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import ServiceType, NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
@@ -453,6 +453,10 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
 
         for ifs in self.resources.sliver.interface_info.interfaces.values():
             component_name, rid = ifs.get_node_map()
+
+            if component_name == str(NodeType.Facility):
+                continue
+
             pred_state = self.redeem_predecessors.get(ID(uid=rid))
             parent_res = pred_state.get_reservation()
             if parent_res is not None and \
@@ -509,8 +513,8 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         return approved
 
     def can_ticket(self) -> bool:
-        supported_ns = [ServiceType.L2STS.name, ServiceType.L2Bridge.name, ServiceType.L2PTP.name,
-                        ServiceType.FABNetv4.name, ServiceType.FABNetv6.name]
+        supported_ns = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
+                        str(ServiceType.FABNetv4), str(ServiceType.FABNetv6)]
 
         ret_val = False
         if self.get_type() is not None:
