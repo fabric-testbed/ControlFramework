@@ -89,10 +89,6 @@ class OrchestratorKernel:
         try:
             self.lock.acquire()
             for reservation in computed_reservations:
-                if reservation.get_reservation_id() in controller_slice.demanded_reservations():
-                    self.get_logger().debug(f"Reservation: {reservation.get_reservation_id()} already demanded")
-                    continue
-
                 self.get_logger().debug(f"Issuing demand for reservation: {reservation.get_reservation_id()}")
 
                 if reservation.get_state() != ReservationStates.Unknown.value:
@@ -101,7 +97,6 @@ class OrchestratorKernel:
 
                 if not self.controller.demand_reservation(reservation=reservation):
                     raise OrchestratorException(f"Could not demand resources: {self.controller.get_last_error()}")
-                controller_slice.mark_demanded(rid=reservation.get_reservation_id())
                 self.get_logger().debug(f"Reservation #{reservation.get_reservation_id()} demanded successfully")
         except Exception as e:
             self.get_logger().error(traceback.format_exc())
