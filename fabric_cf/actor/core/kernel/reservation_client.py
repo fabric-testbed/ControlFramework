@@ -409,7 +409,6 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         @return true if approved; false otherwise
         """
         approved = True
-        l3_ns = [ServiceType.FABNetv4.name, ServiceType.FABNetv6.name]
 
         for pred_state in self.redeem_predecessors.values():
             if pred_state.get_reservation() is None or \
@@ -514,7 +513,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
 
     def can_ticket(self) -> bool:
         supported_ns = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
-                        str(ServiceType.FABNetv4), str(ServiceType.FABNetv6)]
+                        str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror)]
 
         ret_val = False
         if self.get_type() is not None:
