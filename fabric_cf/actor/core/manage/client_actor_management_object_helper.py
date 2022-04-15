@@ -434,15 +434,15 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def modify_reservation(self, *, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
+    def modify_reservation(self, *, rid: ID, modified_sliver: dict, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
 
-        if rid is None or modify_properties is None:
+        if rid is None or modified_sliver is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
             result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
-        self.logger.debug("reservation: {} | modifyProperties= {}".format(rid, modify_properties))
+        self.logger.debug("reservation: {} | modified_sliver= {}".format(rid, modified_sliver))
         try:
 
             class Runner(ABCActorRunnable):
@@ -457,7 +457,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
                         return result
 
-                    self.actor.modify(reservation_id=rid, modify_properties=modify_properties)
+                    self.actor.modify(reservation_id=rid, modified_sliver=modified_sliver)
 
                     return result
             result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))

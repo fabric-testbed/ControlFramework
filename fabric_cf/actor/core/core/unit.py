@@ -72,7 +72,7 @@ class Unit(ConfigToken):
         self.notices = Notice()
         # Reservation this unit belongs to.
         self.reservation = None
-        # The modified version of this unit.
+        # The modified version of the sliver.
         self.modified = None
         self.transfer_out_started = False
         self.sliver = sliver
@@ -81,7 +81,6 @@ class Unit(ConfigToken):
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['transfer_out_started']
-        del state['modified']
         del state['reservation']
         del state['lock']
 
@@ -90,7 +89,6 @@ class Unit(ConfigToken):
     def __setstate__(self, state):
         self.__dict__.update(state)
         self.transfer_out_started = False
-        self.modified = False
         self.reservation = None
         self.lock = threading.Lock()
 
@@ -100,13 +98,6 @@ class Unit(ConfigToken):
         @param to_state ti state
         """
         self.state = to_state
-
-    def merge_properties(self, *, incoming: dict):
-        """
-        Merge properties
-        @param incoming incoming properties
-        """
-        self.properties = {**incoming, **self.properties}
 
     def fail(self, *, message: str, exception: Exception = None):
         """
@@ -131,7 +122,8 @@ class Unit(ConfigToken):
             self.lock.acquire()
             self.notices.add(msg=message, ex=exception)
             self.transition(to_state=UnitState.ACTIVE)
-            self.merge_properties(incoming=self.modified.properties)
+            self.sliver = self.modified
+            self.modified = None
         finally:
             self.lock.release()
 
@@ -369,8 +361,8 @@ class Unit(ConfigToken):
 
     def get_modified(self):
         """
-        Get modified unit
-        @return modified unit
+        Get modified sliver
+        @return modified sliver
         """
         return self.modified
 
@@ -421,7 +413,8 @@ class Unit(ConfigToken):
         try:
             self.lock.acquire()
             self.transition(to_state=UnitState.ACTIVE)
-            self.merge_properties(incoming=self.modified.properties)
+            self.sliver = self.modified
+            self.modified = None
         finally:
             self.lock.release()
 

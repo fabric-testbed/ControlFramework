@@ -55,6 +55,7 @@ from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.update_data import UpdateData
+from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_cf.actor.security.access_checker import AccessChecker
 from fabric_cf.actor.security.auth_token import AuthToken
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
@@ -311,7 +312,7 @@ class KernelWrapper:
 
             if sequence_compare == SequenceComparisonCodes.SequenceGreater:
                 target.prepare_modify_lease()
-                self.kernel.modify_lease(reservation=reservation)
+                self.kernel.modify_lease(reservation=target)
 
             elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
                 self.logger.warning("modifyLeaseRequest with a smaller sequence number")

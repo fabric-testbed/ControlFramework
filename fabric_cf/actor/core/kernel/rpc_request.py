@@ -91,3 +91,10 @@ class RPCRequest:
         if self.timer is not None:
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             GlobalsSingleton.get().timer_scheduler.cancel(self.timer)
+
+    def get(self) -> ABCReservationMixin or ABCDelegation:
+        if self.reservation is None:
+            return self.reservation
+
+        if self.delegation is None:
+            return self.delegation

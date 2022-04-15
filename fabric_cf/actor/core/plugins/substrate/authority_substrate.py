@@ -72,7 +72,8 @@ class AuthoritySubstrate(SubstrateMixin):
     def get_inventory_slice_manager(self) -> InventorySliceManager:
         return self.inventory_slice_manager
 
-    def revisit(self, *, slice_obj: ABCSlice = None, reservation: ABCReservationMixin = None, delegation: ABCDelegation = None):
+    def revisit(self, *, slice_obj: ABCSlice = None, reservation: ABCReservationMixin = None,
+                delegation: ABCDelegation = None):
         if slice_obj is not None and slice_obj.is_inventory():
             self.logger.debug("Recovering inventory slice")
             self.recover_inventory_slice(slice_obj=slice_obj)

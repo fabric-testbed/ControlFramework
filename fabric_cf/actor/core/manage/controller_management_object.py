@@ -117,8 +117,8 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
         return self.client_helper.extend_reservation(reservation=reservation, new_end_time=new_end_time, 
                                                      new_units=new_units, caller=caller)
 
-    def modify_reservation(self, *, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
-        return self.client_helper.modify_reservation(rid=rid, modify_properties=modify_properties, caller=caller)
+    def modify_reservation(self, *, rid: ID, modified_sliver: dict, caller: AuthToken) -> ResultAvro:
+        return self.client_helper.modify_reservation(rid=rid, modified_sliver=modified_sliver, caller=caller)
 
     def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitsAvro:
         result = ResultUnitsAvro()
@@ -140,7 +140,7 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
                 return result
 
             if units_list is not None:
-                result.result = Converter.fill_units(unit_list=units_list)
+                result.units = Converter.fill_units(unit_list=units_list)
         except Exception as e:
             self.logger.error("get_reservation_units: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

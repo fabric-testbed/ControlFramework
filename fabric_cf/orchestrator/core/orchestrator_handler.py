@@ -44,6 +44,7 @@ from fabric_cf.actor.security.fabric_token import FabricToken
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
 from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
+from fabric_cf.orchestrator.core.reservation_status_update import ReservationStatusUpdate
 from fabric_cf.orchestrator.core.response_builder import ResponseBuilder
 
 
@@ -269,6 +270,11 @@ class OrchestratorHandler:
             # 1. Ticket message exchange with broker and
             # 2. Redeem message exchange with AM once ticket is granted by Broker
             self.controller_state.demand_slice(controller_slice=orchestrator_slice)
+
+            for r in orchestrator_slice.computed_l3_reservations:
+                res_status_update = ReservationStatusUpdate(logger=self.logger)
+                self.controller_state.get_sut().add_active_status_watch(watch=ID(uid=r.get_reservation_id()),
+                                                                        callback=res_status_update)
             # self.controller_state.get_sdt().process_slice(controller_slice=orchestrator_slice)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)

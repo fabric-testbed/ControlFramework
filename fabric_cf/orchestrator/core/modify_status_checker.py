@@ -45,7 +45,7 @@ class ModifyStatusChecker(StatusChecker):
         :return:
         """
         if not isinstance(rid, ReservationIDWithModifyIndex):
-            return Status.NOTREADY
+            return Status.NOT_READY
 
         try:
             reservations = controller.get_reservations(rid=rid.get_reservation_id())
@@ -58,11 +58,11 @@ class ModifyStatusChecker(StatusChecker):
                     reservation.get_pending_state() != ReservationPendingStates.None_:
                 self.logger.debug("Returning NOTREADY for reservation {} in state ({}, {})".format(
                     rid, reservation.get_state(), reservation.get_pending_state()))
-                return Status.NOTREADY
+                return Status.NOT_READY
 
             if reservation.get_state() == ReservationStates.Failed or \
                     reservation.get_pending_state() == ReservationStates.Closed:
-                return Status.NOTOK
+                return Status.NOT_OK
 
             units_list = controller.get_reservation_units(rid=rid.get_reservation_id())
 
@@ -95,8 +95,8 @@ class ModifyStatusChecker(StatusChecker):
             if modify_failed:
                 self.logger.info("Reservation {} failed modify for modify index {} with code {} and message {}".format(
                     rid.get_reservation_id(), rid.get_modify_index(), modify_error_code, modify_error_message))
-                return Status.NOTOK
+                return Status.NOT_OK
 
         except Exception as e:
             self.logger.error("Exception occurred e: {}".format(e))
-        return Status.NOTREADY
+        return Status.NOT_READY

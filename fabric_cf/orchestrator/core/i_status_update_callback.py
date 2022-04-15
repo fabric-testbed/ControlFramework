@@ -25,6 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from typing import List
 
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+
+from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.util.id import ID
 
 
@@ -32,21 +35,14 @@ class IStatusUpdateCallback:
     """
     Callbacks on reservation status updates must comply with this interface
     """
-    def success(self, *, ok: List[ID], act_on: List[ID]):
+    def success(self, *, controller: ABCMgmtControllerMixin, reservation: ReservationMng):
         """
-        All reservations in indicated group have gone to Active or have OK modify status
-        :param ok - reservations that transitioned to Active or OK modify status
-        :param act_on - reservations that need to be acted on
-        :raises Exception in case of error
+        Success callback
         """
         raise NotImplementedError
 
-    def failure(self, *, failed: List[ID], ok: List[ID], act_on: List[ID]):
+    def failure(self, *, controller: ABCMgmtControllerMixin, reservation: ReservationMng):
         """
-        Some reservations may have gone into Failed or not OK modify status, so provide an action for those
-        :param failed - those reservations that failed or went to not OK
-        :param ok - reservations in the same group that went Active or OK
-        :param act_on - reservations to be acted on
-        :raises Exception in case of error
+        Failure Callback
         """
         raise NotImplementedError

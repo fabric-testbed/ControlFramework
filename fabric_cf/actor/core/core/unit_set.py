@@ -25,9 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING
+
+from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.common.exceptions import UnitException
 from fabric_cf.actor.core.util.id import ID
@@ -251,16 +252,10 @@ class UnitSet(ABCConcreteSet):
     def is_active(self) -> bool:
         return not self.is_fresh and self.reservation is not None and self.get_pending_count() == 0
 
-    def modify(self, *, concrete_set: ABCConcreteSet, configure: bool):
-        self.ensure_type(cset=concrete_set)
-
-        for u in concrete_set.units.values():
-            if u.get_id() in self.units:
-                self.units[u.get_id()].set_modified(u)
-                if configure:
-                    self.modify_unit(u=self.units[u.get_id()])
-            else:
-                self.logger.warning("Modify for unit not present in seet: {}".format(u.get_id()))
+    def modify(self, *, sliver: BaseSliver):
+        for u in self.units.values():
+            u.set_modified(modified=sliver)
+            self.modify_unit(u=u)
 
     def probe(self):
         rel = None
@@ -323,7 +318,7 @@ class UnitSet(ABCConcreteSet):
         """
         try:
             u.start_modify()
-            self.plugin.modify(reservation=self.reservation, u=u)
+            self.plugin.modify(reservation=self.reservation, unit=u)
         except Exception as e:
             self.fail(u=u, message="Modify for node failed", e=e)
 

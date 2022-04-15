@@ -35,6 +35,7 @@ from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation_server import ReservationServer
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.util.rpc_exception import RPCError
+from fabric_cf.actor.core.util.utils import sliver_to_str
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -323,16 +324,11 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
                 if granted:
                     success = True
                     self.ticket = self.requested_resources
-                    self.logger.debug(f"requested_resources.get_sliver() = {self.requested_resources.get_sliver()}")
-
-                    self.logger.debug(f"approved_resources.get_sliver() = {self.approved_resources.get_sliver()}")
-
                     if self.requested_resources.get_sliver() is not None:
                         self.approved_resources.set_sliver(sliver=self.requested_resources.get_sliver())
 
-                    self.logger.debug(f"approved_resources.get_sliver() = {self.approved_resources.get_sliver()}")
-
-                    self.resources.update_properties(self, self.approved_resources)
+                    self.resources.update_properties(reservation=self, resource_set=self.approved_resources)
+                    self.logger.debug(f"Updated Sliver post modify: {sliver_to_str(sliver=self.resources.get_sliver())}")
                     self.transition(prefix="modify lease", state=ReservationStates.Active,
                                     pending=ReservationPendingStates.Priming)
             except Exception as e:

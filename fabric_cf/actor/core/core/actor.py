@@ -141,8 +141,6 @@ class ActorMixin(ABCActorMixin):
         # A queue of timers that have fired and need to be processed.
         self.timer_queue = queue.Queue()
         self.event_queue = queue.Queue()
-        self.reservation_tracker = None
-        self.subscription_id = None
         # Reservations to close once recovery is complete.
         self.closing = ReservationSet()
 
@@ -164,8 +162,6 @@ class ActorMixin(ABCActorMixin):
         del state['thread']
         del state['timer_queue']
         del state['event_queue']
-        del state['reservation_tracker']
-        del state['subscription_id']
         del state['actor_main_lock']
         del state['closing']
         del state['message_service']
@@ -185,7 +181,6 @@ class ActorMixin(ABCActorMixin):
         self.thread_lock = threading.Lock()
         self.timer_queue = queue.Queue()
         self.event_queue = queue.Queue()
-        self.subscription_id = None
         self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
@@ -998,8 +993,8 @@ class ActorMixin(ABCActorMixin):
             if len(events) > 0:
                 self.logger.debug(f"Processing {len(events)} events")
                 for event in events:
-                    #self.logger.debug("Processing event of type {}".format(type(e)))
-                    #self.logger.debug("Processing event {}".format(e))
+                    self.logger.debug("Processing event of type {}".format(type(event)))
+                    self.logger.debug("Processing event {}".format(event))
                     try:
                         event.process()
                     except Exception as e:

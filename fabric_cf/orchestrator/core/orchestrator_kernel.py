@@ -37,7 +37,6 @@ from fabric_cf.orchestrator.core.bqm_wrapper import BqmWrapper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
 from fabric_cf.orchestrator.core.reservation_status_update_thread import ReservationStatusUpdateThread
-from fabric_cf.orchestrator.core.slice_defer_thread import SliceDeferThread
 
 
 class OrchestratorKernel:
@@ -47,7 +46,6 @@ class OrchestratorKernel:
 
     def __init__(self):
         self.lock = threading.Lock()
-        self.sdt = None
         self.sut = None
         self.broker = None
         self.logger = None
@@ -91,10 +89,6 @@ class OrchestratorKernel:
         try:
             self.lock.acquire()
             for reservation in computed_reservations:
-                if reservation.get_reservation_id() in controller_slice.demanded_reservations():
-                    self.get_logger().debug(f"Reservation: {reservation.get_reservation_id()} already demanded")
-                    continue
-
                 self.get_logger().debug(f"Issuing demand for reservation: {reservation.get_reservation_id()}")
 
                 if reservation.get_state() != ReservationStates.Unknown.value:
@@ -103,7 +97,6 @@ class OrchestratorKernel:
 
                 if not self.controller.demand_reservation(reservation=reservation):
                     raise OrchestratorException(f"Could not demand resources: {self.controller.get_last_error()}")
-                controller_slice.mark_demanded(rid=reservation.get_reservation_id())
                 self.get_logger().debug(f"Reservation #{reservation.get_reservation_id()} demanded successfully")
         except Exception as e:
             self.get_logger().error(traceback.format_exc())
@@ -133,13 +126,6 @@ class OrchestratorKernel:
         """
         return self.sut
 
-    def get_sdt(self) -> SliceDeferThread:
-        """
-        Get SDT thread
-        :return:
-        """
-        return self.sdt
-
     def get_logger(self):
         """
         Get logger
@@ -164,9 +150,6 @@ class OrchestratorKernel:
         Stop threads
         :return:
         """
-        if self.sdt is not None:
-            self.sdt.stop()
-
         if self.sut is not None:
             self.sut.stop()
 
@@ -175,13 +158,9 @@ class OrchestratorKernel:
         Start threads
         :return:
         """
-        #self.get_logger().debug("Starting Slice Defer Thread")
-        #self.sdt = SliceDeferThread()
-        #self.sdt.start()
-
-        #self.get_logger().debug("Starting ReservationStatusUpdateThread")
-        #self.sut = ReservationStatusUpdateThread()
-        #self.sut.start()
+        self.get_logger().debug("Starting ReservationStatusUpdateThread")
+        self.sut = ReservationStatusUpdateThread()
+        self.sut.start()
 
 
 class OrchestratorKernelSingleton:
