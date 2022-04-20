@@ -98,8 +98,7 @@ class KernelWrapper:
         if delegation is None or caller is None or callback is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
-                                   token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+        AccessChecker.check_access(action_id=ActionId.claim, token=id_token, logger=self.logger)
 
         # Note: for claim we do not need the slice object, so we use
         # validate_delegation(delegation_id) instead of validate_delegation(delegation).
@@ -123,8 +122,7 @@ class KernelWrapper:
         if delegation is None or caller is None or callback is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        AccessChecker.check_access(action_id=ActionId.claim, resource_type=ResourceType.delegation,
-                                   token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+        AccessChecker.check_access(action_id=ActionId.reclaim, token=id_token, logger=self.logger)
 
         # Note: for claim we do not need the slice object, so we use
         # validate(ReservationID) instead of validate(Reservation).
@@ -256,7 +254,7 @@ class KernelWrapper:
         self.kernel.extend_lease(reservation=reservation)
 
     def extend_lease_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
-                             compare_sequence_numbers: bool):
+                             compare_sequence_numbers: bool, id_token: str):
         """
         Processes an incoming request for a lease extension.
         Role: Authority
@@ -265,32 +263,41 @@ class KernelWrapper:
         @param compare_sequence_numbers if true, the incoming sequence number will
                    be compared to the local sequence number to detect fresh
                    requests, if false, no comparison will be performed.
+        @param id_token id token of the caller
         @throws Exception in case of error
         """
         if reservation is None or caller is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
+        try:
+            AccessChecker.check_access(action_id=ActionId.renew, token=id_token,
+                                       resource=reservation.get_requested_resources().get_sliver(),
+                                       lease_end_time=reservation.get_requested_term().get_end_time(),
+                                       logger=self.logger)
+            if compare_sequence_numbers:
+                reservation.validate_incoming()
+                target = self.kernel.validate(rid=reservation.get_reservation_id())
 
-        if compare_sequence_numbers:
-            reservation.validate_incoming()
-            target = self.kernel.validate(rid=reservation.get_reservation_id())
+                sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
+                if sequence_compare == SequenceComparisonCodes.SequenceGreater:
+                    target.prepare_extend_lease()
+                    self.kernel.extend_lease(reservation=target)
 
-            sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
-            if sequence_compare == SequenceComparisonCodes.SequenceGreater:
-                target.prepare_extend_lease()
+                elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
+                    self.logger.warning("extendLeaseRequest with a smaller sequence number")
+
+                elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
+                    self.logger.warning("duplicate extendLease request")
+                    self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestExtendLease)
+            else:
+                target = self.kernel.validate(rid=reservation.get_reservation_id())
                 self.kernel.extend_lease(reservation=target)
-
-            elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
-                self.logger.warning("extendLeaseRequest with a smaller sequence number")
-
-            elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
-                self.logger.warning("duplicate extendLease request")
-                self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestExtendLease)
-        else:
-            target = self.kernel.validate(rid=reservation.get_reservation_id())
-            self.kernel.extend_lease(reservation=target)
+        except Exception as e:
+            self.logger.error(f"Exception occurred {e}")
+            self.logger.error(traceback.format_exc())
+            reservation.fail_notify(message=str(e))
 
     def modify_lease_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
-                             compare_sequence_numbers: bool):
+                             compare_sequence_numbers: bool, id_token: str):
         """
         Processes an incoming request for a lease modification.
         Role: Authority
@@ -299,30 +306,40 @@ class KernelWrapper:
         @param compare_sequence_numbers if true, the incoming sequence number will
                    be compared to the local sequence number to detect fresh
                    requests, if false, no comparison will be performed.
+        @param id_token id token of the caller
         @throws Exception in case of error
         """
         if reservation is None or caller is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        if compare_sequence_numbers:
-            reservation.validate_incoming()
-            target = self.kernel.validate(rid=reservation.get_reservation_id())
+        try:
+            AccessChecker.check_access(action_id=ActionId.modify, token=id_token,
+                                       resource=reservation.get_requested_resources().get_sliver(),
+                                       lease_end_time=reservation.get_requested_term().get_end_time(),
+                                       logger=self.logger)
+            if compare_sequence_numbers:
+                reservation.validate_incoming()
+                target = self.kernel.validate(rid=reservation.get_reservation_id())
 
-            sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
+                sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
 
-            if sequence_compare == SequenceComparisonCodes.SequenceGreater:
-                target.prepare_modify_lease()
+                if sequence_compare == SequenceComparisonCodes.SequenceGreater:
+                    target.prepare_modify_lease()
+                    self.kernel.modify_lease(reservation=target)
+
+                elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
+                    self.logger.warning("modifyLeaseRequest with a smaller sequence number")
+
+                elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
+                    self.logger.warning("duplicate extendLease request")
+                    self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestModifyLease)
+            else:
+                target = self.kernel.validate(rid=reservation.get_reservation_id())
                 self.kernel.modify_lease(reservation=target)
-
-            elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
-                self.logger.warning("modifyLeaseRequest with a smaller sequence number")
-
-            elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
-                self.logger.warning("duplicate extendLease request")
-                self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestModifyLease)
-        else:
-            target = self.kernel.validate(rid=reservation.get_reservation_id())
-            self.kernel.modify_lease(reservation=target)
+        except Exception as e:
+            self.logger.error(f"Exception occurred {e}")
+            self.logger.error(traceback.format_exc())
+            reservation.fail_notify(message=str(e))
 
     def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term) -> int:
         """
@@ -357,7 +374,7 @@ class KernelWrapper:
         self.kernel.extend_ticket(reservation=target)
 
     def extend_ticket_request(self, *, reservation: ABCBrokerReservation, caller: AuthToken,
-                              compare_sequence_numbers: bool):
+                              compare_sequence_numbers: bool, id_token: str):
         """
         Processes an incoming request for a ticket extension.
         Role: Broker
@@ -366,33 +383,45 @@ class KernelWrapper:
         @param compare_sequence_numbers if true, the incoming sequence number will
                    be compared to the local sequence number to detect fresh
                    requests, if false, no comparison will be performed.
+        @param id_token id token of the caller
         @throws Exception in case of error
         """
         self.logger.debug("extend_ticket_request")
         if reservation is None or caller is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
-        if compare_sequence_numbers:
-            target = self.kernel.validate(rid=reservation.get_reservation_id())
 
-            sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
+        try:
+            AccessChecker.check_access(action_id=ActionId.renew, token=id_token,
+                                       resource=reservation.get_requested_resources().get_sliver(),
+                                       lease_end_time=reservation.get_requested_term().get_end_time(),
+                                       logger=self.logger)
 
-            if sequence_compare == SequenceComparisonCodes.SequenceGreater:
-                self.logger.debug("extend_ticket SequenceGreater")
-                self.kernel.extend_ticket(reservation=target)
+            if compare_sequence_numbers:
+                target = self.kernel.validate(rid=reservation.get_reservation_id())
 
-            elif sequence_compare == SequenceComparisonCodes.SequenceInProgress:
-                self.logger.warning("New request for a reservation with a pending action")
+                sequence_compare = self.kernel.compare_and_update(incoming=reservation, current=target)
 
-            elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
-                self.logger.warning("Incoming extendTicket request has smaller sequence number")
+                if sequence_compare == SequenceComparisonCodes.SequenceGreater:
+                    self.logger.debug("extend_ticket SequenceGreater")
+                    self.kernel.extend_ticket(reservation=target)
 
-            elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
-                self.logger.warning("Duplicate extendTicket request")
-                self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestExtendTicket)
-        else:
-            target = self.kernel.validate(rid=reservation.get_reservation_id())
-            self.logger.debug("extend_ticket No sequence number comparison")
-            self.extend_ticket(reservation=target)
+                elif sequence_compare == SequenceComparisonCodes.SequenceInProgress:
+                    self.logger.warning("New request for a reservation with a pending action")
+
+                elif sequence_compare == SequenceComparisonCodes.SequenceSmaller:
+                    self.logger.warning("Incoming extendTicket request has smaller sequence number")
+
+                elif sequence_compare == SequenceComparisonCodes.SequenceEqual:
+                    self.logger.warning("Duplicate extendTicket request")
+                    self.kernel.handle_duplicate_request(current=target, operation=RequestTypes.RequestExtendTicket)
+            else:
+                target = self.kernel.validate(rid=reservation.get_reservation_id())
+                self.logger.debug("extend_ticket No sequence number comparison")
+                self.extend_ticket(reservation=target)
+        except Exception as e:
+            self.logger.error(f"Exception occurred {e}")
+            self.logger.error(traceback.format_exc())
+            reservation.fail_notify(message=str(e))
 
     def modify_lease(self, *, reservation: ABCControllerReservation):
         """
@@ -597,8 +626,7 @@ class KernelWrapper:
         @param id_token id_token
         @return query response
         """
-        AccessChecker.check_access(action_id=ActionId.query, resource_type=ResourceType.resources,
-                                   token=id_token, logger=self.logger, actor_type=self.actor.get_type())
+        AccessChecker.check_access(action_id=ActionId.query, token=id_token, logger=self.logger)
 
         return self.kernel.query(properties=properties)
 
@@ -627,7 +655,7 @@ class KernelWrapper:
         self.kernel.redeem(reservation=target)
 
     def redeem_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
-                       callback: ABCControllerCallbackProxy, compare_sequence_numbers: bool):
+                       callback: ABCControllerCallbackProxy, compare_sequence_numbers: bool, id_token: str):
         """
         Processes an incoming request for a new lease.
         Role: Authority
@@ -638,12 +666,16 @@ class KernelWrapper:
         @param compare_sequence_numbers if true, the incoming sequence number will
                    be compared to the local sequence number to detect fresh
                    requests, if false, no comparison will be performed.
+        @param id_token id_token
         @throws Exception in case of error
         """
         if reservation is None or caller is None or callback is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         try:
+            AccessChecker.check_access(action_id=ActionId.redeem, token=id_token,
+                                       resource=reservation.get_requested_resources().get_sliver(),
+                                       logger=self.logger)
             if compare_sequence_numbers:
                 reservation.validate_incoming()
                 reservation.get_slice().set_client()
@@ -864,7 +896,7 @@ class KernelWrapper:
         self.handle_reserve(reservation=reservation, identity=destination.get_identity(), create_new_slice=False)
 
     def ticket_request(self, *, reservation: ABCBrokerReservation, caller: AuthToken, callback: ABCClientCallbackProxy,
-                       compare_seq_numbers: bool):
+                       compare_seq_numbers: bool, id_token: str = None):
         """
         Processes an incoming request for a new ticket.
         Role: Broker
@@ -874,12 +906,17 @@ class KernelWrapper:
         @param compare_seq_numbers if true, the incoming sequence number will
                    be compared to the local sequence number to detect fresh
                    requests, if false, no comparison will be performed.
+        @param id_token id token
         @throws Exception in case of error
         """
         if reservation is None or caller is None or callback is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         try:
+            AccessChecker.check_access(action_id=ActionId.ticket, token=id_token,
+                                       resource=reservation.get_requested_resources().get_sliver(),
+                                       logger=self.logger)
+
             if compare_seq_numbers:
                 reservation.validate_incoming()
                 # Mark the slice as client slice.

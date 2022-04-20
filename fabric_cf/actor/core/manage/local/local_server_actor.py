@@ -70,7 +70,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
     def get_clients(self, *, guid: ID = None, id_token: str = None) -> List[ClientMng]:
         self.clear_last()
         try:
-            result = self.manager.get_clients(caller=self.auth, guid=guid, id_token=id_token)
+            result = self.manager.get_clients(caller=self.auth, guid=guid)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.clients
@@ -116,8 +116,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
         try:
             result = self.manager.get_reservations_by_category(caller=self.auth,
                                                                category=ReservationCategory.Client,
-                                                               slice_id=slice_id,
-                                                               id_token=id_token)
+                                                               slice_id=slice_id)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.reservations
@@ -130,8 +129,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
         self.clear_last()
         try:
             result = self.manager.get_reservations_by_category(caller=self.auth,
-                                                               category=ReservationCategory.Broker,
-                                                               id_token=id_token)
+                                                               category=ReservationCategory.Broker)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.reservations
@@ -157,8 +155,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
         try:
             result = self.manager.get_reservations_by_category(caller=self.auth,
                                                                category=ReservationCategory.Inventory,
-                                                               slice_id=slice_id,
-                                                               id_token=id_token)
+                                                               slice_id=slice_id)
             self.last_status = result.status
             if result.status.get_code() == 0:
                 return result.reservations

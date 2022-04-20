@@ -288,10 +288,11 @@ class Broker(ActorMixin, ABCBrokerMixin):
             self.wrapper.extend_ticket_request(reservation=reservation, caller=reservation.get_client_auth_token(),
                                                compare_sequence_numbers=False)
 
-    def extend_ticket(self, *, reservation: ABCReservationMixin, caller: AuthToken):
+    def extend_ticket(self, *, reservation: ABCReservationMixin, caller: AuthToken, id_token: str = None):
         if not self.recovered or self.is_stopped():
             raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
-        self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
+        self.wrapper.extend_ticket_request(reservation=reservation, caller=caller,
+                                           compare_sequence_numbers=True, id_token=id_token)
 
     def get_broker(self, *, guid: ID) -> ABCBrokerProxy:
         return self.registry.get_broker(guid=guid)
@@ -353,11 +354,13 @@ class Broker(ActorMixin, ABCBrokerMixin):
             self.wrapper.ticket_request(reservation=reservation, caller=reservation.get_client_auth_token(),
                                         callback=reservation.get_callback(), compare_seq_numbers=False)
 
-    def ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken):
+    def ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken,
+               id_token: str = None):
         if not self.is_recovered() or self.is_stopped():
             raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
 
-        self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback, compare_seq_numbers=True)
+        self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback,
+                                    compare_seq_numbers=True, id_token=id_token)
 
     def relinquish(self, *, reservation: ABCReservationMixin, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():

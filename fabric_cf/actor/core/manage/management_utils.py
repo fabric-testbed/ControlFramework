@@ -67,7 +67,8 @@ class MyQueryResponseHandler(ABCQueryResponseHandler):
 class ManagementUtils:
     @staticmethod
     def update_slice(*, slice_obj: ABCSlice, slice_mng: SliceAvro) -> ABCSlice:
-        return
+        slice_obj.set_lease_end(lease_end=slice_mng.get_lease_end())
+        return slice_obj
 
     @staticmethod
     def update_reservation(*, res_obj: ABCReservationMixin, rsv_mng: ReservationMng) -> ABCReservationMixin:

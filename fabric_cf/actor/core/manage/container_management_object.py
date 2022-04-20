@@ -85,7 +85,7 @@ class ContainerManagementObject(ManagementObject):
                     result.append(a)
         return result
 
-    def do_get_actors(self, *, atype: int, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
+    def do_get_actors(self, *, atype: int, caller: AuthToken) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -105,11 +105,10 @@ class ContainerManagementObject(ManagementObject):
 
         return result
 
-    def get_actors(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
-        return self.do_get_actors(atype=ActorType.All.value, caller=caller, id_token=id_token)
+    def get_actors(self, *, caller: AuthToken) -> ResultActorAvro:
+        return self.do_get_actors(atype=ActorType.All.value, caller=caller)
 
-    def do_get_actors_from_database(self, *, caller: AuthToken, status: int = None,
-                                    id_token: str = None) -> ResultActorAvro:
+    def do_get_actors_from_database(self, *, caller: AuthToken, status: int = None) -> ResultActorAvro:
         result = ResultActorAvro()
         result.status = ResultAvro()
 
@@ -143,28 +142,27 @@ class ContainerManagementObject(ManagementObject):
 
         return result
 
-    def get_actors_from_database(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
-        return self.do_get_actors_from_database(caller=caller, id_token=id_token)
+    def get_actors_from_database(self, *, caller: AuthToken) -> ResultActorAvro:
+        return self.do_get_actors_from_database(caller=caller)
 
     def get_actors_from_database_name_type_status(self, *, name: str, actor_type: int, status: int,
-                                                  caller: AuthToken, id_token: str = None) -> ResultActorAvro:
-        return self.do_get_actors_from_database(caller=caller, id_token=id_token, status=status)
+                                                  caller: AuthToken) -> ResultActorAvro:
+        return self.do_get_actors_from_database(caller=caller, status=status)
 
-    def get_controllers(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
-        return self.do_get_actors(atype=ActorType.Orchestrator.value, caller=caller, id_token=id_token)
+    def get_controllers(self, *, caller: AuthToken) -> ResultActorAvro:
+        return self.do_get_actors(atype=ActorType.Orchestrator.value, caller=caller)
 
-    def get_brokers(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
-        return self.do_get_actors(atype=ActorType.Broker.value, caller=caller, id_token=id_token)
+    def get_brokers(self, *, caller: AuthToken) -> ResultActorAvro:
+        return self.do_get_actors(atype=ActorType.Broker.value, caller=caller)
 
-    def get_authorities(self, *, caller: AuthToken, id_token: str = None) -> ResultActorAvro:
-        return self.do_get_actors(atype=ActorType.Authority.value, caller=caller, id_token=id_token)
+    def get_authorities(self, *, caller: AuthToken) -> ResultActorAvro:
+        return self.do_get_actors(atype=ActorType.Authority.value, caller=caller)
 
     def get_management_object(self, *, key: ID) -> ABCManagementObject:
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         return GlobalsSingleton.get().get_container().get_management_object_manager().get_management_object(key=key)
 
-    def do_get_proxies(self, *, atype: ActorType, protocol: str, caller: AuthToken,
-                       id_token: str = None) -> ResultProxyAvro:
+    def do_get_proxies(self, *, atype: ActorType, protocol: str, caller: AuthToken) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -191,11 +189,11 @@ class ContainerManagementObject(ManagementObject):
 
         return result
 
-    def get_broker_proxies(self, *, protocol: str, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
-        return self.do_get_proxies(atype=ActorType.Broker, protocol=protocol, caller=caller, id_token=id_token)
+    def get_broker_proxies(self, *, protocol: str, caller: AuthToken) -> ResultProxyAvro:
+        return self.do_get_proxies(atype=ActorType.Broker, protocol=protocol, caller=caller)
 
-    def get_site_proxies(self, *, protocol: str, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
-        return self.do_get_proxies(atype=ActorType.Authority, protocol=protocol, caller=caller, id_token=id_token)
+    def get_site_proxies(self, *, protocol: str, caller: AuthToken) -> ResultProxyAvro:
+        return self.do_get_proxies(atype=ActorType.Authority, protocol=protocol, caller=caller)
 
-    def get_proxies_by_protocol(self, *, protocol: str, caller: AuthToken, id_token: str = None) -> ResultProxyAvro:
-        return self.do_get_proxies(atype=ActorType.All, protocol=protocol, caller=caller, id_token=id_token)
+    def get_proxies_by_protocol(self, *, protocol: str, caller: AuthToken) -> ResultProxyAvro:
+        return self.do_get_proxies(atype=ActorType.All, protocol=protocol, caller=caller)

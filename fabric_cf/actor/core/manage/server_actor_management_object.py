@@ -65,8 +65,8 @@ class ServerActorManagementObject(ActorManagementObject):
         properties[Constants.PROPERTY_MODULE_NAME] = ServerActorManagementObject.__module__
         return properties
 
-    def get_reservations_by_category(self, *, caller: AuthToken, category: ReservationCategory, slice_id: ID = None,
-                                     id_token: str = None) -> ResultReservationAvro:
+    def get_reservations_by_category(self, *, caller: AuthToken, category: ReservationCategory,
+                                     slice_id: ID = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -111,8 +111,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_slices_by_slice_type(self, *, caller: AuthToken, slice_type: SliceTypes,
-                                 id_token: str = None) -> ResultSliceAvro:
+    def get_slices_by_slice_type(self, *, caller: AuthToken, slice_type: SliceTypes) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -234,7 +233,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
-    def get_clients(self, *, caller: AuthToken, guid: ID = None, id_token: str = None) -> ResultClientMng:
+    def get_clients(self, *, caller: AuthToken, guid: ID = None) -> ResultClientMng:
         result = ResultClientMng()
         result.status = ResultAvro()
 

@@ -26,12 +26,15 @@
 import json
 import traceback
 from datetime import datetime, timedelta
-from http.client import NOT_FOUND, BAD_REQUEST
+from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
 from typing import Tuple, List
 
+from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
+from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -41,6 +44,7 @@ from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.fabric_token import FabricToken
+from fabric_cf.actor.security.pdp_auth import ActionId
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
 from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
@@ -71,12 +75,34 @@ class OrchestratorHandler:
         :return:
         """
         try:
-            fabric_token = FabricToken(logger=self.logger, token=token)
+            oauth_config = self.globals.get_config().get_oauth_config()
+            jwt_validator = self.globals.get_jwt_validator()
+            fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator,
+                                       logger=self.logger, token=token)
 
             return fabric_token.validate()
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred while validating the token e: {e}")
+
+    def __authorize_request(self, *, id_token: str, action_id: ActionId,
+                            resource: BaseSliver or ExperimentTopology = None,
+                            lease_end_time: datetime = None) -> FabricToken:
+        """
+        Authorize request
+        :param id_token:
+        :param action_id:
+        :param resource:
+        :param lease_end_time:
+        :return:
+        """
+        from fabric_cf.actor.security.access_checker import AccessChecker
+        fabric_token = AccessChecker.check_access(action_id=action_id, token=id_token, logger=self.logger,
+                                                  resource=resource, lease_end_time=lease_end_time)
+
+        if fabric_token.get_user_dn() is None:
+            raise OrchestratorException(http_error_code=UNAUTHORIZED,message="Invalid token")
+        return fabric_token
 
     def get_broker(self, *, controller: ABCMgmtControllerMixin) -> ID:
         """
@@ -232,7 +258,14 @@ class OrchestratorHandler:
                     if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
+            topology = ExperimentTopology(graph_string=slice_graph)
+            topology.validate()
+
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
+            asm_graph.validate_graph()
+
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology,
+                                                    lease_end_time=end_time)
 
             broker = self.get_broker(controller=controller)
             if broker is None:
@@ -246,9 +279,13 @@ class OrchestratorHandler:
             slice_obj.graph_id = asm_graph.get_graph_id()
             slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key})
             slice_obj.set_lease_end(lease_end=end_time)
+            auth = AuthAvro()
+            auth.oidc_sub_claim = fabric_token.get_subject()
+            auth.email = fabric_token.get_email()
+            slice_obj.set_owner(auth)
 
             self.logger.debug(f"Adding Slice {slice_name}")
-            slice_id = controller.add_slice(slice_obj=slice_obj, id_token=token)
+            slice_id = controller.add_slice(slice_obj=slice_obj)
             if slice_id is None:
                 self.logger.error(controller.get_last_error())
                 self.logger.error("Slice could not be added to Database")
@@ -275,7 +312,6 @@ class OrchestratorHandler:
                 res_status_update = ReservationStatusUpdate(logger=self.logger)
                 self.controller_state.get_sut().add_active_status_watch(watch=ID(uid=r.get_reservation_id()),
                                                                         callback=res_status_update)
-            # self.controller_state.get_sdt().process_slice(controller_slice=orchestrator_slice)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -310,7 +346,10 @@ class OrchestratorHandler:
             if sliver_id is not None:
                 rid = ID(uid=sliver_id)
 
-            reservations = controller.get_reservations(id_token=token, slice_id=slice_guid, rid=rid)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+
+            reservations = controller.get_reservations(slice_id=slice_guid, rid=rid, email=fabric_token.get_email(),
+                                                       oidc_claim_sub=fabric_token.get_subject())
             if reservations is None:
                 if controller.get_last_error() is not None:
                     self.logger.error(controller.get_last_error())
@@ -350,7 +389,10 @@ class OrchestratorHandler:
 
             slice_states = SliceState.str_list_to_state_list(states=states)
 
-            slice_list = controller.get_slices(id_token=token, slice_id=slice_guid, state=slice_states)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
+
+            slice_list = controller.get_slices(id_token=token, slice_id=slice_guid, state=slice_states,
+                                               email=fabric_token.get_email())
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -390,6 +432,7 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Unable to delete Slice# {slice_guid} that is not yet stable, "
                                             f"try again later")
 
+            self.__authorize_request(id_token=token, action_id=ActionId.delete)
             controller.close_reservations(slice_id=slice_guid)
 
         except Exception as e:
@@ -413,6 +456,8 @@ class OrchestratorHandler:
             slice_guid = None
             if slice_id is not None:
                 slice_guid = ID(uid=slice_id)
+
+            self.__authorize_request(id_token=token, action_id=ActionId.query)
 
             slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
             if slice_list is None or len(slice_list) == 0:
@@ -492,6 +537,7 @@ class OrchestratorHandler:
 
             self.logger.debug(f"There are {len(reservations)} reservations in the slice# {slice_id}")
 
+            self.__authorize_request(id_token=token, action_id=ActionId.renew_slice, lease_end_time=new_end_time)
             for r in reservations:
                 res_state = ReservationStates(r.get_state())
                 if res_state == ReservationStates.Closed or res_state == ReservationStates.Failed or \
@@ -508,10 +554,11 @@ class OrchestratorHandler:
                                                        new_end_time=new_end_time)
                 if not result:
                     failed_to_extend_rid_list.append(r.get_reservation_id())
-                else:
-                    slice_object.set_lease_end(lease_end=new_end_time)
-                    if not controller.update_slice(slice_obj=slice_object):
-                        self.logger.error(f"Failed to update lease end time: {new_end_time} in Slice: {slice_object}")
+
+            if len(failed_to_extend_rid_list) == 0:
+                slice_object.set_lease_end(lease_end=new_end_time)
+                if not controller.update_slice(slice_obj=slice_object):
+                    self.logger.error(f"Failed to update lease end time: {new_end_time} in Slice: {slice_object}")
 
             return ResponseBuilder.get_response_summary(rid_list=failed_to_extend_rid_list)
         except Exception as e:

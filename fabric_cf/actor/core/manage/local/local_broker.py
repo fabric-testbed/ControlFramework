@@ -99,7 +99,7 @@ class LocalBroker(LocalServerActor, ABCMgmtBrokerMixin):
     def claim_delegations(self, *, broker: ID, did: str, id_token: str = None) -> DelegationAvro:
         self.clear_last()
         try:
-            result = self.manager.claim_delegations(broker=broker, did=did, caller=self.auth, id_token=id_token)
+            result = self.manager.claim_delegations(broker=broker, did=did, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -112,7 +112,7 @@ class LocalBroker(LocalServerActor, ABCMgmtBrokerMixin):
     def reclaim_delegations(self, *, broker: ID, did: str, id_token: str = None) -> DelegationAvro:
         self.clear_last()
         try:
-            result = self.manager.reclaim_delegations(broker=broker, did=did, caller=self.auth, id_token=id_token)
+            result = self.manager.reclaim_delegations(broker=broker, did=did, caller=self.auth)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

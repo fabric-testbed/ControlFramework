@@ -75,9 +75,12 @@ class AggregateResourceModelCreator:
             self.arm_graph = FimHelper.get_arm_graph(graph_id=result.slice.get_graph_id())
             result.slice.set_graph(graph=self.arm_graph)
         else:
+            print(f"Creating a new graph for resource slice# {result.slice}")
             self.arm_graph = FimHelper.get_arm_graph_from_file(filename=substrate_file)
             result.slice.set_graph(graph=self.arm_graph)
+            print("Create ARM graph")
             self.substrate.get_inventory_slice_manager().update_inventory_slice(slice_obj=result.slice)
+            print("Updated Slice")
             self.logger.debug(f"Created new graph for resource slice# {result.slice}")
 
         for r in self.resources.values():
