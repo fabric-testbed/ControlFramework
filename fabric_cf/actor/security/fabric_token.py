@@ -1,7 +1,10 @@
 import json
+import logging
 import traceback
+from typing import Dict, List, Any, Tuple
 
 from fss_utils.jwt_manager import ValidateCode
+from fss_utils.jwt_validate import JWTValidator
 
 from fabric_cf.actor.core.common.constants import Constants
 
@@ -16,11 +19,13 @@ class FabricToken:
     """
     Represents the Fabric Token issues by Credential Manager
     """
-    def __init__(self, *, token: str, logger):
+    def __init__(self, *, token: str, jwt_validator: JWTValidator, oauth_config: dict, logger: logging.Logger):
         if token is None:
             raise TokenException('Token: {} is None'.format(token))
 
         self.logger = logger
+        self.jwt_validator = jwt_validator
+        self.oauth_config = oauth_config
         self.encoded_token = token
         self.decoded_token = None
 
@@ -47,14 +52,12 @@ class FabricToken:
         """
         try:
             # validate the token
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            jwt_validator = GlobalsSingleton.get().get_jwt_validator()
-            verify_exp = GlobalsSingleton.get().get_config().get_oauth_config().get(
-                Constants.PROPERTY_CONF_O_AUTH_VERIFY_EXP, True)
+            verify_exp = self.oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_VERIFY_EXP, True)
 
-            if jwt_validator is not None:
+            if self.jwt_validator is not None:
                 self.logger.info("Validating CI Logon token")
-                code, token_or_exception = jwt_validator.validate_jwt(token=self.encoded_token, verify_exp=verify_exp)
+                code, token_or_exception = self.jwt_validator.validate_jwt(token=self.encoded_token,
+                                                                           verify_exp=verify_exp)
                 if code is not ValidateCode.VALID:
                     self.logger.error(f"Unable to validate provided token: {code}/{token_or_exception}")
                     raise TokenException(f"Unable to validate provided token: {code}/{token_or_exception}")
@@ -69,3 +72,51 @@ class FabricToken:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred while validating the token e: {}".format(e))
             raise e
+
+    def is_decoded(self) -> bool:
+        """
+        Check if the token is decoded
+        @return True if decoded, False otherwise
+        """
+        return self.decoded_token is not None
+
+    def get_decoded_token_value(self, key: str) -> Any:
+        """
+        Get decoded token value
+        @param key: key to get value
+        @return value
+        """
+        if self.decoded_token is None:
+            self.validate()
+        return self.decoded_token.get(key)
+
+    def get_subject(self) -> str:
+        """
+        Get subject
+        @return subject
+        """
+        return self.get_decoded_token_value(Constants.CLAIMS_SUB)
+
+    def get_email(self) -> str:
+        """
+        Get email
+        @return email
+        """
+        return self.get_decoded_token_value(Constants.CLAIMS_EMAIL)
+
+    def get_project_and_tags(self) -> Tuple[str or None, List[str] or None]:
+        """
+        Get projects
+        @return projects
+        """
+        projects = self.get_decoded_token_value(Constants.CLAIMS_PROJECTS)
+        if projects is None or len(projects) != 1:
+            return None, None
+        project = ""
+        tag_list = []
+        for key, value in projects.items():
+            project = key
+            for tag in value:
+                tag_list.append(tag)
+                break
+        return project, tag_list

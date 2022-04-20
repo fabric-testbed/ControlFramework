@@ -25,10 +25,13 @@
 import logging
 from bisect import bisect_left
 
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import ComponentType
+
+from fabric_cf.actor.security.pdp_auth import ActionId
 
 
 def binary_search(*, a, x):
@@ -72,3 +75,25 @@ def ns_sliver_to_str(*, sliver: NetworkServiceSliver):
     for interface in sliver.interface_info.interfaces.values():
         result += f"\nIFS: {interface}"
     return result
+
+
+def translate_avro_message_type_pdp_action_id(*, message_name: str) -> ActionId:
+    if message_name == AbcMessageAvro.claim_resources:
+        return ActionId.claim
+    elif message_name == AbcMessageAvro.reclaim_resources:
+        return ActionId.reclaim
+    elif message_name == AbcMessageAvro.get_slices_request or message_name == AbcMessageAvro.get_reservations_request \
+        or message_name == AbcMessageAvro.get_reservations_state_request or \
+        message_name == AbcMessageAvro.get_delegations or message_name == AbcMessageAvro.get_reservation_units_request \
+            or message_name == AbcMessageAvro.get_unit_request or message_name == AbcMessageAvro.get_broker_query_model_request:
+        return ActionId.query
+    elif message_name == AbcMessageAvro.remove_slice:
+        return ActionId.delete
+    elif message_name == AbcMessageAvro.close_reservations:
+        return ActionId.close
+    elif message_name == AbcMessageAvro.remove_reservation:
+        return ActionId.delete
+    elif message_name == AbcMessageAvro.extend_reservation:
+        return ActionId.renew
+    else:
+        return ActionId.noop

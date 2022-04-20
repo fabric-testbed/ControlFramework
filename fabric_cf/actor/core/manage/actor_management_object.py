@@ -25,11 +25,10 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from datetime import date, datetime
-from typing import TYPE_CHECKING, List, Tuple
+from datetime import datetime
+from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric_mb.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
@@ -42,15 +41,13 @@ from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, SliceNotFoundException, \
     DelegationNotFoundException, ManageException
-from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.manage.converter import Converter
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.manage.proxy_protocol_descriptor import ProxyProtocolDescriptor
 from fabric_cf.actor.core.apis.abc_actor_management_object import ABCActorManagementObject
-from fabric_cf.actor.security.access_checker import AccessChecker
-from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType
+
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
 from fabric_cf.actor.core.util.id import ID
@@ -68,23 +65,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         self.db = None
         if actor is not None:
             self.set_actor(actor=actor)
-
-    def validate_token(self, *, id_token: str, action_id: ActionId, resource_type: ResourceType,
-                       resource_id: str = None) -> Tuple[str, str]:
-        user_dn = None
-        user_email = None
-        fabric_token = AccessChecker.check_access(action_id=action_id,
-                                                  resource_type=resource_type,
-                                                  token=id_token, logger=self.logger,
-                                                  actor_type=self.actor.get_type(),
-                                                  resource_id=resource_id)
-        if fabric_token is not None:
-            user_dn = fabric_token.get_decoded_token().get(Constants.CLAIMS_SUB, None)
-            user_email = fabric_token.get_decoded_token().get(Constants.CLAIMS_EMAIL, None)
-
-            if user_dn is None:
-                raise ManageException(ErrorCodes.ErrorInvalidToken)
-        return user_dn, user_email
 
     def register_protocols(self):
         from fabric_cf.actor.core.manage.local.local_actor import LocalActor
@@ -127,8 +107,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             self.logger = actor.get_logger()
             self.id = actor.get_guid()
 
-    def get_slices(self, *, slice_id: ID, caller: AuthToken, id_token: str = None,
-                   slice_name: str = None, email: str = None, state: List[int] = None) -> ResultSliceAvro:
+    def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None,
+                   email: str = None, state: List[int] = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -139,13 +119,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             slice_list = None
 
             try:
-                user_dn, user_email = self.validate_token(id_token=id_token, action_id=ActionId.query,
-                                                          resource_type=ResourceType.slice,
-                                                          resource_id=str(slice_id))
-
-                if user_email is None:
-                    user_email = email
-
                 try:
                     slice_list = None
                     if slice_id is not None:
@@ -154,15 +127,12 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                             slice_list = [slice_obj]
 
                     elif slice_name is not None:
-                        slice_list = self.db.get_slice_by_name(slice_name=slice_name, oidc_claim_sub=user_dn,
-                                                               email=user_email)
-                    elif user_email is not None:
+                        slice_list = self.db.get_slice_by_name(slice_name=slice_name, email=email)
+                    elif email is not None:
                         if state is None:
-                            slice_list = self.db.get_slice_by_email(email=user_email)
+                            slice_list = self.db.get_slice_by_email(email=email)
                         else:
-                            slice_list = self.db.get_slice_by_email_state(email=user_email, state=state)
-                    elif user_dn is not None:
-                        slice_list = self.db.get_slice_by_oidc_claim_sub(oidc_claim_sub=user_dn)
+                            slice_list = self.db.get_slice_by_email_state(email=email, state=state)
                     else:
                         slice_list = self.db.get_slices()
 
@@ -183,7 +153,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 result.status = ManagementObject.set_exception_details(result=result.status, e=e)
         return result
 
-    def add_slice(self, *, slice_obj: SliceAvro, caller: AuthToken, id_token: str = None) -> ResultStringAvro:
+    def add_slice(self, *, slice_obj: SliceAvro, caller: AuthToken) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
 
@@ -193,16 +163,12 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         else:
             try:
-                user_dn, user_email = self.validate_token(id_token=id_token, action_id=ActionId.query,
-                                                          resource_type=ResourceType.slice,
-                                                          resource_id=str(slice_obj.slice_name))
 
                 slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name())
-
                 slice_obj_new.set_description(description=slice_obj.get_description())
                 slice_obj_new.set_owner(owner=self.actor.get_identity())
-                slice_obj_new.get_owner().set_oidc_sub_claim(oidc_sub_claim=user_dn)
-                slice_obj_new.get_owner().set_email(email=user_email)
+                slice_obj_new.get_owner().set_oidc_sub_claim(oidc_sub_claim=slice_obj.get_owner().get_oidc_sub_claim())
+                slice_obj_new.get_owner().set_email(email=slice_obj.get_owner().get_email())
                 slice_obj_new.set_graph_id(graph_id=slice_obj.graph_id)
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
@@ -241,7 +207,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def remove_slice(self, *, slice_id: ID, caller: AuthToken, id_token: str = None) -> ResultAvro:
+    def remove_slice(self, *, slice_id: ID, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
         if slice_id is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
@@ -249,9 +215,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            self.validate_token(id_token=id_token, action_id=ActionId.delete,
-                                resource_type=ResourceType.slice,
-                                resource_id=str(slice_id))
 
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
@@ -312,10 +275,10 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def get_slice_by_guid(self, *, guid: str, id_token: str = None) -> ABCSlice:
+    def get_slice_by_guid(self, *, guid: str) -> ABCSlice:
         return self.db.get_slice(slice_id=guid)
 
-    def get_reservations(self, *, caller: AuthToken, id_token: str = None, state: List[int] = None,
+    def get_reservations(self, *, caller: AuthToken, state: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
                          email: str = None, rid_list: List[str] = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
@@ -327,15 +290,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            user_dn, user_email = self.validate_token(id_token=id_token, action_id=ActionId.query,
-                                                      resource_type=ResourceType.sliver,
-                                                      resource_id=str(rid))
-
-            if user_email is None:
-                user_email = email
-
-            if user_dn is None:
-                user_dn = oidc_claim_sub
 
             res_list = None
             try:
@@ -352,13 +306,13 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     res_list = self.db.get_reservations_by_slice_id(slice_id=slice_id)
                 elif state is not None:
                     res_list = self.db.get_reservations_by_state(state=state)
-                elif user_dn is not None:
-                    res_list = self.db.get_reservations_by_oidc_claim_sub(oidc_claim_sub=user_dn)
-                elif user_email is not None:
+                elif oidc_claim_sub is not None:
+                    res_list = self.db.get_reservations_by_oidc_claim_sub(oidc_claim_sub=oidc_claim_sub)
+                elif email is not None:
                     if state is None:
-                        res_list = self.db.get_reservations_by_email(email=user_email)
+                        res_list = self.db.get_reservations_by_email(email=email)
                     else:
-                        res_list = self.db.get_reservations_by_email_state(email=user_email, state=state)
+                        res_list = self.db.get_reservations_by_email_state(email=email, state=state)
                 elif rid_list is not None:
                     res_list = self.db.get_reservations_by_rids(rid=rid_list)
                 else:
@@ -389,7 +343,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def remove_reservation(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultAvro:
+    def remove_reservation(self, *, caller: AuthToken, rid: ID) -> ResultAvro:
         result = ResultAvro()
 
         if rid is None or caller is None:
@@ -398,9 +352,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            self.validate_token(id_token=id_token, action_id=ActionId.delete,
-                                resource_type=ResourceType.sliver,
-                                resource_id=str(rid))
 
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
@@ -423,7 +374,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def close_reservation(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultAvro:
+    def close_reservation(self, *, caller: AuthToken, rid: ID) -> ResultAvro:
         result = ResultAvro()
 
         if rid is None or caller is None:
@@ -432,10 +383,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            self.validate_token(id_token=id_token, action_id=ActionId.close,
-                                resource_type=ResourceType.sliver,
-                                resource_id=str(rid))
-
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
@@ -457,7 +404,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def close_slice_reservations(self, *, caller: AuthToken, slice_id: ID, id_token: str = None) -> ResultAvro:
+    def close_slice_reservations(self, *, caller: AuthToken, slice_id: ID) -> ResultAvro:
         result = ResultAvro()
 
         if slice_id is None or caller is None:
@@ -466,10 +413,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            self.validate_token(id_token=id_token, action_id=ActionId.close,
-                                resource_type=ResourceType.slice,
-                                resource_id=str(slice_id))
-
             class Runner(ABCActorRunnable):
                 def __init__(self, *, actor: ABCActorMixin):
                     self.actor = actor
@@ -546,8 +489,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def get_reservation_state_for_reservations(self, *, caller: AuthToken, rids: List[str],
-                                               id_token: str = None) -> ResultReservationStateAvro:
+    def get_reservation_state_for_reservations(self, *, caller: AuthToken,
+                                               rids: List[str]) -> ResultReservationStateAvro:
         result = ResultReservationStateAvro()
         result.status = ResultAvro()
 
@@ -563,8 +506,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 return result
 
         try:
-            self.validate_token(id_token=id_token, action_id=ActionId.query,
-                                resource_type=ResourceType.sliver)
 
             res_list = None
             try:
@@ -592,8 +533,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def get_delegations(self, *, caller: AuthToken, id_token: str = None, slice_id: ID = None,
-                        did: str = None, state: int = None) -> ResultDelegationAvro:
+    def get_delegations(self, *, caller: AuthToken, slice_id: ID = None, did: str = None,
+                        state: int = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -603,8 +544,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return result
 
         try:
-            self.validate_token(id_token=id_token, action_id=ActionId.query,
-                                resource_type=ResourceType.delegation)
 
             dlg_list = None
             try:

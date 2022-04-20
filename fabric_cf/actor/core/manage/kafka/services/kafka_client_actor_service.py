@@ -61,32 +61,36 @@ class KafkaClientActorService(KafkaActorService):
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
-        if message.get_message_name() == AbcMessageAvro.claim_resources:
-            result = self.claim(request=message)
+        result = self.authorize_request(id_token=message.get_id_token(), message_name=message.get_message_name())
 
-        elif message.get_message_name() == AbcMessageAvro.reclaim_resources:
-            result = self.reclaim(request=message)
+        # If authorization failed, return the result
+        if result is None:
+            if message.get_message_name() == AbcMessageAvro.claim_resources:
+                result = self.claim(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.add_reservation:
-            result = self.add_reservation(request=message)
+            elif message.get_message_name() == AbcMessageAvro.reclaim_resources:
+                result = self.reclaim(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.add_reservations:
-            result = self.add_reservations(request=message)
+            elif message.get_message_name() == AbcMessageAvro.add_reservation:
+                result = self.add_reservation(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.demand_reservation:
-            result = self.demand_reservation(request=message)
+            elif message.get_message_name() == AbcMessageAvro.add_reservations:
+                result = self.add_reservations(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.get_actors_request:
-            result = self.get_brokers(request=message)
+            elif message.get_message_name() == AbcMessageAvro.demand_reservation:
+                result = self.demand_reservation(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.get_broker_query_model_request:
-            result = self.get_broker_query_model(request=message)
+            elif message.get_message_name() == AbcMessageAvro.get_actors_request:
+                result = self.get_brokers(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.extend_reservation:
-            result = self.extend_reservation(request=message)
-        else:
-            super().process(message=message)
-            return
+            elif message.get_message_name() == AbcMessageAvro.get_broker_query_model_request:
+                result = self.get_broker_query_model(request=message)
+
+            elif message.get_message_name() == AbcMessageAvro.extend_reservation:
+                result = self.extend_reservation(request=message)
+            else:
+                super().process(message=message)
+                return
 
         if callback_topic is None:
             self.logger.debug("No callback specified, ignoring the message")
@@ -192,7 +196,7 @@ class KafkaClientActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_brokers(caller=auth, id_token=request.get_id_token(), broker_id=request.broker_id)
+            result = mo.get_brokers(caller=auth, broker_id=request.broker_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -281,8 +285,7 @@ class KafkaClientActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.interpret())
                 return result
 
-            result = mo.claim_delegations(broker=ID(uid=request.broker_id), did=request.delegation_id, caller=auth,
-                                          id_token=request.id_token)
+            result = mo.claim_delegations(broker=ID(uid=request.broker_id), did=request.delegation_id, caller=auth)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
@@ -313,8 +316,8 @@ class KafkaClientActorService(KafkaActorService):
                 result.status.set_message(ErrorCodes.ErrorNoSuchBroker.interpret())
                 return result
 
-            result = mo.reclaim_delegations(broker=ID(uid=request.broker_id), did=request.delegation_id, caller=auth,
-                                            id_token=request.id_token)
+            result = mo.reclaim_delegations(broker=ID(uid=request.broker_id),
+                                            did=request.delegation_id, caller=auth)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)

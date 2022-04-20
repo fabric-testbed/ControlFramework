@@ -173,36 +173,40 @@ class Authority(ActorMixin, ABCAuthority):
         self.wrapper.advertise(delegation=dlg_obj, client=client)
         return dlg_obj.get_delegation_id()
 
-    def extend_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken = None):
+    def extend_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken = None,
+                     id_token: str = None):
         if caller is None:
             if not self.recovered:
                 self.extending_lease.add(reservation=reservation)
             else:
                 self.wrapper.extend_lease_request(reservation=reservation, caller=reservation.get_client_auth_token(),
-                                                  compare_sequence_numbers=False)
+                                                  compare_sequence_numbers=False, id_token=id_token)
         else:
             if not self.is_recovered() or self.is_stopped():
                 raise AuthorityException(Constants.INVALID_ACTOR_STATE)
-            self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
+            self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True,
+                                              id_token=id_token)
 
-    def modify_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken):
+    def modify_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken, id_token: str = None):
         if caller is None:
             if not self.recovered:
                 self.modifying_lease.add(reservation=reservation)
             else:
                 self.wrapper.modify_lease_request(reservation=reservation, caller=reservation.get_client_auth_token(),
-                                                  compare_sequence_numbers=False)
+                                                  compare_sequence_numbers=False, id_token=id_token)
         else:
             if not self.is_recovered() or self.stopped:
                 raise AuthorityException(Constants.INVALID_ACTOR_STATE)
-            self.wrapper.modify_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
+            self.wrapper.modify_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True,
+                                              id_token=id_token)
 
-    def extend_ticket(self, *, reservation: ABCReservationMixin, caller: AuthToken):
+    def extend_ticket(self, *, reservation: ABCReservationMixin, caller: AuthToken, id_token: str = None):
         slice_obj = reservation.get_slice()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
+        self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True,
+                                           id_token=id_token)
 
     def relinquish(self, *, reservation: ABCReservationMixin, caller: AuthToken):
         if not self.is_recovered() or self.stopped:
@@ -213,30 +217,33 @@ class Authority(ActorMixin, ABCAuthority):
         self.policy.freed(resources=resources)
 
     def redeem(self, *, reservation: ABCReservationMixin, callback: ABCControllerCallbackProxy = None,
-               caller: AuthToken = None):
+               caller: AuthToken = None, id_token: str = None):
         if callback is None and caller is None:
             if not self.recovered:
                 self.redeeming.add(reservation=reservation)
             else:
                 self.wrapper.redeem_request(reservation=reservation, caller=reservation.get_client_auth_token(),
-                                            callback=reservation.get_callback(), compare_sequence_numbers=False)
+                                            callback=reservation.get_callback(), compare_sequence_numbers=False,
+                                            id_token=id_token)
         else:
             if not self.is_recovered() or self.is_stopped():
                 raise AuthorityException(Constants.INVALID_ACTOR_STATE)
 
             if self.plugin.validate_incoming(reservation=reservation, auth=caller):
                 self.wrapper.redeem_request(reservation=reservation, caller=caller, callback=callback,
-                                            compare_sequence_numbers=True)
+                                            compare_sequence_numbers=True, id_token=id_token)
             else:
                 self.logger.error("the redeem request is invalid")
         self.logger.debug("Completed processing Redeem Request")
 
-    def ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken):
+    def ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken,
+               id_token: str = None):
         slice_obj = reservation.get_slice()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback, compare_seq_numbers=True)
+        self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback,
+                                    compare_seq_numbers=True, id_token=id_token)
 
     def tick_handler(self):
         # close expired reservations

@@ -75,7 +75,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None, id_token: str = None) -> ResultProxyAvro:
+    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -140,8 +140,6 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.resources,
-                                       token=id_token, logger=self.logger, actor_type=self.client.get_type())
 
             b = self.client.get_broker(guid=broker)
             if b is not None:
@@ -469,8 +467,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
-                          id_token: str = None) -> ResultDelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -480,10 +477,6 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            AccessChecker.check_access(action_id=ActionId.claim, resource_type=AuthResourceType.delegation,
-                                       token=id_token, logger=self.logger, actor_type=self.client.get_type(),
-                                       resource_id=did)
-
             my_broker = self.client.get_broker(guid=broker)
 
             if my_broker is None:
@@ -515,8 +508,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
-                            id_token: str = None) -> ResultDelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -526,9 +518,6 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            AccessChecker.check_access(action_id=ActionId.reclaim, resource_type=AuthResourceType.delegation,
-                                       token=id_token, logger=self.logger, actor_type=self.client.get_type(),
-                                       resource_id=did)
 
             my_broker = self.client.get_broker(guid=broker)
 
