@@ -393,21 +393,20 @@ class ActorMixin(ABCActorMixin):
         return self.stopped
 
     def query(self, *, query: dict = None, caller: AuthToken = None, actor_proxy: ABCActorProxy = None,
-              handler: ABCQueryResponseHandler = None, id_token: str = None) -> dict:
+              handler: ABCQueryResponseHandler = None) -> dict:
         """
         Query an actor
         @param query query
         @param caller caller
         @param actor_proxy actor proxy
         @param handler response handler
-        @param id_token identity token
         """
         if actor_proxy is None and handler is None:
-            return self.wrapper.query(properties=query, caller=caller, id_token=id_token)
+            return self.wrapper.query(properties=query, caller=caller)
         else:
             callback = Proxy.get_callback(actor=self, protocol=actor_proxy.get_type())
             RPCManagerSingleton.get().query(actor=self, remote_actor=actor_proxy, callback=callback, query=query,
-                                            handler=handler, id_token=id_token)
+                                            handler=handler)
             return None
 
     def recover(self):

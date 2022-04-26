@@ -23,9 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import json
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
 from typing import Tuple, List
 
@@ -100,7 +99,7 @@ class OrchestratorHandler:
         fabric_token = AccessChecker.check_access(action_id=action_id, token=id_token, logger=self.logger,
                                                   resource=resource, lease_end_time=lease_end_time)
 
-        if fabric_token.get_user_dn() is None:
+        if fabric_token.get_subject() is None:
             raise OrchestratorException(http_error_code=UNAUTHORIZED,message="Invalid token")
         return fabric_token
 
@@ -182,6 +181,8 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
+            self.__authorize_request(id_token=token, action_id=ActionId.query)
+
             broker_query_model, graph = self.discover_broker_query_model(controller=controller, token=token,
                                                                          level=level, ignore_validation=True)
 
@@ -250,22 +251,25 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
 
-            # Check if an Active slice exists already with the same name for the user
-            existing_slices = controller.get_slices(id_token=token, slice_name=slice_name)
-
-            if existing_slices is not None and len(existing_slices) != 0:
-                for es in existing_slices:
-                    if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
-                        raise OrchestratorException(f"Slice {slice_name} already exists")
-
+            # Validate the slice graph
             topology = ExperimentTopology(graph_string=slice_graph)
             topology.validate()
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=slice_graph)
             asm_graph.validate_graph()
 
+            # Authorize the slice
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology,
                                                     lease_end_time=end_time)
+
+            # Check if an Active slice exists already with the same name for the user
+            existing_slices = controller.get_slices(id_token=token, slice_name=slice_name,
+                                                    email=fabric_token.get_email())
+
+            if existing_slices is not None and len(existing_slices) != 0:
+                for es in existing_slices:
+                    if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
+                        raise OrchestratorException(f"Slice {slice_name} already exists")
 
             broker = self.get_broker(controller=controller)
             if broker is None:
@@ -282,6 +286,7 @@ class OrchestratorHandler:
             auth = AuthAvro()
             auth.oidc_sub_claim = fabric_token.get_subject()
             auth.email = fabric_token.get_email()
+            auth.token = token
             slice_obj.set_owner(auth)
 
             self.logger.debug(f"Adding Slice {slice_name}")
@@ -414,7 +419,9 @@ class OrchestratorHandler:
             if slice_id is not None:
                 slice_guid = ID(uid=slice_id)
 
-            slice_list = controller.get_slices(id_token=token, slice_id=slice_guid)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
+
+            slice_list = controller.get_slices(id_token=token, slice_id=slice_guid, email=fabric_token.get_email())
 
             if slice_list is None or len(slice_list) == 0:
                 raise OrchestratorException(f"Slice# {slice_id} not found",
@@ -493,7 +500,7 @@ class OrchestratorHandler:
         Renew a slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
-        :param new_lease_end_time: New Lease End Time in UTC in '%Y-%m-%d %H:%M:%S' format
+        :param new_lease_end_time: New Lease End Time in UTC in '%Y-%m-%d %H:%M:%S %z' format
         :raises Raises an exception in case of failure
         :return:
         """
@@ -537,7 +544,7 @@ class OrchestratorHandler:
 
             self.logger.debug(f"There are {len(reservations)} reservations in the slice# {slice_id}")
 
-            self.__authorize_request(id_token=token, action_id=ActionId.renew_slice, lease_end_time=new_end_time)
+            self.__authorize_request(id_token=token, action_id=ActionId.renew, lease_end_time=new_end_time)
             for r in reservations:
                 res_state = ReservationStates(r.get_state())
                 if res_state == ReservationStates.Closed or res_state == ReservationStates.Failed or \
@@ -575,7 +582,7 @@ class OrchestratorHandler:
         """
         new_end_time = None
         if lease_end_time is None:
-            new_end_time = datetime.utcnow() + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
+            new_end_time = datetime.now(timezone.utc) + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
             return new_end_time
         try:
             new_end_time = datetime.strptime(lease_end_time, Constants.LEASE_TIME_FORMAT)
@@ -583,7 +590,7 @@ class OrchestratorHandler:
             raise OrchestratorException(f"Lease End Time is not in format {Constants.LEASE_TIME_FORMAT}",
                                         http_error_code=BAD_REQUEST)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if new_end_time <= now:
             raise OrchestratorException(f"New term end time {new_end_time} is in the past! ",
                                         http_error_code=BAD_REQUEST)

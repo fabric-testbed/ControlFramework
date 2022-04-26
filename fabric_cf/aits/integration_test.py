@@ -26,7 +26,7 @@
 import logging
 import time
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from http.client import OK, NOT_FOUND, BAD_REQUEST
 
 from fabric_cf.actor.core.apis.abc_delegation import DelegationState
@@ -671,7 +671,7 @@ class IntegrationTest(unittest.TestCase):
         # Create Slice
         slice_graph = self.build_slice_with_compute_only(include_components=True)
         oh = OrchestratorHelper()
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         new_time = now + timedelta(days=2)
         new_time_str = new_time.strftime(Constants.LEASE_TIME_FORMAT)
         status, response = oh.create(slice_graph=slice_graph, slice_name=self.TEST_SLICE_NAME,
@@ -711,7 +711,7 @@ class IntegrationTest(unittest.TestCase):
                                                new_time=new_time_str_without_seconds)
 
         # Renew Slice
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         new_time = now + timedelta(days=14)
 
         new_time_str = new_time.strftime(self.TIME_FORMAT_IN_SECONDS)

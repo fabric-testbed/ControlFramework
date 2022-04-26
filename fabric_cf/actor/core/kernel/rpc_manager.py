@@ -132,17 +132,17 @@ class RPCManager:
     def stop(self):
         self.do_stop()
 
-    def claim_delegation(self, *, delegation: ABCDelegation, id_token: str = None):
+    def claim_delegation(self, *, delegation: ABCDelegation):
         self.validate_delegation(delegation=delegation)
         self.do_claim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
                                  delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                                 caller=delegation.get_slice_object().get_owner(), id_token=id_token)
+                                 caller=delegation.get_slice_object().get_owner())
 
-    def reclaim_delegation(self, *, delegation: ABCDelegation, id_token: str = None):
+    def reclaim_delegation(self, *, delegation: ABCDelegation):
         self.validate_delegation(delegation=delegation)
         self.do_reclaim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
                                    delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                                   caller=delegation.get_slice_object().get_owner(), id_token=id_token)
+                                   caller=delegation.get_slice_object().get_owner())
 
     def ticket(self, *, reservation: ABCClientReservation):
         self.validate(reservation=reservation, check_requested=True)
@@ -228,7 +228,7 @@ class RPCManager:
                                  callback=callback, caller=reservation.get_actor().get_identity())
 
     def query(self, *, actor: ABCActorMixin, remote_actor: ABCActorProxy, callback: ABCCallbackProxy,
-              query: dict, handler: ABCQueryResponseHandler, id_token: str):
+              query: dict, handler: ABCQueryResponseHandler):
         if actor is None:
             raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("actor"))
         if remote_actor is None:
@@ -240,7 +240,7 @@ class RPCManager:
         if handler is None:
             raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("handler"))
         self.do_query(actor=actor, remote_actor=remote_actor, local_actor=callback, query=query,
-                      handler=handler, caller=callback.get_identity(), id_token=id_token)
+                      handler=handler, caller=callback.get_identity())
 
     def query_result(self, *, actor: ABCActorMixin, remote_actor: ABCCallbackProxy, request_id: str, response: dict,
                      caller: AuthToken):
@@ -296,9 +296,9 @@ class RPCManager:
         self.thread_pool.shutdown(wait=True)
 
     def do_claim_delegation(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, delegation: ABCDelegation,
-                            callback: ABCClientCallbackProxy, caller: AuthToken, id_token: str = None):
+                            callback: ABCClientCallbackProxy, caller: AuthToken):
         state = proxy.prepare_claim_delegation(delegation=delegation, callback=callback,
-                                               caller=caller, id_token=id_token)
+                                               caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ClaimDelegation)
 
@@ -310,9 +310,9 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_reclaim_delegation(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, delegation: ABCDelegation,
-                              callback: ABCClientCallbackProxy, caller: AuthToken, id_token: str = None):
+                              callback: ABCClientCallbackProxy, caller: AuthToken):
         state = proxy.prepare_reclaim_delegation(delegation=delegation, callback=callback,
-                                                 caller=caller, id_token=id_token)
+                                                 caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ReclaimDelegation)
 
@@ -418,8 +418,8 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_query(self, *, actor: ABCActorMixin, remote_actor: ABCActorProxy, local_actor: ABCCallbackProxy,
-                 query: dict, handler: ABCQueryResponseHandler, caller: AuthToken, id_token: str):
-        state = remote_actor.prepare_query(callback=local_actor, query=query, caller=caller, id_token=id_token)
+                 query: dict, handler: ABCQueryResponseHandler, caller: AuthToken):
+        state = remote_actor.prepare_query(callback=local_actor, query=query, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.Query)
         rpc = RPCRequest(request=state, actor=actor, proxy=remote_actor, handler=handler)
@@ -511,7 +511,6 @@ class RPCManager:
     def queued(self):
         with self.stats_lock:
             self.num_queued += 1
-            #print(f"Queued: {self.num_queued}")
 
     def de_queued(self):
         with self.stats_lock:
@@ -519,7 +518,6 @@ class RPCManager:
                 raise RPCException(message="De-queued invoked, but nothing is queued!!!")
 
             self.num_queued -= 1
-            #print(f"DeQueued: {self.num_queued}")
             if self.num_queued == 0:
                 self.stats_lock.notify_all()
 

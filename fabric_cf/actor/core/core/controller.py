@@ -168,11 +168,11 @@ class Controller(ActorMixin, ABCController):
                         extend.fail(message="unexpected extend failure {}".format(e))
 
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
-                                broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
+                                broker: ABCBrokerProxy = None) -> ABCDelegation:
         raise ControllerException("Not implemented")
 
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
-                                  broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
+                                  broker: ABCBrokerProxy = None) -> ABCDelegation:
         raise ControllerException("Not implemented")
 
     def close_expiring(self):

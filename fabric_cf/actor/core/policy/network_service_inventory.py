@@ -39,6 +39,18 @@ from fabric_cf.actor.core.util.id import ID
 
 
 class NetworkServiceInventory(InventoryForType):
+    @staticmethod
+    def __extract_vlan_range(*, labels: Labels) -> List[int] or None:
+        vlan_range = None
+        if labels is None:
+            return vlan_range
+        if labels.vlan_range is not None:
+            vlans = labels.vlan_range.split("-")
+            vlan_range = list(range(int(vlans[0]), int(vlans[1])))
+        elif labels.vlan is not None:
+            vlan_range = [int(labels.vlan)]
+        return vlan_range
+
     def __exclude_allocated_vlans(self, *, available_vlan_range: List[int], bqm_ifs: InterfaceSliver,
                                   existing_reservations: List[ABCReservationMixin]) -> List[int]:
         # Exclude the already allocated VLANs and subnets
@@ -123,22 +135,16 @@ class NetworkServiceInventory(InventoryForType):
                         return requested_ifs
 
                 delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=mpls_ns.get_label_delegations())
-                vlans = None
-                vlan_range = []
-                if delegated_label.vlan_range is not None:
-                    vlans = delegated_label.vlan_range.split("-")
-                    vlan_range = list(range(int(vlans[0]), int(vlans[1])))
+                vlan_range = self.__extract_vlan_range(labels=delegated_label)
 
-                if vlans is not None and requested_ifs.labels.vlan is not None and requested_vlan not in vlan_range:
+                if vlan_range is not None and requested_vlan not in vlan_range:
                     raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
                                           msg=f"Vlan for L2 service {requested_vlan} is outside the allowed range "
                                               f"{vlan_range}")
 
-            # Validate the VLAN s
-            if bqm_ifs.labels is not None and bqm_ifs.labels.vlan_range is not None:
-                vlans = bqm_ifs.labels.vlan_range.split("-")
-                vlan_range = list(range(int(vlans[0]), int(vlans[1])))
-
+            # Validate the VLANs
+            vlan_range = self.__extract_vlan_range(labels=bqm_ifs.labels)
+            if vlan_range is not None:
                 vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
                                                             existing_reservations=existing_reservations)
 
@@ -155,12 +161,7 @@ class NetworkServiceInventory(InventoryForType):
                         lab_cap_delegations=ns.get_label_delegations())
 
                     # Get the VLAN range
-                    vlans = None
-                    vlan_range = None
-                    if delegated_label.vlan_range is not None:
-                        vlans = delegated_label.vlan_range.split("-")
-                        vlan_range = list(range(int(vlans[0]), int(vlans[1])))
-
+                    vlan_range = self.__extract_vlan_range(labels=delegated_label)
                     vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
                                                                 existing_reservations=existing_reservations)
 

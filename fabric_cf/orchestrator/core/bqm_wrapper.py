@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fim.user import GraphFormat
 
@@ -50,7 +50,7 @@ class BqmWrapper:
         Determine if it's time to refresh the BQM
         @return True -> On first attempt or last query time is after refresh Interval; False otherwise
         """
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         if self.last_query_time is None or \
                 ((current_time - self.last_query_time).seconds > self.refresh_interval_in_seconds):
             return True
@@ -64,7 +64,7 @@ class BqmWrapper:
         """
         self.graph_format = graph_format
         self.bqm = bqm
-        self.last_query_time = datetime.utcnow()
+        self.last_query_time = datetime.now(timezone.utc)
 
     def get_bqm(self) -> str:
         """

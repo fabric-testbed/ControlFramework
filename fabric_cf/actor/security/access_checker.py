@@ -55,7 +55,7 @@ class AccessChecker:
             return token
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
-        oauth_config = GlobalsSingleton.get().get_config().get_global_config().get_oauth_config()
+        oauth_config = GlobalsSingleton.get().get_config().get_global_config().get_oauth()
         jwt_validator = GlobalsSingleton.get().get_jwt_validator()
 
         fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator, logger=logger, token=token)

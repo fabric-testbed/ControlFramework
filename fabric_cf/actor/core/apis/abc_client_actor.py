@@ -165,7 +165,7 @@ class ABCClientActor(ABCActorMixin):
 
     @abstractmethod
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
-                                broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
+                                broker: ABCBrokerProxy = None) -> ABCDelegation:
         """
         Claims already exported resources from the given broker. The delegation
         will be stored in the default slice.
@@ -173,7 +173,6 @@ class ABCClientActor(ABCActorMixin):
         @param delegation_id delegation identifier of the exported delegation
         @param slice_object slice
         @param broker broker proxy
-        @param id_token id token
 
         @returns delegation
         @raises Exception in case of failure
@@ -181,7 +180,7 @@ class ABCClientActor(ABCActorMixin):
 
     @abstractmethod
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
-                                  broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
+                                  broker: ABCBrokerProxy = None) -> ABCDelegation:
         """
         Reclaims already exported resources from the given broker. The delegation
         will be stored in the default slice.
@@ -189,7 +188,6 @@ class ABCClientActor(ABCActorMixin):
         @param delegation_id delegation identifier of the exported delegation
         @param slice_object slice
         @param broker broker proxy
-        @param id_token id token
 
         @returns delegation
         @raises Exception in case of failure

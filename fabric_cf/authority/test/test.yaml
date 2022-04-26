@@ -28,8 +28,8 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  kafka-server: 152.54.15.56:29092
-  kafka-schema-registry-url: http://152.54.15.56:8081
+  kafka-server: 152.54.15.53:29092
+  kafka-schema-registry-url: http://152.54.15.53:8081
   kafka-key-schema: ../../../schema/key.avsc
   kafka-value-schema: ../../../schema/message.avsc
   kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
@@ -79,7 +79,7 @@ database:
   db-user: fabric
   db-password: fabric
   db-name: am
-  db-host: 152.54.15.56:5432
+  db-host: 152.54.15.53:5432
 
 container:
   container.guid: site1-am-conainer
@@ -104,8 +104,8 @@ time:
   time.manual: false
 
 pdp:
-  url: http://localhost:8082/services/pdp
-  enable: False
+  url: http://localhost:8080/services/pdp
+  enable: True
 
 neo4j:
   url: bolt://localhost:7687

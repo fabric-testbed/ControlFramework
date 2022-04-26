@@ -27,7 +27,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from datetime import datetime
+from datetime import datetime, timezone
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
 from fabric_cf.actor.core.apis.abc_kernel_reservation import ABCKernelReservation
 from fabric_cf.actor.core.common.exceptions import ReservationException
@@ -608,7 +608,7 @@ class Reservation(ABCKernelReservation):
 
         self.set_dirty()
         self.state_transition = True
-        self.last_transition_time = datetime.utcnow()
+        self.last_transition_time = datetime.now(timezone.utc)
 
     def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         self.internal_error(err="abstract update_lease trap")
@@ -677,9 +677,8 @@ class Reservation(ABCKernelReservation):
         if self.last_transition_time is None:
             return False
 
-        current_time = datetime.utcnow()
+        current_time = datetime.now(timezone.utc)
         if (current_time - self.last_transition_time).seconds > timeout:
-            print("Return True")
             return True
 
         return False

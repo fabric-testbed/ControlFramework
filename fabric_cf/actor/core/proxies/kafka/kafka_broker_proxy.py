@@ -102,21 +102,20 @@ class KafkaBrokerProxy(KafkaProxy, ABCBrokerProxy):
                                                                                        self.kafka_topic, producer))
 
     def _prepare_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
-                            caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
+                            caller: AuthToken) -> ABCRPCRequestState:
         request = KafkaProxyRequestState()
         request.delegation = self.pass_broker_delegation(delegation=delegation, auth=caller)
         request.callback_topic = callback.get_kafka_topic()
         request.caller = caller
-        request.id_token = id_token
         return request
 
     def prepare_claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
-                                 caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
-        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+                                 caller: AuthToken) -> ABCRPCRequestState:
+        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller)
 
     def prepare_reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
-                                   caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
-        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+                                   caller: AuthToken) -> ABCRPCRequestState:
+        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller)
 
     def _prepare(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
                  caller: AuthToken) -> ABCRPCRequestState:

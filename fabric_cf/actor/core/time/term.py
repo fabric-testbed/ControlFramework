@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import TimeException
@@ -110,7 +110,7 @@ class Term:
         if start is not None:
             self.start_time = start
         else:
-            self.start_time = datetime.utcnow()
+            self.start_time = datetime.now(timezone.utc)
         # End time: last valid millisecond.
         if end is not None:
             self.end_time = end
@@ -128,7 +128,7 @@ class Term:
             if start is not None:
                 self.new_start_time = start
             else:
-                self.new_start_time = datetime.utcnow()
+                self.new_start_time = datetime.now(timezone.utc)
         # Start cycle. Used only for debugging.
         self.cycle_start = 0
         # End cycle. Used only for debugging.

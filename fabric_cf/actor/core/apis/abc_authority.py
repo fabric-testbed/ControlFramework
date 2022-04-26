@@ -55,27 +55,28 @@ class ABCAuthority(ABCServerActor):
 
     @abstractmethod
     def extend_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken = None,
-                     id_token: str = None):
+                     callback: ABCControllerCallbackProxy = None,):
         """
         Processes an extend lease request for the reservation.
 
         @param reservation reservation representing a request for a lease
                extension
         @param caller : caller
-        @param id_token : id token
+        @param callback : callback
 
         @raises Exception in case of error
         """
 
     @abstractmethod
-    def modify_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken, id_token: str = None):
+    def modify_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
+                     callback: ABCControllerCallbackProxy = None,):
         """
         Processes an modify lease request for the reservation.
 
         @param reservation :  reservation representing a request for a lease
                modification
         @param caller : caller
-        @param id_token : id token
+        @param callback : callback
 
         @raises Exception in case of error
         """
@@ -94,14 +95,13 @@ class ABCAuthority(ABCServerActor):
 
     @abstractmethod
     def redeem(self, *, reservation: ABCReservationMixin, callback: ABCControllerCallbackProxy = None,
-               caller: AuthToken = None, id_token: str = None):
+               caller: AuthToken = None):
         """
         Processes a redeem request for the reservation.
 
         @param reservation reservation representing a request for a new lease
         @param callback callback
         @param caller caller
-        @param id_token id token
         @raises Exception in case of error
         """
 

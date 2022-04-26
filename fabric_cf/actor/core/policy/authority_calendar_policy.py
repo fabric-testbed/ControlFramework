@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Tuple
 
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
@@ -459,7 +459,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         @return true if the reservation expired; otherwise, return false
         @raises Exception in case of error
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         end = reservation.get_term().get_end_time()
 
         return now > end

@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -125,17 +125,14 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                         slice_obj = self.db.get_slice(slice_id=slice_id)
                         if slice_obj is not None:
                             slice_list = [slice_obj]
-
-                    elif slice_name is not None:
+                    elif slice_name is not None and email is not None:
                         slice_list = self.db.get_slice_by_name(slice_name=slice_name, email=email)
+                    elif email is not None and state is not None:
+                        slice_list = self.db.get_slice_by_email_state(email=email, state=state)
                     elif email is not None:
-                        if state is None:
-                            slice_list = self.db.get_slice_by_email(email=email)
-                        else:
-                            slice_list = self.db.get_slice_by_email_state(email=email, state=state)
+                        slice_list = self.db.get_slice_by_email(email=email)
                     else:
                         slice_list = self.db.get_slices()
-
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -169,10 +166,11 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.set_owner(owner=self.actor.get_identity())
                 slice_obj_new.get_owner().set_oidc_sub_claim(oidc_sub_claim=slice_obj.get_owner().get_oidc_sub_claim())
                 slice_obj_new.get_owner().set_email(email=slice_obj.get_owner().get_email())
+                slice_obj_new.get_owner().set_token(token=slice_obj.get_owner().get_token())
                 slice_obj_new.set_graph_id(graph_id=slice_obj.graph_id)
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
-                slice_obj_new.set_lease_start(lease_start=datetime.utcnow())
+                slice_obj_new.set_lease_start(lease_start=datetime.now(timezone.utc))
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)
@@ -259,7 +257,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     try:
                         self.actor.get_plugin().get_database().update_slice(slice_object=slice_obj)
                     except Exception as e:
-                        print("Could not commit slice update {}".format(e))
+                        self.logger.error("Could not commit slice update {}".format(e))
                         result.set_code(ErrorCodes.ErrorDatabaseError.value)
                         result.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                         result = ManagementObject.set_exception_details(result=result, e=e)
@@ -470,7 +468,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     try:
                         self.actor.get_plugin().get_database().update_reservation(reservation=r)
                     except Exception as e:
-                        print("Could not commit slice update {}".format(e))
+                        self.logger.error("Could not commit slice update {}".format(e))
                         result.set_code(ErrorCodes.ErrorDatabaseError.value)
                         result.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                         result = ManagementObject.set_exception_details(result=result, e=e)

@@ -25,14 +25,12 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.reservation_avro import ReservationAvro
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fabric_mb.message_bus.messages.update_delegation_avro import UpdateDelegationAvro
-from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.apis.abc_concrete_set import ABCConcreteSet
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
@@ -125,7 +123,7 @@ class ActorService:
             query = request.properties
             callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingQueryRPC(request_type=RPCRequestType.Query, message_id=ID(uid=request.get_message_id()),
-                                   query=query, caller=auth_token, callback=callback, id_token=request.get_id_token())
+                                   query=query, caller=auth_token, callback=callback)
         except Exception as e:
             self.logger.error("Invalid query request: {}".format(e))
             raise e
@@ -137,7 +135,7 @@ class ActorService:
         try:
             query = request.properties
             rpc = IncomingQueryRPC(request_type=RPCRequestType.QueryResult, message_id=ID(uid=request.get_message_id()),
-                                   query=query, caller=auth_token, request_id=ID(uid=request.request_id), id_token=None)
+                                   query=query, caller=auth_token, request_id=ID(uid=request.request_id))
         except Exception as e:
             self.logger.error("Invalid query_result request: {}".format(e))
             raise e

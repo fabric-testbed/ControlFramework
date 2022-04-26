@@ -118,16 +118,15 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
 
-    def reclaim_delegation(self, *, delegation: ABCDelegation, id_token: str):
+    def reclaim_delegation(self, *, delegation: ABCDelegation):
         """
         Processes a requests to claim new ticket for previously exported
         resources (broker role). On the client side this request is issued by
         @param delegation the delegation being claimed
-        @param id_token id token
         @throws Exception
         """
         try:
-            delegation.reclaim(id_token=id_token)
+            delegation.reclaim()
             self.plugin.get_database().update_delegation(delegation=delegation)
         except Exception as e:
             err = f"An error occurred during reclaim for delegation #{delegation.get_delegation_id()}"
@@ -868,17 +867,16 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during reserve for reservation #{reservation.get_reservation_id()}", e=e)
 
-    def delegate(self, *, delegation: ABCDelegation, id_token: str = None):
+    def delegate(self, *, delegation: ABCDelegation):
         """
         Handles a delegate operation for the delegation.
         Broker: process a request for a new delegate.
         Authority: process a request for a new delegate.
         @param delegation delegation
-        @param id_token id token
         @throws Exception
         """
         try:
-            delegation.delegate(policy=self.policy, id_token=id_token)
+            delegation.delegate(policy=self.policy)
             self.plugin.get_database().update_delegation(delegation=delegation)
             if not delegation.is_closed():
                 delegation.service_delegate()

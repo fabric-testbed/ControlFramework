@@ -90,13 +90,13 @@ class BrokerDelegation(Delegation):
     def claim(self):
         raise DelegationException("Not supported on Broker Delegation")
 
-    def delegate(self, policy: ABCPolicy, id_token: str = None):
+    def delegate(self, policy: ABCPolicy):
         self.policy = policy
 
         if self.state == DelegationState.Nascent or self.state == DelegationState.Reclaimed:
             if self.exported:
                 self.sequence_out += 1
-                RPCManagerSingleton.get().claim_delegation(delegation=self, id_token=id_token)
+                RPCManagerSingleton.get().claim_delegation(delegation=self)
                 self.transition(prefix="delegate", state=DelegationState.Delegated)
             else:
                 self.logger.error(
@@ -114,23 +114,22 @@ class BrokerDelegation(Delegation):
                 self.error_string_prefix.format(self, "initiating delegate on defunct Delegation"))
             raise DelegationException("initiating delegate on defunct Delegation")
 
-    def reclaim(self, id_token: str = None):
+    def reclaim(self):
         if self.state == DelegationState.Delegated:
             # We are an agent asked to return a pre-reserved "will call" ticket
             # to a client. Set mustSendUpdate so that the update will be sent
             # on the next probe.
             self.transition(prefix="reclaimed", state=DelegationState.Reclaimed)
             self.policy.update_delegation_complete(delegation=self, reclaim=True)
-            self.service_reclaim(id_token=id_token)
+            self.service_reclaim()
         else:
             self.logger.error(
                 self.error_string_prefix.format(self, self.invalid_state_prefix.format('reclaim', 'reclaim')))
             raise DelegationException(self.invalid_state_prefix.format('reclaim', 'reclaim'))
 
-    def service_reclaim(self, id_token: str = None):
+    def service_reclaim(self):
         """
         Service reclaim
-        @param id_token identity token
         """
         self.logger.debug("Servicing reclaim")
         if self.callback is None:
@@ -141,7 +140,7 @@ class BrokerDelegation(Delegation):
         try:
             if self.exported:
                 self.sequence_out += 1
-                RPCManagerSingleton.get().reclaim_delegation(delegation=self, id_token=id_token)
+                RPCManagerSingleton.get().reclaim_delegation(delegation=self)
         except Exception as e:
             # Note that this may result in a "stuck" delegation... not much we
             # can do if the receiver has failed or rejects our update. We will

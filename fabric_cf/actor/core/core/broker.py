@@ -162,7 +162,7 @@ class Broker(ActorMixin, ABCBrokerMixin):
                     self.logger.error("unexpected extend failure for #{}".format(reservation.get_reservation_id()))
 
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
-                                broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
+                                broker: ABCBrokerProxy = None) -> ABCDelegation:
         if delegation_id is None:
             raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT, msg="delegation_id")
 
@@ -181,11 +181,11 @@ class Broker(ActorMixin, ABCBrokerMixin):
         delegation.set_exported(value=True)
         delegation.set_slice_object(slice_object=slice_object)
 
-        self.wrapper.delegate(delegation=delegation, destination=self, id_token=id_token)
+        self.wrapper.delegate(delegation=delegation, destination=self)
         return delegation
 
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
-                                  broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
+                                  broker: ABCBrokerProxy = None) -> ABCDelegation:
         if delegation_id is None:
             raise BrokerException(error_code=ExceptionErrorCode.INVALID_ARGUMENT, msg="delegation_id")
 
@@ -212,24 +212,19 @@ class Broker(ActorMixin, ABCBrokerMixin):
         delegation.prepare(callback=callback, logger=self.logger)
         delegation.validate_outgoing()
 
-        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=broker, callback=callback,
-                                                id_token=id_token)
+        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=broker, callback=callback)
 
         return delegation
 
-    def claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken,
-                         id_token: str = None):
+    def claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
-        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback,
-                                              id_token=id_token)
+        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback)
 
-    def reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken,
-                           id_token: str = None):
+    def reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
-        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback,
-                                                id_token=id_token)
+        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback)
 
     def close_expiring(self, *, cycle: int):
         """
@@ -288,11 +283,11 @@ class Broker(ActorMixin, ABCBrokerMixin):
             self.wrapper.extend_ticket_request(reservation=reservation, caller=reservation.get_client_auth_token(),
                                                compare_sequence_numbers=False)
 
-    def extend_ticket(self, *, reservation: ABCReservationMixin, caller: AuthToken, id_token: str = None):
+    def extend_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken):
         if not self.recovered or self.is_stopped():
             raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
         self.wrapper.extend_ticket_request(reservation=reservation, caller=caller,
-                                           compare_sequence_numbers=True, id_token=id_token)
+                                           compare_sequence_numbers=True, callback=callback)
 
     def get_broker(self, *, guid: ID) -> ABCBrokerProxy:
         return self.registry.get_broker(guid=guid)
@@ -354,13 +349,12 @@ class Broker(ActorMixin, ABCBrokerMixin):
             self.wrapper.ticket_request(reservation=reservation, caller=reservation.get_client_auth_token(),
                                         callback=reservation.get_callback(), compare_seq_numbers=False)
 
-    def ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken,
-               id_token: str = None):
+    def ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
             raise BrokerException(error_code=ExceptionErrorCode.UNEXPECTED_STATE, msg="of actor")
 
         self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback,
-                                    compare_seq_numbers=True, id_token=id_token)
+                                    compare_seq_numbers=True)
 
     def relinquish(self, *, reservation: ABCReservationMixin, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
@@ -374,7 +368,7 @@ class Broker(ActorMixin, ABCBrokerMixin):
 
     def update_lease(self, *, reservation: ABCReservationMixin, update_data, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
-            raise BrokerException("This actor cannot receive calls")
+            raise BrokerException(msg="This actor cannot receive calls")
 
         self.wrapper.update_lease(reservation=reservation, update_data=update_data, caller=caller)
 

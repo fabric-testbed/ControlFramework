@@ -75,7 +75,7 @@ class ABCBrokerProxy(ABCActorProxy):
 
     @abstractmethod
     def prepare_claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
-                                 caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
+                                 caller: AuthToken) -> ABCRPCRequestState:
         """
         Prepare a claim delegation
         @params delegation: delegation
@@ -85,7 +85,7 @@ class ABCBrokerProxy(ABCActorProxy):
 
     @abstractmethod
     def prepare_reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
-                                   caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
+                                   caller: AuthToken) -> ABCRPCRequestState:
         """
         Prepare a reclaim delegation
         @params delegation: delegation

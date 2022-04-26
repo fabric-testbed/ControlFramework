@@ -37,7 +37,6 @@ class RPCRequestState(ABCRPCRequestState):
         self.caller = None
         self.rtype = None
         self.message_id = ID()
-        self.id_token = None
 
     def get_caller(self) -> AuthToken:
         return self.caller
@@ -53,17 +52,3 @@ class RPCRequestState(ABCRPCRequestState):
 
     def get_message_id(self) -> ID:
         return self.message_id
-
-    def get_id_token(self) -> str:
-        """
-        Returns id token
-        @return  id token
-        """
-        return self.id_token
-
-    def set_id_token(self, id_token: str):
-        """
-        Set id token
-        @param id_token id token
-        """
-        self.id_token = id_token

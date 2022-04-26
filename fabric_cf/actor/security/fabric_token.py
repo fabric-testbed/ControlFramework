@@ -120,3 +120,6 @@ class FabricToken:
                 tag_list.append(tag)
                 break
         return project, tag_list
+
+    def __str__(self):
+        return f"Decoded Token: {self.decoded_token}"

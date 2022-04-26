@@ -286,8 +286,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
 
     @abstractmethod
     def query(self, *, query: dict = None, caller: AuthToken = None,
-              actor_proxy: ABCActorProxy = None, handler: ABCQueryResponseHandler = None,
-              id_token: str = None):
+              actor_proxy: ABCActorProxy = None, handler: ABCQueryResponseHandler = None):
         """
         Processes a query request from the specified caller.
 
@@ -296,7 +295,6 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
             caller: caller
             actor_proxy: actor proxy
             handler: handler
-            id_token: id_token
 
         Returns:
             query response

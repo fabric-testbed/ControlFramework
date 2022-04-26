@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import json
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
@@ -93,7 +94,8 @@ class PdpAuth:
         Returns Headers for REST APIs
         """
         headers = {
-            'Content-Type': "application/json"
+            "accept": "application/json",
+            "Content-Type": "application/json"
         }
         return headers
 
@@ -125,12 +127,14 @@ class PdpAuth:
 
         attrs.set_subject_attributes(subject_id=fabric_token.get_email(), project=project, project_tag=tag_list)
 
+        attrs.set_resource_subject_and_project(subject_id=fabric_token.get_email(), project=project)
+
         # finally action
         # action can be any string matching ActionId enum
         attrs.set_action(action_id.name)
 
         # now you can produce the json
-        request_json = attrs.transform_to_pdp_request()
+        request_json = attrs.transform_to_pdp_request(as_json=False)
 
         return request_json
 
@@ -153,18 +157,16 @@ class PdpAuth:
 
         self.logger.debug("PDP Auth Request: {}".format(pdp_request))
 
+        # send request to PDP
         response = requests.post(url=self.config['url'], headers=self._headers(), json=pdp_request)
+        response_json = response.json()
 
-        if response.status_code != 200:
-            raise PdpAuthException('Authorization check failure: {}'.format(response))
-
-        if response.json()["Response"][0]["Decision"] == "Permit":
-            if self.logger is not None:
-                self.logger.debug("PDP response: {}".format(response.json()))
+        if response.status_code == 200 and response_json["Response"][0]["Decision"] == "Permit":
+            self.logger.debug("PDP response: {}".format(response_json))
         else:
-            if self.logger is not None:
-                self.logger.debug("PDP response: {}".format(response.json()))
-            raise PdpAuthException('Authorization check failure: {}'.format(response.json()))
+            self.logger.error("PDP response: {}".format(response_json))
+            msg = response_json["Response"][0]["AssociatedAdvice"][0]["AttributeAssignment"][0]["Value"]
+            raise PdpAuthException(f"PDP Authorization check failed - {msg}")
 
 
 if __name__ == '__main__':
