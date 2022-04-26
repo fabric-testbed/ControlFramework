@@ -252,11 +252,10 @@ class ABCDelegation(ABC):
         """
 
     @abstractmethod
-    def delegate(self, policy: ABCPolicy, id_token: str = None):
+    def delegate(self, policy: ABCPolicy):
         """
         Check if delegation can be delegated and state transition
         @param policy policy
-        @param id_token id token
         """
 
     @abstractmethod
@@ -266,10 +265,9 @@ class ABCDelegation(ABC):
         """
 
     @abstractmethod
-    def reclaim(self, id_token: str = None):
+    def reclaim(self):
         """
         Reclaim the delegation
-        @param id_token id token
         """
 
     @abstractmethod

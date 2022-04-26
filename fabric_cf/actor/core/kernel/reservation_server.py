@@ -230,8 +230,8 @@ class ReservationServer(Reservation, ABCKernelServerReservationMixin):
         Fail and notify
         @param message message
         """
-        self.generate_update()
         self.fail(message=message)
+        self.generate_update()
 
     def fail_warn(self, *, message: str):
         self.update_data.error(message=message)

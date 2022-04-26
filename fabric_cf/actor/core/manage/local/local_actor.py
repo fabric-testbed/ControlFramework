@@ -29,6 +29,7 @@ import traceback
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
@@ -55,7 +56,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                    email: str = None, state: List[int] = None) -> List[SliceAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, id_token=id_token,
+            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth,
                                              slice_name=slice_name, email=email, state=state)
             self.last_status = result.status
 
@@ -69,7 +70,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def remove_slice(self, *, slice_id: ID, id_token: str = None) -> bool:
         self.clear_last()
         try:
-            result = self.manager.remove_slice(slice_id=slice_id, caller=self.auth, id_token=id_token)
+            result = self.manager.remove_slice(slice_id=slice_id, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0
@@ -84,8 +85,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         self.clear_last()
         try:
             result = self.manager.get_reservations(caller=self.auth, state=state, slice_id=slice_id, rid=rid,
-                                                   id_token=id_token, oidc_claim_sub=oidc_claim_sub, email=email,
-                                                   rid_list=rid_list)
+                                                   oidc_claim_sub=oidc_claim_sub, email=email, rid_list=rid_list)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -99,7 +99,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def remove_reservation(self, *, rid: ID, id_token: str = None) -> bool:
         self.clear_last()
         try:
-            result = self.manager.remove_reservation(caller=self.auth, rid=rid, id_token=id_token)
+            result = self.manager.remove_reservation(caller=self.auth, rid=rid)
             self.last_status = result
 
             return result.get_code() == 0
@@ -112,7 +112,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def close_reservation(self, *, rid: ID, id_token: str = None) -> bool:
         self.clear_last()
         try:
-            result = self.manager.close_reservation(caller=self.auth, rid=rid, id_token=id_token)
+            result = self.manager.close_reservation(caller=self.auth, rid=rid)
             self.last_status = result
 
             return result.get_code() == 0
@@ -128,10 +128,10 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def get_guid(self) -> ID:
         return self.manager.get_actor().get_guid()
 
-    def add_slice(self, *, slice_obj: SliceAvro, id_token: str) -> ID:
+    def add_slice(self, *, slice_obj: SliceAvro, id_token: str = None) -> ID:
         self.clear_last()
         try:
-            result = self.manager.add_slice(slice_obj=slice_obj, caller=self.auth, id_token=id_token)
+            result = self.manager.add_slice(slice_obj=slice_obj, caller=self.auth)
             self.last_status = result.status
 
             if self.last_status.get_code() == 0 and result.get_result() is not None:
@@ -145,7 +145,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def update_slice(self, *, slice_obj: SliceAvro) -> bool:
         self.clear_last()
         try:
-            result = self.manager.add_slice(slice_obj=slice_obj, caller=self.auth)
+            result = self.manager.update_slice(slice_obj=slice_obj, caller=self.auth)
             self.last_status = result
 
             if self.last_status.get_code() == 0:
@@ -176,7 +176,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def close_reservations(self, *, slice_id: ID, id_token: str = None) -> bool:
         self.clear_last()
         try:
-            result = self.manager.close_slice_reservations(caller=self.auth, slice_id=slice_id, id_token=id_token)
+            result = self.manager.close_slice_reservations(caller=self.auth, slice_id=slice_id)
             self.last_status = result
 
             if self.last_status.get_code() == 0:
@@ -206,8 +206,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
                         delegation_id: str = None, id_token: str = None) -> List[DelegationAvro]:
         self.clear_last()
         try:
-            result = self.manager.get_delegations(caller=self.auth, slice_id=slice_id, did=delegation_id,
-                                                  id_token=id_token)
+            result = self.manager.get_delegations(caller=self.auth, slice_id=slice_id, did=delegation_id)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

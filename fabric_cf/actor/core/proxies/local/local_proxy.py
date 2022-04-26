@@ -66,13 +66,11 @@ class LocalProxy(Proxy, ABCCallbackProxy):
             incoming = None
             if request.get_type() == RPCRequestType.Query:
                 incoming = IncomingQueryRPC(request_type=RPCRequestType.Query, message_id=request.get_message_id(),
-                                            query=request.query, caller=request.get_caller(),
-                                            id_token=request.get_id_token(), callback=request.callback)
+                                            query=request.query, caller=request.get_caller(), callback=request.callback)
 
             elif request.get_type() == RPCRequestType.QueryResult:
                 incoming = IncomingQueryRPC(request_type=RPCRequestType.QueryResult,
                                             message_id=request.get_message_id(), query=request.query,
-                                            id_token=request.get_id_token(),
                                             caller=request.get_caller(), request_id=request.request_id)
 
             elif request.get_type() == RPCRequestType.Ticket or request.get_type() == RPCRequestType.Redeem or \
@@ -101,9 +99,8 @@ class LocalProxy(Proxy, ABCCallbackProxy):
         except Exception as e:
             raise ProxyException("Error while processing RPC request{} {}".format(RPCError.InvalidRequest, e))
 
-    def prepare_query(self, *, callback: ABCCallbackProxy, query: dict, caller: AuthToken, id_token: str):
+    def prepare_query(self, *, callback: ABCCallbackProxy, query: dict, caller: AuthToken):
         state = self.LocalProxyRequestState()
-        state.id_token = id_token
         state.query = query
         state.callback = callback
         return state

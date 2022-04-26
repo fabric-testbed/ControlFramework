@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
@@ -66,7 +66,7 @@ class ReservationConverter:
         ticket.set_broker(str(self.broker))
         ticket.set_units(1)
         ticket.set_resource_type(str(sliver.get_type()))
-        start = datetime.utcnow()
+        start = datetime.now(timezone.utc)
         end = start + timedelta(hours=Constants.DEFAULT_LEASE_IN_HOURS)
         if end_time is not None:
             end = end_time

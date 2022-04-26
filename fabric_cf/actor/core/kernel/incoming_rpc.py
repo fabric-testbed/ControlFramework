@@ -42,8 +42,7 @@ class IncomingRPC:
     Represents an incoming RPC message
     """
     def __init__(self, *, message_id: ID, request_type: RPCRequestType,
-                 callback: ABCCallbackProxy, caller: AuthToken,
-                 id_token: str = None):
+                 callback: ABCCallbackProxy, caller: AuthToken):
         self.request_type = request_type
         self.message_id = message_id
         self.callback = callback
@@ -51,7 +50,6 @@ class IncomingRPC:
         self.response_handler = None
         self.error = None
         self.request_id = None
-        self.id_token = id_token
 
     def get_request_type(self) -> RPCRequestType:
         """
@@ -122,13 +120,6 @@ class IncomingRPC:
         @return request_id
         """
         return self.request_id
-
-    def get_id_token(self) -> str:
-        """
-        Get id_token
-        @return id_token
-        """
-        return self.id_token
 
     def __str__(self):
         return "MessageID={} requestType={} caller={}:{}".format(self.message_id, self.request_type,

@@ -23,6 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from datetime import datetime
+
+from fim.slivers.base_sliver import BaseSliver
+from fim.user.topology import ExperimentTopology
+
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.security.fabric_token import FabricToken
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType, PdpAuth
@@ -33,16 +38,16 @@ class AccessChecker:
     Check access for Incoming operation against Policy Decision Point PDP
     """
     @staticmethod
-    def check_access(*, action_id: ActionId, resource_type: ResourceType, token: str,
-                     resource_id: str = None, logger=None, actor_type: ActorType) -> FabricToken:
+    def check_access(*, action_id: ActionId, token: str,
+                     resource: BaseSliver or ExperimentTopology = None,
+                     lease_end_time: datetime = None, logger=None) -> FabricToken or None:
         """
         Check access for Incoming operation against Policy Decision Point PDP
         :param action_id action id
-        :param resource_type resource type
         :param token fabric token
-        :param resource_id resource id
+        :param resource resource
+        :param lease_end_time lease end time
         :param logger logger
-        :param actor_type actor type
 
         :returns decoded fabric token on success; throws exception in case of failure
         """
@@ -50,14 +55,15 @@ class AccessChecker:
             return token
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
+        oauth_config = GlobalsSingleton.get().get_config().get_global_config().get_oauth()
+        jwt_validator = GlobalsSingleton.get().get_jwt_validator()
 
-        fabric_token = FabricToken(logger=logger, token=token)
+        fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator, logger=logger, token=token)
         fabric_token.validate()
 
         pdp_auth = PdpAuth(config=pdp_config, logger=logger)
-        pdp_auth.check_access(fabric_token=fabric_token.get_decoded_token(),
-                              actor_type=actor_type,
-                              action_id=action_id, resource_type=resource_type,
-                              resource_id=resource_id)
+        pdp_auth.check_access(fabric_token=fabric_token,
+                              lease_end_time=lease_end_time,
+                              action_id=action_id, resource=resource)
 
         return fabric_token

@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import TimeException
@@ -174,16 +174,16 @@ class ActorClock:
         @return  the difference, measured in milliseconds, between
                   the current time and midnight, January 1, 1970 UTC.
         """
-        when = datetime.utcnow()
-        epoch = datetime.utcfromtimestamp(0)
+        when = datetime.now(timezone.utc)
+        epoch = datetime.fromtimestamp(0, timezone.utc)
         return int((when - epoch).total_seconds() * 1000)
 
     @staticmethod
     def from_milliseconds(*, milli_seconds) -> datetime:
-        result = datetime.utcfromtimestamp(milli_seconds//1000).replace(microsecond=milli_seconds%1000*1000)
+        result = datetime.fromtimestamp(milli_seconds//1000, timezone.utc).replace(microsecond=milli_seconds%1000*1000)
         return result
 
     @staticmethod
     def to_milliseconds(*, when: datetime) -> int:
-        epoch = datetime.utcfromtimestamp(0)
+        epoch = datetime.fromtimestamp(0, timezone.utc)
         return int((when - epoch).total_seconds() * 1000)

@@ -29,6 +29,8 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fim.user.topology import ExperimentTopology
+
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
 
 
@@ -53,7 +55,7 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def add_slice(self, *, slice_obj: SliceAvro, id_token: str) -> ID:
+    def add_slice(self, *, slice_obj: SliceAvro, id_token: str = None) -> ID:
         """
         Adds a new slice
         @param slice_obj slice

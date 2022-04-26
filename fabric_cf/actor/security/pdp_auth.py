@@ -24,13 +24,19 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import json
-import os
+import logging
+from datetime import datetime, timedelta
 from enum import Enum
-from typing import List
 
 import requests
+from fim.slivers.base_sliver import BaseSliver
+from fim.user.topology import ExperimentTopology
+from fss_utils.jwt_validate import JWTValidator
 
-from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+from fim.authz.attribute_collector import ResourceAuthZAttributes
+
+from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.security.fabric_token import FabricToken
 
 
 class PdpAuthException(Exception):
@@ -54,6 +60,7 @@ class ActionId(Enum):
     """
     Action Id Enumeration
     """
+    noop = 0
     query = 1
     status = 2
     create = 3
@@ -76,44 +83,8 @@ class PdpAuth:
     """
     Responsible for Authorization against PDP
     """
-    co_manage_project_leads_project = 'project-leads'
-    project_lead_role = 'projectLead'
-
-    request = 'Request'
-    attribute = 'Attribute'
-    attribute_id = 'AttributeId'
-    category = 'Category'
-    category_id = 'CategoryId'
-    value = 'Value'
-    email = 'email'
-    subject_id_urn = 'urn:oasis:names:tc:xacml:1.0:subject:subject-id'
-    category_subject_urn = 'urn:oasis:names:tc:xacml:1.0:subject-category:access-subject'
-    category_resource_urn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:resource'
-    resource_type_urn = 'urn:fabric:xacml:attributes:resource-type'
-    resource_id_urn = 'urn:oasis:names:tc:xacml:1.0:resource:resource-id'
-    category_action_urn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:action'
-    action_id_urn = 'urn:oasis:names:tc:xacml:1.0:action:action-id'
-    category_environment_urn = 'urn:oasis:names:tc:xacml:3.0:attribute-category:environment'
-
-    missing_parameter = "Missing {}"
-
-    subject_fabric_role_attribute_json = {
-        "IncludeInResult": False,
-        "AttributeId": "urn:fabric:xacml:attributes:fabric-role",
-        "DataType": "http://www.w3.org/2001/XMLSchema#string",
-        "Value": ["projectMember:project-X"]
-    }
-
-    resource_id_attribute_json = {
-        "IncludeInResult": False,
-        "AttributeId": "urn:oasis:names:tc:xacml:1.0:resource:resource-id",
-        "DataType": "http://www.w3.org/2001/XMLSchema#string",
-        "Value": ["some-delegation"]
-    }
 
     def __init__(self, *, config: dict, logger=None):
-        self.roles_re = 'CO:COU:(.*):members:active'
-        self.project_member = "projectMember:{}"
         self.config = config
         self.logger = logger
 
@@ -123,206 +94,99 @@ class PdpAuth:
         Returns Headers for REST APIs
         """
         headers = {
-            'Content-Type': "application/json"
+            "accept": "application/json",
+            "Content-Type": "application/json"
         }
         return headers
 
-    def get_roles(self, *, fabric_token: dict) -> List[str]:
-        """
-        Get Roles from a fabric token
-        @param fabric_token fabric token
-        @return list of the roles
-        """
-        roles = fabric_token.get('roles', None)
-        if roles is None:
-            raise PdpAuthException(self.missing_parameter.format("roles"))
-
-        return roles
-
-    def update_subject_category(self, *, subject: dict, token: dict) -> dict:
-        """
-        Update the Subject Category in PDP request
-        @param subject subject
-        @param token fabric token
-        @return updated subject category
-        """
-        attributes = subject.get(PdpAuth.attribute, None)
-        if attributes is None:
-            raise PdpAuthException(self.missing_parameter.format("attributes"))
-
-        roles = self.get_roles(fabric_token=token)
-
-        if len(attributes) > 1:
-            raise PdpAuthException("Should only have subject Id Attribute {}".format(subject))
-
-        if attributes[0][PdpAuth.attribute_id] != PdpAuth.subject_id_urn:
-            raise PdpAuthException("Should only have subject Id Attribute {}".format(subject))
-
-        attributes[0][PdpAuth.value] = [token[PdpAuth.email]]
-
-        if len(roles) < 1:
-            raise PdpAuthException("No roles available in Token")
-
-        for r in roles:
-            if r != PdpAuth.co_manage_project_leads_project:
-                attr = self.subject_fabric_role_attribute_json.copy()
-                attr['Value'] = self.project_member.format(r)
-                attributes.append(attr)
-            else:
-                attr = self.subject_fabric_role_attribute_json.copy()
-                attr['Value'] = "projectLead"
-                attributes.append(attr)
-
-        return subject
-
-    def update_resource_category(self, *, resource: dict, resource_type: ResourceType, resource_id: str = None) -> dict:
-        """
-        Update the Resource Category in PDP request
-        @param resource resource
-        @param resource_type resource type
-        @param resource_id resource id
-        @return updated Resource category
-        """
-        attributes = resource.get(PdpAuth.attribute, None)
-        if attributes is None:
-            raise PdpAuthException(self.missing_parameter.format("attributes"))
-
-        if len(attributes) > 1:
-            raise PdpAuthException("Should only have Resource Type Attribute {}".format(resource))
-
-        if attributes[0][PdpAuth.attribute_id] != PdpAuth.resource_type_urn:
-            raise PdpAuthException("Should only have Resource Type Attribute {}".format(resource))
-
-        attributes[0][PdpAuth.value] = [resource_type.name]
-
-        if resource_id is not None:
-            attr = self.resource_id_attribute_json.copy()
-            attr[PdpAuth.value] = resource_id
-            attributes.append(attr)
-
-        return resource
-
-    def update_action_category(self, *, action: dict, action_id: ActionId) -> dict:
-        """
-        Update the Action Category in PDP request
-        @param action action
-        @param action_id action id
-        @return updated Action category
-        """
-        attributes = action.get(PdpAuth.attribute, None)
-        if attributes is None:
-            raise PdpAuthException(self.missing_parameter.format("attributes"))
-
-        if len(attributes) > 1:
-            raise PdpAuthException("Should only have Action-Id Attribute {}".format(action))
-
-        if attributes[0][PdpAuth.attribute_id] != PdpAuth.action_id_urn:
-            raise PdpAuthException("Should only have Action-Id Attribute {}".format(action))
-
-        attributes[0][PdpAuth.value] = [action_id.name]
-
-        return action
-
-    def build_pdp_request(self, *, fabric_token: dict, actor_type: ActorType,
-                          action_id: ActionId, resource_type: ResourceType,
-                          resource_id: str = None) -> dict:
+    @staticmethod
+    def build_pdp_request(*, fabric_token: FabricToken, action_id: ActionId,
+                          resource: BaseSliver or ExperimentTopology, lease_end_time: datetime) -> dict:
         """
         Build PDP Request
         @param fabric_token fabric token
-        @param actor_type action type
         @param action_id Action id
-        @param resource_type resource_type
-        @param resource_id resource_id
+        @param resource: sliver of any type or slice (ExperimentTopology)
+        @param lease_end_time lease end time
         @return PDP request
         """
-        request_file = None
-        if actor_type == ActorType.Orchestrator:
-            request_file = os.path.dirname(__file__) + '/data/orchestrator-request.json'
-        elif actor_type == ActorType.Broker:
-            request_file = os.path.dirname(__file__) + '/data/broker-request.json'
-        elif actor_type == ActorType.Authority:
-            request_file = os.path.dirname(__file__) + '/data/am-request.json'
-        else:
-            raise PdpAuthException("Invalid Actor Type: {}".format(actor_type))
+        attrs = ResourceAuthZAttributes()
+        # collect all resource attributes
+        if resource is not None:
+            attrs.collect_resource_attributes(source=resource)
 
-        request_json = None
-        with open(request_file) as f:
-            request_json = json.load(f)
-            f.close()
+        # additional attributes (slice end date in datetime format)
+        if lease_end_time:
+            attrs.set_lifetime(lease_end_time)
 
-        ## Subject
-        categories = request_json[PdpAuth.request][PdpAuth.category]
-        for c in categories:
-            if c[PdpAuth.category_id] == PdpAuth.category_subject_urn:
-                c = self.update_subject_category(subject=c, token=fabric_token)
+        # next we need to set the owner of the resource and their projects
+        # generally only the id is needed. If action is create, it's not needed at all
+        project, tag_list = fabric_token.get_project_and_tags()
+        if project is None:
+            raise PdpAuthException("No project found in fabric token")
 
-            elif c[PdpAuth.category_id] == PdpAuth.category_resource_urn:
-                c = self.update_resource_category(resource=c, resource_type=resource_type, resource_id=resource_id)
+        attrs.set_subject_attributes(subject_id=fabric_token.get_email(), project=project, project_tag=tag_list)
 
-            elif c[PdpAuth.category_id] == PdpAuth.category_action_urn:
-                c = self.update_action_category(action=c, action_id=action_id)
+        attrs.set_resource_subject_and_project(subject_id=fabric_token.get_email(), project=project)
 
-            elif c[PdpAuth.category_id] == PdpAuth.category_environment_urn:
-                if self.logger is None:
-                    print("Do nothing, ignore Environment category")
-                else:
-                    self.logger.debug("Do nothing, ignore Environment category")
+        # finally action
+        # action can be any string matching ActionId enum
+        attrs.set_action(action_id.name)
 
-            else:
-                raise PdpAuthException("Invalid Category: {}".format(c))
-
-        request_json[PdpAuth.request][PdpAuth.category] = categories
+        # now you can produce the json
+        request_json = attrs.transform_to_pdp_request(as_json=False)
 
         return request_json
 
-    def check_access(self, *, fabric_token: dict, actor_type: ActorType,
-                     action_id: ActionId, resource_type: ResourceType,
-                     resource_id: str = None):
+    def check_access(self, *, fabric_token: FabricToken, action_id: ActionId,
+                     resource: BaseSliver or ExperimentTopology, lease_end_time: datetime):
         """
         Check Access
         @param fabric_token fabric token
-        @param actor_type actor type
         @param action_id action id
-        @param resource_type resource type
-        @param resource_id resource id
+        @param resource sliver (of any type) or slice (ExperimentTopology)
+        @param lease_end_time lease end time
         @raises PdpAuthException in case of denied access or failure
         """
         if not self.config['enable']:
             self.logger.debug("Skipping PDP Authorization check as configured")
             return
 
-        pdp_request = self.build_pdp_request(fabric_token=fabric_token, actor_type=actor_type,
-                                             action_id=action_id, resource_type=resource_type, resource_id=resource_id)
+        pdp_request = self.build_pdp_request(fabric_token=fabric_token, action_id=action_id,
+                                             resource=resource, lease_end_time=lease_end_time)
 
         self.logger.debug("PDP Auth Request: {}".format(pdp_request))
 
+        # send request to PDP
         response = requests.post(url=self.config['url'], headers=self._headers(), json=pdp_request)
+        response_json = response.json()
 
-        if response.status_code != 200:
-            raise PdpAuthException('Authorization check failure: {}'.format(response))
-
-        if response.json()["Response"][0]["Decision"] == "Permit":
-            if self.logger is not None:
-                self.logger.debug("PDP response: {}".format(response.json()))
+        if response.status_code == 200 and response_json["Response"][0]["Decision"] == "Permit":
+            self.logger.debug("PDP response: {}".format(response_json))
         else:
-            if self.logger is not None:
-                self.logger.debug("PDP response: {}".format(response.json()))
-            raise PdpAuthException('Authorization check failure: {}'.format(response.json()))
+            self.logger.error("PDP response: {}".format(response_json))
+            msg = response_json["Response"][0]["AssociatedAdvice"][0]["AttributeAssignment"][0]["Value"]
+            raise PdpAuthException(f"PDP Authorization check failed - {msg}")
 
 
 if __name__ == '__main__':
-    token = {"email": "kthare10@email.unc.edu",
-             "given_name": "Komal",
-             "family_name": "Thareja", "name": "Komal Thareja",
-             "iss": "https://cilogon.org", "sub": "http://cilogon.org/serverA/users/11904101",
-             "aud": "cilogon:/client_id/1253defc60a323fcaa3b449326476099",
-             "token_id": "https://cilogon.org/oauth2/idToken/156747336e2a3fbc1d66cc8fe1571d91/1603986888019",
-             "auth_time": "1603986887", "exp": 1603990493, "iat": 1603986893,
-             "roles": ["CO:members:active", "CO:COU:Jupyterhub:members:active", "CO:COU:project-leads:members:active"],
-             "scope": "all", "project": "all"}
+    oauth_config = {
+        "jwks-url": "https://alpha-2.fabric-testbed.net/certs",
+        "key-refresh": "00:10:00",
+        "verify-exp": False
+    }
+    CREDMGR_CERTS = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_JWKS_URL, None)
+    CREDMGR_KEY_REFRESH = oauth_config.get(Constants.PROPERTY_CONF_O_AUTH_KEY_REFRESH, None)
+    t = datetime.strptime(CREDMGR_KEY_REFRESH, "%H:%M:%S")
+    jwt_validator = JWTValidator(url=CREDMGR_CERTS,
+                                 refresh_period=timedelta(hours=t.hour, minutes=t.minute, seconds=t.second))
+    logger = logging.getLogger(__name__)
+    token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator, logger=logger,
+                        token="eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6ImI0MTUxNjcyMTExOTFlMmUwNWIyMmI1NGIxZDNiNzY2N2U3NjRhNzQ3NzIyMTg1ZTcyMmU1MmUxNDZmZTQzYWEifQ.eyJlbWFpbCI6Imt0aGFyZTEwQGVtYWlsLnVuYy5lZHUiLCJnaXZlbl9uYW1lIjoiS29tYWwiLCJmYW1pbHlfbmFtZSI6IlRoYXJlamEiLCJuYW1lIjoiS29tYWwgVGhhcmVqYSIsImlzcyI6Imh0dHBzOi8vY2lsb2dvbi5vcmciLCJzdWIiOiJodHRwOi8vY2lsb2dvbi5vcmcvc2VydmVyQS91c2Vycy8xMTkwNDEwMSIsImF1ZCI6ImNpbG9nb246L2NsaWVudF9pZC82MTdjZWNkZDc0ZTMyYmU0ZDgxOGNhMTE1MTUzMWRmZiIsImp0aSI6Imh0dHBzOi8vY2lsb2dvbi5vcmcvb2F1dGgyL2lkVG9rZW4vMjViM2ExMmM4YWIzODNhODcyMjNiOTA3YmRhNDA1MGMvMTY1MDM5NTI4ODA5OSIsImF1dGhfdGltZSI6MTY1MDM5NTI4NywiZXhwIjoxNjUwMzk4OTIxLCJpYXQiOjE2NTAzOTUzMjEsInByb2plY3RzIjp7IkNGIFRlc3QiOltdfSwicm9sZXMiOlsiMTBjMDA5NGEtYWJhZi00ZWY5LWE1MzItMmJlNTNlMmE4OTZiLXBjIiwiMTBjMDA5NGEtYWJhZi00ZWY5LWE1MzItMmJlNTNlMmE4OTZiLXBtIiwiMTBjMDA5NGEtYWJhZi00ZWY5LWE1MzItMmJlNTNlMmE4OTZiLXBvIiwiZmFicmljLWFjdGl2ZS11c2VycyIsInByb2plY3QtbGVhZHMiLCJwcm9qZWN0LWxlYWRzIl0sInNjb3BlIjoiYWxsIn0.v24LY2gfBjJPeWy-xXq0ViTguFRmZnv9NQUeqIEYvkWaL4V2qN9IKfatnDaoug7JBF8Xb2jQ0dQf_onnm2yYybWqXy-8ELZ8SZS8LBq3k0yyiE8vm6aAdmglMaLu6R3CIo3FncFBKNFeb_s0brEhngirsGA2lwNDf-Bi5ucHXFNSVDzmAcVopFSBcbwo78p3rRbzR5pjNpFrAT3CJRwRGv1-NvGUZvt10Z7s0KT2HEnNkanZWG02ck7H40HHr1O89svh8jl0ze4wgi9iYscYC0BZ74jBu9wntnty5hubowZ5sOuJZAFtYUB3Z3-W8sVeg_vHqMbPlpoIRYzwiby3SCGIJ7DgqNq8-18T6Z4ZxOAOB74PNJEArWq2Ti7nmL0zxI68wSGNqT0rLZo9p1UUYvf8qCsdYUKmVZD8xRea2FwyZEB8MyIQ5FRWOP2AKN3kCo1K89XpJY5iZrMxRtC7obc41wanZCiEhmEK1pLFDkIYrjNmpNQ0mQ9pMKIXCTKXRFgkMNN5vsz0uT797SNPKsFkKvBz7SBh2gAerpCDivCwoMpEPGTvJp_GqohyFjSkvjJ7n5vxWKiwqzU2wRG23tCi5xqqk30u4R6e7oU7IKBwrdpGHK23q-Laa1mvKL9CZ98Yngs3-S-rZVlTtT_y1UZHFWYOmPFzo0xlUTs5wak")
+    token.validate()
 
-    config = {'url': 'http://localhost:8080/services/pdp'}
-    pdp = PdpAuth(config=config)
-    RESULT = pdp.check_access(fabric_token=token, actor_type=ActorType.Orchestrator,
-                              action_id=ActionId.query, resource_type=ResourceType.resources)
+    config = {'url': 'http://localhost:8080/services/pdp', 'enable': True}
+    pdp = PdpAuth(config=config, logger=logger)
+    RESULT = pdp.check_access(fabric_token=token,action_id=ActionId.query,
+                              resource=None, lease_end_time=None)
     print(RESULT)

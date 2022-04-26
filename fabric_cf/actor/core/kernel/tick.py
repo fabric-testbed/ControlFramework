@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
 from abc import abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fabric_cf.actor.core.apis.abc_ticker import ABCTicker
 from fabric_cf.actor.core.common.exceptions import TickException
@@ -62,7 +62,7 @@ class Tick(ABCTicker):
         """
         Calculates the cycle before the first cycle. The cycle is derived from current time.
         """
-        self.current_cycle = self.clock.cycle(when=datetime.utcnow())
+        self.current_cycle = self.clock.cycle(when=datetime.now(timezone.utc))
 
     def check_initialized(self):
         """

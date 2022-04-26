@@ -204,7 +204,7 @@ class Delegation(ABCDelegation):
     def is_failed(self) -> bool:
         return self.state == DelegationState.Failed
 
-    def delegate(self, policy: ABCPolicy, id_token: str = None):
+    def delegate(self, policy: ABCPolicy):
         # These handlers may need to be slightly more sophisticated, since a
         # client may bid multiple times on a ticket as part of an auction
         # protocol: so we may receive a reserve or extend when there is already
@@ -227,7 +227,7 @@ class Delegation(ABCDelegation):
             self.logger.error(self.error_string_prefix.format(self, self.invalid_state_prefix.format('claim', 'claim')))
             raise DelegationException(self.invalid_state_prefix.format('claim', 'claim'))
 
-    def reclaim(self, id_token: str = None):
+    def reclaim(self):
         if self.state == DelegationState.Delegated:
             self.policy.reclaim(delegation=self)
             self.transition(prefix="reclaimed", state=DelegationState.Reclaimed)

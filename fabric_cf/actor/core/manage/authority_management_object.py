@@ -72,7 +72,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         return properties
 
-    def get_authority_reservations(self, *, caller: AuthToken, id_token: str = None) -> ResultReservationAvro:
+    def get_authority_reservations(self, *, caller: AuthToken) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -81,9 +81,6 @@ class AuthorityManagementObject(ServerActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
-            self.validate_token(id_token=id_token, action_id=ActionId.query,
-                                resource_type=ResourceType.sliver, token=id_token)
-
             res_list = None
             try:
                 res_list = self.db.get_authority_reservations()
@@ -116,7 +113,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
     def get_substrate_database(self) -> ABCSubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
-    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitsAvro:
+    def get_reservation_units(self, *, caller: AuthToken, rid: ID) -> ResultUnitsAvro:
         result = ResultUnitsAvro()
         result.status = ResultAvro()
 
@@ -125,9 +122,6 @@ class AuthorityManagementObject(ServerActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
-
-            self.validate_token(id_token=id_token, action_id=ActionId.query,
-                                resource_type=ResourceType.sliver, resource_id=str(rid))
 
             units_list = None
             try:
@@ -149,7 +143,7 @@ class AuthorityManagementObject(ServerActorManagementObject):
 
         return result
 
-    def get_reservation_unit(self, *, caller: AuthToken, uid: ID, id_token: str = None) -> ResultUnitsAvro:
+    def get_reservation_unit(self, *, caller: AuthToken, uid: ID) -> ResultUnitsAvro:
         result = ResultUnitsAvro()
         result.status = ResultAvro()
 
@@ -158,8 +152,6 @@ class AuthorityManagementObject(ServerActorManagementObject):
             result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
         try:
-            self.validate_token(id_token=id_token, action_id=ActionId.query,
-                                resource_type=ResourceType.sliver, resource_id=str(uid))
             units_list = None
             try:
                 unit = self.db.get_unit(uid=uid)

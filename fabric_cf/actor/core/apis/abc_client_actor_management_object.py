@@ -96,12 +96,11 @@ class ABCClientActorManagementObject(ABC):
         """
 
     @abstractmethod
-    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None, id_token: str = None) -> ResultProxyAvro:
+    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None) -> ResultProxyAvro:
         """
         Get all brokers
         @param caller: caller
         @param broker_id : broker_id
-        @param id_token: id token
         @return list of all the brokers
         """
 
@@ -128,25 +127,21 @@ class ABCClientActorManagementObject(ABC):
         """
 
     @abstractmethod
-    def claim_delegations(self, *, broker: ID, did: ID, caller: AuthToken,
-                          id_token: str = None) -> ResultDelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: ID, caller: AuthToken) -> ResultDelegationAvro:
         """
         Claim delegations
         @param broker : broker ID
         @param did : delegations ID
         @param caller: caller
-        @param id_token: id token
         @return ResultDelegationAvro
         """
 
     @abstractmethod
-    def reclaim_delegations(self, *, broker: ID, did: ID, caller: AuthToken,
-                            id_token: str = None) -> ResultDelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: ID, caller: AuthToken) -> ResultDelegationAvro:
         """
         ReClaim delegations
         @param broker : broker ID
         @param did : delegations ID
         @param caller: caller
-        @param id_token: id token
         @return ResultDelegationAvro
         """

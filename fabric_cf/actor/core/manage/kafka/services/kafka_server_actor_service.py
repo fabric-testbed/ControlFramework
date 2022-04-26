@@ -48,33 +48,36 @@ class KafkaServerActorService(KafkaActorService):
         result = None
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
+        result = self.authorize_request(id_token=message.get_id_token(), message_name=message.get_message_name())
 
-        if message.get_message_name() == AbcMessageAvro.get_reservations_request and \
-                message.get_type() is not None and \
-                message.get_type() == ReservationCategory.Broker.name:
-            result = self.get_reservations_by_category(request=message, category=ReservationCategory.Broker)
+        # If authorization failed, return the result
+        if result is None:
+            if message.get_message_name() == AbcMessageAvro.get_reservations_request and \
+                    message.get_type() is not None and \
+                    message.get_type() == ReservationCategory.Broker.name:
+                result = self.get_reservations_by_category(request=message, category=ReservationCategory.Broker)
 
-        elif message.get_message_name() == AbcMessageAvro.get_slices_request and \
-                message.get_type() is not None and \
-                message.get_type() == SliceTypes.InventorySlice.name:
-            result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.InventorySlice)
+            elif message.get_message_name() == AbcMessageAvro.get_slices_request and \
+                    message.get_type() is not None and \
+                    message.get_type() == SliceTypes.InventorySlice.name:
+                result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.InventorySlice)
 
-        elif message.get_message_name() == AbcMessageAvro.get_reservations_request and \
-                message.get_type() is not None and \
-                message.get_type() == ReservationCategory.Inventory.name:
-            result = self.get_reservations_by_category(request=message, category=ReservationCategory.Inventory)
+            elif message.get_message_name() == AbcMessageAvro.get_reservations_request and \
+                    message.get_type() is not None and \
+                    message.get_type() == ReservationCategory.Inventory.name:
+                result = self.get_reservations_by_category(request=message, category=ReservationCategory.Inventory)
 
-        elif message.get_message_name() == AbcMessageAvro.get_slices_request and \
-                message.get_type() is not None and \
-                message.get_type() == SliceTypes.ClientSlice.name:
-            result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.ClientSlice)
+            elif message.get_message_name() == AbcMessageAvro.get_slices_request and \
+                    message.get_type() is not None and \
+                    message.get_type() == SliceTypes.ClientSlice.name:
+                result = self.get_slices_by_slice_type(request=message, slice_type=SliceTypes.ClientSlice)
 
-        elif message.get_message_name() == AbcMessageAvro.add_slice and message.slice_obj is not None and \
-                (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
-            result = self.add_client_slice(request=message)
-        else:
-            super().process(message=message)
-            return
+            elif message.get_message_name() == AbcMessageAvro.add_slice and message.slice_obj is not None and \
+                    (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
+                result = self.add_client_slice(request=message)
+            else:
+                super().process(message=message)
+                return
 
         if callback_topic is None:
             self.logger.debug("No callback specified, ignoring the message")
@@ -123,8 +126,7 @@ class KafkaServerActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_reservations_by_category(caller=auth, category=category, id_token=request.get_id_token(),
-                                                     slice_id=request.slice_id)
+            result = mo.get_reservations_by_category(caller=auth, category=category, slice_id=request.slice_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -148,7 +150,7 @@ class KafkaServerActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_slices_by_slice_type(caller=auth, slice_type=slice_type, id_token=request.get_id_token())
+            result = mo.get_slices_by_slice_type(caller=auth, slice_type=slice_type)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

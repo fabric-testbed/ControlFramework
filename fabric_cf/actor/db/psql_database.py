@@ -26,7 +26,7 @@
 import logging
 import pickle
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from sqlalchemy import create_engine
@@ -1705,11 +1705,11 @@ def test():
 
     # Slice operations
     db.add_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
-                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow())
+                 properties=pickle.dumps(prop), lease_start=datetime.now(timezone.utc), lease_end=datetime.now(timezone.utc))
     print("Slices after add slice {}".format(db.get_slices()))
     prop['fabric'] = 'testbed'
     db.update_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
-                    properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow())
+                    properties=pickle.dumps(prop), lease_start=datetime.now(timezone.utc), lease_end=datetime.now(timezone.utc))
     print("Get slice after update {}".format(db.get_slice(slice_guid="1234")))
 
     print("Get slice by type after update {}".format(db.get_slices_by_type(slc_type=1)))
@@ -1719,7 +1719,7 @@ def test():
 
     # Reservation operations
     db.add_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
-                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow())
+                 properties=pickle.dumps(prop), lease_start=datetime.now(timezone.utc), lease_end=datetime.now(timezone.utc))
     print("Get all slices {} after add".format(db.get_slices()))
     prop['rsv'] = 'test'
     db.add_reservation(slc_guid="1234", rsv_resid="rsv_567", rsv_category=1, rsv_state=2,
@@ -1810,23 +1810,23 @@ def test3():
     # Slice operations
     from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
     db.add_slice(slc_guid="1234", slc_name="test-slice", slc_type=1, slc_resource_type="def",
-                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 properties=pickle.dumps(prop), lease_start=datetime.now(timezone.utc), lease_end=datetime.now(timezone.utc),
                  slc_state=SliceState.Closing.value, email="kthare10@email.unc.edu")
 
     db.add_slice(slc_guid="1234", slc_name="test-slice2", slc_type=1, slc_resource_type="def",
-                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 properties=pickle.dumps(prop), lease_start=datetime.now(timezone.utc), lease_end=datetime.now(timezone.utc),
                  slc_state=SliceState.Dead.value, email="kthare10@email.unc.edu")
 
     db.add_slice(slc_guid="1234", slc_name="test-slice3", slc_type=1, slc_resource_type="def",
-                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 properties=pickle.dumps(prop), lease_start=datetime.now(timezone.utc), lease_end=datetime.now(timezone.utc),
                  slc_state=SliceState.StableOK.value, email="kthare10@email.unc.edu")
 
     db.add_slice(slc_guid="1234", slc_name="test-slice4", slc_type=1, slc_resource_type="def",
-                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 properties=pickle.dumps(prop), lease_start=datetime.now(timezone.utc), lease_end=datetime.now(timezone.utc),
                  slc_state=SliceState.StableError.value, email="kthare10@email.unc.edu")
 
     db.add_slice(slc_guid="1234", slc_name="test-slice3", slc_type=1, slc_resource_type="def",
-                 properties=pickle.dumps(prop), lease_start=datetime.utcnow(), lease_end=datetime.utcnow(),
+                 properties=pickle.dumps(prop), lease_start=datetime.now(timezone.utc), lease_end=datetime.now(timezone.utc),
                  slc_state=SliceState.Configuring.value, email="kthare10@email.unc.edu")
 
     ss = db.get_slice_by_email_state(slc_state=[SliceState.Dead.value, SliceState.Closing.value],

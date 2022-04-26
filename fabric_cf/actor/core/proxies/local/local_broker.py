@@ -45,19 +45,19 @@ class LocalBroker(LocalProxy, ABCBrokerProxy):
         super().__init__(actor=actor)
 
     def _prepare_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
-                            caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
+                            caller: AuthToken) -> ABCRPCRequestState:
         state = LocalProxy.LocalProxyRequestState()
         state.delegation = self.pass_delegation(delegation=delegation, auth=caller)
         state.callback = callback
         return state
 
     def prepare_claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
-                                 caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
-        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+                                 caller: AuthToken) -> ABCRPCRequestState:
+        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller)
 
     def prepare_reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy,
-                                   caller: AuthToken, id_token: str = None) -> ABCRPCRequestState:
-        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller, id_token=id_token)
+                                   caller: AuthToken) -> ABCRPCRequestState:
+        return self._prepare_delegation(delegation=delegation, callback=callback, caller=caller)
 
     def _prepare(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy,
                  caller: AuthToken) -> ABCRPCRequestState:

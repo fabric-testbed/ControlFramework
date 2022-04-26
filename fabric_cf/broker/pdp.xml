@@ -3,10 +3,10 @@
 	strictAttributeIssuerMatch="false">
 	<!-- You may customize this PDP configuration except 'rootPolicyProvider' element. -->
 	<policyProvider id="rootPolicyProvider" xsi:type="StaticPolicyProvider">
-		<policyLocation>/policies/broker-yes.xml</policyLocation>
+		<policyLocation>/policies/fabricYes.AnyActorYesPolicy.xml</policyLocation>
 	</policyProvider>
 	<!-- Must match the Policy(Set)Id of one of the Policies/PolicySets provided by the 'policyProvider', the one with which the PDP starts the evaluation (root policy).  -->
-	<rootPolicyRef>urn:fabric:authz:xacml:BrokerPolicy</rootPolicyRef>
+	<rootPolicyRef>urn:fabric:authz:xacml:actor:ps</rootPolicyRef>
 	<ioProcChain>
 		<!-- XACML/XML processing chain. Replace requestPreproc value with "urn:ow2:authzforce:feature:pdp:request-preproc:xacml-xml:multiple:repeated-attribute-categories-lax" for Multiple Decision Profile
 			support. -->
