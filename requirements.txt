@@ -2,13 +2,13 @@ requests==2.27.1
 cryptography==3.3.2
 psycopg2-binary
 sqlalchemy
-fabric-message-bus==1.2rc2
+fabric-message-bus==1.2.2
 fabric-fim==1.2rc13
 waitress
 prometheus_client
 connexion==2.7.0
 swagger-ui-bundle
-fabric_fss_utils==1.2rc1
+fabric_fss_utils==1.2.1
 PyYAML==5.4
 astroid==2.4.2
 typing-extensions==3.7.4.3
