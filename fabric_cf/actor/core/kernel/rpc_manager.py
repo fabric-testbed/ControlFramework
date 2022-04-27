@@ -306,7 +306,8 @@ class RPCManager:
                          sequence=delegation.get_sequence_out())
         # Schedule a timeout
         rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
-        proxy.get_logger().info(f"Timer started: {rpc.timer} for Claim")
+        if proxy.get_logger() is not None:
+            proxy.get_logger().info(f"Timer started: {rpc.timer} for Claim")
         self.enqueue(rpc=rpc)
 
     def do_reclaim_delegation(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, delegation: ABCDelegation,
@@ -320,7 +321,8 @@ class RPCManager:
                          sequence=delegation.get_sequence_out())
         # Schedule a timeout
         rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
-        proxy.get_logger().info(f"Timer started: {rpc.timer} for Reclaim")
+        if proxy.get_logger() is not None:
+            proxy.get_logger().info(f"Timer started: {rpc.timer} for Reclaim")
         self.enqueue(rpc=rpc)
 
     def do_ticket(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, reservation: ABCClientReservation,
