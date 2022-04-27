@@ -81,7 +81,7 @@ class ManagementUtils:
     def query(*, actor: ABCActorMixin, actor_proxy: ABCActorProxy, query: dict, id_token: str):
         handler = MyQueryResponseHandler()
 
-        actor.query(query=query, actor_proxy=actor_proxy, handler=handler, id_token=id_token)
+        actor.query(query=query, actor_proxy=actor_proxy, handler=handler)
 
         with handler.condition:
             try:
