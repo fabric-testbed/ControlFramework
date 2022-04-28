@@ -66,22 +66,28 @@ class ReservationStatusUpdate(IStatusUpdateCallback):
 
             # Update the sliver
             node_sliver = pred_res.get_sliver()
+            modified = False
             for d in node_sliver.attached_components_info.devices.values():
                 for ns in d.network_service_info.network_services.values():
+                    self.logger.debug(f"Checking keys {ns_sliver.interface_info.interfaces.keys()}")
                     for ifs_name, ifs in ns.interface_info.interfaces.items():
-                        lookup_name = f'{ns_sliver.get_name()}-{ifs_name}'
+                        lookup_name = f'{node_sliver.get_name()}-{ifs_name}'
                         if lookup_name in ns_sliver.interface_info.interfaces:
                             ns_ifs = ns_sliver.interface_info.interfaces[lookup_name]
                             if ns_ifs.labels.ipv4 is not None:
-                                ifs.label_allocations = Labels.update(ifs.label_allocations,
-                                                                      ipv4=ns_ifs.labels.ipv4)
+                                self.logger.info(f"Updating {ns_ifs.labels.ipv4} to {ifs.labels.ipv4}")
+                                ifs.label_allocations.ipv4 = Labels.update(ifs.label_allocations,
+                                                                           ipv4=ns_ifs.labels.ipv4)
+                                modified = True
                             if ns_ifs.labels.ipv6 is not None:
+                                self.logger.info(f"Updating {ns_ifs.labels.ipv6} to {ifs.labels.ipv6}")
                                 ifs.label_allocations = Labels.update(ifs.label_allocations,
-                                                                      ipv4=ns_ifs.labels.ipv6)
+                                                                      ipv6=ns_ifs.labels.ipv6)
+                                modified = True
 
-            self.logger.debug(f"Updated Node Sliver - {sliver_to_str(sliver=node_sliver)}")
-
-            controller.modify_reservation(rid=ID(uid=pred_res.get_reservation_id()), modified_sliver=node_sliver)
+            if modified:
+                self.logger.debug(f"Updated Node Sliver - {sliver_to_str(sliver=node_sliver)}")
+                controller.modify_reservation(rid=ID(uid=pred_res.get_reservation_id()), modified_sliver=node_sliver)
 
     def failure(self, *, controller: ABCMgmtControllerMixin, reservation: ReservationMng):
         """

@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import ipaddress
 import traceback
 from ipaddress import IPv6Network, IPv4Network
 from typing import List
@@ -173,6 +174,31 @@ class NetworkServiceInventory(InventoryForType):
                     break
         return requested_ifs
 
+    def __allocate_ip_address_to_ifs(self, *, requested_ns: NetworkServiceSliver) -> NetworkServiceSliver:
+        if requested_ns.gateway is None:
+            return requested_ns
+
+        if requested_ns.get_type() == ServiceType.FABNetv4:
+            start_ip_str = requested_ns.gateway.lab.ipv4
+        else:
+            start_ip_str = requested_ns.gateway.lab.ipv6
+
+        start_ip = ipaddress.ip_address(start_ip_str)
+        start_ip += 1
+
+        for ifs in requested_ns.interface_info.interfaces.values():
+            if requested_ns.get_type() == ServiceType.FABNetv4:
+                ifs.labels.ipv4 = str(start_ip)
+                ifs.label_allocations.ipv4 = str(start_ip)
+
+            elif requested_ns.get_type() == ServiceType.FABNetv6:
+                ifs.labels.ipv6 = str(start_ip)
+                ifs.label_allocations.ipv6 = str(start_ip)
+            self.logger.info("Allocated IP address to interface %s", ifs)
+            start_ip += 1
+
+        return requested_ns
+
     def allocate(self, *, rid: ID, requested_ns: NetworkServiceSliver, owner_switch: NodeSliver,
                  existing_reservations: List[ABCReservationMixin]) -> NetworkServiceSliver:
         """
@@ -261,6 +287,7 @@ class NetworkServiceInventory(InventoryForType):
 
                 requested_ns.gateway = Gateway(lab=gateway_labels)
                 break
+            requested_ns = self.__allocate_ip_address_to_ifs(requested_ns=requested_ns)
         except Exception as e:
             self.logger.error(f"Error in allocate_gateway_for_ns: {e}")
             self.logger.error(traceback.format_exc())
