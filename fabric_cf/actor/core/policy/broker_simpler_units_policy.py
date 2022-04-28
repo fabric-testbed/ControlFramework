@@ -639,11 +639,12 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_mpls_ns.node_id))
 
         # Set the Subnet and gateway from the Owner Switch (a)
-        if sliver.get_type() == ServiceType.FABNetv6 or sliver.get_type() == ServiceType.FABNetv4:
-            existing_reservations = self.get_existing_reservations(node_id=owner_mpls_ns.node_id,
-                                                                   node_id_to_reservations=node_id_to_reservations)
-            sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_switch=owner_switch,
-                                  existing_reservations=existing_reservations)
+        self.logger.debug(f"before existing_reservations:")
+        existing_reservations = self.get_existing_reservations(node_id=owner_mpls_ns.node_id,
+                                                               node_id_to_reservations=node_id_to_reservations)
+        self.logger.debug(f"existing_reservations: {existing_reservations}")
+        sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_switch=owner_switch,
+                              existing_reservations=existing_reservations)
 
         return delegation_id, sliver, error_msg
 
@@ -729,7 +730,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.set_approved(term=term, approved_resources=mine)
             reservation.set_source(source=source)
             self.logger.debug(f"allocated: {mine.get_units()} for term: {term}")
-            self.logger.debug(f"resourceshare= {units} mine= {mine.get_units()}")
+            self.logger.debug(f"resource share= {units} mine= {mine.get_units()}")
 
             self.add_to_calendar(reservation=reservation)
             reservation.set_bid_pending(value=False)
