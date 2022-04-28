@@ -429,7 +429,7 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
                     self.transition(prefix="ticket request", state=ReservationStates.Nascent,
                                     pending=ReservationPendingStates.Ticketing)
                 except Exception as e:
-                    self.logger.error("mapAndUpdate bindTicket failed for ticketRequest:", exception=e)
+                    self.logger.error(f"mapAndUpdate bindTicket failed for ticketRequest: {e}")
                     self.fail_notify(message=str(e))
                     return success
 
@@ -443,7 +443,9 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
                         self.transition(prefix="ticketed", state=ReservationStates.Ticketed,
                                         pending=ReservationPendingStates.Priming)
                     except Exception as e:
-                        self.logger.error("mapAndUpdate ticket failed for ticketRequest", exception=e)
+                        self.logger.error("mapAndUpdate ticket failed for ticketRequest")
+                        self.logger.error(e)
+                        self.logger.error(traceback.format_exc())
                         self.fail_notify(message=str(e))
         elif self.state == ReservationStates.Ticketed:
             if not ticketed:
@@ -468,7 +470,7 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
                     else:
                         granted = True
                 except Exception as e:
-                    self.logger.error("mapAndUpdate extendTicket failed for ticketRequest:", exception=e)
+                    self.logger.error(f"mapAndUpdate extendTicket failed for ExtendTicket: {e}")
                     self.fail_notify(message=str(e))
                     return success
 
@@ -483,7 +485,7 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
                         self.term = self.approved_term
                         self.resources.update(reservation=self, resource_set=self.approved_resources)
                     except Exception as e:
-                        self.logger.error("mapAndUpdate ticket failed for ticketRequest", exception=e)
+                        self.logger.error(f"mapAndUpdate extend ticket failed for ExtendTicket: {e}")
                         self.fail_notify(message=str(e))
         else:
             self.logger.error("broker mapAndUpdate: unexpected state")

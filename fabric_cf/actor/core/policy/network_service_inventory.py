@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import traceback
 from ipaddress import IPv6Network, IPv4Network
 from typing import List
 
@@ -187,91 +188,96 @@ class NetworkServiceInventory(InventoryForType):
         :return NetworkService updated with the allocated subnet for FABNetv4 and FABNetv6 services
         Return the sliver updated with the subnet
         """
-        if requested_ns.get_type() != ServiceType.FABNetv4 and requested_ns.get_type() != ServiceType.FABNetv6:
-            return requested_ns
+        try:
+            if requested_ns.get_type() != ServiceType.FABNetv4 and requested_ns.get_type() != ServiceType.FABNetv6:
+                return requested_ns
 
-        for ns in owner_switch.network_service_info.network_services.values():
-            if requested_ns.get_type() == ns.get_type():
-                # Grab Label Delegations
-                delegation_id, delegated_label = self._get_delegations(
-                    lab_cap_delegations=ns.get_label_delegations())
+            for ns in owner_switch.network_service_info.network_services.values():
+                if requested_ns.get_type() == ns.get_type():
+                    # Grab Label Delegations
+                    delegation_id, delegated_label = self._get_delegations(
+                        lab_cap_delegations=ns.get_label_delegations())
 
-                subnet_list = None
-                # Get Subnet
-                if ns.get_type() == ServiceType.FABNetv6:
-                    ip_network = IPv6Network(delegated_label.ipv6_subnet)
-                    subnet_list = list(ip_network.subnets(new_prefix=64))
+                    subnet_list = None
+                    # Get Subnet
+                    if ns.get_type() == ServiceType.FABNetv6:
+                        ip_network = IPv6Network(delegated_label.ipv6_subnet)
+                        subnet_list = list(ip_network.subnets(new_prefix=64))
 
-                elif ns.get_type() == ServiceType.FABNetv4:
-                    ip_network = IPv4Network(delegated_label.ipv4_subnet)
-                    subnet_list = list(ip_network.subnets(new_prefix=24))
+                    elif ns.get_type() == ServiceType.FABNetv4:
+                        ip_network = IPv4Network(delegated_label.ipv4_subnet)
+                        subnet_list = list(ip_network.subnets(new_prefix=24))
 
-                # Exclude the 1st subnet as it is reserved for control plane
-                subnet_list.pop(0)
+                    # Exclude the 1st subnet as it is reserved for control plane
+                    subnet_list.pop(0)
 
-                # Exclude the already allocated subnets
-                for reservation in existing_reservations:
-                    if rid == reservation.get_reservation_id():
-                        continue
-                    # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-                    allocated_sliver = None
-                    if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                        allocated_sliver = reservation.get_approved_resources().get_sliver()
+                    # Exclude the already allocated subnets
+                    for reservation in existing_reservations:
+                        if rid == reservation.get_reservation_id():
+                            continue
+                        # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+                        allocated_sliver = None
+                        if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                            allocated_sliver = reservation.get_approved_resources().get_sliver()
 
-                    if (reservation.is_active() or reservation.is_ticketed()) and \
-                            reservation.get_resources() is not None:
-                        allocated_sliver = reservation.get_resources().get_sliver()
+                        if (reservation.is_active() or reservation.is_ticketed()) and \
+                                reservation.get_resources() is not None:
+                            allocated_sliver = reservation.get_resources().get_sliver()
 
-                    self.logger.debug(f"Existing res# {reservation.get_reservation_id()} allocated: {allocated_sliver}")
+                        self.logger.debug(f"Existing res# {reservation.get_reservation_id()} "
+                                          f"allocated: {allocated_sliver}")
 
-                    if allocated_sliver is None:
-                        continue
+                        if allocated_sliver is None:
+                            continue
 
-                    if allocated_sliver.get_type() != requested_ns.get_type():
-                        continue
+                        if allocated_sliver.get_type() != requested_ns.get_type():
+                            continue
 
-                    if allocated_sliver.get_type() == ServiceType.FABNetv4:
-                        subnet_to_remove = IPv4Network(allocated_sliver.get_gateway().lab.ipv4_subnet)
-                        subnet_list.remove(subnet_to_remove)
-                        self.logger.debug(
-                            f"Excluding already allocated IP4Subnet: "
-                            f"{allocated_sliver.get_gateway().lab.ipv4_subnet}"
-                            f" to res# {reservation.get_reservation_id()}")
+                        if allocated_sliver.get_type() == ServiceType.FABNetv4:
+                            subnet_to_remove = IPv4Network(allocated_sliver.get_gateway().lab.ipv4_subnet)
+                            subnet_list.remove(subnet_to_remove)
+                            self.logger.debug(
+                                f"Excluding already allocated IP4Subnet: "
+                                f"{allocated_sliver.get_gateway().lab.ipv4_subnet}"
+                                f" to res# {reservation.get_reservation_id()}")
 
-                    elif allocated_sliver.get_gateway().lab.ipv6_subnet is not None:
-                        subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().lab.ipv6_subnet)
-                        subnet_list.remove(subnet_to_remove)
-                        self.logger.debug(
-                            f"Excluding already allocated IPv6Subnet: "
-                            f"{allocated_sliver.get_gateway().lab.ipv6_subnet}"
-                            f" to res# {reservation.get_reservation_id()}")
+                        elif allocated_sliver.get_gateway().lab.ipv6_subnet is not None:
+                            subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().lab.ipv6_subnet)
+                            subnet_list.remove(subnet_to_remove)
+                            self.logger.debug(
+                                f"Excluding already allocated IPv6Subnet: "
+                                f"{allocated_sliver.get_gateway().lab.ipv6_subnet}"
+                                f" to res# {reservation.get_reservation_id()}")
 
-                gateway_labels = Labels()
-                hosts = list(subnet_list[0].hosts())
-                if requested_ns.get_type() == ServiceType.FABNetv4:
-                    gateway_labels.ipv4_subnet = subnet_list[0].with_prefixlen
-                    gateway_labels.ipv4 = str(hosts[0])
-                    # Allocate IP address on the interfaces
-                    hosts.pop()
-                    idx = 1
-                    for ifs in requested_ns.interface_info.interfaces.values():
-                        ifs.labels = Labels.update(ifs.get_labels(), ipv4=str(hosts[idx]))
-                        idx += 1
-                        self.logger.info(f"Allocated FABNetv4 Interface Sliver ==== {ifs}")
+                    gateway_labels = Labels()
+                    hosts = list(subnet_list[0].hosts())
+                    if requested_ns.get_type() == ServiceType.FABNetv4:
+                        gateway_labels.ipv4_subnet = subnet_list[0].with_prefixlen
+                        gateway_labels.ipv4 = str(hosts[0])
+                        # Allocate IP address on the interfaces
+                        hosts.pop()
+                        idx = 1
+                        for ifs in requested_ns.interface_info.interfaces.values():
+                            ifs.labels = Labels.update(ifs.get_labels(), ipv4=str(hosts[idx]))
+                            idx += 1
+                            self.logger.info(f"Allocated FABNetv4 Interface Sliver ==== {ifs}")
 
-                elif requested_ns.get_type() == ServiceType.FABNetv6:
-                    gateway_labels.ipv6_subnet = subnet_list[0].with_prefixlen
-                    gateway_labels.ipv6 = str(hosts[0])
-                    # Allocate IP address on the interfaces
-                    hosts.pop()
-                    idx = 1
-                    for ifs in requested_ns.interface_info.interfaces.values():
-                        ifs.labels = Labels.update(ifs.get_labels(), ipv6=str(hosts[idx]))
-                        idx += 1
-                        self.logger.info(f"Allocated FABNetv6 Interface Sliver ==== {ifs}")
+                    elif requested_ns.get_type() == ServiceType.FABNetv6:
+                        gateway_labels.ipv6_subnet = subnet_list[0].with_prefixlen
+                        gateway_labels.ipv6 = str(hosts[0])
+                        # Allocate IP address on the interfaces
+                        hosts.pop()
+                        idx = 1
+                        for ifs in requested_ns.interface_info.interfaces.values():
+                            ifs.labels = Labels.update(ifs.get_labels(), ipv6=str(hosts[idx]))
+                            idx += 1
+                            self.logger.info(f"Allocated FABNetv6 Interface Sliver ==== {ifs}")
 
-                requested_ns.gateway = Gateway(lab=gateway_labels)
-                break
+                    requested_ns.gateway = Gateway(lab=gateway_labels)
+                    break
+        except Exception as e:
+            self.logger.error(f"Error in allocate_gateway_for_ns: {e}")
+            self.logger.error(traceback.format_exc())
         return requested_ns
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
