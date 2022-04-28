@@ -287,9 +287,7 @@ class KernelWrapper:
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
-            reservation.get_slice().set_owner(owner=caller)
-            reservation.prepare(callback=callback, logger=self.logger)
-            reservation.fail_notify(message=str(e))
+            self.fail_notify(reservation=reservation, caller=caller, callback=callback, reason=str(e))
 
     def modify_lease_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
                              compare_sequence_numbers: bool, callback: ABCControllerCallbackProxy = None,):
@@ -334,9 +332,7 @@ class KernelWrapper:
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
-            reservation.get_slice().set_owner(owner=caller)
-            reservation.prepare(callback=callback, logger=self.logger)
-            reservation.fail_notify(message=str(e))
+            self.fail_notify(reservation=reservation, caller=caller, callback=callback, reason=str(e))
 
     def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term) -> int:
         """
@@ -418,9 +414,7 @@ class KernelWrapper:
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
-            reservation.prepare(callback=callback, logger=self.logger)
-            reservation.get_slice().set_owner(owner=caller)
-            reservation.fail_notify(message=str(e))
+            self.fail_notify(reservation=reservation, caller=caller, callback=callback, reason=str(e))
 
     def modify_lease(self, *, reservation: ABCControllerReservation):
         """
@@ -692,9 +686,7 @@ class KernelWrapper:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Exception occurred in processing redeem request {}".format(e))
-            reservation.get_slice().set_owner(owner=caller)
-            reservation.prepare(callback=callback, logger=self.logger)
-            reservation.fail_notify(message=str(e))
+            self.fail_notify(reservation=reservation, caller=caller, callback=callback, reason=str(e))
 
     def register_reservation(self, *, reservation: ABCReservationMixin):
         """
@@ -959,9 +951,7 @@ class KernelWrapper:
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
             self.logger.error(traceback.format_exc())
-            reservation.get_slice().set_owner(owner=caller)
-            reservation.prepare(callback=callback, logger=self.logger)
-            reservation.fail_notify(message=str(e))
+            self.fail_notify(reservation=reservation, caller=caller, callback=callback, reason=str(e))
 
     def unregister_reservation(self, *, rid: ID):
         """
@@ -1047,3 +1037,19 @@ class KernelWrapper:
             self.logger.warning("Could not find reservation #{} while processing a failed RPC.".format(rid))
             return
         self.kernel.handle_failed_rpc(reservation=target, rpc=rpc)
+
+    def fail_notify(self, *, reservation: ABCReservationMixin, reason: str, caller: AuthToken,
+                    callback: ABCControllerCallbackProxy):
+        """
+        Handles a fail notification from an authority or broker.
+        Broker:
+            - ExtendTicket or Ticket
+        Authority:
+            - ExtendLease or ModifyLease or Redeem
+        """
+        try:
+            reservation.get_slice().set_owner(owner=caller)
+            reservation.prepare(callback=callback, logger=self.logger)
+            reservation.fail_notify(message=reason)
+        except Exception as e:
+            self.logger.exception(f"Failed to notify reservation #{reservation.get_reservation_id()} of failure.")

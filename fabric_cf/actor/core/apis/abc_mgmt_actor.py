@@ -29,7 +29,6 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
 

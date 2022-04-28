@@ -29,7 +29,6 @@ import traceback
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject

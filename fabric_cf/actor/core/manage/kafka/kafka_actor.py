@@ -42,7 +42,6 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fabric_mb.message_bus.messages.update_reservation_avro import UpdateReservationAvro
 from fabric_mb.message_bus.messages.update_slice_avro import UpdateSliceAvro
-from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.common.constants import Constants

@@ -992,8 +992,8 @@ class ActorMixin(ABCActorMixin):
             if len(events) > 0:
                 self.logger.debug(f"Processing {len(events)} events")
                 for event in events:
-                    self.logger.debug("Processing event of type {}".format(type(event)))
-                    self.logger.debug("Processing event {}".format(event))
+                    #self.logger.debug("Processing event of type {}".format(type(event)))
+                    #self.logger.debug("Processing event {}".format(event))
                     try:
                         event.process()
                     except Exception as e:
