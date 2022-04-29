@@ -27,6 +27,7 @@ import logging
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fim.slivers.capacities_labels import Flags
 from fim.user import Labels, ServiceType
 
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
@@ -71,6 +72,8 @@ class ReservationStatusUpdate(IStatusUpdateCallback):
                 for ns in d.network_service_info.network_services.values():
                     self.logger.debug(f"Checking keys {ns_sliver.interface_info.interfaces.keys()}")
                     for ifs_name, ifs in ns.interface_info.interfaces.items():
+                        if ifs.flags is None or not ifs.flags.auto_config:
+                            continue
                         lookup_name = f'{node_sliver.get_name()}-{ifs_name}'
                         if lookup_name in ns_sliver.interface_info.interfaces:
                             ns_ifs = ns_sliver.interface_info.interfaces[lookup_name]
