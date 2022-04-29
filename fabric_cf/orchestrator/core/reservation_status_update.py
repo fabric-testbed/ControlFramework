@@ -27,7 +27,6 @@ import logging
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-from fim.slivers.capacities_labels import Flags
 from fim.user import Labels, ServiceType
 
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin

@@ -187,8 +187,6 @@ class NetworkServiceInventory(InventoryForType):
         start_ip += 1
 
         for ifs in requested_ns.interface_info.interfaces.values():
-            if ifs.flags is None or not ifs.flags.auto_config:
-                continue
             if requested_ns.get_type() == ServiceType.FABNetv4:
                 ifs.labels.ipv4 = str(start_ip)
                 ifs.label_allocations.ipv4 = str(start_ip)
