@@ -38,6 +38,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.authority_policy import AuthorityPolicy
 from fabric_cf.actor.core.common.exceptions import AuthorityException
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
 from fabric_cf.actor.core.apis.abc_resource_control import ABCResourceControl
@@ -568,8 +569,13 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             self.lock.release()
 
     def get_existing_reservations(self, node_id: str, node_id_to_reservations: dict):
-        existing_reservations = self.actor.get_plugin().get_database().get_reservations_by_graph_node_id(
-            graph_node_id=node_id)
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
+                                                                                        state=states)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

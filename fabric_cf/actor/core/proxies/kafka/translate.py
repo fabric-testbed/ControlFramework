@@ -90,6 +90,7 @@ class Translate:
         slice_obj.set_config_properties(value=slice_avro.config_properties)
         slice_obj.set_lease_start(lease_start=slice_avro.get_lease_start())
         slice_obj.set_lease_end(lease_end=slice_avro.get_lease_end())
+        slice_obj.set_project_id(project_id=slice_avro.project_id)
         return slice_obj
 
     @staticmethod
@@ -103,6 +104,7 @@ class Translate:
         avro_slice.config_properties = slice_obj.get_config_properties()
         avro_slice.set_lease_end(lease_end=slice_obj.get_lease_end())
         avro_slice.set_lease_start(lease_start=slice_obj.get_lease_start())
+        avro_slice.set_project_id(project_id=slice_obj.get_project_id())
 
         if slice_obj.get_resource_type() is not None:
             avro_slice.set_resource_type(str(slice_obj.get_resource_type()))

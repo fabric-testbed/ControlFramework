@@ -85,13 +85,13 @@ class InventorySliceManager:
             result.code = InventorySliceManagerError.ErrorInvalidArguments
             return result
         try:
-            temp = self.db.get_slice(slice_id=slice_id)
+            temp = self.db.get_slices(slice_id=str(slice_id))
 
-            if temp is not None:
+            if temp is not None and len(temp) > 0:
                 result.code = InventorySliceManagerError.ErrorPoolExists
                 return result
 
-            slice_list = self.db.get_inventory_slices()
+            slice_list = self.db.get_slices()
             if slice_list is not None and len(slice_list) > 0:
                 for slice_obj in slice_list:
                     rt = slice_obj.get_resource_type()
@@ -133,9 +133,10 @@ class InventorySliceManager:
         @param slice_id pool id
         @param rtype resource type
         """
-        slice_obj = self.db.get_slice(slice_id=slice_id)
+        slices = self.db.get_slices(slice_id=str(slice_id))
 
-        if slice_obj is not None:
+        if slices is not None and len(slices) == 1:
+            slice_obj = slices[0]
             if not slice_obj.is_inventory() or rtype != slice_obj.get_resource_type():
                 raise ResourcesException(Constants.INVALID_ARGUMENT)
 

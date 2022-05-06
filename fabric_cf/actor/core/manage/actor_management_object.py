@@ -108,7 +108,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             self.id = actor.get_guid()
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None,
-                   email: str = None, state: List[int] = None) -> ResultSliceAvro:
+                   email: str = None, state: List[int] = None, project: str = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
 
@@ -120,19 +120,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
             try:
                 try:
-                    slice_list = None
-                    if slice_id is not None:
-                        slice_obj = self.db.get_slice(slice_id=slice_id)
-                        if slice_obj is not None:
-                            slice_list = [slice_obj]
-                    elif slice_name is not None and email is not None:
-                        slice_list = self.db.get_slice_by_name(slice_name=slice_name, email=email)
-                    elif email is not None and state is not None:
-                        slice_list = self.db.get_slice_by_email_state(email=email, state=state)
-                    elif email is not None:
-                        slice_list = self.db.get_slice_by_email(email=email)
-                    else:
-                        slice_list = self.db.get_slices()
+                    slice_list = self.db.get_slices(slice_id=slice_id, slice_name=slice_name, email=email,
+                                                    state=state, project_id=project)
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -171,6 +160,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
                 slice_obj_new.set_lease_start(lease_start=datetime.now(timezone.utc))
+                slice_obj_new.set_project_id(project_id=slice_obj.get_project_id())
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)
@@ -257,7 +247,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     try:
                         self.actor.get_plugin().get_database().update_slice(slice_object=slice_obj)
                     except Exception as e:
-                        self.logger.error("Could not commit slice update {}".format(e))
+                        self.actor.get_logger().error("Could not commit slice update {}".format(e))
                         result.set_code(ErrorCodes.ErrorDatabaseError.value)
                         result.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                         result = ManagementObject.set_exception_details(result=result, e=e)
@@ -273,8 +263,11 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    def get_slice_by_guid(self, *, guid: str) -> ABCSlice:
-        return self.db.get_slice(slice_id=guid)
+    def get_slice_by_guid(self, *, guid: str) -> ABCSlice or None:
+        slices = self.db.get_slices(slice_id=guid)
+        if len(slices) == 0:
+            return None
+        return slices[0]
 
     def get_reservations(self, *, caller: AuthToken, state: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
@@ -291,30 +284,11 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
             res_list = None
             try:
-                if rid is not None:
-                    res = self.db.get_reservation(rid=rid)
-                    if res is not None:
-                        res_list = [res]
-                    else:
-                        result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
-                        result.status.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
-                elif slice_id is not None and state is not None:
-                    res_list = self.db.get_reservations_by_slice_id_state(slice_id=slice_id, state=state)
-                elif slice_id is not None:
-                    res_list = self.db.get_reservations_by_slice_id(slice_id=slice_id)
-                elif state is not None:
-                    res_list = self.db.get_reservations_by_state(state=state)
-                elif oidc_claim_sub is not None:
-                    res_list = self.db.get_reservations_by_oidc_claim_sub(oidc_claim_sub=oidc_claim_sub)
-                elif email is not None:
-                    if state is None:
-                        res_list = self.db.get_reservations_by_email(email=email)
-                    else:
-                        res_list = self.db.get_reservations_by_email_state(email=email, state=state)
-                elif rid_list is not None:
+                if rid_list is not None:
                     res_list = self.db.get_reservations_by_rids(rid=rid_list)
                 else:
-                    res_list = self.db.get_reservations()
+                    res_list = self.db.get_reservations(slice_id=slice_id, rid=rid, email=email,
+                                                        oidc_sub=oidc_claim_sub, state=state)
             except Exception as e:
                 self.logger.error("getReservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -435,7 +409,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
     def get_actor(self) -> ABCActorMixin:
         return self.actor
 
-    def get_actor_name(self) -> str:
+    def get_actor_name(self) -> str or None:
         if self.actor is not None:
             return self.actor.get_name()
 
@@ -468,7 +442,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     try:
                         self.actor.get_plugin().get_database().update_reservation(reservation=r)
                     except Exception as e:
-                        self.logger.error("Could not commit slice update {}".format(e))
+                        self.actor.get_logger().error("Could not commit slice update {}".format(e))
                         result.set_code(ErrorCodes.ErrorDatabaseError.value)
                         result.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
                         result = ManagementObject.set_exception_details(result=result, e=e)
@@ -552,10 +526,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     else:
                         result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
                         result.status.set_message(ErrorCodes.ErrorNoSuchDelegation.interpret())
-                elif slice_id is not None:
-                    dlg_list = self.db.get_delegations_by_slice_id(slice_id=slice_id, state=state)
                 else:
-                    dlg_list = self.db.get_delegations(state=state)
+                    dlg_list = self.db.get_delegations(slice_id=slice_id, state=state)
             except Exception as e:
                 self.logger.error("get_delegations db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)

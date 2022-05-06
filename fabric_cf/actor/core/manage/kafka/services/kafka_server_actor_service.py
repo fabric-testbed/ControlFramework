@@ -126,7 +126,8 @@ class KafkaServerActorService(KafkaActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_reservations_by_category(caller=auth, category=category, slice_id=request.slice_id)
+            slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
+            result = mo.get_reservations_by_category(caller=auth, category=category, slice_id=slice_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

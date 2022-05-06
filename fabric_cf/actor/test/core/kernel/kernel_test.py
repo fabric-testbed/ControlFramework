@@ -31,7 +31,7 @@ from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
-from fabric_cf.actor.core.kernel.slice import SliceFactory
+from fabric_cf.actor.core.kernel.slice import SliceFactory, SliceTypes
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.test.base_test_case import BaseTestCase
 
@@ -52,20 +52,24 @@ class KernelTest(BaseTestCase, unittest.TestCase):
     base_res_count = 8
 
     def enforceReservationExistsInDatabase(self, *, db: ABCDatabase, rid: ID):
-        res = db.get_reservation(rid=rid)
+        res = db.get_reservations(rid=rid)
         self.assertIsNotNone(res)
+        self.assertEqual(len(res), 1)
 
     def enforceReservationNotInDatabase(self, *, db: ABCDatabase, rid: ID):
-        res = db.get_reservation(rid=rid)
+        res = db.get_reservations(rid=rid)
         self.assertIsNone(res)
+        self.assertEqual(len(res), 0)
 
     def enforceSliceExistsInDatabase(self, *, db: ABCDatabase, slice_id: ID):
-        slice_obj = db.get_slice(slice_id=slice_id)
+        slice_obj = db.get_slices(slice_id=slice_id)
         self.assertIsNotNone(slice_obj)
+        self.assertEqual(len(slice_obj), 1)
 
     def enforceSliceNotInDatabase(self, *, db: ABCDatabase, slice_id: ID):
-        slice_obj = db.get_slice(slice_id=slice_id)
-        self.assertIsNone(slice_obj)
+        slice_obj = db.get_slices(slice_id=slice_id)
+        self.assertIsNotNone(slice_obj)
+        self.assertEqual(len(slice_obj), 0)
 
     def get_kernel_wrapper(self, *, actor: ABCActorMixin) -> KernelWrapper:
         wrapper = KernelWrapper(actor=actor, plugin=actor.get_plugin(), policy=actor.get_policy())
@@ -140,7 +144,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             self.assertIsNotNone(slice_obj)
             self.assertEqual(i + 1, len(slices))
 
-            slices = db.get_client_slices()
+            slices = db.get_slices(slc_type=[SliceTypes.ClientSlice, SliceTypes.BrokerClientSlice])
             self.assertIsNotNone(slice_obj)
             self.assertEqual(i + 1, len(slices))
 
@@ -189,7 +193,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
             self.assertIsNotNone(slice_obj)
             self.assertEqual(i + 1, len(slices))
 
-            slices = db.get_inventory_slices()
+            slices = db.get_slices(slc_type=[SliceTypes.InventorySlice])
             self.assertIsNotNone(slice_obj)
             self.assertEqual(i + 1, len(slices))
 

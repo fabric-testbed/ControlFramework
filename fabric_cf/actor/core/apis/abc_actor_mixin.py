@@ -52,6 +52,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
 
+
 class ActorType(Enum):
     """
     Enum for Actor Type

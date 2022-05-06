@@ -45,6 +45,7 @@ from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
+from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.proxies.proxy import Proxy
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
@@ -417,13 +418,14 @@ class ActorMixin(ABCActorMixin):
         self.recovery_starting()
         self.logger.debug("Recovering inventory slices")
 
-        inventory_slices = self.plugin.get_database().get_inventory_slices()
+        inventory_slices = self.plugin.get_database().get_slices(slc_type=[SliceTypes.InventorySlice])
         self.logger.debug("Found {} inventory slices".format(len(inventory_slices)))
         self.recover_slices(slices=inventory_slices)
         self.logger.debug("Recovery of inventory slices complete")
 
         self.logger.debug("Recovering client slices")
-        client_slices = self.plugin.get_database().get_client_slices()
+        client_slices = self.plugin.get_database().get_slices(slc_type=[SliceTypes.ClientSlice,
+                                                                        SliceTypes.BrokerClientSlice])
         self.logger.debug("Found {} client slices".format(len(client_slices)))
         self.recover_slices(slices=client_slices)
         self.logger.debug("Recovery of client slices complete")
@@ -487,7 +489,7 @@ class ActorMixin(ABCActorMixin):
         delegation_names = []
 
         try:
-            delegations = self.plugin.get_database().get_delegations_by_slice_id(slice_id=slice_obj.get_slice_id())
+            delegations = self.plugin.get_database().get_delegations(slice_id=str(slice_obj.get_slice_id()))
         except Exception as e:
             self.logger.error(e)
             raise ActorException(f"Could not fetch delegations records for slice {slice_obj} from database")
@@ -570,7 +572,7 @@ class ActorMixin(ABCActorMixin):
             "Starting to recover reservations in slice {}({})".format(slice_obj.get_name(), slice_obj.get_slice_id()))
         reservations = None
         try:
-            reservations = self.plugin.get_database().get_reservations_by_slice_id(slice_id=slice_obj.get_slice_id())
+            reservations = self.plugin.get_database().get_reservations(slice_id=slice_obj.get_slice_id())
         except Exception as e:
             self.logger.error(e)
             raise ActorException(
@@ -633,7 +635,7 @@ class ActorMixin(ABCActorMixin):
         self.logger.info(
             "Starting to recover delegations in slice {}({})".format(slice_obj.get_name(), slice_obj.get_slice_id()))
         try:
-            delegations = self.plugin.get_database().get_delegations_by_slice_id(slice_id=slice_obj.get_slice_id())
+            delegations = self.plugin.get_database().get_delegations(slice_id=str(slice_obj.get_slice_id()))
         except Exception as e:
             self.logger.error(e)
             raise ActorException(
@@ -996,6 +998,7 @@ class ActorMixin(ABCActorMixin):
                     #self.logger.debug("Processing event {}".format(event))
                     try:
                         event.process()
+                        #self.logger.debug("Processing event {} done".format(event))
                     except Exception as e:
                         self.logger.error(f"Error while processing event {type(event)}, {e}")
                         self.logger.error(traceback.format_exc())

@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import enum
 from enum import Enum
-from typing import Tuple
+from typing import Tuple, List
 
 from fabric_cf.actor.core.common.exceptions import SliceException
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
@@ -57,7 +57,7 @@ class SliceState(Enum):
         return None
 
     @staticmethod
-    def str_list_to_state_list(states: list):
+    def str_list_to_state_list(states: List[str]) -> list or None:
         if states is None or len(states) == 0:
             return states
 

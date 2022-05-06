@@ -37,14 +37,11 @@ from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControlle
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
-from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import SliceNotFoundException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-from fabric_cf.actor.core.apis.abc_kernel_client_reservation_mixin import ABCKernelClientReservationMixin
-from fabric_cf.actor.core.apis.abc_kernel_reservation import ABCKernelReservation
-from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.kernel.kernel import Kernel
 from fabric_cf.actor.core.common.exceptions import KernelException
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
@@ -558,7 +555,7 @@ class KernelWrapper:
         else:
             self.kernel.amend_delegate(delegation=temp)
 
-    def handle_reserve(self, *, reservation: ABCKernelReservation, identity: AuthToken, create_new_slice: bool):
+    def handle_reserve(self, *, reservation: ABCReservationMixin, identity: AuthToken, create_new_slice: bool):
         """
         Handles a reserve, i.e., obtain a new ticket or lease. Called from both
         client and server side code. If the slice does not exist it will create
@@ -600,7 +597,7 @@ class KernelWrapper:
         else:
             self.kernel.amend_reserve(reservation=temp)
 
-    def handle_update_reservation(self, *, reservation: ABCKernelReservation, auth: AuthToken):
+    def handle_update_reservation(self, *, reservation: ABCReservationMixin, auth: AuthToken):
         """
         Amend a reservation request or initiation, i.e., to issue a new bid on a
         previously filed request.
@@ -680,7 +677,7 @@ class KernelWrapper:
                 reservation.prepare(callback=callback, logger=self.logger)
                 self.handle_reserve(reservation=reservation, identity=caller, create_new_slice=True)
             else:
-                reservation.set_logger(self.logger)
+                reservation.set_logger(logger=self.logger)
                 self.handle_reserve(reservation=reservation, identity=reservation.get_client_auth_token(),
                                     create_new_slice=True)
         except Exception as e:
@@ -705,7 +702,7 @@ class KernelWrapper:
                     reservation will be unregistered from the kernel data
                     structures.
         """
-        if reservation is None or not isinstance(reservation, ABCKernelReservation):
+        if reservation is None or not isinstance(reservation, ABCReservationMixin):
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.register_reservation(reservation=reservation)
@@ -741,7 +738,7 @@ class KernelWrapper:
                     occurs. If a database error occurs, the slice will be
                     unregistered.
         """
-        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCKernelSlice):
+        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCSlice):
             raise KernelException("Invalid argument {}".format(slice_object))
 
         slice_object.set_owner(owner=self.actor.get_identity())
@@ -794,7 +791,7 @@ class KernelWrapper:
                     kernel data structures.
         @throws RuntimeException if a database error occurs
         """
-        if reservation is None or not isinstance(reservation, ABCKernelReservation):
+        if reservation is None or not isinstance(reservation, ABCReservationMixin):
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.re_register_reservation(reservation=reservation)
@@ -824,7 +821,7 @@ class KernelWrapper:
                     occurs. If a database error occurs, the slice will be
                     unregistered.
         """
-        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCKernelSlice):
+        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCSlice):
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.re_register_slice(slice_object=slice_object)
@@ -871,7 +868,7 @@ class KernelWrapper:
         @param destination identity of the actor the request must be sent to
         @throws Exception in case of error
         """
-        if reservation is None or destination is None or not isinstance(reservation, ABCKernelClientReservationMixin):
+        if reservation is None or destination is None or not isinstance(reservation, ABCClientReservation):
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         protocol = reservation.get_broker().get_type()

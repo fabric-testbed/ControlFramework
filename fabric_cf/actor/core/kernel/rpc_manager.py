@@ -42,7 +42,7 @@ from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservatio
 from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
-from fabric_cf.actor.core.apis.abc_kernel_server_reservation import ABCKernelServerReservationMixin
+from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
 from fabric_cf.actor.core.apis.abc_query_response_handler import ABCQueryResponseHandler
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
@@ -549,7 +549,7 @@ class RPCManager:
     def __log_sliver(*, reservation: ABCReservationMixin, logger: logging.Logger):
         if reservation is not None and isinstance(reservation, ABCReservationMixin):
             sliver = None
-            if isinstance(reservation, ABCKernelServerReservationMixin) and reservation.get_requested_resources() is not None:
+            if isinstance(reservation, ABCServerReservation) and reservation.get_requested_resources() is not None:
                 sliver = reservation.get_requested_resources().get_sliver()
             else:
                 if reservation.get_resources() is not None:

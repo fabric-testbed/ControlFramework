@@ -25,7 +25,6 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-import traceback
 from typing import TYPE_CHECKING, List
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
@@ -34,12 +33,11 @@ from fabric_mb.message_bus.messages.add_slice_avro import AddSliceAvro
 from fabric_mb.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
 from fabric_mb.message_bus.messages.get_slices_request_avro import GetSlicesRequestAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
-from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 
 from fabric_cf.actor.core.apis.abc_mgmt_server_actor import ABCMgmtServerActor
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
-from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.manage.kafka.kafka_actor import KafkaActor

@@ -116,8 +116,8 @@ class BasePlugin(ABCBasePlugin):
     def recovery_ended(self):
         return
 
-    def create_slice(self, *, slice_id: ID, name: str):
-        slice_obj = SliceFactory.create(slice_id=slice_id, name=name)
+    def create_slice(self, *, slice_id: ID, name: str, project_id: str):
+        slice_obj = SliceFactory.create(slice_id=slice_id, name=name, project_id=project_id)
         return slice_obj
 
     def release_slice(self, *, slice_obj: ABCSlice):

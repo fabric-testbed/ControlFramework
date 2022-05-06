@@ -51,12 +51,12 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         if not isinstance(manager, ActorManagementObject):
             raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
-    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None,
-                   email: str = None, state: List[int] = None) -> List[SliceAvro]:
+    def get_slices(self, *, slice_id: ID = None, slice_name: str = None,
+                   email: str = None, project: str = None, state: List[int] = None) -> List[SliceAvro] or None:
         self.clear_last()
         try:
-            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth,
-                                             slice_name=slice_name, email=email, state=state)
+            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, state=state,
+                                             slice_name=slice_name, email=email, project=project)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -66,7 +66,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
-    def remove_slice(self, *, slice_id: ID, id_token: str = None) -> bool:
+    def remove_slice(self, *, slice_id: ID) -> bool:
         self.clear_last()
         try:
             result = self.manager.remove_slice(slice_id=slice_id, caller=self.auth)
@@ -78,7 +78,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def get_reservations(self, *, id_token: str = None, state: List[int] = None, slice_id: ID = None,
+    def get_reservations(self, *, state: int = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None,
                          rid_list: List[str] = None) -> List[ReservationMng]:
         self.clear_last()
@@ -95,7 +95,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
-    def remove_reservation(self, *, rid: ID, id_token: str = None) -> bool:
+    def remove_reservation(self, *, rid: ID) -> bool:
         self.clear_last()
         try:
             result = self.manager.remove_reservation(caller=self.auth, rid=rid)
@@ -108,7 +108,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def close_reservation(self, *, rid: ID, id_token: str = None) -> bool:
+    def close_reservation(self, *, rid: ID) -> bool:
         self.clear_last()
         try:
             result = self.manager.close_reservation(caller=self.auth, rid=rid)
@@ -127,7 +127,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def get_guid(self) -> ID:
         return self.manager.get_actor().get_guid()
 
-    def add_slice(self, *, slice_obj: SliceAvro, id_token: str = None) -> ID:
+    def add_slice(self, *, slice_obj: SliceAvro) -> ID:
         self.clear_last()
         try:
             result = self.manager.add_slice(slice_obj=slice_obj, caller=self.auth)
@@ -144,7 +144,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
     def update_slice(self, *, slice_obj: SliceAvro) -> bool:
         self.clear_last()
         try:
-            result = self.manager.update_slice(slice_obj=slice_obj, caller=self.auth)
+            result = self.manager.update_slice(slice_mng=slice_obj, caller=self.auth)
             self.last_status = result
 
             if self.last_status.get_code() == 0:
@@ -172,7 +172,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def close_reservations(self, *, slice_id: ID, id_token: str = None) -> bool:
+    def close_reservations(self, *, slice_id: ID) -> bool:
         self.clear_last()
         try:
             result = self.manager.close_slice_reservations(caller=self.auth, slice_id=slice_id)
@@ -186,8 +186,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[str],
-                                               id_token: str = None) -> List[ReservationStateAvro]:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[str]) -> List[ReservationStateAvro]:
         self.clear_last()
         try:
             result = self.manager.get_reservation_state_for_reservations(caller=self.auth, rids=reservation_list)
@@ -202,7 +201,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         return None
 
     def get_delegations(self, *, slice_id: ID = None, state: int = None,
-                        delegation_id: str = None, id_token: str = None) -> List[DelegationAvro]:
+                        delegation_id: str = None) -> List[DelegationAvro]:
         self.clear_last()
         try:
             result = self.manager.get_delegations(caller=self.auth, slice_id=slice_id, did=delegation_id)

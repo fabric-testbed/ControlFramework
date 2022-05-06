@@ -29,13 +29,13 @@ from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING, List
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.kernel.slice import SliceTypes
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.util.id import ID
-    from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 
 
@@ -155,7 +155,9 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_reservations(self) -> List[ABCReservationMixin]:
+    def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
+                         email: str = None, oidc_sub: str = None, rid: ID = None,
+                         state: list[int] = None) -> List[ABCReservationMixin]:
         """
         Retrieves the reservations.
 
@@ -165,183 +167,31 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_reservation(self, *, rid: ID, oidc_claim_sub: str = None) -> ABCReservationMixin or None:
-        """
-        Retrieves the specified reservation record.
-
-        @param rid Reservation identifier
-        @param oidc_claim_sub oidc claim sub
-
-        @return dict of properties
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_reservations_by_slice_id(self, *, slice_id: ID) -> List[ABCReservationMixin]:
-        """
-        Retrieves the specified reservations for a slice
-
-        @param slice_id slice_id
-
-        @return list of properties for reservations
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_reservations_by_graph_node_id(self, *, graph_node_id: str) -> List[ABCReservationMixin]:
-        """
-        Retrieves the specified reservations which correspond to a specific graph node
-
-        @param graph_node_id graph_node_id
-
-        @return list of properties for reservations
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_reservations_by_graph_node_id_state(self, *, graph_node_id: str,
-                                                states: List[int]) -> List[ABCReservationMixin]:
-        """
-        Retrieves the specified reservations which correspond to a specific graph node
-
-        @param graph_node_id graph_node_id
-        @param states list of states
-
-        @return list of properties for reservations
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: int) -> List[ABCReservationMixin]:
-        """
-        Retrieves the specified reservations for a slice in a specific state
-
-        @param slice_id slice_id
-        @param state state
-
-        @return list of properties for reservations
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_client_reservations(self) -> List[ABCReservationMixin]:
+    def get_client_reservations(self, *, slice_id: ID = None) -> List[ABCReservationMixin]:
         """
         Retrieves the client reservations
 
-        @return list of properties for reservations
+        @return list of reservations
 
         @throws Exception in case of error
         """
 
     @abstractmethod
-    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> List[ABCReservationMixin]:
+    def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None,
+                   email: str = None, state: list[int] = None, oidc_sub: str = None,
+                   slc_type: List[SliceTypes] = None) -> List[ABCSlice] or None:
         """
-        Retrieves the client reservations
-
-        @param slice_id slice_id
-        @return list of properties for reservations
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_slice(self, *, slice_id: ID) -> ABCSlice or None:
-        """
-        Retrieves the specified slice record.
+        Retrieves the specified slices.
 
         @param slice_id slice id
-
-        @return dict of properties
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_slice_by_name(self, *, slice_name: str, email: str = None,
-                          oidc_claim_sub: str = None) -> List[ABCSlice] or None:
-        """
-        Retrieves the specified slice record.
-
         @param slice_name slice name
-        @param oidc_claim_sub User OIDC Sub Claim
-        @param email User email
+        @param project_id project id
+        @param email email
+        @param state state
+        @param oidc_sub oidc sub
+        @param slc_type slice type
 
-        @return dict of properties
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_slice_by_oidc_claim_sub(self, *, oidc_claim_sub: str) -> List[ABCSlice] or None:
-        """
-        Retrieves the specified slice record.
-
-        @param oidc_claim_sub User OIDC Sub Claim
-        @param email User email
-
-        @return dict of properties
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_slice_by_email(self, *, email: str) -> List[ABCSlice] or None:
-        """
-        Retrieves the specified slice record.
-
-        @param email User email
-
-        @return dict of properties
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_slice_by_resource_type(self, *, rtype: ResourceType) -> ABCSlice or None:
-        """
-        Retrieves the specified slice record.
-
-        @param rtype resource type
-
-        @return dict of properties
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_slices(self) -> List[ABCSlice] or None:
-        """
-        Retrieves all slice records.
-
-        @return a list containing one or more properties dicts representing
-                serialized slices
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_inventory_slices(self) -> List[ABCSlice] or None:
-        """
-        Retrieves all inventory slice records.
-
-        @return a list containing one or more properties dicts representing
-                serialized slices
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_client_slices(self) -> List[ABCSlice] or None:
-        """
-        Retrieves all client slice records.
-
-        @return a list containing one or more properties dicts representing
-                serialized slices
+        @return list of slices
 
         @throws Exception in case of error
         """
@@ -355,24 +205,12 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_holdings(self) -> List[ABCReservationMixin]:
+    def get_holdings(self, *, slice_id: ID = None) -> List[ABCReservationMixin]:
         """
         Retrieves all reservations representing resources held by this
         actor Broker/Controller.
 
         @return list of properties
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_holdings_by_slice_id(self, *, slice_id: ID) -> List[ABCReservationMixin]:
-        """
-        Retrieves all reservations representing resources held by this
-        actor Broker/Controller.
-        @param slice_id sliceId
-
-        @return vector of properties
 
         @throws Exception in case of error
         """
@@ -394,18 +232,6 @@ class ABCDatabase(ABC):
         Retrieves all reservations for which this actor acts as a site.
 
         @return list of properties
-
-        @throws Exception in case of error
-        """
-
-    @abstractmethod
-    def get_reservations_by_state(self, *, state: int) -> List[ABCReservationMixin]:
-        """
-        Retrieves the reservations in a specific state
-
-        @param state state
-
-        @return list of reservations
 
         @throws Exception in case of error
         """
@@ -450,20 +276,12 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_delegations(self, state: int = None) -> List[ABCDelegation]:
+    def get_delegations(self, *, slice_id: ID = None, state: int = None) -> List[ABCDelegation]:
         """
         Get delegations
-        @params state delegation state
-        @return List of delegations
-        """
-
-    @abstractmethod
-    def get_delegations_by_slice_id(self, *, slice_id: ID, state: int = None) -> List[ABCDelegation]:
-        """
-        Get delegations
-        @params slice_id Slice Id
-        @params state delegation state
-        @return List of delegations
+        @params slice_id: slice_id
+        @params state: state
+        @return Delegations
         """
 
     @abstractmethod

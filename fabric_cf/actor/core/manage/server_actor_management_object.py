@@ -78,17 +78,11 @@ class ServerActorManagementObject(ActorManagementObject):
             res_list = None
             try:
                 if category == ReservationCategory.Client:
-                    if slice_id is None:
-                        res_list = self.db.get_client_reservations()
-                    else:
-                        res_list = self.db.get_client_reservations_by_slice_id(slice_id=slice_id)
+                    res_list = self.db.get_client_reservations(slice_id=slice_id)
                 elif category == ReservationCategory.Broker:
                     res_list = self.db.get_broker_reservations()
                 elif category == ReservationCategory.Inventory:
-                    if slice_id is None:
-                        res_list = self.db.get_holdings()
-                    else:
-                        res_list = self.db.get_holdings_by_slice_id(slice_id=slice_id)
+                    res_list = self.db.get_holdings(slice_id=slice_id)
             except Exception as e:
                 self.logger.error("do_get_reservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -125,9 +119,9 @@ class ServerActorManagementObject(ActorManagementObject):
 
             try:
                 if slice_type == SliceTypes.ClientSlice:
-                    slc_list = self.db.get_client_slices()
+                    slc_list = self.db.get_slices(slc_type=[SliceTypes.ClientSlice, SliceTypes.BrokerClientSlice])
                 elif slice_type == SliceTypes.InventorySlice:
-                    slc_list = self.db.get_inventory_slices()
+                    slc_list = self.db.get_slices(slc_type=[SliceTypes.InventorySlice])
 
             except Exception as e:
                 self.logger.error("get_slices_by_slice_type:db access {}".format(e))
@@ -216,7 +210,7 @@ class ServerActorManagementObject(ActorManagementObject):
             client_obj.set_kafka_topic(kafka_topic=kafka_topic)
 
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCServerActor):
                     self.actor = actor
 
                 def run(self):
@@ -272,7 +266,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         try:
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCServerActor):
                     self.actor = actor
 
                 def run(self):
@@ -301,7 +295,7 @@ class ServerActorManagementObject(ActorManagementObject):
 
         try:
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCServerActor):
                     self.actor = actor
 
                 def run(self):

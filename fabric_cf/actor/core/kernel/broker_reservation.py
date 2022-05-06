@@ -35,13 +35,12 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
 from fabric_cf.actor.core.apis.abc_broker_policy_mixin import ABCBrokerPolicyMixin
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory, ABCReservationMixin
-from fabric_cf.actor.core.apis.abc_kernel_broker_reservation_mixin import ABCKernelBrokerReservationMixin
+from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation_server import ReservationServer
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
-from fabric_cf.actor.core.util.rpc_exception import RPCError
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -51,12 +50,11 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-    from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
 
 
-class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
+class BrokerReservation(ReservationServer, ABCBrokerReservation):
     """
     A note on exported "will call" reservations. An export() operation may be
     locally initiated on an agent. It binds and forms a ticket in the same way as
@@ -70,7 +68,7 @@ class BrokerReservation(ReservationServer, ABCKernelBrokerReservationMixin):
     """
     updated_absorbed = "update absorbed"
 
-    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_obj: ABCKernelSlice):
+    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_obj: ABCSlice):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_obj)
         # Delegation backing the ticket granted to this reservation. For now only
         # one source delegation can be used to issue a ticket to satisfy a client

@@ -27,11 +27,13 @@ from __future__ import annotations
 
 from abc import abstractmethod, ABC
 from datetime import datetime
-from typing import TYPE_CHECKING, Tuple
+from typing import TYPE_CHECKING, Tuple, Dict, List
 
 if TYPE_CHECKING:
     from fim.graph.abc_property_graph import ABCPropertyGraph
-
+    from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+    from fabric_cf.actor.core.util.reservation_set import ReservationSet
     from fabric_cf.actor.core.kernel.slice import SliceTypes
     from fabric_cf.actor.security.auth_token import AuthToken
     from fabric_cf.actor.core.util.resource_type import ResourceType
@@ -333,4 +335,116 @@ class ABCSlice(ABC):
     def set_lease_start(self, *, lease_start: datetime):
         """
         Return lease start time
+        """
+
+    def set_project_id(self, *, project_id: str):
+        """
+        Set project id
+        @param project_id: project id
+        """
+
+    def get_project_id(self) -> str:
+        """
+        Return project id
+        """
+
+    @abstractmethod
+    def get_reservations(self) -> ReservationSet:
+        """
+        Returns the reservation set.
+
+        @return reservation set
+        """
+
+    @abstractmethod
+    def get_delegations(self) -> Dict[str, ABCDelegation]:
+        """
+        Returns the delegations dict.
+
+        @return delegations dict
+        """
+
+    @abstractmethod
+    def get_reservations_list(self) -> List[ABCReservationMixin]:
+        """
+        Returns the reservation set represented as a list. Must be
+        called with the kernel lock on to prevent exceptions due to concurrent
+        iteration.
+
+        @return a list of reservation
+        """
+
+    @abstractmethod
+    def is_empty(self) -> bool:
+        """
+        Checks if the slice is empty.
+
+        @return true if there are no reservations in the slice
+        """
+
+    @abstractmethod
+    def prepare(self):
+        """
+        Prepares to register a new slice.  Clears previous state, such
+        as list of reservations in the slice.
+
+        @raises Exception if validity checks fail
+        """
+
+    @abstractmethod
+    def register(self, *, reservation: ABCReservationMixin):
+        """
+        Registers a new reservation.
+
+        @param reservation reservation to register
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def soft_lookup(self, *, rid: ID) -> ABCReservationMixin:
+        """
+        Looks up a reservation by ID but does not throw error if the
+        reservation is not present in the slice.
+
+        @params rid the reservation ID
+
+        @returns the reservation with that ID
+        """
+
+    @abstractmethod
+    def unregister(self, *, reservation: ABCReservationMixin):
+        """
+        Unregisters the reservation from the slice.
+
+        @param reservation reservation to unregister
+        """
+
+    @abstractmethod
+    def register_delegation(self, *, delegation: ABCDelegation):
+        """
+        Registers a new delegation.
+
+        @param delegation delegation to register
+
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
+    def soft_lookup_delegation(self, *, did: str) -> ABCDelegation:
+        """
+        Looks up a delegation by ID but does not throw error if the
+        delegation is not present in the slice.
+
+        @params did the delegation ID
+
+        @returns the delegation with that ID
+        """
+
+    @abstractmethod
+    def unregister_delegation(self, *, delegation: ABCDelegation):
+        """
+        Unregisters the delegation from the slice.
+
+        @param delegation delegation to unregister
         """

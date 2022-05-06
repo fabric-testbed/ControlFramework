@@ -127,21 +127,19 @@ class ABCMgmtClientActor(ABCComponent):
         """
 
     @abstractmethod
-    def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: ID) -> DelegationAvro:
         """
         Claims delegations exported by the specified broker
         @param broker broker guid
         @param did reservation id
-        @param id_token id token
         @return reservation
         """
 
     @abstractmethod
-    def reclaim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: ID) -> DelegationAvro:
         """
         Reclaim delegations exported by the specified broker
         @param broker broker guid
         @param did reservation id
-        @param id_token id token
         @return reservation
         """

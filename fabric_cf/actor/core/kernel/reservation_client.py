@@ -38,7 +38,7 @@ from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import ServiceType, NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
-from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import ABCKernelControllerReservationMixin
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
@@ -62,14 +62,14 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
     from fabric_cf.actor.core.apis.abc_client_policy import ABCClientPolicy
     from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
-    from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.resource_count import ResourceCount
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
+class ReservationClient(Reservation, ABCControllerReservation):
     """
     Reservation state machine for a client-side reservation. Role: orchestrator,
     or an agent requesting tickets from an upstream agent. This class
@@ -98,7 +98,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
     CLOSE_COMPLETE = "close complete"
 
     def __init__(self, *, rid: ID, resources: ResourceSet = None, term: Term = None,
-                 slice_object: ABCKernelSlice = None, broker: ABCBrokerProxy = None):
+                 slice_object: ABCSlice = None, broker: ABCBrokerProxy = None):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_object)
         self.service_pending = JoinState.None_
         # Proxy to the broker that serves tickets for this reservation.

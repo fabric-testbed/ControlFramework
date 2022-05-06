@@ -37,6 +37,7 @@ from fabric_mb.message_bus.messages.result_reservation_avro import ResultReserva
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
@@ -295,7 +296,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         try:
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCClientActor):
                     self.actor = actor
 
                 def run(self):
@@ -321,7 +322,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         try:
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin, logger):
+                def __init__(self, *, actor: ABCClientActor, logger):
                     self.actor = actor
                     self.logger = logger
 
@@ -432,7 +433,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def modify_reservation(self, *, rid: ID, modified_sliver: dict, caller: AuthToken) -> ResultAvro:
+    def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
 
         if rid is None or modified_sliver is None:
@@ -444,7 +445,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
         try:
 
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCClientActor):
                     self.actor = actor
 
                 def run(self):
@@ -485,7 +486,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                 return result
 
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCClientActor):
                     self.actor = actor
 
                 def run(self):
@@ -527,7 +528,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                 return result
 
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCClientActor):
                     self.actor = actor
 
                 def run(self):

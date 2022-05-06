@@ -34,6 +34,8 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
     from fabric_cf.actor.core.util.update_data import UpdateData
     from fabric_cf.actor.security.auth_token import AuthToken
+    from fabric_cf.actor.core.kernel.resource_set import ResourceSet
+    from fabric_cf.actor.core.time.term import Term
 
 
 class ABCServerReservation(ABCReservationMixin):
@@ -112,4 +114,20 @@ class ABCServerReservation(ABCReservationMixin):
         """
         Sets the identity of the server actor that controls the reservation.
         @param owner identity of server actor
+        """
+
+    @abstractmethod
+    def set_requested_resources(self, *, resources: ResourceSet):
+        """
+        Sets the requested resources.
+
+        @param resources requested resources
+        """
+
+    @abstractmethod
+    def set_requested_term(self, *, term: Term):
+        """
+        Sets the requested term.
+
+        @param term requested term
         """

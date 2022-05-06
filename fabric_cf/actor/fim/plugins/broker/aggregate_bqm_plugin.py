@@ -70,8 +70,7 @@ class AggregatedBQMPlugin:
         """
         assert node_id is not None
         # get existing reservations for this node
-        existing_reservations = self.actor.get_plugin().get_database().\
-            get_reservations_by_graph_node_id(graph_node_id=node_id)
+        existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id)
 
         # node capacities
         occupied_capacities = Capacities()

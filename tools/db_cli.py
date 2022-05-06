@@ -110,16 +110,7 @@ class MainClass:
 
     def get_reservations(self, slice_id: str = None, res_id: str = None, email: str = None):
         try:
-            res_list = []
-            if slice_id is not None:
-                res_list = self.db.get_reservations_by_slice_id(slice_id=ID(uid=slice_id))
-            elif res_id is not None:
-                res_list = self.db.get_reservation(rid=ID(uid=res_id))
-            elif email is not None:
-                res_list = self.db.get_reservations_by_email(email=email)
-            else:
-                res_list = self.db.get_reservations()
-
+            res_list = self.db.get_reservations(slice_id=slice_id, rid=res_id, email=email)
             if res_list is not None and len(res_list) > 0:
                 for r in res_list:
                     print(r)

@@ -155,7 +155,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.allocation_horizon = 0
         self.ready = False
 
-        self.queue = None
+        self.queue = FIFOQueue()
         self.pluggable_registry = PluggableRegistry()
 
     def load_combined_broker_model(self):
@@ -994,8 +994,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                   ReservationStates.Nascent.value]
 
         # Only get Active or Ticketing reservations
-        existing_reservations = self.actor.get_plugin().get_database().get_reservations_by_graph_node_id_state(
-            graph_node_id=node_id, states=states)
+        existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
+                                                                                        state=states)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

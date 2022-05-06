@@ -164,10 +164,8 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            slice_id = None
-            if request.slice_id is not None:
-                slice_id = ID(uid=request.slice_id)
-            result = mo.get_slices(slice_id=slice_id, caller=auth, slice_name=request.slice_name,
+            slice_id = ID(uid=request.get_slice_id()) if request.slice_id is not None else None
+            result = mo.get_slices(slice_id=slice_id, caller=auth, slice_name=request.get_slice_name(),
                                    email=request.get_email())
 
         except Exception as e:
@@ -263,38 +261,16 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
+            state = None
+            if request.get_reservation_state() is not None and \
+                    request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
+                state = [request.get_reservation_state()]
 
-            slice_id = None
-            if request.slice_id is not None:
-                slice_id = ID(uid=request.slice_id)
+            slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
+            rid = ID(uid=request.reservation_id) if request.reservation_id is not None else None
 
-            rid = None
-            if request.get_reservation_id() is not None:
-                rid = ID(uid=request.get_reservation_id())
-
-            if rid is not None:
-                result = mo.get_reservations(caller=auth, rid=rid)
-
-            elif slice_id is not None:
-
-                if request.get_reservation_state() is not None and \
-                        request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
-
-                    result = mo.get_reservations(caller=auth, slice_id=slice_id,
-                                                 state=[request.get_reservation_state()])
-
-                else:
-                    result = mo.get_reservations(caller=auth, slice_id=slice_id)
-
-            else:
-                if request.get_reservation_state() is not None and \
-                        request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
-
-                    result = mo.get_reservations(caller=auth, state=[request.get_reservation_state()],
-                                                 email=request.get_email())
-
-                else:
-                    result = mo.get_reservations(caller=auth, email=request.get_email())
+            result = mo.get_reservations(caller=auth, state=state, slice_id=slice_id,
+                                         rid=rid, email=request.get_email())
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -416,16 +392,9 @@ class KafkaActorService(KafkaService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            if request.get_delegation_id() is not None:
-                result = mo.get_delegations(caller=auth, did=ID(uid=request.get_delegation_id()),
-                                            state=request.delegation_state)
-
-            elif request.get_slice_id() is not None:
-                result = mo.get_delegations(caller=auth, slice_id=ID(uid=request.get_slice_id()),
-                                            state=request.delegation_state)
-
-            else:
-                result = mo.get_delegations(caller=auth, state=request.delegation_state)
+            slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
+            result = mo.get_delegations(caller=auth, did=request.get_delegation_id(),
+                                        state=request.get_delegation_state(), slice_id=slice_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

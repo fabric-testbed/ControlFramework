@@ -34,8 +34,7 @@ from fim.slivers.capacities_labels import ReservationInfo
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
-from fabric_cf.actor.core.apis.abc_kernel_reservation import ABCKernelReservation
-from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import SliceException
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, SliceState, SliceOperation
 from fabric_cf.actor.core.util.id import ID
@@ -51,7 +50,7 @@ class SliceTypes(Enum):
     BrokerClientSlice = 3
 
 
-class Slice(ABCKernelSlice):
+class Slice(ABCSlice):
     """
     Slice implementation. A slice has a globally unique identifier, name,
     description, property list, an owning identity, an access control list, and a
@@ -61,7 +60,7 @@ class Slice(ABCKernelSlice):
     reservations at many sites; and on the site Authority, where each slice may
     hold multiple reservations for resources at that site.
     """
-    def __init__(self, *, slice_id: ID = None, name: str = "unspecified"):
+    def __init__(self, *, slice_id: ID = None, name: str = "unspecified", project_id: str = None):
         # Globally unique identifier.
         self.guid = slice_id
         # Slice name. Not required to be globally or locally unique.
@@ -87,6 +86,7 @@ class Slice(ABCKernelSlice):
         self.lock = threading.Lock()
         self.lease_end = None
         self.lease_start = None
+        self.project_id = project_id
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -102,6 +102,12 @@ class Slice(ABCKernelSlice):
         self.graph = None
         self.delegations = {}
         self.lock = threading.Lock()
+
+    def set_project_id(self, project_id):
+        self.project_id = project_id
+
+    def get_project_id(self):
+        return self.project_id
 
     def set_graph_id(self, graph_id: str):
         self.graph_id = graph_id
@@ -170,7 +176,7 @@ class Slice(ABCKernelSlice):
         self.state_machine.clear()
         self.transition_slice(operation=SliceStateMachine.CREATE)
 
-    def register(self, *, reservation: ABCKernelReservation):
+    def register(self, *, reservation: ABCReservationMixin):
         if self.reservations.contains(rid=reservation.get_reservation_id()):
             raise SliceException("Reservation #{} already exists in slice".format(reservation.get_reservation_id()))
 
@@ -215,7 +221,7 @@ class Slice(ABCKernelSlice):
     def set_resource_type(self, *, resource_type: ResourceType):
         self.resource_type = resource_type
 
-    def soft_lookup(self, *, rid: ID) -> ABCKernelReservation:
+    def soft_lookup(self, *, rid: ID) -> ABCReservationMixin:
         return self.reservations.get(rid=rid)
 
     def soft_lookup_delegation(self, *, did: str) -> ABCDelegation:
@@ -236,7 +242,7 @@ class Slice(ABCKernelSlice):
         '''
         return msg
 
-    def unregister(self, *, reservation: ABCKernelReservation):
+    def unregister(self, *, reservation: ABCReservationMixin):
         self.reservations.remove(reservation=reservation)
 
     def unregister_delegation(self, *, delegation: ABCDelegation):
@@ -323,14 +329,15 @@ class Slice(ABCKernelSlice):
 
 class SliceFactory:
     @staticmethod
-    def create(*, slice_id: ID, name: str = None, properties: dict = None) -> ABCSlice:
+    def create(*, slice_id: ID, name: str = None, properties: dict = None, project_id: str = None) -> ABCSlice:
         """
         Create slice
         :param slice_id:
         :param name:
         :param properties:
+        :param project_id:
         :return:
         """
-        result = Slice(slice_id=slice_id, name=name)
+        result = Slice(slice_id=slice_id, name=name, project_id=project_id)
         result.set_config_properties(value=properties)
         return result

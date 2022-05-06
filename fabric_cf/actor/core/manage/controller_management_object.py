@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, List
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -117,7 +118,7 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
         return self.client_helper.extend_reservation(reservation=reservation, new_end_time=new_end_time, 
                                                      new_units=new_units, caller=caller)
 
-    def modify_reservation(self, *, rid: ID, modified_sliver: dict, caller: AuthToken) -> ResultAvro:
+    def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver, caller: AuthToken) -> ResultAvro:
         return self.client_helper.modify_reservation(rid=rid, modified_sliver=modified_sliver, caller=caller)
 
     def get_reservation_units(self, *, caller: AuthToken, rid: ID) -> ResultUnitsAvro:
