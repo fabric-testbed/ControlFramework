@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import logging
 import threading
 import concurrent.futures
 import traceback
@@ -41,6 +42,7 @@ from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservatio
 from fabric_cf.actor.core.apis.abc_controller_callback_proxy import ABCControllerCallbackProxy
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
+from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
 from fabric_cf.actor.core.apis.abc_query_response_handler import ABCQueryResponseHandler
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants
@@ -58,6 +60,7 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.kernel_timer import KernelTimer
 from fabric_cf.actor.core.util.rpc_exception import RPCException, RPCError
 from fabric_cf.actor.core.util.update_data import UpdateData
+from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
@@ -129,17 +132,17 @@ class RPCManager:
     def stop(self):
         self.do_stop()
 
-    def claim_delegation(self, *, delegation: ABCDelegation, id_token: str = None):
+    def claim_delegation(self, *, delegation: ABCDelegation):
         self.validate_delegation(delegation=delegation)
         self.do_claim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
                                  delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                                 caller=delegation.get_slice_object().get_owner(), id_token=id_token)
+                                 caller=delegation.get_slice_object().get_owner())
 
-    def reclaim_delegation(self, *, delegation: ABCDelegation, id_token: str = None):
+    def reclaim_delegation(self, *, delegation: ABCDelegation):
         self.validate_delegation(delegation=delegation)
         self.do_reclaim_delegation(actor=delegation.get_actor(), proxy=delegation.get_broker(),
                                    delegation=delegation, callback=delegation.get_client_callback_proxy(),
-                                   caller=delegation.get_slice_object().get_owner(), id_token=id_token)
+                                   caller=delegation.get_slice_object().get_owner())
 
     def ticket(self, *, reservation: ABCClientReservation):
         self.validate(reservation=reservation, check_requested=True)
@@ -225,7 +228,7 @@ class RPCManager:
                                  callback=callback, caller=reservation.get_actor().get_identity())
 
     def query(self, *, actor: ABCActorMixin, remote_actor: ABCActorProxy, callback: ABCCallbackProxy,
-              query: dict, handler: ABCQueryResponseHandler, id_token: str):
+              query: dict, handler: ABCQueryResponseHandler):
         if actor is None:
             raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("actor"))
         if remote_actor is None:
@@ -237,7 +240,7 @@ class RPCManager:
         if handler is None:
             raise RPCException(message=Constants.NOT_SPECIFIED_PREFIX.format("handler"))
         self.do_query(actor=actor, remote_actor=remote_actor, local_actor=callback, query=query,
-                      handler=handler, caller=callback.get_identity(), id_token=id_token)
+                      handler=handler, caller=callback.get_identity())
 
     def query_result(self, *, actor: ABCActorMixin, remote_actor: ABCCallbackProxy, request_id: str, response: dict,
                      caller: AuthToken):
@@ -293,11 +296,9 @@ class RPCManager:
         self.thread_pool.shutdown(wait=True)
 
     def do_claim_delegation(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, delegation: ABCDelegation,
-                            callback: ABCClientCallbackProxy, caller: AuthToken, id_token: str = None):
-        proxy.get_logger().info("Outbound claim delegation request from <{}>: {}".format(caller.get_name(), delegation))
-
+                            callback: ABCClientCallbackProxy, caller: AuthToken):
         state = proxy.prepare_claim_delegation(delegation=delegation, callback=callback,
-                                               caller=caller, id_token=id_token)
+                                               caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ClaimDelegation)
 
@@ -305,16 +306,14 @@ class RPCManager:
                          sequence=delegation.get_sequence_out())
         # Schedule a timeout
         rpc.timer = KernelTimer.schedule(queue=actor, task=ClaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
-        proxy.get_logger().info("Timer started: {} for Claim".format(rpc.timer))
+        if proxy.get_logger() is not None:
+            proxy.get_logger().info(f"Timer started: {rpc.timer} for Claim")
         self.enqueue(rpc=rpc)
 
     def do_reclaim_delegation(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, delegation: ABCDelegation,
-                              callback: ABCClientCallbackProxy, caller: AuthToken, id_token: str = None):
-        proxy.get_logger().info("Outbound reclaim delegation request from <{}>: {}".format(
-            caller.get_name(), delegation))
-
+                              callback: ABCClientCallbackProxy, caller: AuthToken):
         state = proxy.prepare_reclaim_delegation(delegation=delegation, callback=callback,
-                                                 caller=caller, id_token=id_token)
+                                                 caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ReclaimDelegation)
 
@@ -322,13 +321,12 @@ class RPCManager:
                          sequence=delegation.get_sequence_out())
         # Schedule a timeout
         rpc.timer = KernelTimer.schedule(queue=actor, task=ReclaimTimeout(req=rpc), delay=self.CLAIM_TIMEOUT_SECONDS)
-        proxy.get_logger().info("Timer started: {} for Reclaim".format(rpc.timer))
+        if proxy.get_logger() is not None:
+            proxy.get_logger().info(f"Timer started: {rpc.timer} for Reclaim")
         self.enqueue(rpc=rpc)
 
     def do_ticket(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, reservation: ABCClientReservation,
                   callback: ABCClientCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound ticket request from <{}>: {}".format(caller.get_name(), reservation))
-
         state = proxy.prepare_ticket(reservation=reservation, callback=callback, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.Ticket)
@@ -338,8 +336,6 @@ class RPCManager:
 
     def do_extend_ticket(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, reservation: ABCClientReservation,
                          callback: ABCClientCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound extend ticket request from <{}>: {}".format(caller.get_name(), reservation))
-
         state = proxy.prepare_extend_ticket(reservation=reservation, callback=callback, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ExtendTicket)
@@ -349,8 +345,6 @@ class RPCManager:
 
     def do_relinquish(self, *, actor: ABCActorMixin, proxy: ABCBrokerProxy, reservation: ABCClientReservation,
                       callback: ABCClientCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound relinquish request from <{}>: {}".format(caller.get_name(), reservation))
-
         state = proxy.prepare_relinquish(reservation=reservation, callback=callback, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.Relinquish)
@@ -360,8 +354,6 @@ class RPCManager:
 
     def do_redeem(self, *, actor: ABCActorMixin, proxy: ABCAuthorityProxy, reservation: ABCControllerReservation,
                   callback: ABCControllerCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound redeem request from <{}>: {}".format(caller.get_name(), reservation))
-
         state = proxy.prepare_redeem(reservation=reservation, callback=callback, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.Redeem)
@@ -371,8 +363,6 @@ class RPCManager:
 
     def do_extend_lease(self, *, actor: ABCActorMixin, proxy: ABCAuthorityProxy, reservation: ABCControllerReservation,
                         callback: ABCControllerCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound extend lease request from <{}>: {}".format(caller.get_name(), reservation))
-
         state = proxy.prepare_extend_lease(reservation=reservation, callback=callback, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ExtendLease)
@@ -382,8 +372,6 @@ class RPCManager:
 
     def do_modify_lease(self, *, actor: ABCActorMixin, proxy: ABCAuthorityProxy, reservation: ABCControllerReservation,
                         callback: ABCControllerCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound modify lease request from <{}>: {}".format(caller.get_name(), reservation))
-
         state = proxy.prepare_modify_lease(reservation=reservation, callback=callback, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.ModifyLease)
@@ -393,8 +381,6 @@ class RPCManager:
 
     def do_close(self, *, actor: ABCActorMixin, proxy: ABCAuthorityProxy, reservation: ABCControllerReservation,
                  callback: ABCControllerCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound close request from <{}>: {}".format(caller.get_name(), reservation))
-
         state = proxy.prepare_close(reservation=reservation, callback=callback, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.Close)
@@ -404,8 +390,6 @@ class RPCManager:
 
     def do_update_ticket(self, *, actor: ABCActorMixin, proxy: ABCClientCallbackProxy, reservation: ABCBrokerReservation,
                          update_data: UpdateData, callback: ABCCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound update ticket request from <{}>: {}".format(caller.get_name(), reservation))
-
         state = proxy.prepare_update_ticket(reservation=reservation, update_data=update_data, callback=callback,
                                             caller=caller)
         state.set_caller(caller=caller)
@@ -416,9 +400,6 @@ class RPCManager:
 
     def do_update_delegation(self, *, actor: ABCActorMixin, proxy: ABCClientCallbackProxy, delegation: ABCDelegation,
                              update_data: UpdateData, callback: ABCCallbackProxy, caller: AuthToken):
-        proxy.get_logger().info("Outbound update delegation request from <{}>: {}".format(
-            caller.get_name(), delegation))
-
         state = proxy.prepare_update_delegation(delegation=delegation, update_data=update_data, callback=callback,
                                                 caller=caller)
         state.set_caller(caller=caller)
@@ -430,8 +411,6 @@ class RPCManager:
     def do_update_lease(self, *, actor: ABCActorMixin, proxy: ABCControllerCallbackProxy,
                         reservation: ABCAuthorityReservation, update_data: UpdateData, callback: ABCCallbackProxy,
                         caller: AuthToken):
-        proxy.get_logger().info("Outbound update lease request from <{}>: {}".format(caller.get_name(), reservation))
-
         state = proxy.prepare_update_lease(reservation=reservation, update_data=update_data, callback=callback,
                                            caller=caller)
         state.set_caller(caller=caller)
@@ -441,22 +420,18 @@ class RPCManager:
         self.enqueue(rpc=rpc)
 
     def do_query(self, *, actor: ABCActorMixin, remote_actor: ABCActorProxy, local_actor: ABCCallbackProxy,
-                 query: dict, handler: ABCQueryResponseHandler, caller: AuthToken, id_token: str):
-        remote_actor.get_logger().info("Outbound query request from <{}>".format(caller.get_name()))
-
-        state = remote_actor.prepare_query(callback=local_actor, query=query, caller=caller, id_token=id_token)
+                 query: dict, handler: ABCQueryResponseHandler, caller: AuthToken):
+        state = remote_actor.prepare_query(callback=local_actor, query=query, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.Query)
         rpc = RPCRequest(request=state, actor=actor, proxy=remote_actor, handler=handler)
         # Timer
         rpc.timer = KernelTimer.schedule(queue=actor, task=QueryTimeout(req=rpc), delay=self.QUERY_TIMEOUT_SECONDS)
-        remote_actor.get_logger().info("Timer started: {} for Query".format(rpc.timer))
+        remote_actor.get_logger().info(f"Timer started: {rpc.timer} for Query")
         self.enqueue(rpc=rpc)
 
     def do_query_result(self, *, actor: ABCActorMixin, remote_actor: ABCCallbackProxy, request_id: str,
                         response: dict, caller: AuthToken):
-        remote_actor.get_logger().info("Outbound query_result request from <{}>".format(caller.get_name()))
-
         state = remote_actor.prepare_query_result(request_id=request_id, response=response, caller=caller)
         state.set_caller(caller=caller)
         state.set_type(rtype=RPCRequestType.QueryResult)
@@ -472,67 +447,19 @@ class RPCManager:
             request = self.remove_pending_request(guid=rpc.get_request_id())
             if request is not None:
                 if request.timer:
-                    actor.get_logger().debug("Canceling the timer: {}".format(request.timer))
+                    actor.get_logger().debug(f"Canceling the timer: {request.timer}")
                 request.cancel_timer()
                 if request.handler is not None:
                     rpc.set_response_handler(response_handler=request.handler)
 
-        if rpc.get_request_type() == RPCRequestType.Query:
-            actor.get_logger().info("Inbound query from <{}>".format(rpc.get_caller().get_name()))
+        actor.get_logger().info(f"Inbound {rpc.get_request_type()} request from "
+                                f"<{rpc.get_caller().get_name()}>:{rpc.get()}")
 
-        elif rpc.get_request_type() == RPCRequestType.QueryResult:
-            actor.get_logger().info("Inbound query response from <{}>".format(rpc.get_caller().get_name()))
+        self.__log_sliver(reservation=rpc.get(), logger=actor.get_logger())
 
+        if rpc.get_request_type() == RPCRequestType.QueryResult:
             if request is None:
                 actor.get_logger().warning("No queryRequest to match to inbound queryResponse. Ignoring response")
-
-        elif rpc.get_request_type() == RPCRequestType.ClaimDelegation:
-            actor.get_logger().info("Inbound claim delegation request from <{}>:{}".format(
-                rpc.get_caller().get_name(), rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.ReclaimDelegation:
-            actor.get_logger().info("Inbound reclaim delegation request from <{}>:{}".format(
-                rpc.get_caller().get_name(), rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.Ticket:
-            actor.get_logger().info("Inbound ticket request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                 rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.ExtendTicket:
-            actor.get_logger().info("Inbound extend ticket request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                        rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.Relinquish:
-            actor.get_logger().info("Inbound relinquish request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                     rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.UpdateTicket:
-            actor.get_logger().info("Inbound update ticket request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                        rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.UpdateDelegation:
-            actor.get_logger().info("Inbound update delegation request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                            rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.Redeem:
-            actor.get_logger().info("Inbound redeem request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                 rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.ExtendLease:
-            actor.get_logger().info("Inbound extend lease request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                       rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.Close:
-            actor.get_logger().info("Inbound close request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.UpdateLease:
-            actor.get_logger().info("Inbound update lease request from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                                       rpc.get()))
-
-        elif rpc.get_request_type() == RPCRequestType.FailedRPC:
-            actor.get_logger().info("Inbound FailedRPC from <{}>:{}".format(rpc.get_caller().get_name(),
-                                                                            rpc.get()))
 
         if rpc.get_request_type() == RPCRequestType.FailedRPC:
             actor.get_logger().debug("Failed RPC")
@@ -563,9 +490,9 @@ class RPCManager:
             self.pending_lock.acquire()
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             logger = GlobalsSingleton.get().get_logger()
-            logger.debug("Added request with rid: {}".format(guid))
+            logger.debug(f"Added request with rid: {guid}")
             self.pending[guid] = request
-            logger.debug("Pending Queue: {}".format(self.pending))
+            logger.debug(f"Pending Queue: {self.pending}")
         finally:
             self.pending_lock.release()
 
@@ -575,8 +502,8 @@ class RPCManager:
             self.pending_lock.acquire()
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             logger = GlobalsSingleton.get().get_logger()
-            logger.debug("Removing request with rid: {}".format(guid))
-            logger.debug("Pending Queue: {}".format(self.pending))
+            logger.debug(f"Removing request with rid: {guid}")
+            logger.debug(f"Pending Queue: {self.pending}")
             if guid in self.pending:
                 result = self.pending.pop(guid)
         finally:
@@ -586,7 +513,6 @@ class RPCManager:
     def queued(self):
         with self.stats_lock:
             self.num_queued += 1
-            print("Queued: {}".format(self.num_queued))
 
     def de_queued(self):
         with self.stats_lock:
@@ -594,13 +520,14 @@ class RPCManager:
                 raise RPCException(message="De-queued invoked, but nothing is queued!!!")
 
             self.num_queued -= 1
-            print("DeQueued: {}".format(self.num_queued))
             if self.num_queued == 0:
                 self.stats_lock.notify_all()
 
     def enqueue(self, *, rpc: RPCRequest):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         logger = GlobalsSingleton.get().get_logger()
+        logger.info(f"Outbound {rpc.get_request_type()} : {rpc.get()}")
+        self.__log_sliver(reservation=rpc.get(), logger=logger)
         if not self.started:
             logger.warning("Ignoring RPC request: container is shutting down")
             return
@@ -611,9 +538,22 @@ class RPCManager:
             self.queued()
             self.thread_pool.submit(RPCExecutor.run, rpc, self.producer)
         except Exception as e:
+            logger.error(f"Exception occurred while starting RPC Executor {e}")
             logger.error(traceback.format_exc())
-            logger.error("Exception occurred while starting RPC Executor {}".format(e))
             self.de_queued()
             if rpc.handler is not None:
                 self.remove_pending_request(guid=rpc.request.get_message_id())
             raise e
+
+    @staticmethod
+    def __log_sliver(*, reservation: ABCReservationMixin, logger: logging.Logger):
+        if reservation is not None and isinstance(reservation, ABCReservationMixin):
+            sliver = None
+            if isinstance(reservation, ABCServerReservation) and reservation.get_requested_resources() is not None:
+                sliver = reservation.get_requested_resources().get_sliver()
+            else:
+                if reservation.get_resources() is not None:
+                    sliver = reservation.get_resources().get_sliver()
+
+            if sliver is not None:
+                logger.info(f"Sliver: {sliver_to_str(sliver=sliver)}")

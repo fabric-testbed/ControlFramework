@@ -27,6 +27,7 @@ from __future__ import annotations
 
 import json
 import traceback
+from datetime import datetime
 
 from fabric_mb.message_bus.messages.add_slice_avro import AddSliceAvro
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
@@ -45,6 +46,8 @@ from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.update_reservation_avro import UpdateReservationAvro
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
+from fabric_mb.message_bus.messages.update_slice_avro import UpdateSliceAvro
+from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
@@ -52,51 +55,87 @@ from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_service import KafkaService
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.utils import translate_avro_message_type_pdp_action_id
+from fabric_cf.actor.security.pdp_auth import ActionId
 
 
 class KafkaActorService(KafkaService):
+    def authorize_request(self, *, id_token: str, message_name: str, resource: BaseSliver = None,
+                          lease_end_time: datetime = None) -> ResultStringAvro or None:
+        """
+        Authorize request
+        :param id_token:
+        :param message_name:
+        :param resource:
+        :param lease_end_time:
+        :return:
+        """
+        result = None
+        action_id = translate_avro_message_type_pdp_action_id(message_name=message_name)
+
+        # Internal messages do not require authorization
+        if action_id is ActionId.noop:
+            return result
+
+        try:
+            from fabric_cf.actor.security.access_checker import AccessChecker
+            AccessChecker.check_access(action_id=action_id, token=id_token, logger=self.logger,
+                                       resource=resource, lease_end_time=lease_end_time)
+        except Exception as e:
+            self.logger.exception(e)
+            result = ResultStringAvro()
+            status = ResultAvro()
+            status.status = ErrorCodes.unauthorized
+            status.message = str(e)
+            result.status = status
+        return result
+
     def process(self, *, message: AbcMessageAvro):
         callback_topic = message.get_callback_topic()
         result = None
 
         self.logger.debug("Processing message: {}".format(message.get_message_name()))
 
-        if message.get_message_name() == AbcMessageAvro.get_slices_request:
-            result = self.get_slices(request=message)
+        result = self.authorize_request(id_token=message.get_id_token(), message_name=message.get_message_name())
 
-        elif message.get_message_name() == AbcMessageAvro.remove_slice:
-            result = self.remove_slice(request=message)
+        # If authorization failed, return the result
+        if result is None:
+            if message.get_message_name() == AbcMessageAvro.get_slices_request:
+                result = self.get_slices(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.add_slice:
-            result = self.add_slice(request=message)
+            elif message.get_message_name() == AbcMessageAvro.remove_slice:
+                result = self.remove_slice(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.update_slice:
-            result = self.update_slice(request=message)
+            elif message.get_message_name() == AbcMessageAvro.add_slice:
+                result = self.add_slice(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.get_reservations_request:
-            result = self.get_reservations(request=message)
+            elif message.get_message_name() == AbcMessageAvro.update_slice:
+                result = self.update_slice(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.get_delegations:
-            result = self.get_delegations(request=message)
+            elif message.get_message_name() == AbcMessageAvro.get_reservations_request:
+                result = self.get_reservations(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.remove_reservation:
-            result = self.remove_reservation(request=message)
+            elif message.get_message_name() == AbcMessageAvro.get_delegations:
+                result = self.get_delegations(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.close_reservations:
-            result = self.close_reservations(request=message)
+            elif message.get_message_name() == AbcMessageAvro.remove_reservation:
+                result = self.remove_reservation(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.update_reservation:
-            result = self.update_reservation(request=message)
+            elif message.get_message_name() == AbcMessageAvro.close_reservations:
+                result = self.close_reservations(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.get_reservations_state_request:
-            result = self.get_reservation_state(request=message)
+            elif message.get_message_name() == AbcMessageAvro.update_reservation:
+                result = self.update_reservation(request=message)
 
-        elif message.get_message_name() == AbcMessageAvro.maintenance_request:
-            result = self.maintenance_request(request=message)
+            elif message.get_message_name() == AbcMessageAvro.get_reservations_state_request:
+                result = self.get_reservation_state(request=message)
 
-        else:
-            self.logger.debug("Unsupported Message, discarding it!")
-            return
+            elif message.get_message_name() == AbcMessageAvro.maintenance_request:
+                result = self.maintenance_request(request=message)
+
+            else:
+                self.logger.debug("Unsupported Message, discarding it!")
+                return
 
         if callback_topic is None:
             self.logger.debug("No callback specified, ignoring the message")
@@ -125,11 +164,9 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            slice_id = None
-            if request.slice_id is not None:
-                slice_id = ID(uid=request.slice_id)
-            result = mo.get_slices(slice_id=slice_id, caller=auth, id_token=request.get_id_token(),
-                                   slice_name=request.slice_name, email=request.get_email())
+            slice_id = ID(uid=request.get_slice_id()) if request.slice_id is not None else None
+            result = mo.get_slices(slice_id=slice_id, caller=auth, slice_name=request.get_slice_name(),
+                                   email=request.get_email())
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -154,7 +191,7 @@ class KafkaActorService(KafkaService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.add_slice(slice_obj=request.slice_obj, caller=auth, id_token=request.id_token)
+            result = mo.add_slice(slice_obj=request.slice_obj, caller=auth)
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
@@ -163,7 +200,7 @@ class KafkaActorService(KafkaService):
         result.message_id = request.message_id
         return result
 
-    def update_slice(self, *, request: AddSliceAvro) -> ResultStringAvro:
+    def update_slice(self, *, request: UpdateSliceAvro) -> ResultStringAvro:
         result = ResultStringAvro()
         result.status = ResultAvro()
         result.message_id = request.message_id
@@ -224,41 +261,16 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
+            state = None
+            if request.get_reservation_state() is not None and \
+                    request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
+                state = [request.get_reservation_state()]
 
-            slice_id = None
-            if request.slice_id is not None:
-                slice_id = ID(uid=request.slice_id)
+            slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
+            rid = ID(uid=request.reservation_id) if request.reservation_id is not None else None
 
-            rid = None
-            if request.get_reservation_id() is not None:
-                rid = ID(uid=request.get_reservation_id())
-
-            if rid is not None:
-                result = mo.get_reservations(caller=auth, rid=rid, id_token=request.get_id_token())
-
-            elif slice_id is not None:
-
-                if request.get_reservation_state() is not None and \
-                        request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
-
-                    result = mo.get_reservations(caller=auth, slice_id=slice_id,
-                                                 state=[request.get_reservation_state()],
-                                                 id_token=request.get_id_token())
-
-                else:
-                    result = mo.get_reservations(caller=auth, slice_id=slice_id,
-                                                 id_token=request.get_id_token())
-
-            else:
-                if request.get_reservation_state() is not None and \
-                        request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
-
-                    result = mo.get_reservations(caller=auth, state=[request.get_reservation_state()],
-                                                 id_token=request.get_id_token(), email=request.get_email())
-
-                else:
-                    result = mo.get_reservations(caller=auth, id_token=request.get_id_token(),
-                                                 email=request.get_email())
+            result = mo.get_reservations(caller=auth, state=state, slice_id=slice_id,
+                                         rid=rid, email=request.get_email())
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -305,8 +317,7 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            result.status = mo.remove_reservation(caller=auth, rid=ID(uid=request.reservation_id),
-                                                  id_token=request.id_token)
+            result.status = mo.remove_reservation(caller=auth, rid=ID(uid=request.reservation_id))
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -331,11 +342,9 @@ class KafkaActorService(KafkaService):
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
             if request.get_slice_id() is not None:
-                result.status = mo.close_slice_reservations(caller=auth, slice_id=ID(uid=request.slice_id),
-                                                            id_token=request.id_token)
+                result.status = mo.close_slice_reservations(caller=auth, slice_id=ID(uid=request.slice_id))
             else:
-                result.status = mo.close_reservation(caller=auth, rid=ID(uid=request.reservation_id),
-                                                     id_token=request.id_token)
+                result.status = mo.close_reservation(caller=auth, rid=ID(uid=request.reservation_id))
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -359,8 +368,7 @@ class KafkaActorService(KafkaService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_reservation_state_for_reservations(caller=auth, rids=request.get_reservation_ids(),
-                                                               id_token=request.get_id_token())
+            result = mo.get_reservation_state_for_reservations(caller=auth, rids=request.get_reservation_ids())
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -384,17 +392,9 @@ class KafkaActorService(KafkaService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            if request.get_delegation_id() is not None:
-                result = mo.get_delegations(caller=auth, did=ID(uid=request.get_delegation_id()),
-                                            id_token=request.get_id_token(), state=request.delegation_state)
-
-            elif request.get_slice_id() is not None:
-                result = mo.get_delegations(caller=auth, slice_id=ID(uid=request.get_slice_id()),
-                                            id_token=request.get_id_token(), state=request.delegation_state)
-
-            else:
-                result = mo.get_delegations(caller=auth, id_token=request.get_id_token(),
-                                            state=request.delegation_state)
+            slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
+            result = mo.get_delegations(caller=auth, did=request.get_delegation_id(),
+                                        state=request.get_delegation_state(), slice_id=slice_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

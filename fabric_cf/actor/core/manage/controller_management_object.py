@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, List
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_units_avro import ResultUnitsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -89,8 +90,8 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
             super().set_actor(actor=actor)
             self.client_helper = ClientActorManagementObjectHelper(client=actor)
 
-    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None, id_token: str = None) -> ResultProxyAvro:
-        return self.client_helper.get_brokers(caller=caller, id_token=id_token, broker_id=broker_id)
+    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None) -> ResultProxyAvro:
+        return self.client_helper.get_brokers(caller=caller, broker_id=broker_id)
 
     def add_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
         return self.client_helper.add_broker(broker=broker, caller=caller)
@@ -117,10 +118,10 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
         return self.client_helper.extend_reservation(reservation=reservation, new_end_time=new_end_time, 
                                                      new_units=new_units, caller=caller)
 
-    def modify_reservation(self, *, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
-        return self.client_helper.modify_reservation(rid=rid, modify_properties=modify_properties, caller=caller)
+    def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver, caller: AuthToken) -> ResultAvro:
+        return self.client_helper.modify_reservation(rid=rid, modified_sliver=modified_sliver, caller=caller)
 
-    def get_reservation_units(self, *, caller: AuthToken, rid: ID, id_token: str = None) -> ResultUnitsAvro:
+    def get_reservation_units(self, *, caller: AuthToken, rid: ID) -> ResultUnitsAvro:
         result = ResultUnitsAvro()
         result.status = ResultAvro()
 
@@ -140,7 +141,7 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
                 return result
 
             if units_list is not None:
-                result.result = Converter.fill_units(unit_list=units_list)
+                result.units = Converter.fill_units(unit_list=units_list)
         except Exception as e:
             self.logger.error("get_reservation_units: {}".format(e))
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -152,10 +153,8 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
     def get_substrate_database(self) -> ABCSubstrateDatabase:
         return self.actor.get_plugin().get_database()
 
-    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
-                          id_token: str = None) -> ResultDelegationAvro:
-        return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller)
 
-    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
-                            id_token: str = None) -> ResultDelegationAvro:
-        return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller)

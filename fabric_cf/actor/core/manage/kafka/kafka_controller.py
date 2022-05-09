@@ -71,10 +71,10 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
                                graph_format: GraphFormat) -> BrokerQueryModelAvro:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: ID) -> DelegationAvro:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def reclaim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: ID) -> DelegationAvro:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_reservation_units(self, *, rid: ID, id_token: str = None) -> List[UnitAvro]:

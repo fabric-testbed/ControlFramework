@@ -34,11 +34,11 @@ from datetime import datetime
 from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels
-from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import ServiceType, NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
-from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import ABCKernelControllerReservationMixin
+from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
@@ -62,14 +62,14 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_client_callback_proxy import ABCClientCallbackProxy
     from fabric_cf.actor.core.apis.abc_client_policy import ABCClientPolicy
     from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
-    from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.resource_count import ResourceCount
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
-class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
+class ReservationClient(Reservation, ABCControllerReservation):
     """
     Reservation state machine for a client-side reservation. Role: orchestrator,
     or an agent requesting tickets from an upstream agent. This class
@@ -98,7 +98,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
     CLOSE_COMPLETE = "close complete"
 
     def __init__(self, *, rid: ID, resources: ResourceSet = None, term: Term = None,
-                 slice_object: ABCKernelSlice = None, broker: ABCBrokerProxy = None):
+                 slice_object: ABCSlice = None, broker: ABCBrokerProxy = None):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_object)
         self.service_pending = JoinState.None_
         # Proxy to the broker that serves tickets for this reservation.
@@ -409,6 +409,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         @return true if approved; false otherwise
         """
         approved = True
+
         for pred_state in self.redeem_predecessors.values():
             if pred_state.get_reservation() is None or \
                     pred_state.get_reservation().is_failed() or \
@@ -416,6 +417,7 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
                 self.logger.error("redeem predecessor reservation is in a terminal state or reservation is null."
                                   " ignoring it: {}".format(pred_state.get_reservation()))
                 continue
+
             if not pred_state.get_reservation().is_active_joined():
                 approved = False
                 break
@@ -450,6 +452,10 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
 
         for ifs in self.resources.sliver.interface_info.interfaces.values():
             component_name, rid = ifs.get_node_map()
+
+            if component_name == str(NodeType.Facility):
+                continue
+
             pred_state = self.redeem_predecessors.get(ID(uid=rid))
             parent_res = pred_state.get_reservation()
             if parent_res is not None and \
@@ -506,8 +512,8 @@ class ReservationClient(Reservation, ABCKernelControllerReservationMixin):
         return approved
 
     def can_ticket(self) -> bool:
-        supported_ns = [ServiceType.L2STS.name, ServiceType.L2Bridge.name, ServiceType.L2PTP.name,
-                        ServiceType.FABNetv4.name, ServiceType.FABNetv6.name]
+        supported_ns = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
+                        str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror)]
 
         ret_val = False
         if self.get_type() is not None:

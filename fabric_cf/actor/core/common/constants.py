@@ -248,6 +248,7 @@ class Constants:
 
     CLAIMS_SUB = "sub"
     CLAIMS_EMAIL = "email"
+    CLAIMS_PROJECTS = "projects"
 
     PROPERTY_EXCEPTION_MESSAGE = "exception.message"
     PROPERTY_TARGET_NAME = "target.name"
@@ -270,7 +271,7 @@ class Constants:
     # Orchestrator Lease params
     TWO_WEEKS = timedelta(days=30)
     DEFAULT_MAX_DURATION = TWO_WEEKS
-    LEASE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+    LEASE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
     DEFAULT_LEASE_IN_HOURS = 24
 
     STATE_ALL = "ALL"

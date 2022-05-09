@@ -41,12 +41,15 @@ class KafkaControllerService(KafkaClientActorService):
     def process(self, *, message: AbcMessageAvro):
         callback_topic = message.get_callback_topic()
         result = None
+        result = self.authorize_request(id_token=message.get_id_token(), message_name=message.get_message_name())
 
-        if message.get_message_name() == AbcMessageAvro.get_reservation_units_request:
-            result = self.get_reservation_units(request=message)
-        else:
-            super().process(message=message)
-            return
+        # If authorization failed, return the result
+        if result is None:
+            if message.get_message_name() == AbcMessageAvro.get_reservation_units_request:
+                result = self.get_reservation_units(request=message)
+            else:
+                super().process(message=message)
+                return
 
         if callback_topic is None:
             self.logger.debug("No callback specified, ignoring the message")
@@ -70,8 +73,7 @@ class KafkaControllerService(KafkaClientActorService):
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
 
-            result = mo.get_reservation_units(caller=auth, rid=ID(uid=request.reservation_id),
-                                              id_token=request.get_id_token())
+            result = mo.get_reservation_units(caller=auth, rid=ID(uid=request.reservation_id))
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))

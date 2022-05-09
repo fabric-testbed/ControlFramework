@@ -33,8 +33,6 @@ from fabric_cf.actor.core.apis.abc_client_actor import ABCClientActor
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
     from fabric_cf.actor.core.util.reservation_set import ReservationSet
-    from fabric_cf.actor.security.auth_token import AuthToken
-    from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 
 
 class ABCController(ABCClientActor):

@@ -23,15 +23,14 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import ABCKernelControllerReservationMixin
-from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationException
 
 
 class PredecessorState:
 
-    def __init__(self, *, reservation: ABCKernelControllerReservationMixin, filters: dict = None):
+    def __init__(self, *, reservation: ABCClientReservation, filters: dict = None):
         if reservation is None:
             raise ReservationException(Constants.INVALID_ARGUMENT)
         self.reservation_id = None
@@ -39,12 +38,12 @@ class PredecessorState:
         if reservation is not None:
             self.reservation_id = reservation.get_reservation_id()
 
-    def set_reservation(self, reservation: ABCReservationMixin):
+    def set_reservation(self, reservation: ABCClientReservation):
         self.reservation = reservation
         if reservation is not None:
             self.reservation_id = reservation.get_reservation_id()
 
-    def get_reservation(self) -> ABCKernelControllerReservationMixin:
+    def get_reservation(self) -> ABCClientReservation:
         return self.reservation
 
     def set_properties(self, config: dict):

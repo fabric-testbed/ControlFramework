@@ -121,18 +121,8 @@ class ActorDatabase(ABCDatabase):
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        return None
-
-    def get_slice_id_from_guid(self, *, slice_id: ID) -> int or None:
-        try:
-            self.lock.acquire()
-            slice_obj = self.db.get_slice(slice_guid=str(slice_id))
-            return slice_obj['slc_id']
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
         return None
 
     def get_slice_by_id(self, *, slc_id: int) -> ABCSlice or None:
@@ -145,20 +135,24 @@ class ActorDatabase(ABCDatabase):
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
         return None
 
     def add_slice(self, *, slice_object: ABCSlice):
         try:
-            if self.get_slice(slice_id=slice_object.get_slice_id()) is not None:
+            slices = self.get_slices(slice_id=slice_object.get_slice_id())
+            if len(slices) > 0:
                 raise DatabaseException("Slice # {} already exists".format(slice_object.get_slice_id()))
-            self.lock.acquire()
+
             properties = pickle.dumps(slice_object)
             oidc_claim_sub = None
             email = None
             if slice_object.get_owner() is not None:
                 oidc_claim_sub = slice_object.get_owner().get_oidc_sub_claim()
                 email = slice_object.get_owner().get_email()
+
+            self.lock.acquire()
             self.db.add_slice(slc_guid=str(slice_object.get_slice_id()),
                               slc_state=slice_object.get_state().value,
                               slc_name=slice_object.get_name(),
@@ -167,9 +161,12 @@ class ActorDatabase(ABCDatabase):
                               properties=properties,
                               slc_graph_id=slice_object.get_graph_id(),
                               oidc_claim_sub=oidc_claim_sub, email=email,
-                              lease_end=slice_object.get_lease_end(), lease_start=slice_object.get_lease_start())
+                              lease_end=slice_object.get_lease_end(),
+                              lease_start=slice_object.get_lease_start(),
+                              project_id=slice_object.get_project_id())
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def update_slice(self, *, slice_object: ABCSlice):
         # Update the slice only when there are changes to be reflected in database
@@ -188,159 +185,43 @@ class ActorDatabase(ABCDatabase):
                                  slc_graph_id=slice_object.get_graph_id(),
                                  lease_end=slice_object.get_lease_end(), lease_start=slice_object.get_lease_start())
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def remove_slice(self, *, slice_id: ID):
         try:
             self.lock.acquire()
             self.db.remove_slice(slc_guid=str(slice_id))
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
-    def get_slice(self, *, slice_id: ID) -> ABCSlice or None:
+    def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None,
+                   email: str = None, state: list[int] = None, oidc_sub: str = None,
+                   slc_type: List[SliceTypes] = None) -> List[ABCSlice] or None:
+        result = []
         try:
-            slice_dict = self.db.get_slice(slice_guid=str(slice_id))
-            if slice_dict is not None:
-                pickled_slice = slice_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                return pickle.loads(pickled_slice)
-        except Exception as e:
-            self.logger.error(e)
-        return None
-
-    def get_slice_by_name(self, *, slice_name: str, oidc_claim_sub: str, email: str) -> List[ABCSlice] or None:
-        try:
-            self.lock.acquire()
-            result = []
-            slice_dict_list = self.db.get_slice_by_name(slice_name=slice_name,
-                                                        oidc_claim_sub=oidc_claim_sub, email=email)
-            if slice_dict_list is not None:
-                for s in slice_dict_list:
+            try:
+                self.lock.acquire()
+                slice_type = None
+                if slc_type is not None:
+                    slice_type = [x.value for x in slc_type]
+                sid = str(slice_id) if slice_id is not None else None
+                slices = self.db.get_slices(slice_id=sid, slice_name=slice_name, project_id=project_id,
+                                            email=email, state=state, oidc_sub=oidc_sub, slc_type=slice_type)
+            finally:
+                self.lock.release()
+            if slices is not None:
+                for s in slices:
                     pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
                     slice_obj = pickle.loads(pickled_slice)
                     result.append(slice_obj)
-            return result
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        return None
-
-    def get_slice_by_oidc_claim_sub(self, *, oidc_claim_sub: str) -> List[ABCSlice] or None:
-        try:
-            self.lock.acquire()
-            result = []
-            slice_dict_list = self.db.get_slice_by_oidc_claim_sub(oidc_claim_sub=oidc_claim_sub)
-            if slice_dict_list is not None:
-                for s in slice_dict_list:
-                    pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    slice_obj = pickle.loads(pickled_slice)
-                    result.append(slice_obj)
-            return result
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        return None
-
-    def get_slice_by_email(self, *, email: str) -> List[ABCSlice] or None:
-        try:
-            self.lock.acquire()
-            result = []
-            slice_dict_list = self.db.get_slice_by_email(email=email)
-            if slice_dict_list is not None:
-                for s in slice_dict_list:
-                    pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    slice_obj = pickle.loads(pickled_slice)
-                    result.append(slice_obj)
-            return result
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        return None
-
-    def get_slice_by_email_state(self, *, email: str, state: List[int]) -> List[ABCSlice] or None:
-        try:
-            self.lock.acquire()
-            result = []
-            slice_dict_list = self.db.get_slice_by_email_state(email=email, slc_state=state)
-            if slice_dict_list is not None:
-                for s in slice_dict_list:
-                    pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    slice_obj = pickle.loads(pickled_slice)
-                    result.append(slice_obj)
-            return result
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        return None
-
-    def get_slices(self) -> List[ABCSlice] or None:
-        try:
-            self.lock.acquire()
-            result = []
-            slice_dict_list = self.db.get_slices()
-            if slice_dict_list is not None:
-                for s in slice_dict_list:
-                    pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    slice_obj = pickle.loads(pickled_slice)
-                    result.append(slice_obj)
-            return result
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        return None
-
-    def get_inventory_slices(self) -> List[ABCSlice] or None:
-        try:
-            self.lock.acquire()
-            result = []
-            slice_dict_list = self.db.get_slices_by_type(slc_type=SliceTypes.InventorySlice.value)
-            if slice_dict_list is not None:
-                for s in slice_dict_list:
-                    pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    slice_obj = pickle.loads(pickled_slice)
-                    result.append(slice_obj)
-            return result
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        return None
-
-    def get_client_slices(self) -> List[ABCSlice] or None:
-        try:
-            self.lock.acquire()
-            result = []
-            slice_dict_list = self.db.get_slices_by_types(slc_type1=SliceTypes.ClientSlice.value,
-                                                          slc_type2=SliceTypes.BrokerClientSlice.value)
-            if slice_dict_list is not None:
-                for s in slice_dict_list:
-                    pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                    slice_obj = pickle.loads(pickled_slice)
-                    result.append(slice_obj)
-            return result
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        return None
-
-    def get_slice_by_resource_type(self, *, rtype: ResourceType) -> ABCSlice or None:
-        try:
-            self.lock.acquire()
-            result_list = self.db.get_slices_by_resource_type(slc_resource_type=str(rtype))
-            if result_list is not None and len(result_list) > 0:
-                slice_dict = next(iter(result_list))
-                pickled_slice = slice_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                return pickle.loads(pickled_slice)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        return None
+            if self.lock.locked():
+                self.lock.release()
+        return result
 
     def add_reservation(self, *, reservation: ABCReservationMixin):
         try:
@@ -366,7 +247,8 @@ class ActorDatabase(ABCDatabase):
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def update_reservation(self, *, reservation: ABCReservationMixin):
         # Update the reservation only when there are changes to be reflected in database
@@ -387,7 +269,8 @@ class ActorDatabase(ABCDatabase):
                                        properties=properties,
                                        rsv_graph_node_id=reservation.get_graph_node_id())
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def remove_reservation(self, *, rid: ID):
         try:
@@ -399,24 +282,25 @@ class ActorDatabase(ABCDatabase):
                 self.logger.debug("No associated Unit associated with the reservation")
             self.db.remove_reservation(rsv_resid=str(rid))
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
-    def _load_reservation_from_pickled_object(self, pickled_res: bytes, slice_id: int) -> ABCReservationMixin or None:
+    def _load_reservation_from_pickled_object(self, pickled_res: bytes, slc_id: int) -> ABCReservationMixin or None:
         try:
-            slice_obj = self.get_slice_by_id(slc_id=slice_id)
+            slice_obj = self.get_slice_by_id(slc_id=slc_id)
             result = pickle.loads(pickled_res)
             result.restore(actor=self.actor, slice_obj=slice_obj)
 
             if isinstance(result, ABCControllerReservation) and result.get_redeem_predecessors() is not None:
                 for p in result.get_redeem_predecessors():
                     if p.reservation_id is not None:
-                        parent = self.get_reservation(rid=p.reservation_id)
-                        p.set_reservation(reservation=parent)
+                        parent = self.get_reservations(rid=p.reservation_id)
+                        p.set_reservation(reservation=parent[0])
 
                 for p in result.get_join_predecessors():
                     if p.reservation_id is not None:
-                        parent = self.get_reservation(rid=p.reservation_id)
-                        p.set_reservation(reservation=parent)
+                        parent = self.get_reservations(rid=p.reservation_id)
+                        p.set_reservation(reservation=parent[0])
 
             return result
         except Exception as e:
@@ -424,309 +308,112 @@ class ActorDatabase(ABCDatabase):
             self.logger.error(traceback.format_exc())
         return None
 
-    def get_reservation(self, *, rid: ID, oidc_claim_sub: str = None) -> ABCReservationMixin or None:
-        res_dict = None
+    def _load_reservations_from_db(self, *, res_dict_list: List[dict]) -> List[ABCReservationMixin]:
+        result = []
+        if res_dict_list is None:
+            return result
+
+        for r in res_dict_list:
+            pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+            slc_id = r.get(Constants.RSV_SLC_ID)
+            res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slc_id=slc_id)
+            result.append(res_obj)
+        return result
+
+    def get_client_reservations(self, *, slice_id: ID = None) -> List[ABCReservationMixin]:
+        result = []
         try:
             self.lock.acquire()
-            res_dict = self.db.get_reservation(rsv_resid=str(rid), oidc_claim_sub=oidc_claim_sub)
+            sid = str(slice_id) if slice_id is not None else None
+            res_dict_list = self.db.get_reservations(slice_id=sid,
+                                                     category=[ReservationCategory.Broker.value,
+                                                               ReservationCategory.Authority.value])
+            self.lock.release()
+            result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        if res_dict is not None:
-            pickled_res = res_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-            slice_id = res_dict.get(Constants.RSV_SLC_ID)
-            return self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-        return None
+            if self.lock.locked():
+                self.lock.release()
+        return result
 
-    def get_reservations_by_slice_id(self, *, slice_id: ID) -> List[ABCReservationMixin]:
+    def get_holdings(self, *, slice_id: ID = None) -> List[ABCReservationMixin]:
         result = []
-        res_dict_list = None
         try:
             self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_slice_id(slc_guid=str(slice_id))
+            sid = str(slice_id) if slice_id is not None else None
+            res_dict_list = self.db.get_reservations(slice_id=sid, category=[ReservationCategory.Client.value])
+            self.lock.release()
+            result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_reservations_by_graph_node_id(self, *, graph_node_id: str) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_graph_node_id(graph_node_id=graph_node_id)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_reservations_by_graph_node_id_state(self, *, graph_node_id: str,
-                                                states: List[int]) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_graph_node_id_and_state(graph_node_id=graph_node_id,
-                                                                                states=states)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_reservations_by_oidc_claim_sub(self, *, oidc_claim_sub: str) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_oidc_claim_sub(oidc_claim_sub=oidc_claim_sub)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_reservations_by_email(self, *, email: str) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_email(email=email)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_reservations_by_slice_id_state(self, *, slice_id: ID, state: List[int]) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            res_dict_list = self.db.get_reservations_by_slice_id_state(slc_guid=str(slice_id), rsv_state=state)
-        except Exception as e:
-            self.logger.error(e)
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_reservations_by_email_state(self, *, email: str, state: List[int]) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            res_dict_list = self.db.get_reservations_by_email_state(email=email, rsv_state=state)
-        except Exception as e:
-            self.logger.error(e)
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_client_reservations(self) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_2_category(rsv_cat1=ReservationCategory.Broker.value,
-                                                                   rsv_cat2=ReservationCategory.Authority.value)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_client_reservations_by_slice_id(self, *, slice_id: ID) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_slice_id_by_2_category(slc_guid=str(slice_id),
-                                                                               rsv_cat1=ReservationCategory.Broker.value,
-                                                                               rsv_cat2=ReservationCategory.Authority.value)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_holdings(self) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_category(rsv_cat=ReservationCategory.Client.value)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_holdings_by_slice_id(self, *, slice_id: ID) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_slice_id_by_category(slc_guid=str(slice_id),
-                                                                             rsv_cat=ReservationCategory.Client.value)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
+            if self.lock.locked():
+                self.lock.release()
         return result
 
     def get_broker_reservations(self) -> List[ABCReservationMixin]:
         result = []
-        res_dict_list = None
         try:
             self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_category(rsv_cat=ReservationCategory.Broker.value)
+            res_dict_list = self.db.get_reservations(category=[ReservationCategory.Broker.value])
+            self.lock.release()
+            result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
+            if self.lock.locked():
+                self.lock.release()
         return result
 
     def get_authority_reservations(self) -> List[ABCReservationMixin]:
         result = []
-        res_dict_list = None
         try:
             self.lock.acquire()
             result = []
-            res_dict_list = self.db.get_reservations_by_category(rsv_cat=ReservationCategory.Authority.value)
+            res_dict_list = self.db.get_reservations(category=[ReservationCategory.Authority.value])
+            self.lock.release()
+            result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
+            if self.lock.locked():
+                self.lock.release()
         return result
 
-    def get_reservations(self) -> List[ABCReservationMixin]:
+    def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
+                         email: str = None, oidc_sub: str = None, rid: ID = None,
+                         state: list[int] = None) -> List[ABCReservationMixin]:
         result = []
-        res_dict_list = None
         try:
             self.lock.acquire()
             self.logger.debug("Actor ID: {}".format(self.actor_id))
-            res_dict_list = self.db.get_reservations()
+            sid = str(slice_id) if slice_id is not None else None
+            res_id = str(rid) if rid is not None else None
+            res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id,
+                                                     project_id=project_id, email=email, oidc_sub=oidc_sub, rid=res_id,
+                                                     state=state)
+            self.lock.release()
+            result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
-        return result
-
-    def get_reservations_by_state(self, *, state: List[int]) -> List[ABCReservationMixin]:
-        result = []
-        res_dict_list = None
-        try:
-            self.lock.acquire()
-            res_dict_list = self.db.get_reservations_by_state(rsv_state=state)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
+            if self.lock.locked():
+                self.lock.release()
         return result
 
     def get_reservations_by_rids(self, *, rid: List[str]) -> List[ABCReservationMixin]:
         result = []
-        res_dict_list = None
         try:
             self.lock.acquire()
             res_dict_list = self.db.get_reservations_by_rids(rsv_resid_list=rid)
+            self.lock.release()
+            result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        if res_dict_list is not None:
-            for r in res_dict_list:
-                pickled_res = r.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = r.get(Constants.RSV_SLC_ID)
-                res_obj = self._load_reservation_from_pickled_object(pickled_res=pickled_res, slice_id=slice_id)
-                result.append(res_obj)
+            if self.lock.locked():
+                self.lock.release()
         return result
 
     def add_broker(self, *, broker: ABCBrokerProxy):
@@ -736,7 +423,8 @@ class ActorDatabase(ABCDatabase):
             properties = pickle.dumps(broker)
             self.db.add_proxy(act_id=self.actor_id, prx_name=broker.get_name(), properties=properties)
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def update_broker(self, *, broker: ABCBrokerProxy):
         try:
@@ -745,7 +433,8 @@ class ActorDatabase(ABCDatabase):
             properties = pickle.dumps(broker)
             self.db.update_proxy(act_id=self.actor_id, prx_name=broker.get_name(), properties=properties)
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def remove_broker(self, *, broker: ABCBrokerProxy):
         try:
@@ -753,7 +442,8 @@ class ActorDatabase(ABCDatabase):
             self.logger.debug("Removing broker {}({})".format(broker.get_name(), broker.get_guid()))
             self.db.remove_proxy(act_id=self.actor_id, prx_name=broker.get_name())
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def set_actor_name(self, *, name: str):
         self.actor_name = name
@@ -773,21 +463,17 @@ class ActorDatabase(ABCDatabase):
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
         return None
 
     def add_delegation(self, *, delegation: ABCDelegation):
         self.logger.debug("Adding delegation {} to slice {}".format(delegation.get_delegation_id(),
                                                                     delegation.get_slice_id()))
-
-        slc_id = self.get_slice_id_from_guid(slice_id=delegation.get_slice_id())
-        if slc_id is None:
-            raise DatabaseException("Slice with id: {} not found".format(delegation.get_slice_id()))
-
         try:
             self.lock.acquire()
             properties = pickle.dumps(delegation)
-            self.db.add_delegation(dlg_slc_id=slc_id,
+            self.db.add_delegation(slice_id=str(delegation.get_slice_id()),
                                    dlg_graph_id=str(delegation.get_delegation_id()),
                                    dlg_state=delegation.get_state().value,
                                    properties=properties)
@@ -795,7 +481,8 @@ class ActorDatabase(ABCDatabase):
                 "Delegation {} added to slice {}".format(delegation.get_delegation_id(),
                                                          delegation.get_slice_id()))
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def update_delegation(self, *, delegation: ABCDelegation):
         # Update the delegation only when there are changes to be reflected in database
@@ -811,7 +498,8 @@ class ActorDatabase(ABCDatabase):
                                       dlg_state=delegation.get_state().value,
                                       properties=properties)
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def remove_delegation(self, *, dlg_graph_id: str):
         try:
@@ -819,65 +507,55 @@ class ActorDatabase(ABCDatabase):
             self.logger.debug("Removing delegation {}".format(dlg_graph_id))
             self.db.remove_delegation(dlg_graph_id=str(dlg_graph_id))
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
-    def _load_delegation_from_pickled_instance(self, pickled_del: bytes, slice_id: int) -> ABCDelegation:
-        slice_obj = self.get_slice_by_id(slc_id=slice_id)
+    def _load_delegation_from_pickled_instance(self, pickled_del: bytes, slc_id: int) -> ABCDelegation:
+        slice_obj = self.get_slice_by_id(slc_id=slc_id)
         delegation = pickle.loads(pickled_del)
         delegation.restore(actor=self.actor, slice_obj=slice_obj)
         return delegation
 
+    def _load_delegation_from_db(self, dlg_dict_list: List[dict]) -> List[ABCDelegation]:
+        result = []
+        if dlg_dict_list is None:
+            return result
+
+        for d in dlg_dict_list:
+            pickled_del = d.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+            slc_id = d.get(Constants.DLG_SLC_ID)
+            dlg_obj = self._load_delegation_from_pickled_instance(pickled_del=pickled_del, slc_id=slc_id)
+            result.append(dlg_obj)
+
+        return result
+
     def get_delegation(self, *, dlg_graph_id: str) -> ABCDelegation or None:
-        dlg_dict = None
         try:
             self.lock.acquire()
             dlg_dict = self.db.get_delegation(dlg_graph_id=str(dlg_graph_id))
+            self.lock.release()
+            return self._load_delegation_from_db(dlg_dict_list=[dlg_dict])[0]
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        if dlg_dict is not None:
-            pickled_del = dlg_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-            slice_id = dlg_dict.get(Constants.DLG_SLC_ID)
-            return self._load_delegation_from_pickled_instance(pickled_del=pickled_del, slice_id=slice_id)
+            if self.lock.locked():
+                self.lock.release()
         return None
 
-    def get_delegations(self, state: int = None) -> List[ABCDelegation]:
+    def get_delegations(self, *, slice_id: ID = None, state: int = None) -> List[ABCDelegation]:
         result = []
-        dlg_dict_list = None
         try:
             self.lock.acquire()
             self.logger.debug("Actor ID: {}".format(self.actor_id))
-            dlg_dict_list = self.db.get_delegations(state=state)
+            sid = str(slice_id) if slice_id is not None else None
+            dlg_dict_list = self.db.get_delegations(slc_guid=sid, state=state)
+            self.lock.release()
+            result = self._load_delegation_from_db(dlg_dict_list=dlg_dict_list)
         except Exception as e:
             self.logger.error(e)
         finally:
-            self.lock.release()
-        if dlg_dict_list is not None:
-            for d in dlg_dict_list:
-                pickled_del = d.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = d.get(Constants.DLG_SLC_ID)
-                dlg_obj = self._load_delegation_from_pickled_instance(pickled_del=pickled_del, slice_id=slice_id)
-                result.append(dlg_obj)
-        return result
-
-    def get_delegations_by_slice_id(self, *, slice_id: ID, state: int = None) -> List[ABCDelegation]:
-        result = []
-        dlg_dict_list = None
-        try:
-            self.lock.acquire()
-            result = []
-            dlg_dict_list = self.db.get_delegations_by_slice_id(slc_guid=str(slice_id), state=state)
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            self.lock.release()
-        if dlg_dict_list is not None:
-            for d in dlg_dict_list:
-                pickled_del = d.get(Constants.PROPERTY_PICKLE_PROPERTIES)
-                slice_id = d.get(Constants.DLG_SLC_ID)
-                dlg_obj = self._load_delegation_from_pickled_instance(pickled_del=pickled_del, slice_id=slice_id)
-                result.append(dlg_obj)
+            if self.lock.locked():
+                self.lock.release()
         return result
 
     def add_config_mapping(self, key: str, config_mapping: ConfigurationMapping):
@@ -890,7 +568,8 @@ class ActorDatabase(ABCDatabase):
             self.logger.error(traceback.format_exc())
             raise e
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
 
     def get_config_mappings(self) -> List[ConfigurationMapping]:
         cfg_map_list = None
@@ -902,7 +581,8 @@ class ActorDatabase(ABCDatabase):
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
         finally:
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
         if cfg_map_list is not None:
             for c in cfg_map_list:
                 pickled_cfg_map = c.get(Constants.PROPERTY_PICKLE_PROPERTIES)

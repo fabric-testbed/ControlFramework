@@ -29,8 +29,8 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
-from fabric_cf.actor.core.apis.abc_component import ABCComponent
 
+from fabric_cf.actor.core.apis.abc_component import ABCComponent
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -41,32 +41,31 @@ if TYPE_CHECKING:
 
 class ABCMgmtActor(ABCComponent):
     @abstractmethod
-    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None,
-                   email: str = None) -> List[SliceAvro] or None:
+    def get_slices(self, *, slice_id: ID = None, slice_name: str = None,
+                   email: str = None, project: str = None, state: List[int] = None) -> List[SliceAvro] or None:
         """
         Obtains all slices.
-        @param id_token id token
         @param slice_id slice id
         @param slice_name slice name
         @param email email
-        @return returns list of all the slices
+        @param project project id
+        @param state slice state
+        @return returns list of slices
         """
 
     @abstractmethod
-    def add_slice(self, *, slice_obj: SliceAvro, id_token: str) -> ID:
+    def add_slice(self, *, slice_obj: SliceAvro) -> ID:
         """
         Adds a new slice
         @param slice_obj slice
-        @param id_token id token
         @return returns slice id
         """
 
     @abstractmethod
-    def remove_slice(self, *, slice_id: ID, id_token: str = None) -> bool:
+    def remove_slice(self, *, slice_id: ID) -> bool:
         """
         Removes the specified slice
         @param slice_id slice id
-        @param id_token id token
         @return true for success; false otherwise
         """
 
@@ -82,11 +81,10 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def get_reservations(self, *, id_token: str = None, state: int = None, slice_id: ID = None,
+    def get_reservations(self, *, state: int = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None,
                          rid_list: List[str] = None) -> List[ReservationMng]:
         """
-        @param id_token id token
         @param state state
         @param slice_id slice ID
         @param rid reservation id
@@ -110,41 +108,36 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def close_reservation(self, *, rid: ID, id_token: str = None) -> bool:
+    def close_reservation(self, *, rid: ID) -> bool:
         """
         Closes the specified reservation
         @param rid reservation id
-        @param id_token id token
         @return true for success; false otherwise
         """
 
     @abstractmethod
-    def close_reservations(self, *, slice_id: ID, id_token: str = None) -> bool:
+    def close_reservations(self, *, slice_id: ID) -> bool:
         """
         Closes all reservations in the specified slice.
         @param slice_id slice ID
-        @param id_token id token
         @return true for success; false otherwise
         """
 
     @abstractmethod
-    def remove_reservation(self, *, rid: ID, id_token: str = None) -> bool:
+    def remove_reservation(self, *, rid: ID) -> bool:
         """
         Removes the specified reservation.
         Note only closed reservations can be removed.
         @param rid reservation id of the reservation to be removed
-        @param id_token id token
         @return true for success; false otherwise
         """
 
     @abstractmethod
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[str],
-                                               id_token: str = None) -> List[ReservationStateAvro]:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[str]) -> List[ReservationStateAvro]:
         """
         Returns the state of each of the specified reservations.
         The order in the return list matches the order in the @reservations li
         @param reservation_list list of reservations
-        @param id_token id token
         @return list of state of the specified reservations
         """
 
@@ -171,12 +164,11 @@ class ABCMgmtActor(ABCComponent):
 
     @abstractmethod
     def get_delegations(self, *, slice_id: ID = None, state: int = None,
-                        delegation_id: str = None, id_token: str = None) -> List[DelegationAvro]:
+                        delegation_id: str = None) -> List[DelegationAvro]:
         """
         Get Delegations
         @param slice_id slice id
         @param state state
         @param delegation_id delegation id
-        @param id_token id token
         @return returns list of the delegations
         """

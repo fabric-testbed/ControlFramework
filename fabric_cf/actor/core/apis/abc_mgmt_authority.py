@@ -52,6 +52,7 @@ class ABCMgmtAuthority(ABCMgmtServerActor):
         """
         Retrieves all units in the specified reservation
         @param rid reservation id
+        @param id_token id token
         @return returns list of units for specific reservation
         """
 
@@ -60,5 +61,6 @@ class ABCMgmtAuthority(ABCMgmtServerActor):
         """
         Returns the specified inventory item
         @param uid unit id
+        @param id_token id token
         @return return the specified inventory item
         """

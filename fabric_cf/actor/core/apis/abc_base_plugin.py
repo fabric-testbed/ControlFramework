@@ -117,17 +117,18 @@ class ABCBasePlugin(ABC):
         """
 
     @abstractmethod
-    def create_slice(self, *, slice_id: ID, name: str):
+    def create_slice(self, *, slice_id: ID, name: str, project_id: str):
         """
         Creates a new slice.
 
         Args:
             slice_id: guid for the slice
             name: slice name
+            project_id: project id
         Returns:
-            a slice object
+            slice object
         Raises:
-            Exception in case of error
+            Exception if creation fails
         """
 
     @abstractmethod

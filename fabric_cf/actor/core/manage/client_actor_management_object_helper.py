@@ -37,6 +37,7 @@ from fabric_mb.message_bus.messages.result_reservation_avro import ResultReserva
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
@@ -75,7 +76,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
 
-    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None, id_token: str = None) -> ResultProxyAvro:
+    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None) -> ResultProxyAvro:
         result = ResultProxyAvro()
         result.status = ResultAvro()
 
@@ -140,13 +141,11 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            AccessChecker.check_access(action_id=ActionId.query, resource_type=AuthResourceType.resources,
-                                       token=id_token, logger=self.logger, actor_type=self.client.get_type())
 
             b = self.client.get_broker(guid=broker)
             if b is not None:
                 request = BrokerPolicy.get_broker_query_model_query(level=level, bqm_format=graph_format)
-                response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request, id_token=id_token)
+                response = ManagementUtils.query(actor=self.client, actor_proxy=b, query=request)
                 result.model = Translate.translate_to_broker_query_model(query_response=response, level=level)
             else:
                 result.status.set_code(ErrorCodes.ErrorNoSuchBroker.value)
@@ -297,7 +296,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         try:
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCClientActor):
                     self.actor = actor
 
                 def run(self):
@@ -323,7 +322,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         try:
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin, logger):
+                def __init__(self, *, actor: ABCClientActor, logger):
                     self.actor = actor
                     self.logger = logger
 
@@ -434,19 +433,19 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def modify_reservation(self, *, rid: ID, modify_properties: dict, caller: AuthToken) -> ResultAvro:
+    def modify_reservation(self, *, rid: ID, modified_sliver: BaseSliver, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
 
-        if rid is None or modify_properties is None:
+        if rid is None or modified_sliver is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
             result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
 
-        self.logger.debug("reservation: {} | modifyProperties= {}".format(rid, modify_properties))
+        self.logger.debug("reservation: {} | modified_sliver= {}".format(rid, modified_sliver))
         try:
 
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCClientActor):
                     self.actor = actor
 
                 def run(self):
@@ -457,7 +456,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
                         return result
 
-                    self.actor.modify(reservation_id=rid, modify_properties=modify_properties)
+                    self.actor.modify(reservation_id=rid, modified_sliver=modified_sliver)
 
                     return result
             result = self.client.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.client))
@@ -469,8 +468,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
-                          id_token: str = None) -> ResultDelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -480,10 +478,6 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            AccessChecker.check_access(action_id=ActionId.claim, resource_type=AuthResourceType.delegation,
-                                       token=id_token, logger=self.logger, actor_type=self.client.get_type(),
-                                       resource_id=did)
-
             my_broker = self.client.get_broker(guid=broker)
 
             if my_broker is None:
@@ -492,7 +486,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                 return result
 
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCClientActor):
                     self.actor = actor
 
                 def run(self):
@@ -515,8 +509,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
-                            id_token: str = None) -> ResultDelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -526,9 +519,6 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
             return result
 
         try:
-            AccessChecker.check_access(action_id=ActionId.reclaim, resource_type=AuthResourceType.delegation,
-                                       token=id_token, logger=self.logger, actor_type=self.client.get_type(),
-                                       resource_id=did)
 
             my_broker = self.client.get_broker(guid=broker)
 
@@ -538,7 +528,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                 return result
 
             class Runner(ABCActorRunnable):
-                def __init__(self, *, actor: ABCActorMixin):
+                def __init__(self, *, actor: ABCClientActor):
                     self.actor = actor
 
                 def run(self):

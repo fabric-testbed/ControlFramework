@@ -91,26 +91,22 @@ class ABCServerActor(ABCActorMixin):
         """
 
     @abstractmethod
-    def claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken,
-                         id_token: str = None):
+    def claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken):
         """
-        Processes an incoming claim request.
-        @params delegation: delegation
-        @params callback : callback
-        @params caller: caller
-        @param id_token id token
+        Claims a delegation.
+        @param delegation delegation to claim
+        @param callback callback to call when done
+        @param caller caller
         @raises Exception in case of error
         """
 
     @abstractmethod
-    def reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken,
-                           id_token: str = None):
+    def reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken):
         """
-        Processes an incoming claim request.
-        @params delegation: delegation
-        @params callback : callback
-        @params caller: caller
-        @param id_token id token
+        Reclaims a delegation.
+        @param delegation delegation to reclaim
+        @param callback callback to call when done
+        @param caller caller
         @raises Exception in case of error
         """
 
@@ -125,10 +121,11 @@ class ABCServerActor(ABCActorMixin):
         """
 
     @abstractmethod
-    def extend_ticket(self, *, reservation: ABCReservationMixin, caller: AuthToken):
+    def extend_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken):
         """
         Processes an incoming extend_ticket request.
         @params reservation: reservation
+        @params callback : callback
         @params caller: caller
         @raises Exception in case of error
         """

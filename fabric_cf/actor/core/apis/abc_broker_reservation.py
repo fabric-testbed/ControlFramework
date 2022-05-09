@@ -82,3 +82,17 @@ class ABCBrokerReservation(ABCServerReservation):
 
         @params source : the source delegation.
         """
+
+    @abstractmethod
+    def is_exporting(self) -> bool:
+        """
+        Checks if the reservation is exporting.
+
+        @return true if the reservation is exporting
+        """
+
+    @abstractmethod
+    def set_exporting(self):
+        """
+        Marks the reservation as exporting.
+        """

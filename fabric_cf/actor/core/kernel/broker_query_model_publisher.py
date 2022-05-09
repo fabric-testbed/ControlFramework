@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 
 from confluent_kafka.cimpl import Producer
 from fim.graph.abc_property_graph import GraphFormat
@@ -65,7 +65,7 @@ class BrokerQueryModelPublisher(ABCTimerTask):
                 self.logger.error(f"Could not get broker query model!")
                 return
 
-            key = f'{self.broker.get_guid()}-{datetime.utcnow().timestamp()}'
+            key = f'{self.broker.get_guid()}-{datetime.now(timezone.utc).timestamp()}'
 
             # Publish to Kafka
             if self.producer is not None and self.kafka_topic is not None:

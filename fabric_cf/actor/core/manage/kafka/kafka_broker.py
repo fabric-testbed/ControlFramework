@@ -139,7 +139,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
 
         return status.code == 0
 
-    def claim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
+    def claim_delegations(self, *, broker: ID, did: ID) -> DelegationAvro:
 
         request = ClaimResourcesAvro()
         request.guid = str(self.management_id)
@@ -148,7 +148,6 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.delegation_id = did
         request.message_id = str(ID())
         request.callback_topic = self.callback_topic
-        request.id_token = id_token
 
         status, response = self.send_request(request)
 
@@ -157,7 +156,7 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
 
         return None
 
-    def reclaim_delegations(self, *, broker: ID, did: ID, id_token: str = None) -> DelegationAvro:
+    def reclaim_delegations(self, *, broker: ID, did: ID) -> DelegationAvro:
         request = ReclaimResourcesAvro()
         request.guid = str(self.management_id)
         request.auth = self.auth
@@ -165,7 +164,6 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
         request.delegation_id = did
         request.message_id = str(ID())
         request.callback_topic = self.callback_topic
-        request.id_token = id_token
 
         status, response = self.send_request(request)
 

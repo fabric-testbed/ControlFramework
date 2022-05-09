@@ -30,6 +30,7 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Capacities, Labels
 from fim.slivers.delegations import Delegations
 from fim.slivers.instance_catalog import InstanceCatalog
+from fim.slivers.interface_info import InterfaceSliver
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NSLayer
 
@@ -84,6 +85,13 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"{negative_fields}")
 
         return delegation_id
+
+    def __set_ips(self, *, req_ifs: InterfaceSliver, lab: Labels):
+        if req_ifs.labels is not None and req_ifs.labels.ipv4 is not None:
+            lab.ipv4 = req_ifs.labels.ipv4
+        if req_ifs.labels is not None and req_ifs.labels.ipv6 is not None:
+            lab.ipv6 = req_ifs.labels.ipv6
+        return lab
 
     def __update_shared_nic_labels_and_capacities(self, *, available_component: ComponentSliver,
                                                   requested_component: ComponentSliver) -> ComponentSliver:
@@ -153,10 +161,7 @@ class NetworkNodeInventory(InventoryForType):
         # For the Layer 2 copying the IP address to the label allocations
         # This is to be used by AM Handler to configure Network Interface
         if req_ns.layer == NSLayer.L2:
-            if req_ifs.labels is not None and req_ifs.labels.ipv4 is not None:
-                lab.ipv4 = req_ifs.labels.ipv4
-            if req_ifs.labels is not None and req_ifs.labels.ipv6 is not None:
-                lab.ipv6 = req_ifs.labels.ipv6
+            lab = self.__set_ips(req_ifs=req_ifs, lab=lab)
 
         req_ifs.set_label_allocations(lab=lab)
 
@@ -208,11 +213,7 @@ class NetworkNodeInventory(InventoryForType):
                                 if requested_ifs.labels is not None and requested_ifs.labels.vlan is not None:
                                     lab.vlan = requested_ifs.labels.vlan
 
-                                if requested_ifs.labels.ipv4 is not None:
-                                    lab.ipv4 = requested_ifs.labels.ipv4
-
-                                if requested_ifs.labels.ipv6 is not None:
-                                    lab.ipv6 = requested_ifs.labels.ipv6
+                                lab = self.__set_ips(req_ifs=requested_ifs, lab=lab)
 
                             requested_ifs.set_label_allocations(lab=lab)
                         self.logger.info(f"Assigned Interface Sliver: {requested_ifs}")

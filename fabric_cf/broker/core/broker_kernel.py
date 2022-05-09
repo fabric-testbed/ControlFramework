@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException
@@ -52,12 +52,12 @@ class BrokerKernel:
         Periodically publish BQM to a Kafka Topic to be consumed by Portal
         """
         if self.kafka_topic is not None and self.publish_interval is not None and self.producer is not None:
-            current_time = datetime.utcnow()
+            current_time = datetime.now(timezone.utc)
             if self.last_query_time is None or (current_time - self.last_query_time).seconds > self.publish_interval:
                 bqm = BrokerQueryModelPublisher(broker=self.broker, logger=self.logger,
                                                 kafka_topic=self.kafka_topic, producer=self.producer)
                 bqm.execute()
-                self.last_query_time = datetime.utcnow()
+                self.last_query_time = datetime.now(timezone.utc)
 
 
 class BrokerKernelSingleton:

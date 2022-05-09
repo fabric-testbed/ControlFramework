@@ -96,8 +96,10 @@ class AuthorityService(BrokerService):
         auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingReservationRPC(message_id=ID(uid=request.message_id),
-                                         request_type=RPCRequestType.ExtendLease, reservation=rsvn, caller=auth_token)
+                                         request_type=RPCRequestType.ExtendLease, reservation=rsvn,
+                                         caller=auth_token, callback=callback)
         except Exception as e:
             self.logger.error("Invalid extend_lease request: {}".format(e))
             raise e
@@ -108,8 +110,10 @@ class AuthorityService(BrokerService):
         auth_token = Translate.translate_auth_from_avro(auth_avro=request.auth)
         try:
             rsvn = self.pass_authority(reservation=request.reservation)
+            callback = self.get_callback(kafka_topic=request.callback_topic, auth=auth_token)
             rpc = IncomingReservationRPC(message_id=ID(uid=request.message_id),
-                                         request_type=RPCRequestType.ModifyLease, reservation=rsvn, caller=auth_token)
+                                         request_type=RPCRequestType.ModifyLease, reservation=rsvn,
+                                         caller=auth_token, callback=callback)
         except Exception as e:
             self.logger.error("Invalid modify_lease request: {}".format(e))
             raise e

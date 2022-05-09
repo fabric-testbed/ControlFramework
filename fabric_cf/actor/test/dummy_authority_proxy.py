@@ -69,5 +69,5 @@ class DummyAuthorityProxy(DummyProxy, ABCAuthorityProxy):
     def prepare_relinquish(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken) -> ABCRPCRequestState:
         return None
 
-    def prepare_query(self, *, callback: ABCCallbackProxy, query:dict, caller: AuthToken, id_token: str):
+    def prepare_query(self, *, callback: ABCCallbackProxy, query:dict, caller: AuthToken):
         return None

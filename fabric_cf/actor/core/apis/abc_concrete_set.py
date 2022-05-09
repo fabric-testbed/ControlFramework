@@ -29,6 +29,9 @@ from datetime import datetime
 
 from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING
+
+from fim.slivers.base_sliver import BaseSliver
+
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_authority_proxy import ABCAuthorityProxy
     from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -122,15 +125,11 @@ class ABCConcreteSet(ABC):
         """
 
     @abstractmethod
-    def modify(self, *, concrete_set: ABCConcreteSet, configure: bool):
+    def modify(self, *, sliver: BaseSliver):
         """
         Updates the units in the current set with information contained in the
-        passed set. Note that the passed set may contain only a subset of the
-        units contained in the current set. Optionally triggers configuration
-        actions for all removed/modified units.
-        @param concrete_set:  set containing the update data
-        @param configure :  if true, configuration actions will be triggered for all
-                   modified units
+        passed sliver.
+        @param sliver:  Updated Sliver
         @raises Exception in case of error
         """
 

@@ -32,7 +32,7 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import SliceException
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.util.id import ID
 
 
@@ -47,7 +47,7 @@ class SliceTable:
         # to be unique per slice.
         self.slices_by_name = {}
 
-    def add(self, *, slice_object: ABCKernelSlice):
+    def add(self, *, slice_object: ABCSlice):
         """
         Adds the given slice to the slice table.
 
@@ -106,7 +106,7 @@ class SliceTable:
             self.lock.release()
         return ret_val
 
-    def get(self, *, slice_id: ID, raise_exception: bool = False) -> ABCKernelSlice:
+    def get(self, *, slice_id: ID, raise_exception: bool = False) -> ABCSlice:
         """
         Returns the specified slice.
 
@@ -167,7 +167,7 @@ class SliceTable:
 
         return ret_val
 
-    def get_client_slices(self) -> List[ABCKernelSlice]:
+    def get_client_slices(self) -> List[ABCSlice]:
         """
         Returns all client slices in the table.
 
@@ -185,7 +185,7 @@ class SliceTable:
             self.lock.release()
         return ret_val
 
-    def get_inventory_slices(self) -> List[ABCKernelSlice]:
+    def get_inventory_slices(self) -> List[ABCSlice]:
         """
         Returns all inventory slices in the table.
 
@@ -201,7 +201,7 @@ class SliceTable:
             self.lock.release()
         return ret_val
 
-    def get_slices(self) -> List[ABCKernelSlice]:
+    def get_slices(self) -> List[ABCSlice]:
         """
         Returns all slices in the table.
 

@@ -24,7 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fabric_cf.actor.core.apis.abc_tick import ABCTick
 from fabric_cf.actor.core.kernel.tick import Tick
@@ -76,7 +76,7 @@ class KernelTick(Tick):
         Generate a tick to the registered objects
         """
         with self.lock:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             self.current_cycle = self.clock.cycle(when=now)
             self.logger.trace(f"Clock interrupt: now= {now} cycle={self.current_cycle}")
             if not self.manual and self.timer is None:

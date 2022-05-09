@@ -85,8 +85,8 @@ class BrokerManagementObject(ServerActorManagementObject, ABCClientActorManageme
             super().set_actor(actor=actor)
             self.client_helper = ClientActorManagementObjectHelper(client=actor)
 
-    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None, id_token: str = None) -> ResultProxyAvro:
-        return self.client_helper.get_brokers(caller=caller, id_token=id_token, broker_id=broker_id)
+    def get_brokers(self, *, caller: AuthToken, broker_id: ID = None) -> ResultProxyAvro:
+        return self.client_helper.get_brokers(caller=caller, broker_id=broker_id)
 
     def add_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
         return self.client_helper.add_broker(broker=broker, caller=caller)
@@ -113,10 +113,8 @@ class BrokerManagementObject(ServerActorManagementObject, ABCClientActorManageme
         return self.client_helper.extend_reservation(reservation=reservation, new_end_time=new_end_time,
                                                      new_units=new_units, caller=caller)
 
-    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
-                          id_token: str = None) -> ResultDelegationAvro:
-        return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)
+    def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller)
 
-    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken,
-                            id_token: str = None) -> ResultDelegationAvro:
-        return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller, id_token=id_token)
+    def reclaim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
+        return self.client_helper.reclaim_delegations(broker=broker, did=did, caller=caller)

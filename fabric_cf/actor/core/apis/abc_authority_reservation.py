@@ -73,3 +73,21 @@ class ABCAuthorityReservation(ABCServerReservation):
         """
         Get the Broker Callback Proxy
         """
+
+    @abstractmethod
+    def prepare_extend_lease(self):
+        """
+        Prepare for an incoming extend request on this existing
+        reservation. Note: unlocked
+
+        @throws Exception thrown if request is rejected (e.g., ticket not valid)
+        """
+
+    @abstractmethod
+    def prepare_modify_lease(self):
+        """
+        Prepare for an incoming modify request on this existing
+        reservation. Note: unlocked
+
+        @throws Exception thrown if request is rejected (e.g., ticket not valid)
+        """

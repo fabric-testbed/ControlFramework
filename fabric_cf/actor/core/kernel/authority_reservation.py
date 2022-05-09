@@ -28,13 +28,14 @@ from __future__ import annotations
 import traceback
 from typing import TYPE_CHECKING
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
-from fabric_cf.actor.core.apis.abc_kernel_authority_reservation_mixin import ABCKernelAuthorityReservationMixin
+from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 from fabric_cf.actor.core.common.exceptions import AuthorityException
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation_server import ReservationServer
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.util.rpc_exception import RPCError
+from fabric_cf.actor.core.util.utils import sliver_to_str
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
@@ -42,13 +43,13 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-    from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
+    from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.id import ID
 
 
-class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin):
+class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
     """
     AuthorityReservation controls the state machine for a reservation on the
     authority side. It coordinates resource allocation, lease generation,
@@ -56,7 +57,7 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
     """
     UnexpectedExceptionString = "Unexpected reservation state: state={} pending={}"
 
-    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_object: ABCKernelSlice):
+    def __init__(self, *, rid: ID, resources: ResourceSet, term: Term, slice_object: ABCSlice):
         super().__init__(rid=rid, resources=resources, term=term, slice_object=slice_object)
         # The ticket.
         self.ticket = None
@@ -323,16 +324,11 @@ class AuthorityReservation(ReservationServer, ABCKernelAuthorityReservationMixin
                 if granted:
                     success = True
                     self.ticket = self.requested_resources
-                    self.logger.debug(f"requested_resources.get_sliver() = {self.requested_resources.get_sliver()}")
-
-                    self.logger.debug(f"approved_resources.get_sliver() = {self.approved_resources.get_sliver()}")
-
                     if self.requested_resources.get_sliver() is not None:
                         self.approved_resources.set_sliver(sliver=self.requested_resources.get_sliver())
 
-                    self.logger.debug(f"approved_resources.get_sliver() = {self.approved_resources.get_sliver()}")
-
-                    self.resources.update_properties(self, self.approved_resources)
+                    self.resources.update_properties(reservation=self, resource_set=self.approved_resources)
+                    self.logger.debug(f"Updated Sliver post modify: {sliver_to_str(sliver=self.resources.get_sliver())}")
                     self.transition(prefix="modify lease", state=ReservationStates.Active,
                                     pending=ReservationPendingStates.Priming)
             except Exception as e:

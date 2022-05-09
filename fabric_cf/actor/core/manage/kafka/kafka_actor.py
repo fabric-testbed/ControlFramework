@@ -57,18 +57,18 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def prepare(self, *, callback_topic: str):
         self.callback_topic = callback_topic
 
-    def toggle_maintenance_mode(self, actor_guid: str, callback_topic: str, mode: bool, id_token: str = None, ):
+    def toggle_maintenance_mode(self, actor_guid: str, callback_topic: str, mode: bool):
         props = {Constants.MODE: str(mode)}
         request = MaintenanceRequestAvro(properties=props, actor_guid=actor_guid,
-                                         callback_topic=callback_topic, id_token=id_token)
+                                         callback_topic=callback_topic)
         status, response = self.send_request(request)
 
         return response.status.code == 0
 
-    def get_slices(self, *, id_token: str = None, slice_id: ID = None, slice_name: str = None,
-                   email: str = None) -> List[SliceAvro] or None:
+    def get_slices(self, *, slice_id: ID = None, slice_name: str = None,
+                   email: str = None, project: str = None, state: List[int] = None) -> List[SliceAvro] or None:
         request = GetSlicesRequestAvro()
-        request = self.fill_request_by_id_message(request=request, id_token=id_token, email=email, slice_id=slice_id,
+        request = self.fill_request_by_id_message(request=request, email=email, slice_id=slice_id,
                                                   slice_name=slice_name)
         status, response = self.send_request(request)
         if response is not None:
@@ -76,14 +76,14 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return None
 
-    def remove_slice(self, *, slice_id: ID, id_token: str = None) -> bool:
+    def remove_slice(self, *, slice_id: ID) -> bool:
         request = RemoveSliceAvro()
-        request = self.fill_request_by_id_message(request=request, id_token=id_token, slice_id=slice_id)
+        request = self.fill_request_by_id_message(request=request, slice_id=slice_id)
         status, response = self.send_request(request)
 
         return status.code == 0
 
-    def add_slice(self, *, slice_obj: SliceAvro, id_token: str) -> ID:
+    def add_slice(self, *, slice_obj: SliceAvro) -> ID:
         ret_val = None
         request = AddSliceAvro()
         request.guid = str(self.management_id)
@@ -91,7 +91,6 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         request.callback_topic = self.callback_topic
         request.message_id = str(ID())
         request.slice_obj = slice_obj
-        request.id_token = id_token
 
         status, response = self.send_request(request)
 
@@ -112,11 +111,11 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return status.code == 0
 
-    def get_reservations(self, *, id_token: str = None, state: int = None, slice_id: ID = None,
+    def get_reservations(self, *, state: int = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None,
                          rid_list: List[str] = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
-        request = self.fill_request_by_id_message(request=request, id_token=id_token, slice_id=slice_id,
+        request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
                                                   reservation_state=state, email=email, rid=rid)
         status, response = self.send_request(request)
 
@@ -125,9 +124,9 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         return None
 
     def get_delegations(self, *, slice_id: ID = None, state: int = None,
-                        delegation_id: str = None, id_token: str = None) -> List[DelegationAvro]:
+                        delegation_id: str = None) -> List[DelegationAvro]:
         request = GetDelegationsAvro()
-        request = self.fill_request_by_id_message(request=request, id_token=id_token, slice_id=slice_id,
+        request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
                                                   reservation_state=state, delegation_id=delegation_id)
         status, response = self.send_request(request)
 
@@ -135,23 +134,23 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
             return response.delegations
         return None
 
-    def remove_reservation(self, *, rid: ID, id_token: str = None) -> bool:
+    def remove_reservation(self, *, rid: ID) -> bool:
         request = RemoveReservationAvro()
-        request = self.fill_request_by_id_message(request=request, id_token=id_token, rid=rid)
+        request = self.fill_request_by_id_message(request=request, rid=rid)
         status, response = self.send_request(request)
 
         return status.code == 0
 
-    def close_reservation(self, *, rid: ID, id_token: str = None) -> bool:
+    def close_reservation(self, *, rid: ID) -> bool:
         request = CloseReservationsAvro()
-        request = self.fill_request_by_id_message(request=request, id_token=id_token, rid=rid)
+        request = self.fill_request_by_id_message(request=request, rid=rid)
         status, response = self.send_request(request)
 
         return status.code == 0
 
-    def close_reservations(self, *, slice_id: ID, id_token: str = None) -> bool:
+    def close_reservations(self, *, slice_id: ID) -> bool:
         request = CloseReservationsAvro()
-        request = self.fill_request_by_id_message(request=request, id_token=id_token, slice_id=slice_id)
+        request = self.fill_request_by_id_message(request=request, slice_id=slice_id)
         status, response = self.send_request(request)
 
         return status.code == 0
@@ -168,15 +167,13 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return status.code == 0
 
-    def get_reservation_state_for_reservations(self, *, reservation_list: List[str],
-                                               id_token: str = None) -> List[ReservationStateAvro]:
+    def get_reservation_state_for_reservations(self, *, reservation_list: List[str]) -> List[ReservationStateAvro]:
         request = GetReservationsStateRequestAvro()
         request.guid = str(self.management_id)
         request.auth = self.auth
         request.callback_topic = self.callback_topic
         request.message_id = str(ID())
         request.reservation_ids = []
-        request.id_token = id_token
         for r in reservation_list:
             request.reservation_ids.append(str(r))
 

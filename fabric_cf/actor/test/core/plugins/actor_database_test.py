@@ -73,6 +73,7 @@ class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
         slice_obj = SliceFactory.create(slice_id=ID(), name="slice_to_add")
         self.assertEqual("slice_to_add", slice_obj.get_name())
         db.add_slice(slice_object=slice_obj)
-        slice2 = db.get_slice(slice_id=slice_obj.get_slice_id())
+        slice2 = db.get_slices(slice_id=slice_obj.get_slice_id())
         self.assertIsNotNone(slice2)
+        self.assertEqual(len(slice2), 1)
         db.remove_slice(slice_id=slice_obj.get_slice_id())

@@ -62,7 +62,7 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
         result = None
         try:
             self.lock.acquire()
-            client_dict = self.db.get_client_by_guid(act_id=self.actor_id, clt_guid=str(guid))
+            client_dict = self.db.get_client_by_guid(clt_guid=str(guid))
             if client_dict is not None:
                 pickled_client = client_dict.get(Constants.PROPERTY_PICKLE_PROPERTIES)
                 return pickle.loads(pickled_client)
@@ -77,7 +77,7 @@ class ServerActorDatabase(ActorDatabase, ClientDatabase):
         try:
             self.lock.acquire()
             result = []
-            client_dict_list = self.db.get_clients(act_id=self.actor_id)
+            client_dict_list = self.db.get_clients()
             if client_dict_list is not None:
                 for c in client_dict_list:
                     pickled_client = c.get(Constants.PROPERTY_PICKLE_PROPERTIES)

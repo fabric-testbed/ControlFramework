@@ -83,8 +83,6 @@ class Authority(ActorMixin, ABCAuthority):
         del state['thread']
         del state['timer_queue']
         del state['event_queue']
-        del state['reservation_tracker']
-        del state['subscription_id']
         del state['actor_main_lock']
         del state['closing']
         del state['message_service']
@@ -109,8 +107,6 @@ class Authority(ActorMixin, ABCAuthority):
         self.thread_lock = threading.Lock()
         self.timer_queue = queue.Queue()
         self.event_queue = queue.Queue()
-        self.reservation_tracker = None
-        self.subscription_id = None
         self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
@@ -122,24 +118,20 @@ class Authority(ActorMixin, ABCAuthority):
     def register_client_slice(self, *, slice_obj: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_obj)
 
-    def claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken,
-                         id_token: str = None):
+    def claim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken):
         slice_obj = delegation.get_slice_object()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback,
-                                              id_token=id_token)
+        self.wrapper.claim_delegation_request(delegation=delegation, caller=caller, callback=callback)
 
-    def reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken,
-                           id_token: str = None):
+    def reclaim_delegation(self, *, delegation: ABCDelegation, callback: ABCClientCallbackProxy, caller: AuthToken):
 
         slice_obj = delegation.get_slice_object()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback,
-                                                id_token=id_token)
+        self.wrapper.reclaim_delegation_request(delegation=delegation, caller=caller, callback=callback)
 
     def close_by_caller(self, *, reservation: ABCReservationMixin, caller: AuthToken):
         if not self.is_recovered() or self.is_stopped():
@@ -177,36 +169,41 @@ class Authority(ActorMixin, ABCAuthority):
         self.wrapper.advertise(delegation=dlg_obj, client=client)
         return dlg_obj.get_delegation_id()
 
-    def extend_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken = None):
+    def extend_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken = None,
+                     callback: ABCControllerCallbackProxy = None,):
         if caller is None:
             if not self.recovered:
                 self.extending_lease.add(reservation=reservation)
             else:
                 self.wrapper.extend_lease_request(reservation=reservation, caller=reservation.get_client_auth_token(),
-                                                  compare_sequence_numbers=False)
+                                                  compare_sequence_numbers=False, callback=callback)
         else:
             if not self.is_recovered() or self.is_stopped():
                 raise AuthorityException(Constants.INVALID_ACTOR_STATE)
-            self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
+            self.wrapper.extend_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True,
+                                              callback=callback)
 
-    def modify_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken):
+    def modify_lease(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
+                     callback: ABCControllerCallbackProxy = None,):
         if caller is None:
             if not self.recovered:
                 self.modifying_lease.add(reservation=reservation)
             else:
                 self.wrapper.modify_lease_request(reservation=reservation, caller=reservation.get_client_auth_token(),
-                                                  compare_sequence_numbers=False)
+                                                  compare_sequence_numbers=False, callback=callback)
         else:
             if not self.is_recovered() or self.stopped:
                 raise AuthorityException(Constants.INVALID_ACTOR_STATE)
-            self.wrapper.modify_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
+            self.wrapper.modify_lease_request(reservation=reservation, caller=caller, compare_sequence_numbers=True,
+                                              callback=callback)
 
-    def extend_ticket(self, *, reservation: ABCReservationMixin, caller: AuthToken):
+    def extend_ticket(self, *, reservation: ABCReservationMixin, callback: ABCClientCallbackProxy, caller: AuthToken):
         slice_obj = reservation.get_slice()
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True)
+        self.wrapper.extend_ticket_request(reservation=reservation, caller=caller, compare_sequence_numbers=True,
+                                           callback=callback)
 
     def relinquish(self, *, reservation: ABCReservationMixin, caller: AuthToken):
         if not self.is_recovered() or self.stopped:
@@ -240,7 +237,8 @@ class Authority(ActorMixin, ABCAuthority):
         if slice_obj is not None:
             slice_obj.set_broker_client()
 
-        self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback, compare_seq_numbers=True)
+        self.wrapper.ticket_request(reservation=reservation, caller=caller, callback=callback,
+                                    compare_seq_numbers=True)
 
     def tick_handler(self):
         # close expired reservations

@@ -32,11 +32,13 @@ class AuthToken:
     Represents the Authentication Token for an actor
     """
 
-    def __init__(self, *, name: str = None, guid: ID = None, oidc_sub_claim: str = None, email: str = None):
+    def __init__(self, *, name: str = None, guid: ID = None, oidc_sub_claim: str = None,
+                 email: str = None, token: str = None):
         self.name = name
         self.guid = guid
         self.oidc_sub_claim = oidc_sub_claim
         self.email = email
+        self.token = token
 
     def get_oidc_sub_claim(self) -> str:
         """
@@ -88,4 +90,18 @@ class AuthToken:
         return AuthToken(name=self.name, guid=self.guid)
 
     def __str__(self):
-        return f"name: {self.name} guid: {self.guid} email: {self.email}"
+        return f"name: {self.name} guid: {self.guid} email: {self.email} token: {self.token}"
+
+    def get_token(self):
+        """
+        Get Token
+        @return token
+        """
+        return self.token
+
+    def set_token(self, token: str):
+        """
+        Set Token
+        @param token token
+        """
+        self.token = token

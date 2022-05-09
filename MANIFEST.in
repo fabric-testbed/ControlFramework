@@ -1,5 +1,6 @@
 include README.md
 include LICENSE
+include requirements.txt
 include fabric_cf/orchestrator/swagger_server/swagger/swagger.yaml
 include fabric_cf/actor/security/data/*.json
 include fabric_cf/authority/config.site.am.yaml

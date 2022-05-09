@@ -28,8 +28,8 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  kafka-server: alpha-6.fabric-testbed.net:29092
-  kafka-schema-registry-url: http://alpha-6.fabric-testbed.net:8081
+  kafka-server: 152.54.15.53:29092
+  kafka-schema-registry-url: http://152.54.15.53:8081
   kafka-key-schema: ../../../schema/key.avsc
   kafka-value-schema: ../../../schema/message.avsc
   kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
@@ -79,7 +79,7 @@ database:
   db-user: fabric
   db-password: fabric
   db-name: netam
-  db-host: alpha-6.fabric-testbed.net:5432
+  db-host: 152.54.15.53:5432
 
 container:
   container.guid: net1-am-conainer
@@ -126,7 +126,7 @@ actor:
       class: AuthorityCalendarPolicy
   resources:
       - resource:
-          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6
+          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6, PortMirror
           label: NET AM
           description: Net AM
           handler:
@@ -134,7 +134,7 @@ actor:
             class: NoOpHandler
   controls:
       - control:
-          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6
+          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6, PortMirror
           module: fabric_cf.actor.core.policy.network_service_control
           class: NetworkServiceControl
 

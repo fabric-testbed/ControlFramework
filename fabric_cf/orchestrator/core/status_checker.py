@@ -24,7 +24,9 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from enum import Enum
-from typing import List
+from typing import Tuple
+
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 
 from fabric_cf.actor.core.apis.abc_mgmt_controller_mixin import ABCMgmtControllerMixin
 from fabric_cf.actor.core.util.id import ID
@@ -32,27 +34,19 @@ from fabric_cf.actor.core.util.id import ID
 
 class Status(Enum):
     OK = 0
-    NOTOK = 1
-    NOTREADY = 3
+    NOT_OK = 1
+    NOT_READY = 3
 
 
 class StatusChecker:
+    def __init__(self):
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        self.logger = GlobalsSingleton.get().get_logger()
 
-    def check(self, *, controller: ABCMgmtControllerMixin, rid, ok: List[ID], not_ok: List[ID]) -> Status:
+    def check(self, *, controller: ABCMgmtControllerMixin, rid: ID) -> Tuple[Status, ReservationMng or None]:
         """
-        Check status
-        :param controller:
-        :param rid:
-        :param ok:
-        :param not_ok:
-        :return:
+        Check status of the reservation identified by rid
+        :param controller: controller
+        :param rid: reservation id
+        :return: Status
         """
-        result = self.check_(controller=controller, rid=0)
-        if result == Status.OK:
-            ok.append(rid)
-        elif result == Status.NOTOK:
-            not_ok.append(rid)
-        return result
-
-    def check_(self, *, controller: ABCMgmtControllerMixin, rid) -> Status:
-        raise NotImplementedError

@@ -67,7 +67,8 @@ class MyQueryResponseHandler(ABCQueryResponseHandler):
 class ManagementUtils:
     @staticmethod
     def update_slice(*, slice_obj: ABCSlice, slice_mng: SliceAvro) -> ABCSlice:
-        return
+        slice_obj.set_lease_end(lease_end=slice_mng.get_lease_end())
+        return slice_obj
 
     @staticmethod
     def update_reservation(*, res_obj: ABCReservationMixin, rsv_mng: ReservationMng) -> ABCReservationMixin:
@@ -77,10 +78,10 @@ class ManagementUtils:
         return Converter.absorb_res_properties(rsv_mng=rsv_mng, res_obj=res_obj)
 
     @staticmethod
-    def query(*, actor: ABCActorMixin, actor_proxy: ABCActorProxy, query: dict, id_token: str):
+    def query(*, actor: ABCActorMixin, actor_proxy: ABCActorProxy, query: dict):
         handler = MyQueryResponseHandler()
 
-        actor.query(query=query, actor_proxy=actor_proxy, handler=handler, id_token=id_token)
+        actor.query(query=query, actor_proxy=actor_proxy, handler=handler)
 
         with handler.condition:
             try:

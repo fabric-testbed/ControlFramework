@@ -28,18 +28,17 @@ import traceback
 from typing import List
 
 from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
+from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
-from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException, \
     KernelException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
-from fabric_cf.actor.core.apis.abc_kernel_controller_reservation_mixin import ABCKernelControllerReservationMixin
-from fabric_cf.actor.core.apis.abc_kernel_reservation import ABCKernelReservation
-from fabric_cf.actor.core.apis.abc_kernel_server_reservation import ABCKernelServerReservationMixin
-from fabric_cf.actor.core.apis.abc_kernel_slice import ABCKernelSlice
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
+from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservation
+from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation import Reservation
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
@@ -70,7 +69,7 @@ class Kernel:
         self.lock = threading.Lock()
         self.nothing_pending = threading.Condition()
 
-    def amend_reserve(self, *, reservation: ABCKernelReservation):
+    def amend_reserve(self, *, reservation: ABCReservationMixin):
         """
         Amends a previous reserve operation (both client and server side) for the
         reservation.
@@ -118,23 +117,22 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
 
-    def reclaim_delegation(self, *, delegation: ABCDelegation, id_token: str):
+    def reclaim_delegation(self, *, delegation: ABCDelegation):
         """
         Processes a requests to claim new ticket for previously exported
         resources (broker role). On the client side this request is issued by
         @param delegation the delegation being claimed
-        @param id_token id token
         @throws Exception
         """
         try:
-            delegation.reclaim(id_token=id_token)
+            delegation.reclaim()
             self.plugin.get_database().update_delegation(delegation=delegation)
         except Exception as e:
             err = f"An error occurred during reclaim for delegation #{delegation.get_delegation_id()}"
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
 
-    def fail(self, *, reservation: ABCKernelReservation, message: str):
+    def fail(self, *, reservation: ABCReservationMixin, message: str):
         """
         Handle a failed reservation
         @param reservation reservation
@@ -154,7 +152,7 @@ class Kernel:
             delegation.fail(message=message, exception=None)
         self.plugin.get_database().update_delegation(delegation=delegation)
 
-    def close(self, *, reservation: ABCKernelReservation):
+    def close(self, *, reservation: ABCReservationMixin):
         """
         Handles a close operation for the reservation.
         Client: perform local close operations and issue close request to
@@ -175,8 +173,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
 
-    def compare_and_update(self, *, incoming: ABCKernelServerReservationMixin,
-                           current: ABCKernelServerReservationMixin):
+    @staticmethod
+    def compare_and_update(*, incoming: ABCServerReservation, current: ABCServerReservation):
         """
         Compares the incoming request to the corresponding reservation stored at
         this actor. First compares sequence numbers. If the incoming request has
@@ -201,8 +199,7 @@ class Kernel:
         return code
 
     @staticmethod
-    def compare_and_update_ignore_pending(*, incoming: ABCKernelServerReservationMixin,
-                                          current: ABCKernelServerReservationMixin):
+    def compare_and_update_ignore_pending(*, incoming: ABCServerReservation, current: ABCServerReservation):
         """
         Compares the incoming request to the corresponding reservation stored at
         this actor. First compares sequence numbers. If the incoming request has
@@ -234,7 +231,7 @@ class Kernel:
         self.logger.error(f"Error: {err} Exception: {e}")
         raise e
 
-    def extend_lease(self, *, reservation: ABCKernelReservation):
+    def extend_lease(self, *, reservation: ABCReservationMixin):
         """
         Handles an extend lease operation for the reservation.
         Client: issue an extend lease request.
@@ -252,7 +249,7 @@ class Kernel:
             self.error(err=f"An error occurred during extend lease for reservation #{reservation.get_reservation_id()}",
                        e=e)
 
-    def modify_lease(self, *, reservation: ABCKernelReservation):
+    def modify_lease(self, *, reservation: ABCReservationMixin):
         """
         Handles a modify lease operation for the reservation.
         Client: issue a modify lease request.
@@ -315,7 +312,7 @@ class Kernel:
 
         return 0
 
-    def extend_ticket(self, *, reservation: ABCKernelReservation):
+    def extend_ticket(self, *, reservation: ABCReservationMixin):
         """
         Handles an extend ticket operation for the reservation.
         Client: issue an extend ticket request.
@@ -339,21 +336,21 @@ class Kernel:
             self.error(err=f"An error occurred during extend ticket for reservation #{reservation.get_reservation_id()}",
                        e=e)
 
-    def get_client_slices(self) -> List[ABCKernelSlice]:
+    def get_client_slices(self) -> List[ABCSlice]:
         """
         Returns all client slices.
         @return an array of client slices
         """
         return self.slices.get_client_slices()
 
-    def get_inventory_slices(self) -> List[ABCKernelSlice]:
+    def get_inventory_slices(self) -> List[ABCSlice]:
         """
         Returns all inventory slices.
         @return an array of inventory slices
         """
         return self.slices.get_inventory_slices()
 
-    def get_local_slice(self, *, slice_object: ABCSlice) -> ABCKernelSlice:
+    def get_local_slice(self, *, slice_object: ABCSlice) -> ABCSlice:
         """
         Returns the slice object registered with the kernel that corresponds to
         the argument.
@@ -367,8 +364,8 @@ class Kernel:
 
         return self.slices.get(slice_id=slice_object.get_slice_id(), raise_exception=True)
 
-    def get_or_create_local_slice(self, *, identity: AuthToken, reservation: ABCKernelReservation,
-                                  create_new_slice: bool) -> ABCKernelSlice:
+    def get_or_create_local_slice(self, *, identity: AuthToken, reservation: ABCReservationMixin,
+                                  create_new_slice: bool) -> ABCSlice:
         """
         Returns the slice specified in the reservation or creates a new slice
         with the given parameters. Newly created slices are registered with the
@@ -381,12 +378,13 @@ class Kernel:
         """
         slice_name = reservation.get_slice().get_name()
         slice_id = reservation.get_slice().get_slice_id()
+        project_id = reservation.get_slice().get_project_id()
         config_properties = reservation.get_slice().get_config_properties()
 
         result = self.get_slice(slice_id=slice_id)
         if result is None:
             if create_new_slice:
-                result = self.plugin.create_slice(slice_id=slice_id, name=slice_name)
+                result = self.plugin.create_slice(slice_id=slice_id, name=slice_name, project_id=project_id)
                 result.set_config_properties(value=config_properties)
                 if reservation.get_slice().is_broker_client():
                     result.set_broker_client()
@@ -400,7 +398,7 @@ class Kernel:
             self.register_slice(slice_object=result)
         return result
 
-    def get_reservation(self, *, rid: ID) -> ABCKernelReservation:
+    def get_reservation(self, *, rid: ID) -> ABCReservationMixin:
         """
         Returns the specified reservation.
         @param rid reservation id
@@ -410,7 +408,7 @@ class Kernel:
             return self.reservations.get(rid=rid)
         return None
 
-    def get_reservations(self, *, slice_id: ID) -> List[ABCKernelReservation]:
+    def get_reservations(self, *, slice_id: ID) -> List[ABCReservationMixin]:
         """
         Returns all reservations in the specified slice.
         @param slice_id slice id
@@ -444,7 +442,7 @@ class Kernel:
         """
         return self.plugin
 
-    def get_slice(self, *, slice_id: ID) -> ABCKernelSlice:
+    def get_slice(self, *, slice_id: ID) -> ABCSlice:
         """
         Returns a slice previously registered with the kernel.
         @param slice_id slice identifier
@@ -472,7 +470,8 @@ class Kernel:
         """
         return self.slices.get_slices()
 
-    def handle_duplicate_request(self, *, current: ABCKernelReservation, operation: RequestTypes):
+    @staticmethod
+    def handle_duplicate_request(*, current: ABCReservationMixin, operation: RequestTypes):
         """
         Handles a duplicate request.
         @param current reservation
@@ -480,7 +479,7 @@ class Kernel:
         """
         current.handle_duplicate_request(operation=operation)
 
-    def probe_pending_slices(self, *, slice_obj: ABCKernelSlice):
+    def probe_pending_slices(self, *, slice_obj: ABCSlice):
         """
         Probes to check for completion of pending operation.
         @param slice_obj the slice_obj being probed
@@ -497,7 +496,7 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during probe pending for slice_obj #{slice_obj.get_slice_id()}", e=e)
 
-    def probe_pending(self, *, reservation: ABCKernelReservation):
+    def probe_pending(self, *, reservation: ABCReservationMixin):
         """
         Probes to check for completion of pending operation.
         @param reservation the reservation being probed
@@ -571,7 +570,7 @@ class Kernel:
         """
         return self.policy.query(p=properties)
 
-    def redeem(self, *, reservation: ABCKernelControllerReservationMixin):
+    def redeem(self, *, reservation: ABCClientReservation):
         """
         Redeem a reservation
         @param reservation reservation
@@ -589,7 +588,7 @@ class Kernel:
             self.logger.error(f"An error occurred during redeem for reservation #{reservation.get_reservation_id()} "
                               f"e: {e}")
 
-    def register(self, *, reservation: ABCKernelReservation, slice_object: ABCKernelSlice) -> bool:
+    def register(self, *, reservation: ABCReservationMixin, slice_object: ABCSlice) -> bool:
         """
         Registers a new reservation with its slice and the kernel reservation
         table. Must be called with the kernel lock on.
@@ -627,7 +626,7 @@ class Kernel:
 
         return add
 
-    def register_delegation_with_slice(self, *, delegation: ABCDelegation, slice_object: ABCKernelSlice) -> bool:
+    def register_delegation_with_slice(self, *, delegation: ABCDelegation, slice_object: ABCSlice) -> bool:
         """
         Registers a new delegation with its slice and the kernel delegation
         table. Must be called with the kernel lock on.
@@ -691,7 +690,7 @@ class Kernel:
                 self.unregister_no_check_d(delegation=delegation, slice_object=local_slice)
                 raise e
 
-    def register_reservation(self, *, reservation: ABCKernelReservation):
+    def register_reservation(self, *, reservation: ABCReservationMixin):
         """
         Re-registers the reservation.
         @param reservation reservation
@@ -714,7 +713,7 @@ class Kernel:
                 self.unregister_no_check(reservation=reservation, slice_object=local_slice)
                 raise e
 
-    def register_slice(self, *, slice_object: ABCKernelSlice):
+    def register_slice(self, *, slice_object: ABCSlice):
         """
         Registers the specified slice with the kernel.
         @param slice_object slice to register
@@ -805,7 +804,7 @@ class Kernel:
             self.unregister_no_check_d(delegation=delegation, slice_object=local_slice)
             raise KernelException("The delegation has no database record")
 
-    def re_register_reservation(self, *, reservation: ABCKernelReservation):
+    def re_register_reservation(self, *, reservation: ABCReservationMixin):
         """
         Re-registers the reservation.
         @param reservation reservation
@@ -825,13 +824,13 @@ class Kernel:
 
         # Check if the reservation has a database record.
         temp = None
-        temp = self.plugin.get_database().get_reservation(rid=reservation.get_reservation_id())
+        temp = self.plugin.get_database().get_reservations(rid=reservation.get_reservation_id())
 
-        if temp is None:
+        if temp is None or len(temp) == 0:
             self.unregister_no_check(reservation=reservation, slice_object=local_slice)
             raise KernelException("The reservation has no database record")
 
-    def re_register_slice(self, *, slice_object: ABCKernelSlice):
+    def re_register_slice(self, *, slice_object: ABCSlice):
         """
         Re-registers the specified slice with the kernel.
         @param slice_object slice to re-register
@@ -841,15 +840,15 @@ class Kernel:
         self.slices.add(slice_object=slice_object)
 
         try:
-            temp = self.plugin.get_database().get_slice(slice_id=slice_object.get_slice_id())
-            if temp is None:
+            slices = self.plugin.get_database().get_slices(slice_id=slice_object.get_slice_id())
+            if slices is None or len(slices) == 0:
                 raise KernelException("The slice does not have a database record")
         except Exception as e:
             self.slices.remove(slice_id=slice_object.get_slice_id())
             self.logger.error(traceback.format_exc())
             self.error(err="could not re-register slice", e=e)
 
-    def reserve(self, *, reservation: ABCKernelReservation):
+    def reserve(self, *, reservation: ABCReservationMixin):
         """
         Handles a reserve operation for the reservation.
         Client: issue a ticket request or a claim request.
@@ -868,17 +867,16 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during reserve for reservation #{reservation.get_reservation_id()}", e=e)
 
-    def delegate(self, *, delegation: ABCDelegation, id_token: str = None):
+    def delegate(self, *, delegation: ABCDelegation):
         """
         Handles a delegate operation for the delegation.
         Broker: process a request for a new delegate.
         Authority: process a request for a new delegate.
         @param delegation delegation
-        @param id_token id token
         @throws Exception
         """
         try:
-            delegation.delegate(policy=self.policy, id_token=id_token)
+            delegation.delegate(policy=self.policy)
             self.plugin.get_database().update_delegation(delegation=delegation)
             if not delegation.is_closed():
                 delegation.service_delegate()
@@ -921,7 +919,7 @@ class Kernel:
 
         return result
 
-    def soft_validate(self, *, reservation: ABCKernelReservation = None, rid: ID = None) -> ABCKernelReservation:
+    def soft_validate(self, *, reservation: ABCReservationMixin = None, rid: ID = None) -> ABCReservationMixin:
         """
         Retrieves the locally registered reservation that corresponds to the
         passed reservation. Obtains the reservation from the containing slice
@@ -1008,7 +1006,7 @@ class Kernel:
         with self.nothing_pending:
             self.nothing_pending.wait()
 
-    def unregister(self, *, reservation: ABCKernelReservation, slice_object: ABCKernelSlice):
+    def unregister(self, *, reservation: ABCReservationMixin, slice_object: ABCSlice):
         """
         Unregisters a reservation from the kernel data structures. Must be called
         with the kernel lock on. Performs state checks.
@@ -1022,7 +1020,7 @@ class Kernel:
         else:
             raise KernelException("Only reservations in failed, closed, or closewait state can be unregistered.")
 
-    def unregister_no_check(self, *, reservation: ABCKernelReservation, slice_object: ABCKernelSlice):
+    def unregister_no_check(self, *, reservation: ABCReservationMixin, slice_object: ABCSlice):
         """
         Unregisters a reservation from the kernel data structures. Must be called
         with the kernel lock on. Does not perform state checks.
@@ -1033,7 +1031,7 @@ class Kernel:
         slice_object.unregister(reservation=reservation)
         self.reservations.remove(reservation=reservation)
 
-    def unregister_no_check_d(self, *, delegation: ABCDelegation, slice_object: ABCKernelSlice):
+    def unregister_no_check_d(self, *, delegation: ABCDelegation, slice_object: ABCSlice):
         """
         Unregisters a delegation from the kernel data structures. Must be called
         with the kernel lock on. Does not perform state checks.
@@ -1085,7 +1083,7 @@ class Kernel:
         else:
             raise KernelException("Slice cannot be unregistered: not empty")
 
-    def update_lease(self, *, reservation: ABCKernelReservation, update: Reservation, update_data: UpdateData):
+    def update_lease(self, *, reservation: ABCReservationMixin, update: Reservation, update_data: UpdateData):
         """
         Handles an incoming update lease operation (client side only).
         @param reservation local reservation
@@ -1113,7 +1111,7 @@ class Kernel:
             self.error(err=f"An error occurred during update lease for reservation "
                            f"# {reservation.get_reservation_id()}", e=e)
 
-    def update_ticket(self, *, reservation: ABCKernelReservation, update: Reservation, update_data: UpdateData):
+    def update_ticket(self, *, reservation: ABCReservationMixin, update: Reservation, update_data: UpdateData):
         """
         Handles an incoming update ticket operation (client side only).
         @param reservation local reservation
@@ -1148,7 +1146,7 @@ class Kernel:
             self.error(err=f"An error occurred during update delegation for "
                            f"delegation # {delegation.get_delegation_id()}", e=e)
 
-    def validate(self, *, reservation: ABCKernelReservation = None, rid: ID = None):
+    def validate(self, *, reservation: ABCReservationMixin = None, rid: ID = None):
         """
         Retrieves the locally registered reservation that corresponds to the
         passed reservation. Obtains the reservation from the containing slice
@@ -1177,7 +1175,8 @@ class Kernel:
 
         return None
 
-    def handle_failed_rpc(self, *, reservation: ABCKernelReservation, rpc: FailedRPC):
+    @staticmethod
+    def handle_failed_rpc(*, reservation: ABCReservationMixin, rpc: FailedRPC):
         """
         Handle failed rpc
         @param reservation reservation

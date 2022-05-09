@@ -28,6 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fim.slivers.base_sliver import BaseSliver
+
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 
@@ -151,19 +153,19 @@ class ABCClientActor(ABCActorMixin):
         """
 
     @abstractmethod
-    def modify(self, *, reservation_id: ID, modify_properties: dict):
+    def modify(self, *, reservation_id: ID, modified_sliver: BaseSliver):
         """
         Issue modify request for given reservation. Note: the reservation
         must have already been registered with the actor.
 
         @param reservation_id reservationID for the reservation to modify
-        @param modify_properties property list for modify
+        @param modified_sliver modified_sliver
         @throws Exception in case of error
         """
 
     @abstractmethod
     def claim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
-                                broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
+                                broker: ABCBrokerProxy = None) -> ABCDelegation:
         """
         Claims already exported resources from the given broker. The delegation
         will be stored in the default slice.
@@ -171,7 +173,6 @@ class ABCClientActor(ABCActorMixin):
         @param delegation_id delegation identifier of the exported delegation
         @param slice_object slice
         @param broker broker proxy
-        @param id_token id token
 
         @returns delegation
         @raises Exception in case of failure
@@ -179,7 +180,7 @@ class ABCClientActor(ABCActorMixin):
 
     @abstractmethod
     def reclaim_delegation_client(self, *, delegation_id: str = None, slice_object: ABCSlice = None,
-                                  broker: ABCBrokerProxy = None, id_token: str = None) -> ABCDelegation:
+                                  broker: ABCBrokerProxy = None) -> ABCDelegation:
         """
         Reclaims already exported resources from the given broker. The delegation
         will be stored in the default slice.
@@ -187,7 +188,6 @@ class ABCClientActor(ABCActorMixin):
         @param delegation_id delegation identifier of the exported delegation
         @param slice_object slice
         @param broker broker proxy
-        @param id_token id token
 
         @returns delegation
         @raises Exception in case of failure
