@@ -12,7 +12,7 @@
       "name": "MIT",
       "url": "https://opensource.org/licenses/MIT"
     },
-    "version": "1.0.0"
+    "version": "1.0.1"
   },
   "servers": [
     {
@@ -20,7 +20,7 @@
       "description": "local development"
     },
     {
-      "url": "https://virtserver.swaggerhub.com/kthare10/orchestrator/1.0.0",
+      "url": "https://virtserver.swaggerhub.com/kthare10/orchestrator/1.0.1",
       "description": "SwaggerHub API Auto Mocking"
     }
   ],
@@ -46,17 +46,28 @@
     "/version": {
       "get": {
         "tags": [
-          "default"
+          "version"
         ],
-        "summary": "version",
+        "summary": "Version",
         "description": "Version",
+        "operationId": "version_get",
         "responses": {
           "200": {
             "description": "OK",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Version"
+                  "$ref": "#/components/schemas/version"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
                 }
               }
             }
@@ -91,22 +102,60 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/resources"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Authorization information is missing or invalid"
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Resource(s) not found"
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
           },
-          "5XX": {
-            "description": "Unexpected error"
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -125,9 +174,9 @@
         "description": "Retrieve a listing and description of available resources for portal",
         "parameters": [
           {
-            "name": "graphFormat",
+            "name": "graph_format",
             "in": "query",
-            "description": "Graph format",
+            "description": "graph format",
             "required": true,
             "style": "form",
             "explode": true,
@@ -148,22 +197,60 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/resources"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Authorization information is missing or invalid"
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Resource(s) not found"
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
           },
-          "5XX": {
-            "description": "Unexpected error"
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
           }
         }
       }
@@ -177,9 +264,21 @@
         "description": "Retrieve a listing of user slices",
         "parameters": [
           {
+            "name": "name",
+            "in": "query",
+            "description": "Search for Slices with the name",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "minLength": 3,
+              "type": "string"
+            }
+          },
+          {
             "name": "states",
             "in": "query",
-            "description": "Slice states",
+            "description": "Search for Slices in the specified states",
             "required": false,
             "style": "form",
             "explode": true,
@@ -197,6 +296,35 @@
                 ]
               }
             }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "maximum number of results to return per page (1 or more)",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32",
+              "default": 5
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "description": "number of items to skip before starting to collect the result set",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "minimum": 0,
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
           }
         ],
         "responses": {
@@ -205,22 +333,60 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/slices"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Authorization information is missing or invalid"
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Slice(s) not found"
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
           },
-          "5XX": {
-            "description": "Unexpected error"
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -230,7 +396,7 @@
         ]
       }
     },
-    "/slices/{sliceID}": {
+    "/slices/{slice_id}": {
       "get": {
         "tags": [
           "slices"
@@ -239,9 +405,9 @@
         "description": "Retrieve Slice properties",
         "parameters": [
           {
-            "name": "sliceID",
+            "name": "slice_id",
             "in": "path",
-            "description": "Slice identifier as UUID",
+            "description": "Slice identified by universally unique identifier",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -250,9 +416,9 @@
             }
           },
           {
-            "name": "graphFormat",
+            "name": "graph_format",
             "in": "query",
-            "description": "Graph format",
+            "description": "graph format",
             "required": true,
             "style": "form",
             "explode": true,
@@ -273,73 +439,60 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/slice_details"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request. Slice ID must be in uuid-4 format"
-          },
-          "401": {
-            "description": "Authorization information is missing or invalid"
-          },
-          "404": {
-            "description": "A Slice with the specified ID was not found"
-          },
-          "5XX": {
-            "description": "Unexpected error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/slices/status/{sliceID}": {
-      "get": {
-        "tags": [
-          "slices"
-        ],
-        "summary": "slice status",
-        "description": "Retrieve the status of a slice. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.\n",
-        "parameters": [
-          {
-            "name": "sliceID",
-            "in": "path",
-            "description": "Slice identifier as UUID",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
+            "description": "Bad Request",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/status_400_bad_request"
                 }
               }
             }
           },
-          "400": {
-            "description": "Bad request. Slice ID must be in uuid-4 format"
-          },
           "401": {
-            "description": "Authorization information is missing or invalid"
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
           },
           "404": {
-            "description": "A Slice with the specified ID was not found"
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
           },
-          "5XX": {
-            "description": "Unexpected error"
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -358,7 +511,7 @@
         "description": "Request to create slice as described in the request. Request would be a graph ML describing the requested resources. Resources may be requested to be created now or in future. On success, one or more slivers are allocated, containing resources satisfying the request, and assigned to the given slice. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke get slice API to get the latest state of the requested resources. \n",
         "parameters": [
           {
-            "name": "sliceName",
+            "name": "name",
             "in": "query",
             "description": "Slice Name",
             "required": true,
@@ -369,7 +522,7 @@
             }
           },
           {
-            "name": "sshKey",
+            "name": "ssh_key",
             "in": "query",
             "description": "User SSH Key",
             "required": true,
@@ -380,10 +533,10 @@
             }
           },
           {
-            "name": "leaseEndTime",
+            "name": "lease_end_time",
             "in": "query",
-            "description": "Lease End Time for the Slice",
-            "required": false,
+            "description": "New Lease End Time for the Slice",
+            "required": true,
             "style": "form",
             "explode": true,
             "schema": {
@@ -392,7 +545,7 @@
           }
         ],
         "requestBody": {
-          "$ref": "#/components/requestBodies/Request"
+          "$ref": "#/components/requestBodies/payload_slices_post"
         },
         "responses": {
           "200": {
@@ -400,22 +553,60 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/slivers"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Authorization information is missing or invalid"
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
           },
           "404": {
-            "description": "A Slice with the specified ID was not found"
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
           },
-          "5XX": {
-            "description": "Unexpected error"
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -425,58 +616,7 @@
         ]
       }
     },
-    "/slices/redeem/{sliceID}": {
-      "post": {
-        "tags": [
-          "slices"
-        ],
-        "summary": "Redeem resources reserved via Create API",
-        "description": "Request that the reserved resources be made provisioned, instantiating or otherwise realizing the resources, such that they have a valid operational status and may possibly be made ready for experimenter use. This operation is synchronous, but may start a longer process, such as creating and imaging a virtual machine.\n",
-        "parameters": [
-          {
-            "name": "sliceID",
-            "in": "path",
-            "description": "Slice identifier as UUID",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Success"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Authorization information is missing or invalid"
-          },
-          "404": {
-            "description": "A Slice with the specified ID was not found"
-          },
-          "5XX": {
-            "description": "Unexpected error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/slices/renew/{sliceID}": {
+    "/slices/renew/{slice_id}": {
       "post": {
         "tags": [
           "slices"
@@ -485,9 +625,9 @@
         "description": "Request to extend slice be renewed with their expiration extended. If possible, the orchestrator should extend the slivers to the requested expiration time, or to a sooner time if policy limits apply.\n",
         "parameters": [
           {
-            "name": "sliceID",
+            "name": "slice_id",
             "in": "path",
-            "description": "Slice identifier as UUID",
+            "description": "Slice identified by universally unique identifier",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -496,7 +636,7 @@
             }
           },
           {
-            "name": "newLeaseEndTime",
+            "name": "lease_end_time",
             "in": "query",
             "description": "New Lease End Time for the Slice",
             "required": true,
@@ -513,76 +653,60 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/status_200_ok_no_content"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Authorization information is missing or invalid"
-          },
-          "404": {
-            "description": "A Slice with the specified ID was not found"
-          },
-          "5XX": {
-            "description": "Unexpected error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/slices/modify/{sliceID}": {
-      "put": {
-        "tags": [
-          "slices"
-        ],
-        "summary": "Modify slice",
-        "description": "Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice.\n",
-        "parameters": [
-          {
-            "name": "sliceID",
-            "in": "path",
-            "description": "Slice identifier as UUID",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/Request"
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
+            "description": "Bad Request",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/status_400_bad_request"
                 }
               }
             }
           },
-          "400": {
-            "description": "Bad request"
-          },
           "401": {
-            "description": "Authorization information is missing or invalid"
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
           },
           "404": {
-            "description": "A Slice with the specified ID was not found"
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
           },
-          "5XX": {
-            "description": "Unexpected error"
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -592,7 +716,7 @@
         ]
       }
     },
-    "/slices/delete/{sliceID}": {
+    "/slices/delete/{slice_id}": {
       "delete": {
         "tags": [
           "slices"
@@ -601,9 +725,9 @@
         "description": "Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary, de-provisioned and un-allocated at the respective sites.\n",
         "parameters": [
           {
-            "name": "sliceID",
+            "name": "slice_id",
             "in": "path",
-            "description": "Slice identifier as UUID",
+            "description": "Slice identified by universally unique identifier",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -618,22 +742,60 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/status_200_ok_no_content"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Authorization information is missing or invalid"
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
           },
           "404": {
-            "description": "A Slice with the specified ID was not found"
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
           },
-          "5XX": {
-            "description": "Unexpected error"
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -652,7 +814,7 @@
         "description": "Retrieve a listing of user slivers",
         "parameters": [
           {
-            "name": "sliceID",
+            "name": "slice_id",
             "in": "query",
             "description": "Slice identifier as UUID",
             "required": true,
@@ -669,22 +831,60 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/slivers"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request"
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_400_bad_request"
+                }
+              }
+            }
           },
           "401": {
-            "description": "Authorization information is missing or invalid"
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_401_unauthorized"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_403_forbidden"
+                }
+              }
+            }
           },
           "404": {
-            "description": "Sliver(s) not found"
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
           },
-          "5XX": {
-            "description": "Unexpected error"
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -694,7 +894,7 @@
         ]
       }
     },
-    "/slivers/{sliverID}": {
+    "/slivers/{sliver_id}": {
       "get": {
         "tags": [
           "slivers"
@@ -703,9 +903,9 @@
         "description": "Retrieve Sliver properties",
         "parameters": [
           {
-            "name": "sliceID",
+            "name": "slice_id",
             "in": "query",
-            "description": "Slice identifier as UUID",
+            "description": "Slice identified by universally unique identifier",
             "required": true,
             "style": "form",
             "explode": true,
@@ -714,9 +914,9 @@
             }
           },
           {
-            "name": "sliverID",
+            "name": "sliver_id",
             "in": "path",
-            "description": "Sliver identifier as UUID",
+            "description": "Sliver identified by universally unique identifier",
             "required": true,
             "style": "simple",
             "explode": false,
@@ -731,203 +931,60 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/slivers"
                 }
               }
             }
           },
           "400": {
-            "description": "Bad request. Slice ID must be in uuid-4 format"
-          },
-          "401": {
-            "description": "Authorization information is missing or invalid"
-          },
-          "404": {
-            "description": "A Slice with the specified ID was not found"
-          },
-          "5XX": {
-            "description": "Unexpected error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/slivers/status/{sliverID}": {
-      "get": {
-        "tags": [
-          "slivers"
-        ],
-        "summary": "slivers status",
-        "description": "Retrieve the status of a sliver. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.\n",
-        "parameters": [
-          {
-            "name": "sliceID",
-            "in": "query",
-            "description": "Slice identifier as UUID",
-            "required": true,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sliverID",
-            "in": "path",
-            "description": "Sliver identifier as UUID",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
+            "description": "Bad Request",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/status_400_bad_request"
                 }
               }
             }
           },
-          "400": {
-            "description": "Bad request. Sliver/Slice ID must be in uuid-4 format"
-          },
           "401": {
-            "description": "Authorization information is missing or invalid"
-          },
-          "404": {
-            "description": "A Sliver/Slice with the specified ID was not found"
-          },
-          "5XX": {
-            "description": "Unexpected error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/slivers/poa/{sliverID}": {
-      "post": {
-        "tags": [
-          "slivers"
-        ],
-        "summary": "Perform Operational Action",
-        "description": "Perform the named operational action on the named resources, possibly changing the operational status of the named resources. E.G. 'reboot' a VM. \n",
-        "parameters": [
-          {
-            "name": "sliverID",
-            "in": "path",
-            "description": "Sliver identifier as UUID",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/Request"
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
+            "description": "Unauthorized",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/status_401_unauthorized"
                 }
               }
             }
           },
-          "400": {
-            "description": "Bad request. Sliver/Slice ID must be in uuid-4 format"
-          },
-          "401": {
-            "description": "Authorization information is missing or invalid"
-          },
-          "404": {
-            "description": "A Sliver/Slice with the specified ID was not found"
-          },
-          "5XX": {
-            "description": "Unexpected error"
-          }
-        },
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ]
-      }
-    },
-    "/slivers/modify/{sliverID}": {
-      "put": {
-        "tags": [
-          "slivers"
-        ],
-        "summary": "Modify sliver",
-        "description": "Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice.\n",
-        "parameters": [
-          {
-            "name": "sliverID",
-            "in": "path",
-            "description": "Sliver identifier as UUID",
-            "required": true,
-            "style": "simple",
-            "explode": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "sliceID",
-            "in": "query",
-            "description": "Slice identifier as UUID",
-            "required": true,
-            "style": "form",
-            "explode": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "$ref": "#/components/requestBodies/Request"
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
+          "403": {
+            "description": "Forbidden",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Success"
+                  "$ref": "#/components/schemas/status_403_forbidden"
                 }
               }
             }
           },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Authorization information is missing or invalid"
-          },
           "404": {
-            "description": "A Slice with the specified ID was not found"
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_404_not_found"
+                }
+              }
+            }
           },
-          "5XX": {
-            "description": "Unexpected error"
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/status_500_internal_server_error"
+                }
+              }
+            }
           }
         },
         "security": [
@@ -940,21 +997,484 @@
   },
   "components": {
     "schemas": {
-      "Success": {
+      "status_200_ok_single": {
         "type": "object",
         "properties": {
-          "value": {
-            "type": "object",
-            "description": "JSON object"
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "size": {
+            "type": "integer",
+            "default": 1
+          },
+          "status": {
+            "type": "integer",
+            "default": 200
+          },
+          "type": {
+            "type": "string"
           }
         }
       },
-      "Version": {
+      "status_200_ok_no_content": {
+        "type": "object",
         "properties": {
-          "version": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/status_200_ok_no_content_data"
+            }
+          },
+          "type": {
+            "type": "string",
+            "default": "no_content"
+          },
+          "size": {
+            "type": "integer",
+            "default": 1
+          },
+          "status": {
+            "type": "integer",
+            "default": 200
+          }
+        }
+      },
+      "status_200_ok_paginated": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "links": {
+            "$ref": "#/components/schemas/status_200_ok_paginated_links"
+          },
+          "offset": {
+            "type": "integer"
+          },
+          "size": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "integer",
+            "default": 200
+          },
+          "total": {
+            "type": "integer"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
+      "status_400_bad_request": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/status_400_bad_request_errors"
+            }
+          }
+        }
+      },
+      "status_401_unauthorized": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/status_401_unauthorized_errors"
+            }
+          },
+          "type": {
+            "type": "string",
+            "default": "error"
+          },
+          "size": {
+            "type": "integer",
+            "default": 1
+          },
+          "status": {
+            "type": "integer",
+            "default": 401
+          }
+        }
+      },
+      "status_403_forbidden": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/status_403_forbidden_errors"
+            }
+          },
+          "type": {
+            "type": "string",
+            "default": "error"
+          },
+          "size": {
+            "type": "integer",
+            "default": 1
+          },
+          "status": {
+            "type": "integer",
+            "default": 403
+          }
+        }
+      },
+      "status_404_not_found": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/status_404_not_found_errors"
+            }
+          },
+          "type": {
+            "type": "string",
+            "default": "error"
+          },
+          "size": {
+            "type": "integer",
+            "default": 1
+          },
+          "status": {
+            "type": "integer",
+            "default": 404
+          }
+        }
+      },
+      "status_500_internal_server_error": {
+        "type": "object",
+        "properties": {
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/status_500_internal_server_error_errors"
+            }
+          },
+          "type": {
+            "type": "string",
+            "default": "error"
+          },
+          "size": {
+            "type": "integer",
+            "default": 1
+          },
+          "status": {
+            "type": "integer",
+            "default": 500
+          }
+        }
+      },
+      "status_200_ok_no_content_data": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "default": "No Content"
+          },
+          "details": {
+            "type": "string"
+          }
+        },
+        "example": {
+          "details": "details",
+          "message": "No Content"
+        }
+      },
+      "status_200_ok_paginated_links": {
+        "type": "object",
+        "properties": {
+          "first": {
             "type": "string"
           },
-          "gitsha1": {
+          "last": {
+            "type": "string"
+          },
+          "next": {
+            "type": "string"
+          },
+          "prev": {
+            "type": "string"
+          }
+        }
+      },
+      "status_400_bad_request_errors": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "default": "Bad Request"
+          },
+          "details": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "default": "error"
+          },
+          "size": {
+            "type": "integer",
+            "default": 1
+          },
+          "status": {
+            "type": "integer",
+            "default": 400
+          }
+        }
+      },
+      "status_401_unauthorized_errors": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "default": "Unauthorized"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      },
+      "status_403_forbidden_errors": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "default": "Forbidden"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      },
+      "status_404_not_found_errors": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "default": "Not Found"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      },
+      "status_500_internal_server_error_errors": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "default": "Internal Server Error"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      },
+      "slices": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/status_200_ok_paginated"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/slice"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "slice_details": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/status_200_ok_single"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/slice"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "slice": {
+        "required": [
+          "graph_id",
+          "name",
+          "slice_id"
+        ],
+        "type": "object",
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "lease_start_time": {
+            "type": "string"
+          },
+          "lease_end_time": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "graph_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slice_id": {
+            "type": "string"
+          }
+        }
+      },
+      "slivers": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/status_200_ok_single"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/sliver"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "sliver": {
+        "required": [
+          "graph_node_id",
+          "slice_id",
+          "sliver_id"
+        ],
+        "type": "object",
+        "properties": {
+          "notice": {
+            "type": "string"
+          },
+          "sliver_type": {
+            "type": "string"
+          },
+          "sliver": {
+            "type": "object"
+          },
+          "lease_start_time": {
+            "type": "string"
+          },
+          "lease_end_time": {
+            "type": "string"
+          },
+          "state": {
+            "type": "string"
+          },
+          "pending_state": {
+            "type": "string"
+          },
+          "join_state": {
+            "type": "string"
+          },
+          "graph_node_id": {
+            "type": "string"
+          },
+          "slice_id": {
+            "type": "string"
+          },
+          "sliver_id": {
+            "type": "string"
+          }
+        }
+      },
+      "version": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/status_200_ok_single"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/version_data"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "version_data": {
+        "required": [
+          "reference",
+          "version"
+        ],
+        "properties": {
+          "reference": {
+            "type": "string",
+            "example": "https://github.com/fabric-testbed/ControlFramework"
+          },
+          "version": {
+            "type": "string",
+            "example": "1.0.0"
+          }
+        }
+      },
+      "resources": {
+        "type": "object",
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/status_200_ok_single"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/resource"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "resource": {
+        "required": [
+          "model"
+        ],
+        "type": "object",
+        "properties": {
+          "model": {
             "type": "string"
           }
         }
@@ -1069,7 +1589,7 @@
       }
     },
     "requestBodies": {
-      "Request": {
+      "payload_slices_post": {
         "content": {
           "text/plain": {
             "schema": {

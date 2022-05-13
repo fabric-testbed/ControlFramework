@@ -46,8 +46,12 @@ Example: Version format
 
 ```json
 {
-  "gitsha1": "Release SHA as string",
-  "version": "Release version as string"
+  "data": [
+    null
+  ],
+  "size": 1,
+  "status": 200,
+  "type": "string"
 }
 ```
 #### Resources
@@ -62,7 +66,12 @@ Resource | Action | Input | Output
 Example: Resources format
 ```json
 {
-  "value": {}
+  "data": [
+    {}
+  ],
+  "size": 1,
+  "status": 200,
+  "type": "string"
 }
 ```
 
@@ -73,16 +82,29 @@ API `/slivers`:
  
 Resource | Action | Input | Output
 :--------|:----:|:---:|:---:
-`/` | GET: Retrieve a listing of user slivers | `sliceID` Slice ID | Sliver Format
-`/{sliverID}` | GET: Retrieve Sliver properties | `sliceID` Slice ID, `sliverID` Sliver ID | Sliver Format
-`/status/{sliverID}` | GET: Retrieve the status of a sliver. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.| `sliceID` Slice ID, `sliverID` Sliver ID | Sliver Format
-`/poa/{sliverID}` | POST: Perform the named operational action on the named resources, possibly changing the operational status of the named resources. E.G. 'reboot' a VM. | `sliceID` Slice ID, `sliverID` Sliver ID, `Reboot Node or FPGA bitcode` body | Sliver Format
-`/modify/{sliverID}` | PUT: Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice. | `sliceID` Slice ID, `sliverID` Sliver ID, `Modify Request` body | Sliver Format
+`/` | GET: Retrieve a listing of user slivers | `slice_id` Slice ID | Sliver Format
+`/{sliver_id}` | GET: Retrieve Sliver properties | `slice_id` Slice ID, `sliver_id` Sliver ID | Sliver Format
 
 Example: Sliver format
 ```json
 {
-  "value": {}
+  "data": [
+    {
+      "sliver_type": "string",
+      "sliver": {},
+      "lease_start_time": "string",
+      "lease_end_time": "string",
+      "state": "string",
+      "pending_state": "string",
+      "join_state": "string",
+      "graph_node_id": "string",
+      "slice_id": "string",
+      "sliver_id": "string"
+    }
+  ],
+  "size": 1,
+  "status": 200,
+  "type": "string"
 }
 ```
 
@@ -94,18 +116,31 @@ API `/slices`:
 Resource | Action | Input | Output
 :--------|:----:|:---:|:---:
 `/` | GET: Retrieve a listing of user slices |  | Slice Format
-`/{sliceID}` | GET: Retrieve Slice properties | `sliceID` Slice ID | Slice Format
-`/status/{sliceID}` | GET: Retrieve the status of a slice. Status would include dynamic reservation or instantiation information. This API is used to provide updates on the state of the resources after the completion of create, which began to asynchronously provision the resources. The response would contain relatively dynamic data, not descriptive data as returned in the Graph ML.| `sliceID` Slice ID | Slice Format
+`/{slice_id}` | GET: Retrieve Slice properties | `slice_id` Slice ID | Slice Format
 `/create` | POST: Request to create slice as described in the request. Request would be a graph ML describing the requested resources. Resources may be requested to be created now or in future. On success, one or more slivers are allocated, containing resources satisfying the request, and assigned to the given slice. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke get slice API to get the latest state of the requested resources. | `sliceName` Slice Name, `sshKey` SSH Key, `leaseEndTime` Lease End Time, `GraphML Representing the Slice` body | Slice Format
-`/redeem/{sliceID}` | POST: Request that the reserved resources be made provisioned, instantiating or otherwise realizing the resources, such that they have a valid operational status and may possibly be made ready for experimenter use. This operation is synchronous, but may start a longer process, such as creating and imaging a virtual machine. | `sliceID` Slice ID | Slice Format
-`/renew/{sliceID}` | POST: Request to extend slice be renewed with their expiration extended. If possible, the orchestrator should extend the slivers to the requested expiration time, or to a sooner time if policy limits apply. | `sliceID` Slice ID, `newLeaseEndTime` New Lease End Time for the Slice | Slice Format
-`/modify/{sliceID}` | PUT: Request to modify slice as described in the request. Request would be a Graph ML describing the requested resources for slice or a dictionary for sliver. On success, for one or more slivers are modified. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of the new resources on the appropriate sites either now or in the future based as requested. Modify operations may include add/delete/modify a container/VM/Baremetal server/network or other resources to the slice. | `sliceID` Slice ID, `GraphML representing modify` body | Slice Format
-`/delete/{sliceID}` | DELETE: Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary, de-provisioned and un-allocated at the respective sites. | `sliceID` Slice ID | Slice Format
+`/renew/{slice_id}` | POST: Request to extend slice be renewed with their expiration extended. If possible, the orchestrator should extend the slivers to the requested expiration time, or to a sooner time if policy limits apply. | `slice_id` Slice ID, `newLeaseEndTime` New Lease End Time for the Slice | Slice Format
+`/delete/{slice_id}` | DELETE: Request to delete slice. On success, resources associated with slice or sliver are stopped if necessary, de-provisioned and un-allocated at the respective sites. | `slice_id` Slice ID | Slice Format
 
 Example: Slice format
 ```json
 {
-  "value": {}
+  "data": [
+    {
+      "model": "string",
+      "lease_end_time": "string",
+      "state": "string",
+      "graph_id": "string",
+      "name": "string",
+      "slice_id": "string"
+    }
+  ],
+  "limit": 0,
+  "links": null,
+  "offset": 0,
+  "size": 0,
+  "status": 200,
+  "total": 0,
+  "type": "string"
 }
 ```
 
