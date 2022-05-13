@@ -89,8 +89,12 @@ class NetworkNodeInventory(InventoryForType):
     def __set_ips(self, *, req_ifs: InterfaceSliver, lab: Labels):
         if req_ifs.labels is not None and req_ifs.labels.ipv4 is not None:
             lab.ipv4 = req_ifs.labels.ipv4
+            if req_ifs.labels.ipv4_subnet is not None:
+                lab.ipv4_subnet = req_ifs.labels.ipv4_subnet
         if req_ifs.labels is not None and req_ifs.labels.ipv6 is not None:
             lab.ipv6 = req_ifs.labels.ipv6
+            if req_ifs.labels.ipv6_subnet is not None:
+                lab.ipv6_subnet = req_ifs.labels.ipv6_subnet
         return lab
 
     def __update_shared_nic_labels_and_capacities(self, *, available_component: ComponentSliver,

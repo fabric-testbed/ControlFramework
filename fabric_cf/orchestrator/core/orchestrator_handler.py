@@ -374,7 +374,9 @@ class OrchestratorHandler:
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            project, tags = fabric_token.get_project_and_tags()
+            # TODO - uncomment once project based view is implemented on portal
+            #project, tags = fabric_token.get_project_and_tags()
+            project = None
             slice_list = controller.get_slices(slice_id=slice_guid, state=slice_states,
                                                email=fabric_token.get_email(), project=project)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
