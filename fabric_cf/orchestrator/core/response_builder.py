@@ -45,6 +45,7 @@ class ResponseBuilder:
     PROP_SLICE_ID = "slice_id"
     PROP_NAME = "name"
     PROP_STATE = "state"
+    PROP_PROJECT_ID = "project_id"
     PROP_MODEL = "model"
     PROP_GRAPH_ID = "graph_id"
     PROP_LEASE_START_TIME = "lease_start_time"
@@ -126,6 +127,9 @@ class ResponseBuilder:
             start_time = s.get_lease_start()
             if start_time is not None:
                 s_dict[ResponseBuilder.PROP_LEASE_START_TIME] = start_time.strftime(Constants.LEASE_TIME_FORMAT)
+
+            if s.get_project_id() is not None:
+                s_dict[ResponseBuilder.PROP_PROJECT_ID] = s.get_project_id()
 
             if slice_model is not None:
                 s_dict[ResponseBuilder.PROP_MODEL] = slice_model

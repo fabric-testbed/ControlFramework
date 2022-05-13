@@ -364,7 +364,7 @@ paths:
       - name: lease_end_time
         in: query
         description: New Lease End Time for the Slice
-        required: true
+        required: false
         style: form
         explode: true
         schema:
@@ -895,6 +895,8 @@ components:
         lease_end_time:
           type: string
         state:
+          type: string
+        project_id:
           type: string
         graph_id:
           type: string
