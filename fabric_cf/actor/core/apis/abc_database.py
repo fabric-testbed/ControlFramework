@@ -177,9 +177,9 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None,
-                   email: str = None, state: list[int] = None, oidc_sub: str = None,
-                   slc_type: List[SliceTypes] = None) -> List[ABCSlice] or None:
+    def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
+                   state: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                   limit: int = None, offset: int = None) -> List[ABCSlice] or None:
         """
         Retrieves the specified slices.
 
@@ -190,6 +190,8 @@ class ABCDatabase(ABC):
         @param state state
         @param oidc_sub oidc sub
         @param slc_type slice type
+        @param limit limit
+        @param offset offset
 
         @return list of slices
 
