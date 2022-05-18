@@ -29,7 +29,7 @@ from fabric_cf.orchestrator.swagger_server import received_counter, success_coun
 from fabric_cf.orchestrator.swagger_server.response.constants import VERSIONS_PATH, GET_METHOD
 
 from fabric_cf import __VERSION__
-from fabric_cf.orchestrator.swagger_server.response.cors_response import cors_500
+from fabric_cf.orchestrator.swagger_server.response.cors_response import cors_500, cors_200
 
 
 def version_get() -> Version:  # noqa: E501
@@ -53,7 +53,7 @@ def version_get() -> Version:  # noqa: E501
         response.status = 200
         response.type = 'version'
         success_counter.labels(GET_METHOD, VERSIONS_PATH).inc()
-        return response
+        return cors_200(response_body=response)
     except Exception as exc:
         details = 'Oops! something went wrong with version_get(): {0}'.format(exc)
         logger.error(details)

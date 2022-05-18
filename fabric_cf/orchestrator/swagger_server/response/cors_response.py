@@ -57,7 +57,6 @@ def cors_200(response_body: Union[Resources, Slices, SliceDetails, Slivers, Vers
     """
     body = json.dumps(delete_none(response_body.to_dict()), indent=_INDENT, sort_keys=True) \
         if _INDENT != 0 else json.dumps(delete_none(response_body.to_dict()), sort_keys=True)
-    print(body)
     return cors_response(
         req=request,
         status_code=200,
