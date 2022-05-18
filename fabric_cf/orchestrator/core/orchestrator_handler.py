@@ -210,7 +210,7 @@ class OrchestratorHandler:
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
-                     lease_end_time: str) -> dict:
+                     lease_end_time: str) -> List[dict]:
         """
         Create a slice
         :param token Fabric Identity Token
@@ -315,13 +315,12 @@ class OrchestratorHandler:
             if orchestrator_slice is not None:
                 orchestrator_slice.unlock()
 
-    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None, include_notices: bool = True) -> dict:
+    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None) -> List[dict]:
         """
         Get Slivers for a Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
         :param sliver_id Sliver Id
-        :param include_notices include notices
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
@@ -349,19 +348,20 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Slice# {slice_id} has no reservations",
                                             http_error_code=NOT_FOUND)
 
-            return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices,
-                                                           include_sliver=True)
+            return ResponseBuilder.get_reservation_summary(res_list=reservations)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")
             raise e
 
-    def get_slices(self, *, token: str, slice_id: str = None, states: List[str] = None) -> dict:
+    def get_slices(self, *, token: str, states: List[str], name: str, limit: int, offset: int) -> List[dict]:
         """
         Get User Slices
         :param token Fabric Identity Token
-        :param slice_id Slice Id
         :param states Slice states
+        :param name Slice name
+        :param limit Number of slices to return
+        :param offset Offset
         :raises Raises an exception in case of failure
         :returns List of Slices on success
         """
@@ -369,14 +369,13 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"get_slices invoked for Controller: {controller}")
 
-            slice_guid = ID(uid=slice_id) if slice_id is not None else None
             slice_states = SliceState.str_list_to_state_list(states=states)
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
             project, tags = fabric_token.get_project_and_tags()
-            slice_list = controller.get_slices(slice_id=slice_guid, state=slice_states,
-                                               email=fabric_token.get_email(), project=project)
+            slice_list = controller.get_slices(state=slice_states, email=fabric_token.get_email(), project=project,
+                                               slice_name=name, limit=limit, offset=offset)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -465,7 +464,7 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
 
             slice_model_str = slice_model.serialize_graph(format=graph_format)
-            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)[0]
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
@@ -541,7 +540,8 @@ class OrchestratorHandler:
                     self.logger.error(f"Failed to update lease end time: {new_end_time} in Slice: {slice_object}")
                     self.logger.error(controller.get_last_error())
 
-            return ResponseBuilder.get_response_summary(rid_list=failed_to_extend_rid_list)
+            if len(failed_to_extend_rid_list) > 0:
+                raise OrchestratorException(f"Failed to extend reservation# {failed_to_extend_rid_list}")
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing renew e: {e}")

@@ -196,9 +196,9 @@ class ActorDatabase(ABCDatabase):
             if self.lock.locked():
                 self.lock.release()
 
-    def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None,
-                   email: str = None, state: list[int] = None, oidc_sub: str = None,
-                   slc_type: List[SliceTypes] = None) -> List[ABCSlice] or None:
+    def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
+                   state: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                   limit: int = None, offset: int = None) -> List[ABCSlice] or None:
         result = []
         try:
             try:
@@ -207,8 +207,9 @@ class ActorDatabase(ABCDatabase):
                 if slc_type is not None:
                     slice_type = [x.value for x in slc_type]
                 sid = str(slice_id) if slice_id is not None else None
-                slices = self.db.get_slices(slice_id=sid, slice_name=slice_name, project_id=project_id,
-                                            email=email, state=state, oidc_sub=oidc_sub, slc_type=slice_type)
+                slices = self.db.get_slices(slice_id=sid, slice_name=slice_name, project_id=project_id, email=email,
+                                            state=state, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
+                                            offset=offset)
             finally:
                 self.lock.release()
             if slices is not None:

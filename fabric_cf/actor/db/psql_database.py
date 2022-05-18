@@ -470,8 +470,9 @@ class PsqlDatabase:
             return None
 
         slice_obj = {'slc_id': row.slc_id, 'slc_guid': row.slc_guid, 'slc_name': row.slc_name,
-                     'slc_type': row.slc_type, 'slc_resource_type': row.slc_resource_type,
-                     'properties': row.properties, 'slc_state': row.slc_state}
+                     'slc_type': row.slc_type, 'slc_resource_type': row.slc_resource_type, 'slc_state': row.slc_state,
+                     'project_id': row.project_id, 'lease_start': row.lease_start, 'lease_end': row.lease_end,
+                     'properties': row.properties}
         if row.slc_graph_id is not None:
             slice_obj['slc_graph_id'] = row.slc_graph_id
 
@@ -511,7 +512,8 @@ class PsqlDatabase:
         return filter_dict
 
     def get_slices(self, *, slice_id: str = None, slice_name: str = None, project_id: str = None, email: str = None,
-                   state: list[int] = None, oidc_sub: str = None, slc_type: list[int] = None) -> list:
+                   state: list[int] = None, oidc_sub: str = None, slc_type: list[int] = None, limit: int = None,
+                   offset: int = None) -> list:
         """
         Get slices for an actor
         @param slice_id actor id
@@ -521,6 +523,8 @@ class PsqlDatabase:
         @param state state
         @param oidc_sub oidc claim sub
         @param slc_type slice type
+        @param limit limit
+        @param offset offset
         @return list of slices
         """
         result = []
@@ -535,6 +539,9 @@ class PsqlDatabase:
 
                 if slc_type is not None:
                     rows = rows.filter(Slices.slc_type.in_(slc_type))
+
+                if offset is not None and limit is not None:
+                    rows = rows.order_by(Slices.lease_end).offset(offset).limit(limit)
 
                 for row in rows.all():
                     slice_obj = self.generate_slice_dict_from_row(row)
