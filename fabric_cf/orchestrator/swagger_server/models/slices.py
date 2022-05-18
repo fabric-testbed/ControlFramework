@@ -8,7 +8,6 @@ from typing import List, Dict  # noqa: F401
 from fabric_cf.orchestrator.swagger_server.models.base_model_ import Model
 from fabric_cf.orchestrator.swagger_server.models.slice import Slice  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server.models.status200_ok_paginated import Status200OkPaginated  # noqa: F401,E501
-from fabric_cf.orchestrator.swagger_server.models.status200_ok_paginated_links import Status200OkPaginatedLinks  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server import util
 
 
@@ -17,15 +16,11 @@ class Slices(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, data: List[Slice]=None, limit: int=None, links: Status200OkPaginatedLinks=None, offset: int=None, size: int=None, status: int=200, total: int=None, type: str=None):  # noqa: E501
+    def __init__(self, limit: int=None, offset: int=None, size: int=None, status: int=200, total: int=None, type: str=None, data: List[Slice]=None):  # noqa: E501
         """Slices - a model defined in Swagger
 
-        :param data: The data of this Slices.  # noqa: E501
-        :type data: List[Slice]
         :param limit: The limit of this Slices.  # noqa: E501
         :type limit: int
-        :param links: The links of this Slices.  # noqa: E501
-        :type links: Status200OkPaginatedLinks
         :param offset: The offset of this Slices.  # noqa: E501
         :type offset: int
         :param size: The size of this Slices.  # noqa: E501
@@ -36,36 +31,35 @@ class Slices(Model):
         :type total: int
         :param type: The type of this Slices.  # noqa: E501
         :type type: str
+        :param data: The data of this Slices.  # noqa: E501
+        :type data: List[Slice]
         """
         self.swagger_types = {
-            'data': List[Slice],
             'limit': int,
-            'links': Status200OkPaginatedLinks,
             'offset': int,
             'size': int,
             'status': int,
             'total': int,
-            'type': str
+            'type': str,
+            'data': List[Slice]
         }
 
         self.attribute_map = {
-            'data': 'data',
             'limit': 'limit',
-            'links': 'links',
             'offset': 'offset',
             'size': 'size',
             'status': 'status',
             'total': 'total',
-            'type': 'type'
+            'type': 'type',
+            'data': 'data'
         }
-        self._data = data
         self._limit = limit
-        self._links = links
         self._offset = offset
         self._size = size
         self._status = status
         self._total = total
         self._type = type
+        self._data = data
 
     @classmethod
     def from_dict(cls, dikt) -> 'Slices':
@@ -77,27 +71,6 @@ class Slices(Model):
         :rtype: Slices
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def data(self) -> List[Slice]:
-        """Gets the data of this Slices.
-
-
-        :return: The data of this Slices.
-        :rtype: List[Slice]
-        """
-        return self._data
-
-    @data.setter
-    def data(self, data: List[Slice]):
-        """Sets the data of this Slices.
-
-
-        :param data: The data of this Slices.
-        :type data: List[Slice]
-        """
-
-        self._data = data
 
     @property
     def limit(self) -> int:
@@ -119,27 +92,6 @@ class Slices(Model):
         """
 
         self._limit = limit
-
-    @property
-    def links(self) -> Status200OkPaginatedLinks:
-        """Gets the links of this Slices.
-
-
-        :return: The links of this Slices.
-        :rtype: Status200OkPaginatedLinks
-        """
-        return self._links
-
-    @links.setter
-    def links(self, links: Status200OkPaginatedLinks):
-        """Sets the links of this Slices.
-
-
-        :param links: The links of this Slices.
-        :type links: Status200OkPaginatedLinks
-        """
-
-        self._links = links
 
     @property
     def offset(self) -> int:
@@ -245,3 +197,24 @@ class Slices(Model):
         """
 
         self._type = type
+
+    @property
+    def data(self) -> List[Slice]:
+        """Gets the data of this Slices.
+
+
+        :return: The data of this Slices.
+        :rtype: List[Slice]
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data: List[Slice]):
+        """Sets the data of this Slices.
+
+
+        :param data: The data of this Slices.
+        :type data: List[Slice]
+        """
+
+        self._data = data

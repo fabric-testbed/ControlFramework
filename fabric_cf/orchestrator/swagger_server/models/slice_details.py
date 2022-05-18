@@ -16,35 +16,35 @@ class SliceDetails(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, data: List[Slice]=None, size: int=1, status: int=200, type: str=None):  # noqa: E501
+    def __init__(self, size: int=1, status: int=200, type: str=None, data: List[Slice]=None):  # noqa: E501
         """SliceDetails - a model defined in Swagger
 
-        :param data: The data of this SliceDetails.  # noqa: E501
-        :type data: List[Slice]
         :param size: The size of this SliceDetails.  # noqa: E501
         :type size: int
         :param status: The status of this SliceDetails.  # noqa: E501
         :type status: int
         :param type: The type of this SliceDetails.  # noqa: E501
         :type type: str
+        :param data: The data of this SliceDetails.  # noqa: E501
+        :type data: List[Slice]
         """
         self.swagger_types = {
-            'data': List[Slice],
             'size': int,
             'status': int,
-            'type': str
+            'type': str,
+            'data': List[Slice]
         }
 
         self.attribute_map = {
-            'data': 'data',
             'size': 'size',
             'status': 'status',
-            'type': 'type'
+            'type': 'type',
+            'data': 'data'
         }
-        self._data = data
         self._size = size
         self._status = status
         self._type = type
+        self._data = data
 
     @classmethod
     def from_dict(cls, dikt) -> 'SliceDetails':
@@ -56,27 +56,6 @@ class SliceDetails(Model):
         :rtype: SliceDetails
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def data(self) -> List[Slice]:
-        """Gets the data of this SliceDetails.
-
-
-        :return: The data of this SliceDetails.
-        :rtype: List[Slice]
-        """
-        return self._data
-
-    @data.setter
-    def data(self, data: List[Slice]):
-        """Sets the data of this SliceDetails.
-
-
-        :param data: The data of this SliceDetails.
-        :type data: List[Slice]
-        """
-
-        self._data = data
 
     @property
     def size(self) -> int:
@@ -140,3 +119,24 @@ class SliceDetails(Model):
         """
 
         self._type = type
+
+    @property
+    def data(self) -> List[Slice]:
+        """Gets the data of this SliceDetails.
+
+
+        :return: The data of this SliceDetails.
+        :rtype: List[Slice]
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data: List[Slice]):
+        """Sets the data of this SliceDetails.
+
+
+        :param data: The data of this SliceDetails.
+        :type data: List[Slice]
+        """
+
+        self._data = data

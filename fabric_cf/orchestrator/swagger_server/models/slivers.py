@@ -7,7 +7,7 @@ from typing import List, Dict  # noqa: F401
 
 from fabric_cf.orchestrator.swagger_server.models.base_model_ import Model
 from fabric_cf.orchestrator.swagger_server.models.sliver import Sliver  # noqa: F401,E501
-from fabric_cf.orchestrator.swagger_server.models.status200_ok_single import Status200OkSingle  # noqa: F401,E501
+from fabric_cf.orchestrator.swagger_server.models.status200_ok_paginated import Status200OkPaginated  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server import util
 
 
@@ -16,35 +16,50 @@ class Slivers(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, data: List[Sliver]=None, size: int=1, status: int=200, type: str=None):  # noqa: E501
+    def __init__(self, limit: int=None, offset: int=None, size: int=None, status: int=200, total: int=None, type: str=None, data: List[Sliver]=None):  # noqa: E501
         """Slivers - a model defined in Swagger
 
-        :param data: The data of this Slivers.  # noqa: E501
-        :type data: List[Sliver]
+        :param limit: The limit of this Slivers.  # noqa: E501
+        :type limit: int
+        :param offset: The offset of this Slivers.  # noqa: E501
+        :type offset: int
         :param size: The size of this Slivers.  # noqa: E501
         :type size: int
         :param status: The status of this Slivers.  # noqa: E501
         :type status: int
+        :param total: The total of this Slivers.  # noqa: E501
+        :type total: int
         :param type: The type of this Slivers.  # noqa: E501
         :type type: str
+        :param data: The data of this Slivers.  # noqa: E501
+        :type data: List[Sliver]
         """
         self.swagger_types = {
-            'data': List[Sliver],
+            'limit': int,
+            'offset': int,
             'size': int,
             'status': int,
-            'type': str
+            'total': int,
+            'type': str,
+            'data': List[Sliver]
         }
 
         self.attribute_map = {
-            'data': 'data',
+            'limit': 'limit',
+            'offset': 'offset',
             'size': 'size',
             'status': 'status',
-            'type': 'type'
+            'total': 'total',
+            'type': 'type',
+            'data': 'data'
         }
-        self._data = data
+        self._limit = limit
+        self._offset = offset
         self._size = size
         self._status = status
+        self._total = total
         self._type = type
+        self._data = data
 
     @classmethod
     def from_dict(cls, dikt) -> 'Slivers':
@@ -58,25 +73,46 @@ class Slivers(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def data(self) -> List[Sliver]:
-        """Gets the data of this Slivers.
+    def limit(self) -> int:
+        """Gets the limit of this Slivers.
 
 
-        :return: The data of this Slivers.
-        :rtype: List[Sliver]
+        :return: The limit of this Slivers.
+        :rtype: int
         """
-        return self._data
+        return self._limit
 
-    @data.setter
-    def data(self, data: List[Sliver]):
-        """Sets the data of this Slivers.
+    @limit.setter
+    def limit(self, limit: int):
+        """Sets the limit of this Slivers.
 
 
-        :param data: The data of this Slivers.
-        :type data: List[Sliver]
+        :param limit: The limit of this Slivers.
+        :type limit: int
         """
 
-        self._data = data
+        self._limit = limit
+
+    @property
+    def offset(self) -> int:
+        """Gets the offset of this Slivers.
+
+
+        :return: The offset of this Slivers.
+        :rtype: int
+        """
+        return self._offset
+
+    @offset.setter
+    def offset(self, offset: int):
+        """Sets the offset of this Slivers.
+
+
+        :param offset: The offset of this Slivers.
+        :type offset: int
+        """
+
+        self._offset = offset
 
     @property
     def size(self) -> int:
@@ -121,6 +157,27 @@ class Slivers(Model):
         self._status = status
 
     @property
+    def total(self) -> int:
+        """Gets the total of this Slivers.
+
+
+        :return: The total of this Slivers.
+        :rtype: int
+        """
+        return self._total
+
+    @total.setter
+    def total(self, total: int):
+        """Sets the total of this Slivers.
+
+
+        :param total: The total of this Slivers.
+        :type total: int
+        """
+
+        self._total = total
+
+    @property
     def type(self) -> str:
         """Gets the type of this Slivers.
 
@@ -140,3 +197,24 @@ class Slivers(Model):
         """
 
         self._type = type
+
+    @property
+    def data(self) -> List[Sliver]:
+        """Gets the data of this Slivers.
+
+
+        :return: The data of this Slivers.
+        :rtype: List[Sliver]
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data: List[Sliver]):
+        """Sets the data of this Slivers.
+
+
+        :param data: The data of this Slivers.
+        :type data: List[Sliver]
+        """
+
+        self._data = data

@@ -6,7 +6,6 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from fabric_cf.orchestrator.swagger_server.models.base_model_ import Model
-from fabric_cf.orchestrator.swagger_server.models.status200_ok_paginated_links import Status200OkPaginatedLinks  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server import util
 
 
@@ -15,15 +14,11 @@ class Status200OkPaginated(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, data: List[object]=None, limit: int=None, links: Status200OkPaginatedLinks=None, offset: int=None, size: int=None, status: int=200, total: int=None, type: str=None):  # noqa: E501
+    def __init__(self, limit: int=None, offset: int=None, size: int=None, status: int=200, total: int=None, type: str=None):  # noqa: E501
         """Status200OkPaginated - a model defined in Swagger
 
-        :param data: The data of this Status200OkPaginated.  # noqa: E501
-        :type data: List[object]
         :param limit: The limit of this Status200OkPaginated.  # noqa: E501
         :type limit: int
-        :param links: The links of this Status200OkPaginated.  # noqa: E501
-        :type links: Status200OkPaginatedLinks
         :param offset: The offset of this Status200OkPaginated.  # noqa: E501
         :type offset: int
         :param size: The size of this Status200OkPaginated.  # noqa: E501
@@ -36,9 +31,7 @@ class Status200OkPaginated(Model):
         :type type: str
         """
         self.swagger_types = {
-            'data': List[object],
             'limit': int,
-            'links': Status200OkPaginatedLinks,
             'offset': int,
             'size': int,
             'status': int,
@@ -47,18 +40,14 @@ class Status200OkPaginated(Model):
         }
 
         self.attribute_map = {
-            'data': 'data',
             'limit': 'limit',
-            'links': 'links',
             'offset': 'offset',
             'size': 'size',
             'status': 'status',
             'total': 'total',
             'type': 'type'
         }
-        self._data = data
         self._limit = limit
-        self._links = links
         self._offset = offset
         self._size = size
         self._status = status
@@ -75,27 +64,6 @@ class Status200OkPaginated(Model):
         :rtype: Status200OkPaginated
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def data(self) -> List[object]:
-        """Gets the data of this Status200OkPaginated.
-
-
-        :return: The data of this Status200OkPaginated.
-        :rtype: List[object]
-        """
-        return self._data
-
-    @data.setter
-    def data(self, data: List[object]):
-        """Sets the data of this Status200OkPaginated.
-
-
-        :param data: The data of this Status200OkPaginated.
-        :type data: List[object]
-        """
-
-        self._data = data
 
     @property
     def limit(self) -> int:
@@ -117,27 +85,6 @@ class Status200OkPaginated(Model):
         """
 
         self._limit = limit
-
-    @property
-    def links(self) -> Status200OkPaginatedLinks:
-        """Gets the links of this Status200OkPaginated.
-
-
-        :return: The links of this Status200OkPaginated.
-        :rtype: Status200OkPaginatedLinks
-        """
-        return self._links
-
-    @links.setter
-    def links(self, links: Status200OkPaginatedLinks):
-        """Sets the links of this Status200OkPaginated.
-
-
-        :param links: The links of this Status200OkPaginated.
-        :type links: Status200OkPaginatedLinks
-        """
-
-        self._links = links
 
     @property
     def offset(self) -> int:

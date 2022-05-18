@@ -10,7 +10,7 @@ from fabric_cf.orchestrator.swagger_server.models import Resources, Slices, Sliv
     Status401Unauthorized, Status403ForbiddenErrors, Status403Forbidden, Status404NotFoundErrors, Status404NotFound, \
     Status500InternalServerErrorErrors, Status500InternalServerError
 
-_INDENT = int(os.getenv('OC_API_JSON_RESPONSE_INDENT', '0'))
+_INDENT = int(os.getenv('OC_API_JSON_RESPONSE_INDENT', '4'))
 
 
 def delete_none(_dict):
@@ -55,11 +55,13 @@ def cors_200(response_body: Union[Resources, Slices, SliceDetails, Slivers, Vers
     """
     Return 200 - OK
     """
+    body = json.dumps(delete_none(response_body.to_dict()), indent=_INDENT, sort_keys=True) \
+        if _INDENT != 0 else json.dumps(delete_none(response_body.to_dict()), sort_keys=True)
+    print(body)
     return cors_response(
         req=request,
         status_code=200,
-        body=json.dumps(delete_none(response_body.to_dict()), indent=_INDENT, sort_keys=True)
-        if _INDENT != 0 else json.dumps(delete_none(response_body.to_dict()), sort_keys=True)
+        body=body
     )
 
 

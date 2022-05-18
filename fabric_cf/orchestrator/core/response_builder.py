@@ -40,8 +40,6 @@ from fabric_cf.actor.core.time.actor_clock import ActorClock
 
 
 class ResponseBuilder:
-    PROP_BQM = "bqm"
-
     PROP_SLICE_ID = "slice_id"
     PROP_NAME = "name"
     PROP_STATE = "state"
@@ -133,6 +131,7 @@ class ResponseBuilder:
 
             if slice_model is not None:
                 s_dict[ResponseBuilder.PROP_MODEL] = slice_model
+            slices.append(s_dict)
 
         return slices
 
@@ -143,4 +142,4 @@ class ResponseBuilder:
         :param bqm:
         :return:
         """
-        return {ResponseBuilder.PROP_BQM: bqm}
+        return {ResponseBuilder.PROP_MODEL: bqm}

@@ -48,9 +48,12 @@ def portalresources_get(graph_format) -> Resources:  # noqa: E501
     received_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
     try:
         bqm_dict = handler.portal_list_resources(graph_format_str=graph_format)
-        resource = Resource().from_dict(bqm_dict)
+        response = Resources()
+        response.data = [Resource().from_dict(bqm_dict)]
+        response.size = 1
+        response.type = "resources"
         success_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
-        return cors_success_response(response_body=Resources(data=[resource]))
+        return cors_success_response(response_body=response)
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
@@ -77,9 +80,12 @@ def resources_get(level) -> Resources:  # noqa: E501
     try:
         token = get_token()
         bqm_dict = handler.list_resources(token=token, level=level)
-        resource = Resource().from_dict(bqm_dict)
+        response = Resources()
+        response.data = [Resource().from_dict(bqm_dict)]
+        response.size = 1
+        response.type = "resources"
         success_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
-        return cors_success_response(response_body=Resources(data=[resource]))
+        return cors_success_response(response_body=response)
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()

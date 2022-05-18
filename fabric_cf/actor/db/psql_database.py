@@ -470,8 +470,9 @@ class PsqlDatabase:
             return None
 
         slice_obj = {'slc_id': row.slc_id, 'slc_guid': row.slc_guid, 'slc_name': row.slc_name,
-                     'slc_type': row.slc_type, 'slc_resource_type': row.slc_resource_type,
-                     'properties': row.properties, 'slc_state': row.slc_state}
+                     'slc_type': row.slc_type, 'slc_resource_type': row.slc_resource_type, 'slc_state': row.slc_state,
+                     'project_id': row.project_id, 'lease_start': row.lease_start, 'lease_end': row.lease_end,
+                     'properties': row.properties}
         if row.slc_graph_id is not None:
             slice_obj['slc_graph_id'] = row.slc_graph_id
 
@@ -540,12 +541,9 @@ class PsqlDatabase:
                     rows = rows.filter(Slices.slc_type.in_(slc_type))
 
                 if offset is not None and limit is not None:
-                    _page = int((offset + limit) / limit)
-                    rows = rows.order_by(Slices.lease_end).paginate(page=_page, per_page=limit, error_out=False).items
-                else:
-                    rows = rows.all()
+                    rows = rows.order_by(Slices.lease_end).offset(offset).limit(limit)
 
-                for row in rows:
+                for row in rows.all():
                     slice_obj = self.generate_slice_dict_from_row(row)
                     result.append(slice_obj.copy())
                     slice_obj.clear()

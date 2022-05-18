@@ -16,35 +16,35 @@ class Resources(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, data: List[Resource]=None, size: int=1, status: int=200, type: str=None):  # noqa: E501
+    def __init__(self, size: int=1, status: int=200, type: str=None, data: List[Resource]=None):  # noqa: E501
         """Resources - a model defined in Swagger
 
-        :param data: The data of this Resources.  # noqa: E501
-        :type data: List[Resource]
         :param size: The size of this Resources.  # noqa: E501
         :type size: int
         :param status: The status of this Resources.  # noqa: E501
         :type status: int
         :param type: The type of this Resources.  # noqa: E501
         :type type: str
+        :param data: The data of this Resources.  # noqa: E501
+        :type data: List[Resource]
         """
         self.swagger_types = {
-            'data': List[Resource],
             'size': int,
             'status': int,
-            'type': str
+            'type': str,
+            'data': List[Resource]
         }
 
         self.attribute_map = {
-            'data': 'data',
             'size': 'size',
             'status': 'status',
-            'type': 'type'
+            'type': 'type',
+            'data': 'data'
         }
-        self._data = data
         self._size = size
         self._status = status
         self._type = type
+        self._data = data
 
     @classmethod
     def from_dict(cls, dikt) -> 'Resources':
@@ -56,27 +56,6 @@ class Resources(Model):
         :rtype: Resources
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def data(self) -> List[Resource]:
-        """Gets the data of this Resources.
-
-
-        :return: The data of this Resources.
-        :rtype: List[Resource]
-        """
-        return self._data
-
-    @data.setter
-    def data(self, data: List[Resource]):
-        """Sets the data of this Resources.
-
-
-        :param data: The data of this Resources.
-        :type data: List[Resource]
-        """
-
-        self._data = data
 
     @property
     def size(self) -> int:
@@ -140,3 +119,24 @@ class Resources(Model):
         """
 
         self._type = type
+
+    @property
+    def data(self) -> List[Resource]:
+        """Gets the data of this Resources.
+
+
+        :return: The data of this Resources.
+        :rtype: List[Resource]
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data: List[Resource]):
+        """Sets the data of this Resources.
+
+
+        :param data: The data of this Resources.
+        :type data: List[Resource]
+        """
+
+        self._data = data

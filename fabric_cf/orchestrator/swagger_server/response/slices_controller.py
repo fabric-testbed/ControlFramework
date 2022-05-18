@@ -67,12 +67,15 @@ def slices_create_post(body, name, ssh_key, lease_end_time) -> Slivers:  # noqa:
         slice_graph = body.decode("utf-8")
         slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=slice_graph,
                                             ssh_key=ssh_key, lease_end_time=lease_end_time)
-        slivers = []
+        response = Slices()
+        response.data = []
         for s in slivers_dict:
             sliver = Sliver().from_dict(s)
-            slivers.append(sliver)
+            response.data.append(sliver)
+        response.size = len(response.data)
+        response.type = "slivers"
         success_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
-        return cors_success_response(response_body=Slivers(data=slivers, size=len(slivers)))
+        return cors_success_response(response_body=response)
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
@@ -143,13 +146,16 @@ def slices_get(name=None, states=None, limit=None, offset=None) -> Slices:  # no
     try:
         token = get_token()
         slices_dict = handler.get_slices(token=token, states=states, name=name, limit=limit, offset=offset)
-        slices = []
+        response = Slices()
+        response.data = []
+        response.type = 'slices'
         for s in slices_dict:
             slice_obj = Slice().from_dict(s)
-            slices.append(slice_obj)
+            response.data.append(slice_obj)
+        response.size = len(response.data)
 
         success_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
-        return cors_success_response(response_body=Slices(data=slices, size=len(slices)))
+        return cors_success_response(response_body=response)
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
@@ -219,7 +225,8 @@ def slices_slice_id_get(slice_id, graph_format) -> SliceDetails:  # noqa: E501
         token = get_token()
         value = handler.get_slice_graph(token=token, slice_id=slice_id, graph_format_str=graph_format)
         slice_object = Slice().from_dict(value)
-        response = SliceDetails(data=[slice_object])
+        response = SliceDetails(data=[slice_object], size=1)
+        response.type = 'slice_details'
         success_counter.labels(GET_METHOD, SLICES_GET_SLICE_ID_PATH).inc()
         return cors_success_response(response_body=response)
     except OrchestratorException as e:

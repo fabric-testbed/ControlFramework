@@ -16,35 +16,35 @@ class Version(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, data: List[VersionData]=None, size: int=1, status: int=200, type: str=None):  # noqa: E501
+    def __init__(self, size: int=1, status: int=200, type: str=None, data: List[VersionData]=None):  # noqa: E501
         """Version - a model defined in Swagger
 
-        :param data: The data of this Version.  # noqa: E501
-        :type data: List[VersionData]
         :param size: The size of this Version.  # noqa: E501
         :type size: int
         :param status: The status of this Version.  # noqa: E501
         :type status: int
         :param type: The type of this Version.  # noqa: E501
         :type type: str
+        :param data: The data of this Version.  # noqa: E501
+        :type data: List[VersionData]
         """
         self.swagger_types = {
-            'data': List[VersionData],
             'size': int,
             'status': int,
-            'type': str
+            'type': str,
+            'data': List[VersionData]
         }
 
         self.attribute_map = {
-            'data': 'data',
             'size': 'size',
             'status': 'status',
-            'type': 'type'
+            'type': 'type',
+            'data': 'data'
         }
-        self._data = data
         self._size = size
         self._status = status
         self._type = type
+        self._data = data
 
     @classmethod
     def from_dict(cls, dikt) -> 'Version':
@@ -56,27 +56,6 @@ class Version(Model):
         :rtype: Version
         """
         return util.deserialize_model(dikt, cls)
-
-    @property
-    def data(self) -> List[VersionData]:
-        """Gets the data of this Version.
-
-
-        :return: The data of this Version.
-        :rtype: List[VersionData]
-        """
-        return self._data
-
-    @data.setter
-    def data(self, data: List[VersionData]):
-        """Sets the data of this Version.
-
-
-        :param data: The data of this Version.
-        :type data: List[VersionData]
-        """
-
-        self._data = data
 
     @property
     def size(self) -> int:
@@ -140,3 +119,24 @@ class Version(Model):
         """
 
         self._type = type
+
+    @property
+    def data(self) -> List[VersionData]:
+        """Gets the data of this Version.
+
+
+        :return: The data of this Version.
+        :rtype: List[VersionData]
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data: List[VersionData]):
+        """Sets the data of this Version.
+
+
+        :param data: The data of this Version.
+        :type data: List[VersionData]
+        """
+
+        self._data = data

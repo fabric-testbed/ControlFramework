@@ -49,12 +49,15 @@ def slivers_get(slice_id) -> Slivers:  # noqa: E501
     try:
         token = get_token()
         slivers_dict = handler.get_slivers(slice_id=slice_id, token=token)
-        slivers = []
+        response = Slivers()
+        response.data = []
         for s in slivers_dict:
             sliver = Sliver().from_dict(s)
-            slivers.append(sliver)
+            response.data.append(sliver)
+        response.size = len(response.data)
+        response.type = "slivers"
         success_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
-        return cors_success_response(Slivers(data=slivers, size=len(slivers)))
+        return cors_success_response(response_body=response)
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_PATH).inc()
@@ -83,12 +86,15 @@ def slivers_sliver_id_get(slice_id, sliver_id) -> Slivers:  # noqa: E501
     try:
         token = get_token()
         slivers_dict = handler.get_slivers(slice_id=slice_id, token=token, sliver_id=sliver_id)
-        slivers = []
+        response = Slivers()
+        response.data = []
         for s in slivers_dict:
             sliver = Sliver().from_dict(s)
-            slivers.append(sliver)
+            response.data.append(sliver)
+        response.size = len(response.data)
+        response.type = "slivers"
         success_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()
-        return cors_success_response(Slivers(data=slivers, size=len(slivers)))
+        return cors_success_response(response_body=response)
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLIVERS_GET_SLIVER_ID_PATH).inc()

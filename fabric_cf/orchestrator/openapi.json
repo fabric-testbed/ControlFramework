@@ -1000,12 +1000,6 @@
       "status_200_ok_single": {
         "type": "object",
         "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          },
           "size": {
             "type": "integer",
             "default": 1
@@ -1045,17 +1039,8 @@
       "status_200_ok_paginated": {
         "type": "object",
         "properties": {
-          "data": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
-          },
           "limit": {
             "type": "integer"
-          },
-          "links": {
-            "$ref": "#/components/schemas/status_200_ok_paginated_links"
           },
           "offset": {
             "type": "integer"
@@ -1192,23 +1177,6 @@
         "example": {
           "details": "details",
           "message": "No Content"
-        }
-      },
-      "status_200_ok_paginated_links": {
-        "type": "object",
-        "properties": {
-          "first": {
-            "type": "string"
-          },
-          "last": {
-            "type": "string"
-          },
-          "next": {
-            "type": "string"
-          },
-          "prev": {
-            "type": "string"
-          }
         }
       },
       "status_400_bad_request_errors": {
@@ -1359,7 +1327,7 @@
         "type": "object",
         "allOf": [
           {
-            "$ref": "#/components/schemas/status_200_ok_single"
+            "$ref": "#/components/schemas/status_200_ok_paginated"
           },
           {
             "type": "object",
@@ -1479,114 +1447,6 @@
         "properties": {
           "model": {
             "type": "string"
-          }
-        }
-      }
-    },
-    "parameters": {
-      "sliceID": {
-        "name": "sliceID",
-        "in": "query",
-        "description": "Slice identifier as UUID",
-        "required": true,
-        "style": "form",
-        "explode": true,
-        "schema": {
-          "type": "string"
-        }
-      },
-      "sliceName": {
-        "name": "sliceName",
-        "in": "query",
-        "description": "Slice Name",
-        "required": true,
-        "style": "form",
-        "explode": true,
-        "schema": {
-          "type": "string"
-        }
-      },
-      "sshKey": {
-        "name": "sshKey",
-        "in": "query",
-        "description": "User SSH Key",
-        "required": true,
-        "style": "form",
-        "explode": true,
-        "schema": {
-          "type": "string"
-        }
-      },
-      "newLeaseEndTime": {
-        "name": "newLeaseEndTime",
-        "in": "query",
-        "description": "New Lease End Time for the Slice",
-        "required": true,
-        "style": "form",
-        "explode": true,
-        "schema": {
-          "type": "string"
-        }
-      },
-      "leaseEndTime": {
-        "name": "leaseEndTime",
-        "in": "query",
-        "description": "Lease End Time for the Slice",
-        "required": false,
-        "style": "form",
-        "explode": true,
-        "schema": {
-          "type": "string"
-        }
-      },
-      "level": {
-        "name": "level",
-        "in": "query",
-        "description": "Level of details",
-        "required": true,
-        "style": "form",
-        "explode": true,
-        "schema": {
-          "type": "integer",
-          "default": 1
-        }
-      },
-      "graphFormat": {
-        "name": "graphFormat",
-        "in": "query",
-        "description": "Graph format",
-        "required": true,
-        "style": "form",
-        "explode": true,
-        "schema": {
-          "type": "string",
-          "default": "GRAPHML",
-          "enum": [
-            "GRAPHML",
-            "JSON_NODELINK",
-            "CYTOSCAPE"
-          ]
-        }
-      },
-      "states": {
-        "name": "states",
-        "in": "query",
-        "description": "Slice states",
-        "required": false,
-        "style": "form",
-        "explode": true,
-        "schema": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": [
-              "Nascent",
-              "Configuring",
-              "StableError",
-              "StableOK",
-              "Closing",
-              "Dead"
-            ]
           }
         }
       }
