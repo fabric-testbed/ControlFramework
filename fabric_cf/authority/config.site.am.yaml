@@ -45,7 +45,7 @@ runtime:
   kafka-sasl-consumer-password:
   prometheus.port: 11000
   kafka.request.timeout.ms: 120000
-  rpc.request.timeout.seconds: 900
+  rpc.request.timeout.seconds: 1200
 
 logging:
   ## The directory in which actor should create log files.

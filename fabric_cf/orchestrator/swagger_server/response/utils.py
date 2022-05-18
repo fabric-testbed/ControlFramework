@@ -23,11 +23,11 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import connexion
+from flask import request
 
 
 def get_token() -> str:
-    token = connexion.request.headers.get('Authorization', None)
+    token = request.headers.get('Authorization', None)
     if token is not None:
         token = token.replace('Bearer ', '')
     return token

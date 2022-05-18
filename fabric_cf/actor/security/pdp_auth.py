@@ -99,8 +99,7 @@ class PdpAuth:
         }
         return headers
 
-    @staticmethod
-    def build_pdp_request(*, fabric_token: FabricToken, action_id: ActionId,
+    def build_pdp_request(self, *, fabric_token: FabricToken, action_id: ActionId,
                           resource: BaseSliver or ExperimentTopology, lease_end_time: datetime) -> dict:
         """
         Build PDP Request
@@ -122,6 +121,8 @@ class PdpAuth:
         # next we need to set the owner of the resource and their projects
         # generally only the id is needed. If action is create, it's not needed at all
         project, tag_list = fabric_token.get_project_and_tags()
+        self.logger.debug("project: %s", project)
+        self.logger.debug("tag_list: %s", tag_list)
         if project is None:
             raise PdpAuthException("No project found in fabric token")
 
