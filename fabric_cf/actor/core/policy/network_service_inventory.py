@@ -208,6 +208,7 @@ class NetworkServiceInventory(InventoryForType):
             - exclude the 1st subnet (reserved for control plane)
             - exclude the subnets already assigned to other V4/V6 NetworkService on the same owner switch
             - allocate the first available subnet to the NetworkService
+        :param rid: Reservation ID
         :param requested_ns: Requested NetworkService
         :param owner_switch: BQM Owner site switch identified to serve the NetworkService
         :param existing_reservations: Existing Reservations which also are served by the owner switch

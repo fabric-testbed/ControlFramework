@@ -185,5 +185,8 @@ class ActorClock:
 
     @staticmethod
     def to_milliseconds(*, when: datetime) -> int:
-        epoch = datetime.fromtimestamp(0, timezone.utc)
+        if when.tzinfo is not None:
+            epoch = datetime.fromtimestamp(0, timezone.utc)
+        else:
+            epoch = datetime.fromtimestamp(0)
         return int((when - epoch).total_seconds() * 1000)

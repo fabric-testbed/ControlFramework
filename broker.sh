@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-
-python3 -m fabric_cf.broker
+docker exec -i broker-db psql broker fabric < psql.upgrade

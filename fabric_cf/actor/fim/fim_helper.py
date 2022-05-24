@@ -33,7 +33,7 @@ from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.graph.resources.neo4j_cbm import Neo4jCBMGraph, Neo4jCBMFactory
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
-from fim.graph.slices.neo4j_asm import Neo4jASMFactory, Neo4jASM
+from fim.graph.slices.neo4j_asm import Neo4jASMFactory
 from fim.graph.slices.networkx_asm import NetworkxASM, NetworkXASMFactory
 from fim.slivers.attached_components import ComponentSliver
 from fim.slivers.base_sliver import BaseSliver
@@ -42,7 +42,7 @@ from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import ExperimentTopology, Labels, ServiceType, NodeType
+from fim.user import ExperimentTopology, Labels, NodeType
 
 
 class InterfaceSliverMapping:
@@ -288,6 +288,16 @@ class FimHelper:
                         node.components[cname].set_properties(label_allocations=component.label_allocations,
                                                               capacity_allocations=component.capacity_allocations,
                                                               node_map=component.node_map)
+                        # Update Mac address
+                        for ns in component.network_service_info.network_services.values():
+                            if ns.interface_info is None or ns.interface_info.interfaces is None:
+                                continue
+
+                            for ifs in ns.interface_info.interfaces.values():
+                                topo_component = node.components[cname]
+                                topo_ifs = topo_component.interfaces[ifs.get_name()]
+                                topo_ifs.set_properties(label_allocations=ifs.label_allocations)
+
             elif isinstance(sliver, NetworkServiceSliver):
                 node = neo4j_topo.network_services[node_name]
                 node.set_properties(label_allocations=sliver.label_allocations,

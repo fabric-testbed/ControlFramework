@@ -96,7 +96,8 @@ class UnitSet(ABCConcreteSet):
             self.logger = plugin.get_logger()
         self.reservation = reservation
 
-    def ensure_type(self, *, cset: ABCConcreteSet):
+    @staticmethod
+    def ensure_type(*, cset: ABCConcreteSet):
         """
         Validate the type of incoming concrete set
         @param cset cset
