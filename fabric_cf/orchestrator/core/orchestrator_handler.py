@@ -400,8 +400,7 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
 
             project, tags = fabric_token.get_project_and_tags()
-            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
-                                               project=project)
+            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email())
 
             if slice_list is None or len(slice_list) == 0:
                 raise OrchestratorException(f"Slice# {slice_id} not found",
