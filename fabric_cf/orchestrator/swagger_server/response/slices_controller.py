@@ -53,7 +53,7 @@ def slices_create_post(body, slice_name, ssh_key, lease_end_time):  # noqa: E501
         response.value = value
         success_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
         from fabric_cf.orchestrator.core.response_builder import ResponseBuilder
-        slice_id = value[0][ResponseBuilder.PROP_SLICE_ID]
+        slice_id = value[ResponseBuilder.RESPONSE_RESERVATIONS][0][ResponseBuilder.PROP_SLICE_ID]
         logger.info(f"Slice {slice_id} created for user: {email}")
         return response
     except OrchestratorException as e:
