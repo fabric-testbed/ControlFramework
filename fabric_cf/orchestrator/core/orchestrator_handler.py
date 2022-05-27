@@ -67,6 +67,15 @@ class OrchestratorHandler:
         """
         return self.logger
 
+    def decode_token(self, *, token: str) -> FabricToken:
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        oauth_config = GlobalsSingleton.get().get_config().get_global_config().get_oauth()
+        jwt_validator = GlobalsSingleton.get().get_jwt_validator()
+        fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator,
+                                   logger=self.logger, token=token)
+        fabric_token.validate()
+        return fabric_token
+
     def __authorize_request(self, *, id_token: str, action_id: ActionId,
                             resource: BaseSliver or ExperimentTopology = None,
                             lease_end_time: datetime = None) -> FabricToken:
@@ -400,8 +409,7 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
 
             project, tags = fabric_token.get_project_and_tags()
-            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
-                                               project=project)
+            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email())
 
             if slice_list is None or len(slice_list) == 0:
                 raise OrchestratorException(f"Slice# {slice_id} not found",
