@@ -40,24 +40,32 @@ def slices_create_post(body, slice_name, ssh_key, lease_end_time):  # noqa: E501
     handler = OrchestratorHandler()
     logger = handler.get_logger()
     received_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
+    email = None
 
     try:
         token = get_token()
+        decoded_token = handler.decode_token(token=token)
+        email = decoded_token.get_email()
         slice_graph = body.decode("utf-8")
         value = handler.create_slice(token=token, slice_name=slice_name, slice_graph=slice_graph,
                                      ssh_key=ssh_key, lease_end_time=lease_end_time)
         response = Success()
         response.value = value
         success_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
+        from fabric_cf.orchestrator.core.response_builder import ResponseBuilder
+        slice_id = value[0][ResponseBuilder.PROP_SLICE_ID]
+        logger.info(f"Slice {slice_id} created for user: {email}")
         return response
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
+        logger.info(f"Slice {slice_name} failed to create for user: {email}")
         msg = str(e).replace("\n", "")
         return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
+        logger.info(f"Slice {slice_name} failed to create for user: {email}")
         msg = str(e).replace("\n", "")
         return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 
@@ -76,20 +84,26 @@ def slices_delete_slice_iddelete(slice_id):  # noqa: E501
     handler = OrchestratorHandler()
     logger = handler.get_logger()
     received_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+    email = None
     try:
         token = get_token()
+        decoded_token = handler.decode_token(token=token)
+        email = decoded_token.get_email()
         handler.delete_slice(token=token, slice_id=slice_id)
         response = Success()
         success_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        logger.info(f"Slice {slice_id} deleted for user: {email}")
         return response
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        logger.info(f"Slice {slice_id} failed to delete for user: {email}")
         msg = str(e).replace("\n", "")
         return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(DELETE_METHOD, SLICES_DELETE_PATH).inc()
+        logger.info(f"Slice {slice_id} failed to delete for user: {email}")
         msg = str(e).replace("\n", "")
         return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
 

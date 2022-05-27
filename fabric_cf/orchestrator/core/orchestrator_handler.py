@@ -67,6 +67,15 @@ class OrchestratorHandler:
         """
         return self.logger
 
+    def decode_token(self, *, token: str) -> FabricToken:
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        oauth_config = GlobalsSingleton.get().get_config().get_global_config().get_oauth()
+        jwt_validator = GlobalsSingleton.get().get_jwt_validator()
+        fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator,
+                                   logger=self.logger, token=token)
+        fabric_token.validate()
+        return fabric_token
+
     def __authorize_request(self, *, id_token: str, action_id: ActionId,
                             resource: BaseSliver or ExperimentTopology = None,
                             lease_end_time: datetime = None) -> FabricToken:
