@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-
-python3 -m fabric_cf.authority
+docker exec -i $1-am-db psql am fabric < psql.upgrade

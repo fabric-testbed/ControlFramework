@@ -118,7 +118,7 @@ class FabricToken:
             project = key
             for tag in value:
                 tag_list.append(tag)
-                break
+            break
         return project, tag_list
 
     def __str__(self):

@@ -90,7 +90,7 @@ class AuthToken:
         return AuthToken(name=self.name, guid=self.guid)
 
     def __str__(self):
-        return f"name: {self.name} guid: {self.guid} email: {self.email} token: {self.token}"
+        return f"name: {self.name} guid: {self.guid} email: {self.email}"
 
     def get_token(self):
         """

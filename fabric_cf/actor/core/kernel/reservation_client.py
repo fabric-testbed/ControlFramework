@@ -457,6 +457,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 continue
 
             pred_state = self.redeem_predecessors.get(ID(uid=rid))
+            if not pred_state:
+                self.logger.error(f"Redeem predecessors not found {rid} for {self.get_reservation_id()}")
+                continue
             parent_res = pred_state.get_reservation()
             if parent_res is not None and \
                     ReservationStates(parent_res.get_state()) == ReservationStates.Ticketed:
@@ -580,7 +583,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
     def close(self):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Failed:
-            self.logger.debug("Reservation in Nascent or failed state, transition to close")
+            self.logger.debug(f"Reservation in state: {self.state}, transition to {ReservationStates.Closed}")
             self.transition(prefix="close", state=ReservationStates.Closed, pending=self.pending_state)
             if self.broker is not None:
                 self.logger.debug("Triggering relinquish")
