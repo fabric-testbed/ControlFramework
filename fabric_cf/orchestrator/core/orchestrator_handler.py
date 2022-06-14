@@ -47,7 +47,6 @@ from fabric_cf.actor.security.pdp_auth import ActionId
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
 from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
-from fabric_cf.orchestrator.core.reservation_status_update import ReservationStatusUpdate
 from fabric_cf.orchestrator.core.response_builder import ResponseBuilder
 
 
@@ -226,7 +225,7 @@ class OrchestratorHandler:
 
         slice_id = None
         controller = None
-        orchestrator_slice = None
+        new_slice_object = None
         asm_graph = None
         try:
             end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
@@ -283,25 +282,19 @@ class OrchestratorHandler:
             self.logger.debug(f"Slice {slice_name}/{slice_id} added successfully")
 
             slice_obj.set_slice_id(slice_id=str(slice_id))
-            orchestrator_slice = OrchestratorSliceWrapper(controller=controller, broker=broker,
-                                                          slice_obj=slice_obj, logger=self.logger)
+            new_slice_object = OrchestratorSliceWrapper(controller=controller, broker=broker,
+                                                        slice_obj=slice_obj, logger=self.logger)
 
-            orchestrator_slice.lock()
+            new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
-            computed_reservations = orchestrator_slice.create(slice_graph=asm_graph)
+            computed_reservations = new_slice_object.create(slice_graph=asm_graph)
 
-            # Process the Slice i.e. Demand the computed reservations i.e. Add them to the policy
-            # Once added to the policy; Actor Tick Handler will do following asynchronously:
-            # 1. Ticket message exchange with broker and
-            # 2. Redeem message exchange with AM once ticket is granted by Broker
-            self.controller_state.demand_slice(controller_slice=orchestrator_slice)
-
-            for r in orchestrator_slice.computed_l3_reservations:
-                res_status_update = ReservationStatusUpdate(logger=self.logger)
-                self.controller_state.get_sut().add_active_status_watch(watch=ID(uid=r.get_reservation_id()),
-                                                                        callback=res_status_update)
+            # Enqueue the slice on the demand thread
+            # Demand thread is responsible for demanding the reservations
+            # Helps improve the create response time
+            self.controller_state.get_demand_thread().queue_slice(controller_slice=new_slice_object)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -312,8 +305,8 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
         finally:
-            if orchestrator_slice is not None:
-                orchestrator_slice.unlock()
+            if new_slice_object is not None:
+                new_slice_object.unlock()
 
     def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None) -> List[dict]:
         """
