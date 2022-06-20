@@ -48,6 +48,7 @@ services:
   am:
     init: true
     build:
+      network: host
       context: ../../../
       dockerfile: Dockerfile-auth
     image: authority:1.3
