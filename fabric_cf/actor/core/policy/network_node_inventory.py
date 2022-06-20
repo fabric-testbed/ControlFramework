@@ -395,6 +395,9 @@ class NetworkNodeInventory(InventoryForType):
             self.logger.debug(f"==========Allocating component: {requested_component}")
             resource_type = requested_component.get_type()
             resource_model = requested_component.get_model()
+            if resource_type == ComponentType.Storage:
+                requested_component.capacity_allocations = Capacities(unit=1)
+                continue
             available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
             self.logger.debug(f"available_components after excluding allocated components: {available_components}")
 

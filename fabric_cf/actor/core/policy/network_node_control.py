@@ -98,6 +98,8 @@ class NetworkNodeControl(ResourceControl):
         """
         self.logger.debug(f"requested_components: {requested_components} for reservation# {rid}")
         for name, c in requested_components.devices.items():
+            if c.get_type() == ComponentType.Storage:
+                continue
             node_map = c.get_node_map()
             if node_map is None:
                 raise AuthorityException(f"Component of type: {c.get_type()} "

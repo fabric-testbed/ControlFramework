@@ -264,7 +264,8 @@ class OrchestratorHandler:
             slice_obj.set_client_slice(True)
             slice_obj.set_description("Description")
             slice_obj.graph_id = asm_graph.get_graph_id()
-            slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key})
+            slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key,
+                                                   Constants.PROJECT_ID: project})
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
             auth.oidc_sub_claim = fabric_token.get_subject()

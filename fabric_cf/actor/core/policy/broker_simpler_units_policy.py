@@ -446,10 +446,26 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         """
         node_props = {ABCPropertyGraphConstants.PROP_SITE: sliver.site,
                       ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Server)}
-        return self.combined_broker_model.get_matching_nodes_with_components(
+
+        storage_components = []
+        # remove storage components before the check
+        if sliver.attached_components_info is not None:
+            for name, c in sliver.attached_components_info.devices.items():
+                if c.get_resource_type() == ComponentType.Storage:
+                    storage_components.append(c)
+            for c in storage_components:
+                sliver.attached_components_info.remove_device(name=c.get_name())
+
+        result = self.combined_broker_model.get_matching_nodes_with_components(
             label=ABCPropertyGraphConstants.CLASS_NetworkNode,
             props=node_props,
             comps=sliver.attached_components_info)
+        # re-add storage components
+        if len(storage_components) > 0:
+            for c in storage_components:
+                sliver.attached_components_info.add_device(device_info=c)
+
+        return result
 
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
                          reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver, Any]:
