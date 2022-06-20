@@ -395,6 +395,11 @@ class NetworkNodeInventory(InventoryForType):
             self.logger.debug(f"==========Allocating component: {requested_component}")
             resource_type = requested_component.get_type()
             resource_model = requested_component.get_model()
+            if resource_type == ComponentType.Storage:
+                requested_component.capacity_allocations = Capacities(unit=1)
+                requested_component.label_allocations = Labels()
+                requested_component.label_allocations = Labels.update(lab=requested_component.get_labels())
+                continue
             available_components = graph_node.attached_components_info.get_devices_by_type(resource_type=resource_type)
             self.logger.debug(f"available_components after excluding allocated components: {available_components}")
 
@@ -469,7 +474,7 @@ class NetworkNodeInventory(InventoryForType):
                 existing_reservations=existing_reservations)
 
         requested_sliver.capacity_allocations = Capacities()
-        requested_sliver.capacity_allocations = Labels.update(lab=requested_capacities)
+        requested_sliver.capacity_allocations = Capacities.update(lab=requested_capacities)
         requested_sliver.label_allocations = Labels(instance_parent=graph_node.get_name())
 
         requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))

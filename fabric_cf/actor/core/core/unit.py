@@ -504,5 +504,8 @@ class Unit(ConfigToken):
             self.sliver.set_label_allocations(sliver.get_label_allocations())
             if isinstance(self.sliver, NodeSliver) and isinstance(sliver, NodeSliver):
                 self.sliver.management_ip = sliver.management_ip
+                if sliver.attached_components_info is not None:
+                    for device in sliver.attached_components_info.devices.values():
+                        self.sliver.attached_components_info.devices[device.get_name()].label_allocations = device.label_allocations
         finally:
             self.lock.release()

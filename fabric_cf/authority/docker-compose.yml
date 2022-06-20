@@ -48,9 +48,10 @@ services:
   am:
     init: true
     build:
+      network: host
       context: ../../../
       dockerfile: Dockerfile-auth
-    image: authority:1.2
+    image: authority:1.3
     container_name: site1-am
     restart: always
     depends_on:
