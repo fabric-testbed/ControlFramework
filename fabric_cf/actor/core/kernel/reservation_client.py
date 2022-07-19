@@ -316,8 +316,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         # Alternative: could transition to (state, None) to allow retry of the
         # redeem/extend by a higher level.
         if update_data.failed:
-            self.transition(prefix="failed lease update", state=ReservationStates.Failed,
-                            pending=ReservationPendingStates.None_)
+            self.fail(message=f"failed lease update- {update_data.get_message()}",
+                      sliver=incoming.get_resources().get_sliver())
+            #self.transition(prefix="failed lease update", state=ReservationStates.Failed,
+            #                pending=ReservationPendingStates.None_)
         else:
             try:
                 self.lease_update_satisfies(incoming=incoming, update_data=update_data)
@@ -1648,9 +1650,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
         elif self.state == ReservationStates.Failed:
             self.logger.warning("Reservation #{} has failed".format(self.get_reservation_id()))
 
-    def fail(self, *, message: str, exception: Exception = None):
+    def fail(self, *, message: str, exception: Exception = None, sliver: BaseSliver = None):
         super().fail(message=message, exception=exception)
-        if self.requested_resources is not None and self.requested_resources.sliver is not None:
+        if sliver is None and self.requested_resources is not None and self.requested_resources.sliver is not None:
+            sliver = self.requested_resources.sliver
+
+        if sliver is not None:
             self.update_slice_graph(sliver=self.requested_resources.sliver)
 
     def update_slice_graph(self, *, sliver: BaseSliver):
