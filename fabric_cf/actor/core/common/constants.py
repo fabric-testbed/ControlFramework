@@ -249,6 +249,7 @@ class Constants:
     CLAIMS_SUB = "sub"
     CLAIMS_EMAIL = "email"
     CLAIMS_PROJECTS = "projects"
+    PROJECT_ID = "project_id"
 
     PROPERTY_EXCEPTION_MESSAGE = "exception.message"
     PROPERTY_TARGET_NAME = "target.name"
