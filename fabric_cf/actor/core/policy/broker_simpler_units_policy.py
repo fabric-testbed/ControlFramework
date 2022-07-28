@@ -451,7 +451,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         # remove storage components before the check
         if sliver.attached_components_info is not None:
             for name, c in sliver.attached_components_info.devices.items():
-                if c.get_resource_type() == ComponentType.Storage:
+                if c.get_type() == ComponentType.Storage:
                     storage_components.append(c)
             for c in storage_components:
                 sliver.attached_components_info.remove_device(name=c.get_name())
