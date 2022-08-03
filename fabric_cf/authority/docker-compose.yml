@@ -50,7 +50,7 @@ services:
     build:
       context: ../../../
       dockerfile: Dockerfile-auth
-    image: authority:1.2
+    image: authority:1.2.6
     container_name: site1-am
     restart: always
     depends_on:

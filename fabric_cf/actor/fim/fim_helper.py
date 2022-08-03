@@ -289,14 +289,16 @@ class FimHelper:
                                                               capacity_allocations=component.capacity_allocations,
                                                               node_map=component.node_map)
                         # Update Mac address
-                        for ns in component.network_service_info.network_services.values():
-                            if ns.interface_info is None or ns.interface_info.interfaces is None:
-                                continue
+                        if component.network_service_info is not None and \
+                                component.network_service_info.network_services is not None:
+                            for ns in component.network_service_info.network_services.values():
+                                if ns.interface_info is None or ns.interface_info.interfaces is None:
+                                    continue
 
-                            for ifs in ns.interface_info.interfaces.values():
-                                topo_component = node.components[cname]
-                                topo_ifs = topo_component.interfaces[ifs.get_name()]
-                                topo_ifs.set_properties(label_allocations=ifs.label_allocations)
+                                for ifs in ns.interface_info.interfaces.values():
+                                    topo_component = node.components[cname]
+                                    topo_ifs = topo_component.interfaces[ifs.get_name()]
+                                    topo_ifs.set_properties(label_allocations=ifs.label_allocations)
 
             elif isinstance(sliver, NetworkServiceSliver):
                 node = neo4j_topo.network_services[node_name]
