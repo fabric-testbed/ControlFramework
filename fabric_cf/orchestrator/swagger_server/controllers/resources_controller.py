@@ -15,14 +15,16 @@ def portalresources_get(graph_format):  # noqa: E501
     return rc.portalresources_get(graph_format)
 
 
-def resources_get(level):  # noqa: E501
-    """Retrieve a listing and description of available resources
+def resources_get(level, force_refresh):  # noqa: E501
+    """Retrieve a listing and description of available resources. By default, a cached available resource information is returned. User can force to request the current available resources.
 
-    Retrieve a listing and description of available resources # noqa: E501
+    Retrieve a listing and description of available resources. By default, a cached available resource information is returned. User can force to request the current available resources. # noqa: E501
 
     :param level: Level of details
     :type level: int
+    :param force_refresh: Force to retrieve current available resource information.
+    :type force_refresh: bool
 
     :rtype: Resources
     """
-    return rc.resources_get(level)
+    return rc.resources_get(level, force_refresh)

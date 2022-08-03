@@ -80,8 +80,8 @@
         "tags": [
           "resources"
         ],
-        "summary": "Retrieve a listing and description of available resources",
-        "description": "Retrieve a listing and description of available resources",
+        "summary": "Retrieve a listing and description of available resources. By default, a cached available resource information is returned. User can force to request the current available resources.",
+        "description": "Retrieve a listing and description of available resources. By default, a cached available resource information is returned. User can force to request the current available resources.",
         "parameters": [
           {
             "name": "level",
@@ -93,6 +93,18 @@
             "schema": {
               "type": "integer",
               "default": 1
+            }
+          },
+          {
+            "name": "force_refresh",
+            "in": "query",
+            "description": "Force to retrieve current available resource information.",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "boolean",
+              "default": false
             }
           }
         ],

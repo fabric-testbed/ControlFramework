@@ -26,11 +26,10 @@
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import Tuple, List
+from typing import List
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
@@ -108,54 +107,45 @@ class OrchestratorHandler:
         return None
 
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
-                                    level: int = 10, delete_graph: bool = True,
-                                    ignore_validation: bool = True,
-                                    graph_format: GraphFormat = GraphFormat.GRAPHML) -> Tuple[str, ABCCBMPropertyGraph or None]:
+                                    level: int = 10, graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                    force_refresh: bool = False) -> str or None:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
         :param token Fabric Token
         :param level: level of details
-        :param delete_graph flag indicating if the loaded graph should be deleted or not
-        :param ignore_validation flag indicating to ignore validating the graph (only needed for ADs)
         :param graph_format: Graph format
-        :return tuple of dictionary containing the BQM and ABCCBMPropertyGraph (if delete_graph = False)
+        :param force_refresh: Force fetching a fresh model from Broker
+        :return str or None
         """
-        broker = self.get_broker(controller=controller)
-        if broker is None:
-            raise OrchestratorException("Unable to determine broker proxy for this controller. "
-                                        "Please check Orchestrator container configuration and logs.")
+        broker_query_model = None
+        if not force_refresh:
+            saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
+            if saved_bqm is not None and not saved_bqm.can_refresh():
+                broker_query_model = saved_bqm.get_bqm()
 
-        model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
-                                                  graph_format=graph_format)
-        if model is None:
-            raise OrchestratorException(f"Could not discover types: {controller.get_last_error()}")
+        if broker_query_model is None:
+            broker = self.get_broker(controller=controller)
+            if broker is None:
+                raise OrchestratorException("Unable to determine broker proxy for this controller. "
+                                            "Please check Orchestrator container configuration and logs.")
 
-        graph_str = model.get_model()
+            model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
+                                                      graph_format=graph_format)
+            if model is None or model.get_model() is None or model.get_model() == '':
+                raise OrchestratorException(http_error_code=NOT_FOUND, message="Resource(s) not found!")
+            broker_query_model = model.get_model()
 
-        try:
-            if graph_str is not None and graph_str != '':
-                graph = None
-                # Load graph only when GraphML
-                if graph_format == GraphFormat.GRAPHML:
-                    graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=graph_str,
-                                                                             ignore_validation=ignore_validation)
-                    if delete_graph:
-                        FimHelper.delete_graph(graph_id=graph.get_graph_id())
-                        graph = None
-                return graph_str, graph
-            else:
-                raise OrchestratorException(http_error_code=NOT_FOUND,
-                                            message="Resource(s) not found!")
-        except Exception as e:
-            self.logger.error(traceback.format_exc())
-            raise e
+            self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format)
 
-    def list_resources(self, *, token: str, level: int) -> dict:
+        return broker_query_model
+
+    def list_resources(self, *, token: str, level: int, force_refresh: bool = False) -> dict:
         """
         List Resources
         :param token Fabric Identity Token
         :param level: level of details (default set to 1)
+        :param force_refresh: force fetching bqm from broker and override the cached model
         :raises Raises an exception in case of failure
         :returns Broker Query Model on success
         """
@@ -164,9 +154,9 @@ class OrchestratorHandler:
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
             self.__authorize_request(id_token=token, action_id=ActionId.query)
-
-            broker_query_model, graph = self.discover_broker_query_model(controller=controller, token=token,
-                                                                         level=level, ignore_validation=True)
+            
+            broker_query_model = self.discover_broker_query_model(controller=controller, token=token, level=level,
+                                                                  force_refresh=force_refresh)
 
             return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
 
@@ -188,19 +178,8 @@ class OrchestratorHandler:
 
             broker_query_model = None
             graph_format = self.__translate_graph_format(graph_format=graph_format_str)
-
-            saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
-            if saved_bqm is not None and not saved_bqm.can_refresh():
-                broker_query_model = saved_bqm.get_bqm()
-
-            if broker_query_model is None:
-                broker_query_model, graph = self.discover_broker_query_model(controller=controller,
-                                                                             ignore_validation=True,
-                                                                             level=1,
-                                                                             graph_format=graph_format)
-                if broker_query_model is not None:
-                    self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format)
-
+            broker_query_model = self.discover_broker_query_model(controller=controller, level=1,
+                                                                  graph_format=graph_format)
             return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
 
         except Exception as e:
