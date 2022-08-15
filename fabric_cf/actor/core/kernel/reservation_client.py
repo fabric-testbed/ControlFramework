@@ -1664,18 +1664,23 @@ class ReservationClient(Reservation, ABCControllerReservation):
         :param sliver: sliver
         :return:
         """
-        self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
-                          f"Slice Graph# {self.slice.get_graph_id()}")
-        error_message = self.get_error_message()
-        if error_message is None:
-            error_message = self.get_last_ticket_update()
-        if error_message is None:
-            error_message = self.get_last_lease_update()
-        self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
-                                      reservation_state=self.state.name,
-                                      error_message=error_message)
-        self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
-                          f"Slice Graph# {self.slice.get_graph_id()}")
+        try:
+            self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
+                              f"Slice Graph# {self.slice.get_graph_id()}")
+            error_message = self.get_error_message()
+            if error_message is None:
+                error_message = self.get_last_ticket_update()
+            if error_message is None:
+                error_message = self.get_last_lease_update()
+            self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
+                                          reservation_state=self.state.name,
+                                          error_message=error_message)
+            self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
+                              f"Slice Graph# {self.slice.get_graph_id()}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to update the ASM Graph: {e}")
+            self.logger.error(traceback.format_exc())
 
     def mark_close_by_ticket_review(self, *, update_data: UpdateData):
         if self.last_ticket_update is not None:

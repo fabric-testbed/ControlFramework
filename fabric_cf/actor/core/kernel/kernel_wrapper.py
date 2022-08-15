@@ -244,7 +244,7 @@ class KernelWrapper:
         self.kernel.extend_lease(reservation=reservation)
 
     def extend_lease_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
-                             compare_sequence_numbers: bool, callback: ABCControllerCallbackProxy = None,):
+                             compare_sequence_numbers: bool, callback: ABCControllerCallbackProxy = None):
         """
         Processes an incoming request for a lease extension.
         Role: Authority
@@ -729,6 +729,17 @@ class KernelWrapper:
 
         self.kernel.register_delegation(delegation=delegation)
 
+    def modify_slice(self, *, slice_object: ABCSlice):
+        """
+        Modify the slice registered with the kernel
+        @param slice_object slice_object
+        @throws Exception in case of error
+        """
+        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCSlice):
+            raise KernelException("Invalid argument {}".format(slice_object))
+
+        self.kernel.modify_slice(slice_object=slice_object)
+
     def register_slice(self, *, slice_object: ABCSlice):
         """
         Registers the slice with the kernel: adds the slice object to the kernel
@@ -773,6 +784,18 @@ class KernelWrapper:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.remove_slice(slice_id=slice_id)
+
+    def accept_modify(self, *, slice_id: ID):
+        """
+        Accept the last modify on the slice
+
+        @param slice_id identifier of slice
+        @throws Exception in case of error
+        """
+        if slice_id is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        self.kernel.accept_modify(slice_id=slice_id)
 
     def re_register_reservation(self, *, reservation: ABCReservationMixin):
         """

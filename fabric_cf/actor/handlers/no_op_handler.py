@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import time
 import traceback
 from typing import Tuple
 
@@ -32,11 +33,24 @@ from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
-from fabric_cf.actor.core.util.utils import sliver_to_str
+from fabric_cf.actor.core.util.utils import sliver_to_str, sliver_diff
 from fabric_cf.actor.handlers.handler_base import HandlerBase
 
 
 class NoOpHandler(HandlerBase):
+    def __process_node_sliver_modify(self, *, existing: NodeSliver, new: NodeSliver):
+        # Validate both existing and new sliver
+        self.__process_node_sliver(sliver=existing)
+        self.__process_node_sliver(sliver=new)
+        diff = sliver_diff(sliver1=existing, sliver2=new)
+        for x in diff.added.components:
+            # invoke PCI attach
+            self.get_logger().info(f"PCI attach for component {x}")
+
+        for x in diff.removed.components:
+            # invoke PCI detach
+            self.get_logger().info(f"PCI detach for component {x}")
+
     def __process_node_sliver(self, *, sliver: NodeSliver):
         assert (sliver.label_allocations is not None)
         assert (sliver.label_allocations.instance_parent is not None)
@@ -52,7 +66,6 @@ class NoOpHandler(HandlerBase):
         sliver.label_allocations.instance = 'instance_001'
         sliver.management_ip = '1.2.3.4'
 
-        self.get_logger().debug(f"s: {sliver}")
         nic_types = [ComponentType.SharedNIC, ComponentType.SmartNIC]
         if sliver.attached_components_info is not None:
             for c in sliver.attached_components_info.devices.values():
@@ -95,6 +108,9 @@ class NoOpHandler(HandlerBase):
         try:
             self.get_logger().info(f"Create invoked for unit: {unit}")
             sliver = unit.get_sliver()
+            self.get_logger().info(f"Creating sliver: {sliver_to_str(sliver=sliver)}")
+
+            time.sleep(10)
 
             if isinstance(sliver, NodeSliver):
                 self.__process_node_sliver(sliver=sliver)
@@ -139,9 +155,10 @@ class NoOpHandler(HandlerBase):
         try:
             self.get_logger().info(f"Modify invoked for unit: {unit} type{unit.get_modified()}")
             sliver = unit.get_modified()
+            self.get_logger().info(f"Modifying sliver: {sliver_to_str(sliver=sliver)}")
 
             if isinstance(sliver, NodeSliver):
-                self.__process_node_sliver(sliver=sliver)
+                self.__process_node_sliver_modify(existing=unit.get_sliver(), new=sliver)
 
             elif isinstance(sliver, NetworkServiceSliver):
                 self.__process_ns_sliver(sliver=sliver)

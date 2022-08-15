@@ -382,11 +382,11 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
-    def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
+    def extend_reservation(self, *, reservation: id, new_end_time: datetime, sliver: BaseSliver,
                            caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
 
-        if reservation is None or caller is None or new_end_time is None:
+        if reservation is None or caller is None or (new_end_time is None and sliver is None):
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
             result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
             return result
@@ -405,19 +405,20 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                         return result
 
                     rset = ResourceSet()
-                    if new_units == Constants.EXTEND_SAME_UNITS:
-                        rset.set_units(units=r.get_resources().get_units())
-                    else:
-                        rset.set_units(units=new_units)
-
+                    units = r.get_resources().get_units()
+                    rset.set_units(units=units)
                     rset.set_type(rtype=r.get_resources().get_type())
 
-                    tmp_start_time = r.get_term().get_start_time()
-                    new_term = r.get_term().extend()
+                    new_term = r.get_term()
+                    if new_end_time is not None:
+                        tmp_start_time = r.get_term().get_start_time()
+                        new_term = r.get_term().extend()
 
-                    new_term.set_end_time(date=new_end_time)
-                    new_term.set_new_start_time(date=tmp_start_time)
-                    new_term.set_start_time(date=tmp_start_time)
+                        new_term.set_end_time(date=new_end_time)
+                        new_term.set_new_start_time(date=tmp_start_time)
+                        new_term.set_start_time(date=tmp_start_time)
+                    if sliver is not None:
+                        rset.set_sliver(sliver=sliver)
 
                     self.actor.extend(rid=r.get_reservation_id(), resources=rset, term=new_term)
 

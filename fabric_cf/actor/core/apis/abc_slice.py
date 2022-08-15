@@ -305,6 +305,25 @@ class ABCSlice(ABC):
         @return True if Slice state is StableOK/StableError, false otherwise
         """
 
+    @abstractmethod
+    def is_modify_ok(self) -> bool:
+        """
+        Is Slice in state Modify OK
+        @return True if Slice state is Modify OK, false otherwise
+        """
+
+    def is_modify_error(self) -> bool:
+        """
+        Is Slice in state Modify Error
+        @return True if Slice state is Modify Error, false otherwise
+        """
+
+    def is_modified(self) -> bool:
+        """
+        Is Slice in state ModifyOK/ModifyError
+        @return True if Slice state is ModifyOK/ModifyError, false otherwise
+        """
+
     def is_dead_or_closing(self) -> bool:
         """
         Is Slice in state Dead/Closing

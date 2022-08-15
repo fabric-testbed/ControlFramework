@@ -219,6 +219,7 @@ class ActorDatabase(ABCDatabase):
                     result.append(slice_obj)
         except Exception as e:
             self.logger.error(e)
+            self.logger.error(traceback.format_exc())
         finally:
             if self.lock.locked():
                 self.lock.release()

@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from typing import Tuple, List
+from typing import Tuple, List, Union
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
 from fim.graph.neo4j_property_graph import Neo4jGraphImporter, Neo4jPropertyGraph
@@ -42,7 +42,10 @@ from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import ExperimentTopology, Labels, NodeType
+from fim.user import ExperimentTopology, Labels, NodeType, Component
+from fim.user.interface import Interface
+
+from fabric_cf.actor.core.util.utils import dict_diff
 
 
 class InterfaceSliverMapping:
@@ -165,6 +168,18 @@ class FimHelper:
         return arm_graph
 
     @staticmethod
+    def get_experiment_topology(*, graph_id: str) -> ExperimentTopology:
+        """
+        Load Experiment Topology provide Graph Id
+        :param graph_id Graph Id
+        """
+        graph = FimHelper.get_graph(graph_id=graph_id)
+        asm_graph = Neo4jASMFactory.create(graph=graph)
+        neo4j_topo = ExperimentTopology()
+        neo4j_topo.cast(asm_graph=asm_graph)
+        return neo4j_topo
+
+    @staticmethod
     def get_graph(*, graph_id: str) -> ABCPropertyGraph:
         """
         Load arm graph from fim
@@ -281,7 +296,8 @@ class FimHelper:
                                     capacity_allocations=sliver.capacity_allocations,
                                     reservation_info=sliver.reservation_info,
                                     node_map=sliver.node_map,
-                                    management_ip=sliver.management_ip)
+                                    management_ip=sliver.management_ip,
+                                    capacity_hints=sliver.capacity_hints)
                 if sliver.attached_components_info is not None:
                     for component in sliver.attached_components_info.devices.values():
                         cname = component.get_name()
@@ -289,14 +305,16 @@ class FimHelper:
                                                               capacity_allocations=component.capacity_allocations,
                                                               node_map=component.node_map)
                         # Update Mac address
-                        for ns in component.network_service_info.network_services.values():
-                            if ns.interface_info is None or ns.interface_info.interfaces is None:
-                                continue
+                        if component.network_service_info is not None and \
+                                component.network_service_info.network_services is not None:
+                            for ns in component.network_service_info.network_services.values():
+                                if ns.interface_info is None or ns.interface_info.interfaces is None:
+                                    continue
 
-                            for ifs in ns.interface_info.interfaces.values():
-                                topo_component = node.components[cname]
-                                topo_ifs = topo_component.interfaces[ifs.get_name()]
-                                topo_ifs.set_properties(label_allocations=ifs.label_allocations)
+                                for ifs in ns.interface_info.interfaces.values():
+                                    topo_component = node.components[cname]
+                                    topo_ifs = topo_component.interfaces[ifs.get_name()]
+                                    topo_ifs.set_properties(label_allocations=ifs.label_allocations)
 
             elif isinstance(sliver, NetworkServiceSliver):
                 node = neo4j_topo.network_services[node_name]
@@ -460,3 +478,19 @@ class FimHelper:
         switch = bqm.build_deep_node_sliver(node_id=sw_id)
 
         return switch, mpls_ns
+
+    @staticmethod
+    def get_parent_node(*, graph_model: ABCPropertyGraph, component: Component = None,
+                        interface: Interface = None) -> Tuple[Union[NodeSliver, NetworkServiceSliver, None], str]:
+        if component is not None:
+            node_name, node_id = graph_model.get_parent(node_id=component.node_id, rel=ABCPropertyGraph.REL_HAS,
+                                                        parent=ABCPropertyGraph.CLASS_NetworkNode)
+            node = graph_model.build_deep_node_sliver(node_id=node_id)
+        elif interface is not None:
+            node_name, node_id = graph_model.get_parent(node_id=interface.node_id, rel=ABCPropertyGraph.REL_CONNECTS,
+                                                        parent=ABCPropertyGraph.CLASS_NetworkService)
+            node = graph_model.build_deep_ns_sliver(node_id=node_id)
+        else:
+            raise Exception("Invalid Arguments - component/interface both are None")
+
+        return node, node_id

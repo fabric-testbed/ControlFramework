@@ -230,7 +230,8 @@ class OrchestratorHandler:
 
             if existing_slices is not None and len(existing_slices) != 0:
                 for es in existing_slices:
-                    if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
+                    slice_state = SliceState(es.get_state())
+                    if not SliceState.is_dead_or_closing(state=slice_state):
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
             broker = self.get_broker(controller=controller)
@@ -274,7 +275,7 @@ class OrchestratorHandler:
             # Enqueue the slice on the demand thread
             # Demand thread is responsible for demanding the reservations
             # Helps improve the create response time
-            self.controller_state.get_demand_thread().queue_slice(controller_slice=new_slice_object)
+            self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -355,6 +356,82 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing get_slices e: {e}")
             raise e
 
+    def modify_slice(self, *, token: str, slice_id: str, slice_graph: str) -> List[dict]:
+        """
+        Modify a slice
+        :param token Fabric Identity Token
+        :param slice_id Slice Id
+        :param slice_graph Slice Graph Model
+        :raises Raises an exception in case of failure
+        :returns List of reservations created for the Slice on success
+        """
+        if self.globals.is_maintenance_mode_on():
+            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
+
+        asm_graph = None
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"modify_slice invoked for Controller: {controller}")
+
+            # Check if an Active slice exists already with the same name for the user
+            slice_list = controller.get_slices(slice_id=slice_id)
+            if slice_list is None or len(slice_list) == 0:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                raise OrchestratorException(f"User# has no Slices",
+                                            http_error_code=NOT_FOUND)
+
+            slice_obj = next(iter(slice_list))
+            if slice_obj.get_graph_id() is None:
+                raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
+
+            slice_state = SliceState(slice_obj.get_state())
+
+            if not SliceState.is_stable(state=slice_state):
+                self.logger.info(f"Unable to modify Slice# {slice_id} that is not yet stable, try again later")
+                raise OrchestratorException(f"Unable to modify Slice# {slice_id} that is not yet stable, "
+                                            f"try again later")
+
+            # Validate the slice graph
+            topology = ExperimentTopology(graph_string=slice_graph)
+            topology.validate()
+
+            asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
+            asm_graph.validate_graph()
+
+            # Authorize the slice
+            self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
+
+            broker = self.get_broker(controller=controller)
+            if broker is None:
+                raise OrchestratorException("Unable to determine broker proxy for this controller. "
+                                            "Please check Orchestrator container configuration and logs.")
+
+            slice_object = OrchestratorSliceWrapper(controller=controller, broker=broker,
+                                                    slice_obj=slice_obj, logger=self.logger)
+
+            computed_reservations = slice_object.modify(new_slice_graph=asm_graph)
+
+            FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
+
+            slice_obj.graph_id = asm_graph.get_graph_id()
+            if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
+                self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
+
+            # Enqueue the slice on the demand thread
+            # Demand thread is responsible for demanding the reservations
+            # Helps improve the create response time
+            self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
+
+            return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
+        except Exception as e:
+            if asm_graph is not None:
+                FimHelper.delete_graph(graph_id=asm_graph.get_graph_id())
+
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing modify_slice e: {e}")
+            raise e
+
     def delete_slice(self, *, token: str, slice_id: str = None):
         """
         Delete User Slice
@@ -380,11 +457,11 @@ class OrchestratorHandler:
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
-            if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
+            if not SliceState.is_dead_or_closing(state=slice_state):
                 raise OrchestratorException(f"Slice# {slice_id} already closed",
                                             http_error_code=BAD_REQUEST)
 
-            if slice_state != SliceState.StableOK and slice_state != SliceState.StableError:
+            if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
                 self.logger.info(f"Unable to delete Slice# {slice_guid} that is not yet stable, try again later")
                 raise OrchestratorException(f"Unable to delete Slice# {slice_guid} that is not yet stable, "
                                             f"try again later")
@@ -395,6 +472,47 @@ class OrchestratorHandler:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing delete_slice e: {e}")
+            raise e
+
+    def accept_modify(self, *, token: str, slice_id: str) -> dict:
+        """
+        Accept the last modify on the slice
+        :param token Fabric Identity Token
+        :param slice_id Slice Id
+        :raises Raises an exception in case of failure
+        :returns Slice Graph on success
+        """
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"get_slice_graph invoked for Controller: {controller}")
+
+            slice_guid = ID(uid=slice_id) if slice_id is not None else None
+
+            self.__authorize_request(id_token=token, action_id=ActionId.accept)
+
+            slice_list = controller.get_slices(slice_id=slice_guid)
+            if slice_list is None or len(slice_list) == 0:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                raise OrchestratorException(f"User# has no Slices",
+                                            http_error_code=NOT_FOUND)
+
+            slice_obj = next(iter(slice_list))
+
+            if slice_obj.get_graph_id() is None:
+                raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
+
+            slice_model = FimHelper.get_graph(graph_id=slice_obj.get_graph_id())
+            # TODO: prune the model
+
+            if slice_model is None:
+                raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
+
+            slice_model_str = slice_model.serialize_graph(format=GraphFormat.GRAPHML)
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)[0]
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
             raise e
 
     def get_slice_graph(self, *, token: str, slice_id: str, graph_format_str: str) -> dict:
@@ -470,11 +588,11 @@ class OrchestratorHandler:
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
-            if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
+            if not SliceState.is_dead_or_closing(state=slice_state):
                 raise OrchestratorException(f"Slice# {slice_id} already closed",
                                             http_error_code=BAD_REQUEST)
 
-            if slice_state != SliceState.StableOK and slice_state != SliceState.StableError:
+            if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
                 self.logger.info(f"Unable to renew Slice# {slice_guid} that is not yet stable, try again later")
                 raise OrchestratorException(f"Unable to renew Slice# {slice_guid} that is not yet stable, "
                                             f"try again later")

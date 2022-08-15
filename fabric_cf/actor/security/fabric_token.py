@@ -109,17 +109,11 @@ class FabricToken:
         Get projects
         @return projects
         """
-        projects = self.get_decoded_token_value(Constants.CLAIMS_PROJECTS)
-        if projects is None or len(projects) != 1:
+        project = self.get_decoded_token_value(Constants.CLAIMS_PROJECT)
+        if project is None:
             return None, None
-        project = ""
-        tag_list = []
-        for key, value in projects.items():
-            project = key
-            for tag in value:
-                tag_list.append(tag)
-            break
-        return project, tag_list
+
+        return project[Constants.UUID], project[Constants.TAGS]
 
     def __str__(self):
         return f"Decoded Token: {self.decoded_token}"

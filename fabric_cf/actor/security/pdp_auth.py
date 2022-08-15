@@ -77,6 +77,7 @@ class ActionId(Enum):
     ticket = 14
     extend = 15
     relinquish = 16
+    accept = 17
 
 
 class PdpAuth:

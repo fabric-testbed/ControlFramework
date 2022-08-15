@@ -288,6 +288,30 @@ class Slice(ABCSlice):
 
         return False
 
+    def is_modify_ok(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.ModifyOK:
+            return True
+
+        return False
+
+    def is_modify_error(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.ModifyError:
+            return True
+
+        return False
+
+    def is_modified(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.ModifyError or slice_state == SliceState.ModifyOK:
+            return True
+
+        return False
+
     def is_dead_or_closing(self) -> bool:
         state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
 

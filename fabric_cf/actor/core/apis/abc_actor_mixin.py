@@ -421,6 +421,17 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
+    def modify_slice(self, *, slice_object: ABCSlice):
+        """
+        Modify the slice registered with the actor. Moves the slice into Modifying State
+
+        Args:
+            slice_object: slice_object
+        Raises:
+            Exception in case of error
+        """
+
+    @abstractmethod
     def remove_slice(self, *, slice_object: ABCSlice):
         """
         Removes the specified slice. Purges slice-related state from the database.
@@ -435,6 +446,17 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
     def remove_slice_by_slice_id(self, *, slice_id: ID):
         """
         Removes the specified slice. Purges slice-related state from the database.
+
+        Args:
+            slice_id: slice id
+        Raises:
+            Exception in case of error
+        """
+
+    @abstractmethod
+    def accept_modify(self, *, slice_id: ID):
+        """
+        Accept the last modify
 
         Args:
             slice_id: slice id

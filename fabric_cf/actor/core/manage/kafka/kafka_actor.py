@@ -99,7 +99,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         return ret_val
 
-    def update_slice(self, *, slice_obj: SliceAvro) -> bool:
+    def update_slice(self, *, slice_obj: SliceAvro, modify_state: bool = False) -> bool:
         request = UpdateSliceAvro()
         request.guid = str(self.management_id)
         request.auth = self.auth
@@ -110,6 +110,9 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         status, response = self.send_request(request)
 
         return status.code == 0
+
+    def accept_update_slice(self, *, slice_id: ID) -> bool:
+        raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def get_reservations(self, *, state: int = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None,

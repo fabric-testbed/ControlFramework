@@ -163,7 +163,10 @@ class NetworkServiceInventory(InventoryForType):
                         lab_cap_delegations=ns.get_label_delegations())
 
                     # Get the VLAN range
-                    vlan_range = self.__extract_vlan_range(labels=delegated_label)
+                    if bqm_ifs.get_type() != InterfaceType.FacilityPort:
+                        vlan_range = self.__extract_vlan_range(labels=delegated_label)
+                    else:
+                        vlan_range = self.__extract_vlan_range(labels=bqm_ifs.labels)
                     vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
                                                                 existing_reservations=existing_reservations)
 

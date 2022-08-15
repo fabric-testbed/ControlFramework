@@ -196,6 +196,31 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
+    def accept_update_slice(self, *, slice_id: ID, caller: AuthToken) -> ResultAvro:
+        result = ResultAvro()
+        if slice_id is None or caller is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
+                    self.actor = actor
+
+                def run(self):
+                    self.actor.accept_modify(slice_id=slice_id)
+                    return None
+
+            self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
+        except Exception as e:
+            self.logger.error("accept_update_slice: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+        return result
+
     def remove_slice(self, *, slice_id: ID, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()
         if slice_id is None or caller is None:
@@ -221,7 +246,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             result = ManagementObject.set_exception_details(result=result, e=e)
         return result
 
-    def update_slice(self, *, slice_mng: SliceAvro, caller: AuthToken) -> ResultAvro:
+    def update_slice(self, *, slice_mng: SliceAvro, caller: AuthToken, modify_state: bool = False) -> ResultAvro:
         result = ResultAvro()
         if slice_mng is None or slice_mng.get_slice_id() is None or caller is None:
             result.set_code(ErrorCodes.ErrorInvalidArguments.value)
@@ -236,24 +261,29 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     self.actor = actor
 
                 def run(self):
-                    result = ResultAvro()
-                    slice_obj = self.actor.get_slice(slice_id=slice_id)
-                    if slice_obj is None:
-                        result.set_code(ErrorCodes.ErrorNoSuchSlice.value)
-                        result.set_message(ErrorCodes.ErrorNoSuchSlice.interpret())
-                        return result
-                    slice_obj = ManagementUtils.update_slice(slice_obj=slice_obj, slice_mng=slice_mng)
-                    slice_obj.set_dirty()
-
+                    runner_result = ResultAvro()
                     try:
-                        self.actor.get_plugin().get_database().update_slice(slice_object=slice_obj)
-                    except Exception as e:
-                        self.actor.get_logger().error("Could not commit slice update {}".format(e))
-                        result.set_code(ErrorCodes.ErrorDatabaseError.value)
-                        result.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
-                        result = ManagementObject.set_exception_details(result=result, e=e)
+                        if modify_state:
+                            slice_object = Translate.translate_slice(slice_avro=slice_mng)
+                            self.actor.modify_slice(slice_object=slice_object)
+                        else:
+                            slice_obj = self.actor.get_slice(slice_id=slice_id)
+                            if slice_obj is None:
+                                runner_result.set_code(ErrorCodes.ErrorNoSuchSlice.value)
+                                runner_result.set_message(ErrorCodes.ErrorNoSuchSlice.interpret())
+                                return runner_result
 
-                    return result
+                            slice_obj = ManagementUtils.update_slice(slice_obj=slice_obj, slice_mng=slice_mng)
+                            slice_obj.set_dirty()
+
+                            self.actor.get_plugin().get_database().update_slice(slice_object=slice_obj)
+                    except Exception as e:
+                        self.actor.get_logger().error("Failed to modify/update slice {}".format(e))
+                        runner_result.set_code(ErrorCodes.ErrorDatabaseError.value)
+                        runner_result.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
+                        runner_result = ManagementObject.set_exception_details(result=result, e=e)
+
+                    return runner_result
 
             result = self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
         except Exception as e:
