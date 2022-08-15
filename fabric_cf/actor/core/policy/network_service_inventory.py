@@ -170,10 +170,20 @@ class NetworkServiceInventory(InventoryForType):
                     if vlan_range is not None:
                         vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
                                                                     existing_reservations=existing_reservations)
+                        if bqm_ifs.get_type() != InterfaceType.FacilityPort:
+                            # Allocate the first available VLAN
+                            requested_ifs.labels.vlan = str(vlan_range[0])
+                            requested_ifs.label_allocations = Labels(vlan=str(vlan_range[0]))
+                        else:
+                            if requested_ifs.labels is None or requested_ifs.labels.vlan is None:
+                                return requested_ifs
 
-                        # Allocate the first available VLAN
-                        requested_ifs.labels.vlan = str(vlan_range[0])
-                        requested_ifs.label_allocations = Labels(vlan=str(vlan_range[0]))
+                            if requested_ifs.labels.vlan not in vlan_range:
+                                raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                                      msg=f"Vlan for L3 service {requested_ifs.labels.vlan} "
+                                                          f"is outside the available range "
+                                                          f"{vlan_range}")
+
                     break
         return requested_ifs
 
