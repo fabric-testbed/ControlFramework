@@ -457,7 +457,7 @@ class OrchestratorHandler:
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
-            if not SliceState.is_dead_or_closing(state=slice_state):
+            if SliceState.is_dead_or_closing(state=slice_state):
                 raise OrchestratorException(f"Slice# {slice_id} already closed",
                                             http_error_code=BAD_REQUEST)
 
@@ -588,7 +588,7 @@ class OrchestratorHandler:
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
-            if not SliceState.is_dead_or_closing(state=slice_state):
+            if SliceState.is_dead_or_closing(state=slice_state):
                 raise OrchestratorException(f"Slice# {slice_id} already closed",
                                             http_error_code=BAD_REQUEST)
 
