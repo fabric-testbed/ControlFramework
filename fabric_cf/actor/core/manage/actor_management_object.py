@@ -210,7 +210,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     self.actor = actor
 
                 def run(self):
-                    self.actor.accept_modify(slice_id=slice_id)
+                    self.actor.modify_accept(slice_id=slice_id)
                     return None
 
             self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))

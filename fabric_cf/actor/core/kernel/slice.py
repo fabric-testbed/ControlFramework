@@ -170,11 +170,12 @@ class Slice(ABCSlice):
     def is_empty(self) -> bool:
         return self.reservations.is_empty()
 
-    def prepare(self):
+    def prepare(self, *, recover: bool = False):
         self.reservations.clear()
         self.delegations.clear()
-        self.state_machine.clear()
-        self.transition_slice(operation=SliceStateMachine.CREATE)
+        if not recover:
+            self.state_machine.clear()
+            self.transition_slice(operation=SliceStateMachine.CREATE)
 
     def register(self, *, reservation: ABCReservationMixin):
         if self.reservations.contains(rid=reservation.get_reservation_id()):

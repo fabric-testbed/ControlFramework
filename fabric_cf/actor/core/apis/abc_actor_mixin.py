@@ -454,7 +454,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
-    def accept_modify(self, *, slice_id: ID):
+    def modify_accept(self, *, slice_id: ID):
         """
         Accept the last modify
 

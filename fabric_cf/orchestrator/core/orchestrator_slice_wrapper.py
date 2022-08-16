@@ -327,20 +327,15 @@ class OrchestratorSliceWrapper:
     def modify(self, *, new_slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
         existing_topology = FimHelper.get_experiment_topology(graph_id=self.slice_obj.get_graph_id())
 
-        print(f"Existing graph id: {existing_topology.graph_model.get_graph_id()}")
         new_topology = ExperimentTopology()
 
         new_topology.cast(asm_graph=new_slice_graph)
-
-        print(f"New graph id: {new_topology.graph_model.get_graph_id()}")
-
         topology_diff = existing_topology.diff(new_topology)
 
         reservations = []
         sliver_to_res_mapping = {}
 
         for x in topology_diff.added.nodes:
-            print(f"Added Nodes: {x}")
             reservation = self.__build_node_sliver_reservation(slice_graph=new_slice_graph, node_id=x.node_id)
             if reservation is None:
                 continue
@@ -350,7 +345,6 @@ class OrchestratorSliceWrapper:
         for x in topology_diff.added.services:
             if x.get_sliver().get_type() in self.ignorable_ns:
                 continue
-            print(f"Added services: {x}")
             reservation = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
                                                              node_id=x.node_id,
                                                              node_res_mapping=sliver_to_res_mapping)
@@ -360,17 +354,14 @@ class OrchestratorSliceWrapper:
             sliver, parent_node_id = FimHelper.get_parent_node(graph_model=new_slice_graph, component=x)
             rid = sliver.reservation_info.reservation_id
 
-            print(f"Updating {rid}: adding components: {x}")
             self.computed_modify_reservations[rid] = sliver
 
         for x in topology_diff.removed.nodes:
-            print(f"Removed Nodes: {x.reservation_info.reservation_id}")
             self.computed_remove_reservations.append(x.reservation_info.reservation_id)
 
         for x in topology_diff.removed.services:
             if x.get_sliver().get_type() in self.ignorable_ns:
                 continue
-            print(f"Removed services: {x}")
             reservation_info = x.get_property('reservation_info')
             self.computed_remove_reservations.append(reservation_info.reservation_id)
 
@@ -378,17 +369,12 @@ class OrchestratorSliceWrapper:
         '''
         for x in topology_diff.added.interfaces:
             print(f"Added interfaces: {x}")
-
-        for x in topology_diff.removed.components:
-            print(f"Removed components: {x}")
-
-        for x in topology_diff.removed.interfaces:
-            print(f"Removed interfaces: {x}")
         '''
+        if len(topology_diff.removed.components) > 0 or len(topology_diff.removed.interfaces) > 0:
+            raise OrchestratorException(f"Modify - Removing components and interfaces is not supported")
 
         # Add the new reservations to the controller
         for r in reservations:
-            # TODO un-comment when ready to test
             self.controller.add_reservation(reservation=r)
             self.computed_reservations.append(r)
 

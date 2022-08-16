@@ -402,7 +402,7 @@ class ABCSlice(ABC):
         """
 
     @abstractmethod
-    def prepare(self):
+    def prepare(self, *, recover: bool = False):
         """
         Prepares to register a new slice.  Clears previous state, such
         as list of reservations in the slice.

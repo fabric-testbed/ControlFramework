@@ -785,7 +785,7 @@ class KernelWrapper:
 
         self.kernel.remove_slice(slice_id=slice_id)
 
-    def accept_modify(self, *, slice_id: ID):
+    def modify_accept(self, *, slice_id: ID):
         """
         Accept the last modify on the slice
 
@@ -795,7 +795,7 @@ class KernelWrapper:
         if slice_id is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        self.kernel.accept_modify(slice_id=slice_id)
+        self.kernel.modify_accept(slice_id=slice_id)
 
     def re_register_reservation(self, *, reservation: ABCReservationMixin):
         """

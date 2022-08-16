@@ -772,7 +772,7 @@ class Kernel:
         self.plugin.get_database().remove_reservation(rid=rid)
         self.logger.debug(f"Reservation # {rid} removed from DB")
 
-    def accept_modify(self, *, slice_id: ID):
+    def modify_accept(self, *, slice_id: ID):
         """
         Removes the specified slice.
         @param slice_id slice identifier
@@ -877,7 +877,7 @@ class Kernel:
         @param slice_object slice to re-register
         @throws Exception if the slice cannot be registered
         """
-        slice_object.prepare()
+        slice_object.prepare(recover=True)
         self.slices.add(slice_object=slice_object)
 
         try:

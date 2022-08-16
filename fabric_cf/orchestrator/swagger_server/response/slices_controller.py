@@ -183,7 +183,7 @@ def slices_modify_slice_id_accept_post(slice_id):  # noqa: E501
     received_counter.labels(POST_METHOD, SLICES_MODIFY_ACCEPT_PATH).inc()
     try:
         token = get_token()
-        value = handler.accept_modify(token=token, slice_id=slice_id)
+        value = handler.modify_accept(token=token, slice_id=slice_id)
         slice_object = Slice().from_dict(value)
         response = SliceDetails(data=[slice_object], size=1)
         response.type = 'slice_details'

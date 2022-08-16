@@ -70,9 +70,9 @@ def slices_modify_slice_id_accept_post(slice_id):  # noqa: E501
     :param slice_id: Slice identified by universally unique identifier
     :type slice_id: str
 
-    :rtype: Slivers
+    :rtype: SliceDetails
     """
-    return 'do some magic!'
+    return rc.slices_modify_slice_id_accept_post(slice_id)
 
 
 def slices_modify_slice_id_put(body, slice_id):  # noqa: E501

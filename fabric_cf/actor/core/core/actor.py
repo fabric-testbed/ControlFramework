@@ -725,8 +725,8 @@ class ActorMixin(ABCActorMixin):
     def remove_slice_by_slice_id(self, *, slice_id: ID):
         self.wrapper.remove_slice(slice_id=slice_id)
 
-    def accept_modify(self, *, slice_id: ID):
-        self.wrapper.accept_modify(slice_id=slice_id)
+    def modify_accept(self, *, slice_id: ID):
+        self.wrapper.modify_accept(slice_id=slice_id)
 
     def re_register_delegation(self, *, delegation: ABCDelegation):
         self.wrapper.re_register_delegation(delegation=delegation)

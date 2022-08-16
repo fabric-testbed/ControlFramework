@@ -749,7 +749,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/slivers"
+                  "$ref": "#/components/schemas/slice_details"
                 }
               }
             }

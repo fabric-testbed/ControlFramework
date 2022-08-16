@@ -42,7 +42,8 @@ class NoOpHandler(HandlerBase):
         # Validate both existing and new sliver
         self.__process_node_sliver(sliver=existing)
         self.__process_node_sliver(sliver=new)
-        diff = sliver_diff(sliver1=existing, sliver2=new)
+        #diff = sliver_diff(sliver1=existing, sliver2=new)
+        diff = existing.diff(other_sliver=new)
         for x in diff.added.components:
             # invoke PCI attach
             self.get_logger().info(f"PCI attach for component {x}")

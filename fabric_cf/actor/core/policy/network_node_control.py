@@ -223,7 +223,8 @@ class NetworkNodeControl(ResourceControl):
             # FIX ME: handle modify
             self.logger.info(f"Extend Lease for now, no modify supported res# {reservation}")
             current_sliver = current.get_sliver()
-            diff = sliver_diff(sliver1=current_sliver, sliver2=requested)
+            diff = current_sliver.diff(other_sliver=requested)
+            #diff = sliver_diff(sliver1=current_sliver, sliver2=requested)
             if diff is not None:
                 # Modify MVP - only handle add components for now
                 if len(diff.added.components) > 0:

@@ -1170,6 +1170,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
     def service_update_ticket(self):
         if self.last_ticket_update.successful():
             self.resources.service_update(reservation=self)
+        if self.resources is not None and self.resources.sliver is not None:
             self.update_slice_graph(sliver=self.resources.sliver)
 
     def set_broker(self, *, broker: ABCBrokerProxy) -> bool:

@@ -42,10 +42,10 @@ from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.user import ExperimentTopology, Labels, NodeType, Component
+from fim.user import ExperimentTopology, Labels, NodeType, Component, ReservationInfo
 from fim.user.interface import Interface
 
-from fabric_cf.actor.core.util.utils import dict_diff
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
 
 class InterfaceSliverMapping:
@@ -299,6 +299,14 @@ class FimHelper:
                                     management_ip=sliver.management_ip,
                                     capacity_hints=sliver.capacity_hints)
                 if sliver.attached_components_info is not None:
+                    graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
+                    diff = graph_sliver.diff(other_sliver=sliver)
+                    if diff is not None:
+                        for cname in diff.removed.components:
+                            reservation_info = ReservationInfo()
+                            reservation_info.reservation_state = ReservationStates.Failed.name
+                            node.components[cname].set_properties(reservation_info=reservation_info)
+
                     for component in sliver.attached_components_info.devices.values():
                         cname = component.get_name()
                         node.components[cname].set_properties(label_allocations=component.label_allocations,
@@ -494,3 +502,16 @@ class FimHelper:
             raise Exception("Invalid Arguments - component/interface both are None")
 
         return node, node_id
+
+    @staticmethod
+    def prune_graph(*, graph_id: str) -> ExperimentTopology:
+        """
+        Load arm graph from fim and prune all nodes with reservation_state = reservation_state
+        :param graph_id: graph_id
+        :param reservation_state: reservation_state
+        :return: ExperimentTopology
+        """
+        slice_topology = FimHelper.get_experiment_topology(graph_id=graph_id)
+        slice_topology.prune(reservation_state=ReservationStates.Failed.name)
+
+        return slice_topology

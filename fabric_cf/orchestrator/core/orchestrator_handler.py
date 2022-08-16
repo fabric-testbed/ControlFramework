@@ -474,7 +474,7 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing delete_slice e: {e}")
             raise e
 
-    def accept_modify(self, *, token: str, slice_id: str) -> dict:
+    def modify_accept(self, *, token: str, slice_id: str) -> dict:
         """
         Accept the last modify on the slice
         :param token Fabric Identity Token
@@ -484,11 +484,12 @@ class OrchestratorHandler:
         """
         try:
             controller = self.controller_state.get_management_actor()
-            self.logger.debug(f"get_slice_graph invoked for Controller: {controller}")
+            self.logger.debug(f"modify_accept invoked for Controller: {controller}")
 
             slice_guid = ID(uid=slice_id) if slice_id is not None else None
 
-            self.__authorize_request(id_token=token, action_id=ActionId.accept)
+            # TODO change this to accept
+            self.__authorize_request(id_token=token, action_id=ActionId.modify)
 
             slice_list = controller.get_slices(slice_id=slice_guid)
             if slice_list is None or len(slice_list) == 0:
@@ -498,21 +499,23 @@ class OrchestratorHandler:
                                             http_error_code=NOT_FOUND)
 
             slice_obj = next(iter(slice_list))
+            slice_state = SliceState(slice_obj.get_state())
+            if not SliceState.is_modified(state=slice_state):
+                self.logger.info(f"Unable to accept modify Slice# {slice_guid} that was not modified")
+                raise OrchestratorException(f"Unable to accept modify Slice# {slice_guid} that was not modified")
 
             if slice_obj.get_graph_id() is None:
                 raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
 
-            slice_model = FimHelper.get_graph(graph_id=slice_obj.get_graph_id())
-            # TODO: prune the model
+            slice_topology = FimHelper.prune_graph(graph_id=slice_obj.get_graph_id())
 
-            if slice_model is None:
-                raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
+            controller.accept_update_slice(slice_id=ID(uid=slice_id))
 
-            slice_model_str = slice_model.serialize_graph(format=GraphFormat.GRAPHML)
+            slice_model_str = slice_topology.serialize()
             return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)[0]
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
+            self.logger.error(f"Exception occurred processing modify_accept e: {e}")
             raise e
 
     def get_slice_graph(self, *, token: str, slice_id: str, graph_format_str: str) -> dict:
