@@ -32,7 +32,6 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
-from fim.slivers.attached_components import AttachedComponentsInfo
 from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver, NodeType
@@ -335,6 +334,7 @@ class OrchestratorSliceWrapper:
         reservations = []
         sliver_to_res_mapping = {}
 
+        # Add Nodes
         for x in topology_diff.added.nodes:
             reservation = self.__build_node_sliver_reservation(slice_graph=new_slice_graph, node_id=x.node_id)
             if reservation is None:
@@ -342,6 +342,7 @@ class OrchestratorSliceWrapper:
             reservations.append(reservation)
             sliver_to_res_mapping[x.node_id] = reservation.get_reservation_id()
 
+        # Add Network Services
         for x in topology_diff.added.services:
             if x.get_sliver().get_type() in self.ignorable_ns:
                 continue
@@ -350,12 +351,15 @@ class OrchestratorSliceWrapper:
                                                              node_res_mapping=sliver_to_res_mapping)
             reservations.append(reservation)
 
+        # Add components
         for x in topology_diff.added.components:
             sliver, parent_node_id = FimHelper.get_parent_node(graph_model=new_slice_graph, component=x)
             rid = sliver.reservation_info.reservation_id
 
             self.computed_modify_reservations[rid] = sliver
 
+        # Uncomment in 1.4
+        '''
         for x in topology_diff.removed.nodes:
             self.computed_remove_reservations.append(x.reservation_info.reservation_id)
 
@@ -364,14 +368,20 @@ class OrchestratorSliceWrapper:
                 continue
             reservation_info = x.get_property('reservation_info')
             self.computed_remove_reservations.append(reservation_info.reservation_id)
-
-        # To be supported in 1.4
-        '''
         for x in topology_diff.added.interfaces:
             print(f"Added interfaces: {x}")
         '''
-        if len(topology_diff.removed.components) > 0 or len(topology_diff.removed.interfaces) > 0:
-            raise OrchestratorException(f"Modify - Removing components and interfaces is not supported")
+        if len(topology_diff.removed.nodes) > 0:
+            raise OrchestratorException(f"Modify - Removing nodes not supported")
+
+        if len(topology_diff.removed.services) > 0:
+            raise OrchestratorException(f"Modify - Removing services not supported")
+
+        if len(topology_diff.removed.components) > 0:
+            raise OrchestratorException(f"Modify - Removing components not supported")
+
+        if len(topology_diff.removed.interfaces) > 0:
+            raise OrchestratorException(f"Modify - Removing interfaces not supported")
 
         # Add the new reservations to the controller
         for r in reservations:

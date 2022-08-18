@@ -219,7 +219,7 @@ paths:
         style: form
         explode: true
         schema:
-          maximum: 20
+          maximum: 200
           minimum: 1
           type: integer
           format: int32
