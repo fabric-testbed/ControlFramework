@@ -245,12 +245,12 @@ class OrchestratorHandler:
             slice_obj.set_description("Description")
             slice_obj.graph_id = asm_graph.get_graph_id()
             slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key,
-                                                   Constants.PROJECT_ID: project})
+                                                   Constants.PROJECT_ID: project,
+                                                   Constants.TAGS: tags})
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
             auth.oidc_sub_claim = fabric_token.get_subject()
             auth.email = fabric_token.get_email()
-            auth.token = token
             slice_obj.set_owner(auth)
             slice_obj.set_project_id(project)
 
@@ -400,8 +400,8 @@ class OrchestratorHandler:
             asm_graph.validate_graph()
 
             # Authorize the slice
-            self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
-
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
+            project, tags = fabric_token.get_project_and_tags()
             broker = self.get_broker(controller=controller)
             if broker is None:
                 raise OrchestratorException("Unable to determine broker proxy for this controller. "
@@ -415,6 +415,9 @@ class OrchestratorHandler:
             FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
 
             slice_obj.graph_id = asm_graph.get_graph_id()
+            slice_obj.set_config_properties(value={Constants.PROJECT_ID: project,
+                                                   Constants.TAGS: tags})
+
             if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
                 self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
 

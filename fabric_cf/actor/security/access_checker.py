@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime
+from typing import List
 
 from fim.slivers.base_sliver import BaseSliver
 from fim.user.topology import ExperimentTopology
@@ -42,7 +43,7 @@ class AccessChecker:
                      resource: BaseSliver or ExperimentTopology = None,
                      lease_end_time: datetime = None, logger=None) -> FabricToken or None:
         """
-        Check access for Incoming operation against Policy Decision Point PDP
+        Validates Fabric Token and Check access for Incoming operation against Policy Decision Point PDP
         :param action_id action id
         :param token fabric token
         :param resource resource
@@ -61,9 +62,33 @@ class AccessChecker:
         fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator, logger=logger, token=token)
         fabric_token.validate()
 
-        pdp_auth = PdpAuth(config=pdp_config, logger=logger)
-        pdp_auth.check_access(fabric_token=fabric_token,
-                              lease_end_time=lease_end_time,
-                              action_id=action_id, resource=resource)
+        project, tags = fabric_token.get_project_and_tags()
+
+        AccessChecker.check_pdp_access(action_id=action_id, email=fabric_token.get_email(), project=project,
+                                       tags=tags, resource=resource, lease_end_time=lease_end_time, logger=logger)
 
         return fabric_token
+
+    @staticmethod
+    def check_pdp_access(*, action_id: ActionId, email: str, project: str, tags: List[str],
+                         resource: BaseSliver or ExperimentTopology = None,
+                         lease_end_time: datetime = None, logger=None):
+        """
+        Check access for Incoming operation against Policy Decision Point PDP
+        :param action_id action id
+        :param email email
+        :param project project
+        :param tags tags
+        :param resource resource
+        :param lease_end_time lease end time
+        :param logger logger
+
+        :throws exception in case of failure
+        """
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        pdp_config = GlobalsSingleton.get().get_config().get_global_config().get_pdp_config()
+
+        pdp_auth = PdpAuth(config=pdp_config, logger=logger)
+        pdp_auth.check_access(email=email, project=project, tags=tags,
+                              lease_end_time=lease_end_time,
+                              action_id=action_id, resource=resource)

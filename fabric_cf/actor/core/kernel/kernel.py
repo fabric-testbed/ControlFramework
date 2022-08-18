@@ -728,6 +728,7 @@ class Kernel:
             self.logger.debug("Slice object not found in local data structure")
         else:
             if not real.is_dead_or_closing():
+                real.set_config_properties(value=slice_object.get_config_properties())
                 # Transition slice to Configuring state
                 real.transition_slice(operation=SliceStateMachine.MODIFY)
                 real.set_graph_id(graph_id=slice_object.get_graph_id())

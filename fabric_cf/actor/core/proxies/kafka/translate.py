@@ -125,8 +125,6 @@ class Translate:
         result.guid = str(auth.get_guid())
         result.oidc_sub_claim = auth.get_oidc_sub_claim()
         result.email = auth.get_email()
-        if hasattr(auth, 'token'):
-            result.token = auth.get_token()
         return result
 
     @staticmethod
@@ -138,8 +136,6 @@ class Translate:
         result.guid = auth_avro.guid
         result.oidc_sub_claim = auth_avro.oidc_sub_claim
         result.email = auth_avro.email
-        if hasattr(auth_avro, 'token'):
-            result.token = auth_avro.token
         return result
 
     @staticmethod

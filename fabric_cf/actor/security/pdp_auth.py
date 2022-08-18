@@ -27,6 +27,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
+from typing import List
 
 import requests
 from fim.slivers.base_sliver import BaseSliver
@@ -100,16 +101,21 @@ class PdpAuth:
         }
         return headers
 
-    def build_pdp_request(self, *, fabric_token: FabricToken, action_id: ActionId,
+    def build_pdp_request(self, *, email: str, project: str, tags: List[str], action_id: ActionId,
                           resource: BaseSliver or ExperimentTopology, lease_end_time: datetime) -> dict:
         """
         Build PDP Request
-        @param fabric_token fabric token
+        @param email email
+        @param project project
+        @param tags project tags
         @param action_id Action id
         @param resource: sliver of any type or slice (ExperimentTopology)
         @param lease_end_time lease end time
         @return PDP request
         """
+        if project is None or email is None:
+            raise PdpAuthException("No project found in fabric token")
+
         attrs = ResourceAuthZAttributes()
         # collect all resource attributes
         if resource is not None:
@@ -121,15 +127,10 @@ class PdpAuth:
 
         # next we need to set the owner of the resource and their projects
         # generally only the id is needed. If action is create, it's not needed at all
-        project, tag_list = fabric_token.get_project_and_tags()
-        self.logger.debug("project: %s", project)
-        self.logger.debug("tag_list: %s", tag_list)
-        if project is None:
-            raise PdpAuthException("No project found in fabric token")
 
-        attrs.set_subject_attributes(subject_id=fabric_token.get_email(), project=project, project_tag=tag_list)
+        attrs.set_subject_attributes(subject_id=email, project=project, project_tag=tags)
 
-        attrs.set_resource_subject_and_project(subject_id=fabric_token.get_email(), project=project)
+        attrs.set_resource_subject_and_project(subject_id=email, project=project)
 
         # finally action
         # action can be any string matching ActionId enum
@@ -140,11 +141,13 @@ class PdpAuth:
 
         return request_json
 
-    def check_access(self, *, fabric_token: FabricToken, action_id: ActionId,
+    def check_access(self, *, email: str, project: str, tags: List[str], action_id: ActionId,
                      resource: BaseSliver or ExperimentTopology, lease_end_time: datetime):
         """
         Check Access
-        @param fabric_token fabric token
+        @param email email
+        @param project project
+        @param tags project tags
         @param action_id action id
         @param resource sliver (of any type) or slice (ExperimentTopology)
         @param lease_end_time lease end time
@@ -154,7 +157,7 @@ class PdpAuth:
             self.logger.debug("Skipping PDP Authorization check as configured")
             return
 
-        pdp_request = self.build_pdp_request(fabric_token=fabric_token, action_id=action_id,
+        pdp_request = self.build_pdp_request(email=email, project=project, tags=tags, action_id=action_id,
                                              resource=resource, lease_end_time=lease_end_time)
 
         self.logger.debug("PDP Auth Request: {}".format(pdp_request))
@@ -189,6 +192,7 @@ if __name__ == '__main__':
 
     config = {'url': 'http://localhost:8080/services/pdp', 'enable': True}
     pdp = PdpAuth(config=config, logger=logger)
-    RESULT = pdp.check_access(fabric_token=token,action_id=ActionId.query,
+    project, tags = token.get_project_and_tags()
+    RESULT = pdp.check_access(email=token.get_email(), project=project, tags=tags, action_id=ActionId.query,
                               resource=None, lease_end_time=None)
     print(RESULT)
