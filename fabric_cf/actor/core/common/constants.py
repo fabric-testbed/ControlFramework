@@ -250,7 +250,7 @@ class Constants:
     CLAIMS_EMAIL = "email"
     CLAIMS_PROJECT = "project"
     UUID = "uuid"
-    TAGS = "uuid"
+    TAGS = "tags"
     PROJECT_ID = "project_id"
 
     PROPERTY_EXCEPTION_MESSAGE = "exception.message"

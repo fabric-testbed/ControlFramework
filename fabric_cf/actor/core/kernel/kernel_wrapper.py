@@ -1081,8 +1081,9 @@ class KernelWrapper:
         config_props = slice_object.get_config_properties()
         project = config_props.get(Constants.PROJECT_ID, None)
         tags = config_props.get(Constants.TAGS, None)
-        email = slice_object.get_owner().get_email()
+        email = config_props.get(Constants.CLAIMS_EMAIL, None)
 
         if project is not None and tags is not None and email is not None:
-            AccessChecker.check_pdp_access(action_id=action_id, email=email, project=project, tags=tags,
+            tag_list = tags.split(",")
+            AccessChecker.check_pdp_access(action_id=action_id, email=email, project=project, tags=tag_list,
                                            resource=sliver, lease_end_time=lease_end_time, logger=self.logger)

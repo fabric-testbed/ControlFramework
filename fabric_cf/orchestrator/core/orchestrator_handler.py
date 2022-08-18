@@ -246,7 +246,8 @@ class OrchestratorHandler:
             slice_obj.graph_id = asm_graph.get_graph_id()
             slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key,
                                                    Constants.PROJECT_ID: project,
-                                                   Constants.TAGS: tags})
+                                                   Constants.TAGS: ','.join(tags),
+                                                   Constants.CLAIMS_EMAIL: fabric_token.get_email()})
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
             auth.oidc_sub_claim = fabric_token.get_subject()
@@ -416,7 +417,7 @@ class OrchestratorHandler:
 
             slice_obj.graph_id = asm_graph.get_graph_id()
             slice_obj.set_config_properties(value={Constants.PROJECT_ID: project,
-                                                   Constants.TAGS: tags})
+                                                   Constants.TAGS: ','.join(tags)})
 
             if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
                 self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
