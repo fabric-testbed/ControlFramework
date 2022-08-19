@@ -67,6 +67,10 @@ class SliceState(Enum):
         result = [SliceState.StableOK, SliceState.StableError, SliceState.Dead, SliceState.Closing,
                   SliceState.Configuring, SliceState.Nascent, SliceState.Modifying, SliceState.ModifyError,
                   SliceState.ModifyOK]
+
+        if len(states) == 1 and states[0] == "All":
+            return result
+
         states_to_exclude = []
         for s in result:
             if str(s) not in states:
