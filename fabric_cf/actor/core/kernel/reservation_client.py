@@ -463,8 +463,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 self.logger.error(f"Redeem predecessors not found {rid} for {self.get_reservation_id()}")
                 continue
             parent_res = pred_state.get_reservation()
-            if parent_res is not None and \
-                    ReservationStates(parent_res.get_state()) == ReservationStates.Ticketed:
+            if parent_res is not None and (parent_res.is_ticketed() or parent_res.is_active()):
                 node_sliver = parent_res.get_resources().get_sliver()
                 component = node_sliver.attached_components_info.get_device(name=component_name)
                 graph_id, bqm_component_id = component.get_node_map()
@@ -480,7 +479,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                     ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
+                print(f"KOMAL --- {ifs}")
+
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {self.resources.sliver}")
+            print(f"KOMAL --- {self.resources.sliver}")
 
     def approve_ticket(self):
         """
@@ -507,8 +509,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 self.fail(message=f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"
                                   f" is in a terminal state")
 
-            if not (pred_state.get_reservation().is_ticketed() or pred_state.get_reservation().is_active_ticketed() or
-                    pred_state.get_reservation().is_active()):
+            if not (pred_state.get_reservation().is_ticketed() or pred_state.get_reservation().is_active()):
                 approved = False
                 break
 
