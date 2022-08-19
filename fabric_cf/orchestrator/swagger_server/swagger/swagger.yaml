@@ -212,6 +212,7 @@ paths:
             - Modifying
             - ModifyOK
             - ModifyError
+            - All
       - name: limit
         in: query
         description: maximum number of results to return per page (1 or more)
