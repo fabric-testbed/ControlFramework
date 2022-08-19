@@ -51,7 +51,13 @@ class SliceDeferThread:
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
         self.mgmt_actor = kernel.get_management_actor()
+        self.kernel = kernel
         self.sut = kernel.get_sut()
+
+    def get_sut(self):
+        if self.sut is None:
+            self.sut = self.kernel.get_sut()
+        return self.sut
 
     def queue_slice(self, *, controller_slice: OrchestratorSliceWrapper):
         """
@@ -173,7 +179,7 @@ class SliceDeferThread:
 
             for r in controller_slice.computed_l3_reservations:
                 res_status_update = ReservationStatusUpdate(logger=self.logger)
-                self.sut.add_active_status_watch(watch=ID(uid=r.get_reservation_id()),
+                self.get_sut().add_active_status_watch(watch=ID(uid=r.get_reservation_id()),
                                                  callback=res_status_update)
 
             for r in controller_slice.computed_remove_reservations:

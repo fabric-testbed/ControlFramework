@@ -730,7 +730,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             current_resources = reservation.get_resources()
             needed = requested_resources.get_units()
             diff = current_resources.get_sliver().diff(other_sliver=requested_resources.get_sliver())
-            #diff = sliver_diff(sliver1=current_resources.get_sliver(), sliver2=requested_resources.get_sliver())
 
             if diff is None:
                 self.issue_ticket(reservation=reservation, units=needed, rtype=requested_resources.get_type(),

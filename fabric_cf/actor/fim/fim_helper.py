@@ -508,10 +508,10 @@ class FimHelper:
         """
         Load arm graph from fim and prune all nodes with reservation_state = reservation_state
         :param graph_id: graph_id
-        :param reservation_state: reservation_state
         :return: ExperimentTopology
         """
         slice_topology = FimHelper.get_experiment_topology(graph_id=graph_id)
         slice_topology.prune(reservation_state=ReservationStates.Failed.name)
+        slice_topology.prune(reservation_state=ReservationStates.Closed.name)
 
         return slice_topology

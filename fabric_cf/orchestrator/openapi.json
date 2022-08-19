@@ -306,8 +306,8 @@
                   "Closing",
                   "Dead",
                   "Modifying",
-                  "ModifyError",
-                  "ModifyOK"
+                  "ModifyOK",
+                  "ModifyError"
                 ]
               }
             }

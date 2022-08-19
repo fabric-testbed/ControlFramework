@@ -363,6 +363,7 @@ class OrchestratorHandler:
         :param token Fabric Identity Token
         :param slice_id Slice Id
         :param slice_graph Slice Graph Model
+        :param ssh_key ssh_key
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
@@ -416,8 +417,10 @@ class OrchestratorHandler:
             FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
 
             slice_obj.graph_id = asm_graph.get_graph_id()
-            slice_obj.set_config_properties(value={Constants.PROJECT_ID: project,
-                                                   Constants.TAGS: ','.join(tags)})
+            config_props = slice_obj.get_config_properties()
+            config_props[Constants.PROJECT_ID] = project
+            config_props[Constants.TAGS] = ','.join(tags)
+            slice_obj.set_config_properties(value=config_props)
 
             if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
                 self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")

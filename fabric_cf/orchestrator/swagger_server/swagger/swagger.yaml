@@ -210,8 +210,8 @@ paths:
             - Closing
             - Dead
             - Modifying
-            - ModifyError
             - ModifyOK
+            - ModifyError
       - name: limit
         in: query
         description: maximum number of results to return per page (1 or more)

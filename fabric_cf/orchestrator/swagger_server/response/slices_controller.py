@@ -68,7 +68,7 @@ def slices_create_post(body, name, ssh_key, lease_end_time) -> Slivers:  # noqa:
         slice_graph = body.decode("utf-8")
         slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=slice_graph,
                                             ssh_key=ssh_key, lease_end_time=lease_end_time)
-        response = Slices()
+        response = Slivers()
         response.data = []
         for s in slivers_dict:
             sliver = Sliver().from_dict(s)
@@ -225,7 +225,7 @@ def slices_modify_slice_id_put(body, slice_id):  # noqa: E501
         token = get_token()
         slice_graph = body.decode("utf-8")
         slivers_dict = handler.modify_slice(token=token, slice_id=slice_id, slice_graph=slice_graph)
-        response = Slices()
+        response = Slivers()
         response.data = []
         for s in slivers_dict:
             sliver = Sliver().from_dict(s)

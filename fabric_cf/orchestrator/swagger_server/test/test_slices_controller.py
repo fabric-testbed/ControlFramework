@@ -82,11 +82,13 @@ class TestSlicesController(BaseTestCase):
         Modify an existing slice
         """
         body = 'body_example'
+        query_string = [('ssh_key', 'ssh_key_example')]
         response = self.client.open(
             '//slices/modify/{slice_id}'.format(slice_id='slice_id_example'),
             method='PUT',
             data=json.dumps(body),
-            content_type='text/plain')
+            content_type='text/plain',
+            query_string=query_string)
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
