@@ -743,11 +743,11 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                    f"{reservation.get_reservation_id()}"
                     if error_msg is not None:
                         fail_message = error_msg
-                    reservation.fail(message=fail_message)
+                    reservation.fail_extend(message=fail_message)
         except Exception as e:
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
-            reservation.fail(message="", exception=e)
+            reservation.fail_extend(message="", exception=e)
 
     def issue_ticket(self, *, reservation: ABCBrokerReservation, units: int, rtype: ResourceType,
                      term: Term, source: ABCDelegation, sliver: BaseSliver) -> ABCBrokerReservation:

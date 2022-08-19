@@ -507,7 +507,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 self.fail(message=f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"
                                   f" is in a terminal state")
 
-            if not (pred_state.get_reservation().is_ticketed() or pred_state.get_reservation().is_active_ticketed()):
+            if not (pred_state.get_reservation().is_ticketed() or pred_state.get_reservation().is_active_ticketed() or
+                    pred_state.get_reservation().is_active()):
                 approved = False
                 break
 

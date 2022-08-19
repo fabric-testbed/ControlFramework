@@ -332,7 +332,15 @@ class OrchestratorSliceWrapper:
         topology_diff = existing_topology.diff(new_topology)
 
         reservations = []
-        sliver_to_res_mapping = {}
+        node_res_mapping = {}
+
+        # Build up the node_res mapping to include nodes before modify
+        # This is needed for Network Service slivers when interfaces from VM before modify
+        # are added to the new Network Service slivers
+        for x in new_topology.nodes.values():
+            if x in topology_diff.added.nodes or x in topology_diff.removed.nodes:
+                continue
+            node_res_mapping[x.node_id] = x.reservation_info.reservation_id
 
         # Add Nodes
         for x in topology_diff.added.nodes:
@@ -340,7 +348,7 @@ class OrchestratorSliceWrapper:
             if reservation is None:
                 continue
             reservations.append(reservation)
-            sliver_to_res_mapping[x.node_id] = reservation.get_reservation_id()
+            node_res_mapping[x.node_id] = reservation.get_reservation_id()
 
         # Add Network Services
         for x in topology_diff.added.services:
@@ -348,7 +356,7 @@ class OrchestratorSliceWrapper:
                 continue
             reservation = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
                                                              node_id=x.node_id,
-                                                             node_res_mapping=sliver_to_res_mapping)
+                                                             node_res_mapping=node_res_mapping)
             reservations.append(reservation)
 
         # Add components
