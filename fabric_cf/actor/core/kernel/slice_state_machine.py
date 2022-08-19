@@ -68,12 +68,9 @@ class SliceState(Enum):
                   SliceState.Configuring, SliceState.Nascent, SliceState.Modifying, SliceState.ModifyError,
                   SliceState.ModifyOK]
 
-        if len(states) == 1 and states[0] == "All":
-            return result
-
         states_to_exclude = []
         for s in result:
-            if str(s) not in states:
+            if not (len(states) == 1 and states[0] == "All") and str(s) not in states:
                 states_to_exclude.append(s)
 
         for s in states_to_exclude:
