@@ -72,7 +72,7 @@ def main():
             app.add_api('swagger.yaml', arguments={'title': 'Fabric Orchestrator API'}, pythonic_params=True)
 
             # Start up the server to expose the metrics.
-            waitress.serve(app, port=int(rest_port_str))
+            waitress.serve(app, port=int(rest_port_str), threads=8)
             while True:
                 time.sleep(0.0001)
                 if h.interrupted:

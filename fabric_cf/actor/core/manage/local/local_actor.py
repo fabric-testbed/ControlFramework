@@ -141,15 +141,27 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
-    def update_slice(self, *, slice_obj: SliceAvro) -> bool:
+    def update_slice(self, *, slice_obj: SliceAvro, modify_state: bool = False) -> bool:
         self.clear_last()
         try:
-            result = self.manager.update_slice(slice_mng=slice_obj, caller=self.auth)
+            result = self.manager.update_slice(slice_mng=slice_obj, caller=self.auth, modify_state=modify_state)
             self.last_status = result
 
             if self.last_status.get_code() == 0:
                 return True
 
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return False
+
+    def accept_update_slice(self, *, slice_id: ID) -> bool:
+        self.clear_last()
+        try:
+            result = self.manager.accept_update_slice(slice_id=slice_id, caller=self.auth)
+            self.last_status = result
+
+            return result.get_code() == 0
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 

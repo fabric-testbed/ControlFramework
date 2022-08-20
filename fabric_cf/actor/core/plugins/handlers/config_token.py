@@ -95,3 +95,15 @@ class ConfigToken(ABC):
         """
         Update Sliver
         """
+
+    @abstractmethod
+    def get_modified(self) -> BaseSliver:
+        """
+        Return the modified sliver
+        """
+
+    @abstractmethod
+    def get_properties(self) -> dict:
+        """
+        Return properties
+        """

@@ -85,12 +85,13 @@ class Translate:
         if slice_avro.guid is None:
             raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("Slice id"))
 
-        slice_obj = SliceFactory.create(slice_id=slice_avro.guid, name=slice_avro.slice_name)
+        slice_obj = SliceFactory.create(slice_id=ID(uid=slice_avro.guid), name=slice_avro.slice_name)
         slice_obj.set_description(description=slice_avro.description)
         slice_obj.set_config_properties(value=slice_avro.config_properties)
         slice_obj.set_lease_start(lease_start=slice_avro.get_lease_start())
         slice_obj.set_lease_end(lease_end=slice_avro.get_lease_end())
         slice_obj.set_project_id(project_id=slice_avro.project_id)
+        slice_obj.set_graph_id(graph_id=slice_avro.graph_id)
         return slice_obj
 
     @staticmethod
@@ -124,8 +125,6 @@ class Translate:
         result.guid = str(auth.get_guid())
         result.oidc_sub_claim = auth.get_oidc_sub_claim()
         result.email = auth.get_email()
-        if hasattr(auth, 'token'):
-            result.token = auth.get_token()
         return result
 
     @staticmethod
@@ -137,8 +136,6 @@ class Translate:
         result.guid = auth_avro.guid
         result.oidc_sub_claim = auth_avro.oidc_sub_claim
         result.email = auth_avro.email
-        if hasattr(auth_avro, 'token'):
-            result.token = auth_avro.token
         return result
 
     @staticmethod

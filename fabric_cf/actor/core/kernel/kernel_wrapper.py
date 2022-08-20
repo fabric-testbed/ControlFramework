@@ -24,7 +24,10 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
+from datetime import datetime
 from typing import List
+
+from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
@@ -244,7 +247,7 @@ class KernelWrapper:
         self.kernel.extend_lease(reservation=reservation)
 
     def extend_lease_request(self, *, reservation: ABCAuthorityReservation, caller: AuthToken,
-                             compare_sequence_numbers: bool, callback: ABCControllerCallbackProxy = None,):
+                             compare_sequence_numbers: bool, callback: ABCControllerCallbackProxy = None):
         """
         Processes an incoming request for a lease extension.
         Role: Authority
@@ -259,10 +262,10 @@ class KernelWrapper:
         if reservation is None or caller is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
         try:
-            AccessChecker.check_access(action_id=ActionId.renew, token=caller.get_token(),
-                                       resource=reservation.get_requested_resources().get_sliver(),
-                                       lease_end_time=reservation.get_requested_term().get_end_time(),
-                                       logger=self.logger)
+            self.__authorize_request(action_id=ActionId.renew, reservation=reservation,
+                                     sliver=reservation.get_requested_resources().get_sliver(),
+                                     lease_end_time=reservation.get_requested_term().get_end_time())
+
             if compare_sequence_numbers:
                 reservation.validate_incoming()
                 target = self.kernel.validate(rid=reservation.get_reservation_id())
@@ -303,10 +306,10 @@ class KernelWrapper:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         try:
-            AccessChecker.check_access(action_id=ActionId.modify, token=caller.get_token(),
-                                       resource=reservation.get_requested_resources().get_sliver(),
-                                       lease_end_time=reservation.get_requested_term().get_end_time(),
-                                       logger=self.logger)
+            self.__authorize_request(action_id=ActionId.modify, reservation=reservation,
+                                     sliver=reservation.get_requested_resources().get_sliver(),
+                                     lease_end_time=reservation.get_requested_term().get_end_time())
+
             if compare_sequence_numbers:
                 reservation.validate_incoming()
                 target = self.kernel.validate(rid=reservation.get_reservation_id())
@@ -381,10 +384,9 @@ class KernelWrapper:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         try:
-            AccessChecker.check_access(action_id=ActionId.renew, token=caller.get_token(),
-                                       resource=reservation.get_requested_resources().get_sliver(),
-                                       lease_end_time=reservation.get_requested_term().get_end_time(),
-                                       logger=self.logger)
+            self.__authorize_request(action_id=ActionId.renew, reservation=reservation,
+                                     sliver=reservation.get_requested_resources().get_sliver(),
+                                     lease_end_time=reservation.get_requested_term().get_end_time())
 
             if compare_sequence_numbers:
                 target = self.kernel.validate(rid=reservation.get_reservation_id())
@@ -659,9 +661,9 @@ class KernelWrapper:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         try:
-            AccessChecker.check_access(action_id=ActionId.redeem, token=caller.get_token(),
-                                       resource=reservation.get_requested_resources().get_sliver(),
-                                       logger=self.logger)
+            self.__authorize_request(action_id=ActionId.redeem, reservation=reservation,
+                                     sliver=reservation.get_requested_resources().get_sliver(), lease_end_time=None)
+
             if compare_sequence_numbers:
                 reservation.validate_incoming()
                 reservation.get_slice().set_client()
@@ -729,6 +731,17 @@ class KernelWrapper:
 
         self.kernel.register_delegation(delegation=delegation)
 
+    def modify_slice(self, *, slice_object: ABCSlice):
+        """
+        Modify the slice registered with the kernel
+        @param slice_object slice_object
+        @throws Exception in case of error
+        """
+        if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCSlice):
+            raise KernelException("Invalid argument {}".format(slice_object))
+
+        self.kernel.modify_slice(slice_object=slice_object)
+
     def register_slice(self, *, slice_object: ABCSlice):
         """
         Registers the slice with the kernel: adds the slice object to the kernel
@@ -773,6 +786,18 @@ class KernelWrapper:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         self.kernel.remove_slice(slice_id=slice_id)
+
+    def modify_accept(self, *, slice_id: ID):
+        """
+        Accept the last modify on the slice
+
+        @param slice_id identifier of slice
+        @throws Exception in case of error
+        """
+        if slice_id is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        self.kernel.modify_accept(slice_id=slice_id)
 
     def re_register_reservation(self, *, reservation: ABCReservationMixin):
         """
@@ -897,9 +922,8 @@ class KernelWrapper:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
         try:
-            AccessChecker.check_access(action_id=ActionId.ticket, token=caller.get_token(),
-                                       resource=reservation.get_requested_resources().get_sliver(),
-                                       logger=self.logger)
+            self.__authorize_request(action_id=ActionId.ticket, reservation=reservation,
+                                     sliver=reservation.get_requested_resources().get_sliver(), lease_end_time=None)
 
             if compare_seq_numbers:
                 reservation.validate_incoming()
@@ -1050,3 +1074,16 @@ class KernelWrapper:
             reservation.fail_notify(message=reason)
         except Exception as e:
             self.logger.exception(f"Failed to notify reservation #{reservation.get_reservation_id()} of failure.")
+
+    def __authorize_request(self, *, reservation: ABCReservationMixin, action_id: ActionId, sliver: BaseSliver,
+                            lease_end_time: datetime = None):
+        slice_object = reservation.get_slice()
+        config_props = slice_object.get_config_properties()
+        project = config_props.get(Constants.PROJECT_ID, None)
+        tags = config_props.get(Constants.TAGS, None)
+        email = config_props.get(Constants.CLAIMS_EMAIL, None)
+
+        if project is not None and tags is not None and email is not None:
+            tag_list = tags.split(",")
+            AccessChecker.check_pdp_access(action_id=action_id, email=email, project=project, tags=tag_list,
+                                           resource=sliver, lease_end_time=lease_end_time, logger=self.logger)

@@ -65,6 +65,31 @@ class TestSlicesController(BaseTestCase):
         self.assert200(response,
                        'Response body is : ' + response.data.decode('utf-8'))
 
+    def test_slices_modify_slice_id_accept_post(self):
+        """Test case for slices_modify_slice_id_accept_post
+
+        Accept the last modify an existing slice
+        """
+        response = self.client.open(
+            '//slices/modify/{slice_id}/accept'.format(slice_id='slice_id_example'),
+            method='POST')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    def test_slices_modify_slice_id_put(self):
+        """Test case for slices_modify_slice_id_put
+
+        Modify an existing slice
+        """
+        body = 'body_example'
+        response = self.client.open(
+            '//slices/modify/{slice_id}'.format(slice_id='slice_id_example'),
+            method='PUT',
+            data=json.dumps(body),
+            content_type='text/plain')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
     def test_slices_renew_slice_id_post(self):
         """Test case for slices_renew_slice_id_post
 

@@ -40,6 +40,7 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.policy.resource_control import ResourceControl
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.core.util.utils import sliver_diff
 from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
@@ -87,17 +88,21 @@ class NetworkNodeControl(ResourceControl):
             raise AuthorityException(f"Insufficient resources: {negative_fields}")
 
     def __check_components(self, *, rid: ID, requested_components: AttachedComponentsInfo, graph_node: BaseSliver,
-                           existing_reservations: List[ABCReservationMixin]):
+                           existing_reservations: List[ABCReservationMixin], added_components: set = None):
         """
         Check if the allocated components by the broker can be assigned
         :param rid: reservation id
         :param requested_components: Requested components
         :param graph_node: ARM Graph Node serving the reservation
         :param existing_reservations: Existing Reservations served by the same ARM node
+        :param added_components: Components added by modify
         :raises: AuthorityException in case the request cannot be satisfied
         """
         self.logger.debug(f"requested_components: {requested_components} for reservation# {rid}")
         for name, c in requested_components.devices.items():
+            # Skip the already allocated components in case of Modify
+            if added_components is not None and name not in added_components:
+                continue
             if c.get_type() == ComponentType.Storage:
                 continue
             node_map = c.get_node_map()
@@ -187,6 +192,7 @@ class NetworkNodeControl(ResourceControl):
 
         gained = None
         lost = None
+        modified = None
         if current is None:
             # Check if Capacities can be satisfied by Delegated Capacities
             self.__check_capacities(rid=reservation.get_reservation_id(),
@@ -216,9 +222,27 @@ class NetworkNodeControl(ResourceControl):
         else:
             # FIX ME: handle modify
             self.logger.info(f"Extend Lease for now, no modify supported res# {reservation}")
-            return current
+            current_sliver = current.get_sliver()
+            diff = current_sliver.diff(other_sliver=requested)
+            #diff = sliver_diff(sliver1=current_sliver, sliver2=requested)
+            if diff is not None:
+                # Modify MVP - only handle add components for now
+                if len(diff.added.components) > 0:
+                    self.__check_components(rid=reservation.get_reservation_id(),
+                                            requested_components=requested.attached_components_info,
+                                            graph_node=graph_node,
+                                            existing_reservations=existing_reservations,
+                                            added_components=diff.added.components)
+                    unit = Unit(rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
+                                actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type,
+                                properties=reservation.get_slice().get_config_properties())
+                    modified = UnitSet(plugin=self.authority.get_plugin(), units={unit.reservation_id: unit})
+                else:
+                    return current
+            else:
+                return current
 
-        result = ResourceSet(gained=gained, lost=lost, rtype=resource_type)
+        result = ResourceSet(gained=gained, modified=modified, lost=lost, rtype=resource_type)
         result.set_sliver(sliver=requested)
         return result
 

@@ -392,6 +392,10 @@ class NetworkNodeInventory(InventoryForType):
 
         self.logger.debug(f"requested_components: {requested_components.devices.values()} for reservation# {rid}")
         for name, requested_component in requested_components.devices.items():
+            if requested_component.get_node_map() is not None:
+                self.logger.debug(f"==========Ignoring Allocated component: {requested_component} for modify")
+                # TODO exclude already allocated component to the same reservation
+                continue
             self.logger.debug(f"==========Allocating component: {requested_component}")
             resource_type = requested_component.get_type()
             resource_model = requested_component.get_model()
@@ -453,16 +457,23 @@ class NetworkNodeInventory(InventoryForType):
             raise BrokerException(error_code=Constants.INVALID_ARGUMENT,
                                   msg=f"resource type: {graph_node.get_type()}")
 
-        # Always use requested capacities to be mapped from flavor i.e. capacity hints
-        requested_capacity_hints = requested_sliver.get_capacity_hints()
-        catalog = InstanceCatalog()
-        requested_capacities = catalog.get_instance_capacities(instance_type=requested_capacity_hints.instance_type)
+        delegation_id = None
+        # For create, we need to allocate the VM
+        if requested_sliver.get_node_map() is None:
+            # Always use requested capacities to be mapped from flavor i.e. capacity hints
+            requested_capacity_hints = requested_sliver.get_capacity_hints()
+            catalog = InstanceCatalog()
+            requested_capacities = catalog.get_instance_capacities(instance_type=requested_capacity_hints.instance_type)
 
-        # Check if Capacities can be satisfied
-        delegation_id = self.__check_capacities(rid=rid,
-                                                requested_capacities=requested_capacities,
-                                                delegated_capacities=graph_node.get_capacity_delegations(),
-                                                existing_reservations=existing_reservations)
+            # Check if Capacities can be satisfied
+            delegation_id = self.__check_capacities(rid=rid,
+                                                    requested_capacities=requested_capacities,
+                                                    delegated_capacities=graph_node.get_capacity_delegations(),
+                                                    existing_reservations=existing_reservations)
+        else:
+            # In case of modify, directly get delegation_id
+            if len(graph_node.get_capacity_delegations().get_delegation_ids()) > 0:
+                delegation_id = next(iter(graph_node.get_capacity_delegations().get_delegation_ids()))
 
         # Check if Components can be allocated
         if requested_sliver.attached_components_info is not None:
@@ -473,11 +484,13 @@ class NetworkNodeInventory(InventoryForType):
                 graph_node=graph_node,
                 existing_reservations=existing_reservations)
 
-        requested_sliver.capacity_allocations = Capacities()
-        requested_sliver.capacity_allocations = Capacities.update(lab=requested_capacities)
-        requested_sliver.label_allocations = Labels(instance_parent=graph_node.get_name())
+        # Do this only for create
+        if requested_sliver.get_node_map() is None:
+            requested_sliver.capacity_allocations = Capacities()
+            requested_sliver.capacity_allocations = Capacities.update(lab=requested_capacities)
+            requested_sliver.label_allocations = Labels(instance_parent=graph_node.get_name())
 
-        requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))
+            requested_sliver.set_node_map(node_map=(graph_id, graph_node.node_id))
 
         self.logger.info(f"Reservation# {rid} is being served by delegation# {delegation_id} "
                          f"node# [{graph_id}/{graph_node.node_id}]")

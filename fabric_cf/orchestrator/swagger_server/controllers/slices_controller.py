@@ -62,6 +62,34 @@ def slices_get(name=None, states=None, limit=None, offset=None):  # noqa: E501
     return rc.slices_get(name, states, limit, offset)
 
 
+def slices_modify_slice_id_accept_post(slice_id):  # noqa: E501
+    """Accept the last modify an existing slice
+
+    Accept the last modify and prune any failed resources from the Slice. Also return the accepted slice model back to the user.   # noqa: E501
+
+    :param slice_id: Slice identified by universally unique identifier
+    :type slice_id: str
+
+    :rtype: SliceDetails
+    """
+    return rc.slices_modify_slice_id_accept_post(slice_id)
+
+
+def slices_modify_slice_id_put(body, slice_id):  # noqa: E501
+    """Modify an existing slice
+
+    Request to modify an existing slice as described in the request. Request would be a graph ML describing the experiment topolgy expected after a modify. The supported modify actions include adding or removing nodes, components, network services or interfaces of the slice. On success, one or more slivers are allocated, containing resources satisfying the request, and assigned to the given slice. This API returns list and description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested. Experimenter can invoke get slice API to get the latest state of the requested resources.   # noqa: E501
+
+    :param body: 
+    :type body: dict | bytes
+    :param slice_id: Slice identified by universally unique identifier
+    :type slice_id: str
+
+    :rtype: Slivers
+    """
+    return rc.slices_modify_slice_id_put(body, slice_id)
+
+
 def slices_renew_slice_id_post(slice_id, lease_end_time):  # noqa: E501
     """Renew slice
 

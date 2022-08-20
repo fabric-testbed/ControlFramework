@@ -33,7 +33,8 @@ from fabric_cf.orchestrator.swagger_server.models.slivers import Slivers  # noqa
 from fabric_cf.orchestrator.swagger_server.models.status200_ok_no_content import Status200OkNoContent  # noqa: E501
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.response.constants import POST_METHOD, SLICES_CREATE_PATH, DELETE_METHOD, \
-    SLICES_DELETE_PATH, GET_METHOD, SLICES_GET_PATH, SLICES_RENEW_PATH, SLICES_GET_SLICE_ID_PATH
+    SLICES_DELETE_PATH, GET_METHOD, SLICES_GET_PATH, SLICES_RENEW_PATH, SLICES_GET_SLICE_ID_PATH, SLICES_MODIFY_PATH, \
+    SLICES_MODIFY_ACCEPT_PATH
 from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
@@ -67,7 +68,7 @@ def slices_create_post(body, name, ssh_key, lease_end_time) -> Slivers:  # noqa:
         slice_graph = body.decode("utf-8")
         slivers_dict = handler.create_slice(token=token, slice_name=name, slice_graph=slice_graph,
                                             ssh_key=ssh_key, lease_end_time=lease_end_time)
-        response = Slices()
+        response = Slivers()
         response.data = []
         for s in slivers_dict:
             sliver = Sliver().from_dict(s)
@@ -163,6 +164,83 @@ def slices_get(name=None, states=None, limit=None, offset=None) -> Slices:  # no
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, SLICES_GET_PATH).inc()
+        return cors_error_response(error=e)
+
+
+def slices_modify_slice_id_accept_post(slice_id):  # noqa: E501
+    """Accept the last modify an existing slice
+
+    Accept the last modify and prune any failed resources from the Slice.
+    Also return the accepted slice model back to the user.   # noqa: E501
+
+    :param slice_id: Slice identified by universally unique identifier
+    :type slice_id: str
+
+    :rtype: Slivers
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(POST_METHOD, SLICES_MODIFY_ACCEPT_PATH).inc()
+    try:
+        token = get_token()
+        value = handler.modify_accept(token=token, slice_id=slice_id)
+        slice_object = Slice().from_dict(value)
+        response = SliceDetails(data=[slice_object], size=1)
+        response.type = 'slice_details'
+        success_counter.labels(POST_METHOD, SLICES_MODIFY_ACCEPT_PATH).inc()
+        return cors_success_response(response_body=response)
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLICES_MODIFY_ACCEPT_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLICES_MODIFY_ACCEPT_PATH).inc()
+        return cors_error_response(error=e)
+
+
+def slices_modify_slice_id_put(body, slice_id):  # noqa: E501
+    """Modify an existing slice
+
+    Request to modify an existing slice as described in the request. Request would be a graph ML describing the
+    experiment topolgy expected after a modify. The supported modify actions include adding or removing nodes,
+    components, network services or interfaces of the slice. On success, one or more slivers are allocated,
+    containing resources satisfying the request, and assigned to the given slice. This API returns list and
+    description of the resources reserved for the slice in the form of Graph ML. Orchestrator would also trigger
+    provisioning of these resources asynchronously on the appropriate sites either now or in the future as requested.
+    Experimenter can invoke get slice API to get the latest state of the requested resources.   # noqa: E501
+
+    :param body:
+    :type body: dict | bytes
+    :param slice_id: Slice identified by universally unique identifier
+    :type slice_id: str
+
+    :rtype: Slivers
+    """
+    handler = OrchestratorHandler()
+    logger = handler.get_logger()
+    received_counter.labels(POST_METHOD, SLICES_MODIFY_PATH).inc()
+
+    try:
+        token = get_token()
+        slice_graph = body.decode("utf-8")
+        slivers_dict = handler.modify_slice(token=token, slice_id=slice_id, slice_graph=slice_graph)
+        response = Slivers()
+        response.data = []
+        for s in slivers_dict:
+            sliver = Sliver().from_dict(s)
+            response.data.append(sliver)
+        response.size = len(response.data)
+        response.type = "slivers"
+        success_counter.labels(POST_METHOD, SLICES_MODIFY_PATH).inc()
+        return cors_success_response(response_body=response)
+    except OrchestratorException as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLICES_MODIFY_PATH).inc()
+        return cors_error_response(error=e)
+    except Exception as e:
+        logger.exception(e)
+        failure_counter.labels(POST_METHOD, SLICES_CREATE_PATH).inc()
         return cors_error_response(error=e)
 
 

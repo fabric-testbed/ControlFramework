@@ -227,15 +227,6 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
         """
 
     @abstractmethod
-    def set_slice(self, *, slice_object):
-        """
-        Sets the slice the reservation belongs to.
-
-        Args:
-            slice_object: slice the reservation belongs to
-        """
-
-    @abstractmethod
     def transition(self, *, prefix: str, state: ReservationStates, pending: ReservationPendingStates):
         """
         Transitions this reservation into a new state.

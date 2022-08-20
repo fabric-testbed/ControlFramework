@@ -33,9 +33,10 @@ class TestResourcesController(BaseTestCase):
     def test_resources_get(self):
         """Test case for resources_get
 
-        Retrieve a listing and description of available resources
+        Retrieve a listing and description of available resources. By default, a cached available resource information is returned. User can force to request the current available resources.
         """
-        query_string = [('level', 1)]
+        query_string = [('level', 1),
+                        ('force_refresh', false)]
         response = self.client.open(
             '//resources',
             method='GET',

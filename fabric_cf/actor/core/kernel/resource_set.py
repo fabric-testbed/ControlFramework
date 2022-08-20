@@ -188,12 +188,6 @@ class ResourceSet:
         else:
             self.type = resource_set.type
             difference = 0
-            if resource_set.gained is None or resource_set.lost is not None or resource_set.modified is not None:
-                raise ResourcesException("Internal Error: service overrun in hardChange")
-
-            if resource_set.gained is not None:
-                self.gained = resource_set.gained
-                difference = resource_set.gained.get_units()
 
             if resource_set.lost is not None:
                 self.lost = resource_set.lost

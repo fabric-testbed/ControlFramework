@@ -64,13 +64,15 @@ def portalresources_get(graph_format) -> Resources:  # noqa: E501
         return cors_error_response(error=e)
 
 
-def resources_get(level) -> Resources:  # noqa: E501
+def resources_get(level, force_refresh) -> Resources:  # noqa: E501
     """Retrieve a listing and description of available resources
 
     Retrieve a listing and description of available resources # noqa: E501
 
     :param level: Level of details
     :type level: int
+    :param force_refresh: Force to retrieve current available resource information.
+    :type force_refresh: bool
 
     :rtype: Resources
     """
@@ -79,7 +81,7 @@ def resources_get(level) -> Resources:  # noqa: E501
     received_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
     try:
         token = get_token()
-        bqm_dict = handler.list_resources(token=token, level=level)
+        bqm_dict = handler.list_resources(token=token, level=level, force_refresh=force_refresh)
         response = Resources()
         response.data = [Resource().from_dict(bqm_dict)]
         response.size = 1

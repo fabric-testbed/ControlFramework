@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
@@ -118,7 +119,7 @@ class ABCMgmtClientActor(ABCComponent):
         """
 
     @abstractmethod
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver) -> bool:
         """
         Extend a reservation
         @params reservation: reservation id

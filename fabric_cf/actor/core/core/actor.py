@@ -430,7 +430,10 @@ class ActorMixin(ABCActorMixin):
                                                               state=[SliceState.Configuring.value,
                                                                      SliceState.Nascent.value,
                                                                      SliceState.StableOK.value,
-                                                                     SliceState.StableError.value])
+                                                                     SliceState.StableError.value,
+                                                                     SliceState.Modifying.value,
+                                                                     SliceState.ModifyOK.value,
+                                                                     SliceState.ModifyError.value])
         self.logger.debug("Found {} client slices".format(len(client_slices)))
         self.recover_slices(slices=client_slices)
         self.logger.debug("Recovery of client slices complete")
@@ -703,6 +706,9 @@ class ActorMixin(ABCActorMixin):
     def register_slice(self, *, slice_object: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_object)
 
+    def modify_slice(self, *, slice_object: ABCSlice):
+        self.wrapper.modify_slice(slice_object=slice_object)
+
     def register_delegation(self, *, delegation: ABCDelegation):
         self.wrapper.register_delegation(delegation=delegation)
 
@@ -718,6 +724,9 @@ class ActorMixin(ABCActorMixin):
 
     def remove_slice_by_slice_id(self, *, slice_id: ID):
         self.wrapper.remove_slice(slice_id=slice_id)
+
+    def modify_accept(self, *, slice_id: ID):
+        self.wrapper.modify_accept(slice_id=slice_id)
 
     def re_register_delegation(self, *, delegation: ABCDelegation):
         self.wrapper.re_register_delegation(delegation=delegation)

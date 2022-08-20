@@ -189,11 +189,11 @@ class LocalController(LocalActor, ABCMgmtControllerMixin):
 
         return False
 
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver) -> bool:
         self.clear_last()
         try:
             result = self.manager.extend_reservation(reservation=reservation,
-                                                     new_end_time=new_end_time, new_units=Constants.EXTEND_SAME_UNITS,
+                                                     new_end_time=new_end_time, sliver=sliver,
                                                      caller=self.auth)
             self.last_status = result
 

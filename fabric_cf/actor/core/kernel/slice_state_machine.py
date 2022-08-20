@@ -41,6 +41,9 @@ class SliceState(Enum):
     StableOK = enum.auto()
     Closing = enum.auto()
     Dead = enum.auto()
+    Modifying = enum.auto()
+    ModifyError = enum.auto()
+    ModifyOK = enum.auto()
 
     def __str__(self):
         return self.name
@@ -61,11 +64,13 @@ class SliceState(Enum):
         if states is None or len(states) == 0:
             return states
 
-        result = [SliceState.StableOK, SliceState.StableError, SliceState.Dead,
-                  SliceState.Closing, SliceState.Configuring, SliceState.Nascent]
+        result = [SliceState.StableOK, SliceState.StableError, SliceState.Dead, SliceState.Closing,
+                  SliceState.Configuring, SliceState.Nascent, SliceState.Modifying, SliceState.ModifyError,
+                  SliceState.ModifyOK]
+
         states_to_exclude = []
         for s in result:
-            if str(s) not in states:
+            if not (len(states) == 1 and states[0] == "All") and str(s) not in states:
                 states_to_exclude.append(s)
 
         for s in states_to_exclude:
@@ -76,12 +81,31 @@ class SliceState(Enum):
             ret_val.append(x.value)
         return ret_val
 
+    @staticmethod
+    def is_dead_or_closing(*, state):
+        if state == SliceState.Dead or state == SliceState.Closing:
+            return True
+        return False
+
+    @staticmethod
+    def is_stable(*, state):
+        if state == SliceState.StableOK or state == SliceState.StableError:
+            return True
+        return False
+
+    @staticmethod
+    def is_modified(*, state):
+        if state == SliceState.ModifyOK or state == SliceState.ModifyError:
+            return True
+        return False
+
 
 class SliceCommand(Enum):
     Create = enum.auto()
     Modify = enum.auto()
     Delete = enum.auto()
     Reevaluate = enum.auto()
+    ModifyAccept = enum.auto()
 
 
 class SliceOperation:
@@ -134,11 +158,16 @@ class SliceStateMachine:
 
     MODIFY = SliceOperation(SliceCommand.Modify, SliceState.StableOK, SliceState.StableError, SliceState.Configuring)
 
+    MODIFY_ACCEPT = SliceOperation(SliceCommand.ModifyAccept, SliceState.ModifyOK, SliceState.ModifyError,
+                                   SliceState.Modifying)
+
     DELETE = SliceOperation(SliceCommand.Delete, SliceState.Nascent, SliceState.StableOK, SliceState.StableError,
-                            SliceState.Configuring, SliceState.Dead)
+                            SliceState.Configuring, SliceState.Modifying, SliceState.ModifyOK, SliceState.ModifyError,
+                            SliceState.Dead)
 
     REEVALUATE = SliceOperation(SliceCommand.Reevaluate, SliceState.Nascent, SliceState.StableOK,
-                                SliceState.StableError, SliceState.Configuring, SliceState.Dead, SliceState.Closing)
+                                SliceState.StableError, SliceState.Configuring, SliceState.Dead, SliceState.Closing,
+                                SliceState.Modifying, SliceState.ModifyError, SliceState.ModifyOK)
 
     def __init__(self, *, slice_id: ID):
         self.slice_guid = slice_id
@@ -178,7 +207,13 @@ class SliceStateMachine:
             self.state = SliceState.Configuring
 
         elif operation.command == SliceCommand.Modify:
-            self.state = SliceState.Configuring
+            self.state = SliceState.Modifying
+
+        elif operation.command == SliceCommand.ModifyAccept:
+            if self.state == SliceState.ModifyError:
+                self.state = SliceState.StableError
+            elif self.state == SliceState.ModifyOK:
+                self.state = SliceState.StableOK
 
         elif operation.command == SliceCommand.Delete:
             if self.state != SliceState.Dead:
@@ -205,7 +240,21 @@ class SliceStateMachine:
                                                  ReservationStates.Failed):
                     self.state = SliceState.Closing
 
-            elif self.state == SliceState.StableError or self.state == SliceState.StableOK:
+            elif self.state == SliceState.Modifying:
+                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
+                    self.state = SliceState.ModifyOK
+
+                if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
+                                                  ReservationStates.Closed)) and \
+                        bins.has_state(s=ReservationStates.Failed):
+                    self.state = SliceState.ModifyError
+
+                if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
+                                                 ReservationStates.Failed):
+                    self.state = SliceState.Closing
+
+            elif self.state == SliceState.StableError or self.state == SliceState.StableOK or \
+                    self.state == SliceState.ModifyError or self.state == SliceState.ModifyOK:
                 if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
                                                  ReservationStates.Failed):
                     self.state = SliceState.Dead

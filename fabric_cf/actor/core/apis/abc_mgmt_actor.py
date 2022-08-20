@@ -72,13 +72,22 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def update_slice(self, *, slice_obj: SliceAvro) -> bool:
+    def update_slice(self, *, slice_obj: SliceAvro, modify_state: bool = False) -> bool:
         """
         Updates the specified slice.
         The only updatable slice attributes are:
         - description
         - all properties lists
         @param slice_obj slice
+        @param modify_state - trigger state change
+        @return true for success; false otherwise
+        """
+
+    @abstractmethod
+    def accept_update_slice(self, *, slice_id: ID) -> bool:
+        """
+        Accept the last slice update
+        @param slice_id slice_id
         @return true for success; false otherwise
         """
 
