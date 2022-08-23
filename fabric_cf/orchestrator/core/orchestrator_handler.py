@@ -349,6 +349,8 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
             project, tags = fabric_token.get_project_and_tags()
+            # FIX ME: Hack until portal changes to project based view
+            project = None
             slice_list = controller.get_slices(state=slice_states, email=fabric_token.get_email(), project=project,
                                                slice_name=name, limit=limit, offset=offset)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
@@ -454,6 +456,8 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
 
             project, tags = fabric_token.get_project_and_tags()
+            # FIX ME: Hack until portal changes to project based view
+            project = None
             slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
                                                project=project)
 

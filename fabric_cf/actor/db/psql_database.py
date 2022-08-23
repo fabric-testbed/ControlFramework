@@ -533,6 +533,7 @@ class PsqlDatabase:
                                                     email=email, oidc_sub=oidc_sub)
             with session_scope(self.db_engine) as session:
                 rows = session.query(Slices).filter_by(**filter_dict)
+                rows = rows.order_by(Slices.lease_end)
 
                 if state is not None:
                     rows = rows.filter(Slices.slc_state.in_(state))
@@ -541,7 +542,7 @@ class PsqlDatabase:
                     rows = rows.filter(Slices.slc_type.in_(slc_type))
 
                 if offset is not None and limit is not None:
-                    rows = rows.order_by(Slices.lease_end).offset(offset).limit(limit)
+                    rows = rows.offset(offset).limit(limit)
 
                 for row in rows.all():
                     slice_obj = self.generate_slice_dict_from_row(row)
