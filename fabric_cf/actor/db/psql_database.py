@@ -28,7 +28,7 @@ import pickle
 from contextlib import contextmanager
 from datetime import datetime, timezone
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -533,7 +533,7 @@ class PsqlDatabase:
                                                     email=email, oidc_sub=oidc_sub)
             with session_scope(self.db_engine) as session:
                 rows = session.query(Slices).filter_by(**filter_dict)
-                rows = rows.order_by(Slices.lease_end)
+                rows = rows.order_by(desc(Slices.lease_end))
 
                 if state is not None:
                     rows = rows.filter(Slices.slc_state.in_(state))
