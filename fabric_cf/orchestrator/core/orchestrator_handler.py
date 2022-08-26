@@ -635,7 +635,8 @@ class OrchestratorHandler:
 
                 self.logger.debug(f"Extending reservation with reservation# {r.get_reservation_id()}")
                 result = controller.extend_reservation(reservation=ID(uid=r.get_reservation_id()),
-                                                       new_end_time=new_end_time)
+                                                       new_end_time=new_end_time,
+                                                       sliver=None)
                 if not result:
                     failed_to_extend_rid_list.append(r.get_reservation_id())
 
