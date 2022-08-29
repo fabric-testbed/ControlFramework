@@ -1,0 +1,1 @@
+uwsgi --virtualenv ~/.virtualenvs/ControlFramework1.3 --ini ./orchestrator.ini

@@ -35,7 +35,7 @@ from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorS
 from fabric_cf.orchestrator.core.reservation_status_update import ReservationStatusUpdate
 
 
-class SliceDemandThread:
+class SliceDeferThread:
     """
     This runs as a standalone thread started by Orchestrator and deals with issuing demand for the slivers for
     the newly created slices. The purpose of this thread is to help orchestrator respond back to the create
@@ -51,7 +51,13 @@ class SliceDemandThread:
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
         self.logger = GlobalsSingleton.get().get_logger()
         self.mgmt_actor = kernel.get_management_actor()
+        self.kernel = kernel
         self.sut = kernel.get_sut()
+
+    def get_sut(self):
+        if self.sut is None:
+            self.sut = self.kernel.get_sut()
+        return self.sut
 
     def queue_slice(self, *, controller_slice: OrchestratorSliceWrapper):
         """
@@ -72,7 +78,7 @@ class SliceDemandThread:
         try:
             self.thread_lock.acquire()
             if self.thread is not None:
-                raise OrchestratorException("This SliceDemandThread has already been started")
+                raise OrchestratorException("This SliceDeferThread has already been started")
 
             self.thread = threading.Thread(target=self.run)
             self.thread.setName(self.__class__.__name__)
@@ -93,14 +99,14 @@ class SliceDemandThread:
             temp = self.thread
             self.thread = None
             if temp is not None:
-                self.logger.warning("It seems that the SliceDemandThread is running. Interrupting it")
+                self.logger.warning("It seems that the SliceDeferThread is running. Interrupting it")
                 try:
                     # TODO find equivalent of interrupt
                     with self.slice_avail_condition:
                         self.slice_avail_condition.notify_all()
                     temp.join()
                 except Exception as e:
-                    self.logger.error(f"Could not join SliceDemandThread thread {e}")
+                    self.logger.error(f"Could not join SliceDeferThread thread {e}")
                 finally:
                     self.thread_lock.release()
         finally:
@@ -112,7 +118,7 @@ class SliceDemandThread:
         Thread main loop
         :return:
         """
-        self.logger.debug("SliceDemandThread started")
+        self.logger.debug("SliceDeferThread started")
         while True:
             slices = []
             with self.slice_avail_condition:
@@ -121,11 +127,11 @@ class SliceDemandThread:
                     try:
                         self.slice_avail_condition.wait()
                     except InterruptedError as e:
-                        self.logger.info("Slice Demand thread interrupted. Exiting")
+                        self.logger.info("SliceDeferThread interrupted. Exiting")
                         return
 
                 if self.stopped:
-                    self.logger.info("Slice Demand Thread exiting")
+                    self.logger.info("SliceDeferThread exiting")
                     return
 
                 if not self.slice_queue.empty():
@@ -146,12 +152,12 @@ class SliceDemandThread:
                         # Once added to the policy; Actor Tick Handler will do following asynchronously:
                         # 1. Ticket message exchange with broker and
                         # 2. Redeem message exchange with AM once ticket is granted by Broker
-                        self.demand_slice(controller_slice=s)
+                        self.process_slice(controller_slice=s)
                     except Exception as e:
                         self.logger.error(f"Error while processing slice {type(s)}, {e}")
                         self.logger.error(traceback.format_exc())
 
-    def demand_slice(self, *, controller_slice: OrchestratorSliceWrapper):
+    def process_slice(self, *, controller_slice: OrchestratorSliceWrapper):
         """
         Demand slice reservations.
         :param controller_slice:
@@ -173,8 +179,20 @@ class SliceDemandThread:
 
             for r in controller_slice.computed_l3_reservations:
                 res_status_update = ReservationStatusUpdate(logger=self.logger)
-                self.sut.add_active_status_watch(watch=ID(uid=r.get_reservation_id()),
+                self.get_sut().add_active_status_watch(watch=ID(uid=r.get_reservation_id()),
                                                  callback=res_status_update)
+
+            for r in controller_slice.computed_remove_reservations:
+                self.logger.debug(f"Issuing close for reservation: {r.get_reservation_id()}")
+                self.mgmt_actor.close_reservation(rid=ID(uid=r))
+
+            for rid, sliver in controller_slice.computed_modify_reservations.items():
+                self.logger.debug(f"Issuing extend for modified reservation: {rid}")
+                if not self.mgmt_actor.extend_reservation(reservation=ID(uid=rid), sliver=sliver, new_end_time=None):
+                    self.logger.error(f"Could not demand resources: {self.mgmt_actor.get_last_error()}")
+                    continue
+                self.logger.debug(f"Issued extend for reservation #{rid} successfully")
+
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Unable to get orchestrator or demand reservation: {}".format(e))

@@ -6,6 +6,8 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from fabric_cf.orchestrator.swagger_server.models.base_model_ import Model
+from fabric_cf.orchestrator.swagger_server.models.status200_ok_single import Status200OkSingle  # noqa: F401,E501
+from fabric_cf.orchestrator.swagger_server.models.version_data import VersionData  # noqa: F401,E501
 from fabric_cf.orchestrator.swagger_server import util
 
 
@@ -14,25 +16,35 @@ class Version(Model):
 
     Do not edit the class manually.
     """
-    def __init__(self, version: str=None, gitsha1: str=None):  # noqa: E501
+    def __init__(self, size: int=1, status: int=200, type: str=None, data: List[VersionData]=None):  # noqa: E501
         """Version - a model defined in Swagger
 
-        :param version: The version of this Version.  # noqa: E501
-        :type version: str
-        :param gitsha1: The gitsha1 of this Version.  # noqa: E501
-        :type gitsha1: str
+        :param size: The size of this Version.  # noqa: E501
+        :type size: int
+        :param status: The status of this Version.  # noqa: E501
+        :type status: int
+        :param type: The type of this Version.  # noqa: E501
+        :type type: str
+        :param data: The data of this Version.  # noqa: E501
+        :type data: List[VersionData]
         """
         self.swagger_types = {
-            'version': str,
-            'gitsha1': str
+            'size': int,
+            'status': int,
+            'type': str,
+            'data': List[VersionData]
         }
 
         self.attribute_map = {
-            'version': 'version',
-            'gitsha1': 'gitsha1'
+            'size': 'size',
+            'status': 'status',
+            'type': 'type',
+            'data': 'data'
         }
-        self._version = version
-        self._gitsha1 = gitsha1
+        self._size = size
+        self._status = status
+        self._type = type
+        self._data = data
 
     @classmethod
     def from_dict(cls, dikt) -> 'Version':
@@ -40,49 +52,91 @@ class Version(Model):
 
         :param dikt: A dict.
         :type: dict
-        :return: The Version of this Version.  # noqa: E501
+        :return: The version of this Version.  # noqa: E501
         :rtype: Version
         """
         return util.deserialize_model(dikt, cls)
 
     @property
-    def version(self) -> str:
-        """Gets the version of this Version.
+    def size(self) -> int:
+        """Gets the size of this Version.
 
 
-        :return: The version of this Version.
-        :rtype: str
+        :return: The size of this Version.
+        :rtype: int
         """
-        return self._version
+        return self._size
 
-    @version.setter
-    def version(self, version: str):
-        """Sets the version of this Version.
+    @size.setter
+    def size(self, size: int):
+        """Sets the size of this Version.
 
 
-        :param version: The version of this Version.
-        :type version: str
+        :param size: The size of this Version.
+        :type size: int
         """
 
-        self._version = version
+        self._size = size
 
     @property
-    def gitsha1(self) -> str:
-        """Gets the gitsha1 of this Version.
+    def status(self) -> int:
+        """Gets the status of this Version.
 
 
-        :return: The gitsha1 of this Version.
+        :return: The status of this Version.
+        :rtype: int
+        """
+        return self._status
+
+    @status.setter
+    def status(self, status: int):
+        """Sets the status of this Version.
+
+
+        :param status: The status of this Version.
+        :type status: int
+        """
+
+        self._status = status
+
+    @property
+    def type(self) -> str:
+        """Gets the type of this Version.
+
+
+        :return: The type of this Version.
         :rtype: str
         """
-        return self._gitsha1
+        return self._type
 
-    @gitsha1.setter
-    def gitsha1(self, gitsha1: str):
-        """Sets the gitsha1 of this Version.
+    @type.setter
+    def type(self, type: str):
+        """Sets the type of this Version.
 
 
-        :param gitsha1: The gitsha1 of this Version.
-        :type gitsha1: str
+        :param type: The type of this Version.
+        :type type: str
         """
 
-        self._gitsha1 = gitsha1
+        self._type = type
+
+    @property
+    def data(self) -> List[VersionData]:
+        """Gets the data of this Version.
+
+
+        :return: The data of this Version.
+        :rtype: List[VersionData]
+        """
+        return self._data
+
+    @data.setter
+    def data(self, data: List[VersionData]):
+        """Sets the data of this Version.
+
+
+        :param data: The data of this Version.
+        :type data: List[VersionData]
+        """
+
+        self._data = data

@@ -77,12 +77,12 @@ class ReservationStatusUpdate(IStatusUpdateCallback):
                         if lookup_name in ns_sliver.interface_info.interfaces:
                             ns_ifs = ns_sliver.interface_info.interfaces[lookup_name]
                             if ns_ifs.labels.ipv4 is not None:
-                                self.logger.info(f"Updating {ns_ifs.labels.ipv4} to {ifs.labels.ipv4}")
-                                ifs.label_allocations.ipv4 = Labels.update(ifs.label_allocations,
+                                self.logger.info(f"Updating {ifs} IP4 to {ns_ifs.labels.ipv4}")
+                                ifs.label_allocations = Labels.update(ifs.label_allocations,
                                                                            ipv4=ns_ifs.labels.ipv4)
                                 modified = True
                             if ns_ifs.labels.ipv6 is not None:
-                                self.logger.info(f"Updating {ns_ifs.labels.ipv6} to {ifs.labels.ipv6}")
+                                self.logger.info(f"Updating {ifs} IP6 to {ns_ifs.labels.ipv6}")
                                 ifs.label_allocations = Labels.update(ifs.label_allocations,
                                                                       ipv6=ns_ifs.labels.ipv6)
                                 modified = True

@@ -167,6 +167,7 @@ class NetworkServiceInventory(InventoryForType):
                         vlan_range = self.__extract_vlan_range(labels=delegated_label)
                     else:
                         vlan_range = self.__extract_vlan_range(labels=bqm_ifs.labels)
+
                     if vlan_range is not None:
                         vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
                                                                     existing_reservations=existing_reservations)
@@ -178,7 +179,7 @@ class NetworkServiceInventory(InventoryForType):
                             if requested_ifs.labels is None or requested_ifs.labels.vlan is None:
                                 return requested_ifs
 
-                            if requested_ifs.labels.vlan not in vlan_range:
+                            if int(requested_ifs.labels.vlan) not in vlan_range:
                                 raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
                                                       msg=f"Vlan for L3 service {requested_ifs.labels.vlan} "
                                                           f"is outside the available range "
@@ -282,7 +283,7 @@ class NetworkServiceInventory(InventoryForType):
                             f"{allocated_sliver.get_gateway().lab.ipv4_subnet}"
                             f" to res# {reservation.get_reservation_id()}")
 
-                    elif allocated_sliver.get_gateway().lab.ipv6_subnet is not None:
+                    elif allocated_sliver.get_type() == ServiceType.FABNetv6:
                         subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().lab.ipv6_subnet)
                         subnet_list.remove(subnet_to_remove)
                         self.logger.debug(

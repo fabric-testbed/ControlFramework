@@ -40,7 +40,7 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
-from fim.slivers.network_service import NetworkServiceSliver, NSLayer, ServiceType
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
@@ -60,6 +60,7 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
+from fabric_cf.actor.core.util.utils import sliver_diff
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 
@@ -346,6 +347,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
     def allocate_extending_reservation_set(self, *, requests: ReservationSet):
         if requests is not None:
+            # Holds the Node Id to List of Reservation Ids allocated
+            # This is used to check on the reservations allocated during this cycle to compute available resources
+            # as the reservations are not updated in the database yet
+            node_id_to_reservations = {}
             for reservation in requests.values():
                 if reservation.is_extending_ticket() and not reservation.is_closed():
                     start = reservation.get_requested_term().get_new_start_time()
@@ -357,7 +362,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
                     if inv is not None:
                         ext_term = Term(start=reservation.get_term().get_start_time(), end=end, new_start=start)
-                        self.extend_private(reservation=reservation, inv=inv, term=ext_term)
+                        self.extend_private(reservation=reservation, inv=inv, term=ext_term,
+                                            node_id_to_reservations=node_id_to_reservations)
                     else:
                         reservation.fail(message=Constants.NO_POOL)
 
@@ -444,12 +450,33 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         Identify candidate worker nodes in this site that have at least
         as many needed components as in the sliver.
         """
+        # modify; return existing node map
+        if sliver.get_node_map() is not None:
+            graph_id, node_id = sliver.get_node_map()
+            return [node_id]
+
         node_props = {ABCPropertyGraphConstants.PROP_SITE: sliver.site,
                       ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Server)}
-        return self.combined_broker_model.get_matching_nodes_with_components(
+
+        storage_components = []
+        # remove storage components before the check
+        if sliver.attached_components_info is not None:
+            for name, c in sliver.attached_components_info.devices.items():
+                if c.get_type() == ComponentType.Storage:
+                    storage_components.append(c)
+            for c in storage_components:
+                sliver.attached_components_info.remove_device(name=c.get_name())
+
+        result = self.combined_broker_model.get_matching_nodes_with_components(
             label=ABCPropertyGraphConstants.CLASS_NetworkNode,
             props=node_props,
             comps=sliver.attached_components_info)
+        # re-add storage components
+        if len(storage_components) > 0:
+            for c in storage_components:
+                sliver.attached_components_info.add_device(device_info=c)
+
+        return result
 
     def __find_first_fit(self, node_id_list: List[str], node_id_to_reservations: dict, inv: InventoryForType,
                          reservation: ABCBrokerReservation) -> Tuple[str, BaseSliver, Any]:
@@ -695,21 +722,32 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.fail(message=str(e))
         return False, node_id_to_reservations, error_msg
 
-    def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term):
+    def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
+                       node_id_to_reservations: dict):
         try:
             self.logger.debug(f"Extend private initiated for {reservation}")
             requested_resources = reservation.get_requested_resources()
+            current_resources = reservation.get_resources()
             needed = requested_resources.get_units()
-            current = reservation.get_resources().get_units()
-            if needed == current:
+            diff = current_resources.get_sliver().diff(other_sliver=requested_resources.get_sliver())
+
+            if diff is None:
                 self.issue_ticket(reservation=reservation, units=needed, rtype=requested_resources.get_type(),
                                   term=term, source=reservation.get_source(), sliver=reservation.get_resources().sliver)
             else:
-                self.logger.error(f"Failed to satisfy the extend for reservation# {reservation}")
+                status, node_id_to_reservations, error_msg = self.ticket_inventory(reservation=reservation,
+                                                                                   inv=inv, term=term,
+                                                                                   node_id_to_reservations=node_id_to_reservations)
+                if not status and not reservation.is_failed():
+                    fail_message = f"Insufficient resources for specified start time, Failing reservation: " \
+                                   f"{reservation.get_reservation_id()}"
+                    if error_msg is not None:
+                        fail_message = error_msg
+                    reservation.fail_extend(message=fail_message)
         except Exception as e:
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
-            reservation.fail(message="", exception=e)
+            reservation.fail_extend(message="", exception=e)
 
     def issue_ticket(self, *, reservation: ABCBrokerReservation, units: int, rtype: ResourceType,
                      term: Term, source: ABCDelegation, sliver: BaseSliver) -> ABCBrokerReservation:

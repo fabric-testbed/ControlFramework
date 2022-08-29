@@ -86,6 +86,7 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
         # True if the reservation was closed in the priming state.
         self.closed_in_priming = False
         self.category = ReservationCategory.Broker
+        self.extend_failure = False
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -106,6 +107,7 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
         del state['source']
         del state['notified_failed']
         del state['closed_in_priming']
+        del state['extend_failure']
         return state
 
     def __setstate__(self, state):
@@ -127,6 +129,7 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
         self.source = None
         self.notified_failed = False
         self.closed_in_priming = False
+        self.extend_failure = False
 
     def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """
@@ -304,6 +307,10 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
         if self.is_failed() and not self.notified_failed:
             self.generate_update()
             self.notified_failed = True
+            if self.extend_failure:
+                self.transition(prefix="Recover from Extend Failure", state=ReservationStates.Ticketed,
+                                pending=ReservationPendingStates.None_)
+                self.extend_failure = False
         else:
             if self.pending_state == ReservationPendingStates.Ticketing:
                 # Check for a pending ticket operation that may have completed
@@ -533,6 +540,10 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
                 self.last_pending_state == ReservationPendingStates.ExtendingTicket:
             return
         super().handle_failed_rpc(failed=failed)
+
+    def fail_extend(self, *, message: str, exception: Exception = None):
+        self.extend_failure = True
+        super().fail(message=message, exception=exception)
 
 
 class BrokerReservationFactory:

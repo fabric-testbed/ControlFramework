@@ -23,11 +23,38 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from flask import request
+from http.client import BAD_REQUEST, UNAUTHORIZED, FORBIDDEN, NOT_FOUND
+from typing import Union
+
+import connexion
+
+from fabric_cf.orchestrator.core.exceptions import OrchestratorException
+from fabric_cf.orchestrator.swagger_server.response.cors_response import cors_400, cors_401, cors_403, cors_404, \
+    cors_response, cors_500, cors_200
 
 
 def get_token() -> str:
-    token = request.headers.get('Authorization', None)
+    token = connexion.request.headers.get('Authorization', None)
     if token is not None:
         token = token.replace('Bearer ', '')
     return token
+
+
+def cors_error_response(error: Union[OrchestratorException, Exception]) -> cors_response:
+    if isinstance(error, OrchestratorException):
+        if error.get_http_error_code() == BAD_REQUEST:
+            return cors_400(details=str(error))
+        elif error.get_http_error_code() == UNAUTHORIZED:
+            return cors_401(details=str(error))
+        elif error.get_http_error_code() == FORBIDDEN:
+            return cors_403(details=str(error))
+        elif error.get_http_error_code() == NOT_FOUND:
+            return cors_404(details=str(error))
+        else:
+            return cors_500(details=str(error))
+    else:
+        return cors_500(details=str(error))
+
+
+def cors_success_response(response_body) -> cors_response:
+    return cors_200(response_body=response_body)

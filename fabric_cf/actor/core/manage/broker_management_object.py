@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.common.constants import Constants
@@ -108,10 +109,10 @@ class BrokerManagementObject(ServerActorManagementObject, ABCClientActorManageme
     def demand_reservation(self, *, reservation: ReservationMng, caller: AuthToken) -> ResultAvro:
         return self.client_helper.demand_reservation(reservation=reservation, caller=caller)
 
-    def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
+    def extend_reservation(self, *, reservation: id, new_end_time: datetime, sliver: BaseSliver,
                            caller: AuthToken) -> ResultAvro:
         return self.client_helper.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                                     new_units=new_units, caller=caller)
+                                                     sliver=sliver, caller=caller)
 
     def claim_delegations(self, *, broker: ID, did: str, caller: AuthToken) -> ResultDelegationAvro:
         return self.client_helper.claim_delegations(broker=broker, did=did, caller=caller)

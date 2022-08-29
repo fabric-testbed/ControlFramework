@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, List
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
@@ -176,11 +177,11 @@ class LocalBroker(LocalServerActor, ABCMgmtBrokerMixin):
 
         return False
 
-    def extend_reservation(self, *, reservation: id, new_end_time: datetime) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver) -> bool:
         self.clear_last()
         try:
             result = self.manager.extend_reservation(reservation=reservation, new_end_time=new_end_time,
-                                                     new_units=Constants.EXTEND_SAME_UNITS, caller=self.auth)
+                                                     sliver=sliver, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0

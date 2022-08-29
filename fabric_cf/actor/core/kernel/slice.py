@@ -170,11 +170,12 @@ class Slice(ABCSlice):
     def is_empty(self) -> bool:
         return self.reservations.is_empty()
 
-    def prepare(self):
+    def prepare(self, *, recover: bool = False):
         self.reservations.clear()
         self.delegations.clear()
-        self.state_machine.clear()
-        self.transition_slice(operation=SliceStateMachine.CREATE)
+        if not recover:
+            self.state_machine.clear()
+            self.transition_slice(operation=SliceStateMachine.CREATE)
 
     def register(self, *, reservation: ABCReservationMixin):
         if self.reservations.contains(rid=reservation.get_reservation_id()):
@@ -284,6 +285,30 @@ class Slice(ABCSlice):
         state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
 
         if slice_state == SliceState.StableError or slice_state == SliceState.StableOk:
+            return True
+
+        return False
+
+    def is_modify_ok(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.ModifyOK:
+            return True
+
+        return False
+
+    def is_modify_error(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.ModifyError:
+            return True
+
+        return False
+
+    def is_modified(self) -> bool:
+        state_changed, slice_state = self.transition_slice(operation=SliceStateMachine.REEVALUATE)
+
+        if slice_state == SliceState.ModifyError or slice_state == SliceState.ModifyOK:
             return True
 
         return False

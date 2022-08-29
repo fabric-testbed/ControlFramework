@@ -5,17 +5,18 @@ from __future__ import absolute_import
 from flask import json
 from six import BytesIO
 
+from fabric_cf.orchestrator.swagger_server.models.status500_internal_server_error import Status500InternalServerError  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.models.version import Version  # noqa: E501
 from fabric_cf.orchestrator.swagger_server.test import BaseTestCase
 
 
-class TestDefaultController(BaseTestCase):
-    """DefaultController integration test stubs"""
+class TestVersionController(BaseTestCase):
+    """VersionController integration test stubs"""
 
     def test_version_get(self):
         """Test case for version_get
 
-        version
+        Version
         """
         response = self.client.open(
             '//version',
