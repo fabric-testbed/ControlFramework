@@ -96,3 +96,10 @@ class ABCBrokerReservation(ABCServerReservation):
         """
         Marks the reservation as exporting.
         """
+
+    @abstractmethod
+    def fail_extend(self, *, message: str, exception: Exception = None):
+        """
+        Fail the reservation when the extend ticket fails; set a flag indicating extend failure
+        Flag is later used to move the ticket back to Ticketed state
+        """

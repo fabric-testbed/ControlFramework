@@ -26,11 +26,10 @@
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
-from typing import Tuple, List
+from typing import List
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.graph.resources.abc_cbm import ABCCBMPropertyGraph
 from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
@@ -47,7 +46,6 @@ from fabric_cf.actor.security.pdp_auth import ActionId
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_slice_wrapper import OrchestratorSliceWrapper
 from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
-from fabric_cf.orchestrator.core.reservation_status_update import ReservationStatusUpdate
 from fabric_cf.orchestrator.core.response_builder import ResponseBuilder
 
 
@@ -109,54 +107,45 @@ class OrchestratorHandler:
         return None
 
     def discover_broker_query_model(self, *, controller: ABCMgmtControllerMixin, token: str = None,
-                                    level: int = 10, delete_graph: bool = True,
-                                    ignore_validation: bool = True,
-                                    graph_format: GraphFormat = GraphFormat.GRAPHML) -> Tuple[str, ABCCBMPropertyGraph or None]:
+                                    level: int = 10, graph_format: GraphFormat = GraphFormat.GRAPHML,
+                                    force_refresh: bool = False) -> str or None:
         """
         Discover all the available resources by querying Broker
         :param controller Management Controller Object
         :param token Fabric Token
         :param level: level of details
-        :param delete_graph flag indicating if the loaded graph should be deleted or not
-        :param ignore_validation flag indicating to ignore validating the graph (only needed for ADs)
         :param graph_format: Graph format
-        :return tuple of dictionary containing the BQM and ABCCBMPropertyGraph (if delete_graph = False)
+        :param force_refresh: Force fetching a fresh model from Broker
+        :return str or None
         """
-        broker = self.get_broker(controller=controller)
-        if broker is None:
-            raise OrchestratorException("Unable to determine broker proxy for this controller. "
-                                        "Please check Orchestrator container configuration and logs.")
+        broker_query_model = None
+        if not force_refresh:
+            saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
+            if saved_bqm is not None and not saved_bqm.can_refresh():
+                broker_query_model = saved_bqm.get_bqm()
 
-        model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
-                                                  graph_format=graph_format)
-        if model is None:
-            raise OrchestratorException(f"Could not discover types: {controller.get_last_error()}")
+        if broker_query_model is None:
+            broker = self.get_broker(controller=controller)
+            if broker is None:
+                raise OrchestratorException("Unable to determine broker proxy for this controller. "
+                                            "Please check Orchestrator container configuration and logs.")
 
-        graph_str = model.get_model()
+            model = controller.get_broker_query_model(broker=broker, id_token=token, level=level,
+                                                      graph_format=graph_format)
+            if model is None or model.get_model() is None or model.get_model() == '':
+                raise OrchestratorException(http_error_code=NOT_FOUND, message="Resource(s) not found!")
+            broker_query_model = model.get_model()
 
-        try:
-            if graph_str is not None and graph_str != '':
-                graph = None
-                # Load graph only when GraphML
-                if graph_format == GraphFormat.GRAPHML:
-                    graph = FimHelper.get_neo4j_cbm_graph_from_string_direct(graph_str=graph_str,
-                                                                             ignore_validation=ignore_validation)
-                    if delete_graph:
-                        FimHelper.delete_graph(graph_id=graph.get_graph_id())
-                        graph = None
-                return graph_str, graph
-            else:
-                raise OrchestratorException(http_error_code=NOT_FOUND,
-                                            message="Resource(s) not found!")
-        except Exception as e:
-            self.logger.error(traceback.format_exc())
-            raise e
+            self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format)
 
-    def list_resources(self, *, token: str, level: int) -> dict:
+        return broker_query_model
+
+    def list_resources(self, *, token: str, level: int, force_refresh: bool = False) -> dict:
         """
         List Resources
         :param token Fabric Identity Token
         :param level: level of details (default set to 1)
+        :param force_refresh: force fetching bqm from broker and override the cached model
         :raises Raises an exception in case of failure
         :returns Broker Query Model on success
         """
@@ -165,9 +154,9 @@ class OrchestratorHandler:
             self.logger.debug(f"list_resources invoked controller:{controller}")
 
             self.__authorize_request(id_token=token, action_id=ActionId.query)
-
-            broker_query_model, graph = self.discover_broker_query_model(controller=controller, token=token,
-                                                                         level=level, ignore_validation=True)
+            
+            broker_query_model = self.discover_broker_query_model(controller=controller, token=token, level=level,
+                                                                  force_refresh=force_refresh)
 
             return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
 
@@ -189,19 +178,8 @@ class OrchestratorHandler:
 
             broker_query_model = None
             graph_format = self.__translate_graph_format(graph_format=graph_format_str)
-
-            saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
-            if saved_bqm is not None and not saved_bqm.can_refresh():
-                broker_query_model = saved_bqm.get_bqm()
-
-            if broker_query_model is None:
-                broker_query_model, graph = self.discover_broker_query_model(controller=controller,
-                                                                             ignore_validation=True,
-                                                                             level=1,
-                                                                             graph_format=graph_format)
-                if broker_query_model is not None:
-                    self.controller_state.save_bqm(bqm=broker_query_model, graph_format=graph_format)
-
+            broker_query_model = self.discover_broker_query_model(controller=controller, level=1,
+                                                                  graph_format=graph_format)
             return ResponseBuilder.get_broker_query_model_summary(bqm=broker_query_model)
 
         except Exception as e:
@@ -210,7 +188,7 @@ class OrchestratorHandler:
             raise e
 
     def create_slice(self, *, token: str, slice_name: str, slice_graph: str, ssh_key: str,
-                     lease_end_time: str) -> dict:
+                     lease_end_time: str) -> List[dict]:
         """
         Create a slice
         :param token Fabric Identity Token
@@ -226,7 +204,7 @@ class OrchestratorHandler:
 
         slice_id = None
         controller = None
-        orchestrator_slice = None
+        new_slice_object = None
         asm_graph = None
         try:
             end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
@@ -252,7 +230,8 @@ class OrchestratorHandler:
 
             if existing_slices is not None and len(existing_slices) != 0:
                 for es in existing_slices:
-                    if es.get_state() != SliceState.Dead.value and es.get_state() != SliceState.Closing.value:
+                    slice_state = SliceState(es.get_state())
+                    if not SliceState.is_dead_or_closing(state=slice_state):
                         raise OrchestratorException(f"Slice {slice_name} already exists")
 
             broker = self.get_broker(controller=controller)
@@ -265,12 +244,14 @@ class OrchestratorHandler:
             slice_obj.set_client_slice(True)
             slice_obj.set_description("Description")
             slice_obj.graph_id = asm_graph.get_graph_id()
-            slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key})
+            slice_obj.set_config_properties(value={Constants.USER_SSH_KEY: ssh_key,
+                                                   Constants.PROJECT_ID: project,
+                                                   Constants.TAGS: ','.join(tags),
+                                                   Constants.CLAIMS_EMAIL: fabric_token.get_email()})
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
             auth.oidc_sub_claim = fabric_token.get_subject()
             auth.email = fabric_token.get_email()
-            auth.token = token
             slice_obj.set_owner(auth)
             slice_obj.set_project_id(project)
 
@@ -283,25 +264,19 @@ class OrchestratorHandler:
             self.logger.debug(f"Slice {slice_name}/{slice_id} added successfully")
 
             slice_obj.set_slice_id(slice_id=str(slice_id))
-            orchestrator_slice = OrchestratorSliceWrapper(controller=controller, broker=broker,
-                                                          slice_obj=slice_obj, logger=self.logger)
+            new_slice_object = OrchestratorSliceWrapper(controller=controller, broker=broker,
+                                                        slice_obj=slice_obj, logger=self.logger)
 
-            orchestrator_slice.lock()
+            new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
-            computed_reservations = orchestrator_slice.create(slice_graph=asm_graph)
+            computed_reservations = new_slice_object.create(slice_graph=asm_graph)
 
-            # Process the Slice i.e. Demand the computed reservations i.e. Add them to the policy
-            # Once added to the policy; Actor Tick Handler will do following asynchronously:
-            # 1. Ticket message exchange with broker and
-            # 2. Redeem message exchange with AM once ticket is granted by Broker
-            self.controller_state.demand_slice(controller_slice=orchestrator_slice)
-
-            for r in orchestrator_slice.computed_l3_reservations:
-                res_status_update = ReservationStatusUpdate(logger=self.logger)
-                self.controller_state.get_sut().add_active_status_watch(watch=ID(uid=r.get_reservation_id()),
-                                                                        callback=res_status_update)
+            # Enqueue the slice on the demand thread
+            # Demand thread is responsible for demanding the reservations
+            # Helps improve the create response time
+            self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -312,16 +287,15 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
         finally:
-            if orchestrator_slice is not None:
-                orchestrator_slice.unlock()
+            if new_slice_object is not None:
+                new_slice_object.unlock()
 
-    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None, include_notices: bool = True) -> dict:
+    def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None) -> List[dict]:
         """
         Get Slivers for a Slice
         :param token Fabric Identity Token
         :param slice_id Slice Id
         :param sliver_id Sliver Id
-        :param include_notices include notices
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
@@ -349,19 +323,20 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Slice# {slice_id} has no reservations",
                                             http_error_code=NOT_FOUND)
 
-            return ResponseBuilder.get_reservation_summary(res_list=reservations, include_notices=include_notices,
-                                                           include_sliver=True)
+            return ResponseBuilder.get_reservation_summary(res_list=reservations)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slivers e: {e}")
             raise e
 
-    def get_slices(self, *, token: str, slice_id: str = None, states: List[str] = None) -> dict:
+    def get_slices(self, *, token: str, states: List[str], name: str, limit: int, offset: int) -> List[dict]:
         """
         Get User Slices
         :param token Fabric Identity Token
-        :param slice_id Slice Id
         :param states Slice states
+        :param name Slice name
+        :param limit Number of slices to return
+        :param offset Offset
         :raises Raises an exception in case of failure
         :returns List of Slices on success
         """
@@ -369,18 +344,101 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"get_slices invoked for Controller: {controller}")
 
-            slice_guid = ID(uid=slice_id) if slice_id is not None else None
             slice_states = SliceState.str_list_to_state_list(states=states)
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
             project, tags = fabric_token.get_project_and_tags()
-            slice_list = controller.get_slices(slice_id=slice_guid, state=slice_states,
-                                               email=fabric_token.get_email(), project=project)
+            # FIX ME: Hack until portal changes to project based view
+            project = None
+            slice_list = controller.get_slices(state=slice_states, email=fabric_token.get_email(), project=project,
+                                               slice_name=name, limit=limit, offset=offset)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slices e: {e}")
+            raise e
+
+    def modify_slice(self, *, token: str, slice_id: str, slice_graph: str) -> List[dict]:
+        """
+        Modify a slice
+        :param token Fabric Identity Token
+        :param slice_id Slice Id
+        :param slice_graph Slice Graph Model
+        :param ssh_key ssh_key
+        :raises Raises an exception in case of failure
+        :returns List of reservations created for the Slice on success
+        """
+        if self.globals.is_maintenance_mode_on():
+            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
+
+        asm_graph = None
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"modify_slice invoked for Controller: {controller}")
+
+            # Check if an Active slice exists already with the same name for the user
+            slice_list = controller.get_slices(slice_id=slice_id)
+            if slice_list is None or len(slice_list) == 0:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                raise OrchestratorException(f"User# has no Slices",
+                                            http_error_code=NOT_FOUND)
+
+            slice_obj = next(iter(slice_list))
+            if slice_obj.get_graph_id() is None:
+                raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
+
+            slice_state = SliceState(slice_obj.get_state())
+
+            if not SliceState.is_stable(state=slice_state):
+                self.logger.info(f"Unable to modify Slice# {slice_id} that is not yet stable, try again later")
+                raise OrchestratorException(f"Unable to modify Slice# {slice_id} that is not yet stable, "
+                                            f"try again later")
+
+            # Validate the slice graph
+            topology = ExperimentTopology(graph_string=slice_graph)
+            topology.validate()
+
+            asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
+            asm_graph.validate_graph()
+
+            # Authorize the slice
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
+            project, tags = fabric_token.get_project_and_tags()
+            broker = self.get_broker(controller=controller)
+            if broker is None:
+                raise OrchestratorException("Unable to determine broker proxy for this controller. "
+                                            "Please check Orchestrator container configuration and logs.")
+
+            slice_object = OrchestratorSliceWrapper(controller=controller, broker=broker,
+                                                    slice_obj=slice_obj, logger=self.logger)
+
+            computed_reservations = slice_object.modify(new_slice_graph=asm_graph)
+
+            FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
+
+            slice_obj.graph_id = asm_graph.get_graph_id()
+            config_props = slice_obj.get_config_properties()
+            config_props[Constants.PROJECT_ID] = project
+            config_props[Constants.TAGS] = ','.join(tags)
+            slice_obj.set_config_properties(value=config_props)
+
+            if not controller.update_slice(slice_obj=slice_obj, modify_state=True):
+                self.logger.error(f"Failed to update slice: {slice_id} error: {controller.get_last_error()}")
+
+            # Enqueue the slice on the demand thread
+            # Demand thread is responsible for demanding the reservations
+            # Helps improve the create response time
+            self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
+
+            return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
+        except Exception as e:
+            if asm_graph is not None:
+                FimHelper.delete_graph(graph_id=asm_graph.get_graph_id())
+
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing modify_slice e: {e}")
             raise e
 
     def delete_slice(self, *, token: str, slice_id: str = None):
@@ -398,6 +456,8 @@ class OrchestratorHandler:
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
 
             project, tags = fabric_token.get_project_and_tags()
+            # FIX ME: Hack until portal changes to project based view
+            project = None
             slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
                                                project=project)
 
@@ -408,11 +468,11 @@ class OrchestratorHandler:
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
-            if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
+            if SliceState.is_dead_or_closing(state=slice_state):
                 raise OrchestratorException(f"Slice# {slice_id} already closed",
                                             http_error_code=BAD_REQUEST)
 
-            if slice_state != SliceState.StableOK and slice_state != SliceState.StableError:
+            if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
                 self.logger.info(f"Unable to delete Slice# {slice_guid} that is not yet stable, try again later")
                 raise OrchestratorException(f"Unable to delete Slice# {slice_guid} that is not yet stable, "
                                             f"try again later")
@@ -423,6 +483,50 @@ class OrchestratorHandler:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing delete_slice e: {e}")
+            raise e
+
+    def modify_accept(self, *, token: str, slice_id: str) -> dict:
+        """
+        Accept the last modify on the slice
+        :param token Fabric Identity Token
+        :param slice_id Slice Id
+        :raises Raises an exception in case of failure
+        :returns Slice Graph on success
+        """
+        try:
+            controller = self.controller_state.get_management_actor()
+            self.logger.debug(f"modify_accept invoked for Controller: {controller}")
+
+            slice_guid = ID(uid=slice_id) if slice_id is not None else None
+
+            # TODO change this to accept
+            self.__authorize_request(id_token=token, action_id=ActionId.modify)
+
+            slice_list = controller.get_slices(slice_id=slice_guid)
+            if slice_list is None or len(slice_list) == 0:
+                if controller.get_last_error() is not None:
+                    self.logger.error(controller.get_last_error())
+                raise OrchestratorException(f"User# has no Slices",
+                                            http_error_code=NOT_FOUND)
+
+            slice_obj = next(iter(slice_list))
+            slice_state = SliceState(slice_obj.get_state())
+            if not SliceState.is_modified(state=slice_state):
+                self.logger.info(f"Unable to accept modify Slice# {slice_guid} that was not modified")
+                raise OrchestratorException(f"Unable to accept modify Slice# {slice_guid} that was not modified")
+
+            if slice_obj.get_graph_id() is None:
+                raise OrchestratorException(f"Slice# {slice_obj} does not have graph id")
+
+            slice_topology = FimHelper.prune_graph(graph_id=slice_obj.get_graph_id())
+
+            controller.accept_update_slice(slice_id=ID(uid=slice_id))
+
+            slice_model_str = slice_topology.serialize()
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)[0]
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Exception occurred processing modify_accept e: {e}")
             raise e
 
     def get_slice_graph(self, *, token: str, slice_id: str, graph_format_str: str) -> dict:
@@ -465,7 +569,7 @@ class OrchestratorHandler:
                 raise OrchestratorException(f"Slice# {slice_obj} graph could not be loaded")
 
             slice_model_str = slice_model.serialize_graph(format=graph_format)
-            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)
+            return ResponseBuilder.get_slice_summary(slice_list=slice_list, slice_model=slice_model_str)[0]
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing get_slice_graph e: {e}")
@@ -498,11 +602,11 @@ class OrchestratorHandler:
             slice_object = next(iter(slice_list))
 
             slice_state = SliceState(slice_object.get_state())
-            if slice_state == SliceState.Dead or slice_state == SliceState.Closing:
+            if SliceState.is_dead_or_closing(state=slice_state):
                 raise OrchestratorException(f"Slice# {slice_id} already closed",
                                             http_error_code=BAD_REQUEST)
 
-            if slice_state != SliceState.StableOK and slice_state != SliceState.StableError:
+            if not SliceState.is_stable(state=slice_state) and not SliceState.is_modified(state=slice_state):
                 self.logger.info(f"Unable to renew Slice# {slice_guid} that is not yet stable, try again later")
                 raise OrchestratorException(f"Unable to renew Slice# {slice_guid} that is not yet stable, "
                                             f"try again later")
@@ -531,7 +635,8 @@ class OrchestratorHandler:
 
                 self.logger.debug(f"Extending reservation with reservation# {r.get_reservation_id()}")
                 result = controller.extend_reservation(reservation=ID(uid=r.get_reservation_id()),
-                                                       new_end_time=new_end_time)
+                                                       new_end_time=new_end_time,
+                                                       sliver=None)
                 if not result:
                     failed_to_extend_rid_list.append(r.get_reservation_id())
 
@@ -541,7 +646,8 @@ class OrchestratorHandler:
                     self.logger.error(f"Failed to update lease end time: {new_end_time} in Slice: {slice_object}")
                     self.logger.error(controller.get_last_error())
 
-            return ResponseBuilder.get_response_summary(rid_list=failed_to_extend_rid_list)
+            if len(failed_to_extend_rid_list) > 0:
+                raise OrchestratorException(f"Failed to extend reservation# {failed_to_extend_rid_list}")
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing renew e: {e}")

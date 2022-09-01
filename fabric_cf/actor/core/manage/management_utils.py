@@ -67,7 +67,9 @@ class MyQueryResponseHandler(ABCQueryResponseHandler):
 class ManagementUtils:
     @staticmethod
     def update_slice(*, slice_obj: ABCSlice, slice_mng: SliceAvro) -> ABCSlice:
+        slice_obj.set_graph_id(graph_id=slice_mng.get_graph_id())
         slice_obj.set_lease_end(lease_end=slice_mng.get_lease_end())
+        slice_obj.set_config_properties(value=slice_mng.get_config_properties())
         return slice_obj
 
     @staticmethod

@@ -48,7 +48,7 @@ class NetworkServiceInventory(InventoryForType):
             return vlan_range
         if labels.vlan_range is not None:
             vlans = labels.vlan_range.split("-")
-            vlan_range = list(range(int(vlans[0]), int(vlans[1])))
+            vlan_range = list(range(int(vlans[0]), int(vlans[1]) + 1))
         elif labels.vlan is not None:
             vlan_range = [int(labels.vlan)]
         return vlan_range
@@ -163,14 +163,28 @@ class NetworkServiceInventory(InventoryForType):
                         lab_cap_delegations=ns.get_label_delegations())
 
                     # Get the VLAN range
-                    vlan_range = self.__extract_vlan_range(labels=delegated_label)
-                    vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
-                                                                existing_reservations=existing_reservations)
+                    if bqm_ifs.get_type() != InterfaceType.FacilityPort:
+                        vlan_range = self.__extract_vlan_range(labels=delegated_label)
+                    else:
+                        vlan_range = self.__extract_vlan_range(labels=bqm_ifs.labels)
 
-                    # Allocate the first available VLAN
                     if vlan_range is not None:
-                        requested_ifs.labels.vlan = str(vlan_range[0])
-                        requested_ifs.label_allocations = Labels(vlan=str(vlan_range[0]))
+                        vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
+                                                                    existing_reservations=existing_reservations)
+                        if bqm_ifs.get_type() != InterfaceType.FacilityPort:
+                            # Allocate the first available VLAN
+                            requested_ifs.labels.vlan = str(vlan_range[0])
+                            requested_ifs.label_allocations = Labels(vlan=str(vlan_range[0]))
+                        else:
+                            if requested_ifs.labels is None or requested_ifs.labels.vlan is None:
+                                return requested_ifs
+
+                            if int(requested_ifs.labels.vlan) not in vlan_range:
+                                raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
+                                                      msg=f"Vlan for L3 service {requested_ifs.labels.vlan} "
+                                                          f"is outside the available range "
+                                                          f"{vlan_range}")
+
                     break
         return requested_ifs
 
@@ -208,6 +222,7 @@ class NetworkServiceInventory(InventoryForType):
             - exclude the 1st subnet (reserved for control plane)
             - exclude the subnets already assigned to other V4/V6 NetworkService on the same owner switch
             - allocate the first available subnet to the NetworkService
+        :param rid: Reservation ID
         :param requested_ns: Requested NetworkService
         :param owner_switch: BQM Owner site switch identified to serve the NetworkService
         :param existing_reservations: Existing Reservations which also are served by the owner switch
@@ -268,7 +283,7 @@ class NetworkServiceInventory(InventoryForType):
                             f"{allocated_sliver.get_gateway().lab.ipv4_subnet}"
                             f" to res# {reservation.get_reservation_id()}")
 
-                    elif allocated_sliver.get_gateway().lab.ipv6_subnet is not None:
+                    elif allocated_sliver.get_type() == ServiceType.FABNetv6:
                         subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().lab.ipv6_subnet)
                         subnet_list.remove(subnet_to_remove)
                         self.logger.debug(

@@ -115,7 +115,7 @@ class Ticket(ABCConcreteSet):
         """
         return self.resource_ticket
 
-    def add(self, *, concrete_set, configure: bool):
+    def add(self, *, concrete_set: ABCConcreteSet, configure: bool):
         raise TicketException("add() is not supported by Ticket")
 
     def change(self, *, concrete_set: ABCConcreteSet, configure: bool):

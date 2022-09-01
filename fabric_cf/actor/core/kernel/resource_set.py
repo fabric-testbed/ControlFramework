@@ -50,47 +50,7 @@ class ResourceSet:
     ResourceSet with an attached ConcreteSet is "concrete." The ConcreteSet binds
     real resources (or a promise) for some or all of the abstract units in the
     set: for example, a concrete ResourceSet can represent a ticket or
-    lease. Adding or removing concrete resources does not affect the number of
-    abstract units. If there are fewer concrete units than abstract units, the
-    set has a "deficit".
-
-    An "elastic" ResourceSet may be filled at less than its full request, and it
-    may change size on extends. An actor may modify an elastic ResourceSet on an
-    active ReservationClient by calling "flex", if there is no pending operation
-    in progress, e.g., in preparation for an elastic extend. This class updates
-    the unit count to match the concrete resources on each reserve or extend (on
-    a server), or update (on a client).
-
-    Operations on the ConcreteSet through this class may drive probes and state
-    transitions on the underlying resources transferred in and out of the
-    ResourceSet (e.g., node configuration and node reboot for a COD authority, or
-    resource membership changes on a orchestrator). ConcreteSets are
-    responsible for their own synchronization: calls to ConcreteSet go through
-    pre-op "prepare" or post-op "service" methods in this class, which may block
-    and should not hold any higher-level locks. Most other operations are called
-    through Mapper or the Reservation class with the Manager lock held.
-
-    Implementation notes
-    The unit count is updated immediately to reflect additions or deletions
-    from the set. Updates to the unit count must occur only in the locked
-    methods. Configuration actions on the ConcreteSet (e.g., as resources join
-    and leave the set) must occur only in unlocked methods (e.g., "service"). A
-    tricky part is flex(), which updates abstract count to reflect a new request:
-    it is unlocked, which could race with an incoming unsolicited lease (which
-    are currently allowed), or with overlapping requests on the same set (which
-    are currently not allowed).
-    ResourceSet was conceived as supporting methods that are independent of
-    context and type of ConcreteSet. That ideal has eroded somewhat, and some key
-    fields and methods are specific to a particular context or role. Someday it
-    may be useful to break this into subclasses.
-    Currently leases are validated only with validateIncoming(). There may be
-    some additional checks to enforce.
-    No changes to ResourceData on merges. Needs thought and documentation. We
-    should remove the properties argument on ConcreteSet.change.
-    The 'null ticket corner case' (see above) is a source of complexity, and
-    should be cleaned up.
-    Calls that "reach around" ResourceSet to the concrete set are
-    discouraged/deprecated.
+    lease.
     """
     def __init__(self, *, concrete: ABCConcreteSet = None, gained: ABCConcreteSet = None,
                  lost: ABCConcreteSet = None, modified: ABCConcreteSet = None,
@@ -228,12 +188,6 @@ class ResourceSet:
         else:
             self.type = resource_set.type
             difference = 0
-            if resource_set.gained is None or resource_set.lost is not None or resource_set.modified is not None:
-                raise ResourcesException("Internal Error: service overrun in hardChange")
-
-            if resource_set.gained is not None:
-                self.gained = resource_set.gained
-                difference = resource_set.gained.get_units()
 
             if resource_set.lost is not None:
                 self.lost = resource_set.lost

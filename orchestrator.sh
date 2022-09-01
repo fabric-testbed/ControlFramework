@@ -1,3 +1,2 @@
 #!/usr/bin/env bash
-
-python3 -m fabric_cf.orchestrator
+docker exec -i orchestrator-db psql orchestrator fabric < psql.upgrade

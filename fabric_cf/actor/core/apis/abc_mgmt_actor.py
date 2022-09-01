@@ -41,8 +41,8 @@ if TYPE_CHECKING:
 
 class ABCMgmtActor(ABCComponent):
     @abstractmethod
-    def get_slices(self, *, slice_id: ID = None, slice_name: str = None,
-                   email: str = None, project: str = None, state: List[int] = None) -> List[SliceAvro] or None:
+    def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
+                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         """
         Obtains all slices.
         @param slice_id slice id
@@ -50,6 +50,8 @@ class ABCMgmtActor(ABCComponent):
         @param email email
         @param project project id
         @param state slice state
+        @param limit limit
+        @param offset offset
         @return returns list of slices
         """
 
@@ -70,13 +72,22 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def update_slice(self, *, slice_obj: SliceAvro) -> bool:
+    def update_slice(self, *, slice_obj: SliceAvro, modify_state: bool = False) -> bool:
         """
         Updates the specified slice.
         The only updatable slice attributes are:
         - description
         - all properties lists
         @param slice_obj slice
+        @param modify_state - trigger state change
+        @return true for success; false otherwise
+        """
+
+    @abstractmethod
+    def accept_update_slice(self, *, slice_id: ID) -> bool:
+        """
+        Accept the last slice update
+        @param slice_id slice_id
         @return true for success; false otherwise
         """
 

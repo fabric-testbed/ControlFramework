@@ -23,78 +23,76 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from http.client import INTERNAL_SERVER_ERROR
-
-from fss_utils.http_errors import cors_response
 
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.orchestrator_handler import OrchestratorHandler
-from fabric_cf.orchestrator.swagger_server.models.success import Success  # noqa: E501
+from fabric_cf.orchestrator.swagger_server.models import Resource
+from fabric_cf.orchestrator.swagger_server.models.resources import Resources  # noqa: E501
 from fabric_cf.orchestrator.swagger_server import received_counter, success_counter, failure_counter
 from fabric_cf.orchestrator.swagger_server.response.constants import GET_METHOD, RESOURCES_PATH, PORTAL_RESOURCES_PATH
-from fabric_cf.orchestrator.swagger_server.response.utils import get_token
+from fabric_cf.orchestrator.swagger_server.response.utils import get_token, cors_error_response, cors_success_response
 
 
-def portalresources_get(graph_format):  # noqa: E501
+def portalresources_get(graph_format) -> Resources:  # noqa: E501
     """Retrieve a listing and description of available resources for portal
 
     Retrieve a listing and description of available resources for portal # noqa: E501
 
-    :param graph_format: Graph format
+    :param graph_format: graph format
     :type graph_format: str
 
-    :rtype: Success
+    :rtype: Resources
     """
     handler = OrchestratorHandler()
     logger = handler.get_logger()
     received_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
     try:
-        value = handler.portal_list_resources(graph_format_str=graph_format)
-        response = Success()
-        response.value = value
+        bqm_dict = handler.portal_list_resources(graph_format_str=graph_format)
+        response = Resources()
+        response.data = [Resource().from_dict(bqm_dict)]
+        response.size = 1
+        response.type = "resources"
         success_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
-        return response
+        return cors_success_response(response_body=response)
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
-        msg = str(e).replace("\n", "")
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
+        return cors_error_response(error=e)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, PORTAL_RESOURCES_PATH).inc()
-        msg = str(e).replace("\n", "")
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
+        return cors_error_response(error=e)
 
 
-def resources_get(level: int):  # noqa: E501
+def resources_get(level, force_refresh) -> Resources:  # noqa: E501
     """Retrieve a listing and description of available resources
+
+    Retrieve a listing and description of available resources # noqa: E501
 
     :param level: Level of details
     :type level: int
-    :param graph_format: Graph format
-    :type graph_format: str
+    :param force_refresh: Force to retrieve current available resource information.
+    :type force_refresh: bool
 
-
-    :rtype: Success
+    :rtype: Resources
     """
     handler = OrchestratorHandler()
     logger = handler.get_logger()
     received_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
     try:
         token = get_token()
-        value = handler.list_resources(token=token, level=level)
-        response = Success()
-        response.value = value
+        bqm_dict = handler.list_resources(token=token, level=level, force_refresh=force_refresh)
+        response = Resources()
+        response.data = [Resource().from_dict(bqm_dict)]
+        response.size = 1
+        response.type = "resources"
         success_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
-        return response
+        return cors_success_response(response_body=response)
     except OrchestratorException as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
-        msg = str(e).replace("\n", "")
-        return cors_response(status=e.get_http_error_code(), xerror=str(e), body=msg)
+        return cors_error_response(error=e)
     except Exception as e:
         logger.exception(e)
         failure_counter.labels(GET_METHOD, RESOURCES_PATH).inc()
-        msg = str(e).replace("\n", "")
-        return cors_response(status=INTERNAL_SERVER_ERROR, xerror=str(e), body=msg)
-
+        return cors_error_response(error=e)

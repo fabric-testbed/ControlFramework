@@ -316,8 +316,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         # Alternative: could transition to (state, None) to allow retry of the
         # redeem/extend by a higher level.
         if update_data.failed:
-            self.transition(prefix="failed lease update", state=ReservationStates.Failed,
-                            pending=ReservationPendingStates.None_)
+            self.fail(message=f"failed lease update- {update_data.get_message()}",
+                      sliver=incoming.get_resources().get_sliver())
+            #self.transition(prefix="failed lease update", state=ReservationStates.Failed,
+            #                pending=ReservationPendingStates.None_)
         else:
             try:
                 self.lease_update_satisfies(incoming=incoming, update_data=update_data)
@@ -457,9 +459,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 continue
 
             pred_state = self.redeem_predecessors.get(ID(uid=rid))
+            if not pred_state:
+                self.logger.error(f"Redeem predecessors not found {rid} for {self.get_reservation_id()}")
+                continue
             parent_res = pred_state.get_reservation()
-            if parent_res is not None and \
-                    ReservationStates(parent_res.get_state()) == ReservationStates.Ticketed:
+            if parent_res is not None and (parent_res.is_ticketed() or parent_res.is_active()):
                 node_sliver = parent_res.get_resources().get_sliver()
                 component = node_sliver.attached_components_info.get_device(name=component_name)
                 graph_id, bqm_component_id = component.get_node_map()
@@ -475,7 +479,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                     ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
+                print(f"KOMAL --- {ifs}")
+
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {self.resources.sliver}")
+            print(f"KOMAL --- {self.resources.sliver}")
 
     def approve_ticket(self):
         """
@@ -502,7 +509,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 self.fail(message=f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"
                                   f" is in a terminal state")
 
-            if not (pred_state.get_reservation().is_ticketed() or pred_state.get_reservation().is_active_ticketed()):
+            if not (pred_state.get_reservation().is_ticketed() or pred_state.get_reservation().is_active()):
                 approved = False
                 break
 
@@ -580,7 +587,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
     def close(self):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Failed:
-            self.logger.debug("Reservation in Nascent or failed state, transition to close")
+            self.logger.debug(f"Reservation in state: {self.state}, transition to {ReservationStates.Closed}")
             self.transition(prefix="close", state=ReservationStates.Closed, pending=self.pending_state)
             if self.broker is not None:
                 self.logger.debug("Triggering relinquish")
@@ -1165,6 +1172,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
     def service_update_ticket(self):
         if self.last_ticket_update.successful():
             self.resources.service_update(reservation=self)
+        if self.resources is not None and self.resources.sliver is not None:
             self.update_slice_graph(sliver=self.resources.sliver)
 
     def set_broker(self, *, broker: ABCBrokerProxy) -> bool:
@@ -1645,9 +1653,12 @@ class ReservationClient(Reservation, ABCControllerReservation):
         elif self.state == ReservationStates.Failed:
             self.logger.warning("Reservation #{} has failed".format(self.get_reservation_id()))
 
-    def fail(self, *, message: str, exception: Exception = None):
+    def fail(self, *, message: str, exception: Exception = None, sliver: BaseSliver = None):
         super().fail(message=message, exception=exception)
-        if self.requested_resources is not None and self.requested_resources.sliver is not None:
+        if sliver is None and self.requested_resources is not None and self.requested_resources.sliver is not None:
+            sliver = self.requested_resources.sliver
+
+        if sliver is not None:
             self.update_slice_graph(sliver=self.requested_resources.sliver)
 
     def update_slice_graph(self, *, sliver: BaseSliver):
@@ -1656,18 +1667,23 @@ class ReservationClient(Reservation, ABCControllerReservation):
         :param sliver: sliver
         :return:
         """
-        self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
-                          f"Slice Graph# {self.slice.get_graph_id()}")
-        error_message = self.get_error_message()
-        if error_message is None:
-            error_message = self.get_last_ticket_update()
-        if error_message is None:
-            error_message = self.get_last_lease_update()
-        self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
-                                      reservation_state=self.state.name,
-                                      error_message=error_message)
-        self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
-                          f"Slice Graph# {self.slice.get_graph_id()}")
+        try:
+            self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
+                              f"Slice Graph# {self.slice.get_graph_id()}")
+            error_message = self.get_error_message()
+            if error_message is None:
+                error_message = self.get_last_ticket_update()
+            if error_message is None:
+                error_message = self.get_last_lease_update()
+            self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
+                                          reservation_state=self.state.name,
+                                          error_message=error_message)
+            self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
+                              f"Slice Graph# {self.slice.get_graph_id()}")
+
+        except Exception as e:
+            self.logger.error(f"Failed to update the ASM Graph: {e}")
+            self.logger.error(traceback.format_exc())
 
     def mark_close_by_ticket_review(self, *, update_data: UpdateData):
         if self.last_ticket_update is not None:

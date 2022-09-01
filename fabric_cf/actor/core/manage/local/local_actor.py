@@ -51,12 +51,12 @@ class LocalActor(LocalProxy, ABCMgmtActor):
         if not isinstance(manager, ActorManagementObject):
             raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
-    def get_slices(self, *, slice_id: ID = None, slice_name: str = None,
-                   email: str = None, project: str = None, state: List[int] = None) -> List[SliceAvro] or None:
+    def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
+                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         self.clear_last()
         try:
-            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, state=state,
-                                             slice_name=slice_name, email=email, project=project)
+            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, state=state, slice_name=slice_name,
+                                             email=email, project=project, limit=limit, offset=offset)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -141,15 +141,27 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
-    def update_slice(self, *, slice_obj: SliceAvro) -> bool:
+    def update_slice(self, *, slice_obj: SliceAvro, modify_state: bool = False) -> bool:
         self.clear_last()
         try:
-            result = self.manager.update_slice(slice_mng=slice_obj, caller=self.auth)
+            result = self.manager.update_slice(slice_mng=slice_obj, caller=self.auth, modify_state=modify_state)
             self.last_status = result
 
             if self.last_status.get_code() == 0:
                 return True
 
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return False
+
+    def accept_update_slice(self, *, slice_id: ID) -> bool:
+        self.clear_last()
+        try:
+            result = self.manager.accept_update_slice(slice_id=slice_id, caller=self.auth)
+            self.last_status = result
+
+            return result.get_code() == 0
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 

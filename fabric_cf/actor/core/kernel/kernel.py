@@ -44,7 +44,7 @@ from fabric_cf.actor.core.kernel.reservation import Reservation
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
-from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, SliceOperation
 from fabric_cf.actor.core.kernel.slice_table import SliceTable
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
@@ -713,6 +713,28 @@ class Kernel:
                 self.unregister_no_check(reservation=reservation, slice_object=local_slice)
                 raise e
 
+    def modify_slice(self, *, slice_object: ABCSlice):
+        """
+        Modify the specified slice with the kernel.
+        @param slice_object slice_object
+        @throws Exception in case of failure
+        """
+        if slice_object is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        real = self.get_slice(slice_id=slice_object.get_slice_id())
+
+        if real is None:
+            self.logger.debug("Slice object not found in local data structure")
+        else:
+            if not real.is_dead_or_closing():
+                real.set_config_properties(value=slice_object.get_config_properties())
+                # Transition slice to Configuring state
+                real.transition_slice(operation=SliceStateMachine.MODIFY)
+                real.set_graph_id(graph_id=slice_object.get_graph_id())
+                real.set_dirty()
+                self.plugin.get_database().update_slice(slice_object=real)
+
     def register_slice(self, *, slice_object: ABCSlice):
         """
         Registers the specified slice with the kernel.
@@ -750,6 +772,26 @@ class Kernel:
 
         self.plugin.get_database().remove_reservation(rid=rid)
         self.logger.debug(f"Reservation # {rid} removed from DB")
+
+    def modify_accept(self, *, slice_id: ID):
+        """
+        Removes the specified slice.
+        @param slice_id slice identifier
+        @throws Exception if the slice contains active reservations or removal fails
+        """
+        if slice_id is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        slice_object = self.get_slice(slice_id=slice_id)
+
+        if slice_object is None:
+            self.logger.warning("Slice object not found in local data structure")
+        else:
+            if not slice_object.is_dead_or_closing():
+                # Transition slice to Configuring state
+                slice_object.transition_slice(operation=SliceStateMachine.MODIFY_ACCEPT)
+                slice_object.set_dirty()
+                self.plugin.get_database().update_slice(slice_object=slice_object)
 
     def remove_slice(self, *, slice_id: ID):
         """
@@ -836,7 +878,7 @@ class Kernel:
         @param slice_object slice to re-register
         @throws Exception if the slice cannot be registered
         """
-        slice_object.prepare()
+        slice_object.prepare(recover=True)
         self.slices.add(slice_object=slice_object)
 
         try:

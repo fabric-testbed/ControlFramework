@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING, List
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 if TYPE_CHECKING:
@@ -66,13 +67,13 @@ class ABCClientActorManagementObject(ABC):
         """
 
     @abstractmethod
-    def extend_reservation(self, *, reservation: id, new_end_time: datetime, new_units: int,
+    def extend_reservation(self, *, reservation: id, new_end_time: datetime, sliver: BaseSliver,
                            caller: AuthToken) -> ResultAvro:
         """
         Extend a reservation
         @param reservation : reservation to be extended
         @param new_end_time: new end time
-        @param new_units: new units
+        @param sliver: new sliver
         @param caller: caller
         @return success or failure status
         """

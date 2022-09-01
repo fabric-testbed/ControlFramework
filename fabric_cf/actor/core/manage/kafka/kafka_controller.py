@@ -36,6 +36,7 @@ from fabric_mb.message_bus.messages.get_actors_request_avro import GetActorsRequ
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.get_reservation_units_request_avro import GetReservationUnitsRequestAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
+from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
@@ -98,7 +99,7 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
     def demand_reservation_rid(self, *, rid: ID) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:

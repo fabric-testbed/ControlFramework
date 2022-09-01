@@ -33,15 +33,17 @@ RESOURCES_PATH = '/resources'
 PORTAL_RESOURCES_PATH = '/portalresources'
 
 SLICES_CREATE_PATH = '/slices/create'
-SLICES_DELETE_PATH = '/slices/delete'
+SLICES_MODIFY_PATH = '/slices/modify/{slice_id}'
+SLICES_MODIFY_ACCEPT_PATH = '/slices/modify/{slice_id}/accept'
+SLICES_DELETE_PATH = '/slices/delete/{slice_id}'
 SLICES_GET_PATH = '/slices'
-SLICES_GET_SLICE_ID_PATH = '/slices/{sliceID}'
-SLICES_RENEW_PATH = '/slices/renew/{sliceID}'
-SLICE_STATUS_SLICE_ID_PATH = '/slices/status/{sliceID}'
+SLICES_GET_SLICE_ID_PATH = '/slices/{slice_id}'
+SLICES_RENEW_PATH = '/slices/renew/{slice_id}'
+SLICE_STATUS_SLICE_ID_PATH = '/slices/status/{slice_id}'
 
 
 SLIVERS_GET_PATH = '/slivers'
-SLIVERS_GET_SLIVER_ID_PATH = '/slivers/{sliverID}'
-SLIVERS_STATUS_SLIVER_ID_PATH = '/slivers/status/{sliverID}'
+SLIVERS_GET_SLIVER_ID_PATH = '/slivers/{sliver_id}'
+SLIVERS_STATUS_SLIVER_ID_PATH = '/slivers/status/{sliver_id}'
 
 VERSIONS_PATH = '/version'

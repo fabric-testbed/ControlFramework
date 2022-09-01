@@ -45,7 +45,7 @@ runtime:
   kafka-sasl-consumer-password:
   prometheus.port: 11000
   kafka.request.timeout.ms: 120000
-  rpc.request.timeout.seconds: 900
+  rpc.request.timeout.seconds: 1200
 
 logging:
   ## The directory in which actor should create log files.
@@ -70,7 +70,7 @@ logging:
   logger: site1-am
 
 oauth:
-  jwks-url: https://cm.fabric-testbed.net/certs
+  jwks-url: https://cm.fabric-testbed.net/credmgr/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
   verify-exp: True

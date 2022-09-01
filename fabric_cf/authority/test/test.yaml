@@ -70,7 +70,7 @@ logging:
   logger: site1-am
 
 oauth:
-  jwks-url: https://alpha-2.fabric-testbed.net/certs
+  jwks-url: https://alpha-2.fabric-testbed.net/credmgr/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
   verify-exp: False

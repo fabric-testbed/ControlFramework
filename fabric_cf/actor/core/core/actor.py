@@ -46,6 +46,7 @@ from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
 from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceTypes
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.proxies.proxy import Proxy
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
@@ -425,7 +426,14 @@ class ActorMixin(ABCActorMixin):
 
         self.logger.debug("Recovering client slices")
         client_slices = self.plugin.get_database().get_slices(slc_type=[SliceTypes.ClientSlice,
-                                                                        SliceTypes.BrokerClientSlice])
+                                                                        SliceTypes.BrokerClientSlice],
+                                                              state=[SliceState.Configuring.value,
+                                                                     SliceState.Nascent.value,
+                                                                     SliceState.StableOK.value,
+                                                                     SliceState.StableError.value,
+                                                                     SliceState.Modifying.value,
+                                                                     SliceState.ModifyOK.value,
+                                                                     SliceState.ModifyError.value])
         self.logger.debug("Found {} client slices".format(len(client_slices)))
         self.recover_slices(slices=client_slices)
         self.logger.debug("Recovery of client slices complete")
@@ -698,6 +706,9 @@ class ActorMixin(ABCActorMixin):
     def register_slice(self, *, slice_object: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_object)
 
+    def modify_slice(self, *, slice_object: ABCSlice):
+        self.wrapper.modify_slice(slice_object=slice_object)
+
     def register_delegation(self, *, delegation: ABCDelegation):
         self.wrapper.register_delegation(delegation=delegation)
 
@@ -713,6 +724,9 @@ class ActorMixin(ABCActorMixin):
 
     def remove_slice_by_slice_id(self, *, slice_id: ID):
         self.wrapper.remove_slice(slice_id=slice_id)
+
+    def modify_accept(self, *, slice_id: ID):
+        self.wrapper.modify_accept(slice_id=slice_id)
 
     def re_register_delegation(self, *, delegation: ABCDelegation):
         self.wrapper.re_register_delegation(delegation=delegation)
