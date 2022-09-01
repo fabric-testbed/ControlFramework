@@ -40,6 +40,7 @@ from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 
 process_pool_logger = None
 
+
 class AnsibleHandlerProcessor(HandlerProcessor):
     """
     Ansible Handler Processor
@@ -102,7 +103,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.process_pool_manager = multiprocessing.Manager()
         self.process_pool_lock = self.process_pool_manager.Lock()
 
-    def start(self):
+    def start(self, *, fresh: bool = False):
         """
         Start the Future Processor Thread
         """
@@ -110,6 +111,9 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.thread.setName("FutureProcessor")
         self.thread.setDaemon(True)
         self.thread.start()
+
+        if fresh:
+            self.clean_restart()
 
     def shutdown(self):
         """
@@ -158,7 +162,13 @@ class AnsibleHandlerProcessor(HandlerProcessor):
 
     def invoke_handler(self, unit: ConfigToken, operation: str):
         try:
-            handler = self.config_mappings.get(str(unit.get_resource_type()), None)
+            # clean restart
+            if unit is None:
+                if len(self.config_mappings) < 1:
+                    return
+                handler = list(self.config_mappings.values())[0]
+            else:
+                handler = self.config_mappings.get(str(unit.get_resource_type()), None)
             if handler is None:
                 raise AuthorityException(f"No handler found for resource type {unit.get_resource_type()}")
 
@@ -167,8 +177,9 @@ class AnsibleHandlerProcessor(HandlerProcessor):
                                           self.process_pool_lock)
 
             self.queue_future(future=future, unit=unit)
-            self.logger.debug(f"Handler operation {operation} scheduled for Resource Type: {unit.get_resource_type()} "
-                              f"Unit: {unit.get_id()} Reservation: {unit.get_reservation_id()}")
+            if unit:
+                self.logger.debug(f"Handler operation {operation} scheduled for Resource Type: {unit.get_resource_type()} "
+                                  f"Unit: {unit.get_id()} Reservation: {unit.get_reservation_id()}")
 
         except Exception as e:
             self.logger.error(f"Exception occurred {e}")
@@ -190,6 +201,9 @@ class AnsibleHandlerProcessor(HandlerProcessor):
     def delete(self, unit: ConfigToken):
         self.invoke_handler(unit=unit, operation=Constants.TARGET_DELETE)
 
+    def clean_restart(self):
+        self.invoke_handler(unit=None, operation=Constants.TARGET_CLEAN_RESTART)
+
     def handler_complete(self, properties: dict, unit: ConfigToken, old_unit: ConfigToken):
         try:
             self.lock.acquire()
@@ -204,6 +218,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             self.lock.release()
 
     def process(self, future: concurrent.futures.Future, old_unit: ConfigToken):
+        if old_unit is None:
+            return
         try:
             self.logger.debug(f"Handler Execution completed Result: {future.result()}")
             if future.exception() is not None:
@@ -272,6 +288,8 @@ class AnsibleHandlerProcessor(HandlerProcessor):
             return handler_obj.delete(unit)
         elif operation == Constants.TARGET_MODIFY:
             return handler_obj.modify(unit)
+        elif operation == Constants.TARGET_CLEAN_RESTART:
+            return handler_obj.clean_restart()
         else:
             process_pool_logger.error("Invalid operation")
             result = {Constants.PROPERTY_TARGET_NAME: operation,

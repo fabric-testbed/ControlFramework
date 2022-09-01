@@ -165,5 +165,5 @@ class HandlerProcessor:
     def shutdown(self):
         return
 
-    def start(self):
+    def start(self, *, fresh: bool = False):
         return
