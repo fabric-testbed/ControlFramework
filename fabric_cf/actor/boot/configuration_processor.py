@@ -211,7 +211,7 @@ class ConfigurationProcessor:
         """
         Creates Actor Policy instance
         @param actor actor
-        @param actor_config actor config
+        @param config actor config
         @raises ConfigurationException in case of error
         """
         policy = None

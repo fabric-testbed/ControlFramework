@@ -1,3 +1,4 @@
 ALTER TABLE "Slices" ADD COLUMN IF NOT EXISTS project_id VARCHAR;
 ALTER TABLE "Slices" ADD COLUMN IF NOT EXISTS slc_state INTEGER;
 ALTER TABLE "Reservations" ADD COLUMN IF NOT EXISTS project_id VARCHAR;
+UPDATE "Slices" set slc_state=2 where slc_name='broker';

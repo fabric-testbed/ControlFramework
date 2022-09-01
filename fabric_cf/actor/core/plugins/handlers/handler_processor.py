@@ -167,3 +167,6 @@ class HandlerProcessor:
 
     def start(self):
         return
+
+    def clean_restart(self):
+        return
