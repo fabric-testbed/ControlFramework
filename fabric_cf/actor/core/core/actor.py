@@ -871,9 +871,7 @@ class ActorMixin(ABCActorMixin):
         self.message_service.start()
 
         if self.plugin.get_handler_processor() is not None:
-            from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            fresh = GlobalsSingleton.get().get_container().is_fresh()
-            self.plugin.get_handler_processor().start(fresh=fresh)
+            self.plugin.get_handler_processor().start()
 
     def stop(self):
         """

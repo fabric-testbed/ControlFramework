@@ -103,7 +103,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.process_pool_manager = multiprocessing.Manager()
         self.process_pool_lock = self.process_pool_manager.Lock()
 
-    def start(self, *, fresh: bool = False):
+    def start(self):
         """
         Start the Future Processor Thread
         """
@@ -111,9 +111,6 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         self.thread.setName("FutureProcessor")
         self.thread.setDaemon(True)
         self.thread.start()
-
-        if fresh:
-            self.clean_restart()
 
     def shutdown(self):
         """
@@ -164,7 +161,7 @@ class AnsibleHandlerProcessor(HandlerProcessor):
         try:
             # clean restart
             if unit is None:
-                if len(self.config_mappings) < 1:
+                if len(self.config_mappings) == 0:
                     return
                 handler = list(self.config_mappings.values())[0]
             else:
