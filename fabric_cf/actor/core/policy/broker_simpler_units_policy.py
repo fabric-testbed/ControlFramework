@@ -60,7 +60,6 @@ from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
-from fabric_cf.actor.core.util.utils import sliver_diff
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 
@@ -111,6 +110,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.delegations = {}
         self.combined_broker_model = None
         self.combined_broker_model_graph_id = None
+        self.query_cbm = None
 
         self.queue = FIFOQueue()
         self.inventory = Inventory()
@@ -127,6 +127,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         del state['delegations']
         del state['combined_broker_model']
+        del state['query_cbm']
         del state['lock']
 
         del state['calendar']
@@ -148,6 +149,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         self.delegations = {}
         self.combined_broker_model = None
+        self.query_cbm = None
 
         self.lock = threading.Lock()
         self.calendar = None
@@ -166,6 +168,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.debug(f"Loading an existing Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
 
         self.combined_broker_model = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
+        self.query_cbm = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
         self.combined_broker_model_graph_id = self.combined_broker_model.get_graph_id()
         self.logger.debug(f"Successfully loaded an Combined Broker Model Graph: {self.combined_broker_model_graph_id}")
         self.pluggable_registry.register_pluggable(t=PluggableType.Broker, p=AggregatedBQMPlugin, actor=self.actor,
@@ -838,9 +841,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             bqm_format = GraphFormat.GRAPHML
 
         try:
-            self.lock.acquire()
-            if self.combined_broker_model is not None:
-                graph = self.combined_broker_model.get_bqm(query_level=query_level)
+            if self.query_cbm is not None:
+                graph = self.query_cbm.get_bqm(query_level=query_level)
                 graph_string = None
                 if graph is not None:
                     graph_string = graph.serialize_graph(format=bqm_format)
@@ -858,8 +860,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             result[Constants.BROKER_QUERY_MODEL] = ""
             result[Constants.QUERY_RESPONSE_STATUS] = "False"
             result[Constants.QUERY_RESPONSE_MESSAGE] = str(e)
-        finally:
-            self.lock.release()
 
         self.logger.debug("Returning Query Result: {}".format(result))
         return result

@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import time
 import traceback
 from datetime import datetime, timedelta, timezone
 from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
@@ -121,8 +122,11 @@ class OrchestratorHandler:
         broker_query_model = None
         if not force_refresh:
             saved_bqm = self.controller_state.get_saved_bqm(graph_format=graph_format)
-            if saved_bqm is not None and not saved_bqm.can_refresh():
-                broker_query_model = saved_bqm.get_bqm()
+            if saved_bqm is not None:
+                if not saved_bqm.can_refresh():
+                    broker_query_model = saved_bqm.get_bqm()
+                else:
+                    saved_bqm.start_refresh()
 
         if broker_query_model is None:
             broker = self.get_broker(controller=controller)
@@ -199,6 +203,7 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
+        start = time.time()
         if self.globals.is_maintenance_mode_on():
             raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
 
@@ -271,7 +276,9 @@ class OrchestratorHandler:
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
+            create_ts = time.time()
             computed_reservations = new_slice_object.create(slice_graph=asm_graph)
+            self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts}")
 
             # Enqueue the slice on the demand thread
             # Demand thread is responsible for demanding the reservations
@@ -289,6 +296,7 @@ class OrchestratorHandler:
         finally:
             if new_slice_object is not None:
                 new_slice_object.unlock()
+            self.logger.info(f"OH : TIME= {time.time() - start}")
 
     def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None) -> List[dict]:
         """
@@ -693,3 +701,4 @@ class OrchestratorHandler:
             return GraphFormat.CYTOSCAPE
         else:
             return GraphFormat.GRAPHML
+

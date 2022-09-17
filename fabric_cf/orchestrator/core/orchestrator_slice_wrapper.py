@@ -24,6 +24,8 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+import time
+from datetime import datetime
 from typing import List, Tuple, Dict
 from http.client import BAD_REQUEST, NOT_FOUND
 
@@ -35,9 +37,11 @@ from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver, NodeType
+from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import ServiceType, ExperimentTopology
 
 from fabric_cf.actor.core.common.constants import ErrorCodes
+from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
@@ -134,21 +138,30 @@ class OrchestratorSliceWrapper:
         """
         try:
             # Build Network Node reservations
+            start = time.time()
             network_node_reservations, node_res_mapping = self.__build_network_node_reservations(slice_graph=slice_graph)
+            self.logger.info(f"Node TIME: {time.time() - start}")
 
             # Build Network Service reservations
+            start = time.time()
             network_service_reservations = self.__build_network_service_reservations(slice_graph=slice_graph,
                                                                                      node_res_mapping=node_res_mapping)
+            self.logger.info(f"NS TIME: {time.time() - start}")
 
+            start = time.time()
             # Add Network Node reservations
             for r in network_node_reservations:
                 self.controller.add_reservation(reservation=r)
                 self.computed_reservations.append(r)
 
+            self.logger.info(f"Node ADD TIME: {time.time() - start}")
+
+            start = time.time()
             # Add Network Node reservations
             for r in network_service_reservations:
                 self.controller.add_reservation(reservation=r)
                 self.computed_reservations.append(r)
+            self.logger.info(f"Node ADD TIME: {time.time() - start}")
 
             return self.computed_reservations
         except OrchestratorException as e:

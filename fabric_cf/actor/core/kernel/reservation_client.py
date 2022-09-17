@@ -479,10 +479,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                     ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
-                print(f"KOMAL --- {ifs}")
 
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {self.resources.sliver}")
-            print(f"KOMAL --- {self.resources.sliver}")
 
     def approve_ticket(self):
         """

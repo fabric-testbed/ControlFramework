@@ -300,6 +300,12 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         Returns:
             query response
         """
+    @abstractmethod
+    def execute_on_actor_thread(self, *, runnable: ABCActorRunnable):
+        """
+        Execute on Actor Thread and Wait until response is processed
+        @params runnable: reservation to be processed
+        """
 
     @abstractmethod
     def execute_on_actor_thread_and_wait(self, *, runnable: ABCActorRunnable):

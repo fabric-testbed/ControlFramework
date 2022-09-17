@@ -40,7 +40,6 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.policy.resource_control import ResourceControl
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.core.util.utils import sliver_diff
 from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
@@ -224,7 +223,6 @@ class NetworkNodeControl(ResourceControl):
             self.logger.info(f"Extend Lease for now, no modify supported res# {reservation}")
             current_sliver = current.get_sliver()
             diff = current_sliver.diff(other_sliver=requested)
-            #diff = sliver_diff(sliver1=current_sliver, sliver2=requested)
             if diff is not None:
                 # Modify MVP - only handle add components for now
                 if len(diff.added.components) > 0:

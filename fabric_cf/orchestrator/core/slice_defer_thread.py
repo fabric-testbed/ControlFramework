@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import queue
 import threading
+import time
 import traceback
 
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
@@ -65,10 +66,11 @@ class SliceDeferThread:
         :param controller_slice:
         :return:
         """
-        with self.slice_avail_condition:
+        try:
             self.slice_queue.put_nowait(controller_slice)
             self.logger.debug(f"Added slice to slices queue {controller_slice.get_slice_id()}")
-            self.slice_avail_condition.notify_all()
+        except Exception as e:
+            self.logger.error(f"Failed to queue slice: {controller_slice.get_slice_id()} e: {e}")
 
     def start(self):
         """
@@ -121,28 +123,20 @@ class SliceDeferThread:
         self.logger.debug("SliceDeferThread started")
         while True:
             slices = []
-            with self.slice_avail_condition:
+            if not self.stopped and self.slice_queue.empty():
+                time.sleep(0.001)
 
-                while self.slice_queue.empty() and not self.stopped:
-                    try:
-                        self.slice_avail_condition.wait()
-                    except InterruptedError as e:
-                        self.logger.info("SliceDeferThread interrupted. Exiting")
-                        return
+            if self.stopped:
+                self.logger.info("SliceDeferThread exiting")
+                return
 
-                if self.stopped:
-                    self.logger.info("SliceDeferThread exiting")
-                    return
-
-                if not self.slice_queue.empty():
-                    try:
-                        for s in IterableQueue(source_queue=self.slice_queue):
-                            slices.append(s)
-                    except Exception as e:
-                        self.logger.error(f"Error while adding slice to slice queue! e: {e}")
-                        self.logger.error(traceback.format_exc())
-
-                self.slice_avail_condition.notify_all()
+            if not self.slice_queue.empty():
+                try:
+                    for s in IterableQueue(source_queue=self.slice_queue):
+                        slices.append(s)
+                except Exception as e:
+                    self.logger.error(f"Error while adding slice to slice queue! e: {e}")
+                    self.logger.error(traceback.format_exc())
 
             if len(slices) > 0:
                 self.logger.debug(f"Processing {len(slices)} slices")
@@ -176,14 +170,15 @@ class SliceDeferThread:
                 if not self.mgmt_actor.demand_reservation(reservation=reservation):
                     raise OrchestratorException(f"Could not demand resources: {self.mgmt_actor.get_last_error()}")
                 self.logger.debug(f"Reservation #{reservation.get_reservation_id()} demanded successfully")
-
+            '''
             for r in controller_slice.computed_l3_reservations:
                 res_status_update = ReservationStatusUpdate(logger=self.logger)
                 self.get_sut().add_active_status_watch(watch=ID(uid=r.get_reservation_id()),
-                                                 callback=res_status_update)
+                                                       callback=res_status_update)
+            '''
 
             for r in controller_slice.computed_remove_reservations:
-                self.logger.debug(f"Issuing close for reservation: {r.get_reservation_id()}")
+                self.logger.debug(f"Issuing close for reservation: {r}")
                 self.mgmt_actor.close_reservation(rid=ID(uid=r))
 
             for rid, sliver in controller_slice.computed_modify_reservations.items():

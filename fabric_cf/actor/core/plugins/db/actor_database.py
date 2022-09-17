@@ -389,7 +389,6 @@ class ActorDatabase(ABCDatabase):
         result = []
         try:
             self.lock.acquire()
-            self.logger.debug("Actor ID: {}".format(self.actor_id))
             sid = str(slice_id) if slice_id is not None else None
             res_id = str(rid) if rid is not None else None
             res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id,
@@ -548,7 +547,6 @@ class ActorDatabase(ABCDatabase):
         result = []
         try:
             self.lock.acquire()
-            self.logger.debug("Actor ID: {}".format(self.actor_id))
             sid = str(slice_id) if slice_id is not None else None
             dlg_dict_list = self.db.get_delegations(slc_guid=sid, state=state)
             self.lock.release()

@@ -25,7 +25,9 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import queue
 import threading
+import time
 import traceback
+from datetime import datetime
 from typing import List
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
@@ -816,6 +818,19 @@ class ActorMixin(ABCActorMixin):
             self.thread_lock.release()
         return result
 
+    def execute_on_actor_thread(self, *, runnable: ABCActorRunnable):
+        """
+        Execute an incoming action on actor thread
+        @param runnable incoming action/operation
+        """
+        if self.is_on_actor_thread():
+            return runnable.run()
+        else:
+            status = ExecutionStatus()
+            event = ActorEvent(status=status, runnable=runnable)
+
+            self.queue_event(incoming=event)
+
     def execute_on_actor_thread_and_wait(self, *, runnable: ABCActorRunnable):
         """
         Execute an incoming action on actor thread
@@ -946,19 +961,21 @@ class ActorMixin(ABCActorMixin):
         """
         Queue an event on Actor timer queue
         """
-        with self.actor_main_lock:
+        try:
             self.timer_queue.put_nowait(timer)
             self.logger.debug("Added timer to timer queue {}".format(timer.__class__.__name__))
-            self.actor_main_lock.notify_all()
+        except Exception as e:
+            self.logger.error(f"Failed to queue event: {timer.__class__.__name__} e: {e}")
 
     def queue_event(self, *, incoming: ABCActorEvent):
         """
         Queue an even on Actor Event Queue
         """
-        with self.actor_main_lock:
+        try:
             self.event_queue.put_nowait(incoming)
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
-            self.actor_main_lock.notify_all()
+        except Exception as e:
+            self.logger.error(f"Failed to queue event: {incoming.__class__.__name__} e: {e}")
 
     def await_no_pending_reservations(self):
         """
@@ -974,44 +991,38 @@ class ActorMixin(ABCActorMixin):
             events = []
             timers = []
 
-            with self.actor_main_lock:
+            if not self.stopped and self.event_queue.empty() and self.timer_queue.empty():
+                time.sleep(0.005)
 
-                while self.event_queue.empty() and self.timer_queue.empty() and not self.stopped:
-                    try:
-                        self.actor_main_lock.wait()
-                    except InterruptedError as e:
-                        self.logger.info("Actor thread interrupted. Exiting")
-                        return
+            if self.stopped:
+                self.logger.info("Actor exiting")
+                return
 
-                if self.stopped:
-                    self.logger.info("Actor exiting")
-                    return
+            if not self.event_queue.empty():
+                try:
+                    for event in IterableQueue(source_queue=self.event_queue):
+                        events.append(event)
+                except Exception as e:
+                    self.logger.error(f"Error while adding event to event queue! e: {e}")
+                    self.logger.error(traceback.format_exc())
 
-                if not self.event_queue.empty():
-                    try:
-                        for event in IterableQueue(source_queue=self.event_queue):
-                            events.append(event)
-                    except Exception as e:
-                        self.logger.error(f"Error while adding event to event queue! e: {e}")
-                        self.logger.error(traceback.format_exc())
-
-                if not self.timer_queue.empty():
-                    try:
-                        for timer in IterableQueue(source_queue=self.timer_queue):
-                            timers.append(timer)
-                    except Exception as e:
-                        self.logger.error(f"Error while adding event to event queue! e: {e}")
-                        self.logger.error(traceback.format_exc())
-
-                self.actor_main_lock.notify_all()
+            if not self.timer_queue.empty():
+                try:
+                    for timer in IterableQueue(source_queue=self.timer_queue):
+                        timers.append(timer)
+                except Exception as e:
+                    self.logger.error(f"Error while adding event to event queue! e: {e}")
+                    self.logger.error(traceback.format_exc())
 
             if len(events) > 0:
                 self.logger.debug(f"Processing {len(events)} events")
                 for event in events:
                     #self.logger.debug("Processing event of type {}".format(type(event)))
-                    #self.logger.debug("Processing event {}".format(event))
                     try:
+                        begin = time.time()
                         event.process()
+                        self.logger.info(f"[{threading.get_native_id()}] Event {event.__class__.__name__} "
+                                         f"TIME: {time.time() - begin}")
                         #self.logger.debug("Processing event {} done".format(event))
                     except Exception as e:
                         self.logger.error(f"Error while processing event {type(event)}, {e}")
