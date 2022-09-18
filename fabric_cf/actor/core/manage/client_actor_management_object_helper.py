@@ -225,12 +225,10 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                 def run(self):
                     return self.parent.add_reservation_private(reservation=reservation)
 
-            rid, result.status = self.client.execute_on_actor_thread(runnable=Runner(parent=self))
-
-            if rid is not None:
-                result.set_result(str(rid))
+            self.client.execute_on_actor_thread(runnable=Runner(parent=self))
         except Exception as e:
             self.logger.error("add_reservation {}".format(e))
+            self.logger.error(traceback.format_exc())
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
@@ -372,7 +370,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
                     return result
 
-            result = self.client.execute_on_actor_thread(runnable=Runner(actor=self.client, logger=self.logger))
+            self.client.execute_on_actor_thread(runnable=Runner(actor=self.client, logger=self.logger))
         except Exception as e:
             self.logger.error("demand_reservation {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
