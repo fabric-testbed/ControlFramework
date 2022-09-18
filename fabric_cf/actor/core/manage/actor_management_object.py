@@ -424,7 +424,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     self.actor.close_slice_reservations(slice_id=slice_id)
                     return None
 
-            self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
+            self.actor.execute_on_actor_thread(runnable=Runner(actor=self.actor))
         except SliceNotFoundException as e:
             self.logger.error("close_slice_reservations: {}".format(e))
             result.set_code(ErrorCodes.ErrorNoSuchSlice.value)
