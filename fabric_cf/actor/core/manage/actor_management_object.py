@@ -185,7 +185,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
                         return None
 
-                self.actor.execute_on_actor_thread(runnable=Runner(actor=self.actor))
+                self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
 
                 result.set_result(str(slice_obj_new.get_slice_id()))
             except Exception as e:

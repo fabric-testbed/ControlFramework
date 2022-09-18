@@ -278,7 +278,7 @@ class OrchestratorHandler:
             # Add Reservations to relational database;
             create_ts = time.time()
             computed_reservations = new_slice_object.create(slice_graph=asm_graph)
-            self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts}")
+            self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
 
             # Enqueue the slice on the demand thread
             # Demand thread is responsible for demanding the reservations
@@ -296,7 +296,7 @@ class OrchestratorHandler:
         finally:
             if new_slice_object is not None:
                 new_slice_object.unlock()
-            self.logger.info(f"OH : TIME= {time.time() - start}")
+            self.logger.info(f"OH : TIME= {time.time() - start:.0f}")
 
     def get_slivers(self, *, token: str, slice_id: str, sliver_id: str = None) -> List[dict]:
         """

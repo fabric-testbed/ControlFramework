@@ -1022,7 +1022,7 @@ class ActorMixin(ABCActorMixin):
                         begin = time.time()
                         event.process()
                         self.logger.info(f"[{threading.get_native_id()}] Event {event.__class__.__name__} "
-                                         f"TIME: {time.time() - begin}")
+                                         f"TIME: {time.time() - begin:.0f}")
                         #self.logger.debug("Processing event {} done".format(event))
                     except Exception as e:
                         self.logger.error(f"Error while processing event {type(event)}, {e}")

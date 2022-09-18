@@ -140,13 +140,13 @@ class OrchestratorSliceWrapper:
             # Build Network Node reservations
             start = time.time()
             network_node_reservations, node_res_mapping = self.__build_network_node_reservations(slice_graph=slice_graph)
-            self.logger.info(f"Node TIME: {time.time() - start}")
+            self.logger.info(f"Node TIME: {time.time() - start:.0f}")
 
             # Build Network Service reservations
             start = time.time()
             network_service_reservations = self.__build_network_service_reservations(slice_graph=slice_graph,
                                                                                      node_res_mapping=node_res_mapping)
-            self.logger.info(f"NS TIME: {time.time() - start}")
+            self.logger.info(f"NS TIME: {time.time() - start:.0f}")
 
             start = time.time()
             # Add Network Node reservations
@@ -154,14 +154,14 @@ class OrchestratorSliceWrapper:
                 self.controller.add_reservation(reservation=r)
                 self.computed_reservations.append(r)
 
-            self.logger.info(f"Node ADD TIME: {time.time() - start}")
+            self.logger.info(f"Node ADD TIME: {time.time() - start:.0f}")
 
             start = time.time()
             # Add Network Node reservations
             for r in network_service_reservations:
                 self.controller.add_reservation(reservation=r)
                 self.computed_reservations.append(r)
-            self.logger.info(f"Node ADD TIME: {time.time() - start}")
+            self.logger.info(f"Node ADD TIME: {time.time() - start:.0f}")
 
             return self.computed_reservations
         except OrchestratorException as e:
