@@ -153,10 +153,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
                 slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name())
                 slice_obj_new.set_description(description=slice_obj.get_description())
-                slice_obj_new.set_owner(owner=self.actor.get_identity())
-                slice_obj_new.get_owner().set_oidc_sub_claim(oidc_sub_claim=slice_obj.get_owner().get_oidc_sub_claim())
-                slice_obj_new.get_owner().set_email(email=slice_obj.get_owner().get_email())
-                slice_obj_new.get_owner().set_token(token=slice_obj.get_owner().get_token())
+                auth_token = Translate.translate_auth_from_avro(auth_avro=slice_obj.get_owner())
+                slice_obj_new.set_owner(owner=auth_token)
                 slice_obj_new.set_graph_id(graph_id=slice_obj.graph_id)
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
@@ -424,7 +422,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     self.actor.close_slice_reservations(slice_id=slice_id)
                     return None
 
-            self.actor.execute_on_actor_thread(runnable=Runner(actor=self.actor))
+            self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
         except SliceNotFoundException as e:
             self.logger.error("close_slice_reservations: {}".format(e))
             result.set_code(ErrorCodes.ErrorNoSuchSlice.value)

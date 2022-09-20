@@ -26,6 +26,7 @@
 import logging
 import threading
 import concurrent.futures
+import time
 import traceback
 
 from fabric_mb.message_bus.producer import AvroProducerApi
@@ -483,7 +484,9 @@ class RPCManager:
 
         else:
             actor.get_logger().debug("Added to actor queue to be processed")
+            start = time.time()
             actor.queue_event(incoming=IncomingRPCEvent(actor=actor, rpc=rpc))
+            actor.get_logger().info(f"Kafka Queue event: {time.time() - start:.0f}")
 
     def add_pending_request(self, *, guid: ID, request: RPCRequest):
         try:

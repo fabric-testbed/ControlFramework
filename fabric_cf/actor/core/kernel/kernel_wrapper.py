@@ -754,7 +754,8 @@ class KernelWrapper:
         if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCSlice):
             raise KernelException("Invalid argument {}".format(slice_object))
 
-        slice_object.set_owner(owner=self.actor.get_identity())
+        if slice_object.get_owner() is None:
+            slice_object.set_owner(owner=self.actor.get_identity())
         self.kernel.register_slice(slice_object=slice_object)
 
     def remove_reservation(self, *, rid: ID):

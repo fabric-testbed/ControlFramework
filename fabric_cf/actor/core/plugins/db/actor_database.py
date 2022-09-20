@@ -211,7 +211,8 @@ class ActorDatabase(ABCDatabase):
                                             state=state, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
                                             offset=offset)
             finally:
-                self.lock.release()
+                if self.lock.locked():
+                    self.lock.release()
             if slices is not None:
                 for s in slices:
                     pickled_slice = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
@@ -330,7 +331,8 @@ class ActorDatabase(ABCDatabase):
             res_dict_list = self.db.get_reservations(slice_id=sid,
                                                      category=[ReservationCategory.Broker.value,
                                                                ReservationCategory.Authority.value])
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
             result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
@@ -345,7 +347,8 @@ class ActorDatabase(ABCDatabase):
             self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
             res_dict_list = self.db.get_reservations(slice_id=sid, category=[ReservationCategory.Client.value])
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
             result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
@@ -359,7 +362,8 @@ class ActorDatabase(ABCDatabase):
         try:
             self.lock.acquire()
             res_dict_list = self.db.get_reservations(category=[ReservationCategory.Broker.value])
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
             result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
@@ -374,7 +378,8 @@ class ActorDatabase(ABCDatabase):
             self.lock.acquire()
             result = []
             res_dict_list = self.db.get_reservations(category=[ReservationCategory.Authority.value])
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
             result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
@@ -389,12 +394,14 @@ class ActorDatabase(ABCDatabase):
         result = []
         try:
             self.lock.acquire()
+            self.logger.debug("Actor ID: {}".format(self.actor_id))
             sid = str(slice_id) if slice_id is not None else None
             res_id = str(rid) if rid is not None else None
             res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id,
                                                      project_id=project_id, email=email, oidc_sub=oidc_sub, rid=res_id,
                                                      state=state)
-            self.lock.release()
+            if self.lock.locked():
+               self.lock.release()
             result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
@@ -408,7 +415,8 @@ class ActorDatabase(ABCDatabase):
         try:
             self.lock.acquire()
             res_dict_list = self.db.get_reservations_by_rids(rsv_resid_list=rid)
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
             result = self._load_reservations_from_db(res_dict_list=res_dict_list)
         except Exception as e:
             self.logger.error(e)
@@ -534,7 +542,8 @@ class ActorDatabase(ABCDatabase):
         try:
             self.lock.acquire()
             dlg_dict = self.db.get_delegation(dlg_graph_id=str(dlg_graph_id))
-            self.lock.release()
+            if self.lock.locked():
+                self.lock.release()
             return self._load_delegation_from_db(dlg_dict_list=[dlg_dict])[0]
         except Exception as e:
             self.logger.error(e)
@@ -547,6 +556,7 @@ class ActorDatabase(ABCDatabase):
         result = []
         try:
             self.lock.acquire()
+            self.logger.debug("Actor ID: {}".format(self.actor_id))
             sid = str(slice_id) if slice_id is not None else None
             dlg_dict_list = self.db.get_delegations(slc_guid=sid, state=state)
             self.lock.release()

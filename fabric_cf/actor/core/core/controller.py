@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import time
 import queue
 import threading
 import traceback
@@ -42,6 +43,7 @@ from fabric_cf.actor.core.proxies.kafka.services.controller_service import Contr
 from fabric_cf.actor.core.apis.abc_controller import ABCController
 from fabric_cf.actor.core.core.actor import ActorMixin
 from fabric_cf.actor.core.registry.peer_registry import PeerRegistry
+from fabric_cf.actor.core.util.iterable_queue import IterableQueue
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
 from fabric_cf.actor.core.util.utils import sliver_to_str
@@ -78,6 +80,9 @@ class Controller(ActorMixin, ABCController):
         # initialization status
         self.initialized = False
         self.type = ActorType.Orchestrator
+        self.event_queue_sync = queue.Queue()
+        self.thread_sync = None
+        self.thread_sync_lock = threading.Lock()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -103,6 +108,10 @@ class Controller(ActorMixin, ABCController):
         del state['extending_lease']
         del state['modifying_lease']
         del state['registry']
+
+        del state['thread_sync']
+        del state['thread_sync_lock']
+        del state['event_queue_sync']
         return state
 
     def __setstate__(self, state):
@@ -129,6 +138,9 @@ class Controller(ActorMixin, ABCController):
         self.extending_lease = ReservationSet()
         self.modifying_lease = ReservationSet()
         self.registry = PeerRegistry()
+        self.thread_sync = None
+        self.thread_sync_lock = threading.Lock()
+        self.event_queue_sync = queue.Queue()
 
     def actor_added(self):
         super().actor_added()

@@ -27,7 +27,6 @@ import queue
 import threading
 import time
 import traceback
-from datetime import datetime
 from typing import List
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
@@ -152,6 +151,10 @@ class ActorMixin(ABCActorMixin):
         self.actor_main_lock = threading.Condition()
         self.message_service = None
 
+        self.event_queue_sync = queue.Queue()
+        self.thread_sync = None
+        self.thread_sync_lock = threading.Lock()
+
     def __getstate__(self):
         state = self.__dict__.copy()
         del state['recovered']
@@ -169,6 +172,10 @@ class ActorMixin(ABCActorMixin):
         del state['actor_main_lock']
         del state['closing']
         del state['message_service']
+
+        del state['thread_sync']
+        del state['thread_sync_lock']
+        del state['event_queue_sync']
         return state
 
     def __setstate__(self, state):
@@ -189,6 +196,10 @@ class ActorMixin(ABCActorMixin):
         self.closing = ReservationSet()
         self.message_service = None
         self.policy.set_actor(actor=self)
+
+        self.thread_sync = None
+        self.thread_sync_lock = threading.Lock()
+        self.event_queue_sync = queue.Queue()
 
     def actor_added(self):
         self.plugin.actor_added()
@@ -836,13 +847,13 @@ class ActorMixin(ABCActorMixin):
         Execute an incoming action on actor thread
         @param runnable incoming action/operation
         """
-        if self.is_on_actor_thread():
+        if self.is_on_actor_sync_thread():
             return runnable.run()
         else:
             status = ExecutionStatus()
             event = ActorEvent(status=status, runnable=runnable)
 
-            self.queue_event(incoming=event)
+            self.queue_event_sync(incoming=event)
 
             with status.lock:
                 while not status.done:
@@ -859,13 +870,26 @@ class ActorMixin(ABCActorMixin):
         """
         try:
             self.logger.info("Actor Main Thread started")
-            self.actor_count -= 1
+            self.actor_count += 1
             self.actor_main()
         except Exception as e:
             self.logger.error(f"Unexpected error {e}")
             self.logger.error(traceback.format_exc())
         finally:
             self.logger.info("Actor Main Thread exited")
+
+    def run_sync_processor(self):
+        """
+        Actor run function for Synchronous event processor
+        """
+        try:
+            self.logger.info("Actor Sync Event Processor started")
+            self.sync_event_processor()
+        except Exception as e:
+            self.logger.error(f"Unexpected error {e}")
+            self.logger.error(traceback.format_exc())
+        finally:
+            self.logger.info("Actor Sync Event Processor exited")
 
     def start(self):
         """
@@ -882,6 +906,11 @@ class ActorMixin(ABCActorMixin):
             self.thread.start()
         finally:
             self.thread_lock.release()
+
+        self.thread_sync = threading.Thread(target=self.run_sync_processor)
+        self.thread_sync.setName("SyncProcessor")
+        self.thread_sync.setDaemon(True)
+        self.thread_sync.start()
 
         self.message_service.start()
 
@@ -913,6 +942,26 @@ class ActorMixin(ABCActorMixin):
         finally:
             if self.thread_lock is not None and self.thread_lock.locked():
                 self.thread_lock.release()
+        try:
+            self.thread_sync.acquire()
+            temp = self.thread_sync
+            self.thread_sync = None
+            if temp is not None:
+                self.logger.warning("It seems that the actor thread is running. Interrupting it")
+                try:
+                    # TODO find equivalent of interrupt
+                    with self.actor_main_lock:
+                        self.actor_main_lock.notify_all()
+                    temp.join()
+                except Exception as e:
+                    self.logger.error("Could not join actor thread {}".format(e))
+                    self.logger.error(traceback.format_exc())
+                finally:
+                    self.thread_sync_lock.release()
+
+        finally:
+            if self.thread_sync_lock is not None and self.thread_sync_lock.locked():
+                self.thread_sync_lock.release()
 
         if self.plugin.get_handler_processor() is not None:
             self.plugin.get_handler_processor().shutdown()
@@ -977,11 +1026,54 @@ class ActorMixin(ABCActorMixin):
         except Exception as e:
             self.logger.error(f"Failed to queue event: {incoming.__class__.__name__} e: {e}")
 
+    def queue_event_sync(self, *, incoming: ABCActorEvent):
+        """
+        Queue an even on Actor Event Queue
+        """
+        try:
+            self.event_queue_sync.put_nowait(incoming)
+            self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
+        except Exception as e:
+            self.logger.error(f"Failed to queue event: {incoming.__class__.__name__} e: {e}")
+
     def await_no_pending_reservations(self):
         """
         Await until no pending reservations
         """
         self.wrapper.await_nothing_pending()
+
+    def dequeue(self, queue_obj: queue.Queue):
+        events = []
+        if not queue_obj.empty():
+            try:
+                for event in IterableQueue(source_queue=queue_obj):
+                    events.append(event)
+            except Exception as e:
+                self.logger.error(f"Error while adding event/timer to queue! e: {e}")
+                self.logger.error(traceback.format_exc())
+        return events
+
+    def process_events(self, *, events: list):
+        self.logger.debug(f"Processing {len(events)} events")
+        for event in events:
+            try:
+                begin = time.time()
+                event.process()
+                self.logger.info(f"[{threading.get_native_id()}] Event {event.__class__.__name__} "
+                                 f"TIME: {time.time() - begin:.0f}")
+            except Exception as e:
+                self.logger.error(f"Error while processing event {type(event)}, {e}")
+                self.logger.error(traceback.format_exc())
+
+    def process_timer_events(self, *, timers: list):
+        if len(timers) > 0:
+            self.logger.debug(f"Processing {len(timers)} timers")
+            for t in timers:
+                try:
+                    t.execute()
+                except Exception as e:
+                    self.logger.error(f"Error while processing a timer {type(t)}, {e}")
+                    self.logger.error(traceback.format_exc())
 
     def actor_main(self):
         """
@@ -999,43 +1091,13 @@ class ActorMixin(ABCActorMixin):
                 return
 
             if not self.event_queue.empty():
-                try:
-                    for event in IterableQueue(source_queue=self.event_queue):
-                        events.append(event)
-                except Exception as e:
-                    self.logger.error(f"Error while adding event to event queue! e: {e}")
-                    self.logger.error(traceback.format_exc())
+                events = self.dequeue(queue_obj=self.event_queue)
 
             if not self.timer_queue.empty():
-                try:
-                    for timer in IterableQueue(source_queue=self.timer_queue):
-                        timers.append(timer)
-                except Exception as e:
-                    self.logger.error(f"Error while adding event to event queue! e: {e}")
-                    self.logger.error(traceback.format_exc())
+                timers = self.dequeue(queue_obj=self.timer_queue)
 
-            if len(events) > 0:
-                self.logger.debug(f"Processing {len(events)} events")
-                for event in events:
-                    #self.logger.debug("Processing event of type {}".format(type(event)))
-                    try:
-                        begin = time.time()
-                        event.process()
-                        self.logger.info(f"[{threading.get_native_id()}] Event {event.__class__.__name__} "
-                                         f"TIME: {time.time() - begin:.0f}")
-                        #self.logger.debug("Processing event {} done".format(event))
-                    except Exception as e:
-                        self.logger.error(f"Error while processing event {type(event)}, {e}")
-                        self.logger.error(traceback.format_exc())
-
-            if len(timers) > 0:
-                self.logger.debug(f"Processing {len(timers)} timers")
-                for t in timers:
-                    try:
-                        t.execute()
-                    except Exception as e:
-                        self.logger.error(f"Error while processing a timer {type(t)}, {e}")
-                        self.logger.error(traceback.format_exc())
+            self.process_events(events=events)
+            self.process_timer_events(timers=timers)
 
     def setup_message_service(self):
         """
@@ -1080,3 +1142,30 @@ class ActorMixin(ABCActorMixin):
 
     def load_model(self, *, graph_id: str):
         return
+
+    def is_on_actor_sync_thread(self) -> bool:
+        """
+        Check if running on actor thread
+        @return true if running on actor thread, false otherwise
+        """
+        result = False
+        try:
+            self.thread_sync_lock.acquire()
+            result = self.thread_sync == threading.current_thread()
+        finally:
+            self.thread_sync_lock.release()
+        return result
+
+    def sync_event_processor(self):
+        """
+        Main loop for the thread which processes the synchronous events handled via HTTP/ManagementCLI
+        """
+        while not self.stopped:
+            events = []
+
+            if self.event_queue_sync.empty():
+                time.sleep(1)
+            else:
+                events = self.dequeue(queue_obj=self.event_queue_sync)
+
+            self.process_events(events=events)

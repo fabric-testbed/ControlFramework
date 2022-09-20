@@ -26,6 +26,8 @@
 from __future__ import annotations
 
 import json
+import threading
+import time
 import traceback
 from typing import TYPE_CHECKING, List
 
@@ -1665,6 +1667,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         :param sliver: sliver
         :return:
         """
+        begin = time.time()
         try:
             self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                               f"Slice Graph# {self.slice.get_graph_id()}")
@@ -1682,6 +1685,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         except Exception as e:
             self.logger.error(f"Failed to update the ASM Graph: {e}")
             self.logger.error(traceback.format_exc())
+        self.logger.info(f"[{threading.get_native_id()}] ASM TIME: {time.time() - begin:.0f}")
 
     def mark_close_by_ticket_review(self, *, update_data: UpdateData):
         if self.last_ticket_update is not None:
