@@ -1054,7 +1054,6 @@ class ActorMixin(ABCActorMixin):
         return events
 
     def process_events(self, *, events: list):
-        self.logger.debug(f"Processing {len(events)} events")
         for event in events:
             try:
                 begin = time.time()
@@ -1066,14 +1065,12 @@ class ActorMixin(ABCActorMixin):
                 self.logger.error(traceback.format_exc())
 
     def process_timer_events(self, *, timers: list):
-        if len(timers) > 0:
-            self.logger.debug(f"Processing {len(timers)} timers")
-            for t in timers:
-                try:
-                    t.execute()
-                except Exception as e:
-                    self.logger.error(f"Error while processing a timer {type(t)}, {e}")
-                    self.logger.error(traceback.format_exc())
+        for t in timers:
+            try:
+                t.execute()
+            except Exception as e:
+                self.logger.error(f"Error while processing a timer {type(t)}, {e}")
+                self.logger.error(traceback.format_exc())
 
     def actor_main(self):
         """

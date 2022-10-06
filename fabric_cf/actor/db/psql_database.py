@@ -513,7 +513,7 @@ class PsqlDatabase:
 
     def get_slices(self, *, slice_id: str = None, slice_name: str = None, project_id: str = None, email: str = None,
                    state: list[int] = None, oidc_sub: str = None, slc_type: list[int] = None, limit: int = None,
-                   offset: int = None) -> list:
+                   offset: int = None, lease_end: datetime = None) -> list:
         """
         Get slices for an actor
         @param slice_id actor id
@@ -525,6 +525,7 @@ class PsqlDatabase:
         @param slc_type slice type
         @param limit limit
         @param offset offset
+        @param lease_end lease_end
         @return list of slices
         """
         result = []
@@ -533,6 +534,10 @@ class PsqlDatabase:
                                                     email=email, oidc_sub=oidc_sub)
             with session_scope(self.db_engine) as session:
                 rows = session.query(Slices).filter_by(**filter_dict)
+
+                if lease_end is not None:
+                    rows.filter(Slices.lease_end < lease_end)
+
                 rows = rows.order_by(desc(Slices.lease_end))
 
                 if state is not None:
