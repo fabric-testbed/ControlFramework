@@ -23,7 +23,6 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import threading
 import time
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -220,7 +219,8 @@ class OrchestratorHandler:
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
 
             # Validate the slice graph
-            topology = FimHelper.create_topology(graph_string=slice_graph)
+            topology = ExperimentTopology(graph_string=slice_graph)
+            topology.validate()
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
             asm_graph.validate_graph()
@@ -295,7 +295,8 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
         finally:
-            FimHelper.delete_topology(topology=topology)
+            if topology is not None and topology.graph_model is not None:
+                topology.graph_model.delete_graph()
             if new_slice_object is not None:
                 new_slice_object.unlock()
             self.logger.info(f"OH : TIME= {time.time() - start:.0f}")
@@ -408,7 +409,8 @@ class OrchestratorHandler:
                                             f"try again later")
 
             # Validate the slice graph
-            topology = FimHelper.create_topology(graph_string=slice_graph)
+            topology = ExperimentTopology(graph_string=slice_graph)
+            topology.validate()
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
             asm_graph.validate_graph()
@@ -450,8 +452,6 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing modify_slice e: {e}")
             raise e
-        finally:
-            FimHelper.delete_topology(topology=topology)
 
     def delete_slice(self, *, token: str, slice_id: str = None):
         """

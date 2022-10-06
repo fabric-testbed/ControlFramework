@@ -110,28 +110,6 @@ class FimHelper:
     """
     Provides methods to load Graph Models and perform various operations on them
     """
-    networkx_storage_lock = threading.Lock()
-
-    @staticmethod
-    def create_topology(*, graph_string: str) -> ExperimentTopology:
-        try:
-            FimHelper.networkx_storage_lock.acquire()
-            topology = ExperimentTopology(graph_string=graph_string)
-            topology.validate()
-            return topology
-        finally:
-            FimHelper.networkx_storage_lock.release()
-
-    @staticmethod
-    def delete_topology(*, topology: ExperimentTopology):
-        if topology is None or topology.graph_model is None:
-            return
-        try:
-            FimHelper.networkx_storage_lock.acquire()
-            topology.graph_model.delete_graph()
-        finally:
-            FimHelper.networkx_storage_lock.release()
-
     @staticmethod
     def get_neo4j_importer() -> ABCGraphImporter:
         """
