@@ -31,6 +31,7 @@ from typing import List
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
+from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
 from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
@@ -219,20 +220,28 @@ class OrchestratorHandler:
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
 
             # Validate the slice graph
-            topology = ExperimentTopology(graph_string=slice_graph)
+            create_ts = time.time()
+            topology = ExperimentTopology(graph_string=slice_graph, importer=NetworkXGraphImporterDisjoint())
             topology.validate()
+            self.logger.info(f"TV validate: TIME= {time.time() - create_ts:.0f}")
 
+            create_ts = time.time()
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
             asm_graph.validate_graph()
+            self.logger.info(f"ASM validate: TIME= {time.time() - create_ts:.0f}")
 
             # Authorize the slice
+            create_ts = time.time()
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology,
                                                     lease_end_time=end_time)
+            self.logger.info(f"PDP authorize: TIME= {time.time() - create_ts:.0f}")
 
             # Check if an Active slice exists already with the same name for the user
+            create_ts = time.time()
             project, tags = fabric_token.get_project_and_tags()
             existing_slices = controller.get_slices(slice_name=slice_name,
                                                     email=fabric_token.get_email(), project=project)
+            self.logger.info(f"GET slices: TIME= {time.time() - create_ts:.0f}")
 
             if existing_slices is not None and len(existing_slices) != 0:
                 for es in existing_slices:
@@ -262,8 +271,10 @@ class OrchestratorHandler:
             slice_obj.set_owner(auth)
             slice_obj.set_project_id(project)
 
+            create_ts = time.time()
             self.logger.debug(f"Adding Slice {slice_name}")
             slice_id = controller.add_slice(slice_obj=slice_obj)
+            self.logger.info(f"SLC add slices: TIME= {time.time() - create_ts:.0f}")
             if slice_id is None:
                 self.logger.error(controller.get_last_error())
                 self.logger.error("Slice could not be added to Database")
@@ -274,18 +285,20 @@ class OrchestratorHandler:
             new_slice_object = OrchestratorSliceWrapper(controller=controller, broker=broker,
                                                         slice_obj=slice_obj, logger=self.logger)
 
+            create_ts = time.time()
             new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
             # Add Reservations to relational database;
-            create_ts = time.time()
             computed_reservations = new_slice_object.create(slice_graph=asm_graph)
             self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
 
             # Enqueue the slice on the demand thread
             # Demand thread is responsible for demanding the reservations
             # Helps improve the create response time
+            create_ts = time.time()
             self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
+            self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -410,7 +423,7 @@ class OrchestratorHandler:
                                             f"try again later")
 
             # Validate the slice graph
-            topology = ExperimentTopology(graph_string=slice_graph)
+            topology = ExperimentTopology(graph_string=slice_graph, importer=NetworkXGraphImporterDisjoint())
             topology.validate()
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
@@ -453,6 +466,9 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing modify_slice e: {e}")
             raise e
+        finally:
+            if topology is not None and topology.graph_model is not None:
+                topology.graph_model.delete_graph()
 
     def delete_slice(self, *, token: str, slice_id: str = None):
         """
