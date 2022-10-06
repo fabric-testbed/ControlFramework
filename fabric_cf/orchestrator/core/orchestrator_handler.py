@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import threading
 import time
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -211,6 +212,7 @@ class OrchestratorHandler:
         controller = None
         new_slice_object = None
         asm_graph = None
+        topology = None
         try:
             end_time = self.__validate_lease_end_time(lease_end_time=lease_end_time)
 
@@ -218,8 +220,7 @@ class OrchestratorHandler:
             self.logger.debug(f"create_slice invoked for Controller: {controller}")
 
             # Validate the slice graph
-            topology = ExperimentTopology(graph_string=slice_graph)
-            topology.validate()
+            topology = FimHelper.create_topology(graph_string=slice_graph)
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
             asm_graph.validate_graph()
@@ -294,6 +295,7 @@ class OrchestratorHandler:
             self.logger.error(f"Exception occurred processing create_slice e: {e}")
             raise e
         finally:
+            FimHelper.delete_topology(topology=topology)
             if new_slice_object is not None:
                 new_slice_object.unlock()
             self.logger.info(f"OH : TIME= {time.time() - start:.0f}")
@@ -381,6 +383,7 @@ class OrchestratorHandler:
             raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
 
         asm_graph = None
+        topology = None
         try:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"modify_slice invoked for Controller: {controller}")
@@ -405,8 +408,7 @@ class OrchestratorHandler:
                                             f"try again later")
 
             # Validate the slice graph
-            topology = ExperimentTopology(graph_string=slice_graph)
-            topology.validate()
+            topology = FimHelper.create_topology(graph_string=slice_graph)
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
             asm_graph.validate_graph()
@@ -448,6 +450,8 @@ class OrchestratorHandler:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing modify_slice e: {e}")
             raise e
+        finally:
+            FimHelper.delete_topology(topology=topology)
 
     def delete_slice(self, *, token: str, slice_id: str = None):
         """

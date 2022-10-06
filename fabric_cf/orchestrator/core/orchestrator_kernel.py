@@ -43,7 +43,6 @@ class OrchestratorKernel:
     """
 
     def __init__(self):
-        self.lock = threading.Lock()
         self.defer_thread = None
         self.sut = None
         self.broker = None
