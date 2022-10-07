@@ -422,7 +422,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
                                   " ignoring it: {}".format(pred_state.get_reservation()))
                 continue
 
-            self.logger.info(f"Res# {self.get_reservation_id()} Pred: {pred_state.get_reservation()}")
+            self.logger.info(f"Res# {self.get_reservation_id()} Pred: {pred_state.get_reservation()} "
+                             f"Join State: {pred_state.get_reservation().joinstate}")
 
             if not pred_state.get_reservation().is_active_joined():
                 approved = False
@@ -431,6 +432,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if approved:
             self.prepare_redeem()
 
+        self.logger.info(f"Res# {self.get_reservation_id()} Approved: {approved}")
         return approved
 
     def can_redeem(self) -> bool:
