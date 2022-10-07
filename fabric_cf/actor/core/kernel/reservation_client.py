@@ -422,6 +422,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
                                   " ignoring it: {}".format(pred_state.get_reservation()))
                 continue
 
+            self.logger.info(f"Res# {self.get_reservation_id()} Pred: {pred_state.get_reservation()}")
+
             if not pred_state.get_reservation().is_active_joined():
                 approved = False
                 break
@@ -432,9 +434,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         return approved
 
     def can_redeem(self) -> bool:
-        if (((self.state == ReservationStates.ActiveTicketed) or (self.state == ReservationStates.Ticketed) or
-             ((self.state == ReservationStates.Active) and self.pending_recover)) and
-                (self.pending_state == ReservationPendingStates.None_)):
+        ticketed_states_to_redeem = [ReservationStates.ActiveTicketed, ReservationStates.Ticketed]
+        is_valid_state = self.state in ticketed_states_to_redeem or \
+                         (self.state == ReservationStates.Active and self.pending_recover)
+        if is_valid_state and self.pending_state == ReservationPendingStates.None_:
             assert self.resources is not None
             c = self.resources.get_resources()
             assert c is not None and c.get_units() > 0
@@ -481,7 +484,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                     ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
-
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {self.resources.sliver}")
 
     def approve_ticket(self):
@@ -493,7 +495,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
         When true, the reservation can manipulate the current reservation's attributes to
         facilitate ticketing from the broker. Note that approve_ticket may be polled multiple
         times, and should be idempotent.
-
 
         @return true if approved; false otherwise
         """
@@ -843,10 +844,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 result += f"{ev}, "
             result = result[:-2]
         return result
-
+    '''
     def is_active(self) -> bool:
         return (self.state == ReservationStates.Active or self.state == ReservationStates.ActiveTicketed) and \
                self.joinstate == JoinState.NoJoin
+    '''
 
     def is_active_joined(self) -> bool:
         return self.is_active() and self.joinstate == JoinState.NoJoin
