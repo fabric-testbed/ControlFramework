@@ -227,8 +227,7 @@ class OrchestratorHandler:
 
             create_ts = time.time()
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
-            asm_graph.validate_graph()
-            self.logger.info(f"ASM validate: TIME= {time.time() - create_ts:.0f}")
+            self.logger.info(f"ASM load: TIME= {time.time() - create_ts:.0f}")
 
             # Authorize the slice
             create_ts = time.time()
@@ -427,7 +426,6 @@ class OrchestratorHandler:
             topology.validate()
 
             asm_graph = FimHelper.get_neo4j_asm_graph(slice_graph=topology.serialize())
-            asm_graph.validate_graph()
 
             # Authorize the slice
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)

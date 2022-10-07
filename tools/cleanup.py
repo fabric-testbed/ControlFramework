@@ -80,6 +80,7 @@ class MainClass:
                         self.logger.error(
                             f"Failed to delete reservation {r.get_reservation_id()} for Slice# {s.get_slice_id()}: e: {e}")
                         self.logger.error(traceback.format_exc())
+                actor_db.remove_slice(slice_id=s.get_slice_id())
             except Exception as e:
                 self.logger.error(f"Failed to delete slice: {s.get_slice_id()}: e: {e}")
                 self.logger.error(traceback.format_exc())

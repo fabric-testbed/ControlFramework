@@ -536,7 +536,7 @@ class PsqlDatabase:
                 rows = session.query(Slices).filter_by(**filter_dict)
 
                 if lease_end is not None:
-                    rows.filter(Slices.lease_end < lease_end)
+                    rows = rows.filter(Slices.lease_end < lease_end)
 
                 rows = rows.order_by(desc(Slices.lease_end))
 
