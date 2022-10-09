@@ -78,16 +78,16 @@ class KernelTick(Tick):
         with self.lock:
             now = datetime.now(timezone.utc)
             self.current_cycle = self.clock.cycle(when=now)
-            self.logger.trace(f"Clock interrupt: now= {now} cycle={self.current_cycle}")
+            self.logger.trace(f"[{threading.get_native_id()}] Clock interrupt: now= {now} cycle={self.current_cycle}")
             if not self.manual and self.timer is None:
                 return
 
             for t in self.to_tick:
                 try:
-                    self.logger.trace(f"Delivering external tick to {t.get_name()} cycle= {self.current_cycle}")
+                    self.logger.trace(f"[{threading.get_native_id()}] Delivering external tick to {t.get_name()} cycle= {self.current_cycle}")
                     t.external_tick(cycle=self.current_cycle)
                 except Exception as e:
-                    self.logger.error(f"Unexpected error while delivering tick notification for {t.get_name()} {e}")
+                    self.logger.error(f"[{threading.get_native_id()}] Unexpected error while delivering tick notification for {t.get_name()} {e}")
 
     def tick_notifier(self):
         """

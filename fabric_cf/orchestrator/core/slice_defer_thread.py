@@ -120,7 +120,7 @@ class SliceDeferThread:
         Thread main loop
         :return:
         """
-        self.logger.debug("SliceDeferThread started")
+        self.logger.debug(f"[{threading.get_native_id()}] SliceDeferThread started")
         while True:
             slices = []
             if not self.stopped and self.slice_queue.empty():
@@ -139,7 +139,7 @@ class SliceDeferThread:
                     self.logger.error(traceback.format_exc())
 
             if len(slices) > 0:
-                self.logger.debug(f"Processing {len(slices)} slices")
+                self.logger.debug(f"[{threading.get_native_id()}] Processing {len(slices)} slices")
                 for s in slices:
                     try:
                         # Process the Slice i.e. Demand the computed reservations i.e. Add them to the policy
@@ -161,10 +161,10 @@ class SliceDeferThread:
         try:
             controller_slice.lock()
             for reservation in computed_reservations:
-                self.logger.debug(f"Issuing demand for reservation: {reservation.get_reservation_id()}")
+                self.logger.debug(f"[{threading.get_native_id()}] Issuing demand for reservation: {reservation.get_reservation_id()}")
 
                 if reservation.get_state() != ReservationStates.Unknown.value:
-                    self.logger.debug(f"Reservation not in {reservation.get_state()} state, ignoring it")
+                    self.logger.debug(f"[{threading.get_native_id()}] Reservation not in {reservation.get_state()} state, ignoring it")
                     continue
 
                 if not self.mgmt_actor.demand_reservation(reservation=reservation):
@@ -178,11 +178,11 @@ class SliceDeferThread:
             '''
 
             for r in controller_slice.computed_remove_reservations:
-                self.logger.debug(f"Issuing close for reservation: {r}")
+                self.logger.debug(f"[{threading.get_native_id()}] Issuing close for reservation: {r}")
                 self.mgmt_actor.close_reservation(rid=ID(uid=r))
 
             for rid, sliver in controller_slice.computed_modify_reservations.items():
-                self.logger.debug(f"Issuing extend for modified reservation: {rid}")
+                self.logger.debug(f"[{threading.get_native_id()}] Issuing extend for modified reservation: {rid}")
                 if not self.mgmt_actor.extend_reservation(reservation=ID(uid=rid), sliver=sliver, new_end_time=None):
                     self.logger.error(f"Could not demand resources: {self.mgmt_actor.get_last_error()}")
                     continue

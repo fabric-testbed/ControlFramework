@@ -106,10 +106,10 @@ class ReservationStatusUpdateThread:
         Periodic
         :return:
         """
-        self.logger.debug("Reservation Status Update Thread started")
+        self.logger.debug(f"[{threading.get_native_id()}] Reservation Status Update Thread started")
         while not self.stopped_worker.wait(timeout=self.MODIFY_CHECK_PERIOD):
             self.run()
-        self.logger.debug("Reservation Status Update Thread exited")
+        self.logger.debug(f"[{threading.get_native_id()}] Reservation Status Update Thread exited")
 
     def __add_active_status_watch(self, *, we: WatchEntry):
         try:
@@ -140,7 +140,7 @@ class ReservationStatusUpdateThread:
         :return:
         """
         to_remove = []
-        self.logger.debug(f"Scanning {watch_type} watch list {len(watch_list)}")
+        self.logger.debug(f"[{threading.get_native_id()}] Scanning {watch_type} watch list {len(watch_list)}")
 
         if self.controller is None:
             from fabric_cf.orchestrator.core.orchestrator_kernel import OrchestratorKernelSingleton
@@ -148,7 +148,7 @@ class ReservationStatusUpdateThread:
 
         for watch_entry in watch_list:
             status, reservation = status_checker.check(controller=self.controller, rid=watch_entry.reservation_to_watch)
-            self.logger.info(f"Status------- {status} for {reservation.get_reservation_id()}")
+            self.logger.info(f"[{threading.get_native_id()}] Status------- {status} for {reservation.get_reservation_id()}")
             if status == Status.OK:
                 to_remove.append(watch_entry)
                 watch_entry.callback.success(controller=self.controller, reservation=reservation)
@@ -156,7 +156,7 @@ class ReservationStatusUpdateThread:
                 to_remove.append(watch_entry)
                 watch_entry.callback.failure(controller=self.controller, reservation=reservation)
 
-        self.logger.debug(f"Removing {watch_type} entries from watch {len(to_remove)}")
+        self.logger.debug(f"[{threading.get_native_id()}] Removing {watch_type} entries from watch {len(to_remove)}")
 
         for we in to_remove:
             watch_list.remove(we)

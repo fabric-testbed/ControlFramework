@@ -153,6 +153,7 @@ class AsmUpdateThread:
                 self.logger.error(traceback.format_exc())
 
     def __run(self):
+        self.logger.info(f"[{threading.get_native_id()}] Thread {self.name} started")
         while True:
             with self.condition:
                 while not self.shutdown and self.event_queue.empty():

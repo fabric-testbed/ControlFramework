@@ -869,7 +869,7 @@ class ActorMixin(ABCActorMixin):
         Actor run function for actor thread
         """
         try:
-            self.logger.info("Actor Main Thread started")
+            self.logger.info(f"[{threading.get_native_id()}] Actor Main Thread started")
             self.actor_count += 1
             self.actor_main()
         except Exception as e:
@@ -883,7 +883,7 @@ class ActorMixin(ABCActorMixin):
         Actor run function for Synchronous event processor
         """
         try:
-            self.logger.info("Actor Sync Event Processor started")
+            self.logger.info(f"[{threading.get_native_id()}] Actor Sync Event Processor started")
             self.sync_event_processor()
         except Exception as e:
             self.logger.error(f"Unexpected error {e}")
