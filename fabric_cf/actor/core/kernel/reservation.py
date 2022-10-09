@@ -649,15 +649,6 @@ class Reservation(ABCReservationMixin):
         """
         return JoinState.None_
 
-    class CountHelper:
-        """
-        Helper class for counting units.
-        """
-        def __init__(self):
-            self.pending = 0
-            self.active = 0
-            self.type = None
-
     def get_graph_node_id(self) -> str:
         if self.requested_resources is not None:
             request = self.requested_resources.get_sliver()

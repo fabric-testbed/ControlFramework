@@ -28,7 +28,6 @@ import datetime
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import FrameworkException
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_count import ResourceCount
 
 
 class ReservationSet:
@@ -76,17 +75,6 @@ class ReservationSet:
         if rid is not None and rid in self.reservations:
             return True
         return False
-
-    def count(self, *, rc: ResourceCount, when: datetime):
-        """
-        Tallies up resources in the ReservationSet. Note: "just a hint" unless kernel lock is held.
-
-        Args:
-            rc: holder for counts
-            when: date relative to which to do the counting
-        """
-        for reservation in self.reservations.values():
-            reservation.count(rc, when)
 
     def get(self, *, rid: ID) -> ABCReservationMixin:
         """

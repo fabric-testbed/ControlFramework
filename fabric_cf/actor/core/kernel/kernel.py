@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import threading
+import time
 import traceback
 from typing import List
 
@@ -502,11 +503,20 @@ class Kernel:
         @param reservation the reservation being probed
         @throws Exception rare
         """
+        begin = time.time()
         try:
             reservation.prepare_probe()
+            self.logger.info(f"[{threading.get_native_id()}] KERNEL RES PEP PROBE TIME: {time.time() - begin:.0f}")
+            begin = time.time()
             reservation.probe_pending()
+            self.logger.info(f"[{threading.get_native_id()}] KERNEL RES PEND PROBE TIME: {time.time() - begin:.0f}")
+            begin = time.time()
             self.plugin.get_database().update_reservation(reservation=reservation)
+            self.logger.info(f"[{threading.get_native_id()}] KERNEL RES DB UPDATE PROBE TIME: {time.time() - begin:.0f}")
+            begin = time.time()
             reservation.service_probe()
+            self.logger.info(
+                f"[{threading.get_native_id()}] KERNEL RES SERV PROBE TIME: {time.time() - begin:.0f}")
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during probe pending for reservation #{reservation.get_reservation_id()}",
@@ -999,22 +1009,28 @@ class Kernel:
         @throws Exception
         """
         try:
+            begin = time.time()
             try:
                 self.lock.acquire()
                 for delegation in self.delegations.values():
                     self.probe_pending_delegation(delegation=delegation)
             finally:
                 self.lock.release()
+            self.logger.info(f"[{threading.get_native_id()}] KERNEL DEL TICK TIME: {time.time() - begin:.0f}")
 
+            begin = time.time()
             for reservation in self.reservations.values():
                 self.probe_pending(reservation=reservation)
+            self.logger.info(f"[{threading.get_native_id()}] KERNEL RES TICK TIME: {time.time() - begin:.0f}")
 
+            begin = time.time()
             try:
                 self.lock.acquire()
                 for slice_obj in self.slices.get_client_slices():
                     self.probe_pending_slices(slice_obj=slice_obj)
             finally:
                 self.lock.release()
+            self.logger.info(f"[{threading.get_native_id()}] KERNEL SLC TICK TIME: {time.time() - begin:.0f}")
 
             self.purge()
             self.check_nothing_pending()

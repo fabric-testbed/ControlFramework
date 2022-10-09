@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.time.term import Term
     from fabric_cf.actor.core.util.resource_type import ResourceType
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
-    from fabric_cf.actor.core.util.resource_count import ResourceCount
 
 
 class ABCReservationResources(ABC):
@@ -48,19 +47,6 @@ class ABCReservationResources(ABC):
         previousResources: the previous resource set bound to the reservation
         leasedResources: the concrete resources bound to the reservation.
     """
-
-    @abstractmethod
-    def count(self, *, rc: ResourceCount, when: datetime):
-        """
-        Counts the number of resources in the reservation relative to the specified time.
-        The ResourceCount object is updated with the count of active, pending, expired, failed, etc. units.
-        Note: "just a hint" unless the kernel lock is held.
-
-        Args:
-            rc: holder for counts
-            time: when instance
-        """
-
     @abstractmethod
     def get_approved_resources(self) -> ResourceSet:
         """

@@ -31,8 +31,6 @@ import time
 import traceback
 from typing import TYPE_CHECKING, List
 
-from datetime import datetime
-
 from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels
@@ -67,7 +65,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
-    from fabric_cf.actor.core.util.resource_count import ResourceCount
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
@@ -425,7 +422,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             self.logger.info(f"Res# {self.get_reservation_id()} Pred: {pred_state.get_reservation()} "
                              f"Join State: {pred_state.get_reservation().joinstate}")
 
-            if not pred_state.get_reservation().is_active_joined():
+            if not pred_state.get_reservation().is_active():
                 approved = False
                 break
 
@@ -627,36 +624,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
                                               pending=ReservationPendingStates.Closing,
                                               join_state=JoinState.NoJoin)
 
-    def count_with_time(self, *, when: datetime):
-        """
-        Count with time
-        @param when ime
-        """
-        result = Reservation.CountHelper()
-        if not self.is_terminal():
-            if self.term is not None and self.term.contains(term=when) and self.resources is not None:
-                result.active = self.resources.get_concrete_units(when=when)
-                result.type = self.resources.type
-            else:
-                if self.approved and self.approved_term is not None and self.approved_term.contains(term=when) and \
-                        self.approved_resources is not None:
-                    result.pending = self.approved_resources.units
-                    result.type = self.approved_resources.type
-        return result
-
-    def count(self, *, rc: ResourceCount, when: datetime):
-        if self.state == ReservationStates.Nascent or self.state == ReservationStates.Active or \
-                self.state == ReservationStates.ActiveTicketed or self.state == ReservationStates.Ticketed:
-            c = self.count_with_time(when=when)
-            if c.type is not None:
-                rc.tally_active(resource_type=c.type, count=c.active)
-                rc.tally_pending(resource_type=c.type, count=c.pending)
-        elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait and\
-                self.resources is not None:
-            rc.tally_close(resource_type=self.resources.type, count=self.resources.units)
-        elif self.state == ReservationStates.Failed and self.resources is not None:
-            rc.tally_failed(resource_type=self.resources.type, count=self.resources.units)
-
     def extend_lease(self):
         # Not permitted if there is a pending operation.
         self.nothing_pending()
@@ -846,11 +813,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 result += f"{ev}, "
             result = result[:-2]
         return result
-    '''
-    def is_active(self) -> bool:
-        return (self.state == ReservationStates.Active or self.state == ReservationStates.ActiveTicketed) and \
-               self.joinstate == JoinState.NoJoin
-    '''
 
     def is_active_joined(self) -> bool:
         return self.is_active() and self.joinstate == JoinState.NoJoin
@@ -1680,9 +1642,17 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 error_message = self.get_last_ticket_update()
             if error_message is None:
                 error_message = self.get_last_lease_update()
+            '''
             self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
                                           reservation_state=self.state.name,
                                           error_message=error_message)
+            '''
+            asm_thread = self.actor.get_asm_thread()
+            if asm_thread is not None:
+                asm_thread.enqueue(graph_id=self.slice.get_graph_id(),
+                                   sliver=sliver, rid=str(self.rid),
+                                   reservation_state=self.state.name,
+                                   error_message=error_message)
             self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                               f"Slice Graph# {self.slice.get_graph_id()}")
 

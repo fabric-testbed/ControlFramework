@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from abc import abstractmethod
-from datetime import datetime
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
@@ -38,7 +37,6 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.rpc_exception import RPCError
-from fabric_cf.actor.core.util.resource_count import ResourceCount
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
@@ -179,46 +177,6 @@ class ReservationServer(Reservation, ABCServerReservation):
 
     def clear_notice(self):
         self.update_data.clear()
-
-    def count_when(self, *, when: datetime):
-        """
-        Counts the number of active and pending units in the reservation at the
-        given time instance.
-
-        @param when
-                   time instance
-
-        @return counter of active and pending units
-        """
-        c = Reservation.CountHelper()
-        if not self.is_terminal():
-            if self.term is not None and self.term.contains(term=when) and self.resources is not None:
-                c.active = self.resources.get_concrete_units(when=when)
-                c.type = self.resources.type
-            else:
-                if self.approved and self.approved_term is not None and self.approved_resources is not None:
-                    if self.approved_term.contains(term=when):
-                        c.active = self.approved_resources.units
-                        c.type = self.approved_resources.type
-                    else:
-                        if self.requested_term is not None and self.requested_term.contains(term=when) and \
-                                self.requested_resources is not None:
-                            c.pending = self.requested_resources.units
-                            c.type = self.requested_resources.type
-
-        return c
-
-    def count(self, *, rc: ResourceCount, when: datetime):
-        if self.state == ReservationStates.Nascent or self.state == ReservationStates.Ticketed:
-            c = self.count_when(when=when)
-            if c.type is not None:
-                rc.tally_active(resource_type=c.type, count=c.active)
-                rc.tally_pending(resource_type=c.type, count=c.pending)
-        elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait:
-            if self.resources is not None:
-                rc.tally_close(resource_type=self.resources.type, count=self.resources.get_units())
-        elif self.state == ReservationStates.Failed and self.resources is not None:
-            rc.tally_failed(resource_type=self.resources.type, count=self.resources.get_units())
 
     def fail(self, *, message: str, exception: Exception = None):
         self.update_data.error(message=message)

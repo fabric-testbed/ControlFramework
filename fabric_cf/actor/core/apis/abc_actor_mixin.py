@@ -688,3 +688,6 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         Raises:
             Exception in case of error
         """
+
+    def get_asm_thread(self):
+        return None
