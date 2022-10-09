@@ -503,20 +503,11 @@ class Kernel:
         @param reservation the reservation being probed
         @throws Exception rare
         """
-        begin = time.time()
         try:
             reservation.prepare_probe()
-            self.logger.info(f"[{threading.get_native_id()}] KERNEL RES PEP PROBE TIME: {time.time() - begin:.0f}")
-            begin = time.time()
             reservation.probe_pending()
-            self.logger.info(f"[{threading.get_native_id()}] KERNEL RES PEND PROBE TIME: {time.time() - begin:.0f}")
-            begin = time.time()
             self.plugin.get_database().update_reservation(reservation=reservation)
-            self.logger.info(f"[{threading.get_native_id()}] KERNEL RES DB UPDATE PROBE TIME: {time.time() - begin:.0f}")
-            begin = time.time()
             reservation.service_probe()
-            self.logger.info(
-                f"[{threading.get_native_id()}] KERNEL RES SERV PROBE TIME: {time.time() - begin:.0f}")
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during probe pending for reservation #{reservation.get_reservation_id()}",

@@ -124,6 +124,8 @@ class AsmUpdateThread:
 
             event = AsmEvent(graph_id=graph_id, sliver=sliver)
             self.event_queue.put_nowait(event)
+            with self.condition:
+                self.condition.notify_all()
             self.logger.debug("Added event to event queue {}".format(event.__class__.__name__))
         except Exception as e:
             self.logger.error(f"Failed to queue event: e: {e}")
