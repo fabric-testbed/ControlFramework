@@ -75,6 +75,18 @@ class ExecutionStatus:
         self.done = True
 
 
+class TickEvent(ABCActorEvent):
+    def __init__(self, *, actor, cycle: int):
+        self.actor = actor
+        self.cycle = cycle
+
+    def __str__(self):
+        return "{} {}".format(self.actor, self.cycle)
+
+    def process(self):
+        self.actor.actor_tick(cycle=self.cycle)
+
+
 class ActorEvent(ABCActorEvent):
     """
     Actor Event
@@ -144,6 +156,7 @@ class ActorMixin(ABCActorMixin):
         # A queue of timers that have fired and need to be processed.
         self.timer_queue = queue.Queue()
         self.event_queue = queue.Queue()
+
         # Reservations to close once recovery is complete.
         self.closing = ReservationSet()
 
@@ -154,6 +167,7 @@ class ActorMixin(ABCActorMixin):
         self.event_queue_sync = queue.Queue()
         self.thread_sync = None
         self.thread_sync_lock = threading.Lock()
+        self.tick_event_queue = queue.Queue()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -176,6 +190,7 @@ class ActorMixin(ABCActorMixin):
         del state['thread_sync']
         del state['thread_sync_lock']
         del state['event_queue_sync']
+        del state['tick_event_queue']
         return state
 
     def __setstate__(self, state):
@@ -200,6 +215,7 @@ class ActorMixin(ABCActorMixin):
         self.thread_sync = None
         self.thread_sync_lock = threading.Lock()
         self.event_queue_sync = queue.Queue()
+        self.tick_event_queue = queue.Queue()
 
     def actor_added(self):
         self.plugin.actor_added()
@@ -254,19 +270,7 @@ class ActorMixin(ABCActorMixin):
 
     def external_tick(self, *, cycle: int):
         self.logger.info("External Tick start cycle: {}".format(cycle))
-
-        class TickEvent(ABCActorEvent):
-            def __init__(self, *, base, cycle: int):
-                self.base = base
-                self.cycle = cycle
-
-            def __str__(self):
-                return "{} {}".format(self.base, self.cycle)
-
-            def process(self):
-                self.base.actor_tick(cycle=self.cycle)
-
-        self.queue_event(incoming=TickEvent(base=self, cycle=cycle))
+        self.queue_event(incoming=TickEvent(actor=self, cycle=cycle))
         self.logger.info("External Tick end cycle: {}".format(cycle))
 
     def actor_tick(self, *, cycle: int):
@@ -1021,7 +1025,10 @@ class ActorMixin(ABCActorMixin):
         Queue an even on Actor Event Queue
         """
         try:
-            self.event_queue.put_nowait(incoming)
+            if isinstance(incoming, TickEvent):
+                self.tick_event_queue.put_nowait(incoming)
+            else:
+                self.event_queue.put_nowait(incoming)
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
         except Exception as e:
             self.logger.error(f"Failed to queue event: {incoming.__class__.__name__} e: {e}")
@@ -1079,8 +1086,10 @@ class ActorMixin(ABCActorMixin):
         while True:
             events = []
             timers = []
+            tick_events = []
 
-            if not self.stopped and self.event_queue.empty() and self.timer_queue.empty():
+            if not self.stopped and self.event_queue.empty() and self.timer_queue.empty() and \
+                    self.tick_event_queue.empty():
                 time.sleep(0.005)
 
             if self.stopped:
@@ -1093,7 +1102,12 @@ class ActorMixin(ABCActorMixin):
             if not self.timer_queue.empty():
                 timers = self.dequeue(queue_obj=self.timer_queue)
 
+            if not self.tick_event_queue.empty():
+                e = self.tick_event_queue.get_nowait()
+                tick_events.append(e)
+
             self.process_events(events=events)
+            self.process_events(events=tick_events)
             self.process_timer_events(timers=timers)
 
     def setup_message_service(self):

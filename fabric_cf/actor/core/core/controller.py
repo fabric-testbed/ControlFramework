@@ -78,9 +78,6 @@ class Controller(ActorMixin, ABCController):
         # initialization status
         self.initialized = False
         self.type = ActorType.Orchestrator
-        self.event_queue_sync = queue.Queue()
-        self.thread_sync = None
-        self.thread_sync_lock = threading.Lock()
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
 
     def __getstate__(self):
@@ -112,6 +109,7 @@ class Controller(ActorMixin, ABCController):
         del state['thread_sync_lock']
         del state['event_queue_sync']
         del state ['asm_update_thread']
+        del state['tick_event_queue']
         return state
 
     def __setstate__(self, state):
@@ -142,6 +140,7 @@ class Controller(ActorMixin, ABCController):
         self.thread_sync_lock = threading.Lock()
         self.event_queue_sync = queue.Queue()
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
+        self.tick_event_queue = queue.Queue()
 
     def set_logger(self, logger):
         super(Controller, self).set_logger(logger=logger)
