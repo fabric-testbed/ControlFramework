@@ -78,6 +78,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            reservation.lock()
             reservation.reserve(policy=self.policy)
             self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
@@ -86,6 +87,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             err = f"An error occurred during amend reserve for reservation #{reservation.get_reservation_id()}"
             self.error(err=err, e=e)
+        finally:
+            reservation.unlock()
 
     def amend_delegate(self, *, delegation: ABCDelegation):
         """
@@ -139,9 +142,13 @@ class Kernel:
         @param reservation reservation
         @param message message
         """
-        if not reservation.is_failed() and not reservation.is_closed():
-            reservation.fail(message=message, exception=None)
-        self.plugin.get_database().update_reservation(reservation=reservation)
+        try:
+            reservation.lock()
+            if not reservation.is_failed() and not reservation.is_closed():
+                reservation.fail(message=message, exception=None)
+            self.plugin.get_database().update_reservation(reservation=reservation)
+        finally:
+            reservation.unlock()
 
     def fail_delegation(self, *, delegation: ABCDelegation, message: str):
         """
@@ -164,6 +171,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            reservation.lock()
             if not reservation.is_closed() and not reservation.is_closing():
                 self.policy.close(reservation=reservation)
                 reservation.close()
@@ -173,6 +181,8 @@ class Kernel:
             err = f"An error occurred during close for reservation #{reservation.get_reservation_id()}"
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
+        finally:
+            reservation.unlock()
 
     @staticmethod
     def compare_and_update(*, incoming: ABCServerReservation, current: ABCServerReservation):
@@ -188,15 +198,21 @@ class Kernel:
         @return a comparison status flag (see Sequence*)
         """
         code = SequenceComparisonCodes.SequenceEqual
-        if current.get_sequence_in() < incoming.get_sequence_in():
-            if current.is_no_pending():
-                code = SequenceComparisonCodes.SequenceGreater
-                current.set_sequence_in(sequence=incoming.get_sequence_in())
-                current.set_requested_resources(resources=incoming.get_requested_resources())
-                current.set_requested_term(term=incoming.get_requested_term())
-        else:
-            if current.get_sequence_in() > incoming.get_sequence_in():
-                code = SequenceComparisonCodes.SequenceSmaller
+        try:
+            current.lock()
+            incoming.lock()
+            if current.get_sequence_in() < incoming.get_sequence_in():
+                if current.is_no_pending():
+                    code = SequenceComparisonCodes.SequenceGreater
+                    current.set_sequence_in(sequence=incoming.get_sequence_in())
+                    current.set_requested_resources(resources=incoming.get_requested_resources())
+                    current.set_requested_term(term=incoming.get_requested_term())
+            else:
+                if current.get_sequence_in() > incoming.get_sequence_in():
+                    code = SequenceComparisonCodes.SequenceSmaller
+        finally:
+            current.unlock()
+            incoming.unlock()
         return code
 
     @staticmethod
@@ -213,14 +229,20 @@ class Kernel:
         @return a comparison status flag (see Sequence*)
         """
         code = SequenceComparisonCodes.SequenceEqual
-        if current.get_sequence_in() < incoming.get_sequence_in():
-            code = SequenceComparisonCodes.SequenceGreater
-            current.set_sequence_in(sequence=incoming.get_sequence_in())
-            current.set_requested_resources(resources=incoming.get_requested_resources())
-            current.set_requested_term(term=incoming.get_requested_term())
-        else:
-            if current.get_sequence_in() > incoming.get_sequence_in():
-                code = SequenceComparisonCodes.SequenceSmaller
+        try:
+            current.lock()
+            incoming.lock()
+            if current.get_sequence_in() < incoming.get_sequence_in():
+                code = SequenceComparisonCodes.SequenceGreater
+                current.set_sequence_in(sequence=incoming.get_sequence_in())
+                current.set_requested_resources(resources=incoming.get_requested_resources())
+                current.set_requested_term(term=incoming.get_requested_term())
+            else:
+                if current.get_sequence_in() > incoming.get_sequence_in():
+                    code = SequenceComparisonCodes.SequenceSmaller
+        finally:
+            current.unlock()
+            incoming.unlock()
         return code
 
     def error(self, *, err: str, e: Exception):
@@ -241,6 +263,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            reservation.lock()
             reservation.extend_lease()
             self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
@@ -249,6 +272,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during extend lease for reservation #{reservation.get_reservation_id()}",
                        e=e)
+        finally:
+            reservation.unlock()
 
     def modify_lease(self, *, reservation: ABCReservationMixin):
         """
@@ -260,6 +285,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            reservation.lock()
             reservation.modify_lease()
             self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
@@ -268,6 +294,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during modify lease for reservation #{reservation.get_reservation_id()}",
                        e=e)
+        finally:
+            reservation.unlock()
 
     def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term) -> int:
         """
@@ -285,31 +313,34 @@ class Kernel:
 
         if real is None:
             raise KernelException(f"Unknown reservation rid: {rid}")
+        try:
+            real.lock()
+            # check for a pending operation: we cannot service the extend if there is another operation in progress.
+            if real.get_pending_state() != ReservationPendingStates.None_:
+                return Constants.RESERVATION_HAS_PENDING_OPERATION
 
-        # check for a pending operation: we cannot service the extend if there is another operation in progress.
-        if real.get_pending_state() != ReservationPendingStates.None_:
-            return Constants.RESERVATION_HAS_PENDING_OPERATION
+            # attach the desired extension term and resource set
+            real.set_approved(term=term, approved_resources=resources)
+            # notify the policy that a reservation is about to be extended
+            self.policy.extend(reservation=real, resources=resources, term=term)
 
-        # attach the desired extension term and resource set
-        real.set_approved(term=term, approved_resources=resources)
-        # notify the policy that a reservation is about to be extended
-        self.policy.extend(reservation=real, resources=resources, term=term)
+            if isinstance(real, AuthorityReservation):
+                ticket = False
 
-        if isinstance(real, AuthorityReservation):
-            ticket = False
-
-        if ticket:
-            real.extend_ticket(actor=self.plugin.get_actor())
-        else:
-            real.extend_lease()
-
-        self.plugin.get_database().update_reservation(reservation=real)
-
-        if not real.is_failed():
             if ticket:
-                real.service_extend_ticket()
+                real.extend_ticket(actor=self.plugin.get_actor())
             else:
-                real.service_extend_lease()
+                real.extend_lease()
+
+            self.plugin.get_database().update_reservation(reservation=real)
+
+            if not real.is_failed():
+                if ticket:
+                    real.service_extend_ticket()
+                else:
+                    real.service_extend_lease()
+        finally:
+            real.unlock()
 
         return 0
 
@@ -323,6 +354,7 @@ class Kernel:
         """
         try:
             self.logger.debug(f"Processing extend ticket for reservation={type(reservation)}")
+            reservation.lock()
             if reservation.can_renew():
                 reservation.extend_ticket(actor=self.plugin.get_actor())
             else:
@@ -336,6 +368,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during extend ticket for reservation #{reservation.get_reservation_id()}",
                        e=e)
+        finally:
+            reservation.unlock()
 
     def get_client_slices(self) -> List[ABCSlice]:
         """
@@ -478,15 +512,20 @@ class Kernel:
         @param current reservation
         @param operation operation code
         """
-        current.handle_duplicate_request(operation=operation)
+        try:
+            current.lock()
+            current.handle_duplicate_request(operation=operation)
+        finally:
+            current.unlock()
 
-    def probe_pending_slices(self, *, slice_obj: ABCSlice):
+    def __probe_pending_slices(self, *, slice_obj: ABCSlice):
         """
         Probes to check for completion of pending operation.
         @param slice_obj the slice_obj being probed
         @throws Exception rare
         """
         try:
+            slice_obj.lock_slice()
             if slice_obj.is_broker_client():
                 return
             state_changed, slice_state = slice_obj.transition_slice(operation=SliceStateMachine.REEVALUATE)
@@ -496,14 +535,17 @@ class Kernel:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during probe pending for slice_obj #{slice_obj.get_slice_id()}", e=e)
+        finally:
+            slice_obj.unlock_slice()
 
-    def probe_pending(self, *, reservation: ABCReservationMixin):
+    def __probe_pending(self, *, reservation: ABCReservationMixin):
         """
         Probes to check for completion of pending operation.
         @param reservation the reservation being probed
         @throws Exception rare
         """
         try:
+            reservation.lock()
             reservation.prepare_probe()
             reservation.probe_pending()
             self.plugin.get_database().update_reservation(reservation=reservation)
@@ -512,8 +554,10 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during probe pending for reservation #{reservation.get_reservation_id()}",
                        e=e)
+        finally:
+            reservation.unlock()
 
-    def probe_pending_delegation(self, *, delegation: ABCDelegation):
+    def __probe_pending_delegation(self, *, delegation: ABCDelegation):
         """
         Probes to check for completion of pending operation.
         @param delegation the delegation being probed
@@ -529,7 +573,7 @@ class Kernel:
             self.error(err=f"An error occurred during probe pending for delegation #{delegation.get_delegation_id()}",
                        e=e)
 
-    def purge(self):
+    def __purge(self):
         """
         Purges all closed reservations.
         @throws Exception
@@ -537,11 +581,15 @@ class Kernel:
         for reservation in self.reservations.values():
             if reservation.is_closed():
                 try:
+                    reservation.lock()
+                    reservation.get_kernel_slice().lock_slice()
                     reservation.get_kernel_slice().unregister(reservation=reservation)
                 except Exception as e:
                     self.logger.error(f"An error occurred during purge for "
                                       f"reservation #{reservation.get_reservation_id()} e: {e}")
                 finally:
+                    reservation.get_kernel_slice().unlock_slice()
+                    reservation.unlock()
                     self.reservations.remove(reservation=reservation)
 
         try:
@@ -550,11 +598,13 @@ class Kernel:
             for delegation in self.delegations.values():
                 if delegation.is_closed():
                     try:
+                        delegation.get_slice_object().lock_slice()
                         delegation.get_slice_object().unregister_delegation(delegation=delegation)
                     except Exception as e:
                         self.logger.error(f"An error occurred during purge for "
                                           f"delegation #{delegation.get_delegation_id()} e:{e}")
                     finally:
+                        delegation.get_slice_object().unlock_slice()
                         delegations_to_be_removed.append(delegation.get_delegation_id())
 
             for d in delegations_to_be_removed:
@@ -577,6 +627,7 @@ class Kernel:
         @param reservation reservation
         """
         try:
+            reservation.lock()
             if reservation.can_redeem():
                 reservation.reserve(policy=self.policy)
             else:
@@ -588,8 +639,10 @@ class Kernel:
         except Exception as e:
             self.logger.error(f"An error occurred during redeem for reservation #{reservation.get_reservation_id()} "
                               f"e: {e}")
+        finally:
+            reservation.unlock()
 
-    def register(self, *, reservation: ABCReservationMixin, slice_object: ABCSlice) -> bool:
+    def __register(self, *, reservation: ABCReservationMixin, slice_object: ABCSlice) -> bool:
         """
         Registers a new reservation with its slice and the kernel reservation
         table. Must be called with the kernel lock on.
@@ -600,31 +653,36 @@ class Kernel:
         @throws Exception
         """
         add = False
-        reservation.set_logger(logger=self.logger)
+        try:
+            reservation.lock()
+            reservation.set_logger(logger=self.logger)
 
-        if not reservation.is_closed():
-            # Note: as of now slice.register must be the first operation in
-            # this method. slice.register will throw an exception if the
-            # reservation is already present in the slice table.
+            if not reservation.is_closed():
+                # Note: as of now slice.register must be the first operation in
+                # this method. slice.register will throw an exception if the
+                # reservation is already present in the slice table.
 
-            # register with the local slice
-            slice_object.register(reservation=reservation)
+                # register with the local slice
+                slice_object.lock_slice()
+                slice_object.register(reservation=reservation)
 
-            # register with the reservations table
-            if self.reservations.contains(reservation=reservation):
-                slice_object.unregister(reservation=reservation)
-                raise KernelException("There is already a reservation with the given identifier")
+                # register with the reservations table
+                if self.reservations.contains(reservation=reservation):
+                    slice_object.unregister(reservation=reservation)
+                    raise KernelException("There is already a reservation with the given identifier")
 
-            self.reservations.add(reservation=reservation)
+                self.reservations.add(reservation=reservation)
 
-            # attach actor to the reservation
-            reservation.set_actor(actor=self.plugin.get_actor())
-            # attach the local slice object
-            reservation.set_slice(slice_object=slice_object)
-            add = True
-        else:
-            self.logger.warning(f"Attempting to register a closed reservation #{reservation.get_reservation_id()}")
-
+                # attach actor to the reservation
+                reservation.set_actor(actor=self.plugin.get_actor())
+                # attach the local slice object
+                reservation.set_slice(slice_object=slice_object)
+                add = True
+            else:
+                self.logger.warning(f"Attempting to register a closed reservation #{reservation.get_reservation_id()}")
+        finally:
+            slice_object.unlock_slice()
+            reservation.unlock()
         return add
 
     def register_delegation_with_slice(self, *, delegation: ABCDelegation, slice_object: ABCSlice) -> bool:
@@ -705,14 +763,17 @@ class Kernel:
         add = False
 
         local_slice = self.slices.get(slice_id=reservation.get_slice().get_slice_id(), raise_exception=True)
-        add = self.register(reservation=reservation, slice_object=local_slice)
+        add = self.__register(reservation=reservation, slice_object=local_slice)
 
         if add:
             try:
+                reservation.lock()
                 self.plugin.get_database().add_reservation(reservation=reservation)
             except Exception as e:
                 self.unregister_no_check(reservation=reservation, slice_object=local_slice)
                 raise e
+            finally:
+                reservation.unlock()
 
     def modify_slice(self, *, slice_object: ABCSlice):
         """
@@ -728,13 +789,17 @@ class Kernel:
         if real is None:
             self.logger.debug("Slice object not found in local data structure")
         else:
-            if not real.is_dead_or_closing():
-                real.set_config_properties(value=slice_object.get_config_properties())
-                # Transition slice to Configuring state
-                real.transition_slice(operation=SliceStateMachine.MODIFY)
-                real.set_graph_id(graph_id=slice_object.get_graph_id())
-                real.set_dirty()
-                self.plugin.get_database().update_slice(slice_object=real)
+            try:
+                real.lock_slice()
+                if not real.is_dead_or_closing():
+                    real.set_config_properties(value=slice_object.get_config_properties())
+                    # Transition slice to Configuring state
+                    real.transition_slice(operation=SliceStateMachine.MODIFY)
+                    real.set_graph_id(graph_id=slice_object.get_graph_id())
+                    real.set_dirty()
+                    self.plugin.get_database().update_slice(slice_object=real)
+            finally:
+                real.unlock_slice()
 
     def register_slice(self, *, slice_object: ABCSlice):
         """
@@ -742,15 +807,19 @@ class Kernel:
         @param slice_object slice to register
         @throws Exception if the slice cannot be registered
         """
-        slice_object.prepare()
-        self.slices.add(slice_object=slice_object)
-
         try:
-            self.plugin.get_database().add_slice(slice_object=slice_object)
-        except Exception as e:
-            self.slices.remove(slice_id=slice_object.get_slice_id())
-            self.logger.error(traceback.format_exc())
-            self.error(err="could not register slice", e=e)
+            slice_object.lock_slice()
+            slice_object.prepare()
+            self.slices.add(slice_object=slice_object)
+
+            try:
+                self.plugin.get_database().add_slice(slice_object=slice_object)
+            except Exception as e:
+                self.slices.remove(slice_id=slice_object.get_slice_id())
+                self.logger.error(traceback.format_exc())
+                self.error(err="could not register slice", e=e)
+        finally:
+            slice_object.unlock_slice()
 
     def remove_reservation(self, *, rid: ID):
         """
@@ -764,10 +833,14 @@ class Kernel:
         real = self.reservations.get(rid=rid)
 
         if real is not None:
-            if real.is_closed() or real.is_failed() or real.get_state() == ReservationStates.CloseWait:
-                self.unregister_reservation(rid=rid)
-            else:
-                raise KernelException("Only reservations in failed, closed, or closewait state can be removed.")
+            try:
+                real.lock()
+                if real.is_closed() or real.is_failed() or real.get_state() == ReservationStates.CloseWait:
+                    self.unregister_reservation(rid=rid)
+                else:
+                    raise KernelException("Only reservations in failed, closed, or closewait state can be removed.")
+            finally:
+                real.unlock()
         else:
             self.logger.debug(f"Reservation # {rid} not found")
 
@@ -788,11 +861,15 @@ class Kernel:
         if slice_object is None:
             self.logger.warning("Slice object not found in local data structure")
         else:
-            if not slice_object.is_dead_or_closing():
-                # Transition slice to Configuring state
-                slice_object.transition_slice(operation=SliceStateMachine.MODIFY_ACCEPT)
-                slice_object.set_dirty()
-                self.plugin.get_database().update_slice(slice_object=slice_object)
+            try:
+                slice_object.lock_slice()
+                if not slice_object.is_dead_or_closing():
+                    # Transition slice to Configuring state
+                    slice_object.transition_slice(operation=SliceStateMachine.MODIFY_ACCEPT)
+                    slice_object.set_dirty()
+                    self.plugin.get_database().update_slice(slice_object=slice_object)
+            finally:
+                slice_object.unlock_slice()
 
     def remove_slice(self, *, slice_id: ID):
         """
@@ -863,7 +940,7 @@ class Kernel:
         if local_slice is None:
             raise KernelException("slice not registered with the kernel")
         else:
-            self.register(reservation=reservation, slice_object=local_slice)
+            self.__register(reservation=reservation, slice_object=local_slice)
 
         # Check if the reservation has a database record.
         temp = None
@@ -879,7 +956,12 @@ class Kernel:
         @param slice_object slice to re-register
         @throws Exception if the slice cannot be registered
         """
-        slice_object.prepare(recover=True)
+        try:
+            slice_object.lock_slice()
+            slice_object.prepare(recover=True)
+        finally:
+            slice_object.unlock_slice()
+
         self.slices.add(slice_object=slice_object)
 
         try:
@@ -902,6 +984,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            reservation.lock()
             reservation.reserve(policy=self.policy)
             self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
@@ -909,6 +992,8 @@ class Kernel:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during reserve for reservation #{reservation.get_reservation_id()}", e=e)
+        finally:
+            reservation.unlock()
 
     def delegate(self, *, delegation: ABCDelegation):
         """
@@ -987,7 +1072,11 @@ class Kernel:
             # reservation from the local slice.
             s = self.get_local_slice(slice_object=reservation.get_slice())
 
-            result = s.soft_lookup(rid=reservation.get_reservation_id())
+            try:
+                s.lock_slice()
+                result = s.soft_lookup(rid=reservation.get_reservation_id())
+            finally:
+                s.unlock_slice()
 
         if rid is not None:
             result = self.reservations.get(rid=rid)
@@ -1004,26 +1093,26 @@ class Kernel:
             try:
                 self.lock.acquire()
                 for delegation in self.delegations.values():
-                    self.probe_pending_delegation(delegation=delegation)
+                    self.__probe_pending_delegation(delegation=delegation)
             finally:
                 self.lock.release()
             self.logger.info(f"[{threading.get_native_id()}] KERNEL DEL TICK TIME: {time.time() - begin:.0f}")
 
             begin = time.time()
             for reservation in self.reservations.values():
-                self.probe_pending(reservation=reservation)
+                self.__probe_pending(reservation=reservation)
             self.logger.info(f"[{threading.get_native_id()}] KERNEL RES TICK TIME: {time.time() - begin:.0f}")
 
             begin = time.time()
             try:
                 self.lock.acquire()
                 for slice_obj in self.slices.get_client_slices():
-                    self.probe_pending_slices(slice_obj=slice_obj)
+                    self.__probe_pending_slices(slice_obj=slice_obj)
             finally:
                 self.lock.release()
             self.logger.info(f"[{threading.get_native_id()}] KERNEL SLC TICK TIME: {time.time() - begin:.0f}")
 
-            self.purge()
+            self.__purge()
             self.check_nothing_pending()
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -1055,7 +1144,7 @@ class Kernel:
         with self.nothing_pending:
             self.nothing_pending.wait()
 
-    def unregister(self, *, reservation: ABCReservationMixin, slice_object: ABCSlice):
+    def __unregister(self, *, reservation: ABCReservationMixin, slice_object: ABCSlice):
         """
         Unregisters a reservation from the kernel data structures. Must be called
         with the kernel lock on. Performs state checks.
@@ -1064,7 +1153,11 @@ class Kernel:
         @throws Exception
         """
         if reservation.is_closed() or reservation.is_failed() or reservation.get_state() == ReservationStates.CloseWait:
-            slice_object.unregister(reservation=reservation)
+            try:
+                slice_object.lock_slice()
+                slice_object.unregister(reservation=reservation)
+            finally:
+                slice_object.unlock_slice()
             self.reservations.remove(reservation=reservation)
         else:
             raise KernelException("Only reservations in failed, closed, or closewait state can be unregistered.")
@@ -1077,7 +1170,11 @@ class Kernel:
         @param slice_object local slice object
         @throws Exception
         """
-        slice_object.unregister(reservation=reservation)
+        try:
+            slice_object.lock_slice()
+            slice_object.unregister(reservation=reservation)
+        finally:
+            slice_object.unlock_slice()
         self.reservations.remove(reservation=reservation)
 
     def unregister_no_check_d(self, *, delegation: ABCDelegation, slice_object: ABCSlice):
@@ -1106,7 +1203,7 @@ class Kernel:
         if rid is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
         local_reservation = self.reservations.get_exception(rid=rid)
-        self.unregister(reservation=local_reservation, slice_object=local_reservation.get_kernel_slice())
+        self.__unregister(reservation=local_reservation, slice_object=local_reservation.get_kernel_slice())
 
         self.policy.remove(reservation=local_reservation)
 
@@ -1142,6 +1239,7 @@ class Kernel:
         """
         try:
             self.logger.debug(f"update_lease: Incoming term {update.get_term()}")
+            reservation.lock()
             reservation.update_lease(incoming=update, update_data=update_data)
 
             # NOTE: the database update has to happen BEFORE the service
@@ -1159,6 +1257,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during update lease for reservation "
                            f"# {reservation.get_reservation_id()}", e=e)
+        finally:
+            reservation.unlock()
 
     def update_ticket(self, *, reservation: ABCReservationMixin, update: Reservation, update_data: UpdateData):
         """
@@ -1169,6 +1269,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            reservation.lock()
             reservation.update_ticket(incoming=update, update_data=update_data)
             self.plugin.get_database().update_reservation(reservation=reservation)
             if not reservation.is_failed():
@@ -1177,6 +1278,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during update ticket for "
                            f"reservation # {reservation.get_reservation_id()}", e=e)
+        finally:
+            reservation.unlock()
 
     def update_delegation(self, *, delegation: ABCDelegation, update: ABCDelegation, update_data: UpdateData):
         """
@@ -1231,7 +1334,11 @@ class Kernel:
         @param reservation reservation
         @param rpc rpc
         """
-        reservation.handle_failed_rpc(failed=rpc)
+        try:
+            reservation.lock()
+            reservation.handle_failed_rpc(failed=rpc)
+        finally:
+            reservation.unlock()
 
     def validate_delegation(self, *, delegation: ABCDelegation = None, did: str = None):
         """

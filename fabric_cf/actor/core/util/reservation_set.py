@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import datetime
+import threading
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.exceptions import FrameworkException
@@ -38,12 +39,17 @@ class ReservationSet:
         self.reservations = {}
         if reservations is not None:
             self.reservations = reservations
+        self.lock = threading.Lock()
 
     def __str__(self):
-        result = ""
-        for r in self.reservations.values():
-            result += "rid={} r={}".format(r.get_reservation_id(), r)
-        return result
+        try:
+            self.lock.acquire()
+            result = ""
+            for r in self.reservations.values():
+                result += "rid={} r={}".format(r.get_reservation_id(), r)
+            return result
+        finally:
+            self.lock.release()
 
     def add(self, *, reservation: ABCReservationMixin):
         """
@@ -52,13 +58,21 @@ class ReservationSet:
         Args:
             reservation: reservation to be added
         """
-        self.reservations[reservation.get_reservation_id()] = reservation
+        try:
+            self.lock.acquire()
+            self.reservations[reservation.get_reservation_id()] = reservation
+        finally:
+            self.lock.release()
 
     def clear(self):
         """
         Remove all the reservations from the set
         """
-        self.reservations.clear()
+        try:
+            self.lock.acquire()
+            self.reservations.clear()
+        finally:
+            self.lock.release()
 
     def contains(self, *, reservation: ABCReservationMixin = None, rid: ID = None):
         """
@@ -70,11 +84,15 @@ class ReservationSet:
         Returns:
             true if the set contains the specified reservation; false otherwise
         """
-        if reservation is not None and reservation.get_reservation_id() in self.reservations:
-            return True
-        if rid is not None and rid in self.reservations:
-            return True
-        return False
+        try:
+            self.lock.acquire()
+            if reservation is not None and reservation.get_reservation_id() in self.reservations:
+                return True
+            if rid is not None and rid in self.reservations:
+                return True
+            return False
+        finally:
+            self.lock.release()
 
     def get(self, *, rid: ID) -> ABCReservationMixin:
         """
@@ -85,7 +103,11 @@ class ReservationSet:
         Returns:
             Reservation identified by rid
         """
-        return self.reservations.get(rid, None)
+        try:
+            self.lock.acquire()
+            return self.reservations.get(rid, None)
+        finally:
+            self.lock.release()
 
     def get_exception(self, *, rid: ID) -> ABCReservationMixin:
         """
@@ -98,10 +120,14 @@ class ReservationSet:
 
         @throws Exception if the requested reservation is not present in the set
         """
-        if rid in self.reservations:
-            return self.reservations.get(rid)
+        try:
+            self.lock.acquire()
+            if rid in self.reservations:
+                return self.reservations.get(rid)
 
-        raise FrameworkException("No reservation with ID {}".format(rid))
+            raise FrameworkException("No reservation with ID {}".format(rid))
+        finally:
+            self.lock.release()
 
     def is_empty(self) -> bool:
         """
@@ -110,9 +136,13 @@ class ReservationSet:
         Returns:
             true if the set is empty
         """
-        if len(self.reservations.keys()) == 0:
-            return True
-        return False
+        try:
+            self.lock.acquire()
+            if len(self.reservations.keys()) == 0:
+                return True
+            return False
+        finally:
+            self.lock.release()
 
     def remove(self, *, reservation: ABCReservationMixin):
         """
@@ -121,8 +151,12 @@ class ReservationSet:
         Args:
             reservation: reservation to remove
         """
-        if reservation.get_reservation_id() in self.reservations:
-            self.reservations.pop(reservation.get_reservation_id())
+        try:
+            self.lock.acquire()
+            if reservation.get_reservation_id() in self.reservations:
+                self.reservations.pop(reservation.get_reservation_id())
+        finally:
+            self.lock.release()
 
     def remove_by_rid(self, *, rid: ID):
         """
@@ -131,8 +165,12 @@ class ReservationSet:
         Args:
             rid: reservation id of reservation to remove
         """
-        if rid in self.reservations:
-            self.reservations.pop(rid)
+        try:
+            self.lock.acquire()
+            if rid in self.reservations:
+                self.reservations.pop(rid)
+        finally:
+            self.lock.release()
 
     def size(self) -> int:
         """
@@ -141,22 +179,38 @@ class ReservationSet:
         Returns:
             the size of the reservation set
         """
-        return len(self.reservations.keys())
+        try:
+            self.lock.acquire()
+            return len(self.reservations.keys())
+        finally:
+            self.lock.release()
 
     def __eq__(self, other):
-        if not isinstance(other, ReservationSet):
-            # don't attempt to compare against unrelated types
-            return NotImplemented
+        try:
+            self.lock.acquire()
+            if not isinstance(other, ReservationSet):
+                # don't attempt to compare against unrelated types
+                return NotImplemented
 
-        return self.reservations == other.reservations
+            return self.reservations == other.reservations
+        finally:
+            self.lock.release()
 
     def clone(self):
-        result = ReservationSet()
-        result.reservations = self.reservations.copy()
-        return result
+        try:
+            self.lock.acquire()
+            result = ReservationSet()
+            result.reservations = self.reservations.copy()
+            return result
+        finally:
+            self.lock.release()
 
     def values(self) -> list:
-        result = []
-        for r in self.reservations.values():
-            result.append(r)
-        return result
+        try:
+            self.lock.acquire()
+            result = []
+            for r in self.reservations.values():
+                result.append(r)
+            return result
+        finally:
+            self.lock.release()

@@ -41,6 +41,7 @@ from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.common.exceptions import ActorException
 from fabric_cf.actor.core.container.message_service import MessageService
+from fabric_cf.actor.core.core.event_processor import TickEvent, EventType, EventProcessor
 from fabric_cf.actor.core.delegation.delegation_factory import DelegationFactory
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.kernel_wrapper import KernelWrapper
@@ -58,65 +59,12 @@ from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.security.auth_token import AuthToken
 
 
-class ExecutionStatus:
-    """
-    Execution status of an action on Actor Thread
-    """
-    def __init__(self):
-        self.done = False
-        self.exception = None
-        self.result = None
-        self.lock = threading.Condition()
-
-    def mark_done(self):
-        """
-        Mark as done
-        """
-        self.done = True
-
-
-class TickEvent(ABCActorEvent):
-    def __init__(self, *, actor, cycle: int):
-        self.actor = actor
-        self.cycle = cycle
-
-    def __str__(self):
-        return "{} {}".format(self.actor, self.cycle)
-
-    def process(self):
-        self.actor.actor_tick(cycle=self.cycle)
-
-
-class ActorEvent(ABCActorEvent):
-    """
-    Actor Event
-    """
-    def __init__(self, *, status: ExecutionStatus, runnable: ABCActorRunnable):
-        self.status = status
-        self.runnable = runnable
-
-    def process(self):
-        """
-        Process an event
-        """
-        try:
-            self.status.result = self.runnable.run()
-        except Exception as e:
-            traceback.print_exc()
-            self.status.exception = e
-        finally:
-            with self.status.lock:
-                self.status.done = True
-                self.status.lock.notify_all()
-
-
 class ActorMixin(ABCActorMixin):
     """
     Actor is the base class for all actor implementations
     """
     DefaultDescription = "no description"
-
-    actor_count = 0
+    SUPPORTED_EVENTS = [EventType.TickEvent, EventType.InterActorEvent, EventType.SyncEvent]
 
     def __init__(self, *, auth: AuthToken = None, clock: ActorClock = None):
         # Globally unique identifier for this actor.
@@ -149,25 +97,11 @@ class ActorMixin(ABCActorMixin):
         self.stopped = False
         # Initialization status.
         self.initialized = False
-        # Contains a reference to the thread currently executing the timer handler.
-        # This field is set at the entry to and clear at the exit.
-        # The primary use of the field is to handle correctly stopping the actor.
-        self.thread = None
-        # A queue of timers that have fired and need to be processed.
-        self.timer_queue = queue.Queue()
-        self.event_queue = queue.Queue()
-
         # Reservations to close once recovery is complete.
         self.closing = ReservationSet()
 
-        self.thread_lock = threading.Lock()
-        self.actor_main_lock = threading.Condition()
         self.message_service = None
-
-        self.event_queue_sync = queue.Queue()
-        self.thread_sync = None
-        self.thread_sync_lock = threading.Lock()
-        self.tick_event_queue = queue.Queue()
+        self.event_processors = {}
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -179,18 +113,9 @@ class ActorMixin(ABCActorMixin):
         del state['first_tick']
         del state['stopped']
         del state['initialized']
-        del state['thread_lock']
-        del state['thread']
-        del state['timer_queue']
-        del state['event_queue']
-        del state['actor_main_lock']
         del state['closing']
         del state['message_service']
-
-        del state['thread_sync']
-        del state['thread_sync_lock']
-        del state['event_queue_sync']
-        del state['tick_event_queue']
+        del state['event_processors']
         return state
 
     def __setstate__(self, state):
@@ -203,19 +128,10 @@ class ActorMixin(ABCActorMixin):
         self.first_tick = True
         self.stopped = False
         self.initialized = False
-        self.thread = None
-        self.thread_lock = threading.Lock()
-        self.timer_queue = queue.Queue()
-        self.event_queue = queue.Queue()
-        self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
         self.policy.set_actor(actor=self)
-
-        self.thread_sync = None
-        self.thread_sync_lock = threading.Lock()
-        self.event_queue_sync = queue.Queue()
-        self.tick_event_queue = queue.Queue()
+        self.event_processors = {}
 
     def actor_added(self):
         self.plugin.actor_added()
@@ -283,7 +199,6 @@ class ActorMixin(ABCActorMixin):
             if not self.recovered:
                 self.logger.warning("Tick for an actor that has not completed recovery")
                 return
-            current_cycle = 0
             if self.first_tick:
                 current_cycle = cycle
             else:
@@ -321,7 +236,7 @@ class ActorMixin(ABCActorMixin):
     def get_description(self) -> str:
         return self.description
 
-    def get_guid(self) -> ID:
+    def get_guid(self) -> ID or None:
         if self.identity is not None:
             return self.identity.get_guid()
         return None
@@ -401,6 +316,8 @@ class ActorMixin(ABCActorMixin):
 
             self.current_cycle = -1
 
+            for x in self.SUPPORTED_EVENTS:
+                self.event_processors[x] = EventProcessor(name=str(x), logger=self.logger)
             self.setup_message_service()
 
             self.initialized = True
@@ -412,7 +329,7 @@ class ActorMixin(ABCActorMixin):
         return self.stopped
 
     def query(self, *, query: dict = None, caller: AuthToken = None, actor_proxy: ABCActorProxy = None,
-              handler: ABCQueryResponseHandler = None) -> dict:
+              handler: ABCQueryResponseHandler = None) -> dict or None:
         """
         Query an actor
         @param query query
@@ -528,7 +445,8 @@ class ActorMixin(ABCActorMixin):
 
         adms = self.policy.aggregate_resource_model.generate_adms()
 
-        # Create new delegations and add to the broker slice; they will be re-registered with the policy in the recovery
+        # Create new delegations and add to the broker slice;
+        # they will be re-registered with the policy in the recovery
         for name in delegation_names:
             new_delegation_graph = adms.get(name)
             dlg_obj = DelegationFactory.create(did=new_delegation_graph.get_graph_id(),
@@ -838,86 +756,22 @@ class ActorMixin(ABCActorMixin):
         Execute an incoming action on actor thread
         @param runnable incoming action/operation
         """
-        if self.is_on_actor_thread():
-            return runnable.run()
-        else:
-            status = ExecutionStatus()
-            event = ActorEvent(status=status, runnable=runnable)
-
-            self.queue_event(incoming=event)
+        self.event_processors[EventType.InterActorEvent].execute_on_thread_async(runnable=runnable)
 
     def execute_on_actor_thread_and_wait(self, *, runnable: ABCActorRunnable):
         """
         Execute an incoming action on actor thread
         @param runnable incoming action/operation
         """
-        if self.is_on_actor_sync_thread():
-            return runnable.run()
-        else:
-            status = ExecutionStatus()
-            event = ActorEvent(status=status, runnable=runnable)
-
-            self.queue_event_sync(incoming=event)
-
-            with status.lock:
-                while not status.done:
-                    status.lock.wait()
-
-            if status.exception is not None:
-                raise status.exception
-
-            return status.result
-
-    def run(self):
-        """
-        Actor run function for actor thread
-        """
-        try:
-            self.logger.info(f"[{threading.get_native_id()}] Actor Main Thread started")
-            self.actor_count += 1
-            self.actor_main()
-        except Exception as e:
-            self.logger.error(f"Unexpected error {e}")
-            self.logger.error(traceback.format_exc())
-        finally:
-            self.logger.info("Actor Main Thread exited")
-
-    def run_sync_processor(self):
-        """
-        Actor run function for Synchronous event processor
-        """
-        try:
-            self.logger.info(f"[{threading.get_native_id()}] Actor Sync Event Processor started")
-            self.sync_event_processor()
-        except Exception as e:
-            self.logger.error(f"Unexpected error {e}")
-            self.logger.error(traceback.format_exc())
-        finally:
-            self.logger.info("Actor Sync Event Processor exited")
+        self.event_processors[EventType.SyncEvent].execute_on_thread_sync(runnable=runnable)
 
     def start(self):
         """
         Start an Actor
         """
-        try:
-            self.thread_lock.acquire()
-            if self.thread is not None:
-                raise ActorException("This actor has already been started")
-
-            self.thread = threading.Thread(target=self.run)
-            self.thread.setName(self.get_name())
-            self.thread.setDaemon(True)
-            self.thread.start()
-        finally:
-            self.thread_lock.release()
-
-        self.thread_sync = threading.Thread(target=self.run_sync_processor)
-        self.thread_sync.setName("SyncProcessor")
-        self.thread_sync.setDaemon(True)
-        self.thread_sync.start()
-
+        for x in self.event_processors.values():
+            x.start()
         self.message_service.start()
-
         if self.plugin.get_handler_processor() is not None:
             self.plugin.get_handler_processor().start()
 
@@ -927,45 +781,9 @@ class ActorMixin(ABCActorMixin):
         """
         self.stopped = True
         self.message_service.stop()
-        try:
-            self.thread_lock.acquire()
-            temp = self.thread
-            self.thread = None
-            if temp is not None:
-                self.logger.warning("It seems that the actor thread is running. Interrupting it")
-                try:
-                    # TODO find equivalent of interrupt
-                    with self.actor_main_lock:
-                        self.actor_main_lock.notify_all()
-                    temp.join()
-                except Exception as e:
-                    self.logger.error("Could not join actor thread {}".format(e))
-                    self.logger.error(traceback.format_exc())
-                finally:
-                    self.thread_lock.release()
-        finally:
-            if self.thread_lock is not None and self.thread_lock.locked():
-                self.thread_lock.release()
-        try:
-            self.thread_sync.acquire()
-            temp = self.thread_sync
-            self.thread_sync = None
-            if temp is not None:
-                self.logger.warning("It seems that the actor thread is running. Interrupting it")
-                try:
-                    # TODO find equivalent of interrupt
-                    with self.actor_main_lock:
-                        self.actor_main_lock.notify_all()
-                    temp.join()
-                except Exception as e:
-                    self.logger.error("Could not join actor thread {}".format(e))
-                    self.logger.error(traceback.format_exc())
-                finally:
-                    self.thread_sync_lock.release()
 
-        finally:
-            if self.thread_sync_lock is not None and self.thread_sync_lock.locked():
-                self.thread_sync_lock.release()
+        for x in self.event_processors.values():
+            x.start()
 
         if self.plugin.get_handler_processor() is not None:
             self.plugin.get_handler_processor().shutdown()
@@ -1015,7 +833,7 @@ class ActorMixin(ABCActorMixin):
         Queue an event on Actor timer queue
         """
         try:
-            self.timer_queue.put_nowait(timer)
+            self.event_processors[EventType.InterActorEvent].enqueue(incoming=timer)
             self.logger.debug("Added timer to timer queue {}".format(timer.__class__.__name__))
         except Exception as e:
             self.logger.error(f"Failed to queue event: {timer.__class__.__name__} e: {e}")
@@ -1026,9 +844,9 @@ class ActorMixin(ABCActorMixin):
         """
         try:
             if isinstance(incoming, TickEvent):
-                self.tick_event_queue.put_nowait(incoming)
+                self.event_processors[EventType.TickEvent].enqueue(incoming=incoming)
             else:
-                self.event_queue.put_nowait(incoming)
+                self.event_processors[EventType.InterActorEvent].enqueue(incoming=incoming)
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
         except Exception as e:
             self.logger.error(f"Failed to queue event: {incoming.__class__.__name__} e: {e}")
@@ -1038,7 +856,7 @@ class ActorMixin(ABCActorMixin):
         Queue an even on Actor Event Queue
         """
         try:
-            self.event_queue_sync.put_nowait(incoming)
+            self.event_processors[EventType.SyncEvent].enqueue(incoming=incoming)
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
         except Exception as e:
             self.logger.error(f"Failed to queue event: {incoming.__class__.__name__} e: {e}")
@@ -1048,67 +866,6 @@ class ActorMixin(ABCActorMixin):
         Await until no pending reservations
         """
         self.wrapper.await_nothing_pending()
-
-    def dequeue(self, queue_obj: queue.Queue):
-        events = []
-        if not queue_obj.empty():
-            try:
-                for event in IterableQueue(source_queue=queue_obj):
-                    events.append(event)
-            except Exception as e:
-                self.logger.error(f"Error while adding event/timer to queue! e: {e}")
-                self.logger.error(traceback.format_exc())
-        return events
-
-    def process_events(self, *, events: list):
-        for event in events:
-            try:
-                begin = time.time()
-                event.process()
-                self.logger.info(f"[{threading.get_native_id()}] Event {event.__class__.__name__} "
-                                 f"TIME: {time.time() - begin:.0f}")
-            except Exception as e:
-                self.logger.error(f"Error while processing event {type(event)}, {e}")
-                self.logger.error(traceback.format_exc())
-
-    def process_timer_events(self, *, timers: list):
-        for t in timers:
-            try:
-                t.execute()
-            except Exception as e:
-                self.logger.error(f"Error while processing a timer {type(t)}, {e}")
-                self.logger.error(traceback.format_exc())
-
-    def actor_main(self):
-        """
-        Actor Main loop
-        """
-        while True:
-            events = []
-            timers = []
-            tick_events = []
-
-            if not self.stopped and self.event_queue.empty() and self.timer_queue.empty() and \
-                    self.tick_event_queue.empty():
-                time.sleep(0.005)
-
-            if self.stopped:
-                self.logger.info("Actor exiting")
-                return
-
-            if not self.event_queue.empty():
-                events = self.dequeue(queue_obj=self.event_queue)
-
-            if not self.timer_queue.empty():
-                timers = self.dequeue(queue_obj=self.timer_queue)
-
-            if not self.tick_event_queue.empty():
-                e = self.tick_event_queue.get_nowait()
-                tick_events.append(e)
-
-            self.process_events(events=events)
-            self.process_events(events=tick_events)
-            self.process_timer_events(timers=timers)
 
     def setup_message_service(self):
         """
@@ -1153,30 +910,3 @@ class ActorMixin(ABCActorMixin):
 
     def load_model(self, *, graph_id: str):
         return
-
-    def is_on_actor_sync_thread(self) -> bool:
-        """
-        Check if running on actor thread
-        @return true if running on actor thread, false otherwise
-        """
-        result = False
-        try:
-            self.thread_sync_lock.acquire()
-            result = self.thread_sync == threading.current_thread()
-        finally:
-            self.thread_sync_lock.release()
-        return result
-
-    def sync_event_processor(self):
-        """
-        Main loop for the thread which processes the synchronous events handled via HTTP/ManagementCLI
-        """
-        while not self.stopped:
-            events = []
-
-            if self.event_queue_sync.empty():
-                time.sleep(1)
-            else:
-                events = self.dequeue(queue_obj=self.event_queue_sync)
-
-            self.process_events(events=events)

@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING
 
 from datetime import datetime, timezone
@@ -137,6 +138,7 @@ class Reservation(ABCReservationMixin):
         self.service_pending = ReservationPendingStates.None_
         self.last_transition_time = None
         self.last_pending_state = ReservationPendingStates.None_
+        self.thread_lock = threading.Lock()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -151,6 +153,7 @@ class Reservation(ABCReservationMixin):
         del state['pending_recover']
         del state['state_transition']
         del state['service_pending']
+        del state['thread_lock']
         return state
 
     def __setstate__(self, state):
@@ -166,6 +169,7 @@ class Reservation(ABCReservationMixin):
         self.pending_recover = False
         self.state_transition = False
         self.service_pending = ReservationPendingStates.None_
+        self.thread_lock = threading.Lock()
 
     def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """
@@ -675,3 +679,10 @@ class Reservation(ABCReservationMixin):
 
     def get_error_message(self) -> str:
         return self.error_message
+
+    def lock(self):
+        self.thread_lock.acquire()
+
+    def unlock(self):
+        if self.thread_lock.locked():
+            self.thread_lock.release()

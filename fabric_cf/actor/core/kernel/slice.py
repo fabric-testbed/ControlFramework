@@ -335,20 +335,11 @@ class Slice(ABCSlice):
     def get_config_properties(self) -> dict:
         return self.config_properties
 
-    def update_slice_graph(self, sliver: BaseSliver, rid: str, reservation_state: str,
-                           error_message: str) -> BaseSliver:
-        try:
-            self.lock.acquire()
-            # Update for Orchestrator for Active / Ticketed Reservations
-            if sliver is not None and self.graph_id is not None:
-                if sliver.reservation_info is None:
-                    sliver.reservation_info = ReservationInfo()
-                sliver.reservation_info.reservation_id = rid
-                sliver.reservation_info.reservation_state = reservation_state
-                sliver.reservation_info.error_message = error_message
-                FimHelper.update_node(graph_id=self.graph_id, sliver=sliver)
-            return sliver
-        finally:
+    def lock_slice(self):
+        self.lock.acquire()
+
+    def unlock_slice(self):
+        if self.lock.acquire():
             self.lock.release()
 
 

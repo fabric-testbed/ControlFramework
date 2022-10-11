@@ -26,6 +26,7 @@
 
 from __future__ import annotations
 
+import threading
 import traceback
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -108,6 +109,7 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
         del state['notified_failed']
         del state['closed_in_priming']
         del state['extend_failure']
+        del state['thread_lock']
         return state
 
     def __setstate__(self, state):
@@ -130,6 +132,7 @@ class BrokerReservation(ReservationServer, ABCBrokerReservation):
         self.notified_failed = False
         self.closed_in_priming = False
         self.extend_failure = False
+        self.thread_lock = threading.Lock()
 
     def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """

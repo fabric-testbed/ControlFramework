@@ -508,3 +508,15 @@ class ABCReservationMixin(ABCReservationResources, ABCReservationStatus):
         Processes a failed RPC request.
         @param failed failed
         """
+
+    @abstractmethod
+    def lock(self):
+        """
+        Lock the reservation
+        """
+
+    @abstractmethod
+    def unlock(self):
+        """
+        Unlock the reservation
+        """

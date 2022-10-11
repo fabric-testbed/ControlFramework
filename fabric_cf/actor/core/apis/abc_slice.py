@@ -467,3 +467,15 @@ class ABCSlice(ABC):
 
         @param delegation delegation to unregister
         """
+
+    @abstractmethod
+    def lock_slice(self):
+        """
+        Lock slice
+        """
+
+    @abstractmethod
+    def unlock_slice(self):
+        """
+        Unlock slice
+        """
