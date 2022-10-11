@@ -339,7 +339,7 @@ class Slice(ABCSlice):
         self.lock.acquire()
 
     def unlock_slice(self):
-        if self.lock.acquire():
+        if self.lock.locked():
             self.lock.release()
 
 

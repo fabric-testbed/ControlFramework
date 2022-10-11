@@ -41,6 +41,14 @@ class ReservationSet:
             self.reservations = reservations
         self.lock = threading.Lock()
 
+    def __getstate__(self):
+        state = self.__dict__.copy()
+        del state['lock']
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self.lock = threading.Lock()
+
     def __str__(self):
         try:
             self.lock.acquire()

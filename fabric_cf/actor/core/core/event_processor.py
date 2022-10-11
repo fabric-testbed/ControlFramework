@@ -166,7 +166,8 @@ class EventProcessor:
     def enqueue(self, incoming):
         try:
             self.event_queue.put_nowait(incoming)
-            self.condition.notify_all()
+            with self.condition:
+                self.condition.notify_all()
             self.logger.debug("Added event to event queue {}".format(incoming.__class__.__name__))
         except Exception as e:
             self.logger.error(f"Failed to queue event: {incoming.__class__.__name__} e: {e}")
