@@ -79,17 +79,13 @@ class Authority(ActorMixin, ABCAuthority):
         del state['first_tick']
         del state['stopped']
         del state['initialized']
-        del state['thread_lock']
-        del state['thread']
-        del state['timer_queue']
-        del state['event_queue']
-        del state['actor_main_lock']
         del state['closing']
         del state['message_service']
 
         del state['redeeming']
         del state['extending_lease']
         del state['modifying_lease']
+        del state['event_processors']
 
         return state
 
@@ -103,17 +99,13 @@ class Authority(ActorMixin, ABCAuthority):
         self.first_tick = True
         self.stopped = False
         self.initialized = False
-        self.thread = None
-        self.thread_lock = threading.Lock()
-        self.timer_queue = queue.Queue()
-        self.event_queue = queue.Queue()
-        self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
 
         self.redeeming = ReservationSet()
         self.extending_lease = ReservationSet()
         self.modifying_lease = ReservationSet()
+        self.event_processors = {}
 
     def register_client_slice(self, *, slice_obj: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_obj)

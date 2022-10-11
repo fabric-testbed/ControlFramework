@@ -90,11 +90,6 @@ class Controller(ActorMixin, ABCController):
         del state['first_tick']
         del state['stopped']
         del state['initialized']
-        del state['thread_lock']
-        del state['thread']
-        del state['timer_queue']
-        del state['event_queue']
-        del state['actor_main_lock']
         del state['closing']
         del state['message_service']
 
@@ -105,11 +100,8 @@ class Controller(ActorMixin, ABCController):
         del state['modifying_lease']
         del state['registry']
 
-        del state['thread_sync']
-        del state['thread_sync_lock']
-        del state['event_queue_sync']
-        del state ['asm_update_thread']
-        del state['tick_event_queue']
+        del state['asm_update_thread']
+        del state['event_processors']
         return state
 
     def __setstate__(self, state):
@@ -122,11 +114,6 @@ class Controller(ActorMixin, ABCController):
         self.first_tick = True
         self.stopped = False
         self.initialized = False
-        self.thread = None
-        self.thread_lock = threading.Lock()
-        self.timer_queue = queue.Queue()
-        self.event_queue = queue.Queue()
-        self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
 
@@ -136,11 +123,8 @@ class Controller(ActorMixin, ABCController):
         self.extending_lease = ReservationSet()
         self.modifying_lease = ReservationSet()
         self.registry = PeerRegistry()
-        self.thread_sync = None
-        self.thread_sync_lock = threading.Lock()
-        self.event_queue_sync = queue.Queue()
         self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
-        self.tick_event_queue = queue.Queue()
+        self.event_processors = {}
 
     def set_logger(self, logger):
         super(Controller, self).set_logger(logger=logger)

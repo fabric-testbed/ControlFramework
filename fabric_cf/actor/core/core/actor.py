@@ -738,19 +738,6 @@ class ActorMixin(ABCActorMixin):
         """
         self.stopped = value
 
-    def is_on_actor_thread(self) -> bool:
-        """
-        Check if running on actor thread
-        @return true if running on actor thread, false otherwise
-        """
-        result = False
-        try:
-            self.thread_lock.acquire()
-            result = self.thread == threading.current_thread()
-        finally:
-            self.thread_lock.release()
-        return result
-
     def execute_on_actor_thread(self, *, runnable: ABCActorRunnable):
         """
         Execute an incoming action on actor thread
