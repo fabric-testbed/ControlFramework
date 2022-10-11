@@ -1078,6 +1078,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # delete the snapshot
             if snapshot_graph_id is not None:
                 self.combined_broker_model.importer.delete_graph(graph_id=snapshot_graph_id)
+            # reload the query CBM
+            self.query_cbm = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
@@ -1103,6 +1105,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if snapshot_graph_id is not None:
                 # delete the snapshot
                 self.combined_broker_model.importer.delete_graph(graph_id=snapshot_graph_id)
+            # Reload the Query CBM
+            self.query_cbm = FimHelper.get_neo4j_cbm_graph(graph_id=self.combined_broker_model_graph_id)
         except Exception as e:
             self.logger.error(f"Exception occurred: {e}")
             self.logger.error(traceback.format_exc())
