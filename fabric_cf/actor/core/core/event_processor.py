@@ -226,8 +226,7 @@ class EventProcessor:
                     event.execute()
                 else:
                     event.process()
-                self.logger.info(f"[{threading.get_native_id()}] Event {event.__class__.__name__} "
-                                 f"TIME: {time.time() - begin:.0f}")
+                self.logger.info(f"Event {event.__class__.__name__} TIME: {time.time() - begin:.0f}")
             except Exception as e:
                 self.logger.error(f"Error while processing event {type(event)}, {e}")
                 self.logger.error(traceback.format_exc())

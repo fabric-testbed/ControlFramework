@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import threading
 import traceback
 
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
@@ -56,6 +57,7 @@ class BrokerDelegation(Delegation):
         del state['slice_object']
         del state['logger']
         del state['policy']
+        del state['thread_lock']
         return state
 
     def __setstate__(self, state):
@@ -65,6 +67,7 @@ class BrokerDelegation(Delegation):
         self.slice_object = None
         self.logger = None
         self.policy = None
+        self.thread_lock = threading.Lock()
 
     def get_broker(self) -> ABCBrokerProxy:
         """

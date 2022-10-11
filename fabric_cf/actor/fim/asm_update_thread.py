@@ -146,14 +146,14 @@ class AsmUpdateThread:
             try:
                 begin = time.time()
                 event.process()
-                self.logger.info(f"[{threading.get_native_id()}] Event {event.__class__.__name__} "
+                self.logger.info(f"Event {event.__class__.__name__} "
                                  f"TIME: {time.time() - begin:.0f}")
             except Exception as e:
                 self.logger.error(f"Error while processing event {type(event)}, {e}")
                 self.logger.error(traceback.format_exc())
 
     def __run(self):
-        self.logger.info(f"[{threading.get_native_id()}] Thread {self.name} started")
+        self.logger.info(f"Thread {self.name} started")
         while True:
             with self.condition:
                 while not self.shutdown and self.event_queue.empty():

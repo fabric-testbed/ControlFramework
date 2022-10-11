@@ -27,13 +27,12 @@ from __future__ import annotations
 
 import traceback
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Tuple
+from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_broker_query_model_avro import ResultBrokerQueryModelAvro
 from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
-from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
@@ -52,14 +51,10 @@ from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.time.actor_clock import ActorClock
-from fabric_cf.actor.security.access_checker import AccessChecker
-from fabric_cf.actor.security.pdp_auth import ActionId
 from fabric_cf.actor.core.apis.abc_client_actor_management_object import ABCClientActorManagementObject
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.core.core.broker_policy import BrokerPolicy
-from fabric_cf.actor.security.pdp_auth import ResourceType as AuthResourceType
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro

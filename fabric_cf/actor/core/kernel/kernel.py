@@ -97,6 +97,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            delegation.lock()
             delegation.delegate(policy=self.policy)
             self.plugin.get_database().update_delegation(delegation=delegation)
             if not delegation.is_closed():
@@ -105,6 +106,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             err = f"An error occurred during amend delegate for delegation #{delegation.get_delegation_id()}"
             self.error(err=err, e=e)
+        finally:
+            delegation.unlock()
 
     def claim_delegation(self, *, delegation: ABCDelegation):
         """
@@ -114,12 +117,15 @@ class Kernel:
         @throws Exception
         """
         try:
+            delegation.lock()
             delegation.claim()
             self.plugin.get_database().update_delegation(delegation=delegation)
         except Exception as e:
             err = f"An error occurred during claim for delegation #{delegation.get_delegation_id()}"
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
+        finally:
+            delegation.unlock()
 
     def reclaim_delegation(self, *, delegation: ABCDelegation):
         """
@@ -129,12 +135,15 @@ class Kernel:
         @throws Exception
         """
         try:
+            delegation.lock()
             delegation.reclaim()
             self.plugin.get_database().update_delegation(delegation=delegation)
         except Exception as e:
             err = f"An error occurred during reclaim for delegation #{delegation.get_delegation_id()}"
             self.logger.error(traceback.format_exc())
             self.error(err=err, e=e)
+        finally:
+            delegation.unlock()
 
     def fail(self, *, reservation: ABCReservationMixin, message: str):
         """
@@ -156,9 +165,13 @@ class Kernel:
         @param delegation delegation
         @param message message
         """
-        if not delegation.is_failed() and not delegation.is_closed():
-            delegation.fail(message=message, exception=None)
-        self.plugin.get_database().update_delegation(delegation=delegation)
+        try:
+            delegation.lock()
+            if not delegation.is_failed() and not delegation.is_closed():
+                delegation.fail(message=message, exception=None)
+            self.plugin.get_database().update_delegation(delegation=delegation)
+        finally:
+            delegation.unlock()
 
     def close(self, *, reservation: ABCReservationMixin):
         """
@@ -455,7 +468,7 @@ class Kernel:
             result = sl.get_reservations_list()
         return result
 
-    def get_delegation(self, *, did: str) -> ABCDelegation:
+    def get_delegation(self, *, did: str) -> ABCDelegation or None:
         """
         Returns the specified delegation.
         @param did delegation id
@@ -564,6 +577,7 @@ class Kernel:
         @throws Exception rare
         """
         try:
+            delegation.lock()
             delegation.prepare_probe()
             delegation.probe_pending()
             self.plugin.get_database().update_delegation(delegation=delegation)
@@ -572,6 +586,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during probe pending for delegation #{delegation.get_delegation_id()}",
                        e=e)
+        finally:
+            delegation.unlock()
 
     def __purge(self):
         """
@@ -639,6 +655,7 @@ class Kernel:
         except Exception as e:
             self.logger.error(f"An error occurred during redeem for reservation #{reservation.get_reservation_id()} "
                               f"e: {e}")
+            self.logger.error(traceback.format_exc())
         finally:
             reservation.unlock()
 
@@ -685,7 +702,7 @@ class Kernel:
             reservation.unlock()
         return add
 
-    def register_delegation_with_slice(self, *, delegation: ABCDelegation, slice_object: ABCSlice) -> bool:
+    def __register_delegation_with_slice(self, *, delegation: ABCDelegation, slice_object: ABCSlice) -> bool:
         """
         Registers a new delegation with its slice and the kernel delegation
         table. Must be called with the kernel lock on.
@@ -697,32 +714,38 @@ class Kernel:
         """
         add = False
 
-        if not delegation.is_closed():
-            # Note: as of now slice.register must be the first operation in
-            # this method. slice.register will throw an exception if the
-            # delegation is already present in the slice table.
+        try:
+            delegation.lock()
+            if not delegation.is_closed():
+                # Note: as of now slice.register must be the first operation in
+                # this method. slice.register will throw an exception if the
+                # delegation is already present in the slice table.
 
-            # register with the local slice
-            slice_object.register_delegation(delegation=delegation)
+                # register with the local slice
+                slice_object.lock_slice()
+                slice_object.register_delegation(delegation=delegation)
 
-            try:
-                self.lock.acquire()
-                # register with the delegation table
-                if delegation.get_delegation_id() in self.delegations:
-                    slice_object.unregister_delegation(delegation=delegation)
-                    raise KernelException("There is already a delegation with the given identifier")
+                try:
+                    self.lock.acquire()
+                    # register with the delegation table
+                    if delegation.get_delegation_id() in self.delegations:
+                        slice_object.unregister_delegation(delegation=delegation)
+                        raise KernelException("There is already a delegation with the given identifier")
 
-                self.delegations[delegation.get_delegation_id()] = delegation
-            finally:
-                self.lock.release()
+                    self.delegations[delegation.get_delegation_id()] = delegation
+                finally:
+                    self.lock.release()
 
-            # attach actor to the reservation
-            delegation.set_actor(actor=self.plugin.get_actor())
-            # attach the local slice object
-            delegation.set_slice_object(slice_object=slice_object)
-            add = True
-        else:
-            self.logger.warning(f"Attempting to register a closed delegation #{delegation.get_delegation_id()}")
+                # attach actor to the reservation
+                delegation.set_actor(actor=self.plugin.get_actor())
+                # attach the local slice object
+                delegation.set_slice_object(slice_object=slice_object)
+                add = True
+            else:
+                self.logger.warning(f"Attempting to register a closed delegation #{delegation.get_delegation_id()}")
+        finally:
+            slice_object.unlock_slice()
+            delegation.unlock()
 
         return add
 
@@ -736,11 +759,8 @@ class Kernel:
                 delegation.get_slice_object() is None or delegation.get_slice_object().get_name() is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        local_slice = None
-        add = False
-
         local_slice = self.slices.get(slice_id=delegation.get_slice_id(), raise_exception=True)
-        add = self.register_delegation_with_slice(delegation=delegation, slice_object=local_slice)
+        add = self.__register_delegation_with_slice(delegation=delegation, slice_object=local_slice)
 
         if add:
             try:
@@ -758,9 +778,6 @@ class Kernel:
         if reservation is None or reservation.get_reservation_id() is None or \
                 reservation.get_slice() is None or reservation.get_slice().get_name() is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
-
-        local_slice = None
-        add = False
 
         local_slice = self.slices.get(slice_id=reservation.get_slice().get_slice_id(), raise_exception=True)
         add = self.__register(reservation=reservation, slice_object=local_slice)
@@ -909,13 +926,12 @@ class Kernel:
                 delegation.get_slice_object() is None or delegation.get_slice_object().get_slice_id() is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        local_slice = None
         local_slice = self.slices.get(slice_id=delegation.get_slice_object().get_slice_id(), raise_exception=True)
 
         if local_slice is None:
             raise KernelException("slice not registered with the kernel")
         else:
-            self.register_delegation_with_slice(delegation=delegation, slice_object=local_slice)
+            self.__register_delegation_with_slice(delegation=delegation, slice_object=local_slice)
 
         # Check if the delegation has a database record.
         temp = self.plugin.get_database().get_delegation(dlg_graph_id=delegation.get_delegation_id())
@@ -934,7 +950,6 @@ class Kernel:
                 reservation.get_slice() is None or reservation.get_slice().get_slice_id() is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        local_slice = None
         local_slice = self.slices.get(slice_id=reservation.get_slice().get_slice_id(), raise_exception=True)
 
         if local_slice is None:
@@ -943,7 +958,6 @@ class Kernel:
             self.__register(reservation=reservation, slice_object=local_slice)
 
         # Check if the reservation has a database record.
-        temp = None
         temp = self.plugin.get_database().get_reservations(rid=reservation.get_reservation_id())
 
         if temp is None or len(temp) == 0:
@@ -1004,6 +1018,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            delegation.lock()
             delegation.delegate(policy=self.policy)
             self.plugin.get_database().update_delegation(delegation=delegation)
             if not delegation.is_closed():
@@ -1011,6 +1026,8 @@ class Kernel:
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during delegate for delegation #{delegation.get_delegation_id()}", e=e)
+        finally:
+            delegation.unlock()
 
     def soft_validate_delegation(self, *, delegation: ABCDelegation = None, did: str = None) -> ABCDelegation:
         """
@@ -1036,7 +1053,11 @@ class Kernel:
             # delegation from the local slice.
             s = self.get_local_slice(slice_object=delegation.get_slice_object())
 
-            result = s.soft_lookup_delegation(did=delegation.get_delegation_id())
+            try:
+                s.lock_slice()
+                result = s.soft_lookup_delegation(did=delegation.get_delegation_id())
+            finally:
+                s.unlock_slice()
 
         if did is not None:
             try:
@@ -1096,12 +1117,12 @@ class Kernel:
                     self.__probe_pending_delegation(delegation=delegation)
             finally:
                 self.lock.release()
-            self.logger.info(f"[{threading.get_native_id()}] KERNEL DEL TICK TIME: {time.time() - begin:.0f}")
+            self.logger.info(f"KERNEL DEL TICK TIME: {time.time() - begin:.0f}")
 
             begin = time.time()
             for reservation in self.reservations.values():
                 self.__probe_pending(reservation=reservation)
-            self.logger.info(f"[{threading.get_native_id()}] KERNEL RES TICK TIME: {time.time() - begin:.0f}")
+            self.logger.info(f"KERNEL RES TICK TIME: {time.time() - begin:.0f}")
 
             begin = time.time()
             try:
@@ -1110,7 +1131,7 @@ class Kernel:
                     self.__probe_pending_slices(slice_obj=slice_obj)
             finally:
                 self.lock.release()
-            self.logger.info(f"[{threading.get_native_id()}] KERNEL SLC TICK TIME: {time.time() - begin:.0f}")
+            self.logger.info(f"KERNEL SLC TICK TIME: {time.time() - begin:.0f}")
 
             self.__purge()
             self.check_nothing_pending()
@@ -1185,7 +1206,11 @@ class Kernel:
         @param slice_object local slice object
         @throws Exception
         """
-        slice_object.unregister_delegation(delegation=delegation)
+        try:
+            slice_object.lock_slice()
+            slice_object.unregister_delegation(delegation=delegation)
+        finally:
+            slice_object.unlock_slice()
         try:
             self.lock.acquire()
             if delegation.get_delegation_id() in self.delegations:
@@ -1290,6 +1315,7 @@ class Kernel:
         @throws Exception
         """
         try:
+            delegation.lock()
             delegation.update_delegation(incoming=update, update_data=update_data)
             self.plugin.get_database().update_delegation(delegation=delegation)
             delegation.service_update_delegation()
@@ -1297,6 +1323,8 @@ class Kernel:
             self.logger.error(traceback.format_exc())
             self.error(err=f"An error occurred during update delegation for "
                            f"delegation # {delegation.get_delegation_id()}", e=e)
+        finally:
+            delegation.unlock()
 
     def validate(self, *, reservation: ABCReservationMixin = None, rid: ID = None):
         """

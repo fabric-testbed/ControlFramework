@@ -63,7 +63,7 @@ class RPCExecutor:
         Execute RPC
         """
         logger = request.actor.get_logger()
-        logger.debug(f"[{threading.get_native_id()}] Performing RPC: type={request.request.get_type()} to:{request.proxy.get_name()}")
+        logger.debug(f"Performing RPC: type={request.request.get_type()} to:{request.proxy.get_name()}")
         try:
             request.proxy.execute(request=request.request, producer=producer)
             if request.handler is None:

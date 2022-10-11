@@ -94,7 +94,7 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
 
             request = self.remove_message(msg_id=message_id)
             if request is None:
-                self.logger.error(f"[{threading.get_native_id()}] No corresponding request found for message_id: {message}")
+                self.logger.error(f"No corresponding request found for message_id: {message}")
                 self.logger.error("Discarding the message: {}".format(message))
                 return
             with request.condition:
@@ -105,7 +105,7 @@ class KafkaMgmtMessageProcessor(AvroConsumerApi):
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(e)
-            self.logger.error(f"[{threading.get_native_id()}] Discarding the incoming message {message}")
+            self.logger.error(f"Discarding the incoming message {message}")
 
     def add_message(self, *, message: AbcMessageAvro) -> MessageWrapper:
         result = None

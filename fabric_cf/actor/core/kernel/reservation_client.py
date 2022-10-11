@@ -1657,7 +1657,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         except Exception as e:
             self.logger.error(f"Failed to update the ASM Graph: {e}")
             self.logger.error(traceback.format_exc())
-        self.logger.info(f"[{threading.get_native_id()}] ASM TIME: {time.time() - begin:.0f}")
+        self.logger.info(f"ASM TIME: {time.time() - begin:.0f}")
 
     def mark_close_by_ticket_review(self, *, update_data: UpdateData):
         if self.last_ticket_update is not None:
