@@ -44,6 +44,7 @@ class SliceState(Enum):
     Modifying = enum.auto()
     ModifyError = enum.auto()
     ModifyOK = enum.auto()
+    All = enum.auto()   # used only for querying
 
     def __str__(self):
         return self.name
@@ -51,7 +52,8 @@ class SliceState(Enum):
     @staticmethod
     def all_except_dead_or_closing_value() -> List[int]:
         return [SliceState.Nascent.value, SliceState.Configuring.value, SliceState.StableError.value,
-                SliceState.StableOK.value, SliceState.ModifyError.value, SliceState.ModifyOK.value]
+                SliceState.StableOK.value, SliceState.ModifyError.value, SliceState.ModifyOK.value,
+                SliceState.Modifying.value]
 
     @staticmethod
     def state_from_str(state: str):
@@ -75,7 +77,7 @@ class SliceState(Enum):
 
         states_to_exclude = []
         for s in result:
-            if not (len(states) == 1 and states[0] == "All") and str(s) not in states:
+            if not (len(states) == 1 and states[0] == SliceState.All.name) and str(s) not in states:
                 states_to_exclude.append(s)
 
         for s in states_to_exclude:
@@ -103,6 +105,25 @@ class SliceState(Enum):
         if state == SliceState.ModifyOK or state == SliceState.ModifyError:
             return True
         return False
+
+    @staticmethod
+    def translate(state_name: str):
+        if state_name.lower() == SliceState.Nascent.name.lower():
+            return SliceState.Nascent
+        elif state_name.lower() == SliceState.Configuring.name.lower():
+            return SliceState.Configuring
+        elif state_name.lower() == SliceState.StableOK.name.lower():
+            return SliceState.StableOK
+        elif state_name.lower() == SliceState.StableError.name.lower():
+            return SliceState.StableError
+        elif state_name.lower() == SliceState.ModifyOK.name.lower():
+            return SliceState.ModifyOK
+        elif state_name.lower() == SliceState.ModifyError.name.lower():
+            return SliceState.ModifyError
+        elif state_name.lower() == SliceState.Modifying.name.lower():
+            return SliceState.Modifying
+        else:
+            return SliceState.All
 
 
 class SliceCommand(Enum):

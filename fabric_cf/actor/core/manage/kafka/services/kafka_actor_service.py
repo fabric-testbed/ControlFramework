@@ -133,7 +133,6 @@ class KafkaActorService(KafkaService):
             elif message.get_message_name() == AbcMessageAvro.close_delegations:
                 result = self.close_delegations(request=message)
 
-
             elif message.get_message_name() == AbcMessageAvro.update_reservation:
                 result = self.update_reservation(request=message)
 
