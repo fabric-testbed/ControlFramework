@@ -90,6 +90,13 @@ class KafkaBrokerService(KafkaClientActorService, KafkaServerActorService):
             elif message.get_message_name() == AbcMessageAvro.add_slice and message.slice_obj is not None and \
                     (message.slice_obj.is_client_slice() or message.slice_obj.is_broker_client_slice()):
                 result = self.add_client_slice(request=message)
+
+            elif message.get_message_name() == AbcMessageAvro.remove_delegation:
+                result = self.remove_delegation(request=message)
+
+            elif message.get_message_name() == AbcMessageAvro.close_delegations:
+                result = self.close_delegations(request=message)
+
             else:
                 super().process(message=message)
                 return

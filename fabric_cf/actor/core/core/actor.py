@@ -145,7 +145,7 @@ class ActorMixin(ABCActorMixin):
     def fail_delegation(self, *, did: str, message: str):
         self.wrapper.fail_delegation(did=did, message=message)
 
-    def close_delegation(self, *, did: ID):
+    def close_delegation(self, *, did: str):
         self.wrapper.close_delegation(did=did)
 
     def close_by_rid(self, *, rid: ID):

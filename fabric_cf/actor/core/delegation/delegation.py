@@ -244,12 +244,12 @@ class Delegation(ABCDelegation):
     def close(self):
         send_notification = False
         if self.state == DelegationState.Nascent:
-            self.logger.warning("Closing a reservation in progress")
+            self.logger.warning("Closing a delegation in progress")
             send_notification = True
 
         if self.state != DelegationState.Closed:
             self.transition(prefix="closed", state=DelegationState.Closed)
-            self.policy.close_delegation(delegation=self)
+            self.policy.closed_delegation(delegation=self)
 
         if send_notification:
             self.update_data.error(message="Closed while advertising delegation")

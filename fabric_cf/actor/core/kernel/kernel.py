@@ -873,7 +873,7 @@ class Kernel:
             self.lock.acquire()
             real = self.delegations.get(did)
         finally:
-            self.lock.acquire()
+            self.lock.release()
 
         if real is not None:
             local_slice = self.slices.get(slice_id=real.get_slice_object().get_slice_id(), raise_exception=True)

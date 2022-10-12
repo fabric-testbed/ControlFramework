@@ -45,8 +45,6 @@ class BrokerDelegation(Delegation):
         self.exported = False
         self.broker = broker
         self.authority = None
-        # Relinquish status.
-        self.relinquished = False
         # The status of the last ticket update.
         self.last_delegation_update = UpdateData()
 
@@ -161,35 +159,6 @@ class BrokerDelegation(Delegation):
         if self.dlg_graph_id is None:
             self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("graph id")))
             raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("graph id"))
-
-    def do_relinquish(self):
-        """
-        Perform required actions for a relinquish
-        """
-        if not self.relinquished:
-            self.relinquished = True
-            try:
-                if self.policy is not None:
-                    self.policy.closed_delegation(delegation=self)
-                else:
-                    self.logger.warning("policy not set in reservation {}, unable to call policy.closed(), "
-                                        "continuing".format(self.dlg_graph_id))
-            except Exception as e:
-                self.logger.error("close with policy {}".format(e))
-
-            try:
-                self.sequence_out += 1
-                RPCManagerSingleton.get().relinquish_delegation(delegation=self)
-            except Exception as e:
-                self.logger.error("broker reports relinquish error: {}".format(e))
-
-    def close(self):
-        """
-        Close a delegation, remove the corresponding graph from CBM
-        """
-        if self.state == DelegationState.Nascent:
-            self.transition(prefix="close", state=DelegationState.Closed)
-            self.do_relinquish()
 
     def get_client_callback_proxy(self) -> ABCClientCallbackProxy:
         """

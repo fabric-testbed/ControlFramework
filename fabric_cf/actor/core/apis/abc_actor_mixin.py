@@ -552,7 +552,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
-    def close_delegation(self, *, did: ID):
+    def close_delegation(self, *, did: str):
         """
         Closes the delegation. Note: the delegation must have already been registered with the actor.
         This method may involve either a client or a server side action or both. When called on a broker,

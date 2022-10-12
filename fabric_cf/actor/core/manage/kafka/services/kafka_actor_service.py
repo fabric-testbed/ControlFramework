@@ -127,12 +127,6 @@ class KafkaActorService(KafkaService):
             elif message.get_message_name() == AbcMessageAvro.close_reservations:
                 result = self.close_reservations(request=message)
 
-            elif message.get_message_name() == AbcMessageAvro.remove_delegation:
-                result = self.remove_delegation(request=message)
-
-            elif message.get_message_name() == AbcMessageAvro.close_delegations:
-                result = self.close_delegations(request=message)
-
             elif message.get_message_name() == AbcMessageAvro.update_reservation:
                 result = self.update_reservation(request=message)
 
@@ -170,15 +164,18 @@ class KafkaActorService(KafkaService):
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
-            states = SliceState.all_except_dead_or_closing_value()
+            states = SliceState.list_values_ex_closing_dead()
             if request.reservation_state is not None:
-                states = [request.reservation_state]
+                if request.reservation_state == SliceState.All.value:
+                    states = SliceState.list_values()
+                else:
+                    states = [request.reservation_state]
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
             slice_id = ID(uid=request.get_slice_id()) if request.slice_id is not None else None
             result = mo.get_slices(slice_id=slice_id, caller=auth, slice_name=request.get_slice_name(),
-                                   email=request.get_email(), states=states)
+                                   email=request.get_email(), state=states)
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -444,14 +441,14 @@ class KafkaActorService(KafkaService):
         result.message_id = request.message_id
 
         try:
-            if request.guid is None or request.get_reservation_id() is None:
+            if request.guid is None or request.get_delegation_id() is None:
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            result.status = mo.remove_delegation(caller=auth, did=ID(uid=request.delegation_id))
+            result.status = mo.remove_delegation(caller=auth, did=request.delegation_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

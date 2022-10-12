@@ -368,7 +368,7 @@ class OrchestratorHandler:
             controller = self.controller_state.get_management_actor()
             self.logger.debug(f"get_slices invoked for Controller: {controller}")
 
-            slice_states = SliceState.str_list_to_state_list(states=states)
+            slice_states = SliceState.translate_list(states=states)
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
