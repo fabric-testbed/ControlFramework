@@ -226,3 +226,29 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return None
+
+    def close_delegation(self, *, did: str) -> bool:
+        self.clear_last()
+        try:
+            result = self.manager.close_delegation(caller=self.auth, did=did)
+            self.last_status = result
+
+            return result.get_code() == 0
+
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return False
+
+    def remove_delegation(self, *, did: str) -> bool:
+        self.clear_last()
+        try:
+            result = self.manager.remove_delegation(caller=self.auth, did=did)
+            self.last_status = result
+
+            return result.get_code() == 0
+
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return False

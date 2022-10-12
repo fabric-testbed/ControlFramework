@@ -173,6 +173,28 @@ class Kernel:
         finally:
             delegation.unlock()
 
+    def close_delegation(self, *, delegation: ABCDelegation):
+        """
+        Handles a close operation for the delegation.
+        Client: perform local close operations and issue close request to
+        authority.
+        Broker: perform local close operations
+        Authority: process a close request
+        @param delegation delegation for which to perform close
+        @throws Exception
+        """
+        try:
+            delegation.lock()
+            if not delegation.is_closed():
+                delegation.close()
+                self.plugin.get_database().update_delegation(delegation=delegation)
+        except Exception as e:
+            err = f"An error occurred during close for delegation #{delegation.get_delegation_id()}"
+            self.logger.error(traceback.format_exc())
+            self.error(err=err, e=e)
+        finally:
+            delegation.unlock()
+
     def close(self, *, reservation: ABCReservationMixin):
         """
         Handles a close operation for the reservation.
@@ -837,6 +859,41 @@ class Kernel:
                 self.error(err="could not register slice", e=e)
         finally:
             slice_object.unlock_slice()
+
+    def remove_delegation(self, *, did: str):
+        """
+        Removes the delegation.
+        @param did delegation id.
+        @throws Exception
+        """
+        if did is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        try:
+            self.lock.acquire()
+            real = self.delegations.get(did)
+        finally:
+            self.lock.acquire()
+
+        if real is not None:
+            local_slice = self.slices.get(slice_id=real.get_slice_object().get_slice_id(), raise_exception=True)
+
+            if local_slice is None:
+                raise KernelException("slice not registered with the kernel")
+
+            try:
+                real.lock()
+                if real.is_closed() or real.is_failed():
+                    self.unregister_no_check_d(delegation=real, slice_object=local_slice)
+                else:
+                    raise KernelException("Only delegation in failed, closed, or closewait state can be removed.")
+            finally:
+                real.unlock()
+        else:
+            self.logger.debug(f"Delegation # {did} not found")
+
+        self.plugin.get_database().remove_delegation(dlg_graph_id=did)
+        self.logger.debug(f"Delegation # {did} removed from DB")
 
     def remove_reservation(self, *, rid: ID):
         """

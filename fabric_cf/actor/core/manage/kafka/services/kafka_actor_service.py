@@ -30,12 +30,14 @@ import traceback
 from datetime import datetime
 
 from fabric_mb.message_bus.messages.add_slice_avro import AddSliceAvro
+from fabric_mb.message_bus.messages.close_delegations_avro import CloseDelegationsAvro
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
 from fabric_mb.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
 from fabric_mb.message_bus.messages.get_reservations_state_request_avro import GetReservationsStateRequestAvro
 from fabric_mb.message_bus.messages.get_slices_request_avro import GetSlicesRequestAvro
 from fabric_mb.message_bus.messages.maintenance_request_avro import MaintenanceRequestAvro
+from fabric_mb.message_bus.messages.remove_delegation_avro import RemoveDelegationAvro
 from fabric_mb.message_bus.messages.remove_reservation_avro import RemoveReservationAvro
 from fabric_mb.message_bus.messages.remove_slice_avro import RemoveSliceAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
@@ -51,6 +53,7 @@ from fim.slivers.base_sliver import BaseSliver
 
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.manage.management_object import ManagementObject
 from fabric_cf.actor.core.manage.kafka.services.kafka_service import KafkaService
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
@@ -124,6 +127,13 @@ class KafkaActorService(KafkaService):
             elif message.get_message_name() == AbcMessageAvro.close_reservations:
                 result = self.close_reservations(request=message)
 
+            elif message.get_message_name() == AbcMessageAvro.remove_delegation:
+                result = self.remove_delegation(request=message)
+
+            elif message.get_message_name() == AbcMessageAvro.close_delegations:
+                result = self.close_delegations(request=message)
+
+
             elif message.get_message_name() == AbcMessageAvro.update_reservation:
                 result = self.update_reservation(request=message)
 
@@ -161,12 +171,15 @@ class KafkaActorService(KafkaService):
                 result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
+            states = SliceState.all_except_dead_or_closing_value()
+            if request.reservation_state is not None:
+                states = [request.reservation_state]
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
             slice_id = ID(uid=request.get_slice_id()) if request.slice_id is not None else None
             result = mo.get_slices(slice_id=slice_id, caller=auth, slice_name=request.get_slice_name(),
-                                   email=request.get_email())
+                                   email=request.get_email(), states=states)
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -417,6 +430,53 @@ class KafkaActorService(KafkaService):
             mode_str = request.get_properties().get(Constants.MODE)
             mode = json.loads(mode_str.lower())
             mo.toggle_maintenance_mode(mode=mode)
+
+        except Exception as e:
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        result.message_id = request.message_id
+        return result
+
+    def remove_delegation(self, *, request: RemoveDelegationAvro) -> ResultStringAvro:
+        result = ResultStringAvro()
+        result.status = ResultAvro()
+        result.message_id = request.message_id
+
+        try:
+            if request.guid is None or request.get_reservation_id() is None:
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+                return result
+
+            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
+            result.status = mo.remove_delegation(caller=auth, did=ID(uid=request.delegation_id))
+
+        except Exception as e:
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        result.message_id = request.message_id
+        return result
+
+    def close_delegations(self, *, request: CloseDelegationsAvro) -> ResultStringAvro:
+        result = ResultStringAvro()
+        result.status = ResultAvro()
+        result.message_id = request.message_id
+
+        try:
+            if request.guid is None or (request.get_slice_id() is None and request.get_delegation_id() is None):
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+                return result
+
+            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
+
+            result.status = mo.close_delegation(caller=auth, did=request.delegation_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

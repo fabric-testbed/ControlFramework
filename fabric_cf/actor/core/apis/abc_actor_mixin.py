@@ -552,6 +552,19 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
+    def close_delegation(self, *, did: ID):
+        """
+        Closes the delegation. Note: the delegation must have already been registered with the actor.
+        This method may involve either a client or a server side action or both. When called on a broker,
+        this method will only close the broker delegation.
+
+        Args:
+            did: delegation id
+        Raises:
+            Exception in case of error
+        """
+
+    @abstractmethod
     def close(self, *, reservation: ABCReservationMixin):
         """
         Closes the reservation. Note: the reservation must have already been registered with the actor.
@@ -691,3 +704,16 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
 
     def get_asm_thread(self):
         return None
+
+    @abstractmethod
+    def remove_delegation(self, *, did: str):
+        """
+        Removes the specified delegation. Note: the delegation must have already been registered with the actor.
+        This method will unregister the reservation and remove it from the underlying database.
+        Only closed and failed delegation can be removed.
+
+        Args:
+            did: delegation id
+        Raises:
+            Exception if an error occurs or when trying to remove a delegation that is neither failed or closed.
+        """

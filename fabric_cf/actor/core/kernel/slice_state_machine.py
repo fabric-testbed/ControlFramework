@@ -49,6 +49,11 @@ class SliceState(Enum):
         return self.name
 
     @staticmethod
+    def all_except_dead_or_closing_value() -> List[int]:
+        return [SliceState.Nascent.value, SliceState.Configuring.value, SliceState.StableError.value,
+                SliceState.StableOK.value, SliceState.ModifyError.value, SliceState.ModifyOK.value]
+
+    @staticmethod
     def state_from_str(state: str):
         if state is None:
             return state
@@ -60,7 +65,7 @@ class SliceState(Enum):
         return None
 
     @staticmethod
-    def str_list_to_state_list(states: List[str]) -> list or None:
+    def str_list_to_state_list(states: List[str]) -> List[int] or None:
         if states is None or len(states) == 0:
             return states
 
@@ -82,19 +87,19 @@ class SliceState(Enum):
         return ret_val
 
     @staticmethod
-    def is_dead_or_closing(*, state):
+    def is_dead_or_closing(*, state) -> bool:
         if state == SliceState.Dead or state == SliceState.Closing:
             return True
         return False
 
     @staticmethod
-    def is_stable(*, state):
+    def is_stable(*, state) -> bool:
         if state == SliceState.StableOK or state == SliceState.StableError:
             return True
         return False
 
     @staticmethod
-    def is_modified(*, state):
+    def is_modified(*, state) -> bool:
         if state == SliceState.ModifyOK or state == SliceState.ModifyError:
             return True
         return False

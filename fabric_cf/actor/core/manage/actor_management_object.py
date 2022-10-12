@@ -592,3 +592,64 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             GlobalsSingleton.get().create_maintenance_lock()
         else:
             GlobalsSingleton.get().delete_maintenance_lock()
+
+    def close_delegation(self, *, caller: AuthToken, did: str) -> ResultAvro:
+        result = ResultAvro()
+
+        if did is None or caller is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
+                    self.actor = actor
+
+                def run(self):
+                    self.actor.close_by_rid(rid=rid)
+                    return True
+
+            self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("close_reservation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.set_message(e.text)
+        except Exception as e:
+            self.logger.error("close_reservation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
+    def remove_delegation(self, *, caller: AuthToken, did: str) -> ResultAvro:
+        result = ResultAvro()
+
+        if did is None or caller is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
+                    self.actor = actor
+
+                def run(self):
+                    self.actor.remove_delegation(did=did)
+                    return None
+
+            self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("remove_delegation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
+            result.set_message(e.text)
+        except Exception as e:
+            self.logger.error("remove_delegation: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result

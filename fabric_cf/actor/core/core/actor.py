@@ -145,6 +145,9 @@ class ActorMixin(ABCActorMixin):
     def fail_delegation(self, *, did: str, message: str):
         self.wrapper.fail_delegation(did=did, message=message)
 
+    def close_delegation(self, *, did: ID):
+        self.wrapper.close_delegation(did=did)
+
     def close_by_rid(self, *, rid: ID):
         self.wrapper.close(rid=rid)
 
@@ -647,6 +650,9 @@ class ActorMixin(ABCActorMixin):
     def register_delegation(self, *, delegation: ABCDelegation):
         self.wrapper.register_delegation(delegation=delegation)
 
+    def remove_delegation(self, *, did: str):
+        self.wrapper.remove_delegation(did=did)
+
     def remove_reservation(self, *, reservation: ABCReservationMixin = None, rid: ID = None):
         if reservation is not None:
             self.wrapper.remove_reservation(rid=reservation.get_reservation_id())
@@ -750,7 +756,7 @@ class ActorMixin(ABCActorMixin):
         Execute an incoming action on actor thread
         @param runnable incoming action/operation
         """
-        self.event_processors[EventType.SyncEvent].execute_on_thread_sync(runnable=runnable)
+        return self.event_processors[EventType.SyncEvent].execute_on_thread_sync(runnable=runnable)
 
     def start(self):
         """
