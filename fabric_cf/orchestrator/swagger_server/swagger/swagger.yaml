@@ -370,6 +370,7 @@ paths:
         explode: true
         schema:
           type: string
+          minLength: 3
       - name: ssh_key
         in: query
         description: User SSH Key
