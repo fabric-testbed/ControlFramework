@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import threading
+
 from fim.graph.abc_property_graph import ABCPropertyGraph
 
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -63,6 +65,7 @@ class Delegation(ABCDelegation):
         self.error_message = None
         self.owner = None
         self.delegation_name = delegation_name
+        self.thread_lock = threading.Lock()
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -71,6 +74,7 @@ class Delegation(ABCDelegation):
         del state['slice_object']
         del state['logger']
         del state['policy']
+        del state['thread_lock']
         return state
 
     def __setstate__(self, state):
@@ -80,6 +84,7 @@ class Delegation(ABCDelegation):
         self.slice_object = None
         self.logger = None
         self.policy = None
+        self.thread_lock = threading.Lock()
 
     def restore(self, actor: ABCActorMixin, slice_obj: ABCSlice):
         self.actor = actor
@@ -239,12 +244,12 @@ class Delegation(ABCDelegation):
     def close(self):
         send_notification = False
         if self.state == DelegationState.Nascent:
-            self.logger.warning("Closing a reservation in progress")
+            self.logger.warning("Closing a delegation in progress")
             send_notification = True
 
         if self.state != DelegationState.Closed:
             self.transition(prefix="closed", state=DelegationState.Closed)
-            self.policy.close_delegation(delegation=self)
+            self.policy.closed_delegation(delegation=self)
 
         if send_notification:
             self.update_data.error(message="Closed while advertising delegation")
@@ -436,3 +441,10 @@ class Delegation(ABCDelegation):
         self.update_data.error(message=message)
         self.transition(prefix=message, state=DelegationState.Failed)
         self.logger.error(f"{message}  e: {exception}")
+
+    def lock(self):
+        self.thread_lock.acquire()
+
+    def unlock(self):
+        if self.thread_lock.locked():
+            self.thread_lock.release()

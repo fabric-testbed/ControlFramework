@@ -99,14 +99,12 @@ class ConfigurationProcessor:
         try:
             self.create_actor()
             self.initialize_actor()
-            self.logger.info(f"There are {ActorMixin.actor_count} actors")
             self.register_actor()
             self.create_default_slice()
             self.populate_inventory_neo4j()
             self.recover_actor()
             self.enable_ticking()
             self.process_topology()
-            self.logger.info(f"Processing exports with actor count {ActorMixin.actor_count}")
             self.process_advertise()
             self.logger.info("Processing exports completed")
         except Exception as e:
@@ -211,7 +209,7 @@ class ConfigurationProcessor:
         """
         Creates Actor Policy instance
         @param actor actor
-        @param actor_config actor config
+        @param config actor config
         @raises ConfigurationException in case of error
         """
         policy = None
@@ -349,7 +347,6 @@ class ConfigurationProcessor:
         @raises ConfigurationException in case of error
         """
         try:
-            ActorMixin.actor_count += 1
             self.actor.initialize()
         except Exception as e:
             raise ConfigurationException(f"Actor failed to initialize: {self.actor.get_name()} {e}")

@@ -169,7 +169,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                         self.pending_notify.remove(reservation=reservation)
 
                 elif slice_status_map[slice_id] == TicketReviewSliceState.Nascent:
-                    self.logger.info(
+                    self.logger.debug(
                         "Moving reservation {} to pending redeem list due to nascent reservation in slice {}"
                         .format(reservation.get_reservation_id(), slice_obj.get_name()))
                     self.pending_redeem.add(reservation=reservation)

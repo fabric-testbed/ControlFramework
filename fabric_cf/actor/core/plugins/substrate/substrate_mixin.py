@@ -271,15 +271,12 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
 
         sequence = HandlerProcessor.get_action_sequence_number(properties=properties)
         notice = None
-        # TODO synchronized on token
         if sequence != unit.get_sequence():
             self.logger.warning("(modify complete) sequences mismatch: incoming ({}) local: ({}). "
                                 "Ignoring event.".format(sequence, unit.get_sequence()))
             return
         else:
             self.logger.debug("(modify complete) incoming ({}) local: ({})".format(sequence, unit.get_sequence()))
-
-        # TODO properties
 
         result = HandlerProcessor.get_result_code(properties=properties)
         msg = HandlerProcessor.get_exception_message(properties=properties)

@@ -28,10 +28,7 @@ from typing import List
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.json import JSONSliver
-from fim.slivers.network_node import NodeSliver
-from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState

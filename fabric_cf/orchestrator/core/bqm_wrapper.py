@@ -37,6 +37,7 @@ class BqmWrapper:
         self.bqm = None
         self.last_query_time = None
         self.refresh_interval_in_seconds = 60
+        self.refresh_in_progress = False
 
     def set_refresh_interval(self, *, refresh_interval: int):
         """
@@ -51,8 +52,9 @@ class BqmWrapper:
         @return True -> On first attempt or last query time is after refresh Interval; False otherwise
         """
         current_time = datetime.now(timezone.utc)
-        if self.last_query_time is None or \
-                ((current_time - self.last_query_time).seconds > self.refresh_interval_in_seconds):
+        if not self.refresh_in_progress and (self.last_query_time is None or
+                                             ((current_time - self.last_query_time).seconds >
+                                              self.refresh_interval_in_seconds)):
             return True
         return False
 
@@ -65,6 +67,10 @@ class BqmWrapper:
         self.graph_format = graph_format
         self.bqm = bqm
         self.last_query_time = datetime.now(timezone.utc)
+        self.refresh_in_progress = False
+
+    def start_refresh(self):
+        self.refresh_in_progress = True
 
     def get_bqm(self) -> str:
         """
@@ -79,3 +85,4 @@ class BqmWrapper:
         @return bqm format
         """
         return self.graph_format
+

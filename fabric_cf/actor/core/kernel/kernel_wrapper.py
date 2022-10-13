@@ -165,6 +165,22 @@ class KernelWrapper:
         # it is executed in the context of the actor represented by KernelWrapper.
         self.kernel.close(reservation=target)
 
+    def close_delegation(self, *, did: str):
+        """
+        Closes the delegation, potentially initiating a close request to another
+        actor. If the delegation has concrete resources bound to it, this method
+        may return before all close operations have completed. Check the
+        delegation state to determine when close completes.
+        @param did identifier of reservation to close
+        @throws Exception in case of error
+        """
+        if did is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+        target = self.kernel.validate_delegation(did=did)
+        # NOTE: this call does not require access control check, since
+        # it is executed in the context of the actor represented by KernelWrapper.
+        self.kernel.close_delegation(delegation=target)
+
     def close_slice_reservations(self, *, slice_id: ID):
         """
         Close Slice reservations
@@ -754,8 +770,23 @@ class KernelWrapper:
         if slice_object is None or slice_object.get_slice_id() is None or not isinstance(slice_object, ABCSlice):
             raise KernelException("Invalid argument {}".format(slice_object))
 
-        slice_object.set_owner(owner=self.actor.get_identity())
+        if slice_object.get_owner() is None:
+            slice_object.set_owner(owner=self.actor.get_identity())
         self.kernel.register_slice(slice_object=slice_object)
+
+    def remove_delegation(self, *, did: str):
+        """
+        Unregisters the delegation from the kernel data structures and removes
+        its record from the database.
+        Note:Only failed, closed, or close waiting reservations can be
+        removed.
+        @param delegation identifier of delegation to remove
+        @throws Exception in case of error
+        """
+        if did is None:
+            raise KernelException(Constants.INVALID_ARGUMENT)
+
+        self.kernel.remove_delegation(did=did)
 
     def remove_reservation(self, *, rid: ID):
         """

@@ -7,14 +7,21 @@ VOLUME ["/usr/src/app"]
 
 EXPOSE 11000
 
+RUN apt-get update
+RUN apt-get install cron -y
+
 COPY requirements.txt /usr/src/app/
+COPY docker-entrypoint.sh /usr/src/app/
 COPY fabric_cf /usr/src/app/fabric_cf
+COPY tools/cleanup.py /usr/src/app/fabric_cf/
+COPY tools/install.sh /usr/src/app/fabric_cf/
+
 RUN pip3 install --no-cache-dir -r requirements.txt
 RUN mkdir -p "/etc/fabric/message_bus/schema"
 RUN mkdir -p "/etc/fabric/actor/config"
 RUN mkdir -p "/var/log/actor"
 RUN cp /usr/local/lib/python3.9/site-packages/fabric_mb/message_bus/schema/*.avsc /etc/fabric/message_bus/schema
+RUN sh /usr/src/app/fabric_cf/install.sh
 
-ENTRYPOINT ["python3"]
-
-CMD ["-m", "fabric_cf.broker"]
+ENTRYPOINT ["/usr/src/app/docker-entrypoint.sh"]
+CMD ["fabric_cf.broker"]

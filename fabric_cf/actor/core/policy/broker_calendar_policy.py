@@ -25,13 +25,11 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from datetime import datetime
 from typing import TYPE_CHECKING
 
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.time.calendar.broker_calendar import BrokerCalendar
-from fabric_cf.actor.core.util.resource_count import ResourceCount
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.core.broker_policy import BrokerPolicy
@@ -113,19 +111,6 @@ class BrokerCalendarPolicy(BrokerPolicy):
 
     def closed(self, *, reservation: ABCReservationMixin):
         self.release(reservation=reservation)
-
-    def count(self, *, rvset: ReservationSet, when: datetime):
-        """
-        Returns a counter for the passed set and the specified data.
-
-        @param rvset the set of reservations being counted
-        @param when the date when to count the resources
-
-        @return counter
-        """
-        rc = ResourceCount()
-        rvset.count(rc=rc, when=when)
-        return rc
 
     def finish(self, *, cycle: int):
         self.calendar.tick(cycle=cycle)

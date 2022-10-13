@@ -27,10 +27,12 @@ from __future__ import annotations
 
 from typing import List
 
+from fabric_mb.message_bus.messages.close_delegations_avro import CloseDelegationsAvro
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
 from fabric_mb.message_bus.messages.maintenance_request_avro import MaintenanceRequestAvro
+from fabric_mb.message_bus.messages.remove_delegation_avro import RemoveDelegationAvro
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
 from fabric_mb.message_bus.messages.get_reservations_state_request_avro import GetReservationsStateRequestAvro
 from fabric_mb.message_bus.messages.add_slice_avro import AddSliceAvro
@@ -68,8 +70,11 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
                    state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         request = GetSlicesRequestAvro()
+        reservation_state = None
+        if state is not None and len(state) == 1:
+            reservation_state = state[0]
         request = self.fill_request_by_id_message(request=request, email=email, slice_id=slice_id,
-                                                  slice_name=slice_name)
+                                                  slice_name=slice_name, reservation_state=reservation_state)
         status, response = self.send_request(request)
         if response is not None:
             return response.slices
@@ -196,3 +201,17 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
     def get_name(self) -> str:
         raise ManageException(Constants.NOT_IMPLEMENTED)
+
+    def remove_delegation(self, *, did: str) -> bool:
+        request = RemoveDelegationAvro()
+        request = self.fill_request_by_id_message(request=request, delegation_id=did)
+        status, response = self.send_request(request)
+
+        return status.code == 0
+
+    def close_delegation(self, *, did: str) -> bool:
+        request = CloseDelegationsAvro()
+        request = self.fill_request_by_id_message(request=request, delegation_id=did)
+        status, response = self.send_request(request)
+
+        return status.code == 0

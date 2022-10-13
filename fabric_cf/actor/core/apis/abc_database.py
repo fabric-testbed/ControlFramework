@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod, ABC
+from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
@@ -179,7 +180,7 @@ class ABCDatabase(ABC):
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
                    state: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
-                   limit: int = None, offset: int = None) -> List[ABCSlice] or None:
+                   limit: int = None, offset: int = None, lease_end: datetime = None) -> List[ABCSlice] or None:
         """
         Retrieves the specified slices.
 
@@ -192,6 +193,7 @@ class ABCDatabase(ABC):
         @param slc_type slice type
         @param limit limit
         @param offset offset
+        @param lease_end lease_end
 
         @return list of slices
 

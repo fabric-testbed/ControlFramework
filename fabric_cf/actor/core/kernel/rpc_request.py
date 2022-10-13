@@ -93,8 +93,8 @@ class RPCRequest:
             GlobalsSingleton.get().timer_scheduler.cancel(self.timer)
 
     def get(self) -> ABCReservationMixin or ABCDelegation:
-        if self.reservation is None:
+        if self.reservation is not None:
             return self.reservation
 
-        if self.delegation is None:
+        if self.delegation is not None:
             return self.delegation

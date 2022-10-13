@@ -106,10 +106,10 @@ class ReservationStatusUpdateThread:
         Periodic
         :return:
         """
-        self.logger.debug("Reservation Status Update Thread started")
+        self.logger.debug(f"Reservation Status Update Thread started")
         while not self.stopped_worker.wait(timeout=self.MODIFY_CHECK_PERIOD):
             self.run()
-        self.logger.debug("Reservation Status Update Thread exited")
+        self.logger.debug(f"Reservation Status Update Thread exited")
 
     def __add_active_status_watch(self, *, we: WatchEntry):
         try:

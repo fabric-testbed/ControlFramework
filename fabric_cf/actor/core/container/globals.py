@@ -476,7 +476,7 @@ class Globals:
         """
         Timer thread run function
         """
-        self.log.debug("Timer thread started")
+        self.log.debug(f"Timer thread started")
         while True:
             with self.timer_condition:
                 while self.timer_scheduler.empty() and self.started:
@@ -485,17 +485,17 @@ class Globals:
                         self.timer_condition.wait()
                     except InterruptedError as e:
                         self.log.error(traceback.format_exc())
-                        self.log.error("Timer thread interrupted. Exiting {}".format(e))
+                        self.log.error(f" Timer thread interrupted. Exiting {e}")
                         return
 
                     if not self.started:
-                        self.log.info("Timer thread exiting")
+                        self.log.info(f"Timer thread exiting")
                         return
 
                     self.timer_condition.notify_all()
 
                 if not self.timer_scheduler.empty():
-                    #self.log.debug("Executing Scheduled items")
+                    #self.log.debug(f"Executing Scheduled items")
                     self.timer_scheduler.run(blocking=False)
 
 

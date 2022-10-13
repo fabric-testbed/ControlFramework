@@ -300,6 +300,12 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         Returns:
             query response
         """
+    @abstractmethod
+    def execute_on_actor_thread(self, *, runnable: ABCActorRunnable):
+        """
+        Execute on Actor Thread and Wait until response is processed
+        @params runnable: reservation to be processed
+        """
 
     @abstractmethod
     def execute_on_actor_thread_and_wait(self, *, runnable: ABCActorRunnable):
@@ -546,6 +552,19 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
+    def close_delegation(self, *, did: str):
+        """
+        Closes the delegation. Note: the delegation must have already been registered with the actor.
+        This method may involve either a client or a server side action or both. When called on a broker,
+        this method will only close the broker delegation.
+
+        Args:
+            did: delegation id
+        Raises:
+            Exception in case of error
+        """
+
+    @abstractmethod
     def close(self, *, reservation: ABCReservationMixin):
         """
         Closes the reservation. Note: the reservation must have already been registered with the actor.
@@ -681,4 +700,20 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
             rid: reservation id
         Raises:
             Exception in case of error
+        """
+
+    def get_asm_thread(self):
+        return None
+
+    @abstractmethod
+    def remove_delegation(self, *, did: str):
+        """
+        Removes the specified delegation. Note: the delegation must have already been registered with the actor.
+        This method will unregister the reservation and remove it from the underlying database.
+        Only closed and failed delegation can be removed.
+
+        Args:
+            did: delegation id
+        Raises:
+            Exception if an error occurs or when trying to remove a delegation that is neither failed or closed.
         """

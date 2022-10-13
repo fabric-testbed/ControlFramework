@@ -43,7 +43,6 @@ class OrchestratorKernel:
     """
 
     def __init__(self):
-        self.lock = threading.Lock()
         self.defer_thread = None
         self.sut = None
         self.broker = None
@@ -129,8 +128,8 @@ class OrchestratorKernel:
         """
         if self.defer_thread is not None:
             self.defer_thread.stop()
-        if self.sut is not None:
-            self.sut.stop()
+        #if self.sut is not None:
+        #    self.sut.stop()
 
     def start_threads(self):
         """
@@ -140,9 +139,9 @@ class OrchestratorKernel:
         self.get_logger().debug("Starting SliceDeferThread")
         self.defer_thread = SliceDeferThread(kernel=self)
         self.defer_thread.start()
-        self.get_logger().debug("Starting ReservationStatusUpdateThread")
-        self.sut = ReservationStatusUpdateThread()
-        self.sut.start()
+        #self.get_logger().debug("Starting ReservationStatusUpdateThread")
+        #self.sut = ReservationStatusUpdateThread()
+        #self.sut.start()
 
 
 class OrchestratorKernelSingleton:

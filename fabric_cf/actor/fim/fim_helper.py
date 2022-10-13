@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import logging
+import threading
 from typing import Tuple, List, Union
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
@@ -110,14 +112,16 @@ class FimHelper:
     Provides methods to load Graph Models and perform various operations on them
     """
     @staticmethod
-    def get_neo4j_importer() -> ABCGraphImporter:
+    def get_neo4j_importer(neo4j_config: dict = None) -> ABCGraphImporter:
         """
         get fim graph importer
         :return: Neo4jGraphImporter
         """
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        neo4j_config = GlobalsSingleton.get().get_config().get_global_config().get_neo4j_config()
-        logger = GlobalsSingleton.get().get_logger()
+        logger = None
+        if neo4j_config is None:
+            from fabric_cf.actor.core.container.globals import GlobalsSingleton
+            neo4j_config = GlobalsSingleton.get().get_config().get_global_config().get_neo4j_config()
+            logger = GlobalsSingleton.get().get_logger()
 
         neo4j_graph_importer = Neo4jGraphImporter(url=neo4j_config["url"], user=neo4j_config["user"],
                                                   pswd=neo4j_config["pass"],
@@ -126,25 +130,27 @@ class FimHelper:
         return neo4j_graph_importer
 
     @staticmethod
-    def get_networkx_importer() -> ABCGraphImporter:
+    def get_networkx_importer(logger: logging.Logger = None) -> ABCGraphImporter:
         """
         get fim graph importer
         :return: Neo4jGraphImporter
         """
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        logger = GlobalsSingleton.get().get_logger()
+        if logger is None:
+            from fabric_cf.actor.core.container.globals import GlobalsSingleton
+            logger = GlobalsSingleton.get().get_logger()
 
         return NetworkXGraphImporter(logger=logger)
 
     @staticmethod
-    def get_arm_graph_from_file(*, filename: str, graph_id: str = None) -> ABCARMPropertyGraph:
+    def get_arm_graph_from_file(*, filename: str, graph_id: str = None, neo4j_config: dict = None) -> ABCARMPropertyGraph:
         """
         Load specified file directly with no manipulations or validation
         :param filename:
         :param graph_id:
+        :param neo4j_config neo4j_config
         :return:
         """
-        neo4j_graph_importer = FimHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer(neo4j_config=neo4j_config)
         neo4_graph = neo4j_graph_importer.import_graph_from_file(graph_file=filename, graph_id=graph_id)
         site_arm = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=neo4_graph.graph_id,
                                                           importer=neo4j_graph_importer))
@@ -154,13 +160,14 @@ class FimHelper:
         return site_arm
 
     @staticmethod
-    def get_arm_graph(*, graph_id: str) -> ABCARMPropertyGraph:
+    def get_arm_graph(*, graph_id: str, neo4j_config: dict = None) -> ABCARMPropertyGraph:
         """
         Load arm graph from fim
         :param graph_id: graph_id
+        :param neo4j_config neo4j_config
         :return: Neo4jARMGraph
         """
-        neo4j_graph_importer = FimHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer(neo4j_config=neo4j_config)
         arm_graph = Neo4jARMGraph(graph=Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer))
         if arm_graph.graph_exists():
             arm_graph.validate_graph()
@@ -180,25 +187,27 @@ class FimHelper:
         return neo4j_topo
 
     @staticmethod
-    def get_graph(*, graph_id: str) -> ABCPropertyGraph:
+    def get_graph(*, graph_id: str, neo4j_config: dict = None) -> ABCPropertyGraph:
         """
         Load arm graph from fim
-        :param graph_id: graph_id
+        :param graph_id: graph_id.
+        :param neo4j_config neo4j_config
         :return: Neo4jARMGraph
         """
-        neo4j_graph_importer = FimHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer(neo4j_config=neo4j_config)
         arm_graph = Neo4jPropertyGraph(graph_id=graph_id, importer=neo4j_graph_importer)
 
         return arm_graph
 
     @staticmethod
-    def get_neo4j_cbm_graph(graph_id: str) -> ABCCBMPropertyGraph:
+    def get_neo4j_cbm_graph(graph_id: str, neo4j_config: dict = None) -> ABCCBMPropertyGraph:
         """
         Load cbm graph from fim
         :param graph_id: graph_id
+        :param neo4j_config neo4j_config
         :return: Neo4jCBMGraph
         """
-        neo4j_graph_importer = FimHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer(neo4j_config=neo4j_config)
         combined_broker_model = Neo4jCBMGraph(graph_id=graph_id,
                                               importer=neo4j_graph_importer,
                                               logger=neo4j_graph_importer.log)
@@ -220,25 +229,27 @@ class FimHelper:
         return Neo4jCBMFactory.create(neo4_graph)
 
     @staticmethod
-    def get_graph_from_string_direct(*, graph_str: str) -> ABCPropertyGraph:
+    def get_graph_from_string_direct(*, graph_str: str, neo4j_config: dict = None) -> ABCPropertyGraph:
         """
         Load arm graph from fim
         :param graph_str: graph_str
+        :param neo4j_config neo4j_config
         :return: Neo4jPropertyGraph
         """
-        neo4j_graph_importer = FimHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer(neo4j_config=neo4j_config)
         graph = neo4j_graph_importer.import_graph_from_string_direct(graph_string=graph_str)
 
         return graph
 
     @staticmethod
-    def get_graph_from_string(*, graph_str: str) -> ABCPropertyGraph:
+    def get_graph_from_string(*, graph_str: str, neo4j_config: dict = None) -> ABCPropertyGraph:
         """
         Load arm graph from fim
         :param graph_str: graph_str
+        :param neo4j_config neo4j_config
         :return: Neo4jPropertyGraph
         """
-        neo4j_graph_importer = FimHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer(neo4j_config=neo4j_config)
         graph = neo4j_graph_importer.import_graph_from_string(graph_string=graph_str)
 
         return graph
@@ -256,12 +267,13 @@ class FimHelper:
         return graph
 
     @staticmethod
-    def delete_graph(*, graph_id: str):
+    def delete_graph(*, graph_id: str, neo4j_config: dict = None):
         """
         Delete a graph
         @param graph_id graph id
+        @param neo4j_config neo4j_config
         """
-        neo4j_graph_importer = FimHelper.get_neo4j_importer()
+        neo4j_graph_importer = FimHelper.get_neo4j_importer(neo4j_config=neo4j_config)
         neo4j_graph_importer.delete_graph(graph_id=graph_id)
 
     @staticmethod

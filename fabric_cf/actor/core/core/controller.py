@@ -44,7 +44,7 @@ from fabric_cf.actor.core.core.actor import ActorMixin
 from fabric_cf.actor.core.registry.peer_registry import PeerRegistry
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
-from fabric_cf.actor.core.util.utils import sliver_to_str
+from fabric_cf.actor.fim.asm_update_thread import AsmUpdateThread
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.time.actor_clock import ActorClock
@@ -78,6 +78,7 @@ class Controller(ActorMixin, ABCController):
         # initialization status
         self.initialized = False
         self.type = ActorType.Orchestrator
+        self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -89,11 +90,6 @@ class Controller(ActorMixin, ABCController):
         del state['first_tick']
         del state['stopped']
         del state['initialized']
-        del state['thread_lock']
-        del state['thread']
-        del state['timer_queue']
-        del state['event_queue']
-        del state['actor_main_lock']
         del state['closing']
         del state['message_service']
 
@@ -103,6 +99,9 @@ class Controller(ActorMixin, ABCController):
         del state['extending_lease']
         del state['modifying_lease']
         del state['registry']
+
+        del state['asm_update_thread']
+        del state['event_processors']
         return state
 
     def __setstate__(self, state):
@@ -115,11 +114,6 @@ class Controller(ActorMixin, ABCController):
         self.first_tick = True
         self.stopped = False
         self.initialized = False
-        self.thread = None
-        self.thread_lock = threading.Lock()
-        self.timer_queue = queue.Queue()
-        self.event_queue = queue.Queue()
-        self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
 
@@ -129,6 +123,17 @@ class Controller(ActorMixin, ABCController):
         self.extending_lease = ReservationSet()
         self.modifying_lease = ReservationSet()
         self.registry = PeerRegistry()
+        self.asm_update_thread = AsmUpdateThread(name=f"{self.get_name()}-asm-thread", logger=self.logger)
+        self.event_processors = {}
+
+    def set_logger(self, logger):
+        super(Controller, self).set_logger(logger=logger)
+        self.asm_update_thread.set_logger(logger=logger)
+
+    def start(self):
+        self.asm_update_thread.set_logger(logger=self.logger)
+        self.asm_update_thread.start()
+        super(Controller, self).start()
 
     def actor_added(self):
         super().actor_added()
@@ -417,3 +422,6 @@ class Controller(ActorMixin, ABCController):
     @staticmethod
     def get_mgmt_kafka_service_module() -> str:
         return KafkaControllerService.__module__
+
+    def get_asm_thread(self) -> AsmUpdateThread:
+        return self.asm_update_thread

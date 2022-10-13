@@ -97,7 +97,7 @@ class ActorService:
 
         dlg = BrokerDelegationFactory.create(did=delegation.get_delegation_id(),
                                              slice_id=slice_obj.get_slice_id(),
-                                             broker=None)
+                                             broker=None, delegation_name=delegation.delegation_name)
         dlg.restore(actor=self.actor, slice_obj=slice_obj)
 
         site_proxy = ActorRegistrySingleton.get().get_proxy(protocol=Constants.PROTOCOL_KAFKA,

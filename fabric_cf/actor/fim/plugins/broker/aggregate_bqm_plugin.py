@@ -41,6 +41,9 @@ from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.interface_info import InterfaceType
 from fim.slivers.network_service import ServiceType
 
+from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
+
+
 class AggregatedBQMPlugin:
     """
     Implement a plugin for simple aggregation of CBM into BQM, transforming site
@@ -69,8 +72,14 @@ class AggregatedBQMPlugin:
         organized by component type and model.
         """
         assert node_id is not None
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
         # get existing reservations for this node
-        existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id)
+        existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
+                                                                                        state=states)
 
         # node capacities
         occupied_capacities = Capacities()

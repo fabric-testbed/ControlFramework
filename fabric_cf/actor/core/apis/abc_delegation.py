@@ -398,3 +398,15 @@ class ABCDelegation(ABC):
               message: error message
               exception: exception
         """
+
+    @abstractmethod
+    def lock(self):
+        """
+        Lock delegation
+        """
+
+    @abstractmethod
+    def unlock(self):
+        """
+        Unlock delegation
+        """

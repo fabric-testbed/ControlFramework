@@ -87,17 +87,13 @@ class Broker(ActorMixin, ABCBrokerMixin):
         del state['first_tick']
         del state['stopped']
         del state['initialized']
-        del state['thread_lock']
-        del state['thread']
-        del state['timer_queue']
-        del state['event_queue']
-        del state['actor_main_lock']
         del state['closing']
         del state['message_service']
 
         del state['ticketing']
         del state['extending']
         del state['registry']
+        del state['event_processors']
         return state
 
     def __setstate__(self, state):
@@ -111,17 +107,13 @@ class Broker(ActorMixin, ABCBrokerMixin):
         self.first_tick = True
         self.stopped = False
         self.initialized = False
-        self.thread = None
-        self.thread_lock = threading.Lock()
-        self.timer_queue = queue.Queue()
-        self.event_queue = queue.Queue()
-        self.actor_main_lock = threading.Condition()
         self.closing = ReservationSet()
         self.message_service = None
 
         self.ticketing = ReservationSet()
         self.extending = ReservationSet()
         self.registry = PeerRegistry()
+        self.event_processors = {}
 
     def actor_added(self):
         super().actor_added()

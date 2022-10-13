@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import threading
 import traceback
 
 from fabric_cf.actor.core.apis.abc_broker_proxy import ABCBrokerProxy
@@ -39,13 +40,11 @@ from fabric_cf.actor.core.util.update_data import UpdateData
 
 
 class BrokerDelegation(Delegation):
-    def __init__(self, dlg_graph_id: str, slice_id: ID, broker: ABCBrokerProxy = None):
-        super().__init__(dlg_graph_id=dlg_graph_id, slice_id=slice_id)
+    def __init__(self, dlg_graph_id: str, slice_id: ID, broker: ABCBrokerProxy = None, delegation_name: str = None):
+        super().__init__(dlg_graph_id=dlg_graph_id, slice_id=slice_id, delegation_name=delegation_name)
         self.exported = False
         self.broker = broker
         self.authority = None
-        # Relinquish status.
-        self.relinquished = False
         # The status of the last ticket update.
         self.last_delegation_update = UpdateData()
 
@@ -56,6 +55,7 @@ class BrokerDelegation(Delegation):
         del state['slice_object']
         del state['logger']
         del state['policy']
+        del state['thread_lock']
         return state
 
     def __setstate__(self, state):
@@ -65,6 +65,7 @@ class BrokerDelegation(Delegation):
         self.slice_object = None
         self.logger = None
         self.policy = None
+        self.thread_lock = threading.Lock()
 
     def get_broker(self) -> ABCBrokerProxy:
         """
@@ -159,35 +160,6 @@ class BrokerDelegation(Delegation):
             self.logger.error(self.error_string_prefix.format(self, Constants.NOT_SPECIFIED_PREFIX.format("graph id")))
             raise DelegationException(Constants.NOT_SPECIFIED_PREFIX.format("graph id"))
 
-    def do_relinquish(self):
-        """
-        Perform required actions for a relinquish
-        """
-        if not self.relinquished:
-            self.relinquished = True
-            try:
-                if self.policy is not None:
-                    self.policy.closed_delegation(delegation=self)
-                else:
-                    self.logger.warning("policy not set in reservation {}, unable to call policy.closed(), "
-                                        "continuing".format(self.dlg_graph_id))
-            except Exception as e:
-                self.logger.error("close with policy {}".format(e))
-
-            try:
-                self.sequence_out += 1
-                RPCManagerSingleton.get().relinquish_delegation(delegation=self)
-            except Exception as e:
-                self.logger.error("broker reports relinquish error: {}".format(e))
-
-    def close(self):
-        """
-        Close a delegation, remove the corresponding graph from CBM
-        """
-        if self.state == DelegationState.Nascent:
-            self.transition(prefix="close", state=DelegationState.Closed)
-            self.do_relinquish()
-
     def get_client_callback_proxy(self) -> ABCClientCallbackProxy:
         """
         Get Client callback proxy
@@ -219,6 +191,7 @@ class BrokerDelegation(Delegation):
         if self.authority is None and incoming.get_site_proxy() is not None:
             self.authority = incoming.get_site_proxy()
 
+        self.delegation_name = incoming.get_delegation_name()
         self.graph = incoming.get_graph()
         self.policy.update_delegation_complete(delegation=self)
         if self.graph is not None:

@@ -1,2 +1,3 @@
 #!/bin/sh
-tail -f /dev/null
+service cron start
+python3.9 -m $1

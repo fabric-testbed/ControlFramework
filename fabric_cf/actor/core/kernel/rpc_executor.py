@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.producer import AvroProducerApi
@@ -62,8 +63,7 @@ class RPCExecutor:
         Execute RPC
         """
         logger = request.actor.get_logger()
-        logger.debug("Performing RPC: type={} to:{}".format(request.request.get_type(),
-                                                            request.proxy.get_name()))
+        logger.debug(f"Performing RPC: type={request.request.get_type()} to:{request.proxy.get_name()}")
         try:
             request.proxy.execute(request=request.request, producer=producer)
             if request.handler is None:

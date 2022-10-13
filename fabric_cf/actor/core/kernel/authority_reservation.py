@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import threading
 import traceback
 from typing import TYPE_CHECKING
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ReservationCategory
@@ -86,6 +87,7 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
         del state['policy']
 
         del state['notified_about_failure']
+        del state['thread_lock']
 
         return state
 
@@ -106,6 +108,7 @@ class AuthorityReservation(ReservationServer, ABCAuthorityReservation):
         self.policy = None
 
         self.notified_about_failure = False
+        self.thread_lock = threading.Lock()
 
     def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """

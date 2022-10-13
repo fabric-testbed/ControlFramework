@@ -34,10 +34,12 @@ from fabric_cf.orchestrator.swagger_server.response.cors_response import cors_40
 
 
 def get_token() -> str:
+    result = None
     token = connexion.request.headers.get('Authorization', None)
     if token is not None:
         token = token.replace('Bearer ', '')
-    return token
+        result = f"{token}"
+    return result
 
 
 def cors_error_response(error: Union[OrchestratorException, Exception]) -> cors_response:

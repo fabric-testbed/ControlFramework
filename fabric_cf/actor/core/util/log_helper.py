@@ -25,9 +25,8 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
 import os
+import threading
 from logging.handlers import RotatingFileHandler
-
-from fabric_cf.actor.core.common.constants import Constants
 
 
 class LogHelper:
@@ -59,12 +58,19 @@ class LogHelper:
         log = logging.getLogger(logger)
         log.setLevel(log_level)
         log_format = \
-            '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s] - %(levelname)s - %(message)s'
+            '%(asctime)s - %(name)s - {%(filename)s:%(lineno)d} - [%(threadName)s-%(thread_id)s]- %(levelname)s - %(message)s'
 
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
 
         file_handler = RotatingFileHandler(log_path, backupCount=int(log_retain), maxBytes=int(log_size))
 
         logging.basicConfig(handlers=[file_handler], format=log_format, force=True)
+        file_handler.addFilter(LogHelper.thread_id_filter)
 
         return log
+
+    @staticmethod
+    def thread_id_filter(record):
+        """Inject thread_id to log records"""
+        record.thread_id = threading.get_native_id()
+        return record

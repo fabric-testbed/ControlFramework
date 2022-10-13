@@ -26,10 +26,10 @@
 from __future__ import annotations
 
 import json
+import threading
+import time
 import traceback
 from typing import TYPE_CHECKING, List
-
-from datetime import datetime
 
 from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
@@ -65,7 +65,6 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.kernel.resource_set import ResourceSet
     from fabric_cf.actor.core.time.term import Term
-    from fabric_cf.actor.core.util.resource_count import ResourceCount
     from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
@@ -202,6 +201,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         del state['service_pending']
 
         del state['suggested']
+        del state['thread_lock']
         return state
 
     def __setstate__(self, state):
@@ -219,6 +219,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         self.service_pending = ReservationPendingStates.None_
 
         self.suggested = True
+        self.thread_lock = threading.Lock()
 
     def restore(self, *, actor: ABCActorMixin, slice_obj: ABCSlice):
         """
@@ -420,7 +421,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                                   " ignoring it: {}".format(pred_state.get_reservation()))
                 continue
 
-            if not pred_state.get_reservation().is_active_joined():
+            if not pred_state.get_reservation().is_active():
                 approved = False
                 break
 
@@ -430,9 +431,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         return approved
 
     def can_redeem(self) -> bool:
-        if (((self.state == ReservationStates.ActiveTicketed) or (self.state == ReservationStates.Ticketed) or
-             ((self.state == ReservationStates.Active) and self.pending_recover)) and
-                (self.pending_state == ReservationPendingStates.None_)):
+        ticketed_states_to_redeem = [ReservationStates.ActiveTicketed, ReservationStates.Ticketed]
+        is_valid_state = self.state in ticketed_states_to_redeem or \
+                         (self.state == ReservationStates.Active and self.pending_recover)
+        if is_valid_state and self.pending_state == ReservationPendingStates.None_:
             assert self.resources is not None
             c = self.resources.get_resources()
             assert c is not None and c.get_units() > 0
@@ -479,10 +481,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                     ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
-                print(f"KOMAL --- {ifs}")
-
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {self.resources.sliver}")
-            print(f"KOMAL --- {self.resources.sliver}")
 
     def approve_ticket(self):
         """
@@ -493,7 +492,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
         When true, the reservation can manipulate the current reservation's attributes to
         facilitate ticketing from the broker. Note that approve_ticket may be polled multiple
         times, and should be idempotent.
-
 
         @return true if approved; false otherwise
         """
@@ -623,36 +621,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
                     self.transition_with_join(prefix="close", state=ReservationStates.Active,
                                               pending=ReservationPendingStates.Closing,
                                               join_state=JoinState.NoJoin)
-
-    def count_with_time(self, *, when: datetime):
-        """
-        Count with time
-        @param when ime
-        """
-        result = Reservation.CountHelper()
-        if not self.is_terminal():
-            if self.term is not None and self.term.contains(term=when) and self.resources is not None:
-                result.active = self.resources.get_concrete_units(when=when)
-                result.type = self.resources.type
-            else:
-                if self.approved and self.approved_term is not None and self.approved_term.contains(term=when) and \
-                        self.approved_resources is not None:
-                    result.pending = self.approved_resources.units
-                    result.type = self.approved_resources.type
-        return result
-
-    def count(self, *, rc: ResourceCount, when: datetime):
-        if self.state == ReservationStates.Nascent or self.state == ReservationStates.Active or \
-                self.state == ReservationStates.ActiveTicketed or self.state == ReservationStates.Ticketed:
-            c = self.count_with_time(when=when)
-            if c.type is not None:
-                rc.tally_active(resource_type=c.type, count=c.active)
-                rc.tally_pending(resource_type=c.type, count=c.pending)
-        elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait and\
-                self.resources is not None:
-            rc.tally_close(resource_type=self.resources.type, count=self.resources.units)
-        elif self.state == ReservationStates.Failed and self.resources is not None:
-            rc.tally_failed(resource_type=self.resources.type, count=self.resources.units)
 
     def extend_lease(self):
         # Not permitted if there is a pending operation.
@@ -843,10 +811,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 result += f"{ev}, "
             result = result[:-2]
         return result
-
-    def is_active(self) -> bool:
-        return (self.state == ReservationStates.Active or self.state == ReservationStates.ActiveTicketed) and \
-               self.joinstate == JoinState.NoJoin
 
     def is_active_joined(self) -> bool:
         return self.is_active() and self.joinstate == JoinState.NoJoin
@@ -1667,6 +1631,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         :param sliver: sliver
         :return:
         """
+        begin = time.time()
         try:
             self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                               f"Slice Graph# {self.slice.get_graph_id()}")
@@ -1675,15 +1640,24 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 error_message = self.get_last_ticket_update()
             if error_message is None:
                 error_message = self.get_last_lease_update()
+            '''
             self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
                                           reservation_state=self.state.name,
                                           error_message=error_message)
+            '''
+            asm_thread = self.actor.get_asm_thread()
+            if asm_thread is not None:
+                asm_thread.enqueue(graph_id=self.slice.get_graph_id(),
+                                   sliver=sliver, rid=str(self.rid),
+                                   reservation_state=self.state.name,
+                                   error_message=error_message)
             self.logger.debug(f"Update ASM completed for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                               f"Slice Graph# {self.slice.get_graph_id()}")
 
         except Exception as e:
             self.logger.error(f"Failed to update the ASM Graph: {e}")
             self.logger.error(traceback.format_exc())
+        self.logger.info(f"ASM TIME: {time.time() - begin:.0f}")
 
     def mark_close_by_ticket_review(self, *, update_data: UpdateData):
         if self.last_ticket_update is not None:

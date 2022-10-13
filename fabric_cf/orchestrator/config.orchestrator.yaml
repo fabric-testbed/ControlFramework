@@ -109,7 +109,7 @@ time:
   time.startTime: -1
 
   # Internal tick length (in milliseconds)
-  time.cycleMillis: 1000
+  time.cycleMillis: 10000
 
   # The number of the first tick
   time.firstTick: 0

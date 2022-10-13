@@ -127,6 +127,14 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
+    def close_delegation(self, *, did: str) -> bool:
+        """
+        Closes the specified delegation
+        @param did delegation id
+        @return true for success; false otherwise
+        """
+
+    @abstractmethod
     def close_reservations(self, *, slice_id: ID) -> bool:
         """
         Closes all reservations in the specified slice.
@@ -140,6 +148,15 @@ class ABCMgmtActor(ABCComponent):
         Removes the specified reservation.
         Note only closed reservations can be removed.
         @param rid reservation id of the reservation to be removed
+        @return true for success; false otherwise
+        """
+
+    @abstractmethod
+    def remove_delegation(self, *, did: str) -> bool:
+        """
+        Removes the specified delegation.
+        Note only closed delegation can be removed.
+        @param did delegation id of the delegation to be removed
         @return true for success; false otherwise
         """
 

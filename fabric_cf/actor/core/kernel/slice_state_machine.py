@@ -44,57 +44,81 @@ class SliceState(Enum):
     Modifying = enum.auto()
     ModifyError = enum.auto()
     ModifyOK = enum.auto()
+    All = enum.auto()   # used only for querying
 
     def __str__(self):
         return self.name
 
-    @staticmethod
-    def state_from_str(state: str):
-        if state is None:
-            return state
+    @classmethod
+    def list_values(cls) -> List[int]:
+        return list(map(lambda c: c.value, cls))
 
-        for t in SliceState:
-            if state == str(t):
-                return t
-
-        return None
+    @classmethod
+    def list_names(cls) -> List[str]:
+        return list(map(lambda c: c.name, cls))
 
     @staticmethod
-    def str_list_to_state_list(states: List[str]) -> list or None:
+    def list_values_ex_closing_dead() -> List[int]:
+        result = SliceState.list_values()
+        result.remove(SliceState.Closing.value)
+        result.remove(SliceState.Dead.value)
+        return result
+
+    @staticmethod
+    def translate_list(states: List[str]) -> List[int] or None:
         if states is None or len(states) == 0:
             return states
 
-        result = [SliceState.StableOK, SliceState.StableError, SliceState.Dead, SliceState.Closing,
-                  SliceState.Configuring, SliceState.Nascent, SliceState.Modifying, SliceState.ModifyError,
-                  SliceState.ModifyOK]
+        incoming_states = list(map(lambda x: x.lower(), states))
 
-        states_to_exclude = []
-        for s in result:
-            if not (len(states) == 1 and states[0] == "All") and str(s) not in states:
-                states_to_exclude.append(s)
+        result = SliceState.list_values()
 
-        for s in states_to_exclude:
-            result.remove(s)
+        if len(incoming_states) == 1 and incoming_states[0] == SliceState.All.name.lower():
+            return result
 
-        ret_val = []
-        for x in result:
-            ret_val.append(x.value)
-        return ret_val
+        for s in SliceState:
+            if s.name.lower() not in incoming_states:
+                result.remove(s.value)
+
+        return result
 
     @staticmethod
-    def is_dead_or_closing(*, state):
+    def translate(state_name: str):
+        if state_name.lower() == SliceState.Nascent.name.lower():
+            return SliceState.Nascent
+        elif state_name.lower() == SliceState.Configuring.name.lower():
+            return SliceState.Configuring
+        elif state_name.lower() == SliceState.StableOK.name.lower():
+            return SliceState.StableOK
+        elif state_name.lower() == SliceState.StableError.name.lower():
+            return SliceState.StableError
+        elif state_name.lower() == SliceState.ModifyOK.name.lower():
+            return SliceState.ModifyOK
+        elif state_name.lower() == SliceState.ModifyError.name.lower():
+            return SliceState.ModifyError
+        elif state_name.lower() == SliceState.Modifying.name.lower():
+            return SliceState.Modifying
+        elif state_name.lower() == SliceState.Closing.name.lower():
+            return SliceState.Closing
+        elif state_name.lower() == SliceState.Dead.name.lower():
+            return SliceState.Dead
+        else:
+            return SliceState.All
+
+    @staticmethod
+    def is_dead_or_closing(*, state) -> bool:
         if state == SliceState.Dead or state == SliceState.Closing:
             return True
         return False
 
     @staticmethod
-    def is_stable(*, state):
+    def is_stable(*, state) -> bool:
         if state == SliceState.StableOK or state == SliceState.StableError:
             return True
         return False
 
     @staticmethod
-    def is_modified(*, state):
+    def is_modified(*, state) -> bool:
         if state == SliceState.ModifyOK or state == SliceState.ModifyError:
             return True
         return False
