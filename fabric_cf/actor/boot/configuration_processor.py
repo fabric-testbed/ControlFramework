@@ -551,7 +551,7 @@ class ConfigurationProcessor:
 
         client = AuthToken(name=info.client.get_name(),
                            guid=ID(uid=info.client.get_guid()))
-        info.exported = info.exporter.advertise_resources(delegation=delegation, delegation_name=self.actor.get_name(),
+        info.exported = info.exporter.advertise_resources(delegation=delegation, delegation_name=info.delegation,
                                                           client=client)
 
         if info.exported is None:
