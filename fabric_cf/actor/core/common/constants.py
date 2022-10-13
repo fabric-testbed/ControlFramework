@@ -174,6 +174,8 @@ class Constants:
     PROPERTY_CONF_CLASS_NAME = 'class'
     PROPERTY_CONF_PROPERTIES_NAME = 'properties'
 
+    CONFIG_SECTION_ACTOR = "actor"
+
     PROTOCOL_LOCAL = "local"
     PROTOCOL_KAFKA = "kafka"
 

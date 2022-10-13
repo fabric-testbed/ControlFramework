@@ -31,6 +31,8 @@ from logging.handlers import RotatingFileHandler
 
 import yaml
 
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.plugins.db.actor_database import ActorDatabase
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -43,35 +45,38 @@ class MainClass:
     def __init__(self, config_file: str):
         with open(config_file) as f:
             config_dict = yaml.safe_load(f)
-        self.log_config = config_dict["logging"]
+        self.log_config = config_dict[Constants.CONFIG_LOGGING_SECTION]
 
-        self.logger = logging.getLogger(self.log_config["logger"])
-        file_handler = RotatingFileHandler(f"{self.log_config['log-directory']}/cleanup.log",
-                                           backupCount=self.log_config["log-retain"],
-                                           maxBytes=self.log_config["log-size"])
+        self.logger = logging.getLogger(self.log_config[Constants.PROPERTY_CONF_LOGGER])
+        file_handler = RotatingFileHandler(f"{self.log_config[Constants.PROPERTY_CONF_LOG_DIRECTORY]}/cleanup.log",
+                                           backupCount=self.log_config[Constants.PROPERTY_CONF_LOG_RETAIN],
+                                           maxBytes=self.log_config[Constants.PROPERTY_CONF_LOG_SIZE])
         logging.basicConfig(level=logging.DEBUG,
                             format="%(asctime)s [%(filename)s:%(lineno)d] [%(levelname)s] %(message)s",
                             handlers=[logging.StreamHandler(), file_handler])
 
-        self.neo4j_config = config_dict["neo4j"]
-        self.database_config = config_dict["database"]
+        self.neo4j_config = config_dict[Constants.CONFIG_SECTION_NEO4J]
+        self.database_config = config_dict[Constants.CONFIG_SECTION_DATABASE]
+        self.actor_config = config_dict[Constants.CONFIG_SECTION_ACTOR]
 
     def delete_dead_closing_slice(self, *, days: int):
-        actor_db = ActorDatabase(user=self.database_config["db-user"],
-                                 password=self.database_config["db-password"],
-                                 database=self.database_config["db-name"],
-                                 db_host=self.database_config["db-host"],
+        actor_db = ActorDatabase(user=self.database_config[Constants.PROPERTY_CONF_DB_USER],
+                                 password=self.database_config[Constants.PROPERTY_CONF_DB_PASSWORD],
+                                 database=self.database_config[Constants.PROPERTY_CONF_DB_NAME],
+                                 db_host=self.database_config[Constants.PROPERTY_CONF_DB_HOST],
                                  logger=self.logger)
         states = [SliceState.Dead.value, SliceState.Closing.value]
         lease_end = datetime.now(timezone.utc) - timedelta(days=days)
         slices = actor_db.get_slices(state=states, lease_end=lease_end)
+        actor_type = self.actor_config[Constants.TYPE]
         for s in slices:
             try:
-                try:
-                    FimHelper.delete_graph(graph_id=s.get_graph_id(), neo4j_config=self.neo4j_config)
-                except Exception as e:
-                    self.logger.error(f"Failed to delete graph {s.get_graph_id()} for Slice# {s.get_slice_id()}: e: {e}")
-                    self.logger.error(traceback.format_exc())
+                if actor_type.lower() == ActorType.Orchestrator.name.lower():
+                    try:
+                        FimHelper.delete_graph(graph_id=s.get_graph_id(), neo4j_config=self.neo4j_config)
+                    except Exception as e:
+                        self.logger.error(f"Failed to delete graph {s.get_graph_id()} for Slice# {s.get_slice_id()}: e: {e}")
+                        self.logger.error(traceback.format_exc())
                 reservations = actor_db.get_reservations(slice_id=s.get_slice_id())
                 for r in reservations:
                     try:
