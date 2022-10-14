@@ -28,6 +28,7 @@ import queue
 import threading
 import time
 import traceback
+import re
 
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import ReservationInfo
@@ -120,7 +121,8 @@ class AsmUpdateThread:
                 sliver.reservation_info = ReservationInfo()
             sliver.reservation_info.reservation_id = rid
             sliver.reservation_info.reservation_state = reservation_state
-            sliver.reservation_info.error_message = error_message
+            new_str = re.sub('(\\r\\n|[%\/!])','', error_message)
+            sliver.reservation_info.error_message = new_str
 
             event = AsmEvent(graph_id=graph_id, sliver=sliver)
             self.event_queue.put_nowait(event)

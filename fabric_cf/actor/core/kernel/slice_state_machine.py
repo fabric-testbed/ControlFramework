@@ -252,7 +252,7 @@ class SliceStateMachine:
                 bins.add(s=r.get_state())
 
             if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
-                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
+                if not bins.has_state_other_than(ReservationStates.Active):
                     self.state = SliceState.StableOK
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
@@ -265,7 +265,7 @@ class SliceStateMachine:
                     self.state = SliceState.Closing
 
             elif self.state == SliceState.Modifying:
-                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
+                if not bins.has_state_other_than(ReservationStates.Active):
                     self.state = SliceState.ModifyOK
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
