@@ -176,3 +176,6 @@ class NoOpHandler(HandlerBase):
         finally:
             self.get_logger().info(f"Modify completed")
         return result, unit
+
+    def clean_restart(self):
+        pass
