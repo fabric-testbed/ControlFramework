@@ -255,12 +255,11 @@ class SliceStateMachine:
                 if not bins.has_state_other_than(ReservationStates.Active):
                     self.state = SliceState.StableOK
 
-                if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
-                                                  ReservationStates.Closed)) and \
-                        bins.has_state(s=ReservationStates.Failed):
+                elif not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
+                                                 ReservationStates.Closed):
                     self.state = SliceState.StableError
 
-                if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
+                elif not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
                                                  ReservationStates.Failed):
                     self.state = SliceState.Closing
 
@@ -268,13 +267,12 @@ class SliceStateMachine:
                 if not bins.has_state_other_than(ReservationStates.Active):
                     self.state = SliceState.ModifyOK
 
-                if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
-                                                  ReservationStates.Closed)) and \
-                        bins.has_state(s=ReservationStates.Failed):
+                elif not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
+                                                   ReservationStates.Closed):
                     self.state = SliceState.ModifyError
 
-                if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
-                                                 ReservationStates.Failed):
+                elif not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
+                                                   ReservationStates.Failed):
                     self.state = SliceState.Closing
 
             elif self.state == SliceState.StableError or self.state == SliceState.StableOK or \
@@ -283,8 +281,8 @@ class SliceStateMachine:
                                                  ReservationStates.Failed):
                     self.state = SliceState.Dead
 
-                if not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
-                                                 ReservationPendingStates.Closing, ReservationStates.Failed):
+                elif not bins.has_state_other_than(ReservationStates.Closed, ReservationStates.CloseWait,
+                                                   ReservationPendingStates.Closing, ReservationStates.Failed):
                     self.state = SliceState.Closing
 
             elif self.state == SliceState.Closing and not bins.has_state_other_than(ReservationStates.CloseWait,

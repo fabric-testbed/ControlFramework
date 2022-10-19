@@ -33,7 +33,7 @@ from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
-from fabric_cf.actor.core.util.utils import sliver_to_str, sliver_diff
+from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_cf.actor.handlers.handler_base import HandlerBase
 
 
