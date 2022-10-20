@@ -131,6 +131,14 @@ class Globals:
             return True
         return False
 
+    def is_maint_project(self, *, token: str):
+        from fabric_cf.actor.security.fabric_token import FabricToken
+        fabric_token = FabricToken(oauth_config=self.config.get_global_config().get_oauth(),
+                                   jwt_validator=self.get_jwt_validator(), logger=self.get_logger(), token=token)
+        fabric_token.validate()
+        project, tags = fabric_token.get_project_and_tags()
+        return project == self.config.get_runtime_config().get(Constants.MAINT_PROJECT_ID)
+
     @staticmethod
     def can_reload_model() -> bool:
         if os.path.isfile(Constants.MODEL_RELOAD_LOCATION):
