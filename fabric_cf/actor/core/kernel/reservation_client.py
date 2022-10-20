@@ -913,7 +913,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 self.update_slice_graph(sliver=self.resources.sliver)
 
         elif self.joinstate == JoinState.BlockedExtendTicket:
-            # this is new reservation, and the ticket is
+            # this is existing reservation, and the extend ticket is
             # blocked for a predecessor: see if we can get it going now.
             assert self.state == ReservationStates.Active
 
@@ -1113,15 +1113,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
             RPCManagerSingleton.get().redeem(reservation=self)
 
         elif self.state == ReservationStates.ActiveTicketed:
-            # If the service manager requests to redeem an extended ticket,
-            # then present it to the authority as an extendLease rather than a
-            # redeem. ExtendLease is equivalent to redeem on client side, and
-            # it may be inconvenient for the service manager to distinguish
-            # between them. In this case the requested term was left in
-            # this.term by the extendTicket (absorbTicketUpdate).
             self.transition_with_join(prefix="extend lease blocked", state=self.state,
                                       pending=self.pending_state, join_state=JoinState.BlockedExtendLease)
-            #self.extend_lease()
 
         elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait or \
                 self.state == ReservationStates.Failed:
