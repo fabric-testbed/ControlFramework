@@ -85,6 +85,9 @@ class AggregateResourceModelCreator:
                               f"for Actor {actor_name}")
             self.register_handler(resource_config=r)
 
+        # Cleanup any existing resources
+        self.substrate.handler_processor.clean_restart()
+
         return self.arm_graph.generate_adms()
 
     def register_handler(self, *, resource_config: ResourceConfig):
