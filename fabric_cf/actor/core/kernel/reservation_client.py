@@ -51,6 +51,7 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingSta
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_state import ReservationState
 from fabric_cf.actor.core.util.update_data import UpdateData
+from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_cf.actor.fim.fim_helper import FimHelper
 
 if TYPE_CHECKING:
@@ -441,7 +442,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             return True
         return False
 
-    def prepare_ticket(self):
+    def prepare_ticket(self, extend: bool = False):
         # Parent reservations have been Ticketed; Update BQM Node and Component Id in Node Map
         # Used by Broker to set vlan - source: (c)
         # local_name source: (a)
@@ -450,14 +451,22 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         assert self.resources is not None
         assert self.resources.sliver is not None
+        sliver = self.resources.sliver
 
-        if not isinstance(self.resources.sliver, NetworkServiceSliver):
+        if extend:
+            assert self.requested_resources is not None
+            assert self.requested_resources.sliver is not None
+            sliver = self.requested_resources.sliver
+
+        if not isinstance(sliver, NetworkServiceSliver):
             return
 
-        for ifs in self.resources.sliver.interface_info.interfaces.values():
+        for ifs in sliver.interface_info.interfaces.values():
             component_name, rid = ifs.get_node_map()
 
-            if component_name == str(NodeType.Facility):
+            # Skip Facility Port Interfaces for Create or Modify
+            # Allocated interfaces on Modify i.e. ExtendTicket
+            if component_name == str(NodeType.Facility) or ifs.label_allocations is not None:
                 continue
 
             pred_state = self.redeem_predecessors.get(ID(uid=rid))
@@ -481,9 +490,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                     ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
-            self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {self.resources.sliver}")
+            self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {sliver}")
 
-    def approve_ticket(self):
+    def approve_ticket(self, extend: bool = False):
         """
         Ticket predicate: invoked internally to determine if the reservation
         should be ticketed. This gives subclasses an opportunity sequence actions at the orchestrator side.
@@ -512,11 +521,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 break
 
         if approved:
-            self.prepare_ticket()
+            self.prepare_ticket(extend=extend)
 
         return approved
 
-    def can_ticket(self) -> bool:
+    def can_ticket(self, extend: bool = False) -> bool:
         supported_ns = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
                         str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror)]
 
@@ -524,7 +533,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.get_type() is not None:
             resource_type_str = str(self.get_type())
             if resource_type_str in supported_ns:
-                ret_val = self.approve_ticket()
+                ret_val = self.approve_ticket(extend=extend)
             else:
                 ret_val = True
 
@@ -670,6 +679,15 @@ class ReservationClient(Reservation, ABCControllerReservation):
                             pending=ReservationPendingStates.ExtendingTicket)
         else:
             self.error(err="Wrong state to initiate extend ticket: {}".format(ReservationStates(self.state).name))
+
+        # Extend Ticket is invoked by Probe
+        if not self.can_ticket(extend=True):
+            self.transition_with_join(prefix="Extend ticket blocked", state=self.state,
+                                      pending=self.pending_state, join_state=JoinState.BlockedExtendTicket)
+            self.logger.info("Reservation has to wait for the dependencies to be extended!")
+            print("Reservation has to wait for the dependencies to be extended!")
+            return
+
         self.sequence_ticket_out += 1
         RPCManagerSingleton.get().extend_ticket(reservation=self)
 
@@ -894,6 +912,23 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 # Update ASM with Reservation Info
                 self.update_slice_graph(sliver=self.resources.sliver)
 
+        elif self.joinstate == JoinState.BlockedExtendTicket:
+            # this is new reservation, and the ticket is
+            # blocked for a predecessor: see if we can get it going now.
+            assert self.state == ReservationStates.Active
+
+            if self.approve_ticket(extend=True):
+                self.transition_with_join(prefix="unblock ticket", state=self.state,
+                                          pending=self.pending_state, join_state=JoinState.NoJoin)
+
+                # This is a regular request for modifying network resources to an upstream broker.
+                self.sequence_ticket_out += 1
+                print(f"Issuing an extend ticket {sliver_to_str(sliver=self.get_requested_resources().get_sliver())}")
+                RPCManagerSingleton.get().extend_ticket(reservation=self)
+
+                # Update ASM with Reservation Info
+                self.update_slice_graph(sliver=self.resources.sliver)
+
         elif self.joinstate == JoinState.BlockedRedeem:
             # this reservation has a ticket to redeem, and the redeem is
             # blocked for a predecessor: see if we can get it going now.
@@ -909,6 +944,20 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                 # Update ASM with Reservation Info
                 self.update_slice_graph(sliver=self.resources.sliver)
+
+        elif self.joinstate == JoinState.BlockedExtendLease:
+            # this reservation has a ticket to extend, and the extend is
+            # blocked for a predecessor: see if we can get it going now.
+            assert self.state == ReservationStates.ActiveTicketed
+
+            if self.approve_redeem():
+                self.transition_with_join(prefix="unblock extend lease", state=self.state,
+                                          pending=self.pending_state, join_state=JoinState.NoJoin)
+                self.extend_lease()
+
+                # Update ASM with Reservation Info
+                self.update_slice_graph(sliver=self.resources.sliver)
+
         elif self.joinstate == JoinState.BlockedJoin:
             # This reservation has a lease whose join processing was blocked
             # for a predecessor: see if we can get it going now. Note: if
@@ -1070,7 +1119,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # it may be inconvenient for the service manager to distinguish
             # between them. In this case the requested term was left in
             # this.term by the extendTicket (absorbTicketUpdate).
-            self.extend_lease()
+            self.transition_with_join(prefix="extend lease blocked", state=self.state,
+                                      pending=self.pending_state, join_state=JoinState.BlockedExtendLease)
+            #self.extend_lease()
 
         elif self.state == ReservationStates.Closed or self.state == ReservationStates.CloseWait or \
                 self.state == ReservationStates.Failed:

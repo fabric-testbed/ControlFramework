@@ -400,48 +400,46 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         requested = reservation.get_requested_resources()
         rtype = requested.get_type()
         rc = self.get_control_by_type(rtype=rtype)
-        if rc is not None:
-            try:
-                ticketed_sliver = requested.get_sliver()
-                node_id = ticketed_sliver.get_node_map()[1]
-                self.logger.debug(f"node_id {node_id} serving reservation# {reservation}")
-                if node_id is None:
-                    raise AuthorityException(f"Unable to find node_id {node_id} for reservation# {reservation}")
-
-                graph_node = None
-                if isinstance(ticketed_sliver, NodeSliver):
-                    graph_node = self.get_network_node_from_graph(node_id=node_id)
-
-                elif isinstance(ticketed_sliver, NetworkServiceSliver):
-                    graph_node = self.get_network_service_from_graph(node_id=node_id)
-
-                else:
-                    msg = f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver'
-                    self.logger.error(msg)
-                    raise AuthorityException(msg)
-
-                self.logger.debug(f"Node {graph_node} serving reservation# {reservation}")
-
-                existing_reservations = self.get_existing_reservations(node_id=node_id,
-                                                                       node_id_to_reservations=node_id_to_reservations)
-
-                delegation_name, broker_callback = self.get_delegation_name_and_callback(
-                    delegation_id=requested.get_resources().get_delegation_id())
-
-                rset = rc.assign(reservation=reservation, delegation_name=delegation_name,
-                                 graph_node=graph_node, existing_reservations=existing_reservations)
-
-                if rset is None or rset.get_sliver() is None or rset.get_sliver().get_node_map() is None:
-                    raise AuthorityException(f"Could not assign resources to reservation# {reservation}")
-
-                reservation.set_broker_callback(broker_callback=broker_callback)
-                return rset
-            except Exception as e:
-                self.logger.error(traceback.format_exc())
-                self.logger.error(f"Could not assign {e}")
-                return None
-        else:
+        if rc is None:
             raise AuthorityException(Constants.UNSUPPORTED_RESOURCE_TYPE.format(reservation.get_type()))
+        try:
+            ticketed_sliver = requested.get_sliver()
+            node_id = ticketed_sliver.get_node_map()[1]
+            self.logger.debug(f"node_id {node_id} serving reservation# {reservation}")
+            if node_id is None:
+                raise AuthorityException(f"Unable to find node_id {node_id} for reservation# {reservation}")
+
+            if isinstance(ticketed_sliver, NodeSliver):
+                graph_node = self.get_network_node_from_graph(node_id=node_id)
+
+            elif isinstance(ticketed_sliver, NetworkServiceSliver):
+                graph_node = self.get_network_service_from_graph(node_id=node_id)
+
+            else:
+                msg = f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver'
+                self.logger.error(msg)
+                raise AuthorityException(msg)
+
+            self.logger.debug(f"Node {graph_node} serving reservation# {reservation}")
+
+            existing_reservations = self.get_existing_reservations(node_id=node_id,
+                                                                   node_id_to_reservations=node_id_to_reservations)
+
+            delegation_name, broker_callback = self.get_delegation_name_and_callback(
+                delegation_id=requested.get_resources().get_delegation_id())
+
+            rset = rc.assign(reservation=reservation, delegation_name=delegation_name,
+                             graph_node=graph_node, existing_reservations=existing_reservations)
+
+            if rset is None or rset.get_sliver() is None or rset.get_sliver().get_node_map() is None:
+                raise AuthorityException(f"Could not assign resources to reservation# {reservation}")
+
+            reservation.set_broker_callback(broker_callback=broker_callback)
+            return rset
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Could not assign {e}")
+            return None
 
     def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         super().configuration_complete(action=action, token=token, out_properties=out_properties)

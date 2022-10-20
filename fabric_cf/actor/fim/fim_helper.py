@@ -302,7 +302,7 @@ class FimHelper:
             neo4j_topo.cast(asm_graph=asm_graph)
 
             node_name = sliver.get_name()
-            if isinstance(sliver, NodeSliver):
+            if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
                 node = neo4j_topo.nodes[node_name]
                 node.set_properties(label_allocations=sliver.label_allocations,
                                     capacity_allocations=sliver.capacity_allocations,
@@ -334,17 +334,22 @@ class FimHelper:
                                 for ifs in ns.interface_info.interfaces.values():
                                     topo_component = node.components[cname]
                                     topo_ifs = topo_component.interfaces[ifs.get_name()]
-                                    topo_ifs.set_properties(label_allocations=ifs.label_allocations)
+                                    topo_ifs.set_properties(label_allocations=ifs.label_allocations,
+                                                            node_map=ifs.node_map)
 
-            elif isinstance(sliver, NetworkServiceSliver):
+            elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
                 node = neo4j_topo.network_services[node_name]
                 node.set_properties(label_allocations=sliver.label_allocations,
                                     capacity_allocations=sliver.capacity_allocations,
                                     reservation_info=sliver.reservation_info,
                                     node_map=sliver.node_map)
-                # FIXME Update IFS on ASM; list_interfaces currently returns a list as opposed to Dict
-                #if sliver.interface_info is not None:
-                #    for ids in sliver.interface_info.interfaces.values():
+                if sliver.interface_info is not None:
+                    for ifs in sliver.interface_info.interfaces.values():
+                        if ifs.get_name() not in node.interfaces:
+                            continue
+                        topo_ifs = node.interfaces[ifs.get_name()]
+                        topo_ifs.set_properties(label_allocations=ifs.label_allocations,
+                                                node_map=ifs.node_map)
 
 
     @staticmethod
@@ -500,16 +505,19 @@ class FimHelper:
         return switch, mpls_ns
 
     @staticmethod
-    def get_parent_node(*, graph_model: ABCPropertyGraph, component: Component = None,
-                        interface: Interface = None) -> Tuple[Union[NodeSliver, NetworkServiceSliver, None], str]:
+    def get_parent_node(*, graph_model: ABCPropertyGraph, component: Component = None, interface: Interface = None,
+                        sliver: bool = True) -> Tuple[Union[NodeSliver, NetworkServiceSliver, None], str]:
+        node = None
         if component is not None:
             node_name, node_id = graph_model.get_parent(node_id=component.node_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
-            node = graph_model.build_deep_node_sliver(node_id=node_id)
+            if sliver:
+                node = graph_model.build_deep_node_sliver(node_id=node_id)
         elif interface is not None:
             node_name, node_id = graph_model.get_parent(node_id=interface.node_id, rel=ABCPropertyGraph.REL_CONNECTS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkService)
-            node = graph_model.build_deep_ns_sliver(node_id=node_id)
+            if sliver:
+                node = graph_model.build_deep_ns_sliver(node_id=node_id)
         else:
             raise Exception("Invalid Arguments - component/interface both are None")
 

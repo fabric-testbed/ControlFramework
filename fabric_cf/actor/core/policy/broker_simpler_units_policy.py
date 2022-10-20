@@ -581,6 +581,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # Fetch Network Node Id and BQM Component Id
             node_id, bqm_component_id = ifs.get_node_map()
 
+            if node_id == self.combined_broker_model_graph_id:
+                continue
+
             if node_id == str(NodeType.Facility):
                 bqm_component = self.get_facility_sliver(node_name=bqm_component_id)
             else:
@@ -732,11 +735,17 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             requested_resources = reservation.get_requested_resources()
             current_resources = reservation.get_resources()
             needed = requested_resources.get_units()
-            diff = current_resources.get_sliver().diff(other_sliver=requested_resources.get_sliver())
+            sliver = current_resources.get_sliver()
+            diff = sliver.diff(other_sliver=requested_resources.get_sliver())
 
-            if diff is None:
+            if diff is not None and (diff.added is None or
+                                     (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0)):
+                sliver = requested_resources.get_sliver()
+
+            if diff is None or diff.added is None or \
+                    (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0):
                 self.issue_ticket(reservation=reservation, units=needed, rtype=requested_resources.get_type(),
-                                  term=term, source=reservation.get_source(), sliver=reservation.get_resources().sliver)
+                                  term=term, source=reservation.get_source(), sliver=sliver)
             else:
                 status, node_id_to_reservations, error_msg = self.ticket_inventory(reservation=reservation,
                                                                                    inv=inv, term=term,

@@ -198,6 +198,6 @@ class ControllerSimplePolicy(ControllerCalendarPolicy):
                     reservation.set_approved(term=approved_term, approved_resources=approved_resources)
                     result.add(reservation=reservation)
                     self.calendar.add_pending(reservation=reservation)
-            else:
-                self.logger.error("A non-renewable reservation is on the renewing list")
+            #else:
+                #self.logger.error("A non-renewable reservation is on the renewing list")
         return result
