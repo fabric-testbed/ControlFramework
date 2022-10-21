@@ -42,10 +42,11 @@ from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservatio
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation import Reservation
+from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
-from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, SliceOperation
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine
 from fabric_cf.actor.core.kernel.slice_table import SliceTable
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
@@ -332,12 +333,13 @@ class Kernel:
         finally:
             reservation.unlock()
 
-    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term) -> int:
+    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term, dependencies: List[ABCReservationMixin]) -> int:
         """
         Extends the reservation with the given resources and term.
         @param rid reservation identifier of reservation to extend
         @param resources resources to use for the extension
         @param term term to use for the extension
+        @param dependencies: dependencies
         @return 0 if the reservation extension operation can be initiated,
                 if the reservation has a pending operation, which prevents the extend
                 operation from being initiated.
@@ -353,6 +355,11 @@ class Kernel:
             # check for a pending operation: we cannot service the extend if there is another operation in progress.
             if real.get_pending_state() != ReservationPendingStates.None_:
                 return Constants.RESERVATION_HAS_PENDING_OPERATION
+
+            if isinstance(real, ReservationClient) and dependencies is not None:
+                real.redeem_predecessors.clear()
+                for d in dependencies:
+                    real.add_redeem_predecessor(reservation=d)
 
             # attach the desired extension term and resource set
             real.set_approved(term=term, approved_resources=resources)

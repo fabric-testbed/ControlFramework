@@ -41,6 +41,7 @@ from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryMo
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_mb.message_bus.messages.reclaim_resources_avro import ReclaimResourcesAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
@@ -127,7 +128,8 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
             return response.model
         return None
 
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
+                           dependencies: List[ReservationPredecessorAvro] = None) -> bool:
         request = ExtendReservationAvro()
         request.guid = str(self.management_id)
         request.auth = self.auth

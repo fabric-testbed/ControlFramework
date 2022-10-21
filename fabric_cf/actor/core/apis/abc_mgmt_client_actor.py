@@ -31,6 +31,7 @@ from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
+from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fim.slivers.base_sliver import BaseSliver
 from fim.user import GraphFormat
 
@@ -119,11 +120,14 @@ class ABCMgmtClientActor(ABCComponent):
         """
 
     @abstractmethod
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
+                           dependencies: List[ReservationPredecessorAvro] = None) -> bool:
         """
         Extend a reservation
-        @params reservation: reservation id
-        @params new_end_time: new end time
+        @param reservation: reservation id
+        @param new_end_time: new end time
+        @param sliver: Sliver
+        @param dependencies: Dependency reservations
         @return true for success and false for failure
         """
 

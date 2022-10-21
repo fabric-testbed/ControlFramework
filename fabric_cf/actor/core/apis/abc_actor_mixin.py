@@ -592,7 +592,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
-    def extend(self, *, rid: ID, resources: ResourceSet, term: Term):
+    def extend(self, *, rid: ID, resources: ResourceSet, term: Term, dependencies: List[ABCReservationMixin] = None):
         """
         Extends the reservation. Note: the reservation must have already been registered with the actor.
         This method may involve either a client or a server side action or both. When called on a broker,
@@ -604,6 +604,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
             rid: reservation id
             resources: resource set describing the resources desired for the extension
             term: term for extension (must extend the current term)
+            dependencies: dependencies
         Raises:
             Exception in case of error
         """

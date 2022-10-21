@@ -101,6 +101,8 @@ class JoinState(Enum):
     BlockedRedeem = 34
     Joining = 35
     BlockedTicket = 36
+    BlockedExtendTicket = 37
+    BlockedExtendLease = 38
 
     def __repr__(self):
         return self.name

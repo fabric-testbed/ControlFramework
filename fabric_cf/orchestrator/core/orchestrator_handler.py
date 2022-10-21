@@ -205,7 +205,7 @@ class OrchestratorHandler:
         :returns List of reservations created for the Slice on success
         """
         start = time.time()
-        if self.globals.is_maintenance_mode_on():
+        if self.globals.is_maintenance_mode_on() and not self.globals.is_maint_project(token=token):
             raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
 
         slice_id = None
@@ -393,7 +393,7 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
-        if self.globals.is_maintenance_mode_on():
+        if self.globals.is_maintenance_mode_on() and not self.globals.is_maint_project(token=token):
             raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
 
         asm_graph = None
@@ -611,7 +611,7 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :return:
         """
-        if self.globals.is_maintenance_mode_on():
+        if self.globals.is_maintenance_mode_on() and not self.globals.is_maint_project(token=token):
             raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
 
         failed_to_extend_rid_list = []

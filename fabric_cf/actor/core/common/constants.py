@@ -185,6 +185,7 @@ class Constants:
     MODEL_RELOAD_LOCATION = HOME_DIRECTORY + "reload.model"
     CONFIGURATION_FILE = "/etc/fabric/actor/config/config.yaml"
     STATE_FILE_LOCATION = '/tmp/fabric_actor.tmp'
+    MAINT_PROJECT_ID = 'maint.project.id'
 
     ELASTIC_TIME = "request.elasticTime"
     ELASTIC_SIZE = "request.elasticSize"
@@ -246,7 +247,7 @@ class Constants:
     UNSUPPORTED_RESOURCE_TYPE = "Unsupported resource type: {}"
 
     CLOSURE_BY_TICKET_REVIEW_POLICY = "TicketReviewPolicy: Closing reservation due to failure in slice"
-    MAINTENANCE_MODE_ERROR = "Testbed is in maintenance mode, Create/Renew Slice(s) are disabled!"
+    MAINTENANCE_MODE_ERROR = "Testbed is in maintenance mode: Create, Modify and Renew Slice(s) are disabled!"
 
     CLAIMS_SUB = "sub"
     CLAIMS_EMAIL = "email"

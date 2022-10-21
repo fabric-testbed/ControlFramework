@@ -184,8 +184,8 @@ class ActorMixin(ABCActorMixin):
         self.logger.error(err)
         raise ActorException(err)
 
-    def extend(self, *, rid: ID, resources: ResourceSet, term: Term):
-        self.wrapper.extend_reservation(rid=rid, resources=resources, term=term)
+    def extend(self, *, rid: ID, resources: ResourceSet, term: Term, dependencies: List[ABCReservationMixin] = None):
+        self.wrapper.extend_reservation(rid=rid, resources=resources, term=term, dependencies=dependencies)
 
     def external_tick(self, *, cycle: int):
         self.logger.info("External Tick start cycle: {}".format(cycle))
