@@ -304,7 +304,8 @@ class FimHelper:
             node_name = sliver.get_name()
             if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
                 node = neo4j_topo.nodes[node_name]
-                node.set_properties(label_allocations=sliver.label_allocations,
+                node.set_properties(labels=sliver.labels,
+                                    label_allocations=sliver.label_allocations,
                                     capacity_allocations=sliver.capacity_allocations,
                                     reservation_info=sliver.reservation_info,
                                     node_map=sliver.node_map,
@@ -321,7 +322,9 @@ class FimHelper:
 
                     for component in sliver.attached_components_info.devices.values():
                         cname = component.get_name()
-                        node.components[cname].set_properties(label_allocations=component.label_allocations,
+                        node.components[cname].set_properties(
+                                                              labels=component.labels,
+                                                              label_allocations=component.label_allocations,
                                                               capacity_allocations=component.capacity_allocations,
                                                               node_map=component.node_map)
                         # Update Mac address
@@ -334,12 +337,14 @@ class FimHelper:
                                 for ifs in ns.interface_info.interfaces.values():
                                     topo_component = node.components[cname]
                                     topo_ifs = topo_component.interfaces[ifs.get_name()]
-                                    topo_ifs.set_properties(label_allocations=ifs.label_allocations,
+                                    topo_ifs.set_properties(labels=ifs.labels,
+                                                            label_allocations=ifs.label_allocations,
                                                             node_map=ifs.node_map)
 
             elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
                 node = neo4j_topo.network_services[node_name]
-                node.set_properties(label_allocations=sliver.label_allocations,
+                node.set_properties(labels=sliver.labels,
+                                    label_allocations=sliver.label_allocations,
                                     capacity_allocations=sliver.capacity_allocations,
                                     reservation_info=sliver.reservation_info,
                                     node_map=sliver.node_map)
@@ -348,7 +353,8 @@ class FimHelper:
                         if ifs.get_name() not in node.interfaces:
                             continue
                         topo_ifs = node.interfaces[ifs.get_name()]
-                        topo_ifs.set_properties(label_allocations=ifs.label_allocations,
+                        topo_ifs.set_properties(labels=ifs.labels,
+                                                label_allocations=ifs.label_allocations,
                                                 node_map=ifs.node_map)
 
 
