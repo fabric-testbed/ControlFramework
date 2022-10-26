@@ -202,7 +202,6 @@ class SliceStateMachine:
         """
         We don't introduce a special state to flag when a slice is ALL FAILED, however this helper function helps decide
         when to GC a slice
-
         @return true or false
         """
         bins = StateBins()
@@ -252,7 +251,7 @@ class SliceStateMachine:
                 bins.add(s=r.get_state())
 
             if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
-                if not bins.has_state_other_than(ReservationStates.Active):
+                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
                     self.state = SliceState.StableOK
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,
@@ -265,7 +264,7 @@ class SliceStateMachine:
                     self.state = SliceState.Closing
 
             elif self.state == SliceState.Modifying:
-                if not bins.has_state_other_than(ReservationStates.Active):
+                if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):
                     self.state = SliceState.ModifyOK
 
                 if (not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Failed,

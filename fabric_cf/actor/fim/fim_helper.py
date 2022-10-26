@@ -111,6 +111,8 @@ class FimHelper:
     """
     Provides methods to load Graph Models and perform various operations on them
     """
+    __neo4j_graph_importer = None
+
     @staticmethod
     def get_neo4j_importer(neo4j_config: dict = None) -> ABCGraphImporter:
         """
@@ -123,11 +125,12 @@ class FimHelper:
             neo4j_config = GlobalsSingleton.get().get_config().get_global_config().get_neo4j_config()
             logger = GlobalsSingleton.get().get_logger()
 
-        neo4j_graph_importer = Neo4jGraphImporter(url=neo4j_config["url"], user=neo4j_config["user"],
-                                                  pswd=neo4j_config["pass"],
-                                                  import_host_dir=neo4j_config["import_host_dir"],
-                                                  import_dir=neo4j_config["import_dir"], logger=logger)
-        return neo4j_graph_importer
+        if FimHelper.__neo4j_graph_importer is None:
+            FimHelper.__neo4j_graph_importer = Neo4jGraphImporter(url=neo4j_config["url"], user=neo4j_config["user"],
+                                                                  pswd=neo4j_config["pass"],
+                                                                  import_host_dir=neo4j_config["import_host_dir"],
+                                                                  import_dir=neo4j_config["import_dir"], logger=logger)
+        return FimHelper.__neo4j_graph_importer
 
     @staticmethod
     def get_networkx_importer(logger: logging.Logger = None) -> ABCGraphImporter:
