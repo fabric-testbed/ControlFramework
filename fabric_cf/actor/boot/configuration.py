@@ -389,11 +389,13 @@ class Configuration:
         self.actor = ActorConfig(config=config['actor'])
         self.peers = []
         self.topic_peer_map = {}
+        self.peers_dict = {}
         if 'peers' in config:
             for e in config['peers']:
                 p = Peer(config=e['peer'])
                 self.peers.append(p)
                 self.topic_peer_map[p.get_kafka_topic()] = p
+                self.peers_dict[p.get_name()] = p
 
     def get_global_config(self) -> GlobalConfig:
         """
@@ -434,6 +436,12 @@ class Configuration:
         Return Peer Config
         """
         return self.peers
+
+    def get_peers_dict(self) -> Dict[str, Peer]:
+        """
+        Return Peer Config
+        """
+        return self.peers_dict
 
     def get_topic_peer_map(self) -> Dict[str, Peer]:
         return self.topic_peer_map

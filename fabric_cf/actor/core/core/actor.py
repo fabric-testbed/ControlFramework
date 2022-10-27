@@ -882,7 +882,10 @@ class ActorMixin(ABCActorMixin):
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             config = GlobalsSingleton.get().get_config()
             topic = config.get_actor().get_kafka_topic()
-            topics = [topic]
+            if "," in topic:
+                topics = topic.split(',')
+            else:
+                topics = [topic]
             consumer_conf = GlobalsSingleton.get().get_kafka_config_consumer()
             self.message_service = MessageService(kafka_service=kafka_service, kafka_mgmt_service=kafka_mgmt_service,
                                                   consumer_conf=consumer_conf,

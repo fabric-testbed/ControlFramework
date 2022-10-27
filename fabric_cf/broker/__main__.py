@@ -49,7 +49,7 @@ def main():
 
             while True:
                 time.sleep(0.0001)
-                BrokerKernelSingleton.get().do_periodic()
+                #BrokerKernelSingleton.get().do_periodic()
                 if h.interrupted:
                     GlobalsSingleton.get().stop()
     except Exception:

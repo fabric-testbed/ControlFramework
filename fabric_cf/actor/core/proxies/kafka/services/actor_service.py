@@ -67,8 +67,13 @@ class ActorService:
     def __init__(self, *, actor: ABCActorMixin):
         self.actor = actor
         self.logger = self.actor.get_logger()
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        self.peer_dict = GlobalsSingleton.get().get_config().get_peers_dict()
 
     def get_callback(self, *, kafka_topic: str, auth: AuthToken):
+        peer = self.peer_dict.get(auth.get_name())
+        if peer is not None:
+            kafka_topic = peer.get_kafka_topic()
         return KafkaReturn(kafka_topic=kafka_topic, identity=auth, logger=self.actor.get_logger())
 
     def get_concrete(self, *, reservation: ReservationAvro) -> ABCConcreteSet:
