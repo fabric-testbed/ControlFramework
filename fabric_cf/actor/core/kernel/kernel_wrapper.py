@@ -774,6 +774,10 @@ class KernelWrapper:
 
         if slice_object.get_owner() is None:
             slice_object.set_owner(owner=self.actor.get_identity())
+        else:
+            slice_object.get_owner().name = self.actor.get_name()
+            slice_object.get_owner().guid = self.actor.get_guid()
+
         self.kernel.register_slice(slice_object=slice_object)
 
     def remove_delegation(self, *, did: str):

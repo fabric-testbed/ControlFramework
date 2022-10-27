@@ -471,6 +471,8 @@ class Kernel:
             else:
                 result = reservation.get_kernel_slice()
 
+            identity.name = self.plugin.get_actor().get_name()
+            identity.guid = self.plugin.get_actor().get_guid()
             result.set_owner(owner=identity)
             self.register_slice(slice_object=result)
         return result
