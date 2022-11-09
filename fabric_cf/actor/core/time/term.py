@@ -304,9 +304,12 @@ class Term:
         if self.start_time is None or self.end_time is None or self.new_start_time is None:
             raise TimeException(Constants.INVALID_STATE)
 
-        start_time_hh_mm = self.start_time.strftime(self.HH_MM_TIME_FORMAT)
-        old_start_time_hh_mm = old_term.start_time.strftime(self.HH_MM_TIME_FORMAT)
-        return start_time_hh_mm == old_start_time_hh_mm and self.end_time > self.new_start_time
+        if Term.set_cycles:
+            return self.cycle_start == old_term.cycle_start and self.cycle_end > self.cycle_new_start
+        else:
+            start_time_hh_mm = self.start_time.strftime(self.HH_MM_TIME_FORMAT)
+            old_start_time_hh_mm = old_term.start_time.strftime(self.HH_MM_TIME_FORMAT)
+            return start_time_hh_mm == old_start_time_hh_mm and self.end_time > self.new_start_time
 
     def get_end_time(self) -> datetime:
         """
@@ -392,10 +395,11 @@ class Term:
 
     def __str__(self):
         if Term.set_cycles:
-            return "term=[{}:{}:{}]".format(self.cycle_start, self.cycle_new_start, self.cycle_end)
+            return f"term=[{self.cycle_start}:{self.cycle_new_start}:{self.cycle_end}:" \
+                   f"{Term.get_readable_date(self.start_time)}:{Term.get_readable_date(self.new_start_time)}:" \
+                   f"{Term.get_readable_date(self.end_time)}]"
         else:
-            return "Start: {} End: {}".format(Term.get_readable_date(self.start_time),
-                                              Term.get_readable_date(self.end_time))
+            return f"Start: {Term.get_readable_date(self.start_time)} End: {Term.get_readable_date(self.end_time)}"
 
     def validate(self):
         """

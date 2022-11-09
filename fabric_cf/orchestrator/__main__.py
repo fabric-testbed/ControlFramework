@@ -68,7 +68,7 @@ def main():
             print("Starting REST")
             # start swagger
             app = connexion.App(__name__, specification_dir='swagger_server/swagger/')
-            app.app.json_encoder = encoder.JSONEncoder
+            app.json = encoder.JSONEncoder
             app.add_api('swagger.yaml', arguments={'title': 'Fabric Orchestrator API'}, pythonic_params=True)
 
             # Start up the server to expose the metrics.
