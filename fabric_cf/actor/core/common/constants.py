@@ -290,3 +290,5 @@ class Constants:
 
     CONFIG_PROPERTIES_FILE = "config.properties.file"
     MODE = "mode"
+
+    OPENSTACK_VNIC_MODEL = "OpenStack-vNIC"
