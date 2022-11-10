@@ -646,8 +646,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.debug(f"Owner Switch NS: {owner_switch.network_service_info.network_services.values()}")
 
             net_adm_ids = site_adm_ids
-            if bqm_component.get_type() != NodeType.Facility or \
-                    (sliver.get_type() == ServiceType.L2Bride and bqm_component.get_model() != Constants.OPENSTACK_VNIC_MODEL):
+            if bqm_component.get_type() != NodeType.Facility and sliver.get_type() == ServiceType.L2Bride and \
+                    bqm_component.get_model() != Constants.OPENSTACK_VNIC_MODEL:
                 net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
             else:
                 if bqm_cp.labels is not None and bqm_cp.labels.ipv4_subnet is not None:
