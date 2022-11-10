@@ -574,6 +574,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         error_msg = None
         owner_switch = None
         owner_mpls_ns = None
+        bqm_cp = None
+        bqm_component = None
+        is_vnic = False
 
         # For each Interface Sliver;
         for ifs in sliver.interface_info.interfaces.values():
@@ -610,10 +613,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             owner_switch, owner_mpls_ns = self.get_owners(node_id=net_cp.node_id)
 
             bqm_cp = net_cp
-            if bqm_component.get_type() == NodeType.Facility:
+            if bqm_component.get_type() == NodeType.Facility or (sliver.get_type() == ServiceType.L2Bridge and
+                                                                 bqm_component.get_model() == Constants.OPENSTACK_VNIC_MODEL):
                 bqm_cp = site_cp
 
             if bqm_component.get_type() == ComponentType.SharedNIC:
+                if bqm_component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
+                    is_vnic = True
+                    break
+
                 # VLAN is already set by the Orchestrator using the information from the Node Sliver Parent Reservation
                 if ifs.get_labels().vlan is None:
                     message = "Shared NIC VLAN cannot be None"
@@ -646,8 +654,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.debug(f"Owner Switch NS: {owner_switch.network_service_info.network_services.values()}")
 
             net_adm_ids = site_adm_ids
-            if bqm_component.get_type() != NodeType.Facility and sliver.get_type() == ServiceType.L2Bride and \
-                    bqm_component.get_model() != Constants.OPENSTACK_VNIC_MODEL:
+            if bqm_component.get_type() != NodeType.Facility:
                 net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
             else:
                 if bqm_cp.labels is not None and bqm_cp.labels.ipv4_subnet is not None:
@@ -675,8 +682,16 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         # Set the Subnet and gateway from the Owner Switch (a)
         existing_reservations = self.get_existing_reservations(node_id=owner_mpls_ns.node_id,
                                                                node_id_to_reservations=node_id_to_reservations)
-        sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_switch=owner_switch,
+
+        # Allocate VLAN for the Network Service
+        if is_vnic:
+            site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
+            delegation_id = site_adm_ids[0]
+            inv.allocate_vnic(rid=rid, requested_ns=sliver, bqm_ifs=bqm_cp,
                               existing_reservations=existing_reservations)
+        else:
+            sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_switch=owner_switch,
+                                  existing_reservations=existing_reservations)
 
         return delegation_id, sliver, error_msg
 
