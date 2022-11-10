@@ -277,7 +277,6 @@ class Translate:
     @staticmethod
     def translate_delegation_to_avro(*, delegation: ABCDelegation) -> DelegationAvro:
         avro_delegation = DelegationAvro()
-        avro_delegation.delegation_name = delegation.get_delegation_name()
         avro_delegation.delegation_id = delegation.get_delegation_id()
         avro_delegation.state = delegation.get_state().value
         avro_delegation.slice = Translate.translate_slice_to_avro(slice_obj=delegation.get_slice_object())
