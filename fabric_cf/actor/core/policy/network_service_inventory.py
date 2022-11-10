@@ -47,8 +47,15 @@ class NetworkServiceInventory(InventoryForType):
         if labels is None:
             return vlan_range
         if labels.vlan_range is not None:
-            vlans = labels.vlan_range.split("-")
-            vlan_range = list(range(int(vlans[0]), int(vlans[1]) + 1))
+            if isinstance(labels.vlan_range, list):
+                vlan_range = []
+                for v_r in labels.vlan_range:
+                    vlans = v_r.split("-")
+                    for x in list(range(int(vlans[0]), int(vlans[1]) + 1)):
+                        vlan_range.append(x)
+            else:
+                vlans = labels.vlan_range.split("-")
+                vlan_range = list(range(int(vlans[0]), int(vlans[1]) + 1))
         elif labels.vlan is not None:
             vlan_range = [int(labels.vlan)]
         return vlan_range

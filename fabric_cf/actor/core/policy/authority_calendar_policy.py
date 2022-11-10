@@ -421,6 +421,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                     raise AuthorityException(msg)
 
                 self.logger.debug(f"Node {graph_node} serving reservation# {reservation}")
+                self.logger.debug(f"requested {requested} requested.get_resources() {requested.get_resources()}")
 
                 existing_reservations = self.get_existing_reservations(node_id=node_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
@@ -600,6 +601,10 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
             delegation = self.delegations.get(delegation_id, None)
             if delegation is not None and delegation.is_delegated():
                 return delegation.get_delegation_name(), delegation.get_callback()
+            else:
+                self.logger.info(f"Unable to find the delegation: {delegation_id}")
+                if self.delegations is not None:
+                    self.logger.info(f"Current delegations: {self.delegations.keys()}")
         finally:
             self.lock.release()
 
