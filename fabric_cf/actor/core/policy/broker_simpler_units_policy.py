@@ -40,7 +40,7 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
-from fim.slivers.network_service import NetworkServiceSliver
+from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
@@ -646,12 +646,13 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.debug(f"Owner Switch NS: {owner_switch.network_service_info.network_services.values()}")
 
             net_adm_ids = site_adm_ids
-            if bqm_component.get_type() != NodeType.Facility:
+            if bqm_component.get_type() != NodeType.Facility or \
+                    (sliver.get_type() == ServiceType.L2Bride and bqm_component.get_model() != "OpenStack-vNIC"):
                 net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
             else:
-                if bqm_cp.labels.ipv4_subnet is not None:
+                if bqm_cp.labels is not None and bqm_cp.labels.ipv4_subnet is not None:
                     ifs_labels = Labels.update(ifs_labels, ipv4_subnet=bqm_cp.labels.ipv4_subnet)
-                if bqm_cp.labels.ipv6_subnet is not None:
+                if bqm_cp.labels is not None and bqm_cp.labels.ipv6_subnet is not None:
                     ifs_labels = Labels.update(ifs_labels, ipv6_subnet=bqm_cp.labels.ipv6_subnet)
             if len(net_adm_ids) != 1:
                 error_msg = f"More than 1 or 0 Network Delegations found! net_adm_ids: {net_adm_ids}"
