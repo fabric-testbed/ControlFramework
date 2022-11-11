@@ -291,7 +291,7 @@ class FimHelper:
         return delegation.get_details() if delegation is not None else None
 
     @staticmethod
-    def update_node(*, graph_id: str, sliver: BaseSliver, logger: logging.Logger):
+    def update_node(*, graph_id: str, sliver: BaseSliver):
         """
         Update Sliver Node in ASM
         :param graph_id:
@@ -346,7 +346,6 @@ class FimHelper:
                                                         node_map=ifs.node_map)
 
         elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
-            logger.info(f"Updating sliver: {sliver}")
             node = neo4j_topo.network_services[node_name]
             node.set_properties(labels=sliver.labels,
                                 label_allocations=sliver.label_allocations,
