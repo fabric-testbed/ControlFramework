@@ -46,8 +46,8 @@ class AsmEvent:
         self.graph_id = graph_id
         self.sliver = sliver
 
-    def process(self):
-        FimHelper.update_node(graph_id=self.graph_id, sliver=self.sliver)
+    def process(self, *, logger: logging.Logger):
+        FimHelper.update_node(graph_id=self.graph_id, sliver=self.sliver, logger=logger)
 
 
 class AsmUpdateThread:
@@ -147,7 +147,7 @@ class AsmUpdateThread:
         for event in events:
             try:
                 begin = time.time()
-                event.process()
+                event.process(logger=self.logger)
                 self.logger.info(f"Event {event.__class__.__name__} "
                                  f"TIME: {time.time() - begin:.0f}")
             except Exception as e:

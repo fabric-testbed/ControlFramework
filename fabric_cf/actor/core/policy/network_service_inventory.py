@@ -253,12 +253,16 @@ class NetworkServiceInventory(InventoryForType):
                 if allocated_sliver.get_type() != requested_ns.get_type():
                     continue
 
-                delegated_label.vlan.remove(allocated_sliver.label_allocations.vlan)
+                if allocated_sliver.label_allocations is not None and allocated_sliver.label_allocations.vlan is not None:
+                    delegated_label.vlan.remove(allocated_sliver.label_allocations.vlan)
 
+            if requested_ns.label_allocations is None:
+                requested_ns.label_allocations = Labels()
             requested_ns.label_allocations.vlan = delegated_label.vlan[0]
         except Exception as e:
             self.logger.error(f"Error in allocate_vNIC: {e}")
             self.logger.error(traceback.format_exc())
+            raise e
         return requested_ns
 
     def allocate(self, *, rid: ID, requested_ns: NetworkServiceSliver, owner_switch: NodeSliver,

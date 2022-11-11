@@ -291,74 +291,77 @@ class FimHelper:
         return delegation.get_details() if delegation is not None else None
 
     @staticmethod
-    def update_node(*, graph_id: str, sliver: BaseSliver):
+    def update_node(*, graph_id: str, sliver: BaseSliver, logger: logging.Logger):
         """
         Update Sliver Node in ASM
         :param graph_id:
         :param sliver:
         :return:
         """
-        if sliver is not None:
-            graph = FimHelper.get_graph(graph_id=graph_id)
-            asm_graph = Neo4jASMFactory.create(graph=graph)
-            neo4j_topo = ExperimentTopology()
-            neo4j_topo.cast(asm_graph=asm_graph)
+        if sliver is None:
+            return
+        graph = FimHelper.get_graph(graph_id=graph_id)
+        asm_graph = Neo4jASMFactory.create(graph=graph)
+        neo4j_topo = ExperimentTopology()
+        neo4j_topo.cast(asm_graph=asm_graph)
 
-            node_name = sliver.get_name()
-            if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
-                node = neo4j_topo.nodes[node_name]
-                node.set_properties(labels=sliver.labels,
-                                    label_allocations=sliver.label_allocations,
-                                    capacity_allocations=sliver.capacity_allocations,
-                                    reservation_info=sliver.reservation_info,
-                                    node_map=sliver.node_map,
-                                    management_ip=sliver.management_ip,
-                                    capacity_hints=sliver.capacity_hints)
-                if sliver.attached_components_info is not None:
-                    graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
-                    diff = graph_sliver.diff(other_sliver=sliver)
-                    if diff is not None:
-                        for cname in diff.removed.components:
-                            reservation_info = ReservationInfo()
-                            reservation_info.reservation_state = ReservationStates.Failed.name
-                            node.components[cname].set_properties(reservation_info=reservation_info)
+        node_name = sliver.get_name()
+        if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
+            node = neo4j_topo.nodes[node_name]
+            node.set_properties(labels=sliver.labels,
+                                label_allocations=sliver.label_allocations,
+                                capacity_allocations=sliver.capacity_allocations,
+                                reservation_info=sliver.reservation_info,
+                                node_map=sliver.node_map,
+                                management_ip=sliver.management_ip,
+                                capacity_hints=sliver.capacity_hints)
+            if sliver.attached_components_info is not None:
+                graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
+                diff = graph_sliver.diff(other_sliver=sliver)
+                if diff is not None:
+                    for cname in diff.removed.components:
+                        reservation_info = ReservationInfo()
+                        reservation_info.reservation_state = ReservationStates.Failed.name
+                        node.components[cname].set_properties(reservation_info=reservation_info)
 
-                    for component in sliver.attached_components_info.devices.values():
-                        cname = component.get_name()
-                        node.components[cname].set_properties(
-                                                              labels=component.labels,
-                                                              label_allocations=component.label_allocations,
-                                                              capacity_allocations=component.capacity_allocations,
-                                                              node_map=component.node_map)
-                        # Update Mac address
-                        if component.network_service_info is not None and \
-                                component.network_service_info.network_services is not None:
-                            for ns in component.network_service_info.network_services.values():
-                                if ns.interface_info is None or ns.interface_info.interfaces is None:
-                                    continue
+                for component in sliver.attached_components_info.devices.values():
+                    cname = component.get_name()
+                    node.components[cname].set_properties(
+                                                          labels=component.labels,
+                                                          label_allocations=component.label_allocations,
+                                                          capacity_allocations=component.capacity_allocations,
+                                                          node_map=component.node_map)
+                    # Update Mac address
+                    if component.network_service_info is not None and \
+                            component.network_service_info.network_services is not None:
+                        for ns in component.network_service_info.network_services.values():
+                            if ns.interface_info is None or ns.interface_info.interfaces is None:
+                                continue
 
-                                for ifs in ns.interface_info.interfaces.values():
-                                    topo_component = node.components[cname]
-                                    topo_ifs = topo_component.interfaces[ifs.get_name()]
-                                    topo_ifs.set_properties(labels=ifs.labels,
-                                                            label_allocations=ifs.label_allocations,
-                                                            node_map=ifs.node_map)
+                            for ifs in ns.interface_info.interfaces.values():
+                                topo_component = node.components[cname]
+                                topo_ifs = topo_component.interfaces[ifs.get_name()]
+                                topo_ifs.set_properties(labels=ifs.labels,
+                                                        label_allocations=ifs.label_allocations,
+                                                        node_map=ifs.node_map)
 
-            elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
-                node = neo4j_topo.network_services[node_name]
-                node.set_properties(labels=sliver.labels,
-                                    label_allocations=sliver.label_allocations,
-                                    capacity_allocations=sliver.capacity_allocations,
-                                    reservation_info=sliver.reservation_info,
-                                    node_map=sliver.node_map)
-                if sliver.interface_info is not None:
-                    for ifs in sliver.interface_info.interfaces.values():
-                        if ifs.get_name() not in node.interfaces:
-                            continue
-                        topo_ifs = node.interfaces[ifs.get_name()]
-                        topo_ifs.set_properties(labels=ifs.labels,
-                                                label_allocations=ifs.label_allocations,
-                                                node_map=ifs.node_map)
+        elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
+            logger.info(f"Updating sliver: {sliver}")
+            node = neo4j_topo.network_services[node_name]
+            node.set_properties(labels=sliver.labels,
+                                label_allocations=sliver.label_allocations,
+                                capacity_allocations=sliver.capacity_allocations,
+                                reservation_info=sliver.reservation_info,
+                                node_map=sliver.node_map,
+                                gateway=sliver.gateway)
+            if sliver.interface_info is not None:
+                for ifs in sliver.interface_info.interfaces.values():
+                    if ifs.get_name() not in node.interfaces:
+                        continue
+                    topo_ifs = node.interfaces[ifs.get_name()]
+                    topo_ifs.set_properties(labels=ifs.labels,
+                                            label_allocations=ifs.label_allocations,
+                                            node_map=ifs.node_map)
 
 
     @staticmethod
