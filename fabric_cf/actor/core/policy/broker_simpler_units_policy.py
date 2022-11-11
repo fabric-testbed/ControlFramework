@@ -744,6 +744,21 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.fail(message=str(e))
         return False, node_id_to_reservations, error_msg
 
+    def __is_modify_on_openstack_vnic(self, *, sliver: BaseSliver) -> bool:
+        if not isinstance(sliver, NetworkServiceSliver):
+            return False
+
+        if sliver.get_type() != ServiceType.L2Bridge:
+            return False
+
+        graph_id, bqm_ns_id = sliver.get_node_map()
+
+        bqm_ns_sliver = self.get_network_service_from_graph(node_id=bqm_ns_id)
+        if bqm_ns_sliver.get_type() == ServiceType.VLAN:
+            return True
+
+        return False
+
     def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
                        node_id_to_reservations: dict):
         try:
@@ -754,12 +769,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             sliver = current_resources.get_sliver()
             diff = sliver.diff(other_sliver=requested_resources.get_sliver())
 
-            if diff is not None and (diff.added is None or
-                                     (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0)):
+            #if diff is not None and (diff.added is None or
+            #                         (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0)):
+            if diff is not None:
                 sliver = requested_resources.get_sliver()
 
             if diff is None or diff.added is None or \
-                    (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0):
+                    (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0) or \
+                    self.__is_modify_on_openstack_vnic(sliver=sliver):
                 self.issue_ticket(reservation=reservation, units=needed, rtype=requested_resources.get_type(),
                                   term=term, source=reservation.get_source(), sliver=sliver)
             else:
@@ -1041,6 +1058,20 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if self.combined_broker_model is None:
                 return None
             return self.combined_broker_model.build_deep_node_sliver(node_id=node_id)
+        finally:
+            self.lock.release()
+
+    def get_network_service_from_graph(self, *, node_id: str) -> NetworkServiceSliver or None:
+        """
+        Get Node from CBM
+        :param node_id:
+        :return:
+        """
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model is None:
+                return None
+            return self.combined_broker_model.build_deep_ns_sliver(node_id=node_id)
         finally:
             self.lock.release()
 
