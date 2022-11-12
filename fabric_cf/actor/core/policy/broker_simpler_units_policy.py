@@ -687,7 +687,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         if is_vnic:
             site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
             delegation_id = site_adm_ids[0]
-            inv.allocate_vnic(rid=rid, requested_ns=sliver, bqm_ifs=bqm_cp,
+            inv.allocate_vnic(rid=rid, requested_ns=sliver, owner_ns=owner_mpls_ns,
                               existing_reservations=existing_reservations)
         else:
             sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_switch=owner_switch,

@@ -213,13 +213,13 @@ class NetworkServiceInventory(InventoryForType):
 
         return requested_ns
 
-    def allocate_vnic(self, *, rid: ID, requested_ns: NetworkServiceSliver, bqm_ifs: InterfaceSliver,
+    def allocate_vnic(self, *, rid: ID, requested_ns: NetworkServiceSliver, owner_ns: NetworkServiceSliver,
                       existing_reservations: List[ABCReservationMixin]) -> NetworkServiceSliver:
         """
         Allocate Network Service Sliver (Only for L2Bridge Service for OpenStackvNIC)
         :param rid: Reservation ID
         :param requested_ns: Requested NetworkService
-        :param bqm_ifs: BQM Interface Sliver
+        :param owner_ns: BQM Network Service Sliver
         :param existing_reservations: Existing Reservations which also are served by the owner switch
         :return NetworkService updated with the allocated vlan
         """
@@ -228,7 +228,8 @@ class NetworkServiceInventory(InventoryForType):
                 return requested_ns
 
             # Grab Label Delegations
-            delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=bqm_ifs.get_label_delegations())
+            delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
+            vlans_range = self.__extract_vlan_range(labels=delegated_label.vlan_range)
 
             # Exclude the already allocated VLANs
             for reservation in existing_reservations:
@@ -254,11 +255,11 @@ class NetworkServiceInventory(InventoryForType):
                     continue
 
                 if allocated_sliver.label_allocations is not None and allocated_sliver.label_allocations.vlan is not None:
-                    delegated_label.vlan.remove(allocated_sliver.label_allocations.vlan)
+                    vlans_range.remove(allocated_sliver.label_allocations.vlan)
 
             if requested_ns.label_allocations is None:
                 requested_ns.label_allocations = Labels()
-            requested_ns.label_allocations.vlan = delegated_label.vlan[0]
+            requested_ns.label_allocations.vlan = vlans_range[0]
         except Exception as e:
             self.logger.error(f"Error in allocate_vNIC: {e}")
             self.logger.error(traceback.format_exc())
