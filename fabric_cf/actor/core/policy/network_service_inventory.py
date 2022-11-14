@@ -227,9 +227,7 @@ class NetworkServiceInventory(InventoryForType):
             if requested_ns.get_type() != ServiceType.L2Bridge:
                 return requested_ns
 
-            # Grab Label Delegations
-            delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
-            vlans_range = self.__extract_vlan_range(labels=delegated_label.vlan_range)
+            vlans_range = self.__extract_vlan_range(labels=owner_ns.labels.vlan_range)
 
             # Exclude the already allocated VLANs
             for reservation in existing_reservations:
