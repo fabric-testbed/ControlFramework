@@ -191,7 +191,6 @@ class BrokerDelegation(Delegation):
         if self.authority is None and incoming.get_site_proxy() is not None:
             self.authority = incoming.get_site_proxy()
 
-        #self.delegation_name = incoming.get_delegation_name()
         self.graph = incoming.get_graph()
         self.policy.update_delegation_complete(delegation=self)
         if self.graph is not None:
