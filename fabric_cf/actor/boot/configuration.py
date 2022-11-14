@@ -504,6 +504,10 @@ class Configuration:
         value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS, 120000)
         return int(value)
 
+    def get_kafka_max_message_size(self) -> int:
+        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE, 1048588)
+        return int(value)
+
     def get_rpc_request_timeout_seconds(self) -> int:
         value = self.global_config.runtime.get(Constants.PROPERTY_CONF_RPC_REQUEST_TIMEOUT_SECONDS, 900)
         return int(value)
