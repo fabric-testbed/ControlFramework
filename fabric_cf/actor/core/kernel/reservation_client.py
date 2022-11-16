@@ -488,7 +488,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
                                                                                 local_name=ifs.get_labels().local_name)
                     parent_labs = parent_res_ifs_sliver.get_label_allocations()
 
-                    ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
+                    if component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
+                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac,
+                                                   instance_parent=f"{parent_res.get_reservation_id()}-{node_sliver.get_name()}")
+                    else:
+                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
 
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {sliver}")
 

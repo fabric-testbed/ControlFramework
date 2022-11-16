@@ -302,7 +302,8 @@ class Globals:
                 Constants.SSL_KEY_LOCATION: self.config.get_kafka_ssl_key_location(),
                 Constants.SSL_KEY_PASSWORD: self.config.get_kafka_ssl_key_password(),
                 Constants.SCHEMA_REGISTRY_URL: self.config.get_kafka_schema_registry(),
-                Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS: self.config.get_kafka_request_timeout_ms()}
+                Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS: self.config.get_kafka_request_timeout_ms(),
+                Constants.PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE: self.config.get_kafka_max_message_size()}
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf[Constants.SASL_USERNAME] = sasl_username
@@ -331,6 +332,7 @@ class Globals:
             conf[Constants.SASL_USERNAME] = sasl_username
             conf[Constants.SASL_PASSWORD] = sasl_password
         conf[Constants.GROUP_ID] = group_id
+        conf[Constants.PROPERTY_CONF_KAFKA_FETCH_MAX_MESSAGE_SIZE] = self.config.get_kafka_max_message_size()
         return conf
 
     def get_kafka_producer(self):

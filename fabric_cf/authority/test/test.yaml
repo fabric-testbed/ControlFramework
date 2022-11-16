@@ -46,6 +46,7 @@ runtime:
   prometheus.port: 11000
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
+  message.max.bytes: 1048588
 
 logging:
   ## The directory in which actor should create log files.
@@ -120,7 +121,7 @@ actor:
   guid: site1-am-guid
   description: Site AM
   kafka-topic: site1-am-topic
-  substrate.file: ../../../neo4j/RENCI-ad.graphml
+  substrate.file: ../../../neo4j/UKY2.graphml
   policy:
       module: fabric_cf.actor.core.policy.authority_calendar_policy
       class: AuthorityCalendarPolicy

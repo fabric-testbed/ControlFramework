@@ -103,6 +103,8 @@ class Constants:
     PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD = "kafka-sasl-consumer-password"
     PROPERTY_CONF_KAFKA_SASL_MECHANISM = "kafka-sasl-mechanism"
     PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS = "request.timeout.ms"
+    PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE = "message.max.bytes"
+    PROPERTY_CONF_KAFKA_FETCH_MAX_MESSAGE_SIZE = "fetch.message.max.bytes"
 
     KAFKA_TOPIC = "kafka-topic"
     NAME = "name"
@@ -290,3 +292,5 @@ class Constants:
 
     CONFIG_PROPERTIES_FILE = "config.properties.file"
     MODE = "mode"
+
+    OPENSTACK_VNIC_MODEL = "OpenStack-vNIC"

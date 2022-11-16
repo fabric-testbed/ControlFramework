@@ -47,8 +47,15 @@ class NetworkServiceInventory(InventoryForType):
         if labels is None:
             return vlan_range
         if labels.vlan_range is not None:
-            vlans = labels.vlan_range.split("-")
-            vlan_range = list(range(int(vlans[0]), int(vlans[1]) + 1))
+            if isinstance(labels.vlan_range, list):
+                vlan_range = []
+                for v_r in labels.vlan_range:
+                    vlans = v_r.split("-")
+                    for x in list(range(int(vlans[0]), int(vlans[1]) + 1)):
+                        vlan_range.append(x)
+            else:
+                vlans = labels.vlan_range.split("-")
+                vlan_range = list(range(int(vlans[0]), int(vlans[1]) + 1))
         elif labels.vlan is not None:
             vlan_range = [int(labels.vlan)]
         return vlan_range
@@ -211,6 +218,57 @@ class NetworkServiceInventory(InventoryForType):
             self.logger.info("Allocated IP address to interface %s", ifs)
             start_ip += 1
 
+        return requested_ns
+
+    def allocate_vnic(self, *, rid: ID, requested_ns: NetworkServiceSliver, owner_ns: NetworkServiceSliver,
+                      existing_reservations: List[ABCReservationMixin]) -> NetworkServiceSliver:
+        """
+        Allocate Network Service Sliver (Only for L2Bridge Service for OpenStackvNIC)
+        :param rid: Reservation ID
+        :param requested_ns: Requested NetworkService
+        :param owner_ns: BQM Network Service Sliver
+        :param existing_reservations: Existing Reservations which also are served by the owner switch
+        :return NetworkService updated with the allocated vlan
+        """
+        try:
+            if requested_ns.get_type() != ServiceType.L2Bridge:
+                return requested_ns
+
+            vlans_range = self.__extract_vlan_range(labels=owner_ns.labels)
+
+            # Exclude the already allocated VLANs
+            for reservation in existing_reservations:
+                if rid == reservation.get_reservation_id():
+                    continue
+
+                # For Active or Ticketed or Ticketing reservations; reduce the counts from available
+                allocated_sliver = None
+                if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
+                    allocated_sliver = reservation.get_approved_resources().get_sliver()
+
+                if (reservation.is_active() or reservation.is_ticketed()) and \
+                        reservation.get_resources() is not None:
+                    allocated_sliver = reservation.get_resources().get_sliver()
+
+                self.logger.debug(f"Existing res# {reservation.get_reservation_id()} "
+                                  f"allocated: {allocated_sliver}")
+
+                if allocated_sliver is None:
+                    continue
+
+                if allocated_sliver.get_type() != requested_ns.get_type():
+                    continue
+
+                if allocated_sliver.label_allocations is not None and allocated_sliver.label_allocations.vlan is not None:
+                    vlans_range.remove(allocated_sliver.label_allocations.vlan)
+
+            if requested_ns.label_allocations is None:
+                requested_ns.label_allocations = Labels()
+            requested_ns.label_allocations.vlan = str(vlans_range[0])
+        except Exception as e:
+            self.logger.error(f"Error in allocate_vNIC: {e}")
+            self.logger.error(traceback.format_exc())
+            raise e
         return requested_ns
 
     def allocate(self, *, rid: ID, requested_ns: NetworkServiceSliver, owner_switch: NodeSliver,
