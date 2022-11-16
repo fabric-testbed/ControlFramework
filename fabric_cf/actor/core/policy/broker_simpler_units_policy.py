@@ -620,10 +620,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if bqm_component.get_type() == ComponentType.SharedNIC:
                 if bqm_component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
                     is_vnic = True
-                    break
 
                 # VLAN is already set by the Orchestrator using the information from the Node Sliver Parent Reservation
-                if ifs.get_labels().vlan is None:
+                if ifs.get_labels().vlan is None and not is_vnic:
                     message = "Shared NIC VLAN cannot be None"
                     self.logger.error(message)
                     raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
@@ -654,7 +653,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 self.logger.debug(f"Owner Switch NS: {owner_switch.network_service_info.network_services.values()}")
 
             net_adm_ids = site_adm_ids
-            if bqm_component.get_type() != NodeType.Facility:
+            if bqm_component.get_type() != NodeType.Facility and not is_vnic:
                 net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
             else:
                 if bqm_cp.labels is not None and bqm_cp.labels.ipv4_subnet is not None:

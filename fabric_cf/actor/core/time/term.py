@@ -235,7 +235,10 @@ class Term:
 
         flag = self.extends_term(old_term=old_term)
         if flag is False:
-            raise TimeException("New term does not extend previous term")
+            raise TimeException(f"New term does not extend previous term! new_term: [Start: {self.start_time}"
+                                f" End: {self.end_time} NewStart: {self.new_start_time}] "
+                                f"old_term: [Start: {old_term.start_time} End: {old_term.end_time} "
+                                f"NewStart: {old_term.new_start_time}]")
 
     def __eq__(self, other):
         """
@@ -304,12 +307,9 @@ class Term:
         if self.start_time is None or self.end_time is None or self.new_start_time is None:
             raise TimeException(Constants.INVALID_STATE)
 
-        if Term.set_cycles:
-            return self.cycle_start == old_term.cycle_start and self.cycle_end > self.cycle_new_start
-        else:
-            start_time_hh_mm = self.start_time.strftime(self.HH_MM_TIME_FORMAT)
-            old_start_time_hh_mm = old_term.start_time.strftime(self.HH_MM_TIME_FORMAT)
-            return start_time_hh_mm == old_start_time_hh_mm and self.end_time > self.new_start_time
+        start_time_hh_mm = self.start_time.strftime(self.HH_MM_TIME_FORMAT)
+        old_start_time_hh_mm = old_term.start_time.strftime(self.HH_MM_TIME_FORMAT)
+        return start_time_hh_mm == old_start_time_hh_mm and self.end_time > self.new_start_time
 
     def get_end_time(self) -> datetime:
         """

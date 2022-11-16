@@ -234,7 +234,7 @@ class NetworkServiceInventory(InventoryForType):
             if requested_ns.get_type() != ServiceType.L2Bridge:
                 return requested_ns
 
-            vlans_range = self.__extract_vlan_range(labels=owner_ns.labels.vlan_range)
+            vlans_range = self.__extract_vlan_range(labels=owner_ns.labels)
 
             # Exclude the already allocated VLANs
             for reservation in existing_reservations:
@@ -264,7 +264,7 @@ class NetworkServiceInventory(InventoryForType):
 
             if requested_ns.label_allocations is None:
                 requested_ns.label_allocations = Labels()
-            requested_ns.label_allocations.vlan = vlans_range[0]
+            requested_ns.label_allocations.vlan = str(vlans_range[0])
         except Exception as e:
             self.logger.error(f"Error in allocate_vNIC: {e}")
             self.logger.error(traceback.format_exc())
