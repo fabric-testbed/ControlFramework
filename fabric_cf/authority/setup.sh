@@ -41,7 +41,7 @@ name=$1
 neo4jpwd=$2
 config=$3
 arm=$4
-handler=$5
+handler1=$5
 
 
 mkdir -p $name/logs $name/pg_data/data $name/pg_data/logs $name/neo4j/data $name/neo4j/imports $name/neo4j/logs $name/pdp/conf $name/pdp/policies
@@ -50,12 +50,14 @@ cp fabricYes.AnyActorYesPolicy.xml $name/pdp/policies
 cp env.template $name/.env
 cp $config $name/config.yaml
 cp $arm $name/arm.graphml
-cp $handler $name/vm_handler_config.yml
+cp $handler1 $name/vm_handler_config.yml
 
 if [ -z $6 ]; then
   cp docker-compose.yml $name/
 else
-  cp docker-compose-dev.yml $name/docker-compose.yml
+  handler2=$6
+  cp $handler2 $name/vnic_net_handler_config.yml
+  cp docker-compose.geni.yml $name/docker-compose.yml
 fi
 
 sed -i "s/site1-am/$name/g" $name/docker-compose.yml
