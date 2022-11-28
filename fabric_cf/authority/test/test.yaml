@@ -121,7 +121,7 @@ actor:
   guid: site1-am-guid
   description: Site AM
   kafka-topic: site1-am-topic
-  substrate.file: ../../../neo4j/UKY2.graphml
+  substrate.file: ../../../neo4j/RENCI-ad.graphml
   policy:
       module: fabric_cf.actor.core.policy.authority_calendar_policy
       class: AuthorityCalendarPolicy
