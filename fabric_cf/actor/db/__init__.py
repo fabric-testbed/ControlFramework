@@ -114,6 +114,8 @@ class Reservations(Base):
     oidc_claim_sub = Column(String, nullable=True, index=True)
     email = Column(String, nullable=True, index=True)
     project_id = Column(String, nullable=True, index=True)
+    site = Column(String, nullable=True, index=True)
+    rsv_type = Column(Integer, nullable=True, index=True)
     rsv_state = Column(Integer, nullable=False, index=True)
     rsv_category = Column(Integer, nullable=False)
     rsv_pending = Column(Integer, nullable=False)
@@ -174,6 +176,18 @@ class Delegations(Base):
     __tablename__ = 'Delegations'
     dlg_id = Column(Integer, Sequence('dlg_id', start=1, increment=1), autoincrement=True, primary_key=True)
     dlg_slc_id = Column(Integer, ForeignKey(FOREIGN_KEY_SLICE_ID))
+    site = Column(String, nullable=True, index=True)
     dlg_graph_id = Column(String, nullable=False)
     dlg_state = Column(Integer, nullable=False)
+    properties = Column(LargeBinary)
+
+
+class Sites(Base):
+    """
+    Represents Sites Database Table
+    """
+    __tablename__ = 'Sites'
+    site_id = Column(Integer, Sequence('site_id', start=1, increment=1), autoincrement=True, primary_key=True)
+    name = Column(String, nullable=True, index=True)
+    state = Column(Integer, nullable=False)
     properties = Column(LargeBinary)

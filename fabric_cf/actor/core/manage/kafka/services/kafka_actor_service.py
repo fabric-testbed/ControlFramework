@@ -423,9 +423,12 @@ class KafkaActorService(KafkaService):
                 return result
 
             mo = self.get_actor_mo(guid=ID(uid=request.actor_guid))
-            mode_str = request.get_properties().get(Constants.MODE)
-            mode = json.loads(mode_str.lower())
-            mo.toggle_maintenance_mode(mode=mode)
+            sites = None
+            if request.get_sites() is not None:
+                sites = []
+                for s in request.get_sites():
+                    sites.append(Translate.translate_site_from_avro(site_avro=s))
+            mo.update_maintenance_mode(properties=request.get_properties(), sites=sites)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

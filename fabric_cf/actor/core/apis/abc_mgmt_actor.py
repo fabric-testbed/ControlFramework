@@ -26,11 +26,12 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
+from fabric_cf.actor.core.container.maintenance import Site
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -200,3 +201,42 @@ class ABCMgmtActor(ABCComponent):
         @param delegation_id delegation id
         @return returns list of the delegations
         """
+
+    def is_testbed_in_maintenance(self) -> Tuple[bool, Dict[str, str] or None]:
+        """
+        Determine if testbed is in maintenance
+        @return True if testbed is in maintenance; False otherwise
+        """
+        return False, None
+
+    def is_site_in_maintenance(self, *, site_name: str) -> Tuple[bool, Site or None]:
+        """
+        Determine if site is in maintenance
+        @return True if site is in maintenance; False otherwise
+        """
+        return False, None
+
+    def is_sliver_provisioning_allowed(self, *, project: str, email: str, site: str,
+                                       worker: str) -> Tuple[bool, str or None]:
+        """
+        Determine if sliver can be provisioned
+        Sliver provisioning can be prohibited if Testbed or Site or Worker is in maintenance mode
+        Sliver provisioning in maintenance mode may be allowed for specific projects/users
+        @param project project
+        @param email user's email
+        @param site site name
+        @param worker worker name
+        @return True if allowed; False otherwise
+        """
+        return True, None
+
+    def is_slice_provisioning_allowed(self, *, project: str, email: str) -> bool:
+        """
+        Determine if slice can be provisioned
+        Slice provisioning can be prohibited if Testbed is in maintenance mode
+        Slice provisioning in maintenance mode may be allowed for specific projects/users
+        @param project project
+        @param email user's email
+        @return True if allowed; False otherwise
+        """
+        return True

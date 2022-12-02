@@ -26,11 +26,12 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 
 from fabric_cf.actor.core.common.exceptions import ManageException
+from fabric_cf.actor.core.container.maintenance import Site
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
 from fabric_cf.actor.core.manage.local.local_proxy import LocalProxy
@@ -252,3 +253,16 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
+
+    def is_testbed_in_maintenance(self) -> Tuple[bool, Dict[str, str] or None]:
+        return self.manager.is_testbed_in_maintenance()
+
+    def is_site_in_maintenance(self, *, site_name: str) -> Tuple[bool, Site or None]:
+        return self.manager.is_site_in_maintenance(site_name=site_name)
+
+    def is_slice_provisioning_allowed(self, *, project: str, email: str) -> bool:
+        return self.manager.is_slice_provisioning_allowed(project=project, email=email)
+
+    def is_sliver_provisioning_allowed(self, *, project: str, email: str, site: str,
+                                       worker: str) -> Tuple[bool, str or None]:
+        return self.manager.is_sliver_provisioning_allowed(project=project, email=email, site=site, worker=worker)

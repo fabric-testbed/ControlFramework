@@ -103,42 +103,6 @@ class Globals:
         if os.path.isfile(Constants.SUPERBLOCK_LOCATION):
             os.remove(Constants.SUPERBLOCK_LOCATION)
 
-    def create_maintenance_lock(self):
-        """
-        Create Super Block
-        """
-        self.get_logger().debug("Creating maintenance lock")
-        file = None
-        try:
-            file = open(Constants.MAINTENANCE_LOCATION, 'r')
-        except IOError:
-            file = open(Constants.MAINTENANCE_LOCATION, 'w')
-        finally:
-            if file is not None:
-                file.close()
-
-    @staticmethod
-    def delete_maintenance_lock():
-        """
-        Delete maintenance block file
-        """
-        if os.path.isfile(Constants.MAINTENANCE_LOCATION):
-            os.remove(Constants.MAINTENANCE_LOCATION)
-
-    @staticmethod
-    def is_maintenance_mode_on() -> bool:
-        if os.path.isfile(Constants.MAINTENANCE_LOCATION):
-            return True
-        return False
-
-    def is_maint_project(self, *, token: str):
-        from fabric_cf.actor.security.fabric_token import FabricToken
-        fabric_token = FabricToken(oauth_config=self.config.get_global_config().get_oauth(),
-                                   jwt_validator=self.get_jwt_validator(), logger=self.get_logger(), token=token)
-        fabric_token.validate()
-        project, tags = fabric_token.get_project_and_tags()
-        return project == self.config.get_runtime_config().get(Constants.MAINT_PROJECT_ID)
-
     @staticmethod
     def can_reload_model() -> bool:
         if os.path.isfile(Constants.MODEL_RELOAD_LOCATION):

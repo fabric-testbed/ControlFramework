@@ -40,7 +40,7 @@ from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.user import ServiceType, ExperimentTopology
 
-from fabric_cf.actor.core.common.constants import ErrorCodes
+from fabric_cf.actor.core.common.constants import ErrorCodes, Constants
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
@@ -66,6 +66,7 @@ class OrchestratorSliceWrapper:
         self.reservation_converter = ReservationConverter(controller=controller, broker=broker)
         self.rid_to_res = {}
         self.computed_reservations = []
+        self.computed_add_reservations = []
         self.computed_l3_reservations = []
         self.computed_modify_reservations = {}
         self.computed_remove_reservations = []
@@ -135,6 +136,13 @@ class OrchestratorSliceWrapper:
         """
         return ID(uid=self.slice_obj.get_slice_id())
 
+    def add_reservations(self):
+        start = time.time()
+        # Add Network Node reservations
+        for r in self.computed_add_reservations:
+            self.controller.add_reservation(reservation=r)
+        self.logger.info(f"ADD TIME: {time.time() - start:.0f}")
+
     def create(self, *, slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
         """
         Create a slice
@@ -153,20 +161,15 @@ class OrchestratorSliceWrapper:
                                                                                      node_res_mapping=node_res_mapping)
             self.logger.info(f"NS TIME: {time.time() - start:.0f}")
 
-            start = time.time()
             # Add Network Node reservations
             for r in network_node_reservations:
-                self.controller.add_reservation(reservation=r)
+                self.computed_add_reservations.append(r)
                 self.computed_reservations.append(r)
 
-            self.logger.info(f"Node ADD TIME: {time.time() - start:.0f}")
-
-            start = time.time()
             # Add Network Node reservations
             for r in network_service_reservations:
-                self.controller.add_reservation(reservation=r)
+                self.computed_add_reservations.append(r)
                 self.computed_reservations.append(r)
-            self.logger.info(f"Node ADD TIME: {time.time() - start:.0f}")
 
             return self.computed_reservations
         except OrchestratorException as e:
@@ -293,7 +296,8 @@ class OrchestratorSliceWrapper:
             reservations.append(reservation)
         return reservations
 
-    def __build_node_sliver_reservation(self, *, slice_graph: ABCASMPropertyGraph, node_id: str) -> LeaseReservationAvro:
+    def __build_node_sliver_reservation(self, *, slice_graph: ABCASMPropertyGraph,
+                                        node_id: str) -> LeaseReservationAvro or None:
         """
         Build Network Node Reservations
         @param slice_graph Slice graph
@@ -447,7 +451,7 @@ class OrchestratorSliceWrapper:
 
         # Add the new reservations to the controller
         for r in reservations:
-            self.controller.add_reservation(reservation=r)
+            self.computed_add_reservations.append(r)
             self.computed_reservations.append(r)
 
             if r.get_resource_type() in self.l3_ns:

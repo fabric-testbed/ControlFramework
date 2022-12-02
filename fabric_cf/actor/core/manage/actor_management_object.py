@@ -26,7 +26,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict, Tuple
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
@@ -50,6 +50,7 @@ from fabric_cf.actor.core.apis.abc_actor_management_object import ABCActorManage
 
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
+from fabric_cf.actor.core.container.maintenance import Site, Maintenance
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.auth_token import AuthToken
 
@@ -585,13 +586,67 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    @staticmethod
-    def toggle_maintenance_mode(*, mode: bool):
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        if mode:
-            GlobalsSingleton.get().create_maintenance_lock()
-        else:
-            GlobalsSingleton.get().delete_maintenance_lock()
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        result = ResultAvro()
+
+        if properties is None and sites is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
+                    self.actor = actor
+
+                def run(self):
+                    self.actor.update_maintenance_mode(properties=properties, sites=sites)
+                    return True
+
+            self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("update_maintenance_mode: {}".format(e))
+            result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.set_message(e.text)
+        except Exception as e:
+            self.logger.error("update_maintenance_mode: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
+    def is_testbed_in_maintenance(self) -> Tuple[bool, Dict[str, str] or None]:
+        return Maintenance.is_testbed_in_maintenance(database=self.db)
+
+    def is_site_in_maintenance(self, *, site_name: str) -> Tuple[bool, Site or None]:
+        return Maintenance.is_site_in_maintenance(database=self.db, site_name=site_name)
+
+    def is_sliver_provisioning_allowed(self, *, project: str, email: str, site: str,
+                                       worker: str) -> Tuple[bool, str or None]:
+        """
+        Determine if sliver can be provisioned
+        Sliver provisioning can be prohibited if Testbed or Site or Worker is in maintenance mode
+        Sliver provisioning in maintenance mode may be allowed for specific projects/users
+        @param project project
+        @param email user's email
+        @param site site name
+        @param worker worker name
+        @return True if allowed; False otherwise
+        """
+        return Maintenance.is_sliver_provisioning_allowed(database=self.db, project=project, email=email, site=site,
+                                                          worker=worker)
+
+    def is_slice_provisioning_allowed(self, *, project: str, email: str) -> bool:
+        """
+        Determine if slice can be provisioned
+        Slice provisioning can be prohibited if Testbed is in maintenance mode
+        Slice provisioning in maintenance mode may be allowed for specific projects/users
+        @param project project
+        @param email user's email
+        @return True if allowed; False otherwise
+        """
+        return Maintenance.is_slice_provisioning_allowed(database=self.db, project=project, email=email)
 
     def close_delegation(self, *, caller: AuthToken, did: str) -> ResultAvro:
         result = ResultAvro()

@@ -257,6 +257,8 @@ class Constants:
     UUID = "uuid"
     TAGS = "tags"
     PROJECT_ID = "project_id"
+    USERS = "users"
+    DEADLINE = "deadline"
 
     PROPERTY_EXCEPTION_MESSAGE = "exception.message"
     PROPERTY_TARGET_NAME = "target.name"
@@ -294,3 +296,5 @@ class Constants:
     MODE = "mode"
 
     OPENSTACK_VNIC_MODEL = "OpenStack-vNIC"
+
+    INTERNAL_SERVER_ERROR_MAINT_MODE = 501
