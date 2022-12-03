@@ -301,7 +301,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
     def get_reservations(self, *, caller: AuthToken, state: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
-                         email: str = None, rid_list: List[str] = None) -> ResultReservationAvro:
+                         email: str = None, rid_list: List[str] = None, type: str = None,
+                         site: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -318,7 +319,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     res_list = self.db.get_reservations_by_rids(rid=rid_list)
                 else:
                     res_list = self.db.get_reservations(slice_id=slice_id, rid=rid, email=email,
-                                                        oidc_sub=oidc_claim_sub, state=state)
+                                                        state=state, rsv_type=type, site=site)
             except Exception as e:
                 self.logger.error("getReservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)

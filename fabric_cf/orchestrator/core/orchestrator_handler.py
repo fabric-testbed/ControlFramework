@@ -34,7 +34,6 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology

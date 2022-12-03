@@ -244,7 +244,7 @@ class ActorDatabase(ABCDatabase):
             rsv_type = None
             if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
                 site = reservation.get_resources().get_sliver().get_site()
-                rsv_type = reservation.get_resources().get_sliver().get_type().value
+                rsv_type = reservation.get_resources().get_sliver().get_type().name
 
             self.db.add_reservation(slc_guid=str(reservation.get_slice_id()),
                                     rsv_resid=str(reservation.get_reservation_id()),
@@ -275,7 +275,7 @@ class ActorDatabase(ABCDatabase):
             rsv_type = None
             if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
                 site = reservation.get_resources().get_sliver().get_site()
-                rsv_type = reservation.get_resources().get_sliver().get_type().value
+                rsv_type = reservation.get_resources().get_sliver().get_type().name
 
             properties = pickle.dumps(reservation)
             self.db.update_reservation(slc_guid=str(reservation.get_slice_id()),

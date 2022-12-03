@@ -159,7 +159,7 @@ class ABCDatabase(ABC):
     @abstractmethod
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: ID = None,
-                         state: list[int] = None, site: str = None, rsv_type: int = None) -> List[ABCReservationMixin]:
+                         state: list[int] = None, site: str = None, rsv_type: str = None) -> List[ABCReservationMixin]:
         """
         Retrieves the reservations.
 

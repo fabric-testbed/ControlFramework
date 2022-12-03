@@ -115,7 +115,7 @@ class Reservations(Base):
     email = Column(String, nullable=True, index=True)
     project_id = Column(String, nullable=True, index=True)
     site = Column(String, nullable=True, index=True)
-    rsv_type = Column(Integer, nullable=True, index=True)
+    rsv_type = Column(String, nullable=True, index=True)
     rsv_state = Column(Integer, nullable=False, index=True)
     rsv_category = Column(Integer, nullable=False)
     rsv_pending = Column(Integer, nullable=False)
@@ -188,6 +188,6 @@ class Sites(Base):
     """
     __tablename__ = 'Sites'
     site_id = Column(Integer, Sequence('site_id', start=1, increment=1), autoincrement=True, primary_key=True)
-    name = Column(String, nullable=True, index=True)
+    name = Column(String, index=True)
     state = Column(Integer, nullable=False)
     properties = Column(LargeBinary)

@@ -95,7 +95,7 @@ class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_reservations(self, *, state: int = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None) -> List[ReservationMng]:
+                         rid_list: List[str] = None, type: str = None, site: str = None) -> List[ReservationMng]:
         """
         @param state state
         @param slice_id slice ID
@@ -103,6 +103,8 @@ class ABCMgmtActor(ABCComponent):
         @param oidc_claim_sub: oidc claim sub
         @param email: user email
         @param rid_list: list of Reservation Id
+        @param type type of reservations like NodeSliver/NetworkServiceSliver
+        @param site site
         Obtains all reservations
         @return returns list of the reservations
         """

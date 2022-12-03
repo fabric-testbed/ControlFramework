@@ -38,6 +38,9 @@ from fabric_mb.message_bus.messages.term_avro import TermAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fabric_mb.message_bus.messages.update_data_avro import UpdateDataAvro
 from fabric_mb.message_bus.messages.ticket import Ticket as AvroTicket
+from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import NetworkServiceSliver
+
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException

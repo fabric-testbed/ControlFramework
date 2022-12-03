@@ -608,7 +608,7 @@ class PsqlDatabase:
     def add_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                         rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                         lease_end: datetime = None, rsv_graph_node_id: str = None, oidc_claim_sub: str = None,
-                        email: str = None, project_id: str = None, site: str = None, rsv_type: int = None):
+                        email: str = None, project_id: str = None, site: str = None, rsv_type: str = None):
         """
         Add a reservation
         @param slc_guid slice guid
@@ -645,7 +645,7 @@ class PsqlDatabase:
     def update_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                            rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                            lease_end: datetime = None, rsv_graph_node_id: str = None, site: str = None,
-                           rsv_type: int = None):
+                           rsv_type: str = None):
         """
         Update a reservation
         @param slc_guid slice guid
@@ -715,7 +715,7 @@ class PsqlDatabase:
 
     def create_reservation_filter(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
                                   email: str = None, oidc_sub: str = None, rid: str = None, site: str = None,
-                                  rsv_type: int = None) -> dict:
+                                  rsv_type: str = None) -> dict:
 
         filter_dict = {}
         if slice_id is not None:
@@ -739,7 +739,7 @@ class PsqlDatabase:
 
     def get_reservations(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: str = None, state: list[int] = None,
-                         category: list[int] = None, site: str = None, rsv_type: int = None) -> list:
+                         category: list[int] = None, site: str = None, rsv_type: str = None) -> list:
         """
         Get Reservations for an actor
         @param slice_id slice id
@@ -751,6 +751,7 @@ class PsqlDatabase:
         @param state reservation state
         @param category reservation category
         @param site site name
+        @param rsv_type rsv_type
 
         @return list of reservations
         """

@@ -81,11 +81,12 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
     def get_reservations(self, *, state: int = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None) -> List[ReservationMng]:
+                         rid_list: List[str] = None, type: str = None, site: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
             result = self.manager.get_reservations(caller=self.auth, state=state, slice_id=slice_id, rid=rid,
-                                                   oidc_claim_sub=oidc_claim_sub, email=email, rid_list=rid_list)
+                                                   oidc_claim_sub=oidc_claim_sub, email=email, rid_list=rid_list,
+                                                   type=type, site=site)
             self.last_status = result.status
 
             if result.status.get_code() == 0:

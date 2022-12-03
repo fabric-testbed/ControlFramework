@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
-from typing import List, Dict, Tuple
+from typing import List
 
 from fabric_mb.message_bus.messages.close_delegations_avro import CloseDelegationsAvro
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
@@ -46,7 +46,6 @@ from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fabric_mb.message_bus.messages.update_reservation_avro import UpdateReservationAvro
 from fabric_mb.message_bus.messages.update_slice_avro import UpdateSliceAvro
 
-from fabric_cf.actor.core.container.maintenance import Site
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
@@ -131,10 +130,10 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
     def get_reservations(self, *, state: int = None, slice_id: ID = None,
                          rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None) -> List[ReservationMng]:
+                         rid_list: List[str] = None, type: str = None, site: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
-                                                  reservation_state=state, email=email, rid=rid)
+                                                  reservation_state=state, email=email, rid=rid, type=type, site=site)
         status, response = self.send_request(request)
 
         if status.code == 0:

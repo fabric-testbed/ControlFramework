@@ -279,7 +279,8 @@ class KafkaActorService(KafkaService):
             rid = ID(uid=request.reservation_id) if request.reservation_id is not None else None
 
             result = mo.get_reservations(caller=auth, state=state, slice_id=slice_id,
-                                         rid=rid, email=request.get_email())
+                                         rid=rid, email=request.get_email(), type=request.get_type(),
+                                         site=request.get_site())
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
