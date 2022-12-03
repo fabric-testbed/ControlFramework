@@ -7,7 +7,7 @@ ALTER TABLE "Delegations" ADD COLUMN IF NOT EXISTS site VARCHAR;
 UPDATE "Slices" set slc_state=2 where slc_name='broker';
 CREATE SEQUENCE IF NOT EXISTS site_id start 1 increment 1;
 CREATE TABLE IF NOT EXISTS "Sites" (
-  site_id  INTEGER SEQUENCE NOT NULL DEFAULT nextval('site_id') PRIMARY KEY,
+  site_id  INTEGER NOT NULL DEFAULT nextval('site_id') PRIMARY KEY,
   name VARCHAR NOT NULL,
   state INTEGER NOT NULL,
   properties BYTEA
