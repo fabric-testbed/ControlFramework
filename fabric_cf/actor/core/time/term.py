@@ -307,9 +307,8 @@ class Term:
         if self.start_time is None or self.end_time is None or self.new_start_time is None:
             raise TimeException(Constants.INVALID_STATE)
 
-        start_time_hh_mm = self.start_time.strftime(self.HH_MM_TIME_FORMAT)
-        old_start_time_hh_mm = old_term.start_time.strftime(self.HH_MM_TIME_FORMAT)
-        return start_time_hh_mm == old_start_time_hh_mm and self.end_time > self.new_start_time
+        start_time_diff = self.start_time - old_term.start_time
+        return start_time_diff.total_seconds() <= 300 and self.end_time > self.new_start_time
 
     def get_end_time(self) -> datetime:
         """

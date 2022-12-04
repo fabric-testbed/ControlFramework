@@ -32,11 +32,15 @@ from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
 from fabric_mb.message_bus.messages.resource_ticket_avro import ResourceTicketAvro
 from fabric_mb.message_bus.messages.resource_set_avro import ResourceSetAvro
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fabric_mb.message_bus.messages.term_avro import TermAvro
 from fabric_mb.message_bus.messages.unit_avro import UnitAvro
 from fabric_mb.message_bus.messages.update_data_avro import UpdateDataAvro
 from fabric_mb.message_bus.messages.ticket import Ticket as AvroTicket
+from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import NetworkServiceSliver
+
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import ProxyException
@@ -47,6 +51,7 @@ from fabric_cf.actor.core.delegation.resource_ticket import ResourceTicket
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceFactory
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
+from fabric_cf.actor.core.container.maintenance import Site, MaintenanceState
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
@@ -117,6 +122,28 @@ class Translate:
             avro_slice.graph_id = slice_obj.get_graph_id()
 
         return avro_slice
+
+    @staticmethod
+    def translate_site_to_avro(*, site: Site) -> SiteAvro or None:
+        if site is None:
+            return None
+        result = SiteAvro()
+        result.name = site.get_name()
+        result.state = site.get_state().value
+        result.workers = site.get_workers_str()
+        result.deadline = site.get_deadline_str()
+        return result
+
+    @staticmethod
+    def translate_site_from_avro(*, site_avro: SiteAvro) -> Site or None:
+        if site_avro is None:
+            return None
+        result = Site(name=site_avro.get_name(), state=MaintenanceState(site_avro.get_state()))
+        result.deadline = site_avro.get_deadline()
+        if site_avro.get_workers() is not None:
+            for w in site_avro.get_workers():
+                result.add_worker(worker=w)
+        return result
 
     @staticmethod
     def translate_auth_to_avro(*, auth: AuthToken) -> AuthAvro:

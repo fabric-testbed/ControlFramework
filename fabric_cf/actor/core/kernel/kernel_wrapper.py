@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 from datetime import datetime
-from typing import List
+from typing import List, Dict
 
 from fim.slivers.base_sliver import BaseSliver
 
@@ -52,6 +52,7 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
+from fabric_cf.actor.core.container.maintenance import Site
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.update_data import UpdateData
@@ -1124,3 +1125,6 @@ class KernelWrapper:
             tag_list = tags.split(",")
             AccessChecker.check_pdp_access(action_id=action_id, email=email, project=project, tags=tag_list,
                                            resource=sliver, lease_end_time=lease_end_time, logger=self.logger)
+
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        self.kernel.update_maintenance_mode(properties=properties, sites=sites)

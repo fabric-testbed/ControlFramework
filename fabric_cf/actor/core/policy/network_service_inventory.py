@@ -260,7 +260,7 @@ class NetworkServiceInventory(InventoryForType):
                     continue
 
                 if allocated_sliver.label_allocations is not None and allocated_sliver.label_allocations.vlan is not None:
-                    vlans_range.remove(allocated_sliver.label_allocations.vlan)
+                    vlans_range.remove(int(allocated_sliver.label_allocations.vlan))
 
             if requested_ns.label_allocations is None:
                 requested_ns.label_allocations = Labels()

@@ -279,7 +279,8 @@ class KafkaActorService(KafkaService):
             rid = ID(uid=request.reservation_id) if request.reservation_id is not None else None
 
             result = mo.get_reservations(caller=auth, state=state, slice_id=slice_id,
-                                         rid=rid, email=request.get_email())
+                                         rid=rid, email=request.get_email(), type=request.get_type(),
+                                         site=request.get_site())
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -423,9 +424,12 @@ class KafkaActorService(KafkaService):
                 return result
 
             mo = self.get_actor_mo(guid=ID(uid=request.actor_guid))
-            mode_str = request.get_properties().get(Constants.MODE)
-            mode = json.loads(mode_str.lower())
-            mo.toggle_maintenance_mode(mode=mode)
+            sites = None
+            if request.get_sites() is not None:
+                sites = []
+                for s in request.get_sites():
+                    sites.append(Translate.translate_site_from_avro(site_avro=s))
+            mo.update_maintenance_mode(properties=request.get_properties(), sites=sites)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

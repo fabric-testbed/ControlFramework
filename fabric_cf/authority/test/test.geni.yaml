@@ -28,16 +28,16 @@
 # actor will use sane defaults, in the absence of this configuration file.
 
 runtime:
-  kafka-server:
-  kafka-schema-registry-url:
-  kafka-key-schema: /etc/fabric/message_bus/schema/key.avsc
-  kafka-value-schema: /etc/fabric/message_bus/schema/message.avsc
-  kafka-ssl-ca-location:  /etc/fabric/message_bus/ssl/cacert.pem
-  kafka-ssl-certificate-location:  /etc/fabric/message_bus/ssl/client.pem
-  kafka-ssl-key-location:  /etc/fabric/message_bus/ssl/client.key
-  kafka-ssl-key-password:
+  kafka-server: 152.54.15.53:29092
+  kafka-schema-registry-url: http://152.54.15.53:8081
+  kafka-key-schema: ../../../schema/key.avsc
+  kafka-value-schema: ../../../schema/message.avsc
+  kafka-ssl-ca-location:  ../../../secrets/snakeoil-ca-1.crt
+  kafka-ssl-certificate-location:  ../../../secrets/kafkacat1-ca1-signed.pem
+  kafka-ssl-key-location:  ../../../secrets/kafkacat1.client.key
+  kafka-ssl-key-password:  fabric
   kafka-security-protocol: SSL
-  kafka-group-id:
+  kafka-group-id: fabric-cf
   kafka-sasl-mechanism:
   kafka-sasl-producer-username:
   kafka-sasl-producer-password:
@@ -45,16 +45,16 @@ runtime:
   kafka-sasl-consumer-password:
   prometheus.port: 11000
   kafka.request.timeout.ms: 120000
-  rpc.request.timeout.seconds: 1200
+  rpc.request.timeout.seconds: 900
   message.max.bytes: 2097176
 
 logging:
   ## The directory in which actor should create log files.
   ## This directory will be automatically created if it does not exist.
-  log-directory: /var/log/actor
+  log-directory: .
 
   ## The filename to be used for actor's log file.
-  log-file: actor.log
+  log-file: site_actor.log
 
   handler-log-file: handler.log
 
@@ -71,16 +71,16 @@ logging:
   logger: site1-am
 
 oauth:
-  jwks-url: https://cm.fabric-testbed.net/credmgr/certs
+  jwks-url: https://alpha-2.fabric-testbed.net/credmgr/certs
   # Uses HH:MM:SS (less than 24 hours)
   key-refresh: 00:10:00
-  verify-exp: True
+  verify-exp: False
 
 database:
   db-user: fabric
   db-password: fabric
   db-name: am
-  db-host: localhost:5432
+  db-host: 152.54.15.53:5432
 
 container:
   container.guid: site1-am-conainer
@@ -106,13 +106,13 @@ time:
 
 pdp:
   url: http://localhost:8080/services/pdp
-  enable: True
+  enable: False
 
 neo4j:
   url: bolt://localhost:7687
   user: neo4j
   pass: password
-  import_host_dir: /usr/src/app/neo4j/imports/
+  import_host_dir: ../../../neo4j1/imports/
   import_dir: /imports
 
 actor:
@@ -121,7 +121,7 @@ actor:
   guid: site1-am-guid
   description: Site AM
   kafka-topic: site1-am-topic
-  substrate.file: /etc/fabric/actor/config/neo4j/arm.graphml
+  substrate.file: ../../../neo4j/UKY2.graphml
   policy:
       module: fabric_cf.actor.core.policy.authority_calendar_policy
       class: AuthorityCalendarPolicy
@@ -131,19 +131,15 @@ actor:
           label: VM AM
           description: VM AM
           handler:
-            module: fabric_am.handlers.vm_handler
-            class: VMHandler
-            properties:
-              config.properties.file: /etc/fabric/actor/config/vm_handler_config.yml
+            module: fabric_cf.actor.handlers.no_op_handler
+            class: NoOpHandler
       - resource:
           type: L2Bridge
           label: vNIC Network Service AM
           description: vNIC Network Service AM
           handler:
-            module: fabric_am.handlers.vnic_net_handler
-            class: VnicNetHandler
-            properties:
-              config.properties.file: /etc/fabric/actor/config/vnic_net_handler_config.yml
+            module: fabric_cf.actor.handlers.no_op_handler
+            class: NoOpHandler
   controls:
       - control:
           type: VM, Container, Baremetal
@@ -153,6 +149,7 @@ actor:
           type: L2Bridge
           module: fabric_cf.actor.core.policy.network_service_control
           class: NetworkServiceControl
+
 peers:
   - peer:
       name: orchestrator

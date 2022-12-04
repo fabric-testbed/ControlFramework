@@ -23,11 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import queue
-import threading
-import time
 import traceback
-from typing import List
+from typing import List, Dict
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
@@ -50,10 +47,10 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.proxies.proxy import Proxy
+from fabric_cf.actor.core.container.maintenance import Site
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.iterable_queue import IterableQueue
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.security.auth_token import AuthToken
@@ -906,3 +903,6 @@ class ActorMixin(ABCActorMixin):
 
     def load_model(self, *, graph_id: str):
         return
+
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        self.wrapper.update_maintenance_mode(properties=properties, sites=sites)

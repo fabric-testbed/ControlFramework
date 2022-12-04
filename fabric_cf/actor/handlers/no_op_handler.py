@@ -63,7 +63,11 @@ class NoOpHandler(HandlerBase):
         if sliver.attached_components_info is not None:
             for component in sliver.attached_components_info.devices.values():
                 assert (component.label_allocations is not None)
-                assert (component.label_allocations.bdf is not None)
+                if component.get_type() != ComponentType.Storage:
+                    assert (component.label_allocations.bdf is not None)
+                else:
+                    assert (component.label_allocations.local_name is not None)
+                    component.label_allocations.device_name = '/dev/vdb'
         sliver.label_allocations.instance = 'instance_001'
         sliver.management_ip = '1.2.3.4'
 

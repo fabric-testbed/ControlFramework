@@ -27,13 +27,14 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict
 
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.apis.abc_timer_queue import ABCTimerQueue
 from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
 
 from fabric_cf.actor.core.apis.abc_tick import ABCTick
+from fabric_cf.actor.core.container.maintenance import Site
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
@@ -717,4 +718,14 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
             did: delegation id
         Raises:
             Exception if an error occurs or when trying to remove a delegation that is neither failed or closed.
+        """
+
+    @abstractmethod
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        """
+        Update Maintenance mode
+        @param properties properties
+        @param sites sites
+
+        @raises Exception in case of failure
         """

@@ -30,9 +30,11 @@ from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
 from typing import List
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
 
@@ -205,9 +207,6 @@ class OrchestratorHandler:
         :returns List of reservations created for the Slice on success
         """
         start = time.time()
-        if self.globals.is_maintenance_mode_on() and not self.globals.is_maint_project(token=token):
-            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
-
         slice_id = None
         controller = None
         new_slice_object = None
@@ -289,8 +288,14 @@ class OrchestratorHandler:
             new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
-            # Add Reservations to relational database;
             computed_reservations = new_slice_object.create(slice_graph=asm_graph)
+
+            # Check if Testbed in Maintenance or Site in Maintenance
+            self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
+
+            # Add Reservations to relational database;
+            new_slice_object.add_reservations()
+
             self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
 
             # Enqueue the slice on the demand thread
@@ -394,9 +399,6 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
-        if self.globals.is_maintenance_mode_on() and not self.globals.is_maint_project(token=token):
-            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
-
         asm_graph = None
         topology = None
         try:
@@ -439,7 +441,14 @@ class OrchestratorHandler:
             slice_object = OrchestratorSliceWrapper(controller=controller, broker=broker,
                                                     slice_obj=slice_obj, logger=self.logger)
 
+            # Compute the reservations
             computed_reservations = slice_object.modify(new_slice_graph=asm_graph)
+
+            # Check if Test Bed or site is in maintenance
+            self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
+
+            # Add any new reservations to the database
+            slice_object.add_reservations()
 
             FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
 
@@ -612,9 +621,6 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :return:
         """
-        if self.globals.is_maintenance_mode_on() and not self.globals.is_maint_project(token=token):
-            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
-
         failed_to_extend_rid_list = []
         try:
             controller = self.controller_state.get_management_actor()
@@ -649,7 +655,8 @@ class OrchestratorHandler:
 
             self.logger.debug(f"There are {len(reservations)} reservations in the slice# {slice_id}")
 
-            self.__authorize_request(id_token=token, action_id=ActionId.renew, lease_end_time=new_end_time)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.renew, lease_end_time=new_end_time)
+            self.check_maintenance_mode(token=fabric_token, reservations=reservations)
             for r in reservations:
                 res_state = ReservationStates(r.get_state())
                 if res_state == ReservationStates.Closed or res_state == ReservationStates.Failed or \
@@ -722,3 +729,27 @@ class OrchestratorHandler:
         else:
             return GraphFormat.GRAPHML
 
+    def check_maintenance_mode(self, *, token: FabricToken, reservations: List[ReservationMng] = None):
+        controller = self.controller_state.get_management_actor()
+        self.logger.debug(f"check_maintenance_mode invoked for Controller: {controller}")
+
+        project, tags = token.get_project_and_tags()
+
+        if not controller.is_slice_provisioning_allowed(project=project, email=token.get_email()):
+            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR,
+                                        http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
+
+        if reservations is not None:
+            for r in reservations:
+                sliver = r.get_sliver()
+                if not isinstance(sliver, NetworkServiceSliver):
+                    worker = None
+                    if sliver.get_labels() is not None and sliver.get_labels().instance_parent is not None:
+                        worker = sliver.get_labels().instance_parent
+                    status, message = controller.is_sliver_provisioning_allowed(project=project,
+                                                                                site=sliver.get_site(),
+                                                                                email=token.get_email(),
+                                                                                worker=worker)
+                    if not status:
+                        raise OrchestratorException(message=message,
+                                                    http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)

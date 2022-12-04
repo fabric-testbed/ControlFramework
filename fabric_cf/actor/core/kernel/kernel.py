@@ -26,7 +26,7 @@
 import threading
 import time
 import traceback
-from typing import List
+from typing import List, Dict
 
 from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
@@ -48,6 +48,7 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine
 from fabric_cf.actor.core.kernel.slice_table import SliceTable
+from fabric_cf.actor.core.container.maintenance import Site, MaintenanceState, Maintenance
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
@@ -1428,11 +1429,7 @@ class Kernel:
         @param reservation reservation
         @param rpc rpc
         """
-        try:
-            reservation.lock()
-            reservation.handle_failed_rpc(failed=rpc)
-        finally:
-            reservation.unlock()
+        reservation.handle_failed_rpc(failed=rpc)
 
     def validate_delegation(self, *, delegation: ABCDelegation = None, did: str = None):
         """
@@ -1462,3 +1459,7 @@ class Kernel:
             return local
 
         return None
+
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        Maintenance.update_maintenance_mode(database=self.plugin.get_database(),
+                                            properties=properties, sites=sites)

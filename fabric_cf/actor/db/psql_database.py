@@ -34,7 +34,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.db import Base, Clients, ConfigMappings, Proxies, Units, Reservations, Slices, ManagerObjects, \
-    Miscellaneous, Actors, Delegations
+    Miscellaneous, Actors, Delegations, Sites
 
 
 @contextmanager
@@ -236,6 +236,34 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 session.add(msc_obj)
 
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def update_miscellaneous(self, *, name: str, properties: dict):
+        """
+        Add Miscellaneous entries
+        @param name name
+        @param properties properties
+
+        """
+        try:
+            with session_scope(self.db_engine) as session:
+                msc_obj = session.query(Miscellaneous).filter(Miscellaneous.msc_path == name).first()
+                if msc_obj is not None:
+                    msc_obj.properties = properties
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def remove_miscellaneous(self, *, name: str):
+        """
+        Remove Miscellaneous entries
+        @param name name
+        """
+        try:
+            with session_scope(self.db_engine) as session:
+                session.query(Miscellaneous).filter(Miscellaneous.msc_path == name).delete()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
@@ -580,7 +608,7 @@ class PsqlDatabase:
     def add_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                         rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
                         lease_end: datetime = None, rsv_graph_node_id: str = None, oidc_claim_sub: str = None,
-                        email: str = None, project_id: str = None):
+                        email: str = None, project_id: str = None, site: str = None, rsv_type: str = None):
         """
         Add a reservation
         @param slc_guid slice guid
@@ -596,6 +624,8 @@ class PsqlDatabase:
         @param oidc_claim_sub OIDC Sub claim
         @param email User email
         @param project_id Project id
+        @param site site
+        @param rsv_type reservation type
         """
         try:
             slc_id = self.get_slc_id_by_slice_id(slice_id=slc_guid)
@@ -603,7 +633,7 @@ class PsqlDatabase:
                                    rsv_state=rsv_state, rsv_pending=rsv_pending, rsv_joining=rsv_joining,
                                    lease_start=lease_start, lease_end=lease_end,
                                    properties=properties, oidc_claim_sub=oidc_claim_sub, email=email,
-                                   project_id=project_id)
+                                   project_id=project_id, site=site, rsv_type=rsv_type)
             if rsv_graph_node_id is not None:
                 rsv_obj.rsv_graph_node_id = rsv_graph_node_id
             with session_scope(self.db_engine) as session:
@@ -614,7 +644,8 @@ class PsqlDatabase:
 
     def update_reservation(self, *, slc_guid: str, rsv_resid: str, rsv_category: int, rsv_state: int,
                            rsv_pending: int, rsv_joining: int, properties, lease_start: datetime = None,
-                           lease_end: datetime = None, rsv_graph_node_id: str = None):
+                           lease_end: datetime = None, rsv_graph_node_id: str = None, site: str = None,
+                           rsv_type: str = None):
         """
         Update a reservation
         @param slc_guid slice guid
@@ -627,6 +658,8 @@ class PsqlDatabase:
         @param lease_start Lease start time
         @param lease_end Lease end time
         @param rsv_graph_node_id graph id
+        @param site site
+        @param rsv_type reservation type
         """
         try:
             slc_id = self.get_slc_id_by_slice_id(slice_id=slc_guid)
@@ -641,8 +674,12 @@ class PsqlDatabase:
                     rsv_obj.properties = properties
                     rsv_obj.lease_end = lease_end
                     rsv_obj.lease_start = lease_start
+                    if site is not None:
+                        rsv_obj.site = site
                     if rsv_graph_node_id is not None:
                         rsv_obj.rsv_graph_node_id = rsv_graph_node_id
+                    if rsv_type is not None:
+                        rsv_obj.rsv_type = rsv_type
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", rsv_resid))
         except Exception as e:
@@ -677,7 +714,8 @@ class PsqlDatabase:
         return rsv_obj
 
     def create_reservation_filter(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
-                                  email: str = None, oidc_sub: str = None, rid: str = None) -> dict:
+                                  email: str = None, oidc_sub: str = None, rid: str = None, site: str = None,
+                                  rsv_type: str = None) -> dict:
 
         filter_dict = {}
         if slice_id is not None:
@@ -693,11 +731,15 @@ class PsqlDatabase:
             filter_dict['oidc_claim_sub'] = oidc_sub
         if rid is not None:
             filter_dict['rsv_resid'] = rid
+        if site is not None:
+            filter_dict['site'] = site
+        if rsv_type is not None:
+            filter_dict['rsv_type'] = rsv_type
         return filter_dict
 
     def get_reservations(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: str = None, state: list[int] = None,
-                         category: list[int] = None) -> list:
+                         category: list[int] = None, site: str = None, rsv_type: str = None) -> list:
         """
         Get Reservations for an actor
         @param slice_id slice id
@@ -708,6 +750,8 @@ class PsqlDatabase:
         @param rid reservation id
         @param state reservation state
         @param category reservation category
+        @param site site name
+        @param rsv_type rsv_type
 
         @return list of reservations
         """
@@ -715,7 +759,7 @@ class PsqlDatabase:
         try:
             filter_dict = self.create_reservation_filter(slice_id=slice_id, graph_node_id=graph_node_id,
                                                          project_id=project_id, email=email, oidc_sub=oidc_sub,
-                                                         rid=rid)
+                                                         rid=rid, site=site, rsv_type=rsv_type)
             with session_scope(self.db_engine) as session:
                 rows = session.query(Reservations).filter_by(**filter_dict)
 
@@ -1136,25 +1180,26 @@ class PsqlDatabase:
             raise e
         return result
 
-    def add_delegation(self, *, slice_id: str, dlg_graph_id: str, dlg_state: int, properties):
+    def add_delegation(self, *, slice_id: str, dlg_graph_id: str, dlg_state: int, properties, site: str = None):
         """
         Add delegation
         @param slice_id slice id
         @param dlg_graph_id graph id
         @param dlg_state state
         @param properties properties
+        @param site site
         """
         try:
             slc_id = self.get_slc_id_by_slice_id(slice_id=slice_id)
             dlg_obj = Delegations(dlg_slc_id=slc_id, dlg_graph_id=dlg_graph_id,
-                                  dlg_state=dlg_state, properties=properties)
+                                  dlg_state=dlg_state, properties=properties, site=site)
             with session_scope(self.db_engine) as session:
                 session.add(dlg_obj)
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
 
-    def update_delegation(self, *, dlg_graph_id: str, dlg_state: int, properties):
+    def update_delegation(self, *, dlg_graph_id: str, dlg_state: int, properties, site: str = None):
         """
         Update delegation
         @param dlg_graph_id graph id
@@ -1167,6 +1212,8 @@ class PsqlDatabase:
                 if dlg_obj is not None:
                     dlg_obj.dlg_state = dlg_state
                     dlg_obj.properties = properties
+                    if site is not None:
+                        dlg_obj.site = site
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Delegation", dlg_graph_id))
         except Exception as e:
@@ -1249,6 +1296,96 @@ class PsqlDatabase:
                     result = self.generate_delegation_dict_from_row(dlg_obj)
                 else:
                     raise DatabaseException(self.OBJECT_NOT_FOUND.format("Delegation", dlg_graph_id))
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def add_site(self, *, site_name: str, state: int, properties):
+        """
+        Add a site
+        @param site_name Site Name
+        @param state state
+        @param properties pickled instance
+        """
+        try:
+            site_obj = Sites(name=site_name, state=state, properties=properties)
+            with session_scope(self.db_engine) as session:
+                session.add(site_obj)
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def update_site(self, *, site_name: str, state: int, properties):
+        """
+        Update a site
+        @param site_name Site Name
+        @param state state
+        @param properties pickled instance
+        """
+        try:
+            with session_scope(self.db_engine) as session:
+                site_obj = session.query(Sites).filter(Sites.name == site_name).first()
+                if site_obj is not None:
+                    site_obj.properties = properties
+                    site_obj.state = state
+                else:
+                    raise DatabaseException(self.OBJECT_NOT_FOUND.format("Sites", site_name))
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    def remove_site(self, *, site_name: str):
+        """
+        Remove a proxy
+        @param site_name site_name
+        """
+        try:
+            with session_scope(self.db_engine) as session:
+                session.query(Sites).filter(Sites.name == site_name).delete()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+
+    @staticmethod
+    def generate_site_dict_from_row(row) -> dict:
+        """
+        Generate dictionary representing a site row read from database
+        """
+        if row is None:
+            return None
+
+        site_obj = {'name': row.name, 'properties': row.properties}
+
+        return site_obj
+
+    def get_sites(self) -> list:
+        """
+        Get Sites
+=        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Sites).all():
+                    site_obj = self.generate_site_dict_from_row(row)
+                    result.append(site_obj.copy())
+                    site_obj.clear()
+        except Exception as e:
+            self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
+            raise e
+        return result
+
+    def get_site(self, *, site_name: str) -> list:
+        """
+        Get Sites
+=        """
+        result = []
+        try:
+            with session_scope(self.db_engine) as session:
+                for row in session.query(Sites).filter(Sites.name == site_name).all():
+                    site_obj = self.generate_site_dict_from_row(row)
+                    result.append(site_obj.copy())
+                    site_obj.clear()
         except Exception as e:
             self.logger.error(Constants.EXCEPTION_OCCURRED.format(e))
             raise e
