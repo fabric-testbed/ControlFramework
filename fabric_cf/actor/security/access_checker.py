@@ -30,6 +30,7 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.user.topology import ExperimentTopology
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.security.fabric_token import FabricToken
 from fabric_cf.actor.security.pdp_auth import ActionId, ResourceType, PdpAuth
 
@@ -62,10 +63,12 @@ class AccessChecker:
         fabric_token = FabricToken(oauth_config=oauth_config, jwt_validator=jwt_validator, logger=logger, token=token)
         fabric_token.validate()
 
-        project, tags = fabric_token.get_project_and_tags()
+        projects = fabric_token.get_projects()
 
-        AccessChecker.check_pdp_access(action_id=action_id, email=fabric_token.get_email(), project=project,
-                                       tags=tags, resource=resource, lease_end_time=lease_end_time, logger=logger)
+        for p in projects:
+            AccessChecker.check_pdp_access(action_id=action_id, email=fabric_token.get_email(),
+                                           project=p.get(Constants.UUID), tags=p.get(Constants.TAGS),
+                                           resource=resource, lease_end_time=lease_end_time, logger=logger)
 
         return fabric_token
 

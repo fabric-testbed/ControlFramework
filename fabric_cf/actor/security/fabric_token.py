@@ -104,16 +104,19 @@ class FabricToken:
         """
         return self.get_decoded_token_value(Constants.CLAIMS_EMAIL)
 
-    def get_project_and_tags(self) -> Tuple[str or None, List[str] or None]:
+    def get_projects(self) -> list or None:
         """
         Get projects
         @return projects
         """
-        project = self.get_decoded_token_value(Constants.CLAIMS_PROJECT)
-        if project is None:
-            return None, None
-
-        return project[Constants.UUID], project[Constants.TAGS]
+        return self.get_decoded_token_value(Constants.CLAIMS_PROJECTS)
 
     def __str__(self):
         return f"Decoded Token: {self.decoded_token}"
+
+    def get_first_project(self) -> Tuple[str or None, str or None]:
+        projects = self.get_projects()
+        if projects is None or len(projects) == 0:
+            return None, None
+
+        return projects[0].get(Constants.UUID), projects[0].get(Constants.TAGS)
