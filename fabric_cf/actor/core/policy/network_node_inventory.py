@@ -269,6 +269,8 @@ class NetworkNodeInventory(InventoryForType):
 
         node_map = tuple([graph_id, available_component.node_id])
         requested_component.set_node_map(node_map=node_map)
+        if requested_component.labels is None:
+            requested_component.labels = Labels.update(lab=requested_component.get_label_allocations())
 
         return requested_component
 
