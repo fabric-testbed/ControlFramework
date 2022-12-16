@@ -253,7 +253,7 @@ class Constants:
 
     CLAIMS_SUB = "sub"
     CLAIMS_EMAIL = "email"
-    CLAIMS_PROJECT = "project"
+    CLAIMS_PROJECTS = "projects"
     UUID = "uuid"
     TAGS = "tags"
     PROJECT_ID = "project_id"
