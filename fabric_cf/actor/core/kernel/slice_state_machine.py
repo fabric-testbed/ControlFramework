@@ -134,6 +134,7 @@ class SliceCommand(Enum):
     def __str__(self):
         return self.name
 
+
 class SliceOperation:
     def __init__(self, command: SliceCommand, *valid_from_states):
         self.command = command

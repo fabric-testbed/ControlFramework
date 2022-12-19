@@ -33,6 +33,7 @@ from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservatio
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.common.event_logger import EventLogger
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException, \
     KernelException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
@@ -46,14 +47,16 @@ from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
-from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, SliceState
 from fabric_cf.actor.core.kernel.slice_table import SliceTable
-from fabric_cf.actor.core.container.maintenance import Site, MaintenanceState, Maintenance
+from fabric_cf.actor.core.container.maintenance import Site, Maintenance
+from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
+from fabric_cf.actor.security.pdp_auth import ActionId
 
 
 class Kernel:
@@ -576,6 +579,9 @@ class Kernel:
             state_changed, slice_state = slice_obj.transition_slice(operation=SliceStateMachine.REEVALUATE)
             if state_changed:
                 slice_obj.set_dirty()
+                if slice_state == SliceState.Closing:
+                    slice_avro = Translate.translate_slice_to_avro(slice_obj=slice_obj)
+                    EventLogger.log_slice_event(logger=self.logger, slice_object=slice_avro, action=ActionId.delete)
             self.plugin.get_database().update_slice(slice_object=slice_obj)
         except Exception as e:
             self.logger.error(traceback.format_exc())
