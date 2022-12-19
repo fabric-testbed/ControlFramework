@@ -265,7 +265,7 @@ class OrchestratorHandler:
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
             auth.guid = self.controller_state.get_management_actor().get_guid()
-            auth.oidc_sub_claim = fabric_token.get_subject()
+            auth.oidc_sub_claim = fabric_token.get_uuid()
             auth.email = fabric_token.get_email()
             slice_obj.set_owner(auth)
             slice_obj.set_project_id(project)
@@ -304,6 +304,8 @@ class OrchestratorHandler:
             create_ts = time.time()
             self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
             self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
+            self.log_event(slice_object=slice_obj, action=ActionId.create, sites=new_slice_object.sites,
+                           components=new_slice_object.components, facilities=new_slice_object.facilities)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -467,6 +469,8 @@ class OrchestratorHandler:
             # Helps improve the create response time
             self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
 
+            self.log_event(slice_object=slice_obj, action=ActionId.modify, sites=slice_object.sites,
+                           components=slice_object.components, facilities=slice_object.facilities)
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if asm_graph is not None:
@@ -517,7 +521,7 @@ class OrchestratorHandler:
 
             self.__authorize_request(id_token=token, action_id=ActionId.delete)
             controller.close_reservations(slice_id=slice_guid)
-
+            self.log_event(slice_object=slice_object, action=ActionId.delete)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing delete_slice e: {e}")
@@ -754,3 +758,29 @@ class OrchestratorHandler:
                     if not status:
                         raise OrchestratorException(message=message,
                                                     http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
+
+    def log_event(self, slice_object: SliceAvro, action: ActionId, sites: dict = None,
+                  components: dict = None, facilities: dict = None):
+        log_message = f"Slice event slc:{slice_object.get_slice_name()} {action} by " \
+                      f"prj:{slice_object.get_project_id()} " \
+                      f"usr:{slice_object.get_owner().get_oidc_sub_claim()}:{slice_object.get_owner().get_email()}"
+
+        if action != ActionId.delete:
+            log_message += " with"
+
+        if facilities is not None and len(facilities) > 0:
+            log_message += " facilities "
+            for f, count in facilities.items():
+                log_message += f"{f} ({count}),"
+
+        if sites is not None and len(sites) > 0:
+            log_message += " sites "
+            for s, count in sites.items():
+                log_message += f"{s} ({count}),"
+
+        if components is not None and len(components) > 0:
+            log_message += " components "
+            for c, count in components.items():
+                log_message += f"{c} ({count}),"
+
+        self.logger.info(log_message)
