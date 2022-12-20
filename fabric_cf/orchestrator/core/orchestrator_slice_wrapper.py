@@ -75,9 +75,6 @@ class OrchestratorSliceWrapper:
         self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
                              ServiceType.FABNetv4, ServiceType.PortMirror]
         self.l3_ns = [str(ServiceType.FABNetv6), str(ServiceType.FABNetv4)]
-        self.sites = {}
-        self.facilities = {}
-        self.components = {}
 
     def lock(self):
         """
@@ -336,23 +333,6 @@ class OrchestratorSliceWrapper:
         reservation = self.reservation_converter.generate_reservation(sliver=sliver,
                                                                       slice_id=self.slice_obj.get_slice_id(),
                                                                       end_time=self.slice_obj.get_lease_end())
-
-        if sliver.get_type() == NodeType.Facility:
-            if sliver.get_name() not in self.facilities:
-                self.facilities = {sliver.get_name(): 1}
-            else:
-                self.facilities[sliver.get_name()] += 1
-        else:
-            if sliver.get_site() not in self.sites:
-                self.sites = {sliver.get_site(): 1}
-            else:
-                self.sites[sliver.get_site()] += 1
-        if sliver.attached_components_info is not None:
-            for c in sliver.attached_components_info.devices.values():
-                if str(c.get_type()) not in self.components:
-                    self.components[str(c.get_type())] = 1
-                else:
-                    self.components[str(c.get_type())] += 1
         return reservation
 
     def __build_network_node_reservations(self, *, slice_graph: ABCASMPropertyGraph) \

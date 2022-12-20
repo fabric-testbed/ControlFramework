@@ -60,11 +60,9 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def prepare(self, *, callback_topic: str):
         self.callback_topic = callback_topic
 
-    def toggle_maintenance_mode(self, actor_guid: str, callback_topic: str, mode: int, sites: List[SiteAvro] = None,
+    def toggle_maintenance_mode(self, actor_guid: str, callback_topic: str, sites: List[SiteAvro] = None,
                                 projects: str = None, users: str = None):
         props = {}
-        if mode is not None:
-            props = {Constants.MODE: str(mode)}
         if projects is not None:
             props[Constants.PROJECT_ID] = projects
         if users is not None:

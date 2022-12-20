@@ -285,7 +285,7 @@ class Constants:
     LEASE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
     DEFAULT_LEASE_IN_HOURS = 24
 
-    STATE_ALL = "ALL"
+    ALL = "ALL"
 
     # Default offset used to pick a VLAN from the range 1-4096
     DEFAULT_VLAN_OFFSET = 10

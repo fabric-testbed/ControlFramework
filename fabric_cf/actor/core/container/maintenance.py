@@ -24,59 +24,31 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 from datetime import datetime, timezone
-from enum import Enum
 from typing import List, Dict, Tuple
+
+from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceState
 
 from fabric_cf.actor.core.apis.abc_database import ABCDatabase
 from fabric_cf.actor.core.common.constants import Constants
 
 
-class MaintenanceState(Enum):
-    PreMaint = 1
-    Maint = 2
-    NoMaint = 3
-
-    def __repr__(self):
-        return self.name
-
-    def __str__(self):
-        return self.name
-
-    @staticmethod
-    def translate_string_to_state(*, state_string: str):
-        if state_string.lower() == MaintenanceState.PreMaint.name.lower():
-            return MaintenanceState.PreMaint
-        elif state_string.lower() == MaintenanceState.Maint.name.lower():
-            return MaintenanceState.Maint
-        elif state_string.lower() == MaintenanceState.NoMaint.name.lower():
-            return MaintenanceState.NoMaint
-        else:
-            raise Exception("Invalid state!")
-
-
 class Site:
-    def __init__(self, *, name: str, state: MaintenanceState):
+    def __init__(self, *, name: str, maint_info: MaintenanceInfo):
         """
         Represents a Site in maintenance
         """
-        # Site Name
         self.name = name
-        # Specific workers marked in maintenance
-        self.workers = []
-        # Maintenance State
-        self.state = state
+        self.maintenance_info = maint_info
+        if self.maintenance_info is not None:
+            self.maintenance_info.finalize()
         # Contains allowed projects/users
         self.properties = {}
-        # Deadline; only used for the PreMaint State
-        self.deadline = None
 
-    def get_deadline(self):
-        return self.deadline
+    def get_name(self) -> str:
+        return self.name
 
-    def get_deadline_str(self) -> str or None:
-        if self.deadline is None:
-            return None
-        return datetime.strftime(self.deadline, Constants.LEASE_TIME_FORMAT)
+    def get_maintenance_info(self) -> MaintenanceInfo:
+        return self.maintenance_info
 
     def set_properties(self, *, properties: dict):
         self.properties = properties
@@ -84,92 +56,60 @@ class Site:
     def get_properties(self) -> dict:
         return self.properties
 
-    def get_name(self) -> str:
-        return self.name
-
-    def get_state(self) -> MaintenanceState:
-        return self.state
-
-    def add_worker(self, *, worker: str):
-        """
-        Mark a specific worker in Maintenance mode; if the workers list is empty,
-        the whole site is considered in maintenance
-        """
-        if worker not in self.workers:
-            self.workers.append(worker)
-
-    def remove_worker(self, *, worker: str):
-        """
-        Remove a specific worker from Maintenance mode
-        """
-        if worker in self.workers:
-            self.workers.remove(worker)
-
-    def has_specific_workers(self) -> bool:
-        if self.workers is None or len(self.workers) == 0:
-            return False
-        return True
-
-    def get_workers(self) -> List[str]:
-        return self.workers
-
-    def get_workers_str(self) -> str:
-        if self.workers is not None and len(self.workers) > 0:
-            return ','.join(self.workers)
-        return ""
-
     def is_in_maintenance(self) -> bool:
-        if self.state is not None:
+        if self.maintenance_info is not None:
             now = datetime.now(timezone.utc)
-            if self.state == MaintenanceState.Maint or \
-                    (self.state == MaintenanceState.PreMaint and self.deadline <= now):
+            site_info = self.maintenance_info.get(self.name)
+            if site_info is not None and (site_info.state == MaintenanceState.Maint or
+                                         (site_info.state == MaintenanceState.PreMaint and site_info.deadline <= now)):
                 return True
         return False
 
-    def is_worker_in_maintenance(self, *, worker: str) -> bool:
-        if not self.is_in_maintenance():
-            return False
+    def get_state(self) -> MaintenanceState:
+        site_info = self.maintenance_info.get(self.name)
+        if site_info is not None:
+            return site_info.state
+        else:
+            self.maintenance_info.finalize()
+            for name, entry in self.maintenance_info.iter():
+                return entry.state
 
-        if len(self.workers) == 0:
+    def is_worker_in_maintenance(self, *, worker: str) -> bool:
+        # Whole site is in Maintenance
+        if self.is_in_maintenance():
             return True
 
-        if worker in self.workers:
+        # Check if the specific worker is in Maintenance
+        entry = self.maintenance_info.get(name=worker)
+        now = datetime.now(timezone.utc)
+
+        if entry is not None and (entry.state == MaintenanceState.Maint or
+                                  (entry.state == MaintenanceState.PreMaint and entry.deadline <= now)):
             return True
 
         return False
 
     def __str__(self):
-        return f"Name: {self.name} State: {self.state} Workers: {self.workers} Properties: {self.properties}"
+        return f"Name: {self.name} MaintInfo: {self.maintenance_info} Properties: {self.properties}"
 
 
 class Maintenance:
     @staticmethod
     def update_maintenance_mode(*, database: ABCDatabase, properties: Dict[str, str], sites: List[Site] = None):
-        if sites is not None:
-            for s in sites:
-                if properties is not None:
-                    s.set_properties(properties=properties)
+        for s in sites:
+            if properties is not None:
+                s.set_properties(properties=properties)
 
-                if s.get_state() == MaintenanceState.NoMaint:
-                    database.remove_site(site_name=s.get_name())
-                else:
-                    if database.get_site(site_name=s.get_name()) is not None:
-                        database.update_site(site=s)
-                    else:
-                        database.add_site(site=s)
-        else:
-            if database.get_maintenance_properties() is None:
-                database.add_maintenance_properties(properties=properties)
+            if database.get_site(site_name=s.get_name()) is not None:
+                database.update_site(site=s)
             else:
-                database.update_maintenance_properties(properties=properties)
+                database.add_site(site=s)
 
     @staticmethod
     def is_testbed_in_maintenance(*, database: ABCDatabase) -> Tuple[bool, Dict[str, str] or None]:
-        properties = database.get_maintenance_properties()
-        if properties is not None and properties.get(Constants.MODE) is not None:
-            maint_mode = MaintenanceState(int(properties.get(Constants.MODE)))
-            if maint_mode == MaintenanceState.Maint or maint_mode == MaintenanceState.PreMaint:
-                return True, properties
+        test_bed = database.get_site(site_name=Constants.ALL)
+        if test_bed is not None:
+            return test_bed.is_in_maintenance(), test_bed.get_properties()
 
         return False, None
 
@@ -196,8 +136,6 @@ class Maintenance:
         @return True if allowed; False otherwise
         """
         status, site = Maintenance.is_site_in_maintenance(database=database, site_name=site)
-        if not status:
-            return True, None
 
         projects = site.get_properties().get(Constants.PROJECT_ID)
         users = site.get_properties().get(Constants.USERS)
@@ -208,17 +146,13 @@ class Maintenance:
         if email is not None and users is not None and email in users:
             return True, None
 
-        message = f"Site {site.get_name()} in {site.get_state()}"
-        if worker is not None:
-            if not site.is_worker_in_maintenance(worker=worker):
-                return True, None
-            else:
-                message = f"Worker {worker} on {site.get_name()} in {site.get_state()}"
-        else:
-            if site.has_specific_workers():
-                return True, None
+        if status:
+            return False, f"Site {site.get_name()} in {site.get_state()}"
 
-        return False, message
+        if worker is not None and site.is_worker_in_maintenance(worker=worker):
+            return False, f"Worker {worker} on {site.get_name()} in {site.get_state()}"
+
+        return True, None
 
     @staticmethod
     def is_slice_provisioning_allowed(*, database: ABCDatabase, project: str, email: str) -> bool:

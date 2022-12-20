@@ -620,7 +620,7 @@ class ActorDatabase(ABCDatabase):
             self.lock.acquire()
             properties = pickle.dumps(site)
             self.db.add_site(site_name=site.get_name(), state=site.get_state().value, properties=properties)
-            self.logger.debug(f"Delegation {site.get_name()} added")
+            self.logger.debug(f"Site {site.get_name()} added")
         finally:
             if self.lock.locked():
                 self.lock.release()

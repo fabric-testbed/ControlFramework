@@ -306,8 +306,7 @@ class OrchestratorHandler:
             self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
             self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
             EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.create,
-                                        sites=new_slice_object.sites, components=new_slice_object.components,
-                                        facilities=new_slice_object.facilities)
+                                        topology=topology)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -437,6 +436,7 @@ class OrchestratorHandler:
 
             # Authorize the slice
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology)
             project, tags = fabric_token.get_first_project()
             broker = self.get_broker(controller=controller)
             if broker is None:
@@ -472,8 +472,7 @@ class OrchestratorHandler:
             self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
 
             EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.modify,
-                                        sites=slice_object.sites, components=slice_object.components,
-                                        facilities=slice_object.facilities)
+                                        topology=topology)
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if asm_graph is not None:

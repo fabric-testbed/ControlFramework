@@ -129,20 +129,14 @@ class Translate:
             return None
         result = SiteAvro()
         result.name = site.get_name()
-        result.state = site.get_state().value
-        result.workers = site.get_workers_str()
-        result.deadline = site.get_deadline_str()
+        result.maint_info = site.get_maintenance_info()
         return result
 
     @staticmethod
     def translate_site_from_avro(*, site_avro: SiteAvro) -> Site or None:
         if site_avro is None:
             return None
-        result = Site(name=site_avro.get_name(), state=MaintenanceState(site_avro.get_state()))
-        result.deadline = site_avro.get_deadline()
-        if site_avro.get_workers() is not None:
-            for w in site_avro.get_workers():
-                result.add_worker(worker=w)
+        result = Site(name=site_avro.get_name(), maint_info=site_avro.get_maint_info())
         return result
 
     @staticmethod
