@@ -64,6 +64,10 @@ class AggregatedBQMPlugin:
     def _remove_none_entries(d):
         return {k: v for (k, v) in d.items() if v}
 
+    def __site_maintenance_info(self, *, site_name: str):
+        site = self.actor.get_plugin().get_database().get_site(site_name=site_name)
+        return site.get_maintenance_info().copy()
+
     def __occupied_node_capacity(self, *, node_id: str) -> Tuple[Capacities,
                                                                  Dict[ComponentType, Dict[str, Capacities]]]:
         """
@@ -155,6 +159,7 @@ class AggregatedBQMPlugin:
             site_comps_by_type = defaultdict(dict)
             # occupied component capacities organized by [type][model] into lists (by server)
             site_allocated_comps_caps_by_type = defaultdict(dict)
+            site_sliver.maintenance_info = self.__site_maintenance_info(site_name=s)
 
             loc = None
             for sliver in ls:

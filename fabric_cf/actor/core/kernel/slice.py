@@ -29,8 +29,6 @@ from enum import Enum
 from typing import Dict, Tuple
 
 from fim.graph.abc_property_graph import ABCPropertyGraph
-from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import ReservationInfo
 
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
@@ -40,7 +38,6 @@ from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, S
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_type import ResourceType
-from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.security.auth_token import AuthToken
 
 

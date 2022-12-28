@@ -29,9 +29,14 @@ import threading
 from typing import TYPE_CHECKING
 
 from datetime import datetime, timezone
+
+from fim.slivers.capacities_labels import ReservationInfo
+
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin, ReservationCategory
+from fabric_cf.actor.core.common.event_logger import EventLogger
 from fabric_cf.actor.core.common.exceptions import ReservationException
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
+from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.util.reservation_state import ReservationState
 
 if TYPE_CHECKING:
@@ -605,6 +610,7 @@ class Reservation(ABCReservationMixin):
             self.logger.debug(f"Reservation #{self.rid} {prefix} transition: {self.get_state_name()} -> {state.name}, "
                               f"{self.get_pending_state_name()} -> {pending.name}")
 
+        change = self.state != state
         self.state = state
         self.last_pending_state = pending
         self.pending_state = pending
@@ -612,6 +618,21 @@ class Reservation(ABCReservationMixin):
         self.set_dirty()
         self.state_transition = True
         self.last_transition_time = datetime.now(timezone.utc)
+
+        if change:
+            sliver = None
+            if self.get_resources() is not None:
+                sliver = self.get_resources().get_sliver()
+            elif self.get_requested_resources() is not None:
+                sliver = self.get_requested_resources().get_sliver()
+            if sliver is not None:
+                if sliver.reservation_info is None:
+                    sliver.reservation_info = ReservationInfo()
+                sliver.reservation_info.reservation_id = str(self.get_reservation_id())
+                sliver.reservation_info.reservation_state = str(self.state)
+                EventLogger.log_sliver_event(logger=self.logger,
+                                             slice_object=Translate.translate_slice_to_avro(slice_obj=self.slice),
+                                             sliver=sliver)
 
     def update_lease(self, *, incoming: ABCReservationMixin, update_data):
         self.internal_error(err="abstract update_lease trap")

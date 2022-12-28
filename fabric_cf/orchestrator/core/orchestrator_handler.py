@@ -38,6 +38,7 @@ from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
 
+from fabric_cf.actor.core.common.event_logger import EventLogger
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -265,7 +266,7 @@ class OrchestratorHandler:
             auth = AuthAvro()
             auth.name = self.controller_state.get_management_actor().get_name()
             auth.guid = self.controller_state.get_management_actor().get_guid()
-            auth.oidc_sub_claim = fabric_token.get_subject()
+            auth.oidc_sub_claim = fabric_token.get_uuid()
             auth.email = fabric_token.get_email()
             slice_obj.set_owner(auth)
             slice_obj.set_project_id(project)
@@ -304,6 +305,8 @@ class OrchestratorHandler:
             create_ts = time.time()
             self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
             self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
+            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.create,
+                                        topology=topology)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -433,6 +436,7 @@ class OrchestratorHandler:
 
             # Authorize the slice
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology)
             project, tags = fabric_token.get_first_project()
             broker = self.get_broker(controller=controller)
             if broker is None:
@@ -467,6 +471,8 @@ class OrchestratorHandler:
             # Helps improve the create response time
             self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
 
+            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.modify,
+                                        topology=topology)
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if asm_graph is not None:
@@ -517,7 +523,6 @@ class OrchestratorHandler:
 
             self.__authorize_request(id_token=token, action_id=ActionId.delete)
             controller.close_reservations(slice_id=slice_guid)
-
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing delete_slice e: {e}")
@@ -684,6 +689,8 @@ class OrchestratorHandler:
 
             if len(failed_to_extend_rid_list) > 0:
                 raise OrchestratorException(f"Failed to extend reservation# {failed_to_extend_rid_list}")
+
+            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_object, action=ActionId.renew)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing renew e: {e}")

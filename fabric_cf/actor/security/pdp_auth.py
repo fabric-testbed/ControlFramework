@@ -80,6 +80,9 @@ class ActionId(Enum):
     relinquish = 16
     accept = 17
 
+    def __str__(self):
+        return self.name
+
 
 class PdpAuth:
     """

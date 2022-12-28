@@ -90,6 +90,9 @@ class FabricToken:
             self.validate()
         return self.decoded_token.get(key)
 
+    def get_uuid(self) -> str:
+        return self.get_decoded_token_value(Constants.UUID)
+
     def get_subject(self) -> str:
         """
         Get subject

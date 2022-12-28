@@ -191,7 +191,8 @@ class OrchestratorSliceWrapper:
                                         http_error_code=BAD_REQUEST)
 
     def __build_ns_sliver_reservation(self, *, slice_graph: ABCASMPropertyGraph, node_id: str,
-                                      node_res_mapping: Dict[str, str]) -> Tuple[LeaseReservationAvro or None, BaseSliver or None]:
+                                      node_res_mapping: Dict[str, str]) -> Tuple[LeaseReservationAvro or None,
+                                                                                 BaseSliver or None]:
         """
         Build Network Service Reservation
         @param slice_graph Slice graph
