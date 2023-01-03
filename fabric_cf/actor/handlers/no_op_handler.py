@@ -96,13 +96,13 @@ class NoOpHandler(HandlerBase):
             if sliver.get_type() == ServiceType.L2PTP:
                 assert (interface.labels.vlan is not None)
 
-            if sliver.get_type() == ServiceType.FABNetv4:
+            if sliver.get_type() == ServiceType.FABNetv4 or sliver.get_type() == ServiceType.FABNetv4Ext:
                 assert (sliver.get_gateway() is not None)
                 assert (sliver.get_gateway().lab.ipv4_subnet is not None)
                 assert (sliver.get_gateway().lab.ipv4 is not None)
                 assert (interface.labels.vlan is not None)
 
-            if sliver.get_type() == ServiceType.FABNetv6:
+            if sliver.get_type() == ServiceType.FABNetv6 or sliver.get_type() == ServiceType.FABNetv6Ext:
                 assert (sliver.get_gateway() is not None)
                 assert (sliver.get_gateway().lab.ipv6_subnet is not None)
                 assert (sliver.get_gateway().lab.ipv6 is not None)

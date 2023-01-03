@@ -531,7 +531,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
     def can_ticket(self, extend: bool = False) -> bool:
         supported_ns = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
-                        str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror)]
+                        str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror),
+                        str(ServiceType.FABNetv4Ext), str(ServiceType.FABNetv6Ext)]
 
         ret_val = False
         if self.get_type() is not None:

@@ -199,7 +199,7 @@ class NetworkServiceInventory(InventoryForType):
         if requested_ns.gateway is None:
             return requested_ns
 
-        if requested_ns.get_type() == ServiceType.FABNetv4:
+        if requested_ns.get_type() == ServiceType.FABNetv4 or requested_ns.get_type() == ServiceType.FABNetv4Ext:
             start_ip_str = requested_ns.gateway.lab.ipv4
         else:
             start_ip_str = requested_ns.gateway.lab.ipv6
@@ -208,7 +208,7 @@ class NetworkServiceInventory(InventoryForType):
         start_ip += 1
 
         for ifs in requested_ns.interface_info.interfaces.values():
-            if requested_ns.get_type() == ServiceType.FABNetv4:
+            if requested_ns.get_type() == ServiceType.FABNetv4 or requested_ns.get_type() == ServiceType.FABNetv4Ext:
                 ifs.labels.ipv4 = str(start_ip)
                 ifs.label_allocations.ipv4 = str(start_ip)
 
@@ -288,7 +288,9 @@ class NetworkServiceInventory(InventoryForType):
         Return the sliver updated with the subnet
         """
         try:
-            if requested_ns.get_type() != ServiceType.FABNetv4 and requested_ns.get_type() != ServiceType.FABNetv6:
+            if requested_ns.get_type() != ServiceType.FABNetv4 and requested_ns.get_type() != ServiceType.FABNetv6 \
+                    and requested_ns.get_type() != ServiceType.FABNetv4Ext \
+                    and requested_ns.get_type() != ServiceType.FABNetv6Ext:
                 return requested_ns
 
             for ns in owner_switch.network_service_info.network_services.values():
@@ -300,11 +302,11 @@ class NetworkServiceInventory(InventoryForType):
 
                 subnet_list = None
                 # Get Subnet
-                if ns.get_type() == ServiceType.FABNetv6:
+                if ns.get_type() == ServiceType.FABNetv6 or ns.get_type() == ServiceType.FABNetv6Ext:
                     ip_network = IPv6Network(delegated_label.ipv6_subnet)
                     subnet_list = list(ip_network.subnets(new_prefix=64))
 
-                elif ns.get_type() == ServiceType.FABNetv4:
+                elif ns.get_type() == ServiceType.FABNetv4 or ns.get_type() == ServiceType.FABNetv4Ext:
                     ip_network = IPv4Network(delegated_label.ipv4_subnet)
                     subnet_list = list(ip_network.subnets(new_prefix=24))
 
@@ -333,7 +335,8 @@ class NetworkServiceInventory(InventoryForType):
                     if allocated_sliver.get_type() != requested_ns.get_type():
                         continue
 
-                    if allocated_sliver.get_type() == ServiceType.FABNetv4:
+                    if allocated_sliver.get_type() == ServiceType.FABNetv4 or \
+                            allocated_sliver.get_type() == ServiceType.FABNetv4Ext:
                         subnet_to_remove = IPv4Network(allocated_sliver.get_gateway().lab.ipv4_subnet)
                         subnet_list.remove(subnet_to_remove)
                         self.logger.debug(
@@ -341,7 +344,8 @@ class NetworkServiceInventory(InventoryForType):
                             f"{allocated_sliver.get_gateway().lab.ipv4_subnet}"
                             f" to res# {reservation.get_reservation_id()}")
 
-                    elif allocated_sliver.get_type() == ServiceType.FABNetv6:
+                    elif allocated_sliver.get_type() == ServiceType.FABNetv6 or \
+                            allocated_sliver.get_type() == ServiceType.FABNetv6Ext:
                         subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().lab.ipv6_subnet)
                         subnet_list.remove(subnet_to_remove)
                         self.logger.debug(
@@ -350,11 +354,11 @@ class NetworkServiceInventory(InventoryForType):
                             f" to res# {reservation.get_reservation_id()}")
 
                 gateway_labels = Labels()
-                if requested_ns.get_type() == ServiceType.FABNetv4:
+                if requested_ns.get_type() == ServiceType.FABNetv4 or requested_ns.get_type() == ServiceType.FABNetv4Ext:
                     gateway_labels.ipv4_subnet = subnet_list[0].with_prefixlen
                     gateway_labels.ipv4 = str(next(subnet_list[0].hosts()))
 
-                elif requested_ns.get_type() == ServiceType.FABNetv6:
+                elif requested_ns.get_type() == ServiceType.FABNetv6 or requested_ns.get_type() == ServiceType.FABNetv6Ext:
                     gateway_labels.ipv6_subnet = subnet_list[0].with_prefixlen
                     gateway_labels.ipv6 = str(next(subnet_list[0].hosts()))
 
