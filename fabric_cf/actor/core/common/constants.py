@@ -133,6 +133,7 @@ class Constants:
     PROPERTY_CONF_CONTROLLER_REST_PORT = "orchestrator.rest.port"
     PROPERTY_CONF_CONTROLLER_CREATE_WAIT_TIME = "orchestrator.create.wait.time"
     PROPERTY_CONF_RPC_REQUEST_TIMEOUT_SECONDS = "rpc.request.timeout.seconds"
+    PROPERTY_CONF_RPC_RETRIES = "rpc.retries"
 
     PROPERTY_SUBSTRATE_FILE = "substrate.file"
     PROPERTY_AGGREGATE_RESOURCE_MODEL = "AggregateResourceModel"

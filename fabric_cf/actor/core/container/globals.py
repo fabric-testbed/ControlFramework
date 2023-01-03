@@ -324,7 +324,8 @@ class Globals:
 
         from fabric_cf.actor.core.container.rpc_producer import RPCProducer
         producer = RPCProducer(producer_conf=conf, key_schema_location=key_schema_file,
-                               value_schema_location=value_schema_file, logger=self.get_logger(), actor=actor)
+                               value_schema_location=value_schema_file, logger=self.get_logger(),
+                               actor=actor, retries=self.config.get_rpc_retries())
         return producer
 
     def get_simple_kafka_producer(self):

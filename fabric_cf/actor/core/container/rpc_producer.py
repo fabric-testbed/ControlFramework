@@ -31,14 +31,16 @@ import time
 import threading
 import traceback
 
+from confluent_kafka import KafkaError
 from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fabric_mb.message_bus.producer import AvroProducerApi
 
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
-from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import KafkaServiceException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.failed_rpc_event import FailedRPCEvent
+from fabric_cf.actor.core.kernel.retry_rpc import RetryRPC
+from fabric_cf.actor.core.kernel.retry_rpc_event import RetryRPCEvent
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.rpc_exception import RPCException, RPCError
@@ -53,9 +55,9 @@ class RPCProducer(AvroProducerApi):
                          AbcMessageAvro.update_ticket: RPCRequestType.UpdateTicket}
 
     def __init__(self, *, producer_conf: dict, key_schema_location, value_schema_location: str, actor: ABCActorMixin,
-                 logger: logging.Logger = None):
+                 logger: logging.Logger = None, retries: int = 5):
         super(RPCProducer, self).__init__(producer_conf=producer_conf, key_schema_location=key_schema_location,
-                                          value_schema_location=value_schema_location, logger=logger)
+                                          value_schema_location=value_schema_location, logger=logger, retries=retries)
         self.actor = actor
         self.thread_lock = threading.Lock()
         self.thread = None
@@ -154,11 +156,20 @@ class RPCProducer(AvroProducerApi):
 
             exception = RPCException(message=err, error=RPCError.NetworkError)
 
+            if err.code() == KafkaError._MSG_TIMED_OUT and obj.attempts() < self.retry_attempts:
+                obj.increment_attempt()
+                self.logger.info(f"KAFKA: Message Delivery Retry Attempt [{obj.attempts()}] MsgId: [{obj.id}] "
+                                 f"Msg Name: [{obj.name}] Topic: [{msg.topic()}]")
+                retry = RetryRPC(avro_message=obj, kafka_topic=msg.topic())
+                self.actor.queue_event(incoming=RetryRPCEvent(actor=self.actor, rpc=retry))
+                return
+
             if obj.name is not None and obj.name in self.AVRO_RPC_TYPE_MAP and obj.reservation is not None:
                 # Temporary hack
                 if RPCProducer.__is_update_lease_to_broker(topic=msg.topic(), obj=obj):
                     self.logger.debug("Ignoring failure of UpdateLease to broker")
                     return
+                obj.increment_attempt()
                 # Send FailedRPC to the Actor
                 failed = FailedRPC(e=exception, request_type=self.AVRO_RPC_TYPE_MAP[obj.name],
                                    rid=ID(uid=obj.reservation.reservation_id))
