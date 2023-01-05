@@ -33,7 +33,7 @@ from fabric_cf.actor.boot.inventory.aggregate_resource_model_creator import Aggr
 from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.common.constants import Constants
-from fabric_cf.actor.core.common.resource_config import ResourceConfig
+from fabric_cf.actor.core.common.resource_config import ResourceConfig, ResourceConfigBuilder
 from fabric_cf.actor.core.container.remote_actor_cache import RemoteActorCacheSingleton, RemoteActorCache
 from fabric_cf.actor.core.core.authority import Authority
 from fabric_cf.actor.core.core.broker import Broker
@@ -119,10 +119,10 @@ class ConfigurationProcessor:
         @raises ConfigurationException in case of error
         """
         try:
-            if self.config.get_actor() is not None:
-                self.logger.debug(f"Creating Actor: name={self.config.get_actor().get_name()}")
-                self.actor = self.do_common(actor_config=self.config.get_actor())
-                self.do_specific(actor=self.actor, config=self.config.get_actor())
+            if self.config.get_actor_config() is not None:
+                self.logger.debug(f"Creating Actor: name={self.config.get_actor_config().get_name()}")
+                self.actor = self.do_common(actor_config=self.config.get_actor_config())
+                self.do_specific(actor=self.actor, config=self.config.get_actor_config())
         except Exception as e:
             raise ConfigurationException(f"Unexpected error while creating actor {e}")
 
@@ -233,7 +233,6 @@ class ConfigurationProcessor:
         @param config actor config
         @raises ConfigurationException in case of error
         """
-        policy = None
         if config.get_policy() is not None:
             policy = self.make_policy(policy=config.get_policy())
             properties = config.get_policy().get_properties()
@@ -254,7 +253,7 @@ class ConfigurationProcessor:
                     raise ConfigurationException("No type specified for control")
 
                 for t in i.get_type():
-                    policy.inventory.add_inventory_by_type(rtype=ResourceType(resource_type=t), inventory=inventory)
+                    policy.register_inventory(resource_type=ResourceType(resource_type=t), inventory=inventory)
             except Exception as e:
                 self.logger.error(traceback.format_exc())
                 raise ConfigurationException("Could not create control {}".format(e))
@@ -312,34 +311,7 @@ class ConfigurationProcessor:
         @raises ConfigurationException in case of error
         """
         if isinstance(actor, ABCAuthority):
-            self.resources = self.read_resource_config(config=config)
-
-    @staticmethod
-    def read_resource_config(*, config: ActorConfig) -> Dict[ResourceType, ResourceConfig]:
-        """
-        Read resource config and create ARM and inventory slices
-        @param config actor config
-        @raises ConfigurationException in case of error
-        """
-        result = {}
-        resources = config.get_resources()
-        if resources is None or len(resources) == 0:
-            return result
-
-        for r in resources:
-            for resource_type in r.get_type():
-                descriptor = ResourceConfig()
-                descriptor.set_resource_type(rtype=ResourceType(resource_type=resource_type))
-                descriptor.set_resource_type_label(rtype_label=r.get_label())
-
-                handler = r.get_handler()
-                if handler is not None:
-                    descriptor.set_handler_class(handler_class=handler.get_class_name())
-                    descriptor.set_handler_module(module=handler.get_module_name())
-                    descriptor.set_handler_properties(properties=handler.get_properties())
-
-                result[descriptor.get_resource_type()] = descriptor
-        return result
+            self.resources = ResourceConfigBuilder.build_resource_config(config=config)
 
     def initialize_actor(self):
         """
@@ -385,7 +357,7 @@ class ConfigurationProcessor:
             creator = AggregateResourceModelCreator(substrate=self.actor.get_plugin(), resources=self.resources,
                                                     neo4j_config=self.config.get_global_config().get_neo4j_config())
             self.aggregate_delegation_models = creator.process_neo4j(actor_name=self.actor.get_name(),
-                                                                     substrate_file=self.config.get_actor().
+                                                                     substrate_file=self.config.get_actor_config().
                                                                      get_substrate_file())
             self.actor.set_aggregate_resource_model(aggregate_resource_model=creator.get_arm_graph())
 
@@ -501,11 +473,11 @@ class ConfigurationProcessor:
                 "Invalid peer type: broker can only talk to broker, orchestrator or site authority")
 
         container = ManagementUtils.connect(caller=self.actor.get_identity())
-        to_mgmt_actor = container.get_actor(guid=to_guid)
+        to_mgmt_actor = container.get_actor_config(guid=to_guid)
         self.logger.debug(f"to_mgmt_actor={to_mgmt_actor} to_guid={to_guid}")
         if to_mgmt_actor is None and container.get_last_error() is not None:
             self.logger.error(container.get_last_error())
-        from_mgmt_actor = container.get_actor(guid=from_guid)
+        from_mgmt_actor = container.get_actor_config(guid=from_guid)
         self.logger.debug(f"from_mgmt_actor={from_mgmt_actor} from_guid={from_guid}")
         if from_mgmt_actor is None and container.get_last_error() is not None:
                 self.logger.error(container.get_last_error())

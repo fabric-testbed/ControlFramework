@@ -42,6 +42,7 @@ from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -57,6 +58,7 @@ from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.bids import Bids
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
@@ -175,9 +177,28 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                    logger=self.logger)
         self.logger.debug(f"Registered AggregateBQMPlugin")
 
-    def initialize(self):
+    def load_new_controls(self, *, config: ActorConfig):
+        for i in config.get_controls():
+            try:
+                if i.get_module_name() is None or i.get_class_name() is None or i.get_type() is None or \
+                        len(i.get_type()) == 0:
+                    continue
+
+                inventory = ReflectionUtils.create_instance(module_name=i.get_module_name(),
+                                                            class_name=i.get_class_name())
+                inventory.set_logger(logger=self.logger)
+
+                for t in i.get_type():
+                    rtype = ResourceType(resource_type=t)
+                    if self.inventory.get(resource_type=rtype) is None:
+                        self.register_inventory(resource_type=rtype, inventory=inventory)
+            except Exception as e:
+                self.logger.error(f"Exception occurred while loading new control: {e}")
+                self.logger.error(traceback.format_exc())
+
+    def initialize(self, *, config: ActorConfig):
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
             self.load_combined_broker_model()
             self.initialized = True
 

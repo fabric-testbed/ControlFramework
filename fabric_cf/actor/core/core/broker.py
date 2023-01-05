@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING
 from fim.graph.abc_property_graph import ABCPropertyGraph
 from fim.slivers.base_sliver import BaseSliver
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
@@ -115,8 +116,8 @@ class Broker(ActorMixin, ABCBrokerMixin):
         self.registry = PeerRegistry()
         self.event_processors = {}
 
-    def actor_added(self):
-        super().actor_added()
+    def actor_added(self, *, config: ActorConfig):
+        super().actor_added(config=config)
         self.registry.actor_added()
 
     def add_broker(self, *, broker: ABCBrokerProxy):
@@ -300,9 +301,9 @@ class Broker(ActorMixin, ABCBrokerMixin):
             return slice_list[0]
         return None
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
             self.registry.set_slices_plugin(plugin=self.plugin)
             self.registry.initialize()
             self.initialized = True

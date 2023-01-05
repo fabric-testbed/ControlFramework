@@ -26,6 +26,7 @@
 import traceback
 from typing import List, Dict
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
@@ -130,8 +131,8 @@ class ActorMixin(ABCActorMixin):
         self.policy.set_actor(actor=self)
         self.event_processors = {}
 
-    def actor_added(self):
-        self.plugin.actor_added()
+    def actor_added(self, *, config: ActorConfig):
+        self.plugin.actor_added(config=config)
 
     def actor_removed(self):
         return
@@ -281,7 +282,7 @@ class ActorMixin(ABCActorMixin):
     def get_type(self) -> ActorType:
         return self.type
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
 
         if not self.initialized:
@@ -309,7 +310,7 @@ class ActorMixin(ABCActorMixin):
             self.plugin.initialize()
 
             self.policy.set_actor(actor=self)
-            self.policy.initialize()
+            self.policy.initialize(config=config)
             self.policy.set_logger(logger=self.logger)
 
             self.wrapper = KernelWrapper(actor=self, plugin=self.plugin, policy=self.policy)
@@ -878,7 +879,7 @@ class ActorMixin(ABCActorMixin):
             # Incoming Message Service
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             config = GlobalsSingleton.get().get_config()
-            topic = config.get_actor().get_kafka_topic()
+            topic = config.get_actor_config().get_kafka_topic()
             if "," in topic:
                 topics = topic.split(',')
             else:

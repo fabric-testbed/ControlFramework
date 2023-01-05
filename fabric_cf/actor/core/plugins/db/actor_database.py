@@ -314,12 +314,14 @@ class ActorDatabase(ABCDatabase):
                 for p in result.get_redeem_predecessors():
                     if p.reservation_id is not None:
                         parent = self.get_reservations(rid=p.reservation_id)
-                        p.set_reservation(reservation=parent[0])
+                        if parent is not None and len(parent) > 0:
+                            p.set_reservation(reservation=parent[0])
 
                 for p in result.get_join_predecessors():
                     if p.reservation_id is not None:
                         parent = self.get_reservations(rid=p.reservation_id)
-                        p.set_reservation(reservation=parent[0])
+                        if parent is not None and len(parent) > 0:
+                            p.set_reservation(reservation=parent[0])
 
             return result
         except Exception as e:

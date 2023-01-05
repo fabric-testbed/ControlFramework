@@ -58,7 +58,7 @@ class ActorDatabaseTest(BaseTestCase, unittest.TestCase):
         actor = self.get_actor()
         container_db.remove_actor(actor_name=actor.get_name())
         container_db.add_actor(actor=actor)
-        actor.actor_added()
+        actor.actor_added(config=None)
         return actor
 
     def test_b_create_2(self):

@@ -28,6 +28,8 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING
 
+from fim.graph.resources.neo4j_arm import Neo4jARMGraph
+
 from fabric_cf.actor.core.apis.abc_server_actor import ABCServerActor
 
 if TYPE_CHECKING:
@@ -114,4 +116,12 @@ class ABCAuthority(ABCServerActor):
         @params caller : the slice owner
 
         @raises Exception in case of error
+        """
+
+    @abstractmethod
+    def set_aggregate_resource_model(self, aggregate_resource_model: Neo4jARMGraph):
+        """
+        Set aggregate resource model
+        :param aggregate_resource_model: resource model
+        :return:
         """

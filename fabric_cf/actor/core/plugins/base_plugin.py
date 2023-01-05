@@ -26,6 +26,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import PluginException
@@ -95,13 +96,13 @@ class BasePlugin(ABCBasePlugin):
         self.config_properties = properties
         self.from_config = True
 
-    def actor_added(self):
+    def actor_added(self, *, config: ActorConfig):
         if self.db is not None:
             self.db.actor_added(actor=self.actor)
 
         if self.handler_processor is not None:
             self.handler_processor.set_plugin(plugin=self)
-            self.handler_processor.initialize()
+            self.handler_processor.initialize(config=config)
 
     def recovery_starting(self):
         return

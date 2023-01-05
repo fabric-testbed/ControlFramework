@@ -139,7 +139,7 @@ class Globals:
         self.cleanup_neo4j()
         self.log.debug(f"Reload Neo4j database started {graph_id}")
         from fabric_cf.actor.fim.fim_helper import FimHelper
-        arm_graph = FimHelper.get_arm_graph_from_file(filename=self.get_config().get_actor().get_substrate_file(),
+        arm_graph = FimHelper.get_arm_graph_from_file(filename=self.get_config().get_actor_config().get_substrate_file(),
                                                       graph_id=graph_id)
         self.log.debug(f"Reload Neo4j database completed {graph_id}")
         return arm_graph

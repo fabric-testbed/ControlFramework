@@ -23,7 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_authority import ABCAuthority
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
@@ -41,9 +41,9 @@ class AuthorityPolicy(Policy, ABCAuthorityPolicy):
         self.initialized = False
         self.delegations = None
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
             self.initialized = True
             self.delegations = {}
 

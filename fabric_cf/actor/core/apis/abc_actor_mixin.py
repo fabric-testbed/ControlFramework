@@ -29,6 +29,7 @@ from abc import abstractmethod
 from enum import Enum
 from typing import TYPE_CHECKING, List, Dict
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.apis.abc_timer_queue import ABCTimerQueue
 from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
@@ -103,7 +104,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
     """
 
     @abstractmethod
-    def actor_added(self):
+    def actor_added(self, *, config: ActorConfig):
         """
         Informs the actor that it has been integrated in the container. This
         method should finish the initialization of the actor: some initialization
@@ -176,7 +177,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         """
         Initializes the actor.
 
