@@ -31,12 +31,12 @@ from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.inventory_slice_manager import InventorySliceManagerError
-from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.core.common.resource_config import ResourceConfigBuilder
 
 if TYPE_CHECKING:
-    from fabric_cf.actor.core.common.resource_config import ResourceConfig, ResourceConfigBuilder
+    from fabric_cf.actor.core.common.resource_config import ResourceConfig
     from fabric_cf.actor.core.plugins.substrate.authority_substrate import AuthoritySubstrate
 
 
