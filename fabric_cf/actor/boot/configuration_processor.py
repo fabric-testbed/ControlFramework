@@ -319,7 +319,7 @@ class ConfigurationProcessor:
         @raises ConfigurationException in case of error
         """
         try:
-            self.actor.initialize()
+            self.actor.initialize(config=self.config.get_actor_config())
         except Exception as e:
             raise ConfigurationException(f"Actor failed to initialize: {self.actor.get_name()} {e}")
 
