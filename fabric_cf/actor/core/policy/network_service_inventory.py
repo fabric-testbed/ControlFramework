@@ -268,7 +268,7 @@ class NetworkServiceInventory(InventoryForType):
         except Exception as e:
             self.logger.error(f"Error in allocate_vNIC: {e}")
             self.logger.error(traceback.format_exc())
-            raise e
+            raise BrokerException(msg=f"Allocation failure for Openstack VNIC: {e}")
         return requested_ns
 
     def allocate(self, *, rid: ID, requested_ns: NetworkServiceSliver, owner_switch: NodeSliver,
@@ -369,6 +369,7 @@ class NetworkServiceInventory(InventoryForType):
         except Exception as e:
             self.logger.error(f"Error in allocate_gateway_for_ns: {e}")
             self.logger.error(traceback.format_exc())
+            raise BrokerException(msg=f"Allocation failure for Requested Network Service: {e}")
         return requested_ns
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
