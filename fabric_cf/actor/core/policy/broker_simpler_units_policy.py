@@ -64,11 +64,11 @@ from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
+from fabric_cf.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
     from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
-    from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
 class BrokerAllocationAlgorithm(Enum):
@@ -189,9 +189,14 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 inventory.set_logger(logger=self.logger)
 
                 for t in i.get_type():
+                    self.logger.debug(f"Processing control type: {t}")
                     rtype = ResourceType(resource_type=t)
-                    if self.inventory.get(resource_type=rtype) is None:
+                    existing = self.inventory.get(resource_type=rtype)
+                    if existing is None:
+                        self.logger.debug(f"Registering control type: {t} inventory: {type(inventory)}")
                         self.register_inventory(resource_type=rtype, inventory=inventory)
+                    else:
+                        self.logger.debug(f"Exists control type: {t} inventory: {type(inventory)}")
             except Exception as e:
                 self.logger.error(f"Exception occurred while loading new control: {e}")
                 self.logger.error(traceback.format_exc())

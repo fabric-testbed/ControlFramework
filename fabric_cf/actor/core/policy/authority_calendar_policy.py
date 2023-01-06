@@ -164,9 +164,17 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                 control.set_actor(actor=self.actor)
 
                 for t in c.get_type():
+                    self.logger.debug(f"Processing control type: {t}")
                     rtype = ResourceType(resource_type=t)
-                    if self.get_control_by_type(rtype=rtype) is None:
+                    existing = self.get_control_by_type(rtype=rtype)
+
+                    if existing is None:
+                        self.logger.debug(f"Adding control type: {t} control: {type(control)}")
                         control.add_type(rtype=rtype)
+                    else:
+                        self.logger.debug(f"Exists control type: {t} control: {type(control)}")
+
+                self.logger.debug(f"Registering control control: {type(control)}")
                 self.register_control(control=control)
             except Exception as e:
                 self.logger.error(f"Exception occurred while loading new control: {e}")
