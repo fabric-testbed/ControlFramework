@@ -200,6 +200,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         if not self.initialized:
             super().initialize(config=config)
             self.load_combined_broker_model()
+            self.load_new_controls(config=config)
             self.initialized = True
 
     def register_inventory(self, *, resource_type: ResourceType, inventory: InventoryForType):
