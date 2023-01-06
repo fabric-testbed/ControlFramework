@@ -88,8 +88,11 @@ class HandlerProcessor:
         if resource_configs is not None:
             for rtype, rc in resource_configs.items():
                 if str(rtype) not in self.config_mappings:
+                    self.logger.debug(f"Adding handler for type: {rtype} handler: {type(rc)}")
                     config_map = ResourceConfigBuilder.build_config_mapping(resource_config=rc)
                     self.add_config_mapping(mapping=config_map)
+                else:
+                    self.logger.debug(f"Handler for type: {rtype} exists")
 
     def add_config_mapping(self, *, mapping: ConfigurationMapping):
         try:
