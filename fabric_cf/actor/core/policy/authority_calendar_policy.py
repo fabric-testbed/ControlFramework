@@ -174,8 +174,9 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                     else:
                         self.logger.debug(f"Exists control type: {t} control: {type(control)}")
 
-                self.logger.debug(f"Registering control control: {type(control)}")
-                self.register_control(control=control)
+                if len(control.get_types()) > 0:
+                    self.logger.debug(f"Registering control control: {type(control)}")
+                    self.register_control(control=control)
             except Exception as e:
                 self.logger.error(f"Exception occurred while loading new control: {e}")
                 self.logger.error(traceback.format_exc())

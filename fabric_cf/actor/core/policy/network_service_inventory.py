@@ -200,18 +200,14 @@ class NetworkServiceInventory(InventoryForType):
                     break
         return requested_ifs
 
-    def __allocate_ip_address_to_ifs(self, *, requested_ns: NetworkServiceSliver,
-                                     subnet_list: list) -> NetworkServiceSliver:
+    def __allocate_ip_address_to_ifs(self, *, requested_ns: NetworkServiceSliver) -> NetworkServiceSliver:
         if requested_ns.gateway is None:
             return requested_ns
 
         if requested_ns.get_type() == ServiceType.FABNetv4:
             start_ip_str = requested_ns.gateway.lab.ipv4
         elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
-            if len(subnet_list) <= 1:
-                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                      msg="No public IPv4 addresses are available")
-            start_ip_str = subnet_list[0]
+            return requested_ns
         else:
             start_ip_str = requested_ns.gateway.lab.ipv6
 
@@ -222,14 +218,6 @@ class NetworkServiceInventory(InventoryForType):
             if requested_ns.get_type() == ServiceType.FABNetv4:
                 ifs.labels.ipv4 = str(start_ip)
                 ifs.label_allocations.ipv4 = str(start_ip)
-
-            elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
-                ifs.labels.ipv4 = str(start_ip)
-                ifs.label_allocations.ipv4 = str(start_ip)
-                if requested_ns.labels is None:
-                    requested_ns.labels = Labels()
-                    requested_ns.labels.ipv4 = []
-                requested_ns.labels.ipv4.append(start_ip)
 
             elif requested_ns.get_type()in self.V6FABNetServices:
                 ifs.labels.ipv6 = str(start_ip)
@@ -414,7 +402,7 @@ class NetworkServiceInventory(InventoryForType):
                 requested_ns.gateway = Gateway(lab=gateway_labels)
                 break
             # Allocate the IP Addresses for the requested NS
-            requested_ns = self.__allocate_ip_address_to_ifs(requested_ns=requested_ns, subnet_list=subnet_list)
+            requested_ns = self.__allocate_ip_address_to_ifs(requested_ns=requested_ns)
         except Exception as e:
             self.logger.error(f"Error in allocate_gateway_for_ns: {e}")
             self.logger.error(traceback.format_exc())

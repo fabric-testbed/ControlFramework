@@ -168,7 +168,10 @@ class SubstrateMixin(BasePlugin, ABCSubstrate):
         self.logger.error(message)
         if e:
             self.logger.error(e)
-        unit.fail_on_modify(message=message, exception=e)
+        if unit.is_network_service():
+            unit.fail(message=message, exception=e)
+        else:
+            unit.fail_on_modify(message=message, exception=e)
 
     def merge_unit_properties(self, *, unit: Unit, properties: dict):
         # TODO
