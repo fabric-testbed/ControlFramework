@@ -38,6 +38,7 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver, NodeType
+from fim.slivers.topology_diff import TopologyDiff
 from fim.user import ServiceType, ExperimentTopology
 
 from fabric_cf.actor.core.common.constants import ErrorCodes, Constants
@@ -66,10 +67,14 @@ class OrchestratorSliceWrapper:
         self.reservation_converter = ReservationConverter(controller=controller, broker=broker)
         self.rid_to_res = {}
         self.computed_reservations = []
+        # Reservations trigger Add and Demand
         self.computed_add_reservations = []
         self.computed_l3_reservations = []
+        # Reservations trigger ExtendTicket (Broker) and ExtendLease (AM)
         self.computed_modify_reservations = {}
         self.computed_remove_reservations = []
+        # Reservations trigger ModifyLease (AM)
+        self.computed_modify_properties_reservations = []
         self.thread_lock = threading.Lock()
         self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS, ServiceType.VLAN]
         self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
@@ -77,6 +82,7 @@ class OrchestratorSliceWrapper:
                              ServiceType.FABNetv6Ext]
         self.l3_ns = [str(ServiceType.FABNetv6), str(ServiceType.FABNetv4), str(ServiceType.FABNetv4Ext),
                       str(ServiceType.FABNetv6Ext)]
+        self.ls_ns_ext = [ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext]
 
     def lock(self):
         """
@@ -359,6 +365,37 @@ class OrchestratorSliceWrapper:
             sliver_to_res_mapping[nn_id] = reservation.get_reservation_id()
         return reservations, sliver_to_res_mapping
 
+    def is_property_update(self, *, topology_diff: TopologyDiff):
+        if len(topology_diff.added.services) == 0 and len(topology_diff.added.nodes) == 0 and \
+                len(topology_diff.added.interfaces) == 0 and len(topology_diff.removed.services) == 0 and \
+                len(topology_diff.removed.nodes) == 0 and len(topology_diff.removed.interfaces) == 0:
+            return True
+        return False
+
+    def modify_properties(self, *, new_slice_graph: ABCASMPropertyGraph, new_topology:ExperimentTopology,
+                          existing_topology: ExperimentTopology) -> List[LeaseReservationAvro]:
+        modified_reservations = []
+        node_res_mapping = {}
+        for x in new_topology.nodes.values():
+            if x.reservation_info is not None:
+                node_res_mapping[x.node_id] = x.reservation_info.reservation_id
+        for x in new_topology.network_services.values():
+            if x.reservation_info is not None:
+                node_res_mapping[x.node_id] = x.reservation_info.reservation_id
+
+        for ns_name, new_ns in new_topology.network_services.items():
+            if new_ns.type in self.ls_ns_ext:
+                existing_ns = existing_topology.network_services[ns_name]
+                if new_ns.labels != existing_ns.labels:
+                    reservation, sliver = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
+                                                                             node_res_mapping=node_res_mapping,
+                                                                             node_id=new_ns.node_id)
+                    reservation.set_reservation_id(value=new_ns.reservation_info.reservation_id)
+                    modified_reservations.append(reservation)
+                    self.computed_modify_properties_reservations.append(reservation)
+
+        return modified_reservations
+
     def modify(self, *, new_slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
         existing_topology = FimHelper.get_experiment_topology(graph_id=self.slice_obj.get_graph_id())
 
@@ -366,6 +403,11 @@ class OrchestratorSliceWrapper:
 
         new_topology.cast(asm_graph=new_slice_graph)
         topology_diff = existing_topology.diff(new_topology)
+
+        # No Modification Happened
+        if self.is_property_update(topology_diff=topology_diff):
+            return self.modify_properties(new_slice_graph = new_slice_graph, new_topology=new_topology,
+                                          existing_topology=existing_topology)
 
         reservations = []
         node_res_mapping = {}

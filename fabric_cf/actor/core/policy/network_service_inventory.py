@@ -287,14 +287,24 @@ class NetworkServiceInventory(InventoryForType):
         :return NetworkService updated with the allocated subnet for FABNetv4 and FABNetv6 services
         Return the sliver updated with the subnet
         """
+        all_fabnet_services = [ServiceType.FABNetv6, ServiceType.FABNetv6Ext,
+                               ServiceType.FABNetv4, ServiceType.FABNetv4Ext]
+        v6_fabnet_services = [ServiceType.FABNetv6, ServiceType.FABNetv6Ext]
+        v4_fabnet_services = [ServiceType.FABNetv4, ServiceType.FABNetv4Ext]
+
         try:
-            if requested_ns.get_type() != ServiceType.FABNetv4 and requested_ns.get_type() != ServiceType.FABNetv6 \
-                    and requested_ns.get_type() != ServiceType.FABNetv4Ext \
-                    and requested_ns.get_type() != ServiceType.FABNetv6Ext:
+            if requested_ns.get_type() not in all_fabnet_services:
                 return requested_ns
 
+            # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
+            # Needs to be removed if FabNetv6/FabNetv6Ext are configured with different ranges
+            requested_ns_type = requested_ns.get_type()
+            if requested_ns_type == ServiceType.FABNetv6Ext:
+                requested_ns_type = ServiceType.FABNetv6
+            # Hack End
+
             for ns in owner_switch.network_service_info.network_services.values():
-                if requested_ns.get_type() != ns.get_type():
+                if requested_ns_type != ns.get_type():
                     continue
 
                 # Grab Label Delegations
@@ -302,13 +312,17 @@ class NetworkServiceInventory(InventoryForType):
 
                 subnet_list = None
                 # Get Subnet
-                if ns.get_type() == ServiceType.FABNetv6 or ns.get_type() == ServiceType.FABNetv6Ext:
+                if ns.get_type() in v6_fabnet_services:
                     ip_network = IPv6Network(delegated_label.ipv6_subnet)
                     subnet_list = list(ip_network.subnets(new_prefix=64))
 
-                elif ns.get_type() == ServiceType.FABNetv4 or ns.get_type() == ServiceType.FABNetv4Ext:
+                elif ns.get_type() == ServiceType.FABNetv4:
                     ip_network = IPv4Network(delegated_label.ipv4_subnet)
                     subnet_list = list(ip_network.subnets(new_prefix=24))
+
+                elif ns.get_type() == ServiceType.FABNetv4Ext:
+                    ip_network = IPv4Network(delegated_label.ipv4_subnet)
+                    subnet_list = list(ip_network.subnets(new_prefix=32))
 
                 # Exclude the 1st subnet as it is reserved for control plane
                 subnet_list.pop(0)
@@ -332,11 +346,17 @@ class NetworkServiceInventory(InventoryForType):
                     if allocated_sliver is None:
                         continue
 
-                    if allocated_sliver.get_type() != requested_ns.get_type():
+                    # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
+                    # Needs to be removed if FabNetv6/FabNetv6Ext are configured with different ranges
+                    allocated_sliver_type = allocated_sliver.get_type()
+                    if allocated_sliver_type == ServiceType.FABNetv6Ext:
+                        allocated_sliver_type = ServiceType.FABNetv6
+                    # HACK End
+
+                    if allocated_sliver_type != requested_ns_type:
                         continue
 
-                    if allocated_sliver.get_type() == ServiceType.FABNetv4 or \
-                            allocated_sliver.get_type() == ServiceType.FABNetv4Ext:
+                    if allocated_sliver.get_type() in v4_fabnet_services:
                         subnet_to_remove = IPv4Network(allocated_sliver.get_gateway().lab.ipv4_subnet)
                         subnet_list.remove(subnet_to_remove)
                         self.logger.debug(
@@ -344,8 +364,7 @@ class NetworkServiceInventory(InventoryForType):
                             f"{allocated_sliver.get_gateway().lab.ipv4_subnet}"
                             f" to res# {reservation.get_reservation_id()}")
 
-                    elif allocated_sliver.get_type() == ServiceType.FABNetv6 or \
-                            allocated_sliver.get_type() == ServiceType.FABNetv6Ext:
+                    elif allocated_sliver.get_type() in v6_fabnet_services:
                         subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().lab.ipv6_subnet)
                         subnet_list.remove(subnet_to_remove)
                         self.logger.debug(
@@ -354,13 +373,15 @@ class NetworkServiceInventory(InventoryForType):
                             f" to res# {reservation.get_reservation_id()}")
 
                 gateway_labels = Labels()
-                if requested_ns.get_type() == ServiceType.FABNetv4 or requested_ns.get_type() == ServiceType.FABNetv4Ext:
+                if requested_ns.get_type() in v4_fabnet_services:
                     gateway_labels.ipv4_subnet = subnet_list[0].with_prefixlen
-                    gateway_labels.ipv4 = str(next(subnet_list[0].hosts()))
+                    gateway_labels.ipv4 = str(list(subnet_list[0].hosts())[0])
 
-                elif requested_ns.get_type() == ServiceType.FABNetv6 or requested_ns.get_type() == ServiceType.FABNetv6Ext:
+                elif requested_ns.get_type() in v6_fabnet_services:
                     gateway_labels.ipv6_subnet = subnet_list[0].with_prefixlen
                     gateway_labels.ipv6 = str(next(subnet_list[0].hosts()))
+
+                self.logger.debug(f"Gateway Labels: {gateway_labels}")
 
                 requested_ns.gateway = Gateway(lab=gateway_labels)
                 break
