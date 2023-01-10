@@ -79,7 +79,7 @@ class OrchestratorSliceWrapper:
         self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS, ServiceType.VLAN]
         self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
                              ServiceType.FABNetv4, ServiceType.PortMirror, ServiceType.FABNetv4Ext,
-                             ServiceType.FABNetv6Ext]
+                             ServiceType.FABNetv6Ext, ServiceType.L3VPN]
         self.l3_ns = [str(ServiceType.FABNetv6), str(ServiceType.FABNetv4), str(ServiceType.FABNetv4Ext),
                       str(ServiceType.FABNetv6Ext)]
         self.ls_ns_ext = [ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext]

@@ -139,7 +139,7 @@ actor:
           class: NetworkNodeInventory
           module: fabric_cf.actor.core.policy.network_node_inventory
       - control:
-          type: L2STS, L2Bridge, L2PTP, FABNetv6, FABNetv4, PortMirror, FABNetv4Ext, FABNetv6Ext
+          type: L2STS, L2Bridge, L2PTP, FABNetv6, FABNetv4, PortMirror, FABNetv4Ext, FABNetv6Ext, L3VPN
           class: NetworkServiceInventory
           module: fabric_cf.actor.core.policy.network_service_inventory
 peers:

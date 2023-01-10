@@ -41,6 +41,11 @@ from fabric_cf.actor.core.util.id import ID
 
 
 class NetworkServiceInventory(InventoryForType):
+    FABNetServices = [ServiceType.FABNetv6, ServiceType.FABNetv6Ext,
+                      ServiceType.FABNetv4, ServiceType.FABNetv4Ext]
+    V6FABNetServices = [ServiceType.FABNetv6, ServiceType.FABNetv6Ext]
+    V4FABNetServices = [ServiceType.FABNetv4, ServiceType.FABNetv4Ext]
+
     @staticmethod
     def __extract_vlan_range(*, labels: Labels) -> List[int] or None:
         vlan_range = None
@@ -195,12 +200,18 @@ class NetworkServiceInventory(InventoryForType):
                     break
         return requested_ifs
 
-    def __allocate_ip_address_to_ifs(self, *, requested_ns: NetworkServiceSliver) -> NetworkServiceSliver:
+    def __allocate_ip_address_to_ifs(self, *, requested_ns: NetworkServiceSliver,
+                                     subnet_list: list) -> NetworkServiceSliver:
         if requested_ns.gateway is None:
             return requested_ns
 
-        if requested_ns.get_type() == ServiceType.FABNetv4 or requested_ns.get_type() == ServiceType.FABNetv4Ext:
+        if requested_ns.get_type() == ServiceType.FABNetv4:
             start_ip_str = requested_ns.gateway.lab.ipv4
+        elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
+            if len(subnet_list) <= 1:
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg="No public IPv4 addresses are available")
+            start_ip_str = subnet_list[0]
         else:
             start_ip_str = requested_ns.gateway.lab.ipv6
 
@@ -208,11 +219,19 @@ class NetworkServiceInventory(InventoryForType):
         start_ip += 1
 
         for ifs in requested_ns.interface_info.interfaces.values():
-            if requested_ns.get_type() == ServiceType.FABNetv4 or requested_ns.get_type() == ServiceType.FABNetv4Ext:
+            if requested_ns.get_type() == ServiceType.FABNetv4:
                 ifs.labels.ipv4 = str(start_ip)
                 ifs.label_allocations.ipv4 = str(start_ip)
 
-            elif requested_ns.get_type() == ServiceType.FABNetv6:
+            elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
+                ifs.labels.ipv4 = str(start_ip)
+                ifs.label_allocations.ipv4 = str(start_ip)
+                if requested_ns.labels is None:
+                    requested_ns.labels = Labels()
+                    requested_ns.labels.ipv4 = []
+                requested_ns.labels.ipv4.append(start_ip)
+
+            elif requested_ns.get_type()in self.V6FABNetServices:
                 ifs.labels.ipv6 = str(start_ip)
                 ifs.label_allocations.ipv6 = str(start_ip)
             self.logger.info("Allocated IP address to interface %s", ifs)
@@ -287,13 +306,8 @@ class NetworkServiceInventory(InventoryForType):
         :return NetworkService updated with the allocated subnet for FABNetv4 and FABNetv6 services
         Return the sliver updated with the subnet
         """
-        all_fabnet_services = [ServiceType.FABNetv6, ServiceType.FABNetv6Ext,
-                               ServiceType.FABNetv4, ServiceType.FABNetv4Ext]
-        v6_fabnet_services = [ServiceType.FABNetv6, ServiceType.FABNetv6Ext]
-        v4_fabnet_services = [ServiceType.FABNetv4, ServiceType.FABNetv4Ext]
-
         try:
-            if requested_ns.get_type() not in all_fabnet_services:
+            if requested_ns.get_type() not in self.FABNetServices:
                 return requested_ns
 
             # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
@@ -303,6 +317,7 @@ class NetworkServiceInventory(InventoryForType):
                 requested_ns_type = ServiceType.FABNetv6
             # Hack End
 
+            subnet_list = None
             for ns in owner_switch.network_service_info.network_services.values():
                 if requested_ns_type != ns.get_type():
                     continue
@@ -310,22 +325,22 @@ class NetworkServiceInventory(InventoryForType):
                 # Grab Label Delegations
                 delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=ns.get_label_delegations())
 
-                subnet_list = None
                 # Get Subnet
-                if ns.get_type() in v6_fabnet_services:
+                if ns.get_type() in self.V6FABNetServices:
                     ip_network = IPv6Network(delegated_label.ipv6_subnet)
                     subnet_list = list(ip_network.subnets(new_prefix=64))
+                    # Exclude the 1st subnet as it is reserved for control plane
+                    subnet_list.pop(0)
 
                 elif ns.get_type() == ServiceType.FABNetv4:
                     ip_network = IPv4Network(delegated_label.ipv4_subnet)
                     subnet_list = list(ip_network.subnets(new_prefix=24))
+                    # Exclude the 1st subnet as it is reserved for control plane
+                    subnet_list.pop(0)
 
                 elif ns.get_type() == ServiceType.FABNetv4Ext:
                     ip_network = IPv4Network(delegated_label.ipv4_subnet)
-                    subnet_list = list(ip_network.subnets(new_prefix=32))
-
-                # Exclude the 1st subnet as it is reserved for control plane
-                subnet_list.pop(0)
+                    subnet_list = list(ip_network.hosts())
 
                 # Exclude the already allocated subnets
                 for reservation in existing_reservations:
@@ -356,7 +371,7 @@ class NetworkServiceInventory(InventoryForType):
                     if allocated_sliver_type != requested_ns_type:
                         continue
 
-                    if allocated_sliver.get_type() in v4_fabnet_services:
+                    if allocated_sliver.get_type() == ServiceType.FABNetv4:
                         subnet_to_remove = IPv4Network(allocated_sliver.get_gateway().lab.ipv4_subnet)
                         subnet_list.remove(subnet_to_remove)
                         self.logger.debug(
@@ -364,7 +379,16 @@ class NetworkServiceInventory(InventoryForType):
                             f"{allocated_sliver.get_gateway().lab.ipv4_subnet}"
                             f" to res# {reservation.get_reservation_id()}")
 
-                    elif allocated_sliver.get_type() in v6_fabnet_services:
+                    elif allocated_sliver.get_type() == ServiceType.FABNetv4Ext:
+                        if allocated_sliver.labels is not None and allocated_sliver.labels.ipv4 is not None:
+                            for x in allocated_sliver.labels.ipv4:
+                                subnet_to_remove = IPv4Network(x)
+                                subnet_list.remove(subnet_to_remove)
+                                self.logger.debug(
+                                    f"Excluding already allocated IPv4: {x}"
+                                    f" to res# {reservation.get_reservation_id()}")
+
+                    elif allocated_sliver.get_type() in self.V6FABNetServices:
                         subnet_to_remove = IPv6Network(allocated_sliver.get_gateway().lab.ipv6_subnet)
                         subnet_list.remove(subnet_to_remove)
                         self.logger.debug(
@@ -373,11 +397,15 @@ class NetworkServiceInventory(InventoryForType):
                             f" to res# {reservation.get_reservation_id()}")
 
                 gateway_labels = Labels()
-                if requested_ns.get_type() in v4_fabnet_services:
+                if requested_ns.get_type() == ServiceType.FABNetv4:
                     gateway_labels.ipv4_subnet = subnet_list[0].with_prefixlen
                     gateway_labels.ipv4 = str(list(subnet_list[0].hosts())[0])
 
-                elif requested_ns.get_type() in v6_fabnet_services:
+                elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
+                    gateway_labels.ipv4_subnet = ip_network.with_prefixlen
+                    gateway_labels.ipv4 = str(subnet_list[0])
+
+                elif requested_ns.get_type() in self.V6FABNetServices:
                     gateway_labels.ipv6_subnet = subnet_list[0].with_prefixlen
                     gateway_labels.ipv6 = str(next(subnet_list[0].hosts()))
 
@@ -386,7 +414,7 @@ class NetworkServiceInventory(InventoryForType):
                 requested_ns.gateway = Gateway(lab=gateway_labels)
                 break
             # Allocate the IP Addresses for the requested NS
-            requested_ns = self.__allocate_ip_address_to_ifs(requested_ns=requested_ns)
+            requested_ns = self.__allocate_ip_address_to_ifs(requested_ns=requested_ns, subnet_list=subnet_list)
         except Exception as e:
             self.logger.error(f"Error in allocate_gateway_for_ns: {e}")
             self.logger.error(traceback.format_exc())

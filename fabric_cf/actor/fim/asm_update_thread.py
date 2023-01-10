@@ -121,7 +121,7 @@ class AsmUpdateThread:
                 sliver.reservation_info = ReservationInfo()
             sliver.reservation_info.reservation_id = rid
             sliver.reservation_info.reservation_state = reservation_state
-            new_str = re.sub('(\\\\r\\\\n|[%!{}\'])', '', error_message)
+            new_str = re.sub('(\\\\r\\\\n|[%!{}\'\"])', '', error_message)
             sliver.reservation_info.error_message = new_str
 
             event = AsmEvent(graph_id=graph_id, sliver=sliver)
