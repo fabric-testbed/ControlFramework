@@ -200,14 +200,19 @@ class NetworkServiceInventory(InventoryForType):
                     break
         return requested_ifs
 
-    def __allocate_ip_address_to_ifs(self, *, requested_ns: NetworkServiceSliver) -> NetworkServiceSliver:
+    def __allocate_ip_address_to_ifs(self, *, requested_ns: NetworkServiceSliver,
+                                     ipv4_public_ip_list: List[ipaddress.IPv4Address]) -> NetworkServiceSliver:
         if requested_ns.gateway is None:
             return requested_ns
 
         if requested_ns.get_type() == ServiceType.FABNetv4:
             start_ip_str = requested_ns.gateway.lab.ipv4
         elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
-            return requested_ns
+            if ipv4_public_ip_list is None or \
+                    (len(ipv4_public_ip_list) - 1) != len(requested_ns.interface_info.interfaces):
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg="Public IP4 not available for FabNetv4Ext")
+            start_ip_str = str(ipv4_public_ip_list[0])
         else:
             start_ip_str = requested_ns.gateway.lab.ipv6
 
@@ -219,9 +224,22 @@ class NetworkServiceInventory(InventoryForType):
                 ifs.labels.ipv4 = str(start_ip)
                 ifs.label_allocations.ipv4 = str(start_ip)
 
-            elif requested_ns.get_type()in self.V6FABNetServices:
+            elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
+                if requested_ns.labels is None:
+                    requested_ns.labels = Labels()
+                    requested_ns.labels.ipv4 = []
+                requested_ns.labels.ipv4.append(str(start_ip))
+
+            elif requested_ns.get_type() == ServiceType.FABNetv6:
                 ifs.labels.ipv6 = str(start_ip)
                 ifs.label_allocations.ipv6 = str(start_ip)
+
+            elif requested_ns.get_type() == ServiceType.FABNetv6Ext:
+                if requested_ns.labels is None:
+                    requested_ns.labels = Labels()
+                    requested_ns.labels.ipv6 = []
+                requested_ns.labels.ipv6.append(str(start_ip))
+
             self.logger.info("Allocated IP address to interface %s", ifs)
             start_ip += 1
 

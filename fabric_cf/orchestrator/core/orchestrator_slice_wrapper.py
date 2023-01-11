@@ -404,11 +404,6 @@ class OrchestratorSliceWrapper:
         new_topology.cast(asm_graph=new_slice_graph)
         topology_diff = existing_topology.diff(new_topology)
 
-        # No Modification Happened
-        if self.is_property_update(topology_diff=topology_diff):
-            return self.modify_properties(new_slice_graph = new_slice_graph, new_topology=new_topology,
-                                          existing_topology=existing_topology)
-
         reservations = []
         node_res_mapping = {}
 
