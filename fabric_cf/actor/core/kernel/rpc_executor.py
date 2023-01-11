@@ -25,11 +25,14 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from __future__ import annotations
 
+import logging
 import threading
+import traceback
 from typing import TYPE_CHECKING
 
 from fabric_mb.message_bus.producer import AvroProducerApi
 
+from fabric_cf.actor.core.kernel.retry_rpc import RetryRPC
 from fabric_cf.actor.core.util.rpc_exception import RPCException
 from fabric_cf.actor.core.kernel.failed_rpc import FailedRPC
 from fabric_cf.actor.core.kernel.failed_rpc_event import FailedRPCEvent
@@ -77,3 +80,17 @@ class RPCExecutor:
                                                                  request.proxy.get_name()))
             from fabric_cf.actor.core.kernel.rpc_manager_singleton import RPCManagerSingleton
             RPCManagerSingleton.get().de_queued()
+
+    @staticmethod
+    def retry(request: RetryRPC, producer: AvroProducerApi, logger: logging.Logger):
+        """
+        Execute RPC
+        """
+        logger.debug(f"Performing RPC: type={request.message().name} to:{request.topic()}")
+        try:
+            producer.produce(topic=request.topic(), record=request.message())
+        except RPCException as e:
+            logger.error(f"Exception occurred in Retry RPC: {e}")
+            logger.error(traceback.format_exc())
+        finally:
+            logger.debug(f"Completed RPC: type={request.message().name} to:{request.topic()}")

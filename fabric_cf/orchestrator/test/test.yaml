@@ -44,6 +44,7 @@ runtime:
   rpc.request.timeout.seconds: 900
   maint.project.id: 10c0094a-abaf-4ef9-a532-2be53e2a896b
   message.max.bytes: 1048588
+  rpc.retries: 5
 
 logging:
   ## The directory in which actor should create log files.

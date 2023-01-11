@@ -455,6 +455,9 @@ class Configuration:
 
         return None
 
+    def get_rpc_retries(self) -> int:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_RPC_RETRIES, 5)
+
     def get_kafka_key_schema_location(self) -> str or None:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
 
