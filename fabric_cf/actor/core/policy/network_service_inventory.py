@@ -420,7 +420,7 @@ class NetworkServiceInventory(InventoryForType):
                 requested_ns.gateway = Gateway(lab=gateway_labels)
                 break
             # Allocate the IP Addresses for the requested NS
-            requested_ns = self.__allocate_ip_address_to_ifs(requested_ns=requested_ns)
+            requested_ns = self.__allocate_ip_address_to_ifs(requested_ns=requested_ns, ipv4_public_ip_list=subnet_list)
         except Exception as e:
             self.logger.error(f"Error in allocate_gateway_for_ns: {e}")
             self.logger.error(traceback.format_exc())
