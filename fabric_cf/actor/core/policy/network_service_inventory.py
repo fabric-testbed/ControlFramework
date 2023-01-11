@@ -209,7 +209,7 @@ class NetworkServiceInventory(InventoryForType):
             start_ip_str = requested_ns.gateway.lab.ipv4
         elif requested_ns.get_type() == ServiceType.FABNetv4Ext:
             if ipv4_public_ip_list is None or \
-                    (len(ipv4_public_ip_list) - 1) != len(requested_ns.interface_info.interfaces):
+                    (len(ipv4_public_ip_list) - 1) < len(requested_ns.interface_info.interfaces):
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                                       msg="Public IP4 not available for FabNetv4Ext")
             start_ip_str = str(ipv4_public_ip_list[0])
