@@ -35,7 +35,7 @@ from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.network_node import NodeSliver, NodeType
-from fim.slivers.network_service import ServiceType, NetworkServiceSliver
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
@@ -530,14 +530,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         return approved
 
     def can_ticket(self, extend: bool = False) -> bool:
-        supported_ns = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
-                        str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror),
-                        str(ServiceType.FABNetv4Ext), str(ServiceType.FABNetv6Ext), str(ServiceType.L3VPN)]
-
         ret_val = False
         if self.get_type() is not None:
             resource_type_str = str(self.get_type())
-            if resource_type_str in supported_ns:
+            if resource_type_str in Constants.SUPPORTED_SERVICES_STR:
                 ret_val = self.approve_ticket(extend=extend)
             else:
                 ret_val = True

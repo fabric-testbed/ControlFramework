@@ -76,13 +76,6 @@ class OrchestratorSliceWrapper:
         # Reservations trigger ModifyLease (AM)
         self.computed_modify_properties_reservations = []
         self.thread_lock = threading.Lock()
-        self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS, ServiceType.VLAN]
-        self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
-                             ServiceType.FABNetv4, ServiceType.PortMirror, ServiceType.FABNetv4Ext,
-                             ServiceType.FABNetv6Ext, ServiceType.L3VPN]
-        self.l3_ns = [str(ServiceType.FABNetv6), str(ServiceType.FABNetv4), str(ServiceType.FABNetv4Ext),
-                      str(ServiceType.FABNetv6Ext)]
-        self.ls_ns_ext = [ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext]
 
     def lock(self):
         """
@@ -217,11 +210,11 @@ class OrchestratorSliceWrapper:
         self.logger.trace(f"Network Service Sliver: {sliver}")
 
         # Ignore Sliver types P4,OVS and MPLS
-        if sliver_type in self.ignorable_ns:
+        if sliver_type in Constants.IGNORABLE_NS:
             return None, None
 
         # Process only the currently supported Network Sliver types L2STS, L2PTP and L2Bridge
-        elif sliver_type in self.supported_ns:
+        elif sliver_type in Constants.SUPPORTED_SERVICES:
 
             self.logger.trace(f"Network Service Sliver Interfaces: {sliver.interface_info}")
             # Processing Interface Slivers
@@ -299,7 +292,7 @@ class OrchestratorSliceWrapper:
             if reservation is None:
                 continue
 
-            if reservation.get_resource_type() in self.l3_ns:
+            if reservation.get_resource_type() in Constants.L3_FABNET_SERVICES_STR:
                 self.computed_l3_reservations.append(reservation)
 
             reservations.append(reservation)
@@ -384,7 +377,7 @@ class OrchestratorSliceWrapper:
                 node_res_mapping[x.node_id] = x.reservation_info.reservation_id
 
         for ns_name, new_ns in new_topology.network_services.items():
-            if new_ns.type in self.ls_ns_ext:
+            if new_ns.type in Constants.L3_FABNET_EXT_SERVICES:
                 existing_ns = existing_topology.network_services[ns_name]
                 if new_ns.labels != existing_ns.labels:
                     reservation, sliver = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
@@ -392,7 +385,12 @@ class OrchestratorSliceWrapper:
                                                                              node_id=new_ns.node_id)
                     reservation.set_reservation_id(value=new_ns.reservation_info.reservation_id)
                     modified_reservations.append(reservation)
-                    self.computed_modify_properties_reservations.append(reservation)
+                    if new_ns.type == ServiceType.FABNetv4Ext:
+                        modified_res = ModifiedReservation(sliver=sliver,
+                                                           dependencies=reservation.redeem_processors)
+                        self.computed_modify_reservations[new_ns.reservation_info.reservation_id] = modified_res
+                    else:
+                        self.computed_modify_properties_reservations.append(reservation)
 
         return modified_reservations
 
@@ -403,6 +401,10 @@ class OrchestratorSliceWrapper:
 
         new_topology.cast(asm_graph=new_slice_graph)
         topology_diff = existing_topology.diff(new_topology)
+
+        if self.is_property_update(topology_diff=topology_diff):
+            return self.modify_properties(new_slice_graph=new_slice_graph, existing_topology=existing_topology,
+                                          new_topology=new_topology)
 
         reservations = []
         node_res_mapping = {}
@@ -425,7 +427,7 @@ class OrchestratorSliceWrapper:
 
         # Add Network Services
         for x in topology_diff.added.services:
-            if x.get_sliver().get_type() in self.ignorable_ns:
+            if x.get_sliver().get_type() in Constants.IGNORABLE_NS:
                 continue
             reservation, sliver = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
                                                                      node_id=x.node_id,
@@ -484,7 +486,7 @@ class OrchestratorSliceWrapper:
 
         # Remove services
         for x in topology_diff.removed.services:
-            if x.get_sliver().get_type() in self.ignorable_ns:
+            if x.get_sliver().get_type() in Constants.IGNORABLE_NS:
                 continue
             reservation_info = x.get_property('reservation_info')
             self.computed_remove_reservations.append(reservation_info.reservation_id)
@@ -494,7 +496,7 @@ class OrchestratorSliceWrapper:
             self.computed_add_reservations.append(r)
             self.computed_reservations.append(r)
 
-            if r.get_resource_type() in self.l3_ns:
+            if r.get_resource_type() in Constants.L3_FABNET_SERVICES_STR:
                 self.computed_l3_reservations.append(r)
 
         return self.computed_reservations

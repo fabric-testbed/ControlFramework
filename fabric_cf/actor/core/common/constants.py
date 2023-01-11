@@ -26,6 +26,8 @@
 from datetime import timedelta
 from enum import Enum
 
+from fim.slivers.network_service import ServiceType
+
 
 class ErrorCodes(Enum):
     """
@@ -299,3 +301,30 @@ class Constants:
     OPENSTACK_VNIC_MODEL = "OpenStack-vNIC"
 
     INTERNAL_SERVER_ERROR_MAINT_MODE = 501
+
+    L3_SERVICES = [ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext, ServiceType.FABNetv4,
+                   ServiceType.FABNetv6, ServiceType.L3VPN]
+
+    L3_FABNET_SERVICES = [ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext, ServiceType.FABNetv4,
+                          ServiceType.FABNetv6]
+
+    L3_FABNET_SERVICES_STR = [str(ServiceType.FABNetv6), str(ServiceType.FABNetv4), str(ServiceType.FABNetv4Ext),
+                              str(ServiceType.FABNetv6Ext)]
+
+    L3_FABNET_EXT_SERVICES = [ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext]
+
+    L3_FABNET_NON_EXT_SERVICES = [ServiceType.FABNetv4, ServiceType.FABNetv6]
+
+    L3_FABNETv6_SERVICES = [ServiceType.FABNetv6Ext, ServiceType.FABNetv6]
+
+    L3_FABNETv4_EXT_SERVICES = [ServiceType.FABNetv4Ext, ServiceType.FABNetv4]
+
+    SUPPORTED_SERVICES_STR = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
+                              str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror),
+                              str(ServiceType.FABNetv4Ext), str(ServiceType.FABNetv6Ext), str(ServiceType.L3VPN)]
+
+    IGNORABLE_NS = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS, ServiceType.VLAN]
+
+    SUPPORTED_SERVICES = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
+                          ServiceType.FABNetv4, ServiceType.PortMirror, ServiceType.FABNetv4Ext,
+                          ServiceType.FABNetv6Ext, ServiceType.L3VPN]
