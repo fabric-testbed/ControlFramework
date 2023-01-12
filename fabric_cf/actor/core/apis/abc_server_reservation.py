@@ -131,3 +131,14 @@ class ABCServerReservation(ABCReservationMixin):
 
         @param term requested term
         """
+
+    @abstractmethod
+    def post_message(self, *, message: str):
+        """
+        Post an update when some of the user data was overwritten as part of Extend
+        """
+    @abstractmethod
+    def clear_notice(self, clear_fail: bool = False):
+        """
+        Clear the Notices
+        """

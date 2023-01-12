@@ -23,6 +23,8 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import re
+
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import FrameworkException
 
@@ -54,11 +56,14 @@ class UpdateData:
         self.message = other.message
         self.failed = other.failed
 
-    def clear(self):
+    def clear(self, clear_fail: bool = False):
         """
         Clears all events.
         """
         self.events = None
+        if clear_fail:
+            self.failed = False
+            self.message = ""
 
     def error(self, *, message: str):
         """
@@ -96,10 +101,7 @@ class UpdateData:
     def post(self, *, event: str):
         """
         Posts a human-readable string describing an event that the user
-        may wish to know about. If the object already contains messages, the
-        new message is prepended to the existing messages. Messages are
-        separated using "\n".
-
+        may wish to know about.
         @param event message describing event
         """
         if event is None or event == "":
@@ -130,3 +132,6 @@ class UpdateData:
 
     def __str__(self):
         return f"message: {self.message} events: {self.events} failed: {self.failed}"
+
+    def post_message(self, *, message: str):
+        self.message = message

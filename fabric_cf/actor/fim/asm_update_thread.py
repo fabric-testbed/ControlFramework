@@ -115,14 +115,14 @@ class AsmUpdateThread:
             if self.thread_lock is not None and self.thread_lock.locked():
                 self.thread_lock.release()
 
-    def enqueue(self, *, graph_id: str, sliver: BaseSliver, rid: str, reservation_state: str, error_message: str):
+    def enqueue(self, *, graph_id: str, sliver: BaseSliver, rid: str, reservation_state: str,
+                error_message: str):
         try:
             if sliver.reservation_info is None:
                 sliver.reservation_info = ReservationInfo()
             sliver.reservation_info.reservation_id = rid
             sliver.reservation_info.reservation_state = reservation_state
-            new_str = re.sub('(\\\\r\\\\n|[%!{}\'\"])', '', error_message)
-            sliver.reservation_info.error_message = new_str
+            sliver.reservation_info.error_message = error_message
 
             event = AsmEvent(graph_id=graph_id, sliver=sliver)
             self.event_queue.put_nowait(event)

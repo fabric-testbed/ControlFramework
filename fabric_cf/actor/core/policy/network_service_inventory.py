@@ -26,7 +26,7 @@
 import ipaddress
 import traceback
 from ipaddress import IPv6Network, IPv4Network
-from typing import List
+from typing import List, Tuple
 
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.gateway import Gateway
@@ -396,55 +396,6 @@ class NetworkServiceInventory(InventoryForType):
             self.logger.error(f"Error in allocate_gateway_for_ns: {e}")
             self.logger.error(traceback.format_exc())
             raise BrokerException(msg=f"Allocation failure for Requested Network Service: {e}")
-        return requested_ns
-
-    def allocate_v4_public_ips(self, *, rid: ID, requested_ns: NetworkServiceSliver,
-                               existing_reservations: List[ABCReservationMixin]):
-        ip_network = IPv4Network(requested_ns.gateway.lab.ipv4_subnet)
-        ipaddress_list = list(ip_network.hosts())
-        ipaddress_list.pop(0)
-
-        # Exclude the already allocated subnets
-        for reservation in existing_reservations:
-            if rid == reservation.get_reservation_id():
-                continue
-            # For Active or Ticketed or Ticketing reservations; reduce the counts from available
-            allocated_sliver = None
-            if reservation.is_ticketing() and reservation.get_approved_resources() is not None:
-                allocated_sliver = reservation.get_approved_resources().get_sliver()
-
-            if (reservation.is_active() or reservation.is_ticketed()) and \
-                    reservation.get_resources() is not None:
-                allocated_sliver = reservation.get_resources().get_sliver()
-
-            self.logger.debug(f"Existing res# {reservation.get_reservation_id()} "
-                              f"allocated: {allocated_sliver}")
-
-            if allocated_sliver is None:
-                continue
-
-            if allocated_sliver.get_type() != requested_ns.get_type():
-                continue
-
-            if allocated_sliver.labels is not None and allocated_sliver.labels.ipv4 is not None:
-                for x in allocated_sliver.labels.ipv4:
-                    ip_to_remove = ipaddress.IPv4Address(x)
-                    ipaddress_list.remove(ip_to_remove)
-                    self.logger.debug(f"Excluding already allocated IPv4: {x} to "
-                                      f"res# {reservation.get_reservation_id()}")
-
-        if len(ipaddress_list) == 0 or len(ipaddress_list) < len(requested_ns.labels.ipv4):
-            raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
-                                  msg="No available v4 Public IPs")
-
-        diff = set(requested_ns.labels.ipv4).difference(set(ipaddress_list))
-        ips_to_add = len(diff)
-        for x in diff:
-            requested_ns.labels.ipv4.remove(x)
-        diff = set(ipaddress_list).difference(set(requested_ns.labels.ipv4))
-        for i in range(ips_to_add):
-            requested_ns.labels.ipv4.append(diff.pop())
-
         return requested_ns
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:

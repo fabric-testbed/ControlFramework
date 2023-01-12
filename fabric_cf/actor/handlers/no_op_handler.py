@@ -91,7 +91,7 @@ class NoOpHandler(HandlerBase):
             assert (interface.labels is not None)
             assert (interface.labels.device_name is not None)
             assert (interface.labels.local_name is not None)
-            assert (interface.capacities is not None)
+            #assert (interface.capacities is not None)
 
             if sliver.get_type() == ServiceType.L2PTP:
                 assert (interface.labels.vlan is not None)

@@ -93,11 +93,11 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def get_reservations(self, *, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None, type: str = None, site: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
+                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         """
-        @param state state
+        @param states states
         @param slice_id slice ID
         @param rid reservation id
         @param oidc_claim_sub: oidc claim sub
@@ -105,6 +105,7 @@ class ABCMgmtActor(ABCComponent):
         @param rid_list: list of Reservation Id
         @param type type of reservations like NodeSliver/NetworkServiceSliver
         @param site site
+        @param node_id node id
         Obtains all reservations
         @return returns list of the reservations
         """

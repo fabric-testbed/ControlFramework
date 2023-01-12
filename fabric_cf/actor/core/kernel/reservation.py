@@ -230,7 +230,7 @@ class Reservation(ABCReservationMixin):
         self.dirty = False
         self.state_transition = False
 
-    def clear_notice(self):
+    def clear_notice(self, clear_fail: bool=False):
         """
         Clears all event notices associated with the reservation.
         """

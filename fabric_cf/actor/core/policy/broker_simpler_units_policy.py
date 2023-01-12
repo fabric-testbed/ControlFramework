@@ -767,24 +767,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.fail(message=str(e))
         return False, node_id_to_reservations, error_msg
 
-    def __check_modify_on_fabnetv4ext(self, *, rid: ID, sliver: BaseSliver,
-                                 inv: InventoryForType) -> BaseSliver:
-        if not isinstance(sliver, NetworkServiceSliver) and not isinstance(inv, NetworkServiceInventory):
-            return sliver
-
-        if sliver.get_type() != ServiceType.FABNetv4Ext and sliver.labels is not None and \
-                sliver.labels.ipv4 is not None and len(sliver.labels.ipv4) > 0:
-
-            bqm_graph_id, owner_mpls_node_id = sliver.get_node_map()
-
-            node_id_to_reservations = {}
-            existing_reservations = self.get_existing_reservations(node_id=owner_mpls_node_id,
-                                                                   node_id_to_reservations=node_id_to_reservations)
-
-            sliver = inv.allocate_v4_public_ips(rid=rid, requested_ns=sliver,
-                                                existing_reservations=existing_reservations)
-        return sliver
-
     def __is_modify_on_openstack_vnic(self, *, sliver: BaseSliver) -> bool:
         if not isinstance(sliver, NetworkServiceSliver):
             return False
@@ -818,8 +800,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if diff is None or diff.added is None or \
                     (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0) or \
                     self.__is_modify_on_openstack_vnic(sliver=sliver):
-                self.__check_modify_on_fabnetv4ext(rid=reservation.get_reservation_id(),
-                                                   sliver=sliver, inv=inv)
                 self.issue_ticket(reservation=reservation, units=needed, rtype=requested_resources.get_type(),
                                   term=term, source=reservation.get_source(), sliver=sliver)
             else:
@@ -835,7 +815,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         except Exception as e:
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
-            reservation.fail_extend(message="", exception=e)
+            reservation.fail_extend(message=str(e), exception=e)
 
     def issue_ticket(self, *, reservation: ABCBrokerReservation, units: int, rtype: ResourceType,
                      term: Term, source: ABCDelegation, sliver: BaseSliver) -> ABCBrokerReservation:
@@ -1129,7 +1109,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         states = [ReservationStates.Active.value,
                   ReservationStates.ActiveTicketed.value,
                   ReservationStates.Ticketed.value,
-                  ReservationStates.Nascent.value]
+                  ReservationStates.Nascent.value,
+                  ReservationStates.Failed.value]
 
         # Only get Active or Ticketing reservations
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,

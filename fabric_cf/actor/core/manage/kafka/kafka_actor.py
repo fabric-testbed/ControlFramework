@@ -126,12 +126,16 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def accept_update_slice(self, *, slice_id: ID) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def get_reservations(self, *, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None, type: str = None, site: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
+                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
+        reservation_state = None
+        if states is not None:
+            reservation_state = states[0]
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
-                                                  reservation_state=state, email=email, rid=rid, type=type, site=site)
+                                                  reservation_state=reservation_state, email=email, rid=rid,
+                                                  type=type, site=site)
         status, response = self.send_request(request)
 
         if status.code == 0:

@@ -738,7 +738,7 @@ class PsqlDatabase:
         return filter_dict
 
     def get_reservations(self, *, slice_id: str = None, graph_node_id: str = None, project_id: str = None,
-                         email: str = None, oidc_sub: str = None, rid: str = None, state: list[int] = None,
+                         email: str = None, oidc_sub: str = None, rid: str = None, states: list[int] = None,
                          category: list[int] = None, site: str = None, rsv_type: str = None) -> list:
         """
         Get Reservations for an actor
@@ -748,7 +748,7 @@ class PsqlDatabase:
         @param email email
         @param oidc_sub oidc sub
         @param rid reservation id
-        @param state reservation state
+        @param states reservation state
         @param category reservation category
         @param site site name
         @param rsv_type rsv_type
@@ -763,8 +763,8 @@ class PsqlDatabase:
             with session_scope(self.db_engine) as session:
                 rows = session.query(Reservations).filter_by(**filter_dict)
 
-                if state is not None:
-                    rows = rows.filter(Reservations.rsv_state.in_(state))
+                if states is not None:
+                    rows = rows.filter(Reservations.rsv_state.in_(states))
 
                 if category is not None:
                     rows = rows.filter(Reservations.rsv_category.in_(category))
