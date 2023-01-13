@@ -270,15 +270,15 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            state = None
+            states = None
             if request.get_reservation_state() is not None and \
                     request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
-                state = [request.get_reservation_state()]
+                states = [request.get_reservation_state()]
 
             slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
             rid = ID(uid=request.reservation_id) if request.reservation_id is not None else None
 
-            result = mo.get_reservations(caller=auth, state=state, slice_id=slice_id,
+            result = mo.get_reservations(caller=auth, states=states, slice_id=slice_id,
                                          rid=rid, email=request.get_email(), type=request.get_type(),
                                          site=request.get_site())
 

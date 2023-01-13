@@ -606,7 +606,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                   ReservationStates.Nascent.value]
 
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
-                                                                                        state=states)
+                                                                                        states=states)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

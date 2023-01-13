@@ -288,8 +288,11 @@ class NetworkServiceInventory(InventoryForType):
         Return the sliver updated with the subnet
         """
         try:
-            if requested_ns.get_type() not in Constants.L3_FABNET_SERVICES:
+            if requested_ns.get_type() not in Constants.L3_SERVICES:
                 return requested_ns
+
+            # Grab Label Delegations
+            delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
 
             # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
             # Needs to be removed if FabNetv6/FabNetv6Ext are configured with different ranges
@@ -298,9 +301,14 @@ class NetworkServiceInventory(InventoryForType):
                 requested_ns_type = ServiceType.FABNetv6
             # Hack End
 
+            if requested_ns_type == ServiceType.L3VPN:
+                if requested_ns.labels is not None:
+                    requested_ns.labels = Labels.update(requested_ns.labels, asn=delegated_label.asn)
+                else:
+                    requested_ns.labels = Labels(asn=delegated_label.asn)
+                return requested_ns
+
             subnet_list = None
-            # Grab Label Delegations
-            delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
 
             # Get Subnet
             if owner_ns.get_type() in Constants.L3_FABNETv6_SERVICES:

@@ -317,7 +317,7 @@ class Constants:
 
     L3_FABNETv6_SERVICES = [ServiceType.FABNetv6Ext, ServiceType.FABNetv6]
 
-    L3_FABNETv4_EXT_SERVICES = [ServiceType.FABNetv4Ext, ServiceType.FABNetv4]
+    L3_FABNETv4_SERVICES = [ServiceType.FABNetv4Ext, ServiceType.FABNetv4]
 
     SUPPORTED_SERVICES_STR = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
                               str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror),
