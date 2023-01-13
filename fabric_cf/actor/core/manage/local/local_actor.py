@@ -214,7 +214,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: int = None,
+    def get_delegations(self, *, slice_id: ID = None, state: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         self.clear_last()
         try:

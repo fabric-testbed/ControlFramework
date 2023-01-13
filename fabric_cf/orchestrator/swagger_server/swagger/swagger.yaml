@@ -1020,6 +1020,8 @@ components:
           type: string
         project_id:
           type: string
+        project_name:
+          type: string
         graph_id:
           type: string
         name:

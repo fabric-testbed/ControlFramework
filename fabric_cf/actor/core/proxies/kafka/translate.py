@@ -90,12 +90,14 @@ class Translate:
         if slice_avro.guid is None:
             raise ProxyException(Constants.NOT_SPECIFIED_PREFIX.format("Slice id"))
 
-        slice_obj = SliceFactory.create(slice_id=ID(uid=slice_avro.guid), name=slice_avro.slice_name)
+        slice_obj = SliceFactory.create(slice_id=ID(uid=slice_avro.guid),
+                                        name=slice_avro.slice_name,
+                                        project_id=slice_avro.project_id,
+                                        project_name=slice_avro.project_name)
         slice_obj.set_description(description=slice_avro.description)
         slice_obj.set_config_properties(value=slice_avro.config_properties)
         slice_obj.set_lease_start(lease_start=slice_avro.get_lease_start())
         slice_obj.set_lease_end(lease_end=slice_avro.get_lease_end())
-        slice_obj.set_project_id(project_id=slice_avro.project_id)
         slice_obj.set_graph_id(graph_id=slice_avro.graph_id)
         return slice_obj
 
@@ -112,6 +114,9 @@ class Translate:
         avro_slice.set_lease_start(lease_start=slice_obj.get_lease_start())
         if hasattr(slice_obj, 'project_id'):
             avro_slice.set_project_id(project_id=slice_obj.get_project_id())
+
+        if hasattr(slice_obj, 'project_name'):
+            avro_slice.set_project_name(project_name=slice_obj.get_project_name())
 
         if slice_obj.get_resource_type() is not None:
             avro_slice.set_resource_type(str(slice_obj.get_resource_type()))

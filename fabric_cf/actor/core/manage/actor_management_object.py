@@ -152,7 +152,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         else:
             try:
 
-                slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name())
+                slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name(),
+                                                    project_id=slice_obj.get_project_id(),
+                                                    project_name=slice_obj.get_project_name())
                 slice_obj_new.set_description(description=slice_obj.get_description())
                 auth_token = Translate.translate_auth_from_avro(auth_avro=slice_obj.get_owner())
                 slice_obj_new.set_owner(owner=auth_token)
@@ -160,7 +162,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
                 slice_obj_new.set_lease_start(lease_start=datetime.now(timezone.utc))
-                slice_obj_new.set_project_id(project_id=slice_obj.get_project_id())
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)

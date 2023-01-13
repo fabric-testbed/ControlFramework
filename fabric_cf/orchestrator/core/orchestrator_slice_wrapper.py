@@ -531,7 +531,6 @@ class OrchestratorSliceWrapper:
                     continue
 
                 allocated_sliver = None
-                print(f"KOMAL {reservation}")
                 pending_state = ReservationPendingStates(reservation.get_pending_state())
                 state = ReservationStates(reservation.get_state())
 

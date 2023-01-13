@@ -162,6 +162,7 @@ class Controller(ActorMixin, ABCController):
                         self.wrapper.ticket(reservation=ticket, destination=self)
                     except Exception as e:
                         self.logger.error("unexpected ticket failure for #{} {}".format(ticket.get_reservation_id(), e))
+                        self.logger.error(traceback.format_exc())
                         ticket.fail(message="unexpected ticket failure {}".format(e))
 
             extending = candidates.get_extending()
