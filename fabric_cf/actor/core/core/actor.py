@@ -362,7 +362,7 @@ class ActorMixin(ABCActorMixin):
         self.logger.debug("Recovering client slices")
         client_slices = self.plugin.get_database().get_slices(slc_type=[SliceTypes.ClientSlice,
                                                                         SliceTypes.BrokerClientSlice],
-                                                              state=[SliceState.Configuring.value,
+                                                              states=[SliceState.Configuring.value,
                                                                      SliceState.Nascent.value,
                                                                      SliceState.StableOK.value,
                                                                      SliceState.StableError.value,

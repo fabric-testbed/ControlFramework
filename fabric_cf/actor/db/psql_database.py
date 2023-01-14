@@ -27,6 +27,7 @@ import logging
 import pickle
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from typing import List
 
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -540,7 +541,7 @@ class PsqlDatabase:
         return filter_dict
 
     def get_slices(self, *, slice_id: str = None, slice_name: str = None, project_id: str = None, email: str = None,
-                   state: list[int] = None, oidc_sub: str = None, slc_type: list[int] = None, limit: int = None,
+                   states: list[int] = None, oidc_sub: str = None, slc_type: list[int] = None, limit: int = None,
                    offset: int = None, lease_end: datetime = None) -> list:
         """
         Get slices for an actor
@@ -548,7 +549,7 @@ class PsqlDatabase:
         @param slice_name slice name
         @param project_id project id
         @param email email
-        @param state state
+        @param states states
         @param oidc_sub oidc claim sub
         @param slc_type slice type
         @param limit limit
@@ -568,8 +569,8 @@ class PsqlDatabase:
 
                 rows = rows.order_by(desc(Slices.lease_end))
 
-                if state is not None:
-                    rows = rows.filter(Slices.slc_state.in_(state))
+                if states is not None:
+                    rows = rows.filter(Slices.slc_state.in_(states))
 
                 if slc_type is not None:
                     rows = rows.filter(Slices.slc_type.in_(slc_type))
@@ -1257,11 +1258,11 @@ class PsqlDatabase:
             raise DatabaseException(self.OBJECT_NOT_FOUND.format("Reservation", reservation_id))
         return reservations[0]['rsv_id']
 
-    def get_delegations(self, *, slc_guid: str = None, state: int = None) -> list:
+    def get_delegations(self, *, slc_guid: str = None, states: List[int] = None) -> list:
         """
         Get delegations
         @param slc_guid slice guid
-        @param state delegation state
+        @param states delegation state
         @param list of delegations
         """
         result = []
@@ -1271,8 +1272,8 @@ class PsqlDatabase:
                 rows = session.query(Delegations)
                 if slc_guid is not None:
                     rows = rows.filter(Delegations.dlg_slc_id == slc_id)
-                if state is not None:
-                    rows = rows.filter(Delegations.dlg_state == state)
+                if states is not None:
+                    rows = rows.filter(Delegations.dlg_state.in_(states))
                 for row in rows.all():
                     dlg_obj = self.generate_delegation_dict_from_row(row)
                     result.append(dlg_obj.copy())

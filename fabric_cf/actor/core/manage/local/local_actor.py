@@ -53,11 +53,12 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         self.clear_last()
         try:
-            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, state=state, slice_name=slice_name,
-                                             email=email, project=project, limit=limit, offset=offset)
+            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, states=states,
+                                             slice_name=slice_name, email=email, project=project,
+                                             limit=limit, offset=offset)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -214,7 +215,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: List[int] = None,
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         self.clear_last()
         try:

@@ -386,7 +386,7 @@ class OrchestratorHandler:
             project = None
             if len(projects) == 1:
                 project, tags, project_name = fabric_token.get_first_project()
-            slice_list = controller.get_slices(state=slice_states, email=fabric_token.get_email(), project=project,
+            slice_list = controller.get_slices(states=slice_states, email=fabric_token.get_email(), project=project,
                                                slice_name=name, limit=limit, offset=offset)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:

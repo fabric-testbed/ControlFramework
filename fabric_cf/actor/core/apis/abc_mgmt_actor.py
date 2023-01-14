@@ -43,14 +43,14 @@ if TYPE_CHECKING:
 class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         """
         Obtains all slices.
         @param slice_id slice id
         @param slice_name slice name
         @param email email
         @param project project id
-        @param state slice state
+        @param states slice states
         @param limit limit
         @param offset offset
         @return returns list of slices
@@ -195,12 +195,12 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def get_delegations(self, *, slice_id: ID = None, state: List[int] = None,
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         """
         Get Delegations
         @param slice_id slice id
-        @param state state
+        @param states states
         @param delegation_id delegation id
         @return returns list of the delegations
         """

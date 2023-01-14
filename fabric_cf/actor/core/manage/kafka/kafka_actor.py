@@ -75,10 +75,10 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         return response.status.code == 0
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         request = GetSlicesRequestAvro()
         request = self.fill_request_by_id_message(request=request, email=email, slice_id=slice_id,
-                                                  slice_name=slice_name, reservation_state=state)
+                                                  slice_name=slice_name, states=states)
         status, response = self.send_request(request)
         if response is not None:
             return response.slices
@@ -128,7 +128,7 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
                          type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
-                                                  reservation_state=states, email=email, rid=rid,
+                                                  states=states, email=email, rid=rid,
                                                   type=type, site=site)
         status, response = self.send_request(request)
 
@@ -136,11 +136,11 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
             return response.reservations
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: List[int] = None,
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         request = GetDelegationsAvro()
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
-                                                  reservation_state=state, delegation_id=delegation_id)
+                                                  states=states, delegation_id=delegation_id)
         status, response = self.send_request(request)
 
         if status.code == 0:

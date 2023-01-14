@@ -180,7 +180,7 @@ class ABCDatabase(ABC):
 
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
-                   state: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                   states: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
                    limit: int = None, offset: int = None, lease_end: datetime = None) -> List[ABCSlice] or None:
         """
         Retrieves the specified slices.
@@ -189,7 +189,7 @@ class ABCDatabase(ABC):
         @param slice_name slice name
         @param project_id project id
         @param email email
-        @param state state
+        @param states states
         @param oidc_sub oidc sub
         @param slc_type slice type
         @param limit limit
@@ -281,7 +281,7 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_delegations(self, *, slice_id: ID = None, state: int = None) -> List[ABCDelegation]:
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None) -> List[ABCDelegation]:
         """
         Get delegations
         @params slice_id: slice_id

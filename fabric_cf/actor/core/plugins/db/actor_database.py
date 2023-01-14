@@ -199,7 +199,7 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
-                   state: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                   states: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
                    limit: int = None, offset: int = None, lease_end: datetime = None) -> List[ABCSlice] or None:
         result = []
         try:
@@ -210,7 +210,7 @@ class ActorDatabase(ABCDatabase):
                     slice_type = [x.value for x in slc_type]
                 sid = str(slice_id) if slice_id is not None else None
                 slices = self.db.get_slices(slice_id=sid, slice_name=slice_name, project_id=project_id, email=email,
-                                            state=state, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
+                                            states=states, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
                                             offset=offset, lease_end=lease_end)
             finally:
                 if self.lock.locked():
@@ -569,12 +569,12 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: int = None) -> List[ABCDelegation]:
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None) -> List[ABCDelegation]:
         result = []
         try:
             self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
-            dlg_dict_list = self.db.get_delegations(slc_guid=sid, state=state)
+            dlg_dict_list = self.db.get_delegations(slc_guid=sid, states=states)
             self.lock.release()
             result = self._load_delegation_from_db(dlg_dict_list=dlg_dict_list)
         except Exception as e:

@@ -165,17 +165,20 @@ class KafkaActorService(KafkaService):
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
             states = SliceState.list_values_ex_closing_dead()
-            if request.reservation_state is not None:
-                if request.reservation_state == SliceState.All.value:
-                    states = SliceState.list_values()
-                else:
-                    states = [request.reservation_state]
+            if request.states is not None:
+                states = []
+                for x in request.states:
+                    if request.reservation_state == SliceState.All.value:
+                        states = SliceState.list_values()
+                        break
+                    else:
+                        states.append(x)
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
             slice_id = ID(uid=request.get_slice_id()) if request.slice_id is not None else None
             result = mo.get_slices(slice_id=slice_id, caller=auth, slice_name=request.get_slice_name(),
-                                   email=request.get_email(), state=states)
+                                   email=request.get_email(), states=states)
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -396,13 +399,13 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            state = None
+            states = None
             if request.get_delegation_state() is not None:
-                state = [request.get_delegation_state()]
+                states = [request.get_delegation_state()]
 
             slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
             result = mo.get_delegations(caller=auth, did=request.get_delegation_id(),
-                                        state=state, slice_id=slice_id)
+                                        states=states, slice_id=slice_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
