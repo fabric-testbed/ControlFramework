@@ -41,7 +41,7 @@ from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
-from fim.slivers.topology_diff import TopologyDiff
+from fim.slivers.topology_diff import TopologyDiff, WhatsModifiedFlag
 from fim.user import ServiceType, ExperimentTopology
 
 from fabric_cf.actor.core.common.constants import ErrorCodes, Constants
@@ -362,40 +362,6 @@ class OrchestratorSliceWrapper:
             sliver_to_res_mapping[nn_id] = reservation.get_reservation_id()
         return reservations, sliver_to_res_mapping
 
-    def is_property_update(self, *, topology_diff: TopologyDiff):
-        if len(topology_diff.added.services) == 0 and len(topology_diff.added.nodes) == 0 and \
-                len(topology_diff.added.interfaces) == 0 and len(topology_diff.removed.services) == 0 and \
-                len(topology_diff.removed.nodes) == 0 and len(topology_diff.removed.interfaces) == 0:
-            return True
-        return False
-
-    def modify_properties(self, *, new_slice_graph: ABCASMPropertyGraph, new_topology:ExperimentTopology,
-                          existing_topology: ExperimentTopology) -> List[LeaseReservationAvro]:
-        modified_reservations = []
-        node_res_mapping = {}
-        for x in new_topology.nodes.values():
-            if x.reservation_info is not None:
-                node_res_mapping[x.node_id] = x.reservation_info.reservation_id
-        for x in new_topology.network_services.values():
-            if x.reservation_info is not None:
-                node_res_mapping[x.node_id] = x.reservation_info.reservation_id
-
-        for ns_name, new_ns in new_topology.network_services.items():
-            if new_ns.type in Constants.L3_FABNET_EXT_SERVICES:
-                existing_ns = existing_topology.network_services[ns_name]
-                rid = existing_ns.reservation_info.reservation_id
-                if new_ns.labels != existing_ns.labels:
-                    reservation, sliver = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
-                                                                             node_res_mapping=node_res_mapping,
-                                                                             node_id=new_ns.node_id)
-                    reservation.set_reservation_id(value=rid)
-                    modified_reservations.append(reservation)
-                    self.computed_modify_properties_reservations.append(reservation)
-                    if new_ns.type == ServiceType.FABNetv4Ext:
-                        self.__check_modify_on_fabnetv4ext(rid=rid, req_sliver=sliver)
-
-        return modified_reservations
-
     def modify(self, *, new_slice_graph: ABCASMPropertyGraph) -> List[LeaseReservationAvro]:
         existing_topology = FimHelper.get_experiment_topology(graph_id=self.slice_obj.get_graph_id())
 
@@ -404,11 +370,11 @@ class OrchestratorSliceWrapper:
         new_topology.cast(asm_graph=new_slice_graph)
         topology_diff = existing_topology.diff(new_topology)
 
-        if self.is_property_update(topology_diff=topology_diff):
-            return self.modify_properties(new_slice_graph=new_slice_graph, existing_topology=existing_topology,
-                                          new_topology=new_topology)
-
         reservations = []
+
+        if topology_diff is None:
+            return reservations
+
         node_res_mapping = {}
 
         # Build up the node_res mapping to include nodes before modify
@@ -500,6 +466,26 @@ class OrchestratorSliceWrapper:
 
             if r.get_resource_type() in Constants.L3_FABNET_SERVICES_STR:
                 self.computed_l3_reservations.append(r)
+
+        modified_reservations = []
+
+        for new_ns, flag in topology_diff.modified.services:
+            if flag & WhatsModifiedFlag.LABELS:
+                # Only support modify for FabNet Services
+                if new_ns.type not in Constants.L3_FABNET_SERVICES:
+                    continue
+                rid = new_ns.reservation_info.reservation_id
+                reservation, sliver = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
+                                                                         node_res_mapping=node_res_mapping,
+                                                                         node_id=new_ns.node_id)
+                reservation.set_reservation_id(value=rid)
+                modified_reservations.append(reservation)
+                self.computed_modify_properties_reservations.append(reservation)
+                if new_ns.type == ServiceType.FABNetv4Ext:
+                    self.__check_modify_on_fabnetv4ext(rid=rid, req_sliver=sliver)
+
+        for x in modified_reservations:
+            self.computed_reservations.append(x)
 
         return self.computed_reservations
 

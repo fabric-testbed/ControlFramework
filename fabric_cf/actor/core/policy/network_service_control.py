@@ -86,7 +86,7 @@ class NetworkServiceControl(ResourceControl):
         else:
             current_sliver = current.get_sliver()
             diff = current_sliver.diff(other_sliver=requested)
-            if diff is not None or current_sliver.get_type() in Constants.L3_FABNET_EXT_SERVICES:
+            if diff is not None:
                 unit = Unit(rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
                             actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type,
                             properties=reservation.get_slice().get_config_properties())
