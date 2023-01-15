@@ -1686,19 +1686,17 @@ class ReservationClient(Reservation, ABCControllerReservation):
         try:
             self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                               f"Slice Graph# {self.slice.get_graph_id()}")
-            error_message = "#OC#: "
-            if self.get_error_message() is not None:
-                error_message += f"{self.__remove_special_characters(message=self.get_error_message())}##"
-            else:
-                error_message += "##"
+            error_message = ""
+            if self.get_error_message() is not None and len(self.get_error_message()) > 0:
+                error_message += f"{self.__remove_special_characters(message=self.get_error_message())}#"
 
             broker_updates = self.get_last_ticket_update()
-            if broker_updates is not None:
-                error_message += f"#BROKER#: {self.__remove_special_characters(message=broker_updates)}##"
+            if broker_updates is not None and len(broker_updates) > 0:
+                error_message += f"{self.__remove_special_characters(message=broker_updates)}#"
 
             authority_updates = self.get_last_lease_update()
-            if authority_updates is not None:
-                error_message += f"#AUTHORITY#: {self.__remove_special_characters(message=authority_updates)}##"
+            if authority_updates is not None and len(authority_updates) > 0:
+                error_message += f"{self.__remove_special_characters(message=authority_updates)}#"
 
             asm_thread = self.actor.get_asm_thread()
             if asm_thread is not None:
