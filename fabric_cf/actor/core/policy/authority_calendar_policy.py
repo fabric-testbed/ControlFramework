@@ -32,6 +32,7 @@ from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -45,6 +46,7 @@ from fabric_cf.actor.core.apis.abc_resource_control import ABCResourceControl
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.time.calendar.authority_calendar import AuthorityCalendar
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -129,14 +131,15 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     def set_aggregate_resource_model_graph_id(self, graph_id: str):
         self.aggregate_resource_model_graph_id = graph_id
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         """
         initialize the policy
         """
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
             self.calendar = AuthorityCalendar(clock=self.clock)
             self.initialize_controls()
+            self.load_new_controls(config=config)
             self.load_aggregate_resource_model()
             self.initialized = True
 
@@ -148,6 +151,35 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         for control in self.controls_by_guid.values():
             control.set_actor(actor=self.actor)
             control.initialize()
+
+    def load_new_controls(self, *, config: ActorConfig):
+        for c in config.get_controls():
+            try:
+                if c.get_module_name() is None or c.get_class_name() is None or c.get_type() is None or \
+                        len(c.get_type()) == 0:
+                    continue
+
+                control = ReflectionUtils.create_instance(module_name=c.get_module_name(),
+                                                          class_name=c.get_class_name())
+                control.set_actor(actor=self.actor)
+
+                for t in c.get_type():
+                    self.logger.debug(f"Processing control type: {t}")
+                    rtype = ResourceType(resource_type=t)
+                    existing = self.get_control_by_type(rtype=rtype)
+
+                    if existing is None:
+                        self.logger.debug(f"Adding control type: {t} control: {type(control)}")
+                        control.add_type(rtype=rtype)
+                    else:
+                        self.logger.debug(f"Exists control type: {t} control: {type(control)}")
+
+                if len(control.get_types()) > 0:
+                    self.logger.debug(f"Registering control control: {type(control)}")
+                    self.register_control(control=control)
+            except Exception as e:
+                self.logger.error(f"Exception occurred while loading new control: {e}")
+                self.logger.error(traceback.format_exc())
 
     def eject(self, *, resources: ResourceSet):
         rc = self.get_control_by_type(rtype=resources.get_type())
@@ -574,7 +606,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                   ReservationStates.Nascent.value]
 
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
-                                                                                        state=states)
+                                                                                        states=states)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

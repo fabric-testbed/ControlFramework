@@ -58,6 +58,11 @@ For GENI racks, use the following command instead:
 /setup.sh uky2-am password ./config.site.am.geni.yaml ../../neo4j/UKY2.graphml ./vm_handler_config.yml ./vnic_net_handler_config.yml
 ```
 
+For Network AM, use the following command instead:
+```
+./setup.sh net-am password ./config.net.am.yaml ../../neo4j/Network-ad.graphml ./net_handler_config.yml
+```
+
 ### Environment and Configuration
 The script `setup.sh` generates directory for the AM, which has `.env` file which contains Environment variables for `docker-compose.yml` to use
 User is expected to update `.env` file as needed and update volumes section for am in `docker-compose.yml`.

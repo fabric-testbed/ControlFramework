@@ -143,6 +143,8 @@ class ResourceControl(ABCResourceControl):
 
     def set_actor(self, *, actor: ABCActorMixin):
         self.authority = actor
+        if self.authority is not None:
+            self.logger = self.authority.get_logger()
 
     def get_guid(self) -> ID:
         return self.guid

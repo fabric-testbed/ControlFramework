@@ -57,7 +57,8 @@ class Slice(ABCSlice):
     reservations at many sites; and on the site Authority, where each slice may
     hold multiple reservations for resources at that site.
     """
-    def __init__(self, *, slice_id: ID = None, name: str = "unspecified", project_id: str = None):
+    def __init__(self, *, slice_id: ID = None, name: str = "unspecified", project_id: str = None,
+                 project_name: str = None):
         # Globally unique identifier.
         self.guid = slice_id
         # Slice name. Not required to be globally or locally unique.
@@ -84,6 +85,7 @@ class Slice(ABCSlice):
         self.lease_end = None
         self.lease_start = None
         self.project_id = project_id
+        self.project_name = project_name
 
     def __getstate__(self):
         state = self.__dict__.copy()
@@ -105,6 +107,12 @@ class Slice(ABCSlice):
 
     def get_project_id(self):
         return self.project_id
+
+    def set_project_name(self, project_name):
+        self.project_name = project_name
+
+    def get_project_name(self):
+        return self.project_name
 
     def set_graph_id(self, graph_id: str):
         self.graph_id = graph_id
@@ -342,15 +350,17 @@ class Slice(ABCSlice):
 
 class SliceFactory:
     @staticmethod
-    def create(*, slice_id: ID, name: str = None, properties: dict = None, project_id: str = None) -> ABCSlice:
+    def create(*, slice_id: ID, name: str = None, properties: dict = None, project_id: str = None,
+               project_name: str = None) -> ABCSlice:
         """
         Create slice
         :param slice_id:
         :param name:
         :param properties:
         :param project_id:
+        :param project_name:
         :return:
         """
-        result = Slice(slice_id=slice_id, name=name, project_id=project_id)
+        result = Slice(slice_id=slice_id, name=name, project_id=project_id, project_name=project_name)
         result.set_config_properties(value=properties)
         return result

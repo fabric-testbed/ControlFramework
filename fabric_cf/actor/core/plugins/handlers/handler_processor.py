@@ -28,8 +28,10 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import PluginException
+from fabric_cf.actor.core.common.resource_config import ResourceConfigBuilder
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.plugins.base_plugin import BasePlugin
@@ -61,15 +63,16 @@ class HandlerProcessor:
         self.initialized = False
         self.lock = threading.Lock()
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         if not self.initialized:
             if self.plugin is None:
                 raise PluginException(Constants.NOT_SPECIFIED_PREFIX.format("plugin"))
             self.logger = self.plugin.get_logger()
-            self.load_config_mappings()
+            self.load_config_mappings_from_db()
+            self.load_config_mappings(config=config)
             self.initialized = True
 
-    def load_config_mappings(self):
+    def load_config_mappings_from_db(self):
         try:
             self.lock.acquire()
             mappings = self.plugin.get_database().get_config_mappings()
@@ -77,6 +80,19 @@ class HandlerProcessor:
                 self.config_mappings[m.get_key()] = m
         finally:
             self.lock.release()
+
+    def load_config_mappings(self, *, config: ActorConfig):
+        if config is None:
+            return
+        resource_configs = ResourceConfigBuilder.build_resource_config(config=config)
+        if resource_configs is not None:
+            for rtype, rc in resource_configs.items():
+                if str(rtype) not in self.config_mappings:
+                    self.logger.debug(f"Adding handler for type: {rtype} handler: {type(rc)}")
+                    config_map = ResourceConfigBuilder.build_config_mapping(resource_config=rc)
+                    self.add_config_mapping(mapping=config_map)
+                else:
+                    self.logger.debug(f"Handler for type: {rtype} exists")
 
     def add_config_mapping(self, *, mapping: ConfigurationMapping):
         try:

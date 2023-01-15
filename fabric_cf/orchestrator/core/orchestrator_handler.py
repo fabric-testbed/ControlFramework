@@ -237,7 +237,7 @@ class OrchestratorHandler:
 
             # Check if an Active slice exists already with the same name for the user
             create_ts = time.time()
-            project, tags = fabric_token.get_first_project()
+            project, tags, project_name = fabric_token.get_first_project()
             existing_slices = controller.get_slices(slice_name=slice_name,
                                                     email=fabric_token.get_email(), project=project)
             self.logger.info(f"GET slices: TIME= {time.time() - create_ts:.0f}")
@@ -270,6 +270,7 @@ class OrchestratorHandler:
             auth.email = fabric_token.get_email()
             slice_obj.set_owner(auth)
             slice_obj.set_project_id(project)
+            slice_obj.set_project_name(project_name)
 
             create_ts = time.time()
             self.logger.debug(f"Adding Slice {slice_name}")
@@ -384,8 +385,8 @@ class OrchestratorHandler:
             projects = fabric_token.get_projects()
             project = None
             if len(projects) == 1:
-                project, tags = fabric_token.get_first_project()
-            slice_list = controller.get_slices(state=slice_states, email=fabric_token.get_email(), project=project,
+                project, tags, project_name = fabric_token.get_first_project()
+            slice_list = controller.get_slices(states=slice_states, email=fabric_token.get_email(), project=project,
                                                slice_name=name, limit=limit, offset=offset)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:
@@ -437,7 +438,7 @@ class OrchestratorHandler:
             # Authorize the slice
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology)
-            project, tags = fabric_token.get_first_project()
+            project, tags, project_name = fabric_token.get_first_project()
             broker = self.get_broker(controller=controller)
             if broker is None:
                 raise OrchestratorException("Unable to determine broker proxy for this controller. "
@@ -499,11 +500,7 @@ class OrchestratorHandler:
             slice_guid = ID(uid=slice_id) if slice_id is not None else None
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
 
-            project, tags = fabric_token.get_first_project()
-            # FIX ME: Hack until portal changes to project based view
-            project = None
-            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
-                                               project=project)
+            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email())
 
             if slice_list is None or len(slice_list) == 0:
                 raise OrchestratorException(f"Slice# {slice_id} not found",
@@ -741,7 +738,7 @@ class OrchestratorHandler:
         controller = self.controller_state.get_management_actor()
         self.logger.debug(f"check_maintenance_mode invoked for Controller: {controller}")
 
-        project, tags = token.get_first_project()
+        project, tags, project_name = token.get_first_project()
 
         if not controller.is_slice_provisioning_allowed(project=project, email=token.get_email()):
             raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR,

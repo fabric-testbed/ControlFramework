@@ -117,9 +117,9 @@ class FabricToken:
     def __str__(self):
         return f"Decoded Token: {self.decoded_token}"
 
-    def get_first_project(self) -> Tuple[str or None, str or None]:
+    def get_first_project(self) -> Tuple[str or None, str or None, str or None]:
         projects = self.get_projects()
         if projects is None or len(projects) == 0:
-            return None, None
+            return None, None, None
 
-        return projects[0].get(Constants.UUID), projects[0].get(Constants.TAGS)
+        return projects[0].get(Constants.UUID), projects[0].get(Constants.TAGS), projects[0].get(Constants.NAME)

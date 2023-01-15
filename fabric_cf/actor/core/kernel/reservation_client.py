@@ -26,6 +26,7 @@
 from __future__ import annotations
 
 import json
+import re
 import threading
 import time
 import traceback
@@ -35,7 +36,7 @@ from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.network_node import NodeSliver, NodeType
-from fim.slivers.network_service import ServiceType, NetworkServiceSliver
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_authority_policy import ABCAuthorityPolicy
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
@@ -530,13 +531,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         return approved
 
     def can_ticket(self, extend: bool = False) -> bool:
-        supported_ns = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
-                        str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror)]
-
         ret_val = False
         if self.get_type() is not None:
             resource_type_str = str(self.get_type())
-            if resource_type_str in supported_ns:
+            if resource_type_str in Constants.SUPPORTED_SERVICES_STR:
                 ret_val = self.approve_ticket(extend=extend)
             else:
                 ret_val = True
@@ -567,7 +565,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         return self.last_ticket_update.successful()
 
-    def clear_notice(self):
+    def clear_notice(self, clear_fail: bool=False):
         self.last_ticket_update.clear()
         self.last_lease_update.clear()
 
@@ -830,7 +828,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 result += f"{self.last_lease_update.get_message()}, "
             ev = self.last_lease_update.get_events()
             if ev is not None and ev != "":
-                result += f"{ev}, "
+                result += f"events: {ev}, "
             result = result[:-2]
         return result
 
@@ -1673,6 +1671,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if sliver is not None:
             self.update_slice_graph(sliver=self.requested_resources.sliver)
 
+    @staticmethod
+    def __remove_special_characters(message: str) -> str:
+        message = re.sub('(\\\\r\\\\n|[%!{}\'\"])', '', message)
+        return message
+
     def update_slice_graph(self, *, sliver: BaseSliver):
         """
         Update ASM with Sliver information
@@ -1683,16 +1686,18 @@ class ReservationClient(Reservation, ABCControllerReservation):
         try:
             self.logger.debug(f"Updating ASM for  Reservation# {self.rid} State# {self.get_reservation_state()} "
                               f"Slice Graph# {self.slice.get_graph_id()}")
-            error_message = self.get_error_message()
-            if error_message is None:
-                error_message = self.get_last_ticket_update()
-            if error_message is None:
-                error_message = self.get_last_lease_update()
-            '''
-            self.slice.update_slice_graph(sliver=sliver, rid=str(self.rid),
-                                          reservation_state=self.state.name,
-                                          error_message=error_message)
-            '''
+            error_message = ""
+            if self.get_error_message() is not None and len(self.get_error_message()) > 0:
+                error_message += f"{self.__remove_special_characters(message=self.get_error_message())}#"
+
+            broker_updates = self.get_last_ticket_update()
+            if broker_updates is not None and len(broker_updates) > 0:
+                error_message += f"{self.__remove_special_characters(message=broker_updates)}#"
+
+            authority_updates = self.get_last_lease_update()
+            if authority_updates is not None and len(authority_updates) > 0:
+                error_message += f"{self.__remove_special_characters(message=authority_updates)}#"
+
             asm_thread = self.actor.get_asm_thread()
             if asm_thread is not None:
                 asm_thread.enqueue(graph_id=self.slice.get_graph_id(),

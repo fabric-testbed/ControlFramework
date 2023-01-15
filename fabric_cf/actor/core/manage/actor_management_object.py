@@ -109,7 +109,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             self.id = actor.get_guid()
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
-                   state: List[int] = None, project: str = None, limit: int = None,
+                   states: List[int] = None, project: str = None, limit: int = None,
                    offset: int = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
@@ -123,7 +123,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             try:
                 try:
                     slice_list = self.db.get_slices(slice_id=slice_id, slice_name=slice_name, email=email,
-                                                    state=state, project_id=project, limit=limit, offset=offset)
+                                                    states=states, project_id=project, limit=limit, offset=offset)
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -152,7 +152,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         else:
             try:
 
-                slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name())
+                slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name(),
+                                                    project_id=slice_obj.get_project_id(),
+                                                    project_name=slice_obj.get_project_name())
                 slice_obj_new.set_description(description=slice_obj.get_description())
                 auth_token = Translate.translate_auth_from_avro(auth_avro=slice_obj.get_owner())
                 slice_obj_new.set_owner(owner=auth_token)
@@ -160,7 +162,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
                 slice_obj_new.set_lease_start(lease_start=datetime.now(timezone.utc))
-                slice_obj_new.set_project_id(project_id=slice_obj.get_project_id())
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)
@@ -299,10 +300,10 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return None
         return slices[0]
 
-    def get_reservations(self, *, caller: AuthToken, state: List[int] = None,
+    def get_reservations(self, *, caller: AuthToken, states: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
                          email: str = None, rid_list: List[str] = None, type: str = None,
-                         site: str = None) -> ResultReservationAvro:
+                         site: str = None, node_id: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -319,7 +320,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     res_list = self.db.get_reservations_by_rids(rid=rid_list)
                 else:
                     res_list = self.db.get_reservations(slice_id=slice_id, rid=rid, email=email,
-                                                        state=state, rsv_type=type, site=site)
+                                                        states=states, rsv_type=type, site=site,
+                                                        graph_node_id=node_id)
             except Exception as e:
                 self.logger.error("getReservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -537,7 +539,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return result
 
     def get_delegations(self, *, caller: AuthToken, slice_id: ID = None, did: str = None,
-                        state: int = None) -> ResultDelegationAvro:
+                        states: List[int] = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -558,7 +560,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                         result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
                         result.status.set_message(ErrorCodes.ErrorNoSuchDelegation.interpret())
                 else:
-                    dlg_list = self.db.get_delegations(slice_id=slice_id, state=state)
+                    dlg_list = self.db.get_delegations(slice_id=slice_id, states=states)
             except Exception as e:
                 self.logger.error("get_delegations db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)

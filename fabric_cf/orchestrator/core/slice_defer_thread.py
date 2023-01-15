@@ -189,6 +189,11 @@ class SliceDeferThread:
                     continue
                 self.logger.debug(f"Issued extend for reservation #{rid} successfully")
 
+            for r in controller_slice.computed_modify_properties_reservations:
+                self.logger.debug(f"Issuing modify for reservation: {r}")
+                self.mgmt_actor.modify_reservation(rid=ID(uid=str(r.get_reservation_id())),
+                                                   modified_sliver=r.sliver)
+
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error("Unable to get orchestrator or demand reservation: {}".format(e))

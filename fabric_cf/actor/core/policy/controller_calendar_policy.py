@@ -25,6 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 from abc import abstractmethod
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.core.apis.abc_controller_policy import ABCControllerPolicy
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
@@ -252,9 +253,9 @@ class ControllerCalendarPolicy(Policy, ABCControllerPolicy):
         @raises Exception in case of error
         """
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
             self.calendar = ControllerCalendar(clock=self.clock)
             self.initialized = True
 

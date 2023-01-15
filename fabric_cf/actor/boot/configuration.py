@@ -425,7 +425,7 @@ class Configuration:
             return self.global_config.get_oauth()
         return None
 
-    def get_actor(self) -> ActorConfig:
+    def get_actor_config(self) -> ActorConfig:
         """
         Return Actor Config
         """

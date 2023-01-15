@@ -32,6 +32,7 @@ from typing import TYPE_CHECKING
 
 from fim.slivers.base_sliver import BaseSliver
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -135,8 +136,8 @@ class Controller(ActorMixin, ABCController):
         self.asm_update_thread.start()
         super(Controller, self).start()
 
-    def actor_added(self):
-        super().actor_added()
+    def actor_added(self, *, config: ActorConfig):
+        super().actor_added(config=config)
         self.registry.actor_added()
 
     def add_broker(self, *, broker: ABCBrokerProxy):
@@ -161,6 +162,7 @@ class Controller(ActorMixin, ABCController):
                         self.wrapper.ticket(reservation=ticket, destination=self)
                     except Exception as e:
                         self.logger.error("unexpected ticket failure for #{} {}".format(ticket.get_reservation_id(), e))
+                        self.logger.error(traceback.format_exc())
                         ticket.fail(message="unexpected ticket failure {}".format(e))
 
             extending = candidates.get_extending()
@@ -259,9 +261,9 @@ class Controller(ActorMixin, ABCController):
     def get_default_broker(self) -> ABCBrokerProxy:
         return self.registry.get_default_broker()
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
 
             self.registry.set_slices_plugin(plugin=self.plugin)
             self.registry.initialize()

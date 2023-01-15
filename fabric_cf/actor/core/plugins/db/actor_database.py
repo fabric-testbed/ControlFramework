@@ -199,7 +199,7 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
-                   state: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                   states: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
                    limit: int = None, offset: int = None, lease_end: datetime = None) -> List[ABCSlice] or None:
         result = []
         try:
@@ -210,7 +210,7 @@ class ActorDatabase(ABCDatabase):
                     slice_type = [x.value for x in slc_type]
                 sid = str(slice_id) if slice_id is not None else None
                 slices = self.db.get_slices(slice_id=sid, slice_name=slice_name, project_id=project_id, email=email,
-                                            state=state, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
+                                            states=states, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
                                             offset=offset, lease_end=lease_end)
             finally:
                 if self.lock.locked():
@@ -314,12 +314,14 @@ class ActorDatabase(ABCDatabase):
                 for p in result.get_redeem_predecessors():
                     if p.reservation_id is not None:
                         parent = self.get_reservations(rid=p.reservation_id)
-                        p.set_reservation(reservation=parent[0])
+                        if parent is not None and len(parent) > 0:
+                            p.set_reservation(reservation=parent[0])
 
                 for p in result.get_join_predecessors():
                     if p.reservation_id is not None:
                         parent = self.get_reservations(rid=p.reservation_id)
-                        p.set_reservation(reservation=parent[0])
+                        if parent is not None and len(parent) > 0:
+                            p.set_reservation(reservation=parent[0])
 
             return result
         except Exception as e:
@@ -406,7 +408,7 @@ class ActorDatabase(ABCDatabase):
 
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: ID = None,
-                         state: list[int] = None, site: str = None, rsv_type: int = None) -> List[ABCReservationMixin]:
+                         states: list[int] = None, site: str = None, rsv_type: int = None) -> List[ABCReservationMixin]:
         result = []
         try:
             self.lock.acquire()
@@ -414,7 +416,7 @@ class ActorDatabase(ABCDatabase):
             res_id = str(rid) if rid is not None else None
             res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id,
                                                      project_id=project_id, email=email, oidc_sub=oidc_sub, rid=res_id,
-                                                     state=state, site=site, rsv_type=rsv_type)
+                                                     states=states, site=site, rsv_type=rsv_type)
             if self.lock.locked():
                self.lock.release()
             result = self._load_reservations_from_db(res_dict_list=res_dict_list)
@@ -567,12 +569,12 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: int = None) -> List[ABCDelegation]:
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None) -> List[ABCDelegation]:
         result = []
         try:
             self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
-            dlg_dict_list = self.db.get_delegations(slc_guid=sid, state=state)
+            dlg_dict_list = self.db.get_delegations(slc_guid=sid, states=states)
             self.lock.release()
             result = self._load_delegation_from_db(dlg_dict_list=dlg_dict_list)
         except Exception as e:

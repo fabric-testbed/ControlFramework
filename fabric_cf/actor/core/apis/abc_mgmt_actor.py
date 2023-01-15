@@ -43,14 +43,14 @@ if TYPE_CHECKING:
 class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         """
         Obtains all slices.
         @param slice_id slice id
         @param slice_name slice name
         @param email email
         @param project project id
-        @param state slice state
+        @param states slice states
         @param limit limit
         @param offset offset
         @return returns list of slices
@@ -93,11 +93,11 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def get_reservations(self, *, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None, type: str = None, site: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
+                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         """
-        @param state state
+        @param states states
         @param slice_id slice ID
         @param rid reservation id
         @param oidc_claim_sub: oidc claim sub
@@ -105,6 +105,7 @@ class ABCMgmtActor(ABCComponent):
         @param rid_list: list of Reservation Id
         @param type type of reservations like NodeSliver/NetworkServiceSliver
         @param site site
+        @param node_id node id
         Obtains all reservations
         @return returns list of the reservations
         """
@@ -194,12 +195,12 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def get_delegations(self, *, slice_id: ID = None, state: int = None,
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         """
         Get Delegations
         @param slice_id slice id
-        @param state state
+        @param states states
         @param delegation_id delegation id
         @return returns list of the delegations
         """

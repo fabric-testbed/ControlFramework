@@ -460,12 +460,14 @@ class Kernel:
         slice_name = reservation.get_slice().get_name()
         slice_id = reservation.get_slice().get_slice_id()
         project_id = reservation.get_slice().get_project_id()
+        project_name = reservation.get_slice().get_project_name()
         config_properties = reservation.get_slice().get_config_properties()
 
         result = self.get_slice(slice_id=slice_id)
         if result is None:
             if create_new_slice:
-                result = self.plugin.create_slice(slice_id=slice_id, name=slice_name, project_id=project_id)
+                result = self.plugin.create_slice(slice_id=slice_id, name=slice_name, project_id=project_id,
+                                                  project_name=project_name)
                 result.set_config_properties(value=config_properties)
                 if reservation.get_slice().is_broker_client():
                     result.set_broker_client()

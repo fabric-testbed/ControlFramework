@@ -23,6 +23,7 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
@@ -100,7 +101,7 @@ class Policy(ABCPolicy):
     def get_guid(self) -> ID:
         return self.guid
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         """
         Initialize the policy object
         """

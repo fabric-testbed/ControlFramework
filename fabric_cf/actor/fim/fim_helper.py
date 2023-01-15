@@ -43,10 +43,11 @@ from fim.slivers.capacities_labels import Capacities
 from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
-from fim.slivers.network_service import NetworkServiceSliver
+from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 from fim.user import ExperimentTopology, Labels, NodeType, Component, ReservationInfo
 from fim.user.interface import Interface
 
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
 
@@ -496,12 +497,14 @@ class FimHelper:
         return None
 
     @staticmethod
-    def get_owners(*, bqm: ABCCBMPropertyGraph, node_id: str) -> Tuple[NodeSliver, NetworkServiceSliver]:
+    def get_owners(*, bqm: ABCCBMPropertyGraph, node_id: str,
+                   ns_type: ServiceType) -> Tuple[NodeSliver, NetworkServiceSliver]:
         """
         Get owner switch and network service of a Connection Point from BQM
         @param bqm BQM graph
         @param node_id Connection Point Node Id
-        @return Owner Switch and MPLS Network Service, MPLS Network Service
+        @param ns_type Network Service Type
+        @return Owner Switch and Network Service
         """
         mpls_ns_name, mpls_ns_id = bqm.get_parent(node_id=node_id, rel=ABCPropertyGraph.REL_CONNECTS,
                                                   parent=ABCPropertyGraph.CLASS_NetworkService)
@@ -512,6 +515,12 @@ class FimHelper:
                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
 
         switch = bqm.build_deep_node_sliver(node_id=sw_id)
+
+        if ns_type in Constants.L3_SERVICES:
+            for ns in switch.network_service_info.network_services.values():
+                if ns_type == ns.get_type():
+                    mpls_ns = ns
+                    break
 
         return switch, mpls_ns
 

@@ -53,11 +53,12 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         self.clear_last()
         try:
-            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, state=state, slice_name=slice_name,
-                                             email=email, project=project, limit=limit, offset=offset)
+            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, states=states,
+                                             slice_name=slice_name, email=email, project=project,
+                                             limit=limit, offset=offset)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -79,14 +80,14 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def get_reservations(self, *, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None, type: str = None, site: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
+                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_reservations(caller=self.auth, state=state, slice_id=slice_id, rid=rid,
+            result = self.manager.get_reservations(caller=self.auth, states=states, slice_id=slice_id, rid=rid,
                                                    oidc_claim_sub=oidc_claim_sub, email=email, rid_list=rid_list,
-                                                   type=type, site=site)
+                                                   type=type, site=site, node_id=node_id)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -214,7 +215,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: int = None,
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         self.clear_last()
         try:

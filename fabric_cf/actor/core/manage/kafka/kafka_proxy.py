@@ -91,7 +91,7 @@ class KafkaProxy(ABCComponent):
         raise ManageException("Not implemented")
 
     def fill_request_by_id_message(self, request: RequestByIdRecord, id_token: str = None, email: str = None,
-                                   slice_id: ID = None, slice_name: str = None, reservation_state: int = None,
+                                   slice_id: ID = None, slice_name: str = None, states: List[int] = None,
                                    rid: ID = None, delegation_id: str = None, broker_id: ID = None, type: str = None,
                                    site: str = None):
         request.guid = str(self.management_id)
@@ -100,7 +100,7 @@ class KafkaProxy(ABCComponent):
         request.message_id = str(ID())
         request.id_token = id_token
         request.email = email
-        request.reservation_state = reservation_state
+        request.states = states
         request.delegation_id = delegation_id
         request.site = site
         request.type = type

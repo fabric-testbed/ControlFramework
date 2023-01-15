@@ -23,7 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+from typing import Dict
 
+from fabric_cf.actor.boot.configuration import ActorConfig
+from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
@@ -124,3 +127,52 @@ class ResourceConfig:
         @param description description
         """
         self.description = description
+
+
+class ResourceConfigBuilder:
+    @staticmethod
+    def build_resource_config(*, config: ActorConfig) -> Dict[ResourceType, ResourceConfig]:
+        """
+        Read resource config and create ARM and inventory slices
+        @param config actor config
+        @raises ConfigurationException in case of error
+        """
+        result = {}
+        resources = config.get_resources()
+        if resources is None or len(resources) == 0:
+            return result
+
+        for r in resources:
+            for resource_type in r.get_type():
+                descriptor = ResourceConfig()
+                descriptor.set_resource_type(rtype=ResourceType(resource_type=resource_type))
+                descriptor.set_resource_type_label(rtype_label=r.get_label())
+
+                handler = r.get_handler()
+                if handler is not None:
+                    descriptor.set_handler_class(handler_class=handler.get_class_name())
+                    descriptor.set_handler_module(module=handler.get_module_name())
+                    descriptor.set_handler_properties(properties=handler.get_properties())
+
+                result[descriptor.get_resource_type()] = descriptor
+        return result
+
+    @staticmethod
+    def build_config_mapping(*, resource_config: ResourceConfig) -> ConfigurationMapping or None:
+        """
+        Register Handlers for each Resource Type and Save it Plugin
+        @param resource_config Resource Config
+        """
+        handler_module = resource_config.get_handler_module()
+        handler_class = resource_config.get_handler_class()
+
+        if handler_class is None or handler_module is None:
+            return None
+
+        config_map = ConfigurationMapping()
+        config_map.set_key(key=str(resource_config.get_resource_type()))
+        config_map.set_class_name(class_name=handler_class)
+        config_map.set_module_name(module_name=handler_module)
+        config_map.set_properties(properties=resource_config.get_handler_properties())
+
+        return config_map

@@ -96,17 +96,24 @@ class NoOpHandler(HandlerBase):
             if sliver.get_type() == ServiceType.L2PTP:
                 assert (interface.labels.vlan is not None)
 
-            if sliver.get_type() == ServiceType.FABNetv4:
+            if sliver.get_type() in Constants.L3_FABNETv4_SERVICES:
                 assert (sliver.get_gateway() is not None)
                 assert (sliver.get_gateway().lab.ipv4_subnet is not None)
                 assert (sliver.get_gateway().lab.ipv4 is not None)
                 assert (interface.labels.vlan is not None)
 
-            if sliver.get_type() == ServiceType.FABNetv6:
+            if sliver.get_type() in Constants.L3_FABNETv6_SERVICES:
                 assert (sliver.get_gateway() is not None)
                 assert (sliver.get_gateway().lab.ipv6_subnet is not None)
                 assert (sliver.get_gateway().lab.ipv6 is not None)
                 assert (interface.labels.vlan is not None)
+
+            if sliver.get_type() == ServiceType.L3VPN:
+                assert (sliver.labels.asn is not None)
+                assert (interface.labels.vlan is not None)
+                assert (interface.labels.local_name is not None)
+                assert (interface.labels.device_name is not None)
+                assert (interface.labels.ipv4_subnet is not None)
 
     def create(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None

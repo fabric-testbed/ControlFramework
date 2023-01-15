@@ -326,7 +326,7 @@ class RemoteActorCache:
             act_guid = actor.get_guid()
 
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
-            kafka_topic = GlobalsSingleton.get().get_config().get_actor().get_kafka_topic()
+            kafka_topic = GlobalsSingleton.get().get_config().get_actor_config().get_kafka_topic()
 
             entry = {self.actor_name: act_name,
                      self.actor_guid: act_guid,

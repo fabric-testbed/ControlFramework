@@ -27,6 +27,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.common.exceptions import BrokerException, ExceptionErrorCode
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates
 from fabric_cf.actor.core.time.calendar.broker_calendar import BrokerCalendar
@@ -130,9 +131,9 @@ class BrokerCalendarPolicy(BrokerPolicy):
         """
         raise BrokerException(error_code=ExceptionErrorCode.NOT_IMPLEMENTED)
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
             self.calendar = BrokerCalendar(clock=self.clock)
             self.initialized = True
 

@@ -103,7 +103,7 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
             slice_id = slice_obj.get_slice_id()
 
             # only want to do this for 'new' tickets
-            if reservation.is_failed() or reservation.is_ticketed():
+            if reservation.is_failed() or reservation.is_ticketed() or reservation.is_ticketing():
                 # check if we've examined this slice already
                 if slice_id not in slice_status_map:
                     # set the default status

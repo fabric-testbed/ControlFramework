@@ -175,8 +175,8 @@ class ReservationServer(Reservation, ABCServerReservation):
         self.fail(message=f"Failing reservation due to non-recoverable RPC error {failed.get_error_type()}",
                   exception=failed.get_error())
 
-    def clear_notice(self):
-        self.update_data.clear()
+    def clear_notice(self, clear_fail: bool = False):
+        self.update_data.clear(clear_fail=clear_fail)
 
     def fail(self, *, message: str, exception: Exception = None):
         self.update_data.error(message=message)
@@ -254,3 +254,6 @@ class ReservationServer(Reservation, ABCServerReservation):
             return self.callback.get_identity()
         else:
             return self.client
+
+    def post_message(self, *, message: str):
+        self.update_data.post_message(message=message)

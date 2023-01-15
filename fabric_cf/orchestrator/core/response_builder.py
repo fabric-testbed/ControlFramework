@@ -41,6 +41,7 @@ class ResponseBuilder:
     PROP_NAME = "name"
     PROP_STATE = "state"
     PROP_PROJECT_ID = "project_id"
+    PROP_PROJECT_NAME = "project_name"
     PROP_MODEL = "model"
     PROP_GRAPH_ID = "graph_id"
     PROP_LEASE_START_TIME = "lease_start_time"
@@ -125,6 +126,9 @@ class ResponseBuilder:
 
             if s.get_project_id() is not None:
                 s_dict[ResponseBuilder.PROP_PROJECT_ID] = s.get_project_id()
+
+            if s.get_project_name() is not None:
+                s_dict[ResponseBuilder.PROP_PROJECT_NAME] = s.get_project_name()
 
             if slice_model is not None:
                 s_dict[ResponseBuilder.PROP_MODEL] = slice_model

@@ -8,5 +8,5 @@ connexion
 swagger-ui-bundle
 fabric_fss_utils==1.4.0
 PyYAML
-fabric-message-bus==1.4.0b7
-fabric-fim==1.4.0
+fabric-message-bus==1.4.0b11
+fabric-fim==1.4.1

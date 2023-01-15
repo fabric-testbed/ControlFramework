@@ -137,6 +137,9 @@ class Maintenance:
         """
         status, site = Maintenance.is_site_in_maintenance(database=database, site_name=site)
 
+        if not status:
+            return True, None
+
         projects = site.get_properties().get(Constants.PROJECT_ID)
         users = site.get_properties().get(Constants.USERS)
 

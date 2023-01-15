@@ -23,8 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
+import ipaddress
 import threading
 import time
+from ipaddress import IPv4Network
 from typing import List, Tuple, Dict
 from http.client import BAD_REQUEST, NOT_FOUND
 
@@ -38,9 +40,12 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import CapacityHints
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver, NodeType
+from fim.slivers.network_service import NetworkServiceSliver
+from fim.slivers.topology_diff import TopologyDiff, WhatsModifiedFlag
 from fim.user import ServiceType, ExperimentTopology
 
 from fabric_cf.actor.core.common.constants import ErrorCodes, Constants
+from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.orchestrator.core.exceptions import OrchestratorException
 from fabric_cf.orchestrator.core.reservation_converter import ReservationConverter
@@ -66,15 +71,15 @@ class OrchestratorSliceWrapper:
         self.reservation_converter = ReservationConverter(controller=controller, broker=broker)
         self.rid_to_res = {}
         self.computed_reservations = []
+        # Reservations trigger Add and Demand
         self.computed_add_reservations = []
         self.computed_l3_reservations = []
+        # Reservations trigger ExtendTicket (Broker) and ExtendLease (AM)
         self.computed_modify_reservations = {}
         self.computed_remove_reservations = []
+        # Reservations trigger ModifyLease (AM)
+        self.computed_modify_properties_reservations = []
         self.thread_lock = threading.Lock()
-        self.ignorable_ns = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS, ServiceType.VLAN]
-        self.supported_ns = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
-                             ServiceType.FABNetv4, ServiceType.PortMirror]
-        self.l3_ns = [str(ServiceType.FABNetv6), str(ServiceType.FABNetv4)]
 
     def lock(self):
         """
@@ -209,11 +214,11 @@ class OrchestratorSliceWrapper:
         self.logger.trace(f"Network Service Sliver: {sliver}")
 
         # Ignore Sliver types P4,OVS and MPLS
-        if sliver_type in self.ignorable_ns:
+        if sliver_type in Constants.IGNORABLE_NS:
             return None, None
 
         # Process only the currently supported Network Sliver types L2STS, L2PTP and L2Bridge
-        elif sliver_type in self.supported_ns:
+        elif sliver_type in Constants.SUPPORTED_SERVICES:
 
             self.logger.trace(f"Network Service Sliver Interfaces: {sliver.interface_info}")
             # Processing Interface Slivers
@@ -291,7 +296,7 @@ class OrchestratorSliceWrapper:
             if reservation is None:
                 continue
 
-            if reservation.get_resource_type() in self.l3_ns:
+            if reservation.get_resource_type() in Constants.L3_FABNET_SERVICES_STR:
                 self.computed_l3_reservations.append(reservation)
 
             reservations.append(reservation)
@@ -366,6 +371,10 @@ class OrchestratorSliceWrapper:
         topology_diff = existing_topology.diff(new_topology)
 
         reservations = []
+
+        if topology_diff is None:
+            return reservations
+
         node_res_mapping = {}
 
         # Build up the node_res mapping to include nodes before modify
@@ -386,7 +395,7 @@ class OrchestratorSliceWrapper:
 
         # Add Network Services
         for x in topology_diff.added.services:
-            if x.get_sliver().get_type() in self.ignorable_ns:
+            if x.get_sliver().get_type() in Constants.IGNORABLE_NS:
                 continue
             reservation, sliver = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
                                                                      node_id=x.node_id,
@@ -445,7 +454,7 @@ class OrchestratorSliceWrapper:
 
         # Remove services
         for x in topology_diff.removed.services:
-            if x.get_sliver().get_type() in self.ignorable_ns:
+            if x.get_sliver().get_type() in Constants.IGNORABLE_NS:
                 continue
             reservation_info = x.get_property('reservation_info')
             self.computed_remove_reservations.append(reservation_info.reservation_id)
@@ -455,7 +464,100 @@ class OrchestratorSliceWrapper:
             self.computed_add_reservations.append(r)
             self.computed_reservations.append(r)
 
-            if r.get_resource_type() in self.l3_ns:
+            if r.get_resource_type() in Constants.L3_FABNET_SERVICES_STR:
                 self.computed_l3_reservations.append(r)
 
+        modified_reservations = []
+
+        for new_ns, flag in topology_diff.modified.services:
+            if flag & WhatsModifiedFlag.LABELS:
+                # Only support modify for FabNet Services
+                if new_ns.type not in Constants.L3_FABNET_SERVICES:
+                    continue
+                rid = new_ns.reservation_info.reservation_id
+                reservation, sliver = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
+                                                                         node_res_mapping=node_res_mapping,
+                                                                         node_id=new_ns.node_id)
+                reservation.set_reservation_id(value=rid)
+                modified_reservations.append(reservation)
+                self.computed_modify_properties_reservations.append(reservation)
+                if new_ns.type == ServiceType.FABNetv4Ext:
+                    self.__check_modify_on_fabnetv4ext(rid=rid, req_sliver=sliver)
+
+        for x in modified_reservations:
+            self.computed_reservations.append(x)
+
         return self.computed_reservations
+
+    def __check_modify_on_fabnetv4ext(self, *, rid: str, req_sliver: NetworkServiceSliver) -> NetworkServiceSliver:
+        if req_sliver.get_type() != ServiceType.FABNetv4Ext:
+            return req_sliver
+
+        num_ips_to_be_updated = 0
+
+        states = [ReservationStates.Active.value,
+                  ReservationStates.ActiveTicketed.value,
+                  ReservationStates.Ticketed.value,
+                  ReservationStates.Nascent.value]
+
+        if req_sliver.labels is not None and req_sliver.labels.ipv4 is not None and len(req_sliver.labels.ipv4) > 0:
+            bqm_graph_id, owner_mpls_node_id = req_sliver.get_node_map()
+
+            existing_reservations = self.controller.get_reservations(node_id=owner_mpls_node_id, states=states)
+            ip_network = IPv4Network(req_sliver.gateway.lab.ipv4_subnet)
+            ipaddress_list = list(ip_network.hosts())
+            ipaddress_list.pop(0)
+
+            # Exclude the already allocated Public IPs
+            for reservation in existing_reservations:
+                if rid == reservation.get_reservation_id():
+                    continue
+
+                if reservation.get_sliver().get_type() != req_sliver.get_type():
+                    continue
+
+                allocated_sliver = None
+                pending_state = ReservationPendingStates(reservation.get_pending_state())
+                state = ReservationStates(reservation.get_state())
+
+                # For Active or Ticketed or Ticketing reservations; remove IPs from available list
+                if pending_state == ReservationPendingStates.Ticketing or \
+                        state in [ReservationStates.Active, ReservationStates.Ticketed]:
+                    allocated_sliver = reservation.get_sliver()
+
+                self.logger.debug(f"Existing res# {reservation.get_reservation_id()} "
+                                  f"allocated: {allocated_sliver}")
+
+                if allocated_sliver is None:
+                    continue
+
+                if allocated_sliver.labels is not None and allocated_sliver.labels.ipv4 is not None:
+                    for x in allocated_sliver.labels.ipv4:
+                        ip_to_remove = ipaddress.IPv4Address(x)
+                        ipaddress_list.remove(ip_to_remove)
+                        self.logger.debug(f"Excluding already allocated IPv4: {x} to "
+                                          f"res# {reservation.get_reservation_id()}")
+
+            if len(ipaddress_list) == 0 or len(ipaddress_list) < len(req_sliver.labels.ipv4):
+                raise OrchestratorException(message="No available v4 Public IPs")
+
+            ip_to_remove = []
+            for x in req_sliver.labels.ipv4:
+                ip_add = ipaddress.IPv4Address(x)
+                if ip_add not in ipaddress_list:
+                    ip_to_remove.append(x)
+                else:
+                    ipaddress_list.remove(ip_add)
+
+            num_ips_to_be_updated = len(ip_to_remove)
+            for x in ip_to_remove:
+                req_sliver.labels.ipv4.remove(x)
+
+            for i in range(num_ips_to_be_updated):
+                ip_add = str(ipaddress_list.pop(0))
+                req_sliver.labels.ipv4.append(ip_add)
+
+        if req_sliver.reservation_info is not None and num_ips_to_be_updated > 0:
+            req_sliver.reservation_info.error_message = "IP Addresses were updated due to conflicts"
+
+        return req_sliver

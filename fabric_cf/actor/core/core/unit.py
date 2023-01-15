@@ -28,6 +28,7 @@ from enum import Enum
 
 from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.network_node import NodeSliver
+from fim.slivers.network_service import NetworkServiceSliver
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
@@ -201,6 +202,11 @@ class Unit(ConfigToken):
         @return unit id
         """
         return self.reservation_id
+
+    def is_network_service(self) -> bool:
+        if isinstance(self.sliver, NetworkServiceSliver):
+            return True
+        return False
 
     def get_properties(self) -> dict:
         """

@@ -75,13 +75,10 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
         return response.status.code == 0
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         request = GetSlicesRequestAvro()
-        reservation_state = None
-        if state is not None and len(state) == 1:
-            reservation_state = state[0]
         request = self.fill_request_by_id_message(request=request, email=email, slice_id=slice_id,
-                                                  slice_name=slice_name, reservation_state=reservation_state)
+                                                  slice_name=slice_name, states=states)
         status, response = self.send_request(request)
         if response is not None:
             return response.slices
@@ -126,23 +123,24 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def accept_update_slice(self, *, slice_id: ID) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def get_reservations(self, *, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None, type: str = None, site: str = None) -> List[ReservationMng]:
+    def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
+                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
-                                                  reservation_state=state, email=email, rid=rid, type=type, site=site)
+                                                  states=states, email=email, rid=rid,
+                                                  type=type, site=site)
         status, response = self.send_request(request)
 
         if status.code == 0:
             return response.reservations
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: int = None,
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         request = GetDelegationsAvro()
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
-                                                  reservation_state=state, delegation_id=delegation_id)
+                                                  states=states, delegation_id=delegation_id)
         status, response = self.send_request(request)
 
         if status.code == 0:

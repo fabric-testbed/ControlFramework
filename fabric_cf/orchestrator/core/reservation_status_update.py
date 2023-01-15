@@ -38,7 +38,7 @@ from fabric_cf.orchestrator.core.i_status_update_callback import IStatusUpdateCa
 class ReservationStatusUpdate(IStatusUpdateCallback):
     def __init__(self, *, logger: logging.Logger = None):
         self.logger = logger
-        self.l3_ns = [ServiceType.FABNetv6, ServiceType.FABNetv4]
+        self.l3_ns = [ServiceType.FABNetv6, ServiceType.FABNetv4, ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext]
 
     def success(self, *, controller: ABCMgmtControllerMixin, reservation: ReservationMng):
         """
