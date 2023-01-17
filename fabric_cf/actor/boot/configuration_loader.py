@@ -38,7 +38,7 @@ class ConfigurationLoader:
         self.path = path
         self.config = None
 
-    def process(self, *, config: Configuration = None):
+    def process(self, *, config: Configuration = None, actor = None):
         """
         Read config and parse it
         @param config config
@@ -48,7 +48,11 @@ class ConfigurationLoader:
         else:
             self.config = config
         init = ConfigurationProcessor(config=self.config)
-        init.process()
+        if actor is None:
+            init.process()
+        else:
+            init.actor = actor
+            init.process_topology()
 
     def read_configuration(self) -> Configuration:
         """

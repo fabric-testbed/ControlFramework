@@ -184,12 +184,13 @@ class Container(ABCActorContainer):
             self.create_database()
             self.boot()
 
+            from fabric_cf.actor.boot.configuration_loader import ConfigurationLoader
+            loader = ConfigurationLoader()
+
             if self.is_fresh():
                 try:
                     from fabric_cf.actor.core.container.globals import GlobalsSingleton
                     GlobalsSingleton.get().cleanup_neo4j()
-                    from fabric_cf.actor.boot.configuration_loader import ConfigurationLoader
-                    loader = ConfigurationLoader()
                     loader.process(config=self.config)
                 except Exception as e:
                     self.logger.error(traceback.format_exc())
@@ -198,6 +199,8 @@ class Container(ABCActorContainer):
                     raise e
                 # Create State file only after successful fresh boot
                 self.create_super_block()
+            else:
+                loader.process(config=self.config, actor=self.get_actor())
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(e)
