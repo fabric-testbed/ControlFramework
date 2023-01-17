@@ -168,7 +168,7 @@ class KafkaActorService(KafkaService):
             if request.states is not None:
                 states = []
                 for x in request.states:
-                    if request.reservation_state == SliceState.All.value:
+                    if x == SliceState.All.value:
                         states = SliceState.list_values()
                         break
                     else:
@@ -276,7 +276,7 @@ class KafkaActorService(KafkaService):
             slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
             rid = ID(uid=request.reservation_id) if request.reservation_id is not None else None
 
-            result = mo.get_reservations(caller=auth, states=request.get_reservation_state(), slice_id=slice_id,
+            result = mo.get_reservations(caller=auth, states=request.get_states(), slice_id=slice_id,
                                          rid=rid, email=request.get_email(), type=request.get_type(),
                                          site=request.get_site())
 
@@ -399,13 +399,10 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            states = None
-            if request.get_delegation_state() is not None:
-                states = [request.get_delegation_state()]
 
             slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
             result = mo.get_delegations(caller=auth, did=request.get_delegation_id(),
-                                        states=states, slice_id=slice_id)
+                                        states=request.get_states(), slice_id=slice_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
