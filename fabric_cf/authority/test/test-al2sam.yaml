@@ -38,11 +38,14 @@ runtime:
   kafka-ssl-key-password:  fabric
   kafka-security-protocol: SSL
   kafka-group-id: fabric-cf
-  orchestrator.rest.port: 8700
-  prometheus.port: 11002
+  kafka-sasl-mechanism:
+  kafka-sasl-producer-username:
+  kafka-sasl-producer-password:
+  kafka-sasl-consumer-username:
+  kafka-sasl-consumer-password:
+  prometheus.port: 11006
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
-  maint.project.id: 10c0094a-abaf-4ef9-a532-2be53e2a896b
   message.max.bytes: 1048588
   rpc.retries: 5
 
@@ -52,10 +55,12 @@ logging:
   log-directory: .
 
   ## The filename to be used for actor's log file.
-  log-file: actor.log
+  log-file: al2s_actor.log
+
+  handler-log-file: handler.log
 
   ## The default log level for actor.
-  log-level: TRACE
+  log-level: DEBUG
 
   ## actor rotates log files. You may specify how many archived log files to keep here.
   log-retain: 5
@@ -64,7 +69,7 @@ logging:
   ## You may specify the file size that results in a log file being rotated here.
   log-size: 5000000
 
-  logger: orchestrator
+  logger: al2s1-am
 
 oauth:
   jwks-url: https://alpha-2.fabric-testbed.net/credmgr/certs
@@ -75,26 +80,11 @@ oauth:
 database:
   db-user: fabric
   db-password: fabric
-  db-name: orchestrator
+  db-name: al2sam
   db-host: 152.54.15.53:5432
 
-pdp:
-  url: http://localhost:8080/services/pdp
-  enable: False
-
-neo4j:
-  url: bolt://localhost:9687
-  user: neo4j
-  pass: password
-  import_host_dir: ../../../neo4j3/imports/
-  import_dir: /imports
-
 container:
-  container.guid: orchestrator-conainer
-
-bqm:
-  # in seconds (default set to 300 seconds)
-  refresh-interval: 300
+  container.guid: al2s1-am-conainer
 
 time:
   # This section controls settings, which are generally useful
@@ -108,7 +98,6 @@ time:
 
   # Internal tick length (in milliseconds)
   time.cycleMillis: 1000
-
   # The number of the first tick
   time.firstTick: 0
 
@@ -116,33 +105,50 @@ time:
   # manually (true)
   time.manual: false
 
+pdp:
+  url: http://localhost:8082/services/pdp
+  enable: False
+
+neo4j:
+  url: bolt://localhost:10687
+  user: neo4j
+  pass: password
+  import_host_dir: ../../../neo4j5/imports/
+  import_dir: /imports
+
 actor:
-  type: orchestrator
-  name: orchestrator
-  guid: orchestrator-guid
-  description: orchestrator
-  kafka-topic: orchestrator-topic
+  type: authority
+  name: al2s1-am
+  guid: al2s1-am-guid
+  description: al2s AM
+  kafka-topic: al2s1-am-topic
+  substrate.file: ../../../neo4j/AL2S.graphml
   policy:
-      module: fabric_cf.actor.core.policy.controller_ticket_review_policy
-      class: ControllerTicketReviewPolicy
+      module: fabric_cf.actor.core.policy.authority_calendar_policy
+      class: AuthorityCalendarPolicy
+  resources:
+      - resource:
+          type: L2PTP, L2Cloud, L3VPN, L3Cloud
+          label: AL2S AM
+          description: AL2S AM
+          handler:
+            module: fabric_cf.actor.handlers.no_op_handler
+            class: NoOpHandler
+  controls:
+      - control:
+          type: L2PTP, L2Cloud, L3VPN, L3Cloud
+          module: fabric_cf.actor.core.policy.network_service_control
+          class: NetworkServiceControl
+
 peers:
+  - peer:
+      name: orchestrator
+      type: orchestrator
+      guid: orchestrator-guid
+      kafka-topic: orchestrator-topic
   - peer:
       name: broker
       type: broker
       guid: broker-guid
       kafka-topic: broker-topic
-  - peer:
-      name: net1-am
-      guid: net1-am-guid
-      type: authority
-      kafka-topic: net1-am-topic
-  - peer:
-      name: site1-am
-      guid: site1-am-guid
-      type: authority
-      kafka-topic: site1-am-topic
-  - peer:
-      name: al2s1-am
-      guid: al2s1-am-guid
-      type: authority
-      kafka-topic: al2s1-am-topic
+      delegation: primary

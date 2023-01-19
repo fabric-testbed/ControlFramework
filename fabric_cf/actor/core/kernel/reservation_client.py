@@ -467,7 +467,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
             # Skip Facility Port Interfaces for Create or Modify
             # Allocated interfaces on Modify i.e. ExtendTicket
-            if component_name == str(NodeType.Facility) or ifs.label_allocations is not None:
+            if component_name == str(NodeType.Facility) or \
+                    component_name == Constants.AL2S or \
+                    ifs.label_allocations is not None:
                 continue
 
             pred_state = self.redeem_predecessors.get(ID(uid=rid))

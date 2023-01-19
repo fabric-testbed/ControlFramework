@@ -289,6 +289,7 @@ class Constants:
     DEFAULT_LEASE_IN_HOURS = 24
 
     ALL = "ALL"
+    AL2S = "AL2S"
 
     # Default offset used to pick a VLAN from the range 1-4096
     DEFAULT_VLAN_OFFSET = 10

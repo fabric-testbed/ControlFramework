@@ -158,3 +158,8 @@ peers:
       guid: site1-am-guid
       type: authority
       kafka-topic: site1-am-topic
+  - peer:
+      name: al2s1-am
+      guid: al2s1-am-guid
+      type: authority
+      kafka-topic: al2s1-am-topic

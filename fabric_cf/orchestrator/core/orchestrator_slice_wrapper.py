@@ -37,7 +37,7 @@ from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReserva
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.slices.abc_asm import ABCASMPropertyGraph
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import CapacityHints
+from fim.slivers.capacities_labels import CapacityHints, Labels
 from fim.slivers.instance_catalog import InstanceCatalog
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
@@ -239,7 +239,11 @@ class OrchestratorSliceWrapper:
                     node_map = ifs.get_node_map()
                     if node_map is not None:
                         if not ifs_mapping.is_facility():
-                            parent_res_id = node_res_mapping.get(ifs_mapping.get_node_id(), None)
+                            # AL2S Network Service
+                            if ifs_mapping.is_l3vpn() and sliver.get_name().lower() == "al2s":
+                                parent_res_id = node_res_mapping.get(ifs_mapping.get_peer_ns_id(), None)
+                            else:
+                                parent_res_id = node_res_mapping.get(ifs_mapping.get_node_id(), None)
                             if parent_res_id is not None and parent_res_id not in predecessor_reservations:
                                 predecessor_reservations.append(parent_res_id)
 
@@ -252,7 +256,21 @@ class OrchestratorSliceWrapper:
                     # Set Labels
                     ifs.set_labels(lab=ifs_mapping.get_peer_ifs().get_labels())
 
-                    if not ifs_mapping.is_facility():
+                    if ifs_mapping.is_facility():
+                        # For Facility Ports, set Node Map [Facility, Facility Name] to help broker lookup
+                        node_map = tuple([str(NodeType.Facility), ifs_mapping.get_node_id()])
+                        ifs.set_node_map(node_map=node_map)
+                    elif ifs_mapping.is_l3vpn():
+                        # For Facility Ports, set Node Map [Facility, Facility Name] to help broker lookup
+                        node_map = tuple([Constants.AL2S, ifs_mapping.get_peer_ns_id()])
+                        ifs.set_node_map(node_map=node_map)
+
+                        if sliver.get_name() != "al2s" and ifs.peer_labels is None and \
+                                ifs_mapping.get_peer_ifs() is not None and \
+                                ifs_mapping.get_peer_ifs().get_labels() is not None:
+                            peer_labels_json = ifs_mapping.get_peer_ifs().get_labels().to_json()
+                            ifs.peer_labels = Labels().from_json(peer_labels_json)
+                    else:
                         # Save the parent component name and the parent reservation id in the Node Map
                         parent_res_id = node_res_mapping.get(ifs_mapping.get_node_id(), None)
 
@@ -263,16 +281,16 @@ class OrchestratorSliceWrapper:
 
                         if parent_res_id is not None and parent_res_id not in predecessor_reservations:
                             predecessor_reservations.append(parent_res_id)
-                    else:
-                        # For Facility Ports, set Node Map [Facility, Facility Name] to help broker lookup
-                        node_map = tuple([str(NodeType.Facility), ifs_mapping.get_node_id()])
-                        ifs.set_node_map(node_map=node_map)
 
+                print(f"{sliver.get_name()} --- pred: -- {predecessor_reservations}")
                 # Generate reservation for the sliver
-                return self.reservation_converter.generate_reservation(sliver=sliver,
-                                                                       slice_id=self.slice_obj.get_slice_id(),
-                                                                       end_time=self.slice_obj.get_lease_end(),
-                                                                       pred_list=predecessor_reservations), sliver
+                reservation =  self.reservation_converter.generate_reservation(sliver=sliver,
+                                                                               slice_id=self.slice_obj.get_slice_id(),
+                                                                               end_time=self.slice_obj.get_lease_end(),
+                                                                               pred_list=predecessor_reservations)
+                if sliver.node_id not in node_res_mapping:
+                    node_res_mapping[sliver.node_id] = reservation.get_reservation_id()
+                return reservation, sliver
             else:
                 raise OrchestratorException(message="Not implemented",
                                             http_error_code=BAD_REQUEST)

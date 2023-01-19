@@ -43,7 +43,7 @@ runtime:
   kafka-sasl-producer-password:
   kafka-sasl-consumer-username:
   kafka-sasl-consumer-password:
-  prometheus.port: 11006
+  prometheus.port: 11007
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
   message.max.bytes: 1048588

@@ -24,7 +24,6 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
-import threading
 from typing import Tuple, List, Union
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
@@ -62,6 +61,7 @@ class InterfaceSliverMapping:
         # Maps to the Network Node (Parent of the Component or Parent of Connection) in the Graph
         self.node_id = None
         self.facility = False
+        self.l3vpn = False
 
     def get_peer_ifs(self) -> InterfaceSliver:
         return self.peer_ifs
@@ -78,6 +78,9 @@ class InterfaceSliverMapping:
     def is_facility(self) -> bool:
         return self.facility
 
+    def is_l3vpn(self) -> bool:
+        return self.l3vpn
+
     def set_peer_ifs(self, peer_ifs: InterfaceSliver):
         self.peer_ifs = peer_ifs
 
@@ -92,6 +95,9 @@ class InterfaceSliverMapping:
 
     def set_facility(self, facility: bool):
         self.facility = facility
+
+    def set_l3vpn(self, l3vpn: bool):
+        self.l3vpn = l3vpn
 
     def set_properties(self, **kwargs):
         """
@@ -409,23 +415,29 @@ class FimHelper:
         component_name = None
         node_id = None
         facility = False
-        if peer_ifs.get_type() != str(InterfaceType.FacilityPort):
+        l3vpn = False
+
+        if peer_ifs.get_type() in [str(InterfaceType.DedicatedPort), str(InterfaceType.SharedPort)]:
             component_name, component_id = slice_graph.get_parent(node_id=peer_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                                                   parent=ABCPropertyGraph.CLASS_Component)
 
             node_name, node_id = slice_graph.get_parent(node_id=component_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
-        else:
+        elif peer_ifs.get_type() == str(InterfaceType.FacilityPort):
             node_name, node_id = slice_graph.get_parent(node_id=peer_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
             node_sliver = slice_graph.build_deep_node_sliver(node_id=node_id)
             # Passing Facility Name instead of Node ID
             node_id = f"{node_sliver.get_site()},{node_name}"
             facility = True
+        elif peer_ifs.get_type() == str(InterfaceType.ServicePort):
+            # Passing Facility Name instead of Node ID
+            node_id = None
+            l3vpn = True
 
         ret_val = InterfaceSliverMapping()
         ret_val.set_properties(peer_ifs=peer_ifs, peer_ns_id=peer_ns_id,
-                               component_name=component_name, node_id=node_id, facility=facility)
+                               component_name=component_name, node_id=node_id, facility=facility, l3vpn=l3vpn)
         return ret_val
 
     @staticmethod
