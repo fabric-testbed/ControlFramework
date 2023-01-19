@@ -29,6 +29,7 @@ import traceback
 from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.container.maintenance import Site
@@ -92,6 +93,20 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
             if result.status.get_code() == 0:
                 return result.reservations
+
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return None
+
+    def get_sites(self, *, site: str) -> List[SiteAvro] or None:
+        self.clear_last()
+        try:
+            result = self.manager.get_sites(site=site)
+            self.last_status = result.status
+
+            if result.status.get_code() == 0:
+                return result.sites
 
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
