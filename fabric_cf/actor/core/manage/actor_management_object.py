@@ -32,6 +32,7 @@ from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric_mb.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
+from fabric_mb.message_bus.messages.result_sites_avro import ResultSitesAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
@@ -299,6 +300,51 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         if len(slices) == 0:
             return None
         return slices[0]
+
+    def get_sites(self, *, caller: AuthToken, site: str) -> ResultSitesAvro:
+        result = ResultSitesAvro()
+        result.status = ResultAvro()
+
+        if caller is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+
+            sites = site.split(",")
+            sites_list = None
+            try:
+                if len(sites) == 1:
+                    site_info = self.db.get_site(site_name=sites[0])
+                    if site_info is not None:
+                        sites_list = [site_info]
+                else:
+                    sites_list = self.db.get_sites()
+
+            except Exception as e:
+                self.logger.error("get_sites:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+            if sites_list is not None:
+                result.sites = []
+                for s in sites_list:
+                    site_avro = Translate.translate_site_to_avro(site=s)
+                    result.sites.append(site_avro)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_sites: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
+        except Exception as e:
+            self.logger.error("get_sites: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
 
     def get_reservations(self, *, caller: AuthToken, states: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,

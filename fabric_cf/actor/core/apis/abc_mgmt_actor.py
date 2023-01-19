@@ -29,6 +29,7 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
 from fabric_cf.actor.core.container.maintenance import Site
@@ -108,6 +109,14 @@ class ABCMgmtActor(ABCComponent):
         @param node_id node id
         Obtains all reservations
         @return returns list of the reservations
+        """
+
+    @abstractmethod
+    def get_sites(self, *, site: str) -> List[SiteAvro] or None:
+        """
+        @param site site name
+        Obtains Maintenance Info for a site
+        @return returns list of the Sites
         """
 
     @abstractmethod

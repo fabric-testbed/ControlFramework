@@ -31,6 +31,7 @@ from fabric_mb.message_bus.messages.close_delegations_avro import CloseDelegatio
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
+from fabric_mb.message_bus.messages.get_sites_request_avro import GetSitesRequestAvro
 from fabric_mb.message_bus.messages.maintenance_request_avro import MaintenanceRequestAvro
 from fabric_mb.message_bus.messages.remove_delegation_avro import RemoveDelegationAvro
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
@@ -134,6 +135,15 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
 
         if status.code == 0:
             return response.reservations
+        return None
+
+    def get_sites(self, *, site: str) -> List[SiteAvro] or None:
+        request = GetSitesRequestAvro()
+        request = self.fill_request_by_id_message(request=request, site=site)
+        status, response = self.send_request(request)
+
+        if status.code == 0:
+            return response.sites
         return None
 
     def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,

@@ -42,6 +42,27 @@ if TYPE_CHECKING:
 
 
 class MessageService(AvroConsumerApi):
+    MANAGEMENT_MESSAGES = [AbcMessageAvro.claim_resources,
+                           AbcMessageAvro.reclaim_resources,
+                           AbcMessageAvro.get_slices_request,
+                           AbcMessageAvro.get_reservations_request,
+                           AbcMessageAvro.get_reservations_state_request,
+                           AbcMessageAvro.get_delegations,
+                           AbcMessageAvro.get_reservation_units_request,
+                           AbcMessageAvro.get_unit_request,
+                           AbcMessageAvro.get_broker_query_model_request,
+                           AbcMessageAvro.add_slice,
+                           AbcMessageAvro.update_slice,
+                           AbcMessageAvro.remove_slice,
+                           AbcMessageAvro.close_reservations,
+                           AbcMessageAvro.update_reservation,
+                           AbcMessageAvro.remove_reservation,
+                           AbcMessageAvro.extend_reservation,
+                           AbcMessageAvro.close_delegations,
+                           AbcMessageAvro.remove_delegation,
+                           AbcMessageAvro.maintenance_request,
+                           AbcMessageAvro.get_sites_request]
+
     def __init__(self, *, kafka_service: ActorService, kafka_mgmt_service: KafkaActorService, consumer_conf: dict,
                  key_schema_location, value_schema_location: str, topics: List[str], batch_size: int = 5,
                  logger: logging.Logger = None, sync: bool = False):
@@ -87,25 +108,7 @@ class MessageService(AvroConsumerApi):
 
     def handle_message(self, message: AbcMessageAvro):
         try:
-            if message.get_message_name() == AbcMessageAvro.claim_resources or \
-                    message.get_message_name() == AbcMessageAvro.reclaim_resources or \
-                    message.get_message_name() == AbcMessageAvro.get_slices_request or \
-                    message.get_message_name() == AbcMessageAvro.get_reservations_request or \
-                    message.get_message_name() == AbcMessageAvro.get_reservations_state_request or \
-                    message.get_message_name() == AbcMessageAvro.get_delegations or \
-                    message.get_message_name() == AbcMessageAvro.get_reservation_units_request or \
-                    message.get_message_name() == AbcMessageAvro.get_unit_request or \
-                    message.get_message_name() == AbcMessageAvro.get_broker_query_model_request or \
-                    message.get_message_name() == AbcMessageAvro.add_slice or \
-                    message.get_message_name() == AbcMessageAvro.update_slice or \
-                    message.get_message_name() == AbcMessageAvro.remove_slice or \
-                    message.get_message_name() == AbcMessageAvro.close_reservations or \
-                    message.get_message_name() == AbcMessageAvro.update_reservation or \
-                    message.get_message_name() == AbcMessageAvro.remove_reservation or \
-                    message.get_message_name() == AbcMessageAvro.extend_reservation or \
-                    message.get_message_name() == AbcMessageAvro.close_delegations or \
-                    message.get_message_name() == AbcMessageAvro.remove_delegation or \
-                    message.get_message_name() == AbcMessageAvro.maintenance_request:
+            if message.get_message_name() in self.MANAGEMENT_MESSAGES:
                 self.kafka_mgmt_service.process(message=message)
             else:
                 self.kafka_service.process(message=message)
