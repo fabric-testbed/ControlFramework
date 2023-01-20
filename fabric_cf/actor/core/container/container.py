@@ -184,12 +184,13 @@ class Container(ABCActorContainer):
             self.create_database()
             self.boot()
 
+            from fabric_cf.actor.boot.configuration_loader import ConfigurationLoader
+            loader = ConfigurationLoader()
+
             if self.is_fresh():
                 try:
                     from fabric_cf.actor.core.container.globals import GlobalsSingleton
                     GlobalsSingleton.get().cleanup_neo4j()
-                    from fabric_cf.actor.boot.configuration_loader import ConfigurationLoader
-                    loader = ConfigurationLoader()
                     loader.process(config=self.config)
                 except Exception as e:
                     self.logger.error(traceback.format_exc())
@@ -198,6 +199,8 @@ class Container(ABCActorContainer):
                     raise e
                 # Create State file only after successful fresh boot
                 self.create_super_block()
+            else:
+                loader.process(config=self.config, actor=self.get_actor())
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(e)
@@ -227,7 +230,7 @@ class Container(ABCActorContainer):
         self.logger.debug(f"Registering protocol {Constants.PROTOCOL_LOCAL}")
         self.register_protocol(protocol=desc)
 
-        kafka_topic_name = self.get_config().get_actor().get_kafka_topic()
+        kafka_topic_name = self.get_config().get_actor_config().get_kafka_topic()
         self.logger.debug("Kafka Topic {}".format(kafka_topic_name))
         if kafka_topic_name is not None:
             desc = ProtocolDescriptor(protocol=Constants.PROTOCOL_KAFKA, location=kafka_topic_name)
@@ -386,7 +389,7 @@ class Container(ABCActorContainer):
         actor.set_logger(logger=self.logger)
         self.logger.info(f"Recover actor: {actor_name}")
         self.logger.debug("Initializing the actor object")
-        actor.initialize()
+        actor.initialize(config=self.config.get_actor_config())
         # By now we have a valid actor object. We need to register it with
         # the container and call recovery for its reservations.
         self.register_recovered_actor(actor=actor)
@@ -428,7 +431,7 @@ class Container(ABCActorContainer):
         @raises Exception in case of error
         """
         self.db.add_actor(actor=actor)
-        actor.actor_added()
+        actor.actor_added(config=self.config.get_actor_config())
         self.register_management_object(actor=actor)
         self.register_common(actor=actor)
         self.actor = actor
@@ -521,7 +524,7 @@ class Container(ABCActorContainer):
         @raises Exception in case of error
         """
         self.logger.debug("Registering a recovered actor")
-        actor.actor_added()
+        actor.actor_added(config=self.config.get_actor_config())
         self.register_common(actor=actor)
         self.management_object_manager.load_actor_manager_objects(actor_name=actor.get_name())
         self.actor = actor

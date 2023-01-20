@@ -389,11 +389,13 @@ class Configuration:
         self.actor = ActorConfig(config=config['actor'])
         self.peers = []
         self.topic_peer_map = {}
+        self.peers_dict = {}
         if 'peers' in config:
             for e in config['peers']:
                 p = Peer(config=e['peer'])
                 self.peers.append(p)
                 self.topic_peer_map[p.get_kafka_topic()] = p
+                self.peers_dict[p.get_name()] = p
 
     def get_global_config(self) -> GlobalConfig:
         """
@@ -423,7 +425,7 @@ class Configuration:
             return self.global_config.get_oauth()
         return None
 
-    def get_actor(self) -> ActorConfig:
+    def get_actor_config(self) -> ActorConfig:
         """
         Return Actor Config
         """
@@ -434,6 +436,12 @@ class Configuration:
         Return Peer Config
         """
         return self.peers
+
+    def get_peers_dict(self) -> Dict[str, Peer]:
+        """
+        Return Peer Config
+        """
+        return self.peers_dict
 
     def get_topic_peer_map(self) -> Dict[str, Peer]:
         return self.topic_peer_map
@@ -446,6 +454,9 @@ class Configuration:
             return self.global_config.get_neo4j_config()
 
         return None
+
+    def get_rpc_retries(self) -> int:
+        return self.global_config.runtime.get(Constants.PROPERTY_CONF_RPC_RETRIES, 5)
 
     def get_kafka_key_schema_location(self) -> str or None:
         return self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_KEY_SCHEMA, None)
@@ -494,6 +505,10 @@ class Configuration:
 
     def get_kafka_request_timeout_ms(self) -> int:
         value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS, 120000)
+        return int(value)
+
+    def get_kafka_max_message_size(self) -> int:
+        value = self.global_config.runtime.get(Constants.PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE, 1048588)
         return int(value)
 
     def get_rpc_request_timeout_seconds(self) -> int:

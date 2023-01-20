@@ -35,6 +35,7 @@ from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservat
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
 from fabric_mb.message_bus.messages.get_reservations_request_avro import GetReservationsRequestAvro
 from fabric_mb.message_bus.messages.get_reservations_state_request_avro import GetReservationsStateRequestAvro
+from fabric_mb.message_bus.messages.get_sites_request_avro import GetSitesRequestAvro
 from fabric_mb.message_bus.messages.get_slices_request_avro import GetSlicesRequestAvro
 from fabric_mb.message_bus.messages.maintenance_request_avro import MaintenanceRequestAvro
 from fabric_mb.message_bus.messages.remove_delegation_avro import RemoveDelegationAvro
@@ -44,6 +45,7 @@ from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric_mb.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
+from fabric_mb.message_bus.messages.result_sites_avro import ResultSitesAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.update_reservation_avro import UpdateReservationAvro
@@ -51,7 +53,7 @@ from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 from fabric_mb.message_bus.messages.update_slice_avro import UpdateSliceAvro
 from fim.slivers.base_sliver import BaseSliver
 
-from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
+from fabric_cf.actor.core.common.constants import ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.manage.management_object import ManagementObject
@@ -118,6 +120,9 @@ class KafkaActorService(KafkaService):
             elif message.get_message_name() == AbcMessageAvro.get_reservations_request:
                 result = self.get_reservations(request=message)
 
+            elif message.get_message_name() == AbcMessageAvro.get_sites_request:
+                result = self.get_sites(request=message)
+
             elif message.get_message_name() == AbcMessageAvro.get_delegations:
                 result = self.get_delegations(request=message)
 
@@ -165,17 +170,20 @@ class KafkaActorService(KafkaService):
                 result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
                 return result
             states = SliceState.list_values_ex_closing_dead()
-            if request.reservation_state is not None:
-                if request.reservation_state == SliceState.All.value:
-                    states = SliceState.list_values()
-                else:
-                    states = [request.reservation_state]
+            if request.states is not None:
+                states = []
+                for x in request.states:
+                    if x == SliceState.All.value:
+                        states = SliceState.list_values()
+                        break
+                    else:
+                        states.append(x)
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
             slice_id = ID(uid=request.get_slice_id()) if request.slice_id is not None else None
             result = mo.get_slices(slice_id=slice_id, caller=auth, slice_name=request.get_slice_name(),
-                                   email=request.get_email(), state=states)
+                                   email=request.get_email(), states=states)
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -270,16 +278,36 @@ class KafkaActorService(KafkaService):
 
             auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
             mo = self.get_actor_mo(guid=ID(uid=request.guid))
-            state = None
-            if request.get_reservation_state() is not None and \
-                    request.get_reservation_state() != Constants.ALL_RESERVATION_STATES:
-                state = [request.get_reservation_state()]
-
             slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
             rid = ID(uid=request.reservation_id) if request.reservation_id is not None else None
 
-            result = mo.get_reservations(caller=auth, state=state, slice_id=slice_id,
-                                         rid=rid, email=request.get_email())
+            result = mo.get_reservations(caller=auth, states=request.get_states(), slice_id=slice_id,
+                                         rid=rid, email=request.get_email(), type=request.get_type(),
+                                         site=request.get_site())
+
+        except Exception as e:
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        result.message_id = request.message_id
+        return result
+
+    def get_sites(self, *, request: GetSitesRequestAvro) -> ResultSitesAvro:
+        result = ResultSitesAvro()
+        result.status = ResultAvro()
+        result.message_id = request.message_id
+
+        try:
+            if request.guid is None:
+                result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+                return result
+
+            auth = Translate.translate_auth_from_avro(auth_avro=request.auth)
+            mo = self.get_actor_mo(guid=ID(uid=request.guid))
+
+            result = mo.get_sites(caller=auth, site=request.get_site())
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -403,7 +431,7 @@ class KafkaActorService(KafkaService):
 
             slice_id = ID(uid=request.slice_id) if request.slice_id is not None else None
             result = mo.get_delegations(caller=auth, did=request.get_delegation_id(),
-                                        state=request.get_delegation_state(), slice_id=slice_id)
+                                        states=request.get_states(), slice_id=slice_id)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
@@ -423,9 +451,12 @@ class KafkaActorService(KafkaService):
                 return result
 
             mo = self.get_actor_mo(guid=ID(uid=request.actor_guid))
-            mode_str = request.get_properties().get(Constants.MODE)
-            mode = json.loads(mode_str.lower())
-            mo.toggle_maintenance_mode(mode=mode)
+            sites = None
+            if request.get_sites() is not None:
+                sites = []
+                for s in request.get_sites():
+                    sites.append(Translate.translate_site_from_avro(site_avro=s))
+            mo.update_maintenance_mode(properties=request.get_properties(), sites=sites)
 
         except Exception as e:
             result.status.set_code(ErrorCodes.ErrorInternalError.value)

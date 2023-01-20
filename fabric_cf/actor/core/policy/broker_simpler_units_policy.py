@@ -40,8 +40,9 @@ from fim.slivers.base_sliver import BaseSliver
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver, NodeType
-from fim.slivers.network_service import NetworkServiceSliver
+from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_broker_reservation import ABCBrokerReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -57,16 +58,17 @@ from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.bids import Bids
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.policy.inventory import Inventory
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
+from fabric_cf.actor.core.util.resource_type import ResourceType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
     from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
-    from fabric_cf.actor.core.util.resource_type import ResourceType
 
 
 class BrokerAllocationAlgorithm(Enum):
@@ -175,10 +177,35 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                    logger=self.logger)
         self.logger.debug(f"Registered AggregateBQMPlugin")
 
-    def initialize(self):
+    def load_new_controls(self, *, config: ActorConfig):
+        for i in config.get_controls():
+            try:
+                if i.get_module_name() is None or i.get_class_name() is None or i.get_type() is None or \
+                        len(i.get_type()) == 0:
+                    continue
+
+                inventory = ReflectionUtils.create_instance(module_name=i.get_module_name(),
+                                                            class_name=i.get_class_name())
+                inventory.set_logger(logger=self.logger)
+
+                for t in i.get_type():
+                    self.logger.debug(f"Processing control type: {t}")
+                    rtype = ResourceType(resource_type=t)
+                    existing = self.inventory.get(resource_type=rtype)
+                    if existing is None:
+                        self.logger.debug(f"Registering control type: {t} inventory: {type(inventory)}")
+                        self.register_inventory(resource_type=rtype, inventory=inventory)
+                    else:
+                        self.logger.debug(f"Exists control type: {t} inventory: {type(inventory)}")
+            except Exception as e:
+                self.logger.error(f"Exception occurred while loading new control: {e}")
+                self.logger.error(traceback.format_exc())
+
+    def initialize(self, *, config: ActorConfig):
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
             self.load_combined_broker_model()
+            self.load_new_controls(config=config)
             self.initialized = True
 
     def register_inventory(self, *, resource_type: ResourceType, inventory: InventoryForType):
@@ -572,14 +599,19 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug(f"Processing Network Service sliver: {sliver}")
         delegation_id = None
         error_msg = None
-        owner_switch = None
-        owner_mpls_ns = None
+        owner_ns = None
+        bqm_component = None
+        is_vnic = False
 
         # For each Interface Sliver;
         for ifs in sliver.interface_info.interfaces.values():
 
             # Fetch Network Node Id and BQM Component Id
             node_id, bqm_component_id = ifs.get_node_map()
+
+            # Skipping the already allocated interface on a modify
+            if node_id == self.combined_broker_model_graph_id:
+                continue
 
             if node_id == str(NodeType.Facility):
                 bqm_component = self.get_facility_sliver(node_name=bqm_component_id)
@@ -604,27 +636,29 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.debug(f"Peer Interface Sliver [Network Delegation] (A): {net_cp}")
 
             # need to find the owner switch of the network service in CBM and take it's name or labels.local_name
-            owner_switch, owner_mpls_ns = self.get_owners(node_id=net_cp.node_id)
+            owner_switch, owner_ns = self.get_owners(node_id=net_cp.node_id, ns_type=sliver.get_type())
 
             bqm_cp = net_cp
-            if bqm_component.get_type() == NodeType.Facility:
+            if bqm_component.get_type() == NodeType.Facility or (sliver.get_type() == ServiceType.L2Bridge and
+                                                                 bqm_component.get_model() == Constants.OPENSTACK_VNIC_MODEL):
                 bqm_cp = site_cp
 
             if bqm_component.get_type() == ComponentType.SharedNIC:
+                if bqm_component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
+                    is_vnic = True
+
                 # VLAN is already set by the Orchestrator using the information from the Node Sliver Parent Reservation
-                if ifs.get_labels().vlan is None:
+                if ifs.get_labels().vlan is None and not is_vnic:
                     message = "Shared NIC VLAN cannot be None"
                     self.logger.error(message)
                     raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
                                           msg=f"{message}")
             else:
-                existing_reservations = self.get_existing_reservations(node_id=owner_mpls_ns.node_id,
+                existing_reservations = self.get_existing_reservations(node_id=owner_ns.node_id,
                                                                        node_id_to_reservations=node_id_to_reservations)
                 # Set vlan - source: (c) - only for dedicated NICs
-                ifs = inv.allocate_ifs(requested_ns=sliver, requested_ifs=ifs,
-                                       owner_switch=owner_switch, mpls_ns=owner_mpls_ns,
-                                       bqm_ifs=bqm_cp,
-                                       existing_reservations=existing_reservations)
+                ifs = inv.allocate_ifs(requested_ns=sliver, requested_ifs=ifs, owner_ns=owner_ns,
+                                       bqm_ifs=bqm_cp, existing_reservations=existing_reservations)
 
             # local_name source: (a)
             ifs_labels = ifs.get_labels()
@@ -637,18 +671,18 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             adm_ids = owner_switch.get_structural_info().adm_graph_ids
             site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
 
-            self.logger.debug(f"Owner MPLS Network Service: {owner_mpls_ns}")
+            self.logger.debug(f"Owner Network Service: {owner_ns}")
             self.logger.debug(f"Owner Switch: {owner_switch}")
             if owner_switch.network_service_info is not None:
                 self.logger.debug(f"Owner Switch NS: {owner_switch.network_service_info.network_services.values()}")
 
             net_adm_ids = site_adm_ids
-            if bqm_component.get_type() != NodeType.Facility:
+            if bqm_component.get_type() != NodeType.Facility and not is_vnic:
                 net_adm_ids = [x for x in adm_ids if not x in site_adm_ids or site_adm_ids.remove(x)]
             else:
-                if bqm_cp.labels.ipv4_subnet is not None:
+                if bqm_cp.labels is not None and bqm_cp.labels.ipv4_subnet is not None:
                     ifs_labels = Labels.update(ifs_labels, ipv4_subnet=bqm_cp.labels.ipv4_subnet)
-                if bqm_cp.labels.ipv6_subnet is not None:
+                if bqm_cp.labels is not None and bqm_cp.labels.ipv6_subnet is not None:
                     ifs_labels = Labels.update(ifs_labels, ipv6_subnet=bqm_cp.labels.ipv6_subnet)
             if len(net_adm_ids) != 1:
                 error_msg = f"More than 1 or 0 Network Delegations found! net_adm_ids: {net_adm_ids}"
@@ -666,13 +700,21 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.info(f"Allocated Interface Sliver: {ifs} delegation: {delegation_id}")
 
         # Update the Network Service Sliver Node Map to map to parent of (a)
-        sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_mpls_ns.node_id))
+        sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns.node_id))
 
         # Set the Subnet and gateway from the Owner Switch (a)
-        existing_reservations = self.get_existing_reservations(node_id=owner_mpls_ns.node_id,
+        existing_reservations = self.get_existing_reservations(node_id=owner_ns.node_id,
                                                                node_id_to_reservations=node_id_to_reservations)
-        sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_switch=owner_switch,
+
+        # Allocate VLAN for the Network Service
+        if is_vnic:
+            site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
+            delegation_id = site_adm_ids[0]
+            inv.allocate_vnic(rid=rid, requested_ns=sliver, owner_ns=owner_ns,
                               existing_reservations=existing_reservations)
+        else:
+            sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_ns=owner_ns,
+                                  existing_reservations=existing_reservations)
 
         return delegation_id, sliver, error_msg
 
@@ -725,6 +767,21 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             reservation.fail(message=str(e))
         return False, node_id_to_reservations, error_msg
 
+    def __is_modify_on_openstack_vnic(self, *, sliver: BaseSliver) -> bool:
+        if not isinstance(sliver, NetworkServiceSliver):
+            return False
+
+        if sliver.get_type() != ServiceType.L2Bridge:
+            return False
+
+        graph_id, bqm_ns_id = sliver.get_node_map()
+
+        bqm_ns_sliver = self.get_network_service_from_graph(node_id=bqm_ns_id)
+        if bqm_ns_sliver.get_type() == ServiceType.VLAN:
+            return True
+
+        return False
+
     def extend_private(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
                        node_id_to_reservations: dict):
         try:
@@ -732,11 +789,19 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             requested_resources = reservation.get_requested_resources()
             current_resources = reservation.get_resources()
             needed = requested_resources.get_units()
-            diff = current_resources.get_sliver().diff(other_sliver=requested_resources.get_sliver())
+            sliver = current_resources.get_sliver()
+            diff = sliver.diff(other_sliver=requested_resources.get_sliver())
 
-            if diff is None:
+            #if diff is not None and (diff.added is None or
+            #                         (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0)):
+            if diff is not None:
+                sliver = requested_resources.get_sliver()
+
+            if diff is None or diff.added is None or \
+                    (len(diff.added.components) == 0 and len(diff.added.interfaces) == 0) or \
+                    self.__is_modify_on_openstack_vnic(sliver=sliver):
                 self.issue_ticket(reservation=reservation, units=needed, rtype=requested_resources.get_type(),
-                                  term=term, source=reservation.get_source(), sliver=reservation.get_resources().sliver)
+                                  term=term, source=reservation.get_source(), sliver=sliver)
             else:
                 status, node_id_to_reservations, error_msg = self.ticket_inventory(reservation=reservation,
                                                                                    inv=inv, term=term,
@@ -750,7 +815,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         except Exception as e:
             self.logger.error(e)
             self.logger.error(traceback.format_exc())
-            reservation.fail_extend(message="", exception=e)
+            reservation.fail_extend(message=str(e), exception=e)
 
     def issue_ticket(self, *, reservation: ABCBrokerReservation, units: int, rtype: ResourceType,
                      term: Term, source: ABCDelegation, sliver: BaseSliver) -> ABCBrokerReservation:
@@ -994,14 +1059,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_owners(self, *, node_id: str) -> Tuple[NodeSliver, NetworkServiceSliver]:
+    def get_owners(self, *, node_id: str, ns_type: ServiceType) -> Tuple[NodeSliver, NetworkServiceSliver]:
         """
         Get owner switch and network service of a Connection Point from BQM
         @param node_id Node Id of the Connection Point
+        @param ns_type Network Service Type
         """
         try:
             self.lock.acquire()
-            return FimHelper.get_owners(bqm=self.combined_broker_model, node_id=node_id)
+            return FimHelper.get_owners(bqm=self.combined_broker_model, node_id=node_id, ns_type=ns_type)
         finally:
             self.lock.release()
 
@@ -1019,6 +1085,20 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
+    def get_network_service_from_graph(self, *, node_id: str) -> NetworkServiceSliver or None:
+        """
+        Get Node from CBM
+        :param node_id:
+        :return:
+        """
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model is None:
+                return None
+            return self.combined_broker_model.build_deep_ns_sliver(node_id=node_id)
+        finally:
+            self.lock.release()
+
     def get_existing_reservations(self, node_id: str, node_id_to_reservations: dict) -> List[ABCReservationMixin]:
         """
         Get existing reservations which are served by CBM node identified by node_id
@@ -1033,7 +1113,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         # Only get Active or Ticketing reservations
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
-                                                                                        state=states)
+                                                                                        states=states)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

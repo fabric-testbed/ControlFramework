@@ -26,11 +26,13 @@
 from __future__ import annotations
 
 import traceback
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 
 from fabric_cf.actor.core.common.exceptions import ManageException
+from fabric_cf.actor.core.container.maintenance import Site
 from fabric_cf.actor.core.manage.actor_management_object import ActorManagementObject
 from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
 from fabric_cf.actor.core.manage.local.local_proxy import LocalProxy
@@ -52,11 +54,12 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             raise ManageException("Invalid manager object. Required: {}".format(type(ActorManagementObject)))
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         self.clear_last()
         try:
-            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, state=state, slice_name=slice_name,
-                                             email=email, project=project, limit=limit, offset=offset)
+            result = self.manager.get_slices(slice_id=slice_id, caller=self.auth, states=states,
+                                             slice_name=slice_name, email=email, project=project,
+                                             limit=limit, offset=offset)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
@@ -78,17 +81,32 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return False
 
-    def get_reservations(self, *, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None) -> List[ReservationMng]:
+    def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
+                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         self.clear_last()
         try:
-            result = self.manager.get_reservations(caller=self.auth, state=state, slice_id=slice_id, rid=rid,
-                                                   oidc_claim_sub=oidc_claim_sub, email=email, rid_list=rid_list)
+            result = self.manager.get_reservations(caller=self.auth, states=states, slice_id=slice_id, rid=rid,
+                                                   oidc_claim_sub=oidc_claim_sub, email=email, rid_list=rid_list,
+                                                   type=type, site=site, node_id=node_id)
             self.last_status = result.status
 
             if result.status.get_code() == 0:
                 return result.reservations
+
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return None
+
+    def get_sites(self, *, site: str) -> List[SiteAvro] or None:
+        self.clear_last()
+        try:
+            result = self.manager.get_sites(site=site)
+            self.last_status = result.status
+
+            if result.status.get_code() == 0:
+                return result.sites
 
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
@@ -212,7 +230,7 @@ class LocalActor(LocalProxy, ABCMgmtActor):
 
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: int = None,
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         self.clear_last()
         try:
@@ -252,3 +270,16 @@ class LocalActor(LocalProxy, ABCMgmtActor):
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
         return False
+
+    def is_testbed_in_maintenance(self) -> Tuple[bool, Dict[str, str] or None]:
+        return self.manager.is_testbed_in_maintenance()
+
+    def is_site_in_maintenance(self, *, site_name: str) -> Tuple[bool, Site or None]:
+        return self.manager.is_site_in_maintenance(site_name=site_name)
+
+    def is_slice_provisioning_allowed(self, *, project: str, email: str) -> bool:
+        return self.manager.is_slice_provisioning_allowed(project=project, email=email)
+
+    def is_sliver_provisioning_allowed(self, *, project: str, email: str, site: str,
+                                       worker: str) -> Tuple[bool, str or None]:
+        return self.manager.is_sliver_provisioning_allowed(project=project, email=email, site=site, worker=worker)

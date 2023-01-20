@@ -367,6 +367,17 @@ class ABCSlice(ABC):
         Return project id
         """
 
+    def set_project_name(self, *, project_name: str):
+        """
+        Set project name
+        @param project_name: project name
+        """
+
+    def get_project_name(self) -> str:
+        """
+        Return project name
+        """
+
     @abstractmethod
     def get_reservations(self) -> ReservationSet:
         """

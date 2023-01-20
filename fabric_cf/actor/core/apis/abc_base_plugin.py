@@ -28,7 +28,7 @@ from __future__ import annotations
 from abc import abstractmethod, ABC
 from typing import TYPE_CHECKING
 
-
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.util.id import ID
 
@@ -62,7 +62,7 @@ class ABCBasePlugin(ABC):
         """
 
     @abstractmethod
-    def actor_added(self):
+    def actor_added(self, *, config: ActorConfig):
         """
         Performs initialization steps that require that the actor has been added
 
@@ -117,7 +117,7 @@ class ABCBasePlugin(ABC):
         """
 
     @abstractmethod
-    def create_slice(self, *, slice_id: ID, name: str, project_id: str):
+    def create_slice(self, *, slice_id: ID, name: str, project_id: str, project_name: str):
         """
         Creates a new slice.
 
@@ -125,6 +125,7 @@ class ABCBasePlugin(ABC):
             slice_id: guid for the slice
             name: slice name
             project_id: project id
+            project_name: project_name
         Returns:
             slice object
         Raises:

@@ -131,6 +131,9 @@ class SliceCommand(Enum):
     Reevaluate = enum.auto()
     ModifyAccept = enum.auto()
 
+    def __str__(self):
+        return self.name
+
 
 class SliceOperation:
     def __init__(self, command: SliceCommand, *valid_from_states):
@@ -249,6 +252,13 @@ class SliceStateMachine:
             bins = StateBins()
             for r in reservations.values():
                 bins.add(s=r.get_state())
+                if r.get_pending_state() in [ReservationPendingStates.ModifyingLease,
+                                             ReservationPendingStates.ExtendingTicket,
+                                             ReservationPendingStates.ExtendingLease,
+                                             ReservationPendingStates.Redeeming,
+                                             ReservationPendingStates.Ticketing,
+                                             ReservationPendingStates.Priming]:
+                    bins.add(s=r.get_pending_state())
 
             if self.state == SliceState.Nascent or self.state == SliceState.Configuring:
                 if not bins.has_state_other_than(ReservationStates.Active, ReservationStates.Closed):

@@ -47,6 +47,9 @@ runtime:
   prometheus.port: 11000
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 1200
+  maint.project.id: 990d8a8b-7e50-4d13-a3be-0f133ffa8653
+  message.max.bytes: 1048588
+  rpc.retries: 5
 
 logging:
   ## The directory in which actor should create log files.

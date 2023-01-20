@@ -26,6 +26,8 @@
 from datetime import timedelta
 from enum import Enum
 
+from fim.slivers.network_service import ServiceType
+
 
 class ErrorCodes(Enum):
     """
@@ -103,6 +105,8 @@ class Constants:
     PROPERTY_CONF_KAFKA_SASL_CONSUMER_PASSWORD = "kafka-sasl-consumer-password"
     PROPERTY_CONF_KAFKA_SASL_MECHANISM = "kafka-sasl-mechanism"
     PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS = "request.timeout.ms"
+    PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE = "message.max.bytes"
+    PROPERTY_CONF_KAFKA_FETCH_MAX_MESSAGE_SIZE = "fetch.message.max.bytes"
 
     KAFKA_TOPIC = "kafka-topic"
     NAME = "name"
@@ -131,6 +135,7 @@ class Constants:
     PROPERTY_CONF_CONTROLLER_REST_PORT = "orchestrator.rest.port"
     PROPERTY_CONF_CONTROLLER_CREATE_WAIT_TIME = "orchestrator.create.wait.time"
     PROPERTY_CONF_RPC_REQUEST_TIMEOUT_SECONDS = "rpc.request.timeout.seconds"
+    PROPERTY_CONF_RPC_RETRIES = "rpc.retries"
 
     PROPERTY_SUBSTRATE_FILE = "substrate.file"
     PROPERTY_AGGREGATE_RESOURCE_MODEL = "AggregateResourceModel"
@@ -185,6 +190,7 @@ class Constants:
     MODEL_RELOAD_LOCATION = HOME_DIRECTORY + "reload.model"
     CONFIGURATION_FILE = "/etc/fabric/actor/config/config.yaml"
     STATE_FILE_LOCATION = '/tmp/fabric_actor.tmp'
+    MAINT_PROJECT_ID = 'maint.project.id'
 
     ELASTIC_TIME = "request.elasticTime"
     ELASTIC_SIZE = "request.elasticSize"
@@ -246,14 +252,16 @@ class Constants:
     UNSUPPORTED_RESOURCE_TYPE = "Unsupported resource type: {}"
 
     CLOSURE_BY_TICKET_REVIEW_POLICY = "TicketReviewPolicy: Closing reservation due to failure in slice"
-    MAINTENANCE_MODE_ERROR = "Testbed is in maintenance mode, Create/Renew Slice(s) are disabled!"
+    MAINTENANCE_MODE_ERROR = "Testbed is in maintenance mode: Create, Modify and Renew Slice(s) are disabled!"
 
     CLAIMS_SUB = "sub"
     CLAIMS_EMAIL = "email"
-    CLAIMS_PROJECT = "project"
+    CLAIMS_PROJECTS = "projects"
     UUID = "uuid"
     TAGS = "tags"
     PROJECT_ID = "project_id"
+    USERS = "users"
+    DEADLINE = "deadline"
 
     PROPERTY_EXCEPTION_MESSAGE = "exception.message"
     PROPERTY_TARGET_NAME = "target.name"
@@ -266,6 +274,7 @@ class Constants:
     TARGET_CREATE = "create"
     TARGET_DELETE = "delete"
     TARGET_MODIFY = "modify"
+    TARGET_CLEAN_RESTART = "clean_restart"
 
     RSV_SLC_ID = 'rsv_slc_id'
     DLG_SLC_ID = 'dlg_slc_id'
@@ -279,7 +288,7 @@ class Constants:
     LEASE_TIME_FORMAT = "%Y-%m-%d %H:%M:%S %z"
     DEFAULT_LEASE_IN_HOURS = 24
 
-    STATE_ALL = "ALL"
+    ALL = "ALL"
 
     # Default offset used to pick a VLAN from the range 1-4096
     DEFAULT_VLAN_OFFSET = 10
@@ -288,3 +297,34 @@ class Constants:
 
     CONFIG_PROPERTIES_FILE = "config.properties.file"
     MODE = "mode"
+
+    OPENSTACK_VNIC_MODEL = "OpenStack-vNIC"
+
+    INTERNAL_SERVER_ERROR_MAINT_MODE = 501
+
+    L3_SERVICES = [ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext, ServiceType.FABNetv4,
+                   ServiceType.FABNetv6, ServiceType.L3VPN]
+
+    L3_FABNET_SERVICES = [ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext, ServiceType.FABNetv4,
+                          ServiceType.FABNetv6]
+
+    L3_FABNET_SERVICES_STR = [str(ServiceType.FABNetv6), str(ServiceType.FABNetv4), str(ServiceType.FABNetv4Ext),
+                              str(ServiceType.FABNetv6Ext)]
+
+    L3_FABNET_EXT_SERVICES = [ServiceType.FABNetv6Ext, ServiceType.FABNetv4Ext]
+
+    L3_FABNET_NON_EXT_SERVICES = [ServiceType.FABNetv4, ServiceType.FABNetv6]
+
+    L3_FABNETv6_SERVICES = [ServiceType.FABNetv6Ext, ServiceType.FABNetv6]
+
+    L3_FABNETv4_SERVICES = [ServiceType.FABNetv4Ext, ServiceType.FABNetv4]
+
+    SUPPORTED_SERVICES_STR = [str(ServiceType.L2STS), str(ServiceType.L2Bridge), str(ServiceType.L2PTP),
+                              str(ServiceType.FABNetv4), str(ServiceType.FABNetv6), str(ServiceType.PortMirror),
+                              str(ServiceType.FABNetv4Ext), str(ServiceType.FABNetv6Ext), str(ServiceType.L3VPN)]
+
+    IGNORABLE_NS = [ServiceType.P4, ServiceType.OVS, ServiceType.MPLS, ServiceType.VLAN]
+
+    SUPPORTED_SERVICES = [ServiceType.L2STS, ServiceType.L2Bridge, ServiceType.L2PTP, ServiceType.FABNetv6,
+                          ServiceType.FABNetv4, ServiceType.PortMirror, ServiceType.FABNetv4Ext,
+                          ServiceType.FABNetv6Ext, ServiceType.L3VPN]

@@ -171,7 +171,7 @@ class IncomingRPCEvent(ABCActorEvent):
 
         elif self.rpc.get_request_type() == RPCRequestType.Close:
             authority.get_logger().info("processing close from <{}>".format(self.rpc.get_caller().get_name()))
-            authority.relinquish(reservation=self.rpc.get(), caller=self.rpc.get_caller())
+            authority.close(reservation=self.rpc.get())
 
         else:
             processed = self.do_process_server(server=authority)

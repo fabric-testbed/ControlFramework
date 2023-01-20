@@ -67,11 +67,17 @@ class HandlerBase(ABC):
     @abstractmethod
     def modify(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         """
-        Create
+        Modify
         """
 
     @abstractmethod
     def delete(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         """
-        Create
+        Delete
+        """
+
+    @abstractmethod
+    def clean_restart(self):
+        """
+        Clean Restart - delete all existing VMs before start
         """

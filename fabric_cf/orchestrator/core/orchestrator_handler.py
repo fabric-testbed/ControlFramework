@@ -30,12 +30,15 @@ from http.client import NOT_FOUND, BAD_REQUEST, UNAUTHORIZED
 from typing import List
 
 from fabric_mb.message_bus.messages.auth_avro import AuthAvro
+from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fim.graph.networkx_property_graph_disjoint import NetworkXGraphImporterDisjoint
 from fim.slivers.base_sliver import BaseSliver
+from fim.slivers.network_service import NetworkServiceSliver
 from fim.user import GraphFormat
 from fim.user.topology import ExperimentTopology
 
+from fabric_cf.actor.core.common.event_logger import EventLogger
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -205,9 +208,6 @@ class OrchestratorHandler:
         :returns List of reservations created for the Slice on success
         """
         start = time.time()
-        if self.globals.is_maintenance_mode_on():
-            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
-
         slice_id = None
         controller = None
         new_slice_object = None
@@ -237,7 +237,7 @@ class OrchestratorHandler:
 
             # Check if an Active slice exists already with the same name for the user
             create_ts = time.time()
-            project, tags = fabric_token.get_project_and_tags()
+            project, tags, project_name = fabric_token.get_first_project()
             existing_slices = controller.get_slices(slice_name=slice_name,
                                                     email=fabric_token.get_email(), project=project)
             self.logger.info(f"GET slices: TIME= {time.time() - create_ts:.0f}")
@@ -264,11 +264,13 @@ class OrchestratorHandler:
                                                    Constants.CLAIMS_EMAIL: fabric_token.get_email()})
             slice_obj.set_lease_end(lease_end=end_time)
             auth = AuthAvro()
-            auth.name = fabric_token.get_email()
-            auth.oidc_sub_claim = fabric_token.get_subject()
+            auth.name = self.controller_state.get_management_actor().get_name()
+            auth.guid = self.controller_state.get_management_actor().get_guid()
+            auth.oidc_sub_claim = fabric_token.get_uuid()
             auth.email = fabric_token.get_email()
             slice_obj.set_owner(auth)
             slice_obj.set_project_id(project)
+            slice_obj.set_project_name(project_name)
 
             create_ts = time.time()
             self.logger.debug(f"Adding Slice {slice_name}")
@@ -288,8 +290,14 @@ class OrchestratorHandler:
             new_slice_object.lock()
 
             # Create Slivers from Slice Graph; Compute Reservations from Slivers;
-            # Add Reservations to relational database;
             computed_reservations = new_slice_object.create(slice_graph=asm_graph)
+
+            # Check if Testbed in Maintenance or Site in Maintenance
+            self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
+
+            # Add Reservations to relational database;
+            new_slice_object.add_reservations()
+
             self.logger.info(f"OC wrapper: TIME= {time.time() - create_ts:.0f}")
 
             # Enqueue the slice on the demand thread
@@ -298,6 +306,8 @@ class OrchestratorHandler:
             create_ts = time.time()
             self.controller_state.get_defer_thread().queue_slice(controller_slice=new_slice_object)
             self.logger.info(f"QU queue: TIME= {time.time() - create_ts:.0f}")
+            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.create,
+                                        topology=topology)
 
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
@@ -372,10 +382,11 @@ class OrchestratorHandler:
 
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.query)
 
-            project, tags = fabric_token.get_project_and_tags()
-            # FIX ME: Hack until portal changes to project based view
+            projects = fabric_token.get_projects()
             project = None
-            slice_list = controller.get_slices(state=slice_states, email=fabric_token.get_email(), project=project,
+            if len(projects) == 1:
+                project, tags, project_name = fabric_token.get_first_project()
+            slice_list = controller.get_slices(states=slice_states, email=fabric_token.get_email(), project=project,
                                                slice_name=name, limit=limit, offset=offset)
             return ResponseBuilder.get_slice_summary(slice_list=slice_list)
         except Exception as e:
@@ -393,9 +404,6 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :returns List of reservations created for the Slice on success
         """
-        if self.globals.is_maintenance_mode_on():
-            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
-
         asm_graph = None
         topology = None
         try:
@@ -429,7 +437,8 @@ class OrchestratorHandler:
 
             # Authorize the slice
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.modify, resource=topology)
-            project, tags = fabric_token.get_project_and_tags()
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.create, resource=topology)
+            project, tags, project_name = fabric_token.get_first_project()
             broker = self.get_broker(controller=controller)
             if broker is None:
                 raise OrchestratorException("Unable to determine broker proxy for this controller. "
@@ -438,7 +447,14 @@ class OrchestratorHandler:
             slice_object = OrchestratorSliceWrapper(controller=controller, broker=broker,
                                                     slice_obj=slice_obj, logger=self.logger)
 
+            # Compute the reservations
             computed_reservations = slice_object.modify(new_slice_graph=asm_graph)
+
+            # Check if Test Bed or site is in maintenance
+            self.check_maintenance_mode(token=fabric_token, reservations=computed_reservations)
+
+            # Add any new reservations to the database
+            slice_object.add_reservations()
 
             FimHelper.delete_graph(graph_id=slice_obj.get_graph_id())
 
@@ -456,6 +472,8 @@ class OrchestratorHandler:
             # Helps improve the create response time
             self.controller_state.get_defer_thread().queue_slice(controller_slice=slice_object)
 
+            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_obj, action=ActionId.modify,
+                                        topology=topology)
             return ResponseBuilder.get_reservation_summary(res_list=computed_reservations)
         except Exception as e:
             if asm_graph is not None:
@@ -482,11 +500,7 @@ class OrchestratorHandler:
             slice_guid = ID(uid=slice_id) if slice_id is not None else None
             fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.delete)
 
-            project, tags = fabric_token.get_project_and_tags()
-            # FIX ME: Hack until portal changes to project based view
-            project = None
-            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email(),
-                                               project=project)
+            slice_list = controller.get_slices(slice_id=slice_guid, email=fabric_token.get_email())
 
             if slice_list is None or len(slice_list) == 0:
                 raise OrchestratorException(f"Slice# {slice_id} not found",
@@ -506,7 +520,6 @@ class OrchestratorHandler:
 
             self.__authorize_request(id_token=token, action_id=ActionId.delete)
             controller.close_reservations(slice_id=slice_guid)
-
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing delete_slice e: {e}")
@@ -611,9 +624,6 @@ class OrchestratorHandler:
         :raises Raises an exception in case of failure
         :return:
         """
-        if self.globals.is_maintenance_mode_on():
-            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR)
-
         failed_to_extend_rid_list = []
         try:
             controller = self.controller_state.get_management_actor()
@@ -648,7 +658,8 @@ class OrchestratorHandler:
 
             self.logger.debug(f"There are {len(reservations)} reservations in the slice# {slice_id}")
 
-            self.__authorize_request(id_token=token, action_id=ActionId.renew, lease_end_time=new_end_time)
+            fabric_token = self.__authorize_request(id_token=token, action_id=ActionId.renew, lease_end_time=new_end_time)
+            self.check_maintenance_mode(token=fabric_token, reservations=reservations)
             for r in reservations:
                 res_state = ReservationStates(r.get_state())
                 if res_state == ReservationStates.Closed or res_state == ReservationStates.Failed or \
@@ -675,6 +686,8 @@ class OrchestratorHandler:
 
             if len(failed_to_extend_rid_list) > 0:
                 raise OrchestratorException(f"Failed to extend reservation# {failed_to_extend_rid_list}")
+
+            EventLogger.log_slice_event(logger=self.logger, slice_object=slice_object, action=ActionId.renew)
         except Exception as e:
             self.logger.error(traceback.format_exc())
             self.logger.error(f"Exception occurred processing renew e: {e}")
@@ -721,3 +734,27 @@ class OrchestratorHandler:
         else:
             return GraphFormat.GRAPHML
 
+    def check_maintenance_mode(self, *, token: FabricToken, reservations: List[ReservationMng] = None):
+        controller = self.controller_state.get_management_actor()
+        self.logger.debug(f"check_maintenance_mode invoked for Controller: {controller}")
+
+        project, tags, project_name = token.get_first_project()
+
+        if not controller.is_slice_provisioning_allowed(project=project, email=token.get_email()):
+            raise OrchestratorException(Constants.MAINTENANCE_MODE_ERROR,
+                                        http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)
+
+        if reservations is not None:
+            for r in reservations:
+                sliver = r.get_sliver()
+                if not isinstance(sliver, NetworkServiceSliver):
+                    worker = None
+                    if sliver.get_labels() is not None and sliver.get_labels().instance_parent is not None:
+                        worker = sliver.get_labels().instance_parent
+                    status, message = controller.is_sliver_provisioning_allowed(project=project,
+                                                                                site=sliver.get_site(),
+                                                                                email=token.get_email(),
+                                                                                worker=worker)
+                    if not status:
+                        raise OrchestratorException(message=message,
+                                                    http_error_code=Constants.INTERNAL_SERVER_ERROR_MAINT_MODE)

@@ -235,7 +235,10 @@ class Term:
 
         flag = self.extends_term(old_term=old_term)
         if flag is False:
-            raise TimeException("New term does not extend previous term")
+            raise TimeException(f"New term does not extend previous term! new_term: [Start: {self.start_time}"
+                                f" End: {self.end_time} NewStart: {self.new_start_time}] "
+                                f"old_term: [Start: {old_term.start_time} End: {old_term.end_time} "
+                                f"NewStart: {old_term.new_start_time}]")
 
     def __eq__(self, other):
         """
@@ -304,9 +307,8 @@ class Term:
         if self.start_time is None or self.end_time is None or self.new_start_time is None:
             raise TimeException(Constants.INVALID_STATE)
 
-        start_time_hh_mm = self.start_time.strftime(self.HH_MM_TIME_FORMAT)
-        old_start_time_hh_mm = old_term.start_time.strftime(self.HH_MM_TIME_FORMAT)
-        return start_time_hh_mm == old_start_time_hh_mm and self.end_time > self.new_start_time
+        start_time_diff = self.start_time - old_term.start_time
+        return start_time_diff.total_seconds() <= 300 and self.end_time > self.new_start_time
 
     def get_end_time(self) -> datetime:
         """
@@ -392,10 +394,11 @@ class Term:
 
     def __str__(self):
         if Term.set_cycles:
-            return "term=[{}:{}:{}]".format(self.cycle_start, self.cycle_new_start, self.cycle_end)
+            return f"term=[{self.cycle_start}:{self.cycle_new_start}:{self.cycle_end}:" \
+                   f"{Term.get_readable_date(self.start_time)}:{Term.get_readable_date(self.new_start_time)}:" \
+                   f"{Term.get_readable_date(self.end_time)}]"
         else:
-            return "Start: {} End: {}".format(Term.get_readable_date(self.start_time),
-                                              Term.get_readable_date(self.end_time))
+            return f"Start: {Term.get_readable_date(self.start_time)} End: {Term.get_readable_date(self.end_time)}"
 
     def validate(self):
         """

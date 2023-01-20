@@ -103,34 +103,6 @@ class Globals:
         if os.path.isfile(Constants.SUPERBLOCK_LOCATION):
             os.remove(Constants.SUPERBLOCK_LOCATION)
 
-    def create_maintenance_lock(self):
-        """
-        Create Super Block
-        """
-        self.get_logger().debug("Creating maintenance lock")
-        file = None
-        try:
-            file = open(Constants.MAINTENANCE_LOCATION, 'r')
-        except IOError:
-            file = open(Constants.MAINTENANCE_LOCATION, 'w')
-        finally:
-            if file is not None:
-                file.close()
-
-    @staticmethod
-    def delete_maintenance_lock():
-        """
-        Delete maintenance block file
-        """
-        if os.path.isfile(Constants.MAINTENANCE_LOCATION):
-            os.remove(Constants.MAINTENANCE_LOCATION)
-
-    @staticmethod
-    def is_maintenance_mode_on() -> bool:
-        if os.path.isfile(Constants.MAINTENANCE_LOCATION):
-            return True
-        return False
-
     @staticmethod
     def can_reload_model() -> bool:
         if os.path.isfile(Constants.MODEL_RELOAD_LOCATION):
@@ -167,7 +139,7 @@ class Globals:
         self.cleanup_neo4j()
         self.log.debug(f"Reload Neo4j database started {graph_id}")
         from fabric_cf.actor.fim.fim_helper import FimHelper
-        arm_graph = FimHelper.get_arm_graph_from_file(filename=self.get_config().get_actor().get_substrate_file(),
+        arm_graph = FimHelper.get_arm_graph_from_file(filename=self.get_config().get_actor_config().get_substrate_file(),
                                                       graph_id=graph_id)
         self.log.debug(f"Reload Neo4j database completed {graph_id}")
         return arm_graph
@@ -294,7 +266,8 @@ class Globals:
                 Constants.SSL_KEY_LOCATION: self.config.get_kafka_ssl_key_location(),
                 Constants.SSL_KEY_PASSWORD: self.config.get_kafka_ssl_key_password(),
                 Constants.SCHEMA_REGISTRY_URL: self.config.get_kafka_schema_registry(),
-                Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS: self.config.get_kafka_request_timeout_ms()}
+                Constants.PROPERTY_CONF_KAFKA_REQUEST_TIMEOUT_MS: self.config.get_kafka_request_timeout_ms(),
+                Constants.PROPERTY_CONF_KAFKA_MAX_MESSAGE_SIZE: self.config.get_kafka_max_message_size()}
 
         if sasl_username is not None and sasl_username != '' and sasl_password is not None and sasl_password != '':
             conf[Constants.SASL_USERNAME] = sasl_username
@@ -323,6 +296,7 @@ class Globals:
             conf[Constants.SASL_USERNAME] = sasl_username
             conf[Constants.SASL_PASSWORD] = sasl_password
         conf[Constants.GROUP_ID] = group_id
+        conf[Constants.PROPERTY_CONF_KAFKA_FETCH_MAX_MESSAGE_SIZE] = self.config.get_kafka_max_message_size()
         return conf
 
     def get_kafka_producer(self):
@@ -350,7 +324,8 @@ class Globals:
 
         from fabric_cf.actor.core.container.rpc_producer import RPCProducer
         producer = RPCProducer(producer_conf=conf, key_schema_location=key_schema_file,
-                               value_schema_location=value_schema_file, logger=self.get_logger(), actor=actor)
+                               value_schema_location=value_schema_file, logger=self.get_logger(),
+                               actor=actor, retries=self.config.get_rpc_retries())
         return producer
 
     def get_simple_kafka_producer(self):

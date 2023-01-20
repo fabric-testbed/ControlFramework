@@ -28,7 +28,6 @@ from datetime import datetime, timezone
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import BrokerException
 from fabric_cf.actor.core.kernel.broker_query_model_publisher import BrokerQueryModelPublisher
-from fabric_cf.actor.core.manage.management_utils import ManagementUtils
 
 
 class BrokerKernel:

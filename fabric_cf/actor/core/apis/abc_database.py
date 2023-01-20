@@ -38,6 +38,7 @@ if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_slice import ABCSlice
     from fabric_cf.actor.core.util.id import ID
     from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
+    from fabric_cf.actor.core.container.maintenance import Site
 
 
 class ABCDatabase(ABC):
@@ -158,11 +159,11 @@ class ABCDatabase(ABC):
     @abstractmethod
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: ID = None,
-                         state: list[int] = None) -> List[ABCReservationMixin]:
+                         states: list[int] = None, site: str = None, rsv_type: str = None) -> List[ABCReservationMixin]:
         """
         Retrieves the reservations.
 
-        @return list of properties
+        @return list of reservations
 
         @throws Exception in case of error
         """
@@ -179,7 +180,7 @@ class ABCDatabase(ABC):
 
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
-                   state: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                   states: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
                    limit: int = None, offset: int = None, lease_end: datetime = None) -> List[ABCSlice] or None:
         """
         Retrieves the specified slices.
@@ -188,7 +189,7 @@ class ABCDatabase(ABC):
         @param slice_name slice name
         @param project_id project id
         @param email email
-        @param state state
+        @param states states
         @param oidc_sub oidc sub
         @param slc_type slice type
         @param limit limit
@@ -280,7 +281,7 @@ class ABCDatabase(ABC):
         """
 
     @abstractmethod
-    def get_delegations(self, *, slice_id: ID = None, state: int = None) -> List[ABCDelegation]:
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None) -> List[ABCDelegation]:
         """
         Get delegations
         @params slice_id: slice_id
@@ -306,4 +307,57 @@ class ABCDatabase(ABC):
     def get_brokers(self) -> List[ABCBrokerProxy] or None:
         """
         Return all brokers
+        """
+
+    @abstractmethod
+    def add_site(self, *, site: Site):
+        """
+        Add site
+        @param site site
+        """
+
+    def update_site(self, *, site: Site):
+        """
+        Update Site
+        @param site site
+        """
+    def remove_site(self, *, site_name: str):
+        """
+        Remove Site
+        @param site_name site name
+        """
+    def get_site(self, *, site_name: str) -> Site or None:
+        """
+        Get site
+        @param site_name site name
+        @return Site
+        """
+
+    def get_sites(self) -> List[Site]:
+        """
+        Return all sites
+        @return list of sites
+        """
+
+    def add_maintenance_properties(self, *, properties: dict):
+        """
+        Add maintenance properties
+        @param properties properties
+        """
+
+    def update_maintenance_properties(self, *, properties: dict):
+        """
+        Update maintenance properties
+        @param properties properties
+        """
+
+    def remove_maintenance_properties(self):
+        """
+        Remove maintenance properties
+        """
+
+    def get_maintenance_properties(self) -> dict:
+        """
+        Get maintenance Properties
+        @return properties
         """

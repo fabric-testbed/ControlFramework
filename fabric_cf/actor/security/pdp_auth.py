@@ -80,6 +80,9 @@ class ActionId(Enum):
     relinquish = 16
     accept = 17
 
+    def __str__(self):
+        return self.name
+
 
 class PdpAuth:
     """
@@ -192,7 +195,7 @@ if __name__ == '__main__':
 
     config = {'url': 'http://localhost:8080/services/pdp', 'enable': True}
     pdp = PdpAuth(config=config, logger=logger)
-    project, tags = token.get_project_and_tags()
-    RESULT = pdp.check_access(email=token.get_email(), project=project, tags=tags, action_id=ActionId.query,
-                              resource=None, lease_end_time=None)
-    print(RESULT)
+    projects = token.get_projects()
+    for p in projects:
+        pdp.check_access(email=token.get_email(), project=p.get(Constants.UUID), tags=p.get(Constants.TAGS),
+                         action_id=ActionId.query, resource=None, lease_end_time=None)

@@ -36,6 +36,7 @@ from fim.graph.networkx_property_graph import NetworkXGraphImporter
 from fim.graph.resources.networkx_abqm import NetworkXAggregateBQM
 from fim.slivers.capacities_labels import Capacities
 from fim.slivers.delegations import DelegationFormat
+from fim.slivers.maintenance_mode import MaintenanceInfo, MaintenanceEntry, MaintenanceState
 from fim.slivers.network_node import CompositeNodeSliver, NodeType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
 from fim.slivers.interface_info import InterfaceType
@@ -64,6 +65,17 @@ class AggregatedBQMPlugin:
     def _remove_none_entries(d):
         return {k: v for (k, v) in d.items() if v}
 
+    def __site_maintenance_info(self, *, site_name: str):
+        site = self.actor.get_plugin().get_database().get_site(site_name=site_name)
+        if site is not None:
+            result = site.get_maintenance_info().copy()
+        else:
+            result = MaintenanceInfo()
+            entry = MaintenanceEntry(state=MaintenanceState.Active)
+            result.add(site_name, entry)
+        result.finalize()
+        return result
+
     def __occupied_node_capacity(self, *, node_id: str) -> Tuple[Capacities,
                                                                  Dict[ComponentType, Dict[str, Capacities]]]:
         """
@@ -79,7 +91,7 @@ class AggregatedBQMPlugin:
 
         # get existing reservations for this node
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
-                                                                                        state=states)
+                                                                                        states=states)
 
         # node capacities
         occupied_capacities = Capacities()
@@ -155,6 +167,7 @@ class AggregatedBQMPlugin:
             site_comps_by_type = defaultdict(dict)
             # occupied component capacities organized by [type][model] into lists (by server)
             site_allocated_comps_caps_by_type = defaultdict(dict)
+            site_sliver.maintenance_info = self.__site_maintenance_info(site_name=s)
 
             loc = None
             for sliver in ls:

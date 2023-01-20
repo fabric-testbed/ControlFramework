@@ -32,6 +32,7 @@ from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_authority_reservation import ABCAuthorityReservation
 from fabric_cf.actor.core.apis.abc_callback_proxy import ABCCallbackProxy
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -45,6 +46,7 @@ from fabric_cf.actor.core.apis.abc_resource_control import ABCResourceControl
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.time.calendar.authority_calendar import AuthorityCalendar
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.fim.fim_helper import FimHelper
@@ -129,14 +131,15 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
     def set_aggregate_resource_model_graph_id(self, graph_id: str):
         self.aggregate_resource_model_graph_id = graph_id
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         """
         initialize the policy
         """
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
             self.calendar = AuthorityCalendar(clock=self.clock)
             self.initialize_controls()
+            self.load_new_controls(config=config)
             self.load_aggregate_resource_model()
             self.initialized = True
 
@@ -148,6 +151,35 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         for control in self.controls_by_guid.values():
             control.set_actor(actor=self.actor)
             control.initialize()
+
+    def load_new_controls(self, *, config: ActorConfig):
+        for c in config.get_controls():
+            try:
+                if c.get_module_name() is None or c.get_class_name() is None or c.get_type() is None or \
+                        len(c.get_type()) == 0:
+                    continue
+
+                control = ReflectionUtils.create_instance(module_name=c.get_module_name(),
+                                                          class_name=c.get_class_name())
+                control.set_actor(actor=self.actor)
+
+                for t in c.get_type():
+                    self.logger.debug(f"Processing control type: {t}")
+                    rtype = ResourceType(resource_type=t)
+                    existing = self.get_control_by_type(rtype=rtype)
+
+                    if existing is None:
+                        self.logger.debug(f"Adding control type: {t} control: {type(control)}")
+                        control.add_type(rtype=rtype)
+                    else:
+                        self.logger.debug(f"Exists control type: {t} control: {type(control)}")
+
+                if len(control.get_types()) > 0:
+                    self.logger.debug(f"Registering control control: {type(control)}")
+                    self.register_control(control=control)
+            except Exception as e:
+                self.logger.error(f"Exception occurred while loading new control: {e}")
+                self.logger.error(traceback.format_exc())
 
     def eject(self, *, resources: ResourceSet):
         rc = self.get_control_by_type(rtype=resources.get_type())
@@ -400,49 +432,47 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
         requested = reservation.get_requested_resources()
         rtype = requested.get_type()
         rc = self.get_control_by_type(rtype=rtype)
-        if rc is not None:
-            try:
-                ticketed_sliver = requested.get_sliver()
-                node_id = ticketed_sliver.get_node_map()[1]
-                self.logger.debug(f"node_id {node_id} serving reservation# {reservation}")
-                if node_id is None:
-                    raise AuthorityException(f"Unable to find node_id {node_id} for reservation# {reservation}")
-
-                graph_node = None
-                if isinstance(ticketed_sliver, NodeSliver):
-                    graph_node = self.get_network_node_from_graph(node_id=node_id)
-
-                elif isinstance(ticketed_sliver, NetworkServiceSliver):
-                    graph_node = self.get_network_service_from_graph(node_id=node_id)
-
-                else:
-                    msg = f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver'
-                    self.logger.error(msg)
-                    raise AuthorityException(msg)
-
-                self.logger.debug(f"Node {graph_node} serving reservation# {reservation}")
-                self.logger.debug(f"requested {requested} requested.get_resources() {requested.get_resources()}")
-
-                existing_reservations = self.get_existing_reservations(node_id=node_id,
-                                                                       node_id_to_reservations=node_id_to_reservations)
-
-                delegation_name, broker_callback = self.get_delegation_name_and_callback(
-                    delegation_id=requested.get_resources().get_delegation_id())
-
-                rset = rc.assign(reservation=reservation, delegation_name=delegation_name,
-                                 graph_node=graph_node, existing_reservations=existing_reservations)
-
-                if rset is None or rset.get_sliver() is None or rset.get_sliver().get_node_map() is None:
-                    raise AuthorityException(f"Could not assign resources to reservation# {reservation}")
-
-                reservation.set_broker_callback(broker_callback=broker_callback)
-                return rset
-            except Exception as e:
-                self.logger.error(traceback.format_exc())
-                self.logger.error(f"Could not assign {e}")
-                return None
-        else:
+        if rc is None:
             raise AuthorityException(Constants.UNSUPPORTED_RESOURCE_TYPE.format(reservation.get_type()))
+        try:
+            ticketed_sliver = requested.get_sliver()
+            node_id = ticketed_sliver.get_node_map()[1]
+            self.logger.debug(f"node_id {node_id} serving reservation# {reservation}")
+            if node_id is None:
+                raise AuthorityException(f"Unable to find node_id {node_id} for reservation# {reservation}")
+
+            if isinstance(ticketed_sliver, NodeSliver):
+                graph_node = self.get_network_node_from_graph(node_id=node_id)
+
+            elif isinstance(ticketed_sliver, NetworkServiceSliver):
+                graph_node = self.get_network_service_from_graph(node_id=node_id)
+
+            else:
+                msg = f'Reservation {reservation} sliver type is neither Node, nor NetworkServiceSliver'
+                self.logger.error(msg)
+                raise AuthorityException(msg)
+
+            self.logger.debug(f"Node {graph_node} serving reservation# {reservation}")
+            self.logger.debug(f"requested {requested} requested.get_resources() {requested.get_resources()}")
+
+            existing_reservations = self.get_existing_reservations(node_id=node_id,
+                                                                   node_id_to_reservations=node_id_to_reservations)
+
+            delegation_name, broker_callback = self.get_delegation_name_and_callback(
+                delegation_id=requested.get_resources().get_delegation_id())
+
+            rset = rc.assign(reservation=reservation, delegation_name=delegation_name,
+                             graph_node=graph_node, existing_reservations=existing_reservations)
+
+            if rset is None or rset.get_sliver() is None or rset.get_sliver().get_node_map() is None:
+                raise AuthorityException(f"Could not assign resources to reservation# {reservation}")
+
+            reservation.set_broker_callback(broker_callback=broker_callback)
+            return rset
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+            self.logger.error(f"Could not assign {e}")
+            return None
 
     def configuration_complete(self, *, action: str, token: ConfigToken, out_properties: dict):
         super().configuration_complete(action=action, token=token, out_properties=out_properties)
@@ -576,7 +606,7 @@ class AuthorityCalendarPolicy(AuthorityPolicy):
                   ReservationStates.Nascent.value]
 
         existing_reservations = self.actor.get_plugin().get_database().get_reservations(graph_node_id=node_id,
-                                                                                        state=states)
+                                                                                        states=states)
 
         reservations_allocated_in_cycle = node_id_to_reservations.get(node_id, None)
 

@@ -29,6 +29,7 @@ from datetime import datetime
 from typing import List
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.ticket_reservation_avro import TicketReservationAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.broker_query_model_avro import BrokerQueryModelAvro
@@ -99,7 +100,8 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
     def demand_reservation_rid(self, *, rid: ID) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver) -> bool:
+    def extend_reservation(self, *, reservation: ID, new_end_time: datetime, sliver: BaseSliver,
+                           dependencies: List[ReservationPredecessorAvro] = None) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
     def modify_reservation(self, *, rid: ID, modify_properties: dict) -> bool:

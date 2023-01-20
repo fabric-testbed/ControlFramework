@@ -26,12 +26,13 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict, Tuple
 
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_reservation_avro import ResultReservationAvro
 from fabric_mb.message_bus.messages.result_reservation_state_avro import ResultReservationStateAvro
+from fabric_mb.message_bus.messages.result_sites_avro import ResultSitesAvro
 from fabric_mb.message_bus.messages.result_string_avro import ResultStringAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
 from fabric_mb.message_bus.messages.result_slice_avro import ResultSliceAvro
@@ -50,6 +51,7 @@ from fabric_cf.actor.core.apis.abc_actor_management_object import ABCActorManage
 
 from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
+from fabric_cf.actor.core.container.maintenance import Site, Maintenance
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.security.auth_token import AuthToken
 
@@ -108,7 +110,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             self.id = actor.get_guid()
 
     def get_slices(self, *, slice_id: ID, caller: AuthToken, slice_name: str = None, email: str = None,
-                   state: List[int] = None, project: str = None, limit: int = None,
+                   states: List[int] = None, project: str = None, limit: int = None,
                    offset: int = None) -> ResultSliceAvro:
         result = ResultSliceAvro()
         result.status = ResultAvro()
@@ -122,7 +124,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             try:
                 try:
                     slice_list = self.db.get_slices(slice_id=slice_id, slice_name=slice_name, email=email,
-                                                    state=state, project_id=project, limit=limit, offset=offset)
+                                                    states=states, project_id=project, limit=limit, offset=offset)
                 except Exception as e:
                     self.logger.error("getSlices:db access {}".format(e))
                     result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -151,7 +153,9 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         else:
             try:
 
-                slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name())
+                slice_obj_new = SliceFactory.create(slice_id=ID(), name=slice_obj.get_slice_name(),
+                                                    project_id=slice_obj.get_project_id(),
+                                                    project_name=slice_obj.get_project_name())
                 slice_obj_new.set_description(description=slice_obj.get_description())
                 auth_token = Translate.translate_auth_from_avro(auth_avro=slice_obj.get_owner())
                 slice_obj_new.set_owner(owner=auth_token)
@@ -159,7 +163,6 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                 slice_obj_new.set_config_properties(value=slice_obj.get_config_properties())
                 slice_obj_new.set_lease_end(lease_end=slice_obj.get_lease_end())
                 slice_obj_new.set_lease_start(lease_start=datetime.now(timezone.utc))
-                slice_obj_new.set_project_id(project_id=slice_obj.get_project_id())
 
                 if slice_obj.get_inventory():
                     slice_obj_new.set_inventory(value=True)
@@ -298,9 +301,55 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
             return None
         return slices[0]
 
-    def get_reservations(self, *, caller: AuthToken, state: List[int] = None,
+    def get_sites(self, *, caller: AuthToken, site: str) -> ResultSitesAvro:
+        result = ResultSitesAvro()
+        result.status = ResultAvro()
+
+        if caller is None:
+            result.status.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.status.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+
+            sites = site.split(",")
+            sites_list = None
+            try:
+                if len(sites) == 1:
+                    site_info = self.db.get_site(site_name=sites[0])
+                    if site_info is not None:
+                        sites_list = [site_info]
+                else:
+                    sites_list = self.db.get_sites()
+
+            except Exception as e:
+                self.logger.error("get_sites:db access {}".format(e))
+                result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
+                result.status.set_message(ErrorCodes.ErrorDatabaseError.interpret(exception=e))
+                result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+            if sites_list is not None:
+                result.sites = []
+                for s in sites_list:
+                    site_avro = Translate.translate_site_to_avro(site=s)
+                    result.sites.append(site_avro)
+        except ReservationNotFoundException as e:
+            self.logger.error("get_sites: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.status.set_message(e.text)
+        except Exception as e:
+            self.logger.error("get_sites: {}".format(e))
+            result.status.set_code(ErrorCodes.ErrorInternalError.value)
+            result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+
+        return result
+
+
+    def get_reservations(self, *, caller: AuthToken, states: List[int] = None,
                          slice_id: ID = None, rid: ID = None, oidc_claim_sub: str = None,
-                         email: str = None, rid_list: List[str] = None) -> ResultReservationAvro:
+                         email: str = None, rid_list: List[str] = None, type: str = None,
+                         site: str = None, node_id: str = None) -> ResultReservationAvro:
         result = ResultReservationAvro()
         result.status = ResultAvro()
 
@@ -317,7 +366,8 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                     res_list = self.db.get_reservations_by_rids(rid=rid_list)
                 else:
                     res_list = self.db.get_reservations(slice_id=slice_id, rid=rid, email=email,
-                                                        oidc_sub=oidc_claim_sub, state=state)
+                                                        states=states, rsv_type=type, site=site,
+                                                        graph_node_id=node_id)
             except Exception as e:
                 self.logger.error("getReservations:db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -535,7 +585,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
         return result
 
     def get_delegations(self, *, caller: AuthToken, slice_id: ID = None, did: str = None,
-                        state: int = None) -> ResultDelegationAvro:
+                        states: List[int] = None) -> ResultDelegationAvro:
         result = ResultDelegationAvro()
         result.status = ResultAvro()
 
@@ -556,7 +606,7 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
                         result.status.set_code(ErrorCodes.ErrorNoSuchDelegation.value)
                         result.status.set_message(ErrorCodes.ErrorNoSuchDelegation.interpret())
                 else:
-                    dlg_list = self.db.get_delegations(slice_id=slice_id, state=state)
+                    dlg_list = self.db.get_delegations(slice_id=slice_id, states=states)
             except Exception as e:
                 self.logger.error("get_delegations db access {}".format(e))
                 result.status.set_code(ErrorCodes.ErrorDatabaseError.value)
@@ -585,13 +635,67 @@ class ActorManagementObject(ManagementObject, ABCActorManagementObject):
 
         return result
 
-    @staticmethod
-    def toggle_maintenance_mode(*, mode: bool):
-        from fabric_cf.actor.core.container.globals import GlobalsSingleton
-        if mode:
-            GlobalsSingleton.get().create_maintenance_lock()
-        else:
-            GlobalsSingleton.get().delete_maintenance_lock()
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        result = ResultAvro()
+
+        if properties is None and sites is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCActorMixin):
+                    self.actor = actor
+
+                def run(self):
+                    self.actor.update_maintenance_mode(properties=properties, sites=sites)
+                    return True
+
+            self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
+        except ReservationNotFoundException as e:
+            self.logger.error("update_maintenance_mode: {}".format(e))
+            result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+            result.set_message(e.text)
+        except Exception as e:
+            self.logger.error("update_maintenance_mode: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
+    def is_testbed_in_maintenance(self) -> Tuple[bool, Dict[str, str] or None]:
+        return Maintenance.is_testbed_in_maintenance(database=self.db)
+
+    def is_site_in_maintenance(self, *, site_name: str) -> Tuple[bool, Site or None]:
+        return Maintenance.is_site_in_maintenance(database=self.db, site_name=site_name)
+
+    def is_sliver_provisioning_allowed(self, *, project: str, email: str, site: str,
+                                       worker: str) -> Tuple[bool, str or None]:
+        """
+        Determine if sliver can be provisioned
+        Sliver provisioning can be prohibited if Testbed or Site or Worker is in maintenance mode
+        Sliver provisioning in maintenance mode may be allowed for specific projects/users
+        @param project project
+        @param email user's email
+        @param site site name
+        @param worker worker name
+        @return True if allowed; False otherwise
+        """
+        return Maintenance.is_sliver_provisioning_allowed(database=self.db, project=project, email=email, site=site,
+                                                          worker=worker)
+
+    def is_slice_provisioning_allowed(self, *, project: str, email: str) -> bool:
+        """
+        Determine if slice can be provisioned
+        Slice provisioning can be prohibited if Testbed is in maintenance mode
+        Slice provisioning in maintenance mode may be allowed for specific projects/users
+        @param project project
+        @param email user's email
+        @return True if allowed; False otherwise
+        """
+        return Maintenance.is_slice_provisioning_allowed(database=self.db, project=project, email=email)
 
     def close_delegation(self, *, caller: AuthToken, did: str) -> ResultAvro:
         result = ResultAvro()

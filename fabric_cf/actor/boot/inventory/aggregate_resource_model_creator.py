@@ -31,9 +31,9 @@ from fim.graph.resources.neo4j_arm import Neo4jARMGraph
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.inventory_slice_manager import InventorySliceManagerError
-from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.core.common.resource_config import ResourceConfigBuilder
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.common.resource_config import ResourceConfig
@@ -85,6 +85,9 @@ class AggregateResourceModelCreator:
                               f"for Actor {actor_name}")
             self.register_handler(resource_config=r)
 
+        # Cleanup any existing resources
+        self.substrate.handler_processor.clean_restart()
+
         return self.arm_graph.generate_adms()
 
     def register_handler(self, *, resource_config: ResourceConfig):
@@ -92,17 +95,7 @@ class AggregateResourceModelCreator:
         Register Handlers for each Resource Type and Save it Plugin
         @param resource_config Resource Config
         """
-        handler_module = resource_config.get_handler_module()
-        handler_class = resource_config.get_handler_class()
-
-        if handler_class is None or handler_module is None:
-            return
-
-        config_map = ConfigurationMapping()
-        config_map.set_key(key=str(resource_config.get_resource_type()))
-        config_map.set_class_name(class_name=handler_class)
-        config_map.set_module_name(module_name=handler_module)
-        config_map.set_properties(properties=resource_config.get_handler_properties())
+        config_map = ResourceConfigBuilder.build_config_mapping(resource_config=resource_config)
 
         self.substrate.handler_processor.add_config_mapping(mapping=config_map)
         print(f"Added handler for  {resource_config.get_resource_type()} config_map: {config_map}")

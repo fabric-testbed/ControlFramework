@@ -81,7 +81,7 @@ class KernelTest(BaseTestCase, unittest.TestCase):
         actor = self.get_actor()
         db.remove_actor_database(actor_name=actor.get_name())
         db.add_actor(actor=actor)
-        actor.actor_added()
+        actor.actor_added(config=None)
         return actor
 
     def test_a_register_reservation(self):

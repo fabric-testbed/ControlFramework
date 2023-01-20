@@ -28,7 +28,7 @@ from typing import List
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
-from fim.slivers.json import JSONSliver
+from fim.graph.abc_property_graph import ABCPropertyGraph
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates, ReservationPendingStates, JoinState
@@ -41,6 +41,7 @@ class ResponseBuilder:
     PROP_NAME = "name"
     PROP_STATE = "state"
     PROP_PROJECT_ID = "project_id"
+    PROP_PROJECT_NAME = "project_name"
     PROP_MODEL = "model"
     PROP_GRAPH_ID = "graph_id"
     PROP_LEASE_START_TIME = "lease_start_time"
@@ -80,7 +81,7 @@ class ResponseBuilder:
                 if sliver is not None:
                     res_dict[ResponseBuilder.PROP_GRAPH_NODE_ID] = sliver.node_id
                     res_dict[ResponseBuilder.PROP_SLIVER_TYPE] = type(sliver).__name__
-                    res_dict[ResponseBuilder.PROP_SLIVER] = JSONSliver.sliver_to_json(sliver)
+                    res_dict[ResponseBuilder.PROP_SLIVER] = ABCPropertyGraph.sliver_to_dict(sliver)
 
                 if reservation.get_start() is not None:
                     start_time = ActorClock.from_milliseconds(milli_seconds=reservation.get_start())
@@ -125,6 +126,9 @@ class ResponseBuilder:
 
             if s.get_project_id() is not None:
                 s_dict[ResponseBuilder.PROP_PROJECT_ID] = s.get_project_id()
+
+            if s.get_project_name() is not None:
+                s_dict[ResponseBuilder.PROP_PROJECT_NAME] = s.get_project_name()
 
             if slice_model is not None:
                 s_dict[ResponseBuilder.PROP_MODEL] = slice_model

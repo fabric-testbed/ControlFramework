@@ -30,6 +30,7 @@ from datetime import datetime
 from typing import TYPE_CHECKING, List
 
 from fabric_mb.message_bus.messages.lease_reservation_avro import LeaseReservationAvro
+from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_broker_query_model_avro import ResultBrokerQueryModelAvro
 from fabric_mb.message_bus.messages.result_proxy_avro import ResultProxyAvro
@@ -375,7 +376,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
         return result
 
     def extend_reservation(self, *, reservation: id, new_end_time: datetime, sliver: BaseSliver,
-                           caller: AuthToken) -> ResultAvro:
+                           caller: AuthToken, dependencies: List[ReservationPredecessorAvro] = None) -> ResultAvro:
         result = ResultAvro()
 
         if reservation is None or caller is None or (new_end_time is None and sliver is None):
@@ -396,6 +397,16 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
                         return result
 
+                    dep_res_list = []
+                    if dependencies is not None:
+                        for d in dependencies:
+                            dep_res = self.actor.get_reservation(rid=ID(uid=d.get_reservation_id()))
+                            if dep_res is None:
+                                result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
+                                result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
+                                return result
+                            dep_res_list.append(dep_res)
+
                     rset = ResourceSet()
                     units = r.get_resources().get_units()
                     rset.set_units(units=units)
@@ -412,7 +423,8 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                     if sliver is not None:
                         rset.set_sliver(sliver=sliver)
 
-                    self.actor.extend(rid=r.get_reservation_id(), resources=rset, term=new_term)
+                    self.actor.extend(rid=r.get_reservation_id(), resources=rset, term=new_term,
+                                      dependencies=dep_res_list)
 
                     return result
 

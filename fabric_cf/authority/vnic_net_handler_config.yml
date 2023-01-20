@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # MIT License
 #
 # Copyright (c) 2020 FABRIC Testbed
@@ -23,42 +22,12 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.util.id import ID
-
-
-class ReservationIDWithModifyIndex:
-    def __init__(self, *, rid: ID, index: int):
-        self.rid = rid
-        self.index = index
-
-    def get_reservation_id(self) -> ID:
-        """
-        Get Reservation Id
-        :return:
-        """
-        return self.rid
-
-    def get_modify_index(self) -> int:
-        """
-        Get Modify Index
-        :return:
-        """
-        return self.index
-
-    def override_modify_index(self, *, index: int):
-        """
-        Override modify index
-        :param index:
-        :return:
-        """
-        self.index = index
-
-    def __str__(self):
-        return "{}[{}]".format(self.rid, self.index)
-
-    def __eq__(self, other):
-        if not isinstance(other, ReservationIDWithModifyIndex):
-            return False
-        if self.rid == other.rid and self.index == other.index:
-            return True
-        return False
+ansible:
+  ansible_python_interpreter: /usr/bin/python3.6
+runtime:
+  network_name_prefix: dataplane
+playbooks:
+  location: /etc/fabric/actor/playbooks
+  inventory_location: /etc/fabric/actor/playbooks/inventory
+  admin_ssh_key: /root/.ssh/id_rsa_nova
+  L2Bridge: head_port_provisioning.yml

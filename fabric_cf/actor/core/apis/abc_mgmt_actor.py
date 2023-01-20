@@ -26,11 +26,13 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple, Dict
 
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 
 from fabric_cf.actor.core.apis.abc_component import ABCComponent
+from fabric_cf.actor.core.container.maintenance import Site
 
 if TYPE_CHECKING:
     from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
@@ -42,14 +44,14 @@ if TYPE_CHECKING:
 class ABCMgmtActor(ABCComponent):
     @abstractmethod
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         """
         Obtains all slices.
         @param slice_id slice id
         @param slice_name slice name
         @param email email
         @param project project id
-        @param state slice state
+        @param states slice states
         @param limit limit
         @param offset offset
         @return returns list of slices
@@ -92,18 +94,29 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def get_reservations(self, *, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None) -> List[ReservationMng]:
+    def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
+                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         """
-        @param state state
+        @param states states
         @param slice_id slice ID
         @param rid reservation id
         @param oidc_claim_sub: oidc claim sub
         @param email: user email
         @param rid_list: list of Reservation Id
+        @param type type of reservations like NodeSliver/NetworkServiceSliver
+        @param site site
+        @param node_id node id
         Obtains all reservations
         @return returns list of the reservations
+        """
+
+    @abstractmethod
+    def get_sites(self, *, site: str) -> List[SiteAvro] or None:
+        """
+        @param site site name
+        Obtains Maintenance Info for a site
+        @return returns list of the Sites
         """
 
     @abstractmethod
@@ -191,12 +204,51 @@ class ABCMgmtActor(ABCComponent):
         """
 
     @abstractmethod
-    def get_delegations(self, *, slice_id: ID = None, state: int = None,
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         """
         Get Delegations
         @param slice_id slice id
-        @param state state
+        @param states states
         @param delegation_id delegation id
         @return returns list of the delegations
         """
+
+    def is_testbed_in_maintenance(self) -> Tuple[bool, Dict[str, str] or None]:
+        """
+        Determine if testbed is in maintenance
+        @return True if testbed is in maintenance; False otherwise
+        """
+        return False, None
+
+    def is_site_in_maintenance(self, *, site_name: str) -> Tuple[bool, Site or None]:
+        """
+        Determine if site is in maintenance
+        @return True if site is in maintenance; False otherwise
+        """
+        return False, None
+
+    def is_sliver_provisioning_allowed(self, *, project: str, email: str, site: str,
+                                       worker: str) -> Tuple[bool, str or None]:
+        """
+        Determine if sliver can be provisioned
+        Sliver provisioning can be prohibited if Testbed or Site or Worker is in maintenance mode
+        Sliver provisioning in maintenance mode may be allowed for specific projects/users
+        @param project project
+        @param email user's email
+        @param site site name
+        @param worker worker name
+        @return True if allowed; False otherwise
+        """
+        return True, None
+
+    def is_slice_provisioning_allowed(self, *, project: str, email: str) -> bool:
+        """
+        Determine if slice can be provisioned
+        Slice provisioning can be prohibited if Testbed is in maintenance mode
+        Slice provisioning in maintenance mode may be allowed for specific projects/users
+        @param project project
+        @param email user's email
+        @return True if allowed; False otherwise
+        """
+        return True

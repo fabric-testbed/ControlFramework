@@ -41,13 +41,14 @@ from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.common.exceptions import DatabaseException
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.plugins.handlers.configuration_mapping import ConfigurationMapping
+from fabric_cf.actor.core.container.maintenance import Site
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.resource_type import ResourceType
 from fabric_cf.actor.db.psql_database import PsqlDatabase
-from fabric_cf.actor.fim.fim_helper import FimHelper
 
 
 class ActorDatabase(ABCDatabase):
+    MAINTENANCE = 'maintenance'
+
     def __init__(self, *, user: str, password: str, database: str, db_host: str, logger):
         self.user = user
         self.password = password
@@ -198,7 +199,7 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, project_id: str = None, email: str = None,
-                   state: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
+                   states: list[int] = None, oidc_sub: str = None, slc_type: List[SliceTypes] = None,
                    limit: int = None, offset: int = None, lease_end: datetime = None) -> List[ABCSlice] or None:
         result = []
         try:
@@ -209,7 +210,7 @@ class ActorDatabase(ABCDatabase):
                     slice_type = [x.value for x in slc_type]
                 sid = str(slice_id) if slice_id is not None else None
                 slices = self.db.get_slices(slice_id=sid, slice_name=slice_name, project_id=project_id, email=email,
-                                            state=state, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
+                                            states=states, oidc_sub=oidc_sub, slc_type=slice_type, limit=limit,
                                             offset=offset, lease_end=lease_end)
             finally:
                 if self.lock.locked():
@@ -239,6 +240,12 @@ class ActorDatabase(ABCDatabase):
                 oidc_claim_sub = reservation.get_slice().get_owner().get_oidc_sub_claim()
                 email = reservation.get_slice().get_owner().get_email()
 
+            site = None
+            rsv_type = None
+            if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
+                site = reservation.get_resources().get_sliver().get_site()
+                rsv_type = reservation.get_resources().get_sliver().get_type().name
+
             self.db.add_reservation(slc_guid=str(reservation.get_slice_id()),
                                     rsv_resid=str(reservation.get_reservation_id()),
                                     rsv_category=reservation.get_category().value,
@@ -247,7 +254,7 @@ class ActorDatabase(ABCDatabase):
                                     rsv_joining=reservation.get_join_state().value,
                                     properties=properties,
                                     rsv_graph_node_id=reservation.get_graph_node_id(),
-                                    oidc_claim_sub=oidc_claim_sub, email=email)
+                                    oidc_claim_sub=oidc_claim_sub, email=email, site=site, rsv_type=rsv_type)
             self.logger.debug(
                 "Reservation {} added to slice {}".format(reservation.get_reservation_id(), reservation.get_slice()))
         finally:
@@ -263,6 +270,13 @@ class ActorDatabase(ABCDatabase):
             self.lock.acquire()
             self.logger.debug("Updating reservation {} in slice {}".format(reservation.get_reservation_id(),
                                                                            reservation.get_slice()))
+
+            site = None
+            rsv_type = None
+            if reservation.get_resources() is not None and reservation.get_resources().get_sliver() is not None:
+                site = reservation.get_resources().get_sliver().get_site()
+                rsv_type = reservation.get_resources().get_sliver().get_type().name
+
             properties = pickle.dumps(reservation)
             self.db.update_reservation(slc_guid=str(reservation.get_slice_id()),
                                        rsv_resid=str(reservation.get_reservation_id()),
@@ -271,7 +285,8 @@ class ActorDatabase(ABCDatabase):
                                        rsv_pending=reservation.get_pending_state().value,
                                        rsv_joining=reservation.get_join_state().value,
                                        properties=properties,
-                                       rsv_graph_node_id=reservation.get_graph_node_id())
+                                       rsv_graph_node_id=reservation.get_graph_node_id(),
+                                       site=site, rsv_type = rsv_type)
         finally:
             if self.lock.locked():
                 self.lock.release()
@@ -299,12 +314,14 @@ class ActorDatabase(ABCDatabase):
                 for p in result.get_redeem_predecessors():
                     if p.reservation_id is not None:
                         parent = self.get_reservations(rid=p.reservation_id)
-                        p.set_reservation(reservation=parent[0])
+                        if parent is not None and len(parent) > 0:
+                            p.set_reservation(reservation=parent[0])
 
                 for p in result.get_join_predecessors():
                     if p.reservation_id is not None:
                         parent = self.get_reservations(rid=p.reservation_id)
-                        p.set_reservation(reservation=parent[0])
+                        if parent is not None and len(parent) > 0:
+                            p.set_reservation(reservation=parent[0])
 
             return result
         except Exception as e:
@@ -391,7 +408,7 @@ class ActorDatabase(ABCDatabase):
 
     def get_reservations(self, *, slice_id: ID = None, graph_node_id: str = None, project_id: str = None,
                          email: str = None, oidc_sub: str = None, rid: ID = None,
-                         state: list[int] = None) -> List[ABCReservationMixin]:
+                         states: list[int] = None, site: str = None, rsv_type: int = None) -> List[ABCReservationMixin]:
         result = []
         try:
             self.lock.acquire()
@@ -399,7 +416,7 @@ class ActorDatabase(ABCDatabase):
             res_id = str(rid) if rid is not None else None
             res_dict_list = self.db.get_reservations(slice_id=sid, graph_node_id=graph_node_id,
                                                      project_id=project_id, email=email, oidc_sub=oidc_sub, rid=res_id,
-                                                     state=state)
+                                                     states=states, site=site, rsv_type=rsv_type)
             if self.lock.locked():
                self.lock.release()
             result = self._load_reservations_from_db(res_dict_list=res_dict_list)
@@ -552,14 +569,118 @@ class ActorDatabase(ABCDatabase):
                 self.lock.release()
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: int = None) -> List[ABCDelegation]:
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None) -> List[ABCDelegation]:
         result = []
         try:
             self.lock.acquire()
             sid = str(slice_id) if slice_id is not None else None
-            dlg_dict_list = self.db.get_delegations(slc_guid=sid, state=state)
+            dlg_dict_list = self.db.get_delegations(slc_guid=sid, states=states)
             self.lock.release()
             result = self._load_delegation_from_db(dlg_dict_list=dlg_dict_list)
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+        return result
+
+    def add_maintenance_properties(self, *, properties: dict):
+        """
+        Add maintenance properties
+        @param properties properties
+        """
+        self.db.add_miscellaneous(name=self.MAINTENANCE, properties=properties)
+
+    def update_maintenance_properties(self, *, properties: dict):
+        """
+        Update maintenance properties
+        @param properties properties
+        """
+        self.db.update_miscellaneous(name=self.MAINTENANCE, properties=properties)
+
+    def remove_maintenance_properties(self):
+        """
+        Remove maintenance properties
+        """
+        self.db.remove_miscellaneous(name=self.MAINTENANCE)
+
+    def get_maintenance_properties(self) -> dict:
+        """
+        Get maintenance Properties
+        @return properties
+        """
+        result = None
+        try:
+            result = self.db.get_miscellaneous(name=self.MAINTENANCE)
+        except Exception as e:
+            self.logger.error(e)
+        return result
+
+    def add_site(self, *, site: Site):
+        self.logger.debug(f"Adding site {site.get_name()}")
+        try:
+            self.lock.acquire()
+            properties = pickle.dumps(site)
+            self.db.add_site(site_name=site.get_name(), state=site.get_state().value, properties=properties)
+            self.logger.debug(f"Site {site.get_name()} added")
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+
+    def update_site(self, *, site: Site):
+        try:
+            self.lock.acquire()
+            self.logger.debug(f"Updating site {site.get_name()}")
+            properties = pickle.dumps(site)
+            self.db.update_site(site_name=site.get_name(), state=site.get_state().value, properties=properties)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+
+    def remove_site(self, *, site_name: str):
+        try:
+            self.lock.acquire()
+            self.logger.debug(f"Removing site {site_name}")
+            self.db.remove_site(site_name=site_name)
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+
+    def _load_site_from_db(self, site_list: List[dict]) -> List[Site]:
+        result = []
+        if site_list is None:
+            return result
+
+        for s in site_list:
+            pickled_site = s.get(Constants.PROPERTY_PICKLE_PROPERTIES)
+            site = pickle.loads(pickled_site)
+            result.append(site)
+
+        return result
+
+    def get_site(self, *, site_name: str) -> Site or None:
+        try:
+            self.lock.acquire()
+            site_list = self.db.get_site(site_name=site_name)
+            if self.lock.locked():
+                self.lock.release()
+            if site_list is not None and len(site_list) > 0:
+                return self._load_site_from_db(site_list=site_list)[0]
+        except Exception as e:
+            self.logger.error(e)
+            self.logger.error(traceback.format_exc())
+        finally:
+            if self.lock.locked():
+                self.lock.release()
+        return None
+
+    def get_sites(self) -> List[Site]:
+        result = []
+        try:
+            self.lock.acquire()
+            site_list = self.db.get_sites()
+            self.lock.release()
+            result = self._load_site_from_db(site_list=site_list)
         except Exception as e:
             self.logger.error(e)
         finally:

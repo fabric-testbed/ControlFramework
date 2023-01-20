@@ -25,7 +25,7 @@
 # Author: Komal Thareja (kthare10@renci.org)
 import traceback
 from datetime import datetime
-from typing import List
+from typing import List, Dict
 
 from fim.slivers.base_sliver import BaseSliver
 
@@ -52,6 +52,7 @@ from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
 from fabric_cf.actor.core.registry.actor_registry import ActorRegistrySingleton
+from fabric_cf.actor.core.container.maintenance import Site
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.update_data import UpdateData
@@ -350,19 +351,21 @@ class KernelWrapper:
             self.logger.error(traceback.format_exc())
             self.fail_notify(reservation=reservation, caller=caller, callback=callback, reason=str(e))
 
-    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term) -> int:
+    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term,
+                           dependencies: List[ABCReservationMixin] = None) -> int:
         """
         Extends the reservation with the given resources and term.
         @param rid identifier of reservation to extend
         @param resources resources for extension
         @param term term for extension
+        @param dependencies: dependencies
         @return 0 on success, a negative exit code on error
         @throws Exception in case of error
         """
         if rid is None or resources is None or term is None:
             raise KernelException(Constants.INVALID_ARGUMENT)
 
-        return self.kernel.extend_reservation(rid=rid, resources=resources, term=term)
+        return self.kernel.extend_reservation(rid=rid, resources=resources, term=term, dependencies=dependencies)
 
     def extend_ticket(self, *, reservation: ABCClientReservation):
         """
@@ -772,6 +775,10 @@ class KernelWrapper:
 
         if slice_object.get_owner() is None:
             slice_object.set_owner(owner=self.actor.get_identity())
+        else:
+            slice_object.get_owner().name = self.actor.get_name()
+            slice_object.get_owner().guid = self.actor.get_guid()
+
         self.kernel.register_slice(slice_object=slice_object)
 
     def remove_delegation(self, *, did: str):
@@ -1118,3 +1125,6 @@ class KernelWrapper:
             tag_list = tags.split(",")
             AccessChecker.check_pdp_access(action_id=action_id, email=email, project=project, tags=tag_list,
                                            resource=sliver, lease_end_time=lease_end_time, logger=self.logger)
+
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        self.kernel.update_maintenance_mode(properties=properties, sites=sites)

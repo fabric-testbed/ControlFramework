@@ -26,13 +26,14 @@
 import threading
 import time
 import traceback
-from typing import List
+from typing import List, Dict
 
 from fabric_cf.actor.core.apis.abc_base_plugin import ABCBasePlugin
 from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservation
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.common.constants import Constants
+from fabric_cf.actor.core.common.event_logger import EventLogger
 from fabric_cf.actor.core.common.exceptions import ReservationNotFoundException, DelegationNotFoundException, \
     KernelException
 from fabric_cf.actor.core.kernel.authority_reservation import AuthorityReservation
@@ -42,16 +43,20 @@ from fabric_cf.actor.core.apis.abc_server_reservation import ABCServerReservatio
 from fabric_cf.actor.core.apis.abc_slice import ABCSlice
 from fabric_cf.actor.core.kernel.request_types import RequestTypes
 from fabric_cf.actor.core.kernel.reservation import Reservation
+from fabric_cf.actor.core.kernel.reservation_client import ReservationClient
 from fabric_cf.actor.core.kernel.reservation_states import ReservationPendingStates, ReservationStates
 from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.sequence_comparison_codes import SequenceComparisonCodes
-from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, SliceOperation
+from fabric_cf.actor.core.kernel.slice_state_machine import SliceStateMachine, SliceState
 from fabric_cf.actor.core.kernel.slice_table import SliceTable
+from fabric_cf.actor.core.container.maintenance import Site, Maintenance
+from fabric_cf.actor.core.proxies.kafka.translate import Translate
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.core.util.update_data import UpdateData
 from fabric_cf.actor.security.auth_token import AuthToken
+from fabric_cf.actor.security.pdp_auth import ActionId
 
 
 class Kernel:
@@ -332,12 +337,13 @@ class Kernel:
         finally:
             reservation.unlock()
 
-    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term) -> int:
+    def extend_reservation(self, *, rid: ID, resources: ResourceSet, term: Term, dependencies: List[ABCReservationMixin]) -> int:
         """
         Extends the reservation with the given resources and term.
         @param rid reservation identifier of reservation to extend
         @param resources resources to use for the extension
         @param term term to use for the extension
+        @param dependencies: dependencies
         @return 0 if the reservation extension operation can be initiated,
                 if the reservation has a pending operation, which prevents the extend
                 operation from being initiated.
@@ -353,6 +359,11 @@ class Kernel:
             # check for a pending operation: we cannot service the extend if there is another operation in progress.
             if real.get_pending_state() != ReservationPendingStates.None_:
                 return Constants.RESERVATION_HAS_PENDING_OPERATION
+
+            if isinstance(real, ReservationClient) and dependencies is not None:
+                real.redeem_predecessors.clear()
+                for d in dependencies:
+                    real.add_redeem_predecessor(reservation=d)
 
             # attach the desired extension term and resource set
             real.set_approved(term=term, approved_resources=resources)
@@ -449,12 +460,14 @@ class Kernel:
         slice_name = reservation.get_slice().get_name()
         slice_id = reservation.get_slice().get_slice_id()
         project_id = reservation.get_slice().get_project_id()
+        project_name = reservation.get_slice().get_project_name()
         config_properties = reservation.get_slice().get_config_properties()
 
         result = self.get_slice(slice_id=slice_id)
         if result is None:
             if create_new_slice:
-                result = self.plugin.create_slice(slice_id=slice_id, name=slice_name, project_id=project_id)
+                result = self.plugin.create_slice(slice_id=slice_id, name=slice_name, project_id=project_id,
+                                                  project_name=project_name)
                 result.set_config_properties(value=config_properties)
                 if reservation.get_slice().is_broker_client():
                     result.set_broker_client()
@@ -464,6 +477,8 @@ class Kernel:
             else:
                 result = reservation.get_kernel_slice()
 
+            identity.name = self.plugin.get_actor().get_name()
+            identity.guid = self.plugin.get_actor().get_guid()
             result.set_owner(owner=identity)
             self.register_slice(slice_object=result)
         return result
@@ -566,6 +581,9 @@ class Kernel:
             state_changed, slice_state = slice_obj.transition_slice(operation=SliceStateMachine.REEVALUATE)
             if state_changed:
                 slice_obj.set_dirty()
+                if slice_state == SliceState.Closing:
+                    slice_avro = Translate.translate_slice_to_avro(slice_obj=slice_obj)
+                    EventLogger.log_slice_event(logger=self.logger, slice_object=slice_avro, action=ActionId.delete)
             self.plugin.get_database().update_slice(slice_object=slice_obj)
         except Exception as e:
             self.logger.error(traceback.format_exc())
@@ -1419,11 +1437,7 @@ class Kernel:
         @param reservation reservation
         @param rpc rpc
         """
-        try:
-            reservation.lock()
-            reservation.handle_failed_rpc(failed=rpc)
-        finally:
-            reservation.unlock()
+        reservation.handle_failed_rpc(failed=rpc)
 
     def validate_delegation(self, *, delegation: ABCDelegation = None, did: str = None):
         """
@@ -1453,3 +1467,7 @@ class Kernel:
             return local
 
         return None
+
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        Maintenance.update_maintenance_mode(database=self.plugin.get_database(),
+                                            properties=properties, sites=sites)

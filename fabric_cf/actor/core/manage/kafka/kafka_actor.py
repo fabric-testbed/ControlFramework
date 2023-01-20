@@ -31,6 +31,7 @@ from fabric_mb.message_bus.messages.close_delegations_avro import CloseDelegatio
 from fabric_mb.message_bus.messages.close_reservations_avro import CloseReservationsAvro
 from fabric_mb.message_bus.messages.delegation_avro import DelegationAvro
 from fabric_mb.message_bus.messages.get_delegations_avro import GetDelegationsAvro
+from fabric_mb.message_bus.messages.get_sites_request_avro import GetSitesRequestAvro
 from fabric_mb.message_bus.messages.maintenance_request_avro import MaintenanceRequestAvro
 from fabric_mb.message_bus.messages.remove_delegation_avro import RemoveDelegationAvro
 from fabric_mb.message_bus.messages.reservation_state_avro import ReservationStateAvro
@@ -41,6 +42,7 @@ from fabric_mb.message_bus.messages.get_slices_request_avro import GetSlicesRequ
 from fabric_mb.message_bus.messages.remove_reservation_avro import RemoveReservationAvro
 from fabric_mb.message_bus.messages.remove_slice_avro import RemoveSliceAvro
 from fabric_mb.message_bus.messages.reservation_mng import ReservationMng
+from fabric_mb.message_bus.messages.site_avro import SiteAvro
 from fabric_mb.message_bus.messages.slice_avro import SliceAvro
 from fabric_mb.message_bus.messages.update_reservation_avro import UpdateReservationAvro
 from fabric_mb.message_bus.messages.update_slice_avro import UpdateSliceAvro
@@ -59,22 +61,25 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def prepare(self, *, callback_topic: str):
         self.callback_topic = callback_topic
 
-    def toggle_maintenance_mode(self, actor_guid: str, callback_topic: str, mode: bool):
-        props = {Constants.MODE: str(mode)}
+    def toggle_maintenance_mode(self, actor_guid: str, callback_topic: str, sites: List[SiteAvro] = None,
+                                projects: str = None, users: str = None):
+        props = {}
+        if projects is not None:
+            props[Constants.PROJECT_ID] = projects
+        if users is not None:
+            props[Constants.USERS] = users
         request = MaintenanceRequestAvro(properties=props, actor_guid=actor_guid,
-                                         callback_topic=callback_topic)
+                                         callback_topic=callback_topic, sites=sites)
+
         status, response = self.send_request(request)
 
         return response.status.code == 0
 
     def get_slices(self, *, slice_id: ID = None, slice_name: str = None, email: str = None, project: str = None,
-                   state: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
+                   states: List[int] = None, limit: int = None, offset: int = None) -> List[SliceAvro] or None:
         request = GetSlicesRequestAvro()
-        reservation_state = None
-        if state is not None and len(state) == 1:
-            reservation_state = state[0]
         request = self.fill_request_by_id_message(request=request, email=email, slice_id=slice_id,
-                                                  slice_name=slice_name, reservation_state=reservation_state)
+                                                  slice_name=slice_name, states=states)
         status, response = self.send_request(request)
         if response is not None:
             return response.slices
@@ -119,23 +124,33 @@ class KafkaActor(KafkaProxy, ABCMgmtActor):
     def accept_update_slice(self, *, slice_id: ID) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
-    def get_reservations(self, *, state: int = None, slice_id: ID = None,
-                         rid: ID = None, oidc_claim_sub: str = None, email: str = None,
-                         rid_list: List[str] = None) -> List[ReservationMng]:
+    def get_reservations(self, *, states: List[int] = None, slice_id: ID = None,
+                         rid: ID = None, oidc_claim_sub: str = None, email: str = None, rid_list: List[str] = None,
+                         type: str = None, site: str = None, node_id: str = None) -> List[ReservationMng]:
         request = GetReservationsRequestAvro()
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
-                                                  reservation_state=state, email=email, rid=rid)
+                                                  states=states, email=email, rid=rid,
+                                                  type=type, site=site)
         status, response = self.send_request(request)
 
         if status.code == 0:
             return response.reservations
         return None
 
-    def get_delegations(self, *, slice_id: ID = None, state: int = None,
+    def get_sites(self, *, site: str) -> List[SiteAvro] or None:
+        request = GetSitesRequestAvro()
+        request = self.fill_request_by_id_message(request=request, site=site)
+        status, response = self.send_request(request)
+
+        if status.code == 0:
+            return response.sites
+        return None
+
+    def get_delegations(self, *, slice_id: ID = None, states: List[int] = None,
                         delegation_id: str = None) -> List[DelegationAvro]:
         request = GetDelegationsAvro()
         request = self.fill_request_by_id_message(request=request, slice_id=slice_id,
-                                                  reservation_state=state, delegation_id=delegation_id)
+                                                  states=states, delegation_id=delegation_id)
         status, response = self.send_request(request)
 
         if status.code == 0:

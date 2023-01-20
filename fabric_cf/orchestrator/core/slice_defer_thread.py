@@ -181,12 +181,18 @@ class SliceDeferThread:
                 self.logger.debug(f"Issuing close for reservation: {r}")
                 self.mgmt_actor.close_reservation(rid=ID(uid=r))
 
-            for rid, sliver in controller_slice.computed_modify_reservations.items():
+            for rid, modified_res in controller_slice.computed_modify_reservations.items():
                 self.logger.debug(f"Issuing extend for modified reservation: {rid}")
-                if not self.mgmt_actor.extend_reservation(reservation=ID(uid=rid), sliver=sliver, new_end_time=None):
+                if not self.mgmt_actor.extend_reservation(reservation=ID(uid=rid), sliver=modified_res.sliver,
+                                                          new_end_time=None, dependencies=modified_res.dependencies):
                     self.logger.error(f"Could not demand resources: {self.mgmt_actor.get_last_error()}")
                     continue
                 self.logger.debug(f"Issued extend for reservation #{rid} successfully")
+
+            for r in controller_slice.computed_modify_properties_reservations:
+                self.logger.debug(f"Issuing modify for reservation: {r}")
+                self.mgmt_actor.modify_reservation(rid=ID(uid=str(r.get_reservation_id())),
+                                                   modified_sliver=r.sliver)
 
         except Exception as e:
             self.logger.error(traceback.format_exc())

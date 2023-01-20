@@ -46,6 +46,8 @@ runtime:
   prometheus.port: 11006
   kafka.request.timeout.ms: 120000
   rpc.request.timeout.seconds: 900
+  message.max.bytes: 1048588
+  rpc.retries: 5
 
 logging:
   ## The directory in which actor should create log files.
@@ -126,7 +128,7 @@ actor:
       class: AuthorityCalendarPolicy
   resources:
       - resource:
-          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6, PortMirror
+          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6, PortMirror, FABNetv4Ext, FABNetv6Ext, L3VPN
           label: NET AM
           description: Net AM
           handler:
@@ -134,7 +136,7 @@ actor:
             class: NoOpHandler
   controls:
       - control:
-          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6, PortMirror
+          type: L2STS, L2Bridge, L2PTP, FABNetv4, FABNetv6, PortMirror, FABNetv4Ext, FABNetv6Ext, L3VPN
           module: fabric_cf.actor.core.policy.network_service_control
           class: NetworkServiceControl
 

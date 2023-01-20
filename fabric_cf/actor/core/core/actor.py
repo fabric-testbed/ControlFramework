@@ -23,12 +23,10 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-import queue
-import threading
-import time
 import traceback
-from typing import List
+from typing import List, Dict
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
 from fabric_cf.actor.core.apis.abc_policy import ABCPolicy
 from fabric_cf.actor.core.apis.abc_timer_task import ABCTimerTask
@@ -50,10 +48,10 @@ from fabric_cf.actor.core.kernel.resource_set import ResourceSet
 from fabric_cf.actor.core.kernel.slice import SliceTypes
 from fabric_cf.actor.core.kernel.slice_state_machine import SliceState
 from fabric_cf.actor.core.proxies.proxy import Proxy
+from fabric_cf.actor.core.container.maintenance import Site
 from fabric_cf.actor.core.time.actor_clock import ActorClock
 from fabric_cf.actor.core.time.term import Term
 from fabric_cf.actor.core.util.id import ID
-from fabric_cf.actor.core.util.iterable_queue import IterableQueue
 from fabric_cf.actor.core.util.reflection_utils import ReflectionUtils
 from fabric_cf.actor.core.util.reservation_set import ReservationSet
 from fabric_cf.actor.security.auth_token import AuthToken
@@ -133,8 +131,8 @@ class ActorMixin(ABCActorMixin):
         self.policy.set_actor(actor=self)
         self.event_processors = {}
 
-    def actor_added(self):
-        self.plugin.actor_added()
+    def actor_added(self, *, config: ActorConfig):
+        self.plugin.actor_added(config=config)
 
     def actor_removed(self):
         return
@@ -184,8 +182,8 @@ class ActorMixin(ABCActorMixin):
         self.logger.error(err)
         raise ActorException(err)
 
-    def extend(self, *, rid: ID, resources: ResourceSet, term: Term):
-        self.wrapper.extend_reservation(rid=rid, resources=resources, term=term)
+    def extend(self, *, rid: ID, resources: ResourceSet, term: Term, dependencies: List[ABCReservationMixin] = None):
+        self.wrapper.extend_reservation(rid=rid, resources=resources, term=term, dependencies=dependencies)
 
     def external_tick(self, *, cycle: int):
         self.logger.info("External Tick start cycle: {}".format(cycle))
@@ -284,7 +282,7 @@ class ActorMixin(ABCActorMixin):
     def get_type(self) -> ActorType:
         return self.type
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         from fabric_cf.actor.core.container.globals import GlobalsSingleton
 
         if not self.initialized:
@@ -312,7 +310,7 @@ class ActorMixin(ABCActorMixin):
             self.plugin.initialize()
 
             self.policy.set_actor(actor=self)
-            self.policy.initialize()
+            self.policy.initialize(config=config)
             self.policy.set_logger(logger=self.logger)
 
             self.wrapper = KernelWrapper(actor=self, plugin=self.plugin, policy=self.policy)
@@ -364,7 +362,7 @@ class ActorMixin(ABCActorMixin):
         self.logger.debug("Recovering client slices")
         client_slices = self.plugin.get_database().get_slices(slc_type=[SliceTypes.ClientSlice,
                                                                         SliceTypes.BrokerClientSlice],
-                                                              state=[SliceState.Configuring.value,
+                                                              states=[SliceState.Configuring.value,
                                                                      SliceState.Nascent.value,
                                                                      SliceState.StableOK.value,
                                                                      SliceState.StableError.value,
@@ -881,8 +879,11 @@ class ActorMixin(ABCActorMixin):
             # Incoming Message Service
             from fabric_cf.actor.core.container.globals import GlobalsSingleton
             config = GlobalsSingleton.get().get_config()
-            topic = config.get_actor().get_kafka_topic()
-            topics = [topic]
+            topic = config.get_actor_config().get_kafka_topic()
+            if "," in topic:
+                topics = topic.split(',')
+            else:
+                topics = [topic]
             consumer_conf = GlobalsSingleton.get().get_kafka_config_consumer()
             self.message_service = MessageService(kafka_service=kafka_service, kafka_mgmt_service=kafka_mgmt_service,
                                                   consumer_conf=consumer_conf,
@@ -903,3 +904,6 @@ class ActorMixin(ABCActorMixin):
 
     def load_model(self, *, graph_id: str):
         return
+
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        self.wrapper.update_maintenance_mode(properties=properties, sites=sites)

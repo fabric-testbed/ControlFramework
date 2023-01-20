@@ -27,13 +27,15 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from enum import Enum
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Dict
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.apis.abc_timer_queue import ABCTimerQueue
 from fabric_cf.actor.core.apis.abc_actor_identity import ABCActorIdentity
 
 from fabric_cf.actor.core.apis.abc_tick import ABCTick
+from fabric_cf.actor.core.container.maintenance import Site
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_actor_event import ABCActorEvent
@@ -102,7 +104,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
     """
 
     @abstractmethod
-    def actor_added(self):
+    def actor_added(self, *, config: ActorConfig):
         """
         Informs the actor that it has been integrated in the container. This
         method should finish the initialization of the actor: some initialization
@@ -175,7 +177,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         """
         Initializes the actor.
 
@@ -592,7 +594,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
         """
 
     @abstractmethod
-    def extend(self, *, rid: ID, resources: ResourceSet, term: Term):
+    def extend(self, *, rid: ID, resources: ResourceSet, term: Term, dependencies: List[ABCReservationMixin] = None):
         """
         Extends the reservation. Note: the reservation must have already been registered with the actor.
         This method may involve either a client or a server side action or both. When called on a broker,
@@ -604,6 +606,7 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
             rid: reservation id
             resources: resource set describing the resources desired for the extension
             term: term for extension (must extend the current term)
+            dependencies: dependencies
         Raises:
             Exception in case of error
         """
@@ -716,4 +719,14 @@ class ABCActorMixin(ABCActorIdentity, ABCTick, ABCTimerQueue):
             did: delegation id
         Raises:
             Exception if an error occurs or when trying to remove a delegation that is neither failed or closed.
+        """
+
+    @abstractmethod
+    def update_maintenance_mode(self, *, properties: Dict[str, str], sites: List[Site] = None):
+        """
+        Update Maintenance mode
+        @param properties properties
+        @param sites sites
+
+        @raises Exception in case of failure
         """

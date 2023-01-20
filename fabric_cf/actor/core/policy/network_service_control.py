@@ -71,6 +71,7 @@ class NetworkServiceControl(ResourceControl):
         resource_type = ResourceType(resource_type=str(requested.get_type()))
 
         gained = None
+        modified = None
         lost = None
         if current is None:
             self.logger.debug("check if sliver can be provisioned")
@@ -83,11 +84,17 @@ class NetworkServiceControl(ResourceControl):
                         properties=reservation.get_slice().get_config_properties())
             gained = UnitSet(plugin=self.authority.get_plugin(), units={unit.reservation_id: unit})
         else:
-            # FIXME: handle modify
-            self.logger.info(f"Extend Lease for now, no modify supported res# {reservation}")
-            return current
+            current_sliver = current.get_sliver()
+            diff = current_sliver.diff(other_sliver=requested)
+            if diff is not None:
+                unit = Unit(rid=reservation.get_reservation_id(), slice_id=reservation.get_slice_id(),
+                            actor_id=self.authority.get_guid(), sliver=requested, rtype=resource_type,
+                            properties=reservation.get_slice().get_config_properties())
+                modified = UnitSet(plugin=self.authority.get_plugin(), units={unit.reservation_id: unit})
+            else:
+                return current
 
-        result = ResourceSet(gained=gained, lost=lost, rtype=resource_type)
+        result = ResourceSet(gained=gained, modified=modified, lost=lost, rtype=resource_type)
         result.set_sliver(sliver=requested)
         return result
 

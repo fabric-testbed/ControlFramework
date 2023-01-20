@@ -29,6 +29,7 @@ from typing import TYPE_CHECKING
 
 from fim.graph.abc_property_graph import GraphFormat
 
+from fabric_cf.actor.boot.configuration import ActorConfig
 from fabric_cf.actor.core.apis.abc_delegation import ABCDelegation, DelegationState
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.core.ticket import Ticket
@@ -77,9 +78,9 @@ class BrokerPolicy(Policy, ABCBrokerPolicyMixin):
     def extend_broker(self, *, reservation: ABCBrokerReservation) -> bool:
         return False
 
-    def initialize(self):
+    def initialize(self, *, config: ActorConfig):
         if not self.initialized:
-            super().initialize()
+            super().initialize(config=config)
             self.initialized = True
 
     def revisit(self, *, reservation: ABCReservationMixin):

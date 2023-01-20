@@ -53,6 +53,7 @@ from fabric_cf.actor.core.kernel.failed_rpc_event import FailedRPCEvent
 from fabric_cf.actor.core.kernel.incoming_rpc import IncomingRPC
 from fabric_cf.actor.core.kernel.incoming_rpc_event import IncomingRPCEvent
 from fabric_cf.actor.core.kernel.query_timeout import QueryTimeout
+from fabric_cf.actor.core.kernel.retry_rpc import RetryRPC
 from fabric_cf.actor.core.kernel.rpc_executor import RPCExecutor
 from fabric_cf.actor.core.kernel.rpc_request import RPCRequest
 from fabric_cf.actor.core.kernel.rpc_request_type import RPCRequestType
@@ -547,6 +548,15 @@ class RPCManager:
             if rpc.handler is not None:
                 self.remove_pending_request(guid=rpc.request.get_message_id())
             raise e
+
+    def retry_rpc(self, *, rpc: RetryRPC):
+        from fabric_cf.actor.core.container.globals import GlobalsSingleton
+        logger = GlobalsSingleton.get().get_logger()
+        try:
+            self.thread_pool.submit(RPCExecutor.retry, rpc, self.producer, logger)
+        except Exception as e:
+            logger.error(f"Exception occurred while retrying RPC {e}")
+            logger.error(traceback.format_exc())
 
     @staticmethod
     def __log_sliver(*, reservation: ABCReservationMixin, logger: logging.Logger):

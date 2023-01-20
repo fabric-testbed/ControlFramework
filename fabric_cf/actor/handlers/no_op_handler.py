@@ -33,7 +33,7 @@ from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 
 from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.plugins.handlers.config_token import ConfigToken
-from fabric_cf.actor.core.util.utils import sliver_to_str, sliver_diff
+from fabric_cf.actor.core.util.utils import sliver_to_str
 from fabric_cf.actor.handlers.handler_base import HandlerBase
 
 
@@ -63,7 +63,11 @@ class NoOpHandler(HandlerBase):
         if sliver.attached_components_info is not None:
             for component in sliver.attached_components_info.devices.values():
                 assert (component.label_allocations is not None)
-                assert (component.label_allocations.bdf is not None)
+                if component.get_type() != ComponentType.Storage:
+                    assert (component.label_allocations.bdf is not None)
+                else:
+                    assert (component.label_allocations.local_name is not None)
+                    component.label_allocations.device_name = '/dev/vdb'
         sliver.label_allocations.instance = 'instance_001'
         sliver.management_ip = '1.2.3.4'
 
@@ -92,17 +96,24 @@ class NoOpHandler(HandlerBase):
             if sliver.get_type() == ServiceType.L2PTP:
                 assert (interface.labels.vlan is not None)
 
-            if sliver.get_type() == ServiceType.FABNetv4:
+            if sliver.get_type() in Constants.L3_FABNETv4_SERVICES:
                 assert (sliver.get_gateway() is not None)
                 assert (sliver.get_gateway().lab.ipv4_subnet is not None)
                 assert (sliver.get_gateway().lab.ipv4 is not None)
                 assert (interface.labels.vlan is not None)
 
-            if sliver.get_type() == ServiceType.FABNetv6:
+            if sliver.get_type() in Constants.L3_FABNETv6_SERVICES:
                 assert (sliver.get_gateway() is not None)
                 assert (sliver.get_gateway().lab.ipv6_subnet is not None)
                 assert (sliver.get_gateway().lab.ipv6 is not None)
                 assert (interface.labels.vlan is not None)
+
+            if sliver.get_type() == ServiceType.L3VPN:
+                assert (sliver.labels.asn is not None)
+                assert (interface.labels.vlan is not None)
+                assert (interface.labels.local_name is not None)
+                assert (interface.labels.device_name is not None)
+                assert (interface.labels.ipv4_subnet is not None)
 
     def create(self, unit: ConfigToken) -> Tuple[dict, ConfigToken]:
         result = None
@@ -176,3 +187,6 @@ class NoOpHandler(HandlerBase):
         finally:
             self.get_logger().info(f"Modify completed")
         return result, unit
+
+    def clean_restart(self):
+        pass

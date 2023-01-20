@@ -29,6 +29,7 @@ from abc import abstractmethod, ABC
 from datetime import datetime
 from typing import TYPE_CHECKING, List
 
+from fabric_mb.message_bus.messages.reservation_predecessor_avro import ReservationPredecessorAvro
 from fabric_mb.message_bus.messages.result_delegation_avro import ResultDelegationAvro
 from fabric_mb.message_bus.messages.result_strings_avro import ResultStringsAvro
 from fabric_mb.message_bus.messages.result_avro import ResultAvro
@@ -68,13 +69,14 @@ class ABCClientActorManagementObject(ABC):
 
     @abstractmethod
     def extend_reservation(self, *, reservation: id, new_end_time: datetime, sliver: BaseSliver,
-                           caller: AuthToken) -> ResultAvro:
+                           caller: AuthToken, dependencies: List[ReservationPredecessorAvro] = None) -> ResultAvro:
         """
         Extend a reservation
         @param reservation : reservation to be extended
         @param new_end_time: new end time
         @param sliver: new sliver
         @param caller: caller
+        @param dependencies: dependencies
         @return success or failure status
         """
 

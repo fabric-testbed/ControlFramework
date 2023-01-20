@@ -43,10 +43,11 @@ from fim.slivers.capacities_labels import Capacities
 from fim.slivers.delegations import Delegations
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
 from fim.slivers.network_node import NodeSliver
-from fim.slivers.network_service import NetworkServiceSliver
+from fim.slivers.network_service import NetworkServiceSliver, ServiceType
 from fim.user import ExperimentTopology, Labels, NodeType, Component, ReservationInfo
 from fim.user.interface import Interface
 
+from fabric_cf.actor.core.common.constants import Constants
 from fabric_cf.actor.core.kernel.reservation_states import ReservationStates
 
 
@@ -298,56 +299,69 @@ class FimHelper:
         :param sliver:
         :return:
         """
-        if sliver is not None:
-            graph = FimHelper.get_graph(graph_id=graph_id)
-            asm_graph = Neo4jASMFactory.create(graph=graph)
-            neo4j_topo = ExperimentTopology()
-            neo4j_topo.cast(asm_graph=asm_graph)
+        if sliver is None:
+            return
+        graph = FimHelper.get_graph(graph_id=graph_id)
+        asm_graph = Neo4jASMFactory.create(graph=graph)
+        neo4j_topo = ExperimentTopology()
+        neo4j_topo.cast(asm_graph=asm_graph)
 
-            node_name = sliver.get_name()
-            if isinstance(sliver, NodeSliver):
-                node = neo4j_topo.nodes[node_name]
-                node.set_properties(label_allocations=sliver.label_allocations,
-                                    capacity_allocations=sliver.capacity_allocations,
-                                    reservation_info=sliver.reservation_info,
-                                    node_map=sliver.node_map,
-                                    management_ip=sliver.management_ip,
-                                    capacity_hints=sliver.capacity_hints)
-                if sliver.attached_components_info is not None:
-                    graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
-                    diff = graph_sliver.diff(other_sliver=sliver)
-                    if diff is not None:
-                        for cname in diff.removed.components:
-                            reservation_info = ReservationInfo()
-                            reservation_info.reservation_state = ReservationStates.Failed.name
-                            node.components[cname].set_properties(reservation_info=reservation_info)
+        node_name = sliver.get_name()
+        if isinstance(sliver, NodeSliver) and node_name in neo4j_topo.nodes:
+            node = neo4j_topo.nodes[node_name]
+            node.set_properties(labels=sliver.labels,
+                                label_allocations=sliver.label_allocations,
+                                capacity_allocations=sliver.capacity_allocations,
+                                reservation_info=sliver.reservation_info,
+                                node_map=sliver.node_map,
+                                management_ip=sliver.management_ip,
+                                capacity_hints=sliver.capacity_hints)
+            if sliver.attached_components_info is not None:
+                graph_sliver = asm_graph.build_deep_node_sliver(node_id=sliver.node_id)
+                diff = graph_sliver.diff(other_sliver=sliver)
+                if diff is not None:
+                    for cname in diff.removed.components:
+                        reservation_info = ReservationInfo()
+                        reservation_info.reservation_state = ReservationStates.Failed.name
+                        node.components[cname].set_properties(reservation_info=reservation_info)
 
-                    for component in sliver.attached_components_info.devices.values():
-                        cname = component.get_name()
-                        node.components[cname].set_properties(label_allocations=component.label_allocations,
-                                                              capacity_allocations=component.capacity_allocations,
-                                                              node_map=component.node_map)
-                        # Update Mac address
-                        if component.network_service_info is not None and \
-                                component.network_service_info.network_services is not None:
-                            for ns in component.network_service_info.network_services.values():
-                                if ns.interface_info is None or ns.interface_info.interfaces is None:
-                                    continue
+                for component in sliver.attached_components_info.devices.values():
+                    cname = component.get_name()
+                    node.components[cname].set_properties(
+                                                          labels=component.labels,
+                                                          label_allocations=component.label_allocations,
+                                                          capacity_allocations=component.capacity_allocations,
+                                                          node_map=component.node_map)
+                    # Update Mac address
+                    if component.network_service_info is not None and \
+                            component.network_service_info.network_services is not None:
+                        for ns in component.network_service_info.network_services.values():
+                            if ns.interface_info is None or ns.interface_info.interfaces is None:
+                                continue
 
-                                for ifs in ns.interface_info.interfaces.values():
-                                    topo_component = node.components[cname]
-                                    topo_ifs = topo_component.interfaces[ifs.get_name()]
-                                    topo_ifs.set_properties(label_allocations=ifs.label_allocations)
+                            for ifs in ns.interface_info.interfaces.values():
+                                topo_component = node.components[cname]
+                                topo_ifs = topo_component.interfaces[ifs.get_name()]
+                                topo_ifs.set_properties(labels=ifs.labels,
+                                                        label_allocations=ifs.label_allocations,
+                                                        node_map=ifs.node_map)
 
-            elif isinstance(sliver, NetworkServiceSliver):
-                node = neo4j_topo.network_services[node_name]
-                node.set_properties(label_allocations=sliver.label_allocations,
-                                    capacity_allocations=sliver.capacity_allocations,
-                                    reservation_info=sliver.reservation_info,
-                                    node_map=sliver.node_map)
-                # FIXME Update IFS on ASM; list_interfaces currently returns a list as opposed to Dict
-                #if sliver.interface_info is not None:
-                #    for ids in sliver.interface_info.interfaces.values():
+        elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
+            node = neo4j_topo.network_services[node_name]
+            node.set_properties(labels=sliver.labels,
+                                label_allocations=sliver.label_allocations,
+                                capacity_allocations=sliver.capacity_allocations,
+                                reservation_info=sliver.reservation_info,
+                                node_map=sliver.node_map,
+                                gateway=sliver.gateway)
+            if sliver.interface_info is not None:
+                for ifs in sliver.interface_info.interfaces.values():
+                    if ifs.get_name() not in node.interfaces:
+                        continue
+                    topo_ifs = node.interfaces[ifs.get_name()]
+                    topo_ifs.set_properties(labels=ifs.labels,
+                                            label_allocations=ifs.label_allocations,
+                                            node_map=ifs.node_map)
 
 
     @staticmethod
@@ -483,12 +497,14 @@ class FimHelper:
         return None
 
     @staticmethod
-    def get_owners(*, bqm: ABCCBMPropertyGraph, node_id: str) -> Tuple[NodeSliver, NetworkServiceSliver]:
+    def get_owners(*, bqm: ABCCBMPropertyGraph, node_id: str,
+                   ns_type: ServiceType) -> Tuple[NodeSliver, NetworkServiceSliver]:
         """
         Get owner switch and network service of a Connection Point from BQM
         @param bqm BQM graph
         @param node_id Connection Point Node Id
-        @return Owner Switch and MPLS Network Service, MPLS Network Service
+        @param ns_type Network Service Type
+        @return Owner Switch and Network Service
         """
         mpls_ns_name, mpls_ns_id = bqm.get_parent(node_id=node_id, rel=ABCPropertyGraph.REL_CONNECTS,
                                                   parent=ABCPropertyGraph.CLASS_NetworkService)
@@ -500,19 +516,28 @@ class FimHelper:
 
         switch = bqm.build_deep_node_sliver(node_id=sw_id)
 
+        if ns_type in Constants.L3_SERVICES:
+            for ns in switch.network_service_info.network_services.values():
+                if ns_type == ns.get_type():
+                    mpls_ns = ns
+                    break
+
         return switch, mpls_ns
 
     @staticmethod
-    def get_parent_node(*, graph_model: ABCPropertyGraph, component: Component = None,
-                        interface: Interface = None) -> Tuple[Union[NodeSliver, NetworkServiceSliver, None], str]:
+    def get_parent_node(*, graph_model: ABCPropertyGraph, component: Component = None, interface: Interface = None,
+                        sliver: bool = True) -> Tuple[Union[NodeSliver, NetworkServiceSliver, None], str]:
+        node = None
         if component is not None:
             node_name, node_id = graph_model.get_parent(node_id=component.node_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
-            node = graph_model.build_deep_node_sliver(node_id=node_id)
+            if sliver:
+                node = graph_model.build_deep_node_sliver(node_id=node_id)
         elif interface is not None:
             node_name, node_id = graph_model.get_parent(node_id=interface.node_id, rel=ABCPropertyGraph.REL_CONNECTS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkService)
-            node = graph_model.build_deep_ns_sliver(node_id=node_id)
+            if sliver:
+                node = graph_model.build_deep_ns_sliver(node_id=node_id)
         else:
             raise Exception("Invalid Arguments - component/interface both are None")
 

@@ -23,44 +23,19 @@
 #
 #
 # Author: Komal Thareja (kthare10@renci.org)
-from fabric_cf.actor.core.util.id import ID
-from fabric_cf.orchestrator.core.reservation_id_with_modify_index import ReservationIDWithModifyIndex
+from fabric_mb.message_bus.messages.abc_message_avro import AbcMessageAvro
 
 
-class ModifyOperation:
-    def __init__(self, *, rid: ID, index: int, modify_sub_command: str, properties: dict):
-        self.res_id = ReservationIDWithModifyIndex(rid=rid, index=index)
-        self.modify_sub_command = modify_sub_command
-        self.properties = properties
+class RetryRPC:
+    """
+    Represents Retry RPC Message
+    """
+    def __init__(self, *, avro_message: AbcMessageAvro, kafka_topic: str):
+        self.avro_message = avro_message
+        self.kafka_topic = kafka_topic
 
-    def get(self) -> ReservationIDWithModifyIndex:
-        """
-        Get Index
-        :return:
-        """
-        return self.res_id
+    def message(self) -> AbcMessageAvro:
+        return self.avro_message
 
-    def get_sub_command(self) -> str:
-        """
-        Get Sub Command
-        :return:
-        """
-        return self.modify_sub_command
-
-    def get_properties(self) -> dict:
-        """
-        Get properties
-        :return:
-        """
-        return self.properties
-
-    def override_index(self, *, index: int):
-        """
-        Override index
-        :param index:
-        :return:
-        """
-        self.res_id.override_modify_index(index=index)
-
-    def __str__(self):
-        return "{}/{}".format(self.modify_sub_command, self.res_id)
+    def topic(self) -> str:
+        return self.kafka_topic
