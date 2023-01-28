@@ -602,6 +602,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         owner_ns = None
         bqm_component = None
         is_vnic = False
+        owner_mpls_ns = None
+        owner_switch = None
+
+        peered_ns_interfaces = []
 
         # For each Interface Sliver;
         for ifs in sliver.interface_info.interfaces.values():
@@ -615,6 +619,10 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             if node_id == str(NodeType.Facility):
                 bqm_component = self.get_facility_sliver(node_name=bqm_component_id)
+            # Peered Interfaces are handled at the end
+            elif node_id == str(Constants.PEERED):
+                peered_ns_interfaces.append(ifs)
+                continue
             else:
                 bqm_component = self.get_component_sliver(node_id=bqm_component_id)
 
@@ -627,7 +635,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.debug(f"Interface Sliver [Site Delegation] (C): {site_cp}")
 
             # Get BQM Peer Connection Point in Site Delegation (a)
-            net_cp = self.get_net_interface_sliver(site_ifs_id=site_cp.node_id, itype=InterfaceType.TrunkPort)
+            net_cp = self.get_peer_interface_sliver(site_ifs_id=site_cp.node_id,
+                                                    interface_type=InterfaceType.TrunkPort)
 
             if net_cp is None:
                 error_msg = "Peer Connection Point not found from Network AM"
@@ -636,7 +645,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             self.logger.debug(f"Peer Interface Sliver [Network Delegation] (A): {net_cp}")
 
             # need to find the owner switch of the network service in CBM and take it's name or labels.local_name
-            owner_switch, owner_ns = self.get_owners(node_id=net_cp.node_id, ns_type=sliver.get_type())
+            owner_switch, owner_mpls_ns, owner_ns = self.get_owners(node_id=net_cp.node_id,
+                                                                    ns_type=sliver.get_type())
 
             bqm_cp = net_cp
             if bqm_component.get_type() == NodeType.Facility or (sliver.get_type() == ServiceType.L2Bridge and
@@ -716,7 +726,40 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             sliver = inv.allocate(rid=rid, requested_ns=sliver, owner_ns=owner_ns,
                                   existing_reservations=existing_reservations)
 
+        self.__allocate_peered_interfaces(peered_interfaces=peered_ns_interfaces, owner_switch=owner_switch,
+                                          owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver,
+                                          existing_reservations=existing_reservations)
+
         return delegation_id, sliver, error_msg
+
+    def __allocate_peered_interfaces(self, *, peered_interfaces: List[InterfaceSliver], owner_switch: NodeSliver,
+                                     inv: NetworkServiceInventory, sliver: NetworkServiceSliver,
+                                     owner_mpls: NetworkServiceSliver, existing_reservations: List[ABCReservationMixin]):
+        for pfs in peered_interfaces:
+            name, site = pfs.get_node_map()
+            peer_sw, peer_mpls, peer_ns = self.get_peer_owners(site=site, ns_type=sliver.get_type())
+
+            nodes_on_path = self.get_shortest_path(src_node_id=owner_mpls.node_id,
+                                                   dest_node_id=peer_mpls.node_id)
+
+            bqm_interface = None
+            for bifs in owner_mpls.interface_info.interfaces.values():
+                if bifs.node_id == nodes_on_path[1]:
+                    bqm_interface = bifs
+                    break
+            if bqm_interface is None:
+                raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
+                                      msg=f"Unable to find BQM interface for {pfs.get_name()}")
+
+            pfs = inv.allocate_peered_ifs(owner_switch=owner_switch, requested_ifs=pfs,
+                                          bqm_interface=bqm_interface,
+                                          existing_reservations=existing_reservations)
+
+            pfs.set_node_map(node_map=(self.combined_broker_model_graph_id, bqm_interface.node_id))
+            if pfs.peer_labels is None:
+                pfs.peer_labels = Labels()
+            pfs.peer_labels = Labels.update(pfs.peer_labels, asn=peer_ns.labels.asn)
+            self.logger.info(f"Allocated Peered Interface Sliver: {pfs}")
 
     def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
                          node_id_to_reservations: dict) -> Tuple[bool, dict, Any]:
@@ -991,7 +1034,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         self.logger.debug("Reclaim Delegation")
         self.remove_delegation(delegation=delegation)
 
-    def get_net_interface_sliver(self, *, site_ifs_id: str, itype: InterfaceType) -> InterfaceSliver:
+    def get_peer_interface_sliver(self, *, site_ifs_id: str, interface_type: InterfaceType) -> InterfaceSliver or None:
         """
         Get Peer Interface Sliver (child of Network Service Sliver) provided node id of Interface Sliver
         (child of Component Sliver)
@@ -1003,17 +1046,21 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         [Connection Point]      Link    [Connection Point]
 
         @param site_ifs_id Interface Sliver Id
-        @param itype Interface Type
+        @param interface_type Interface Type
         @return Interface sliver
         """
         try:
             self.lock.acquire()
-            result = FimHelper.get_interface_sliver_by_id(ifs_node_id=site_ifs_id, graph=self.combined_broker_model,
-                                                          itype=itype)
-            if len(result) != 1:
-                raise BrokerException(msg=f"More than one Peer Interface Sliver of type {itype} found for "
+            peer_interfaces = FimHelper.get_peer_interfaces(ifs_node_id=site_ifs_id, graph=self.combined_broker_model,
+                                                            interface_type=interface_type)
+
+            if len(peer_interfaces) == 0:
+                return None
+
+            if len(peer_interfaces) != 1:
+                raise BrokerException(msg=f"More than one Peer Interface Sliver of type {interface_type} found for "
                                           f"IFS: {site_ifs_id}")
-            return next(iter(result))
+            return next(iter(peer_interfaces))
         finally:
             self.lock.release()
 
@@ -1031,7 +1078,62 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_facility_sliver(self, *, node_name: str) -> ComponentSliver or None:
+    def get_shortest_path(self, *, src_node_id: str, dest_node_id: str):
+        """
+        Get Component Sliver from BQM
+        @param src_node_id: Source node id
+        @param dest_node_id: Destination node id
+        @return Facility Sliver
+        """
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model is None:
+                return None
+            node_list = self.combined_broker_model.get_nodes_on_shortest_path(node_a=src_node_id, node_z=dest_node_id)
+            return node_list
+        finally:
+            self.lock.release()
+
+    def get_peer_owners(self, *, site:str, ns_type: ServiceType) -> Tuple[NodeSliver, NetworkServiceSliver,
+                                                                          NetworkServiceSliver]:
+        peer_sw = self.get_switch_sliver(site=site)
+        peer_mpls = None
+        peer_ns = None
+
+        for ns in peer_sw.network_service_info.network_services.values():
+            if ServiceType.MPLS == ns.get_type():
+                peer_mpls = ns
+            if ns.get_type() == ns_type:
+                peer_ns = ns
+
+        return peer_sw, peer_mpls, peer_ns
+
+    def get_switch_sliver(self, *, site: str) -> NodeSliver:
+        """
+        Get Component Sliver from BQM
+        @param site: Node Site Name
+        @return Facility Sliver
+        """
+        try:
+            self.lock.acquire()
+            if self.combined_broker_model is None:
+                return None
+            node_props = {ABCPropertyGraphConstants.PROP_SITE: site,
+                          ABCPropertyGraphConstants.PROP_TYPE: str(NodeType.Switch)}
+            candidates = self.combined_broker_model.get_matching_nodes_with_components(
+                label=ABCPropertyGraphConstants.CLASS_NetworkNode,
+                props=node_props)
+
+            if candidates is not None:
+                for c in candidates:
+                    ns_sliver = self.combined_broker_model.build_deep_node_sliver(node_id=c)
+                    return ns_sliver
+
+            return None
+        finally:
+            self.lock.release()
+
+    def get_facility_sliver(self, *, node_name: str) -> NodeSliver or None:
         """
         Get Component Sliver from BQM
         @param node_name: Node Name
@@ -1059,7 +1161,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_owners(self, *, node_id: str, ns_type: ServiceType) -> Tuple[NodeSliver, NetworkServiceSliver]:
+    def get_owners(self, *, node_id: str, ns_type: ServiceType) -> Tuple[NodeSliver, NetworkServiceSliver,
+                                                                         NetworkServiceSliver]:
         """
         Get owner switch and network service of a Connection Point from BQM
         @param node_id Node Id of the Connection Point

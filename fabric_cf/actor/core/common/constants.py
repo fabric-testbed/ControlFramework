@@ -290,6 +290,7 @@ class Constants:
 
     ALL = "ALL"
     AL2S = "AL2S"
+    PEERED = "Peered"
 
     # Default offset used to pick a VLAN from the range 1-4096
     DEFAULT_VLAN_OFFSET = 10

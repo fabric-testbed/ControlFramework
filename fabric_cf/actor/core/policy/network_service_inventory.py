@@ -31,6 +31,7 @@ from typing import List, Tuple
 from fim.slivers.capacities_labels import Labels
 from fim.slivers.gateway import Gateway
 from fim.slivers.interface_info import InterfaceSliver, InterfaceType
+from fim.slivers.network_node import NodeSliver
 from fim.slivers.network_service import NetworkServiceSliver, NSLayer, ServiceType
 
 from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
@@ -408,3 +409,32 @@ class NetworkServiceInventory(InventoryForType):
 
     def free(self, *, count: int, request: dict = None, resource: dict = None) -> dict:
         pass
+
+    def allocate_peered_ifs(self, *, owner_switch: NodeSliver,
+                            requested_ifs: InterfaceSliver, bqm_interface: InterfaceSliver,
+                            existing_reservations: List[ABCReservationMixin]) -> InterfaceSliver:
+        """
+        Update Labels for a Peered Interface
+        @param
+        """
+
+        ifs_labels = requested_ifs.get_labels()
+        if ifs_labels is None:
+            ifs_labels = Labels()
+
+        if bqm_interface.labels.vlan_range is not None:
+            vlan_range = self.__extract_vlan_range(labels=bqm_interface.labels)
+        else:
+            vlan_range = list(range(100, 1000))
+
+        available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
+                                                         existing_reservations=existing_reservations)
+
+        # local_name, device_name
+        ifs_labels = Labels.update(ifs_labels, local_name=bqm_interface.get_name(),
+                                   device_name=owner_switch.get_name(), vlan=str(available_vlans[0]))
+
+        requested_ifs.labels = ifs_labels
+        requested_ifs.label_allocations = Labels.update(lab=ifs_labels)
+
+        return requested_ifs
