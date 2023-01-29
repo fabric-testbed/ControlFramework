@@ -434,7 +434,7 @@ class FimHelper:
             facility = True
         else:
             node_id = None
-            peer_site = Constants.AL2S
+            peer_site = Constants.INTERNET2
             peer_ns = slice_graph.build_deep_ns_sliver(node_id=peer_ns_id)
 
             # Peer Network Service is FABRIC L3VPN connected to a FABRIC Site
