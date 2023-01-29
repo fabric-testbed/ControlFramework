@@ -243,17 +243,19 @@ class OrchestratorSliceWrapper:
                                 redeem_predecessors.append(parent_res_id)
                         continue
 
-                    # capacities (bw in Gbps, burst size is in Mbits) source: (b)
-                    # Set Capacities
-                    ifs.set_capacities(cap=ifs_mapping.get_peer_ifs().get_capacities())
-
                     if ifs_mapping.is_facility():
                         # Set Labels
                         ifs.set_labels(lab=ifs_mapping.get_peer_ifs().get_labels())
+                        if ifs_mapping.get_peer_ifs().get_peer_labels() is not None:
+                            ifs.set_peer_labels(lab=ifs_mapping.get_peer_ifs().get_peer_labels())
 
                         # For Facility Ports, set Node Map [Facility, Facility Name] to help broker lookup
                         node_map = tuple([str(NodeType.Facility), ifs_mapping.get_node_id()])
                         ifs.set_node_map(node_map=node_map)
+
+                        # capacities (bw in Gbps, burst size is in Mbits) source: (b)
+                        # Set Capacities
+                        ifs.set_capacities(cap=ifs_mapping.get_peer_ifs().get_capacities())
 
                     elif ifs_mapping.is_peered():
                         # Peered Interface between L3VPN;
@@ -272,6 +274,12 @@ class OrchestratorSliceWrapper:
                                 ifs.labels = Labels()
                             ifs.labels = Labels.update(ifs.labels,
                                                        ipv4_subnet=f'{address_list[0]}/{interface.network.prefixlen}')
+                            if peer_ifs_labels.bgp_key is not None:
+                                if ifs.peer_labels is None:
+                                    ifs.peer_labels = Labels()
+
+                                ifs.peer_labels = Labels.update(ifs.peer_labels,
+                                                                bgp_key=peer_ifs_labels.bgp_key)
                         # Peer_ifs is FABRIC in ASM
                         else:
                             interface = ipaddress.IPv4Interface(ifs.labels.ipv4_subnet)
@@ -280,8 +288,13 @@ class OrchestratorSliceWrapper:
                             if ifs.peer_labels is None:
                                 ifs.peer_labels = Labels()
                             ifs.peer_labels = Labels.update(ifs.peer_labels,
-                                                            ipv4_subnet=f'{address_list[0]}/{interface.network.prefixlen}')
+                                                            ipv4_subnet=f'{address_list[0]}/{interface.network.prefixlen}',
+                                                            bgp_key=ifs.labels.bgp_key)
                     else:
+                        # capacities (bw in Gbps, burst size is in Mbits) source: (b)
+                        # Set Capacities
+                        ifs.set_capacities(cap=ifs_mapping.get_peer_ifs().get_capacities())
+
                         # Set Labels
                         ifs.set_labels(lab=ifs_mapping.get_peer_ifs().get_labels())
 

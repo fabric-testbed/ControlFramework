@@ -478,33 +478,13 @@ class FimHelper:
 
             # Peer Connection point maps to Interface Sliver
             # Build Interface Sliver
-            peer_ifs = FimHelper.build_ifs_from_props(node_props=node_props)
+            peer_ifs = ABCPropertyGraph.interface_sliver_from_graph_properties_dict(d=node_props)
             if interface_type is not None and peer_ifs.get_type() == interface_type:
                 result.append(peer_ifs)
                 break
             else:
                 result.append(peer_ifs)
         return result
-
-    @staticmethod
-    def build_ifs_from_props(node_props: dict) -> InterfaceSliver:
-        """
-        Build Interface Sliver from the node properties
-        @param node_props Node properties
-        @return Interface Sliver
-        """
-        ifs = InterfaceSliver()
-        ifs.node_id = node_props[ABCPropertyGraph.NODE_ID]
-        cap_json = node_props.get(ABCPropertyGraph.PROP_CAPACITIES, None)
-        labels_json = node_props.get(ABCPropertyGraph.PROP_LABELS, None)
-        ifs.set_properties(name=node_props[ABCPropertyGraph.PROP_NAME],
-                           type=node_props[ABCPropertyGraph.PROP_TYPE])
-        if cap_json is not None:
-            ifs.set_capacities(cap=Capacities().from_json(cap_json))
-
-        if labels_json is not None:
-            ifs.set_labels(lab=Labels().from_json(labels_json))
-        return ifs
 
     @staticmethod
     def get_site_interface_sliver(*, component: ComponentSliver or NodeSliver,

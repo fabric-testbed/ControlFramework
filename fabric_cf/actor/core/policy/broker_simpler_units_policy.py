@@ -760,6 +760,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 pfs.peer_labels = Labels()
             pfs.peer_labels = Labels.update(pfs.peer_labels, asn=peer_ns.labels.asn)
             self.logger.info(f"Allocated Peered Interface Sliver: {pfs}")
+            if sliver.get_technology() == "AL2S":
+                raise BrokerException(msg="TEMP")
 
     def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
                          node_id_to_reservations: dict) -> Tuple[bool, dict, Any]:
