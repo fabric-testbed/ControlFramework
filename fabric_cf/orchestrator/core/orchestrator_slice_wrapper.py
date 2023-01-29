@@ -297,6 +297,10 @@ class OrchestratorSliceWrapper:
                         # Set Labels
                         ifs.set_labels(lab=ifs_mapping.get_peer_ifs().get_labels())
 
+                        # Set Peer Labels
+                        if ifs_mapping.get_peer_ifs().get_peer_labels() is not None:
+                            ifs.set_peer_labels(lab=ifs_mapping.get_peer_ifs().get_peer_labels())
+
                         # Save the parent component name and the parent reservation id in the Node Map
                         parent_res_id = node_res_mapping.get(ifs_mapping.get_node_id(), None)
 
