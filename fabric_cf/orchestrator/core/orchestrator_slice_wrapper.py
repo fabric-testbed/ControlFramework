@@ -228,7 +228,6 @@ class OrchestratorSliceWrapper:
                     # i.e. [Peer IFS, Peer NS Id, Component Name, Node Id]
                     ifs_mapping = FimHelper.get_interface_sliver_mapping(ifs_node_id=ifs.node_id,
                                                                          slice_graph=slice_graph)
-
                     if ifs_mapping is None:
                         raise OrchestratorException(message=f"Peer connection point not found for ifs# {ifs}",
                                                     http_error_code=BAD_REQUEST)

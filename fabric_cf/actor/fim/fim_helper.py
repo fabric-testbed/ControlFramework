@@ -419,13 +419,13 @@ class FimHelper:
         facility = False
         peer_site = None
 
-        if peer_ifs.get_type() in [str(InterfaceType.DedicatedPort), str(InterfaceType.SharedPort)]:
+        if peer_ifs.get_type() in [InterfaceType.DedicatedPort, InterfaceType.SharedPort]:
             component_name, component_id = slice_graph.get_parent(node_id=peer_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                                                   parent=ABCPropertyGraph.CLASS_Component)
 
             node_name, node_id = slice_graph.get_parent(node_id=component_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
-        elif peer_ifs.get_type() == str(InterfaceType.FacilityPort):
+        elif peer_ifs.get_type() == InterfaceType.FacilityPort:
             node_name, node_id = slice_graph.get_parent(node_id=peer_ns_id, rel=ABCPropertyGraph.REL_HAS,
                                                         parent=ABCPropertyGraph.CLASS_NetworkNode)
             node_sliver = slice_graph.build_deep_node_sliver(node_id=node_id)
@@ -435,6 +435,7 @@ class FimHelper:
         else:
             node_id = None
             peer_site = Constants.INTERNET2
+            #peer_site = Constants.AL2S
             peer_ns = slice_graph.build_deep_ns_sliver(node_id=peer_ns_id)
 
             # Peer Network Service is FABRIC L3VPN connected to a FABRIC Site
