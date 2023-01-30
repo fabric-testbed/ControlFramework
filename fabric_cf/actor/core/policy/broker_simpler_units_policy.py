@@ -727,14 +727,15 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                   existing_reservations=existing_reservations)
 
         self.__allocate_peered_interfaces(peered_interfaces=peered_ns_interfaces, owner_switch=owner_switch,
-                                          owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver,
-                                          existing_reservations=existing_reservations)
+                                          owner_mpls=owner_mpls_ns, inv=inv, sliver=sliver, owner_ns=owner_ns,
+                                          node_id_to_reservations=node_id_to_reservations)
 
         return delegation_id, sliver, error_msg
 
     def __allocate_peered_interfaces(self, *, peered_interfaces: List[InterfaceSliver], owner_switch: NodeSliver,
                                      inv: NetworkServiceInventory, sliver: NetworkServiceSliver,
-                                     owner_mpls: NetworkServiceSliver, existing_reservations: List[ABCReservationMixin]):
+                                     owner_mpls: NetworkServiceSliver, owner_ns: NetworkServiceSliver,
+                                     node_id_to_reservations: dict):
         for pfs in peered_interfaces:
             name, site = pfs.get_node_map()
             peer_sw, peer_mpls, peer_ns = self.get_peer_owners(site=site, ns_type=sliver.get_type())
@@ -742,14 +743,26 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             nodes_on_path = self.get_shortest_path(src_node_id=owner_mpls.node_id,
                                                    dest_node_id=peer_mpls.node_id)
 
+            # Node ID of the switch connecting the L3VPN to the destination L3VPN
+            interface_node_id = nodes_on_path[1]
+            # In case of FABRIC L3VPN service connecting to the VMs, use the last switch connected to the AL2S
+            if sliver.get_technology() != Constants.AL2S:
+                # Update Switch
+                interface_node_id = nodes_on_path[-4]
+                owner_switch, owner_mpls, owner_ns = self.get_owners(node_id=interface_node_id,
+                                                                     ns_type=sliver.get_type())
+
             bqm_interface = None
             for bifs in owner_mpls.interface_info.interfaces.values():
-                if bifs.node_id == nodes_on_path[1]:
+                if bifs.node_id == interface_node_id:
                     bqm_interface = bifs
                     break
             if bqm_interface is None:
                 raise BrokerException(error_code=ExceptionErrorCode.INSUFFICIENT_RESOURCES,
                                       msg=f"Unable to find BQM interface for {pfs.get_name()}")
+
+            existing_reservations = self.get_existing_reservations(node_id=owner_ns.node_id,
+                                                                   node_id_to_reservations=node_id_to_reservations)
 
             pfs = inv.allocate_peered_ifs(owner_switch=owner_switch, requested_ifs=pfs,
                                           bqm_interface=bqm_interface,
@@ -760,6 +773,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 pfs.peer_labels = Labels()
             pfs.peer_labels = Labels.update(pfs.peer_labels, asn=peer_ns.labels.asn)
             self.logger.info(f"Allocated Peered Interface Sliver: {pfs}")
+
+        # Update the Network Service Sliver Node Map
+        sliver.set_node_map(node_map=(self.combined_broker_model_graph_id, owner_ns.node_id))
 
     def ticket_inventory(self, *, reservation: ABCBrokerReservation, inv: InventoryForType, term: Term,
                          node_id_to_reservations: dict) -> Tuple[bool, dict, Any]:
