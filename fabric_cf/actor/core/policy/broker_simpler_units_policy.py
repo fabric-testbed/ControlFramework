@@ -670,14 +670,22 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 ifs = inv.allocate_ifs(requested_ns=sliver, requested_ifs=ifs, owner_ns=owner_ns,
                                        bqm_ifs=bqm_cp, existing_reservations=existing_reservations)
 
+            local_name = net_cp.get_name()
+            device_name = owner_switch.get_name()
+
+            if device_name == Constants.AL2S:
+                names = local_name.split(":")
+                device_name = names[0]
+                local_name = names[1]
+
             # local_name source: (a)
             ifs_labels = ifs.get_labels()
-            ifs_labels = Labels.update(ifs_labels, local_name=net_cp.get_name())
+            ifs_labels = Labels.update(ifs_labels, local_name=local_name)
 
             # NSO device name source: (a) - need to find the owner switch of the network service in CBM
             # and take its name or labels.local_name
             # Set the NSO device-name
-            ifs_labels = Labels.update(ifs_labels, device_name=owner_switch.get_name())
+            ifs_labels = Labels.update(ifs_labels, device_name=device_name)
             adm_ids = owner_switch.get_structural_info().adm_graph_ids
             site_adm_ids = bqm_component.get_structural_info().adm_graph_ids
 
