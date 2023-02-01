@@ -676,6 +676,7 @@ class OrchestratorHandler:
                                                        new_end_time=new_end_time,
                                                        sliver=None)
                 if not result:
+                    self.logger.error(f"Error: {controller.get_last_error()}")
                     failed_to_extend_rid_list.append(r.get_reservation_id())
 
             if len(failed_to_extend_rid_list) == 0:

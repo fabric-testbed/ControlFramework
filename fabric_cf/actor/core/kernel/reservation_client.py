@@ -456,8 +456,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         if extend:
             assert self.requested_resources is not None
-            assert self.requested_resources.sliver is not None
-            sliver = self.requested_resources.sliver
+            # Extend is invoked for a renew - use existing sliver
+            # Extend when invoked for a modify - use the new sliver
+            if self.requested_resources.sliver is not None:
+                sliver = self.requested_resources.sliver
 
         if not isinstance(sliver, NetworkServiceSliver):
             return
