@@ -1,5 +1,3 @@
-[![Requirements Status](https://requires.io/github/fabric-testbed/ControlFramework/requirements.svg?branch=master)](https://requires.io/github/fabric-testbed/ControlFramework/requirements/?branch=master)
-
 [![PyPI](https://img.shields.io/pypi/v/fabric-cf?style=plastic)](https://pypi.org/project/fabric-cf/)
 
 # Control Framework
