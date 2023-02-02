@@ -32,7 +32,7 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Tuple, List, Any
 
-from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat
+from fim.graph.abc_property_graph import ABCPropertyGraphConstants, GraphFormat, ABCPropertyGraph
 from fim.graph.resources.abc_adm import ABCADMPropertyGraph
 from fim.pluggable import PluggableRegistry, PluggableType
 from fim.slivers.attached_components import ComponentSliver, ComponentType
@@ -745,20 +745,39 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                      owner_mpls: NetworkServiceSliver, owner_ns: NetworkServiceSliver,
                                      node_id_to_reservations: dict):
         for pfs in peered_interfaces:
-            name, site = pfs.get_node_map()
-            peer_sw, peer_mpls, peer_ns = self.get_peer_owners(site=site, ns_type=sliver.get_type())
+            name, site_node_type_name = pfs.get_node_map()
+            site = site_node_type_name
+            node_type = None
+            node_name = None
+            res_list = site_node_type_name.split(",")
+            if len(res_list) > 1:
+                site = res_list[0]
+                node_type = res_list[1]
+                node_name = res_list[2]
+
+            peer_sw = self.get_peer_node(site=site, ns_type=sliver.get_type(),
+                                                             node_type=node_type, node_name=node_name)
 
             nodes_on_path = self.get_shortest_path(src_node_id=owner_mpls.node_id,
-                                                   dest_node_id=peer_mpls.node_id)
+                                                   dest_node_id=peer_sw.node_id)
 
             # Node ID of the switch connecting the L3VPN to the destination L3VPN
             interface_node_id = nodes_on_path[1]
             # In case of FABRIC L3VPN service connecting to the VMs, use the last switch connected to the AL2S
             if sliver.get_technology() != Constants.AL2S:
                 # Update Switch
-                interface_node_id = nodes_on_path[-4]
+                index = 0
+                peer_ns_id = None
+                for x in nodes_on_path:
+                    index += 1
+                    if Constants.AL2S in x:
+                        peer_ns_id = x
+                        interface_node_id = nodes_on_path[index - 4]
                 owner_switch, owner_mpls, owner_ns = self.get_owners(node_id=interface_node_id,
                                                                      ns_type=sliver.get_type())
+                peer_mpls, peer_sw = self.get_network_service_from_graph(node_id=peer_ns_id, parent=True)
+
+            peer_mpls, peer_ns = self.get_ns(switch=peer_sw, ns_type=sliver.get_type())
 
             bqm_interface = None
             for bifs in owner_mpls.interface_info.interfaces.values():
@@ -843,7 +862,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         graph_id, bqm_ns_id = sliver.get_node_map()
 
-        bqm_ns_sliver = self.get_network_service_from_graph(node_id=bqm_ns_id)
+        bqm_ns_sliver, bqm_sw = self.get_network_service_from_graph(node_id=bqm_ns_id)
         if bqm_ns_sliver.get_type() == ServiceType.VLAN:
             return True
 
@@ -1118,19 +1137,23 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_peer_owners(self, *, site:str, ns_type: ServiceType) -> Tuple[NodeSliver, NetworkServiceSliver,
-                                                                          NetworkServiceSliver]:
-        peer_sw = self.get_switch_sliver(site=site)
-        peer_mpls = None
-        peer_ns = None
-
-        for ns in peer_sw.network_service_info.network_services.values():
+    def get_ns(self, *, switch: NodeSliver, ns_type: ServiceType) -> Tuple[NetworkServiceSliver, NetworkServiceSliver]:
+        peer_mpls = peer_ns = None
+        for ns in switch.network_service_info.network_services.values():
             if ServiceType.MPLS == ns.get_type():
                 peer_mpls = ns
             if ns.get_type() == ns_type:
                 peer_ns = ns
 
-        return peer_sw, peer_mpls, peer_ns
+        return peer_mpls, peer_ns
+
+    def get_peer_node(self, *, site: str, node_type: str, node_name: str,
+                        ns_type: ServiceType) -> NodeSliver:
+        if node_type == str(NodeType.Facility):
+            peer_node = self.get_facility_sliver(node_name=f'{site},{node_name}')
+            return peer_node
+        else:
+            return self.get_switch_sliver(site=site)
 
     def get_switch_sliver(self, *, site: str) -> NodeSliver:
         """
@@ -1212,17 +1235,26 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
         finally:
             self.lock.release()
 
-    def get_network_service_from_graph(self, *, node_id: str) -> NetworkServiceSliver or None:
+    def get_network_service_from_graph(self, *, node_id: str,
+                                       parent: bool = False) -> Tuple[NetworkServiceSliver or None, NodeSliver or None]:
         """
         Get Node from CBM
         :param node_id:
+        :param parent:
         :return:
         """
         try:
             self.lock.acquire()
             if self.combined_broker_model is None:
-                return None
-            return self.combined_broker_model.build_deep_ns_sliver(node_id=node_id)
+                return None, None
+            node_sliver = None
+            ns_sliver = self.combined_broker_model.build_deep_ns_sliver(node_id=node_id)
+            if parent:
+                node_name, node_id = self.combined_broker_model.get_parent(node_id=node_id, rel=ABCPropertyGraph.REL_HAS,
+                                                                           parent=ABCPropertyGraph.CLASS_NetworkNode)
+                node_sliver = self.combined_broker_model.build_deep_node_sliver(node_id=node_id)
+
+            return ns_sliver, node_sliver
         finally:
             self.lock.release()
 

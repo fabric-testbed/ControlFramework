@@ -434,26 +434,34 @@ class FimHelper:
             facility = True
         else:
             node_id = None
-            peer_site = Constants.INTERNET2
-            #peer_site = Constants.AL2S
             peer_ns = slice_graph.build_deep_ns_sliver(node_id=peer_ns_id)
 
             # Peer Network Service is FABRIC L3VPN connected to a FABRIC Site
             # Determine the site to which AL2S Peered Interface is connected to
-            if peer_ns.get_technology() != Constants.AL2S:
-                for ifs in peer_ns.interface_info.interfaces.values():
-                    # Skip the peered interface
-                    if ifs.node_id == peer_ifs.node_id:
-                        continue
-                    # Grab the first interface connected to a VM
-                    peer_nic_ifs_list = FimHelper.get_peer_interfaces(ifs_node_id=ifs.node_id,
-                                                                      graph=slice_graph)
-                    ovs_ns_name, ovs_ns_id = slice_graph.get_parent(node_id=peer_nic_ifs_list[0].node_id,
-                                                                    rel=ABCPropertyGraph.REL_CONNECTS,
-                                                                    parent=ABCPropertyGraph.CLASS_NetworkService)
-                    ovs_ns = slice_graph.build_deep_ns_sliver(node_id=ovs_ns_id)
-                    peer_site = ovs_ns.get_site()
-                    break
+            for ifs in peer_ns.interface_info.interfaces.values():
+                # Skip the peered interface
+                if ifs.node_id == peer_ifs.node_id:
+                    continue
+                # Grab the first interface connected to a VM
+                peer_nic_ifs_list = FimHelper.get_peer_interfaces(ifs_node_id=ifs.node_id,
+                                                                  graph=slice_graph)
+                ovs_ns_name, ovs_ns_id = slice_graph.get_parent(node_id=peer_nic_ifs_list[0].node_id,
+                                                                rel=ABCPropertyGraph.REL_CONNECTS,
+                                                                parent=ABCPropertyGraph.CLASS_NetworkService)
+                ovs_ns = slice_graph.build_deep_ns_sliver(node_id=ovs_ns_id)
+
+                peer_site = ovs_ns.get_site()
+
+                if ovs_ns.get_type() != ServiceType.OVS:
+                    # Peer node i.e. Facility Port
+                    peer_node_name, peer_node_id = slice_graph.get_parent(node_id=ovs_ns.node_id,
+                                                                          rel=ABCPropertyGraph.REL_HAS,
+                                                                          parent=ABCPropertyGraph.CLASS_NetworkNode)
+
+                    peer_node = slice_graph.build_deep_node_sliver(node_id=peer_node_id)
+
+                    peer_site = f'{ovs_ns.get_site()},{peer_node.get_type()},{peer_node.get_name()}'
+                break
 
         ret_val = InterfaceSliverMapping()
         ret_val.set_properties(peer_ifs=peer_ifs, peer_ns_id=peer_ns_id, component_name=component_name,
@@ -531,7 +539,7 @@ class FimHelper:
 
         switch = bqm.build_deep_node_sliver(node_id=sw_id)
 
-        requested_ns = None
+        requested_ns = mpls_ns
         if ns_type in Constants.L3_SERVICES:
             for ns in switch.network_service_info.network_services.values():
                 if ns_type == ns.get_type():
