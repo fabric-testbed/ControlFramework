@@ -690,7 +690,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
             self.transition_with_join(prefix="Extend ticket blocked", state=self.state,
                                       pending=self.pending_state, join_state=JoinState.BlockedExtendTicket)
             self.logger.info("Reservation has to wait for the dependencies to be extended!")
-            print("Reservation has to wait for the dependencies to be extended!")
             return
 
         self.sequence_ticket_out += 1
