@@ -456,10 +456,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
         if extend:
             assert self.requested_resources is not None
-            # Extend is invoked for a renew - use existing sliver
-            # Extend when invoked for a modify - use the new sliver
-            if self.requested_resources.sliver is not None:
-                sliver = self.requested_resources.sliver
+            assert self.requested_resources.sliver is not None
+            sliver = self.requested_resources.sliver
 
         if not isinstance(sliver, NetworkServiceSliver):
             return
@@ -686,8 +684,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
         else:
             self.error(err="Wrong state to initiate extend ticket: {}".format(ReservationStates(self.state).name))
 
-        # Extend Ticket is invoked by Probe
-        if not self.can_ticket(extend=True):
+        # Extend Ticket is invoked by Probe; Check dependencies only in case of modify
+        # No new sliver is passed for renew and does not require dependency check
+        if self.requested_resources.sliver is not None and not self.can_ticket(extend=True):
             self.transition_with_join(prefix="Extend ticket blocked", state=self.state,
                                       pending=self.pending_state, join_state=JoinState.BlockedExtendTicket)
             self.logger.info("Reservation has to wait for the dependencies to be extended!")
