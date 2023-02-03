@@ -7,7 +7,9 @@ name = "fabric_cf"
 authors = [{name="Komal Thareja", email="kthare10@renci.org"}, {name="Ilya Baldin", email="ibaldin@renci.org"}]
 readme = "README.md"
 license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: MIT License"]
+classifiers = ["Programming Language :: Python :: 3",
+               "License :: OSI Approved :: MIT License",
+               "Operating System :: OS Independent"]
 description = "Fabric Control Framework"
 dynamic = ["version"]
 

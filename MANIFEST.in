@@ -1,7 +1,0 @@
-include README.md
-include LICENSE
-include requirements.txt
-include fabric_cf/orchestrator/swagger_server/swagger/swagger.yaml
-include fabric_cf/authority/config.site.am.yaml
-include fabric_cf/broker/config.broker.yaml
-include fabric_cf/orchestrator/config.orchestrator.yaml
