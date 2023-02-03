@@ -24,6 +24,7 @@
 #
 # Author: Komal Thareja (kthare10@renci.org)
 import logging
+import random
 from typing import Tuple, List, Union
 
 from fim.graph.abc_property_graph import ABCPropertyGraph, ABCGraphImporter
@@ -496,8 +497,8 @@ class FimHelper:
         return result
 
     @staticmethod
-    def get_site_interface_sliver(*, component: ComponentSliver or NodeSliver,
-                                  local_name: str) -> InterfaceSliver or None:
+    def get_site_interface_sliver(*, component: ComponentSliver or NodeSliver, local_name: str,
+                                  region: str = None) -> InterfaceSliver or None:
         """
         Get Interface Sliver (child of Component Sliver) with a local name
 
@@ -510,13 +511,21 @@ class FimHelper:
 
         @param component Component Sliver
         @param local_name Local Name
+        @param region region
         @return Interface sliver
         """
         for ns in component.network_service_info.network_services.values():
-            for ifs in ns.interface_info.interfaces.values():
-                # For Facility ifs, local name would be none, there will be only one IFS
-                if component.get_type() == NodeType.Facility or local_name in ifs.get_name():
-                    return ifs
+            # Return specific interface where local name matches
+            if local_name is not None:
+                return next(x for x in ns.interface_info.interfaces.values() if local_name in x.get_name())
+            else:
+                # Return an interface chosen randomly
+                if region is None:
+                    return random.choice(ns.interface_info.interfaces.values())
+                # Return an interface chosen randomly for a specific region
+                else:
+                    result = list(filter(lambda x: (region in x.labels.device_name), ns.interface_info.interfaces.values()))
+                    return random.choice(result)
         return None
 
     @staticmethod

@@ -631,7 +631,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
             # Get BQM Connection Point in Site Delegation (c)
             site_cp = FimHelper.get_site_interface_sliver(component=bqm_component,
-                                                          local_name=ifs.get_labels().local_name)
+                                                          local_name=ifs.get_labels().local_name,
+                                                          region=ifs.get_labels().region)
             self.logger.debug(f"Interface Sliver [Site Delegation] (C): {site_cp}")
 
             # Get BQM Peer Connection Point in Site Delegation (a)
@@ -649,8 +650,9 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                                                                     ns_type=sliver.get_type())
 
             bqm_cp = net_cp
-            if bqm_component.get_type() == NodeType.Facility or (sliver.get_type() == ServiceType.L2Bridge and
-                                                                 bqm_component.get_model() == Constants.OPENSTACK_VNIC_MODEL):
+            if bqm_component.get_type() == NodeType.Facility or \
+                    (sliver.get_type() == ServiceType.L2Bridge and
+                     bqm_component.get_model() == Constants.OPENSTACK_VNIC_MODEL):
                 bqm_cp = site_cp
 
             if bqm_component.get_type() == ComponentType.SharedNIC:
@@ -755,8 +757,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
                 node_type = res_list[1]
                 node_name = res_list[2]
 
-            peer_sw = self.get_peer_node(site=site, ns_type=sliver.get_type(),
-                                                             node_type=node_type, node_name=node_name)
+            peer_sw = self.get_peer_node(site=site, node_type=node_type, node_name=node_name)
 
             nodes_on_path = self.get_shortest_path(src_node_id=owner_mpls.node_id,
                                                    dest_node_id=peer_sw.node_id)
@@ -1147,8 +1148,7 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
 
         return peer_mpls, peer_ns
 
-    def get_peer_node(self, *, site: str, node_type: str, node_name: str,
-                        ns_type: ServiceType) -> NodeSliver:
+    def get_peer_node(self, *, site: str, node_type: str, node_name: str) -> NodeSliver:
         if node_type == str(NodeType.Facility):
             peer_node = self.get_facility_sliver(node_name=f'{site},{node_name}')
             return peer_node
