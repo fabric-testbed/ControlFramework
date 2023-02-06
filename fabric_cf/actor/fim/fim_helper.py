@@ -521,7 +521,7 @@ class FimHelper:
             else:
                 # Return an interface chosen randomly
                 if region is None:
-                    return random.choice(ns.interface_info.interfaces.values())
+                    return random.choice(list(ns.interface_info.interfaces.values()))
                 # Return an interface chosen randomly for a specific region
                 else:
                     result = list(filter(lambda x: (region in x.labels.device_name), ns.interface_info.interfaces.values()))
