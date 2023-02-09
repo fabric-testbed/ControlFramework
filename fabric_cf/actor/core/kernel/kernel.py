@@ -358,7 +358,7 @@ class Kernel:
             real.lock()
             # check for a pending operation: we cannot service the extend if there is another operation in progress.
             if real.get_pending_state() != ReservationPendingStates.None_:
-                raise KernelException(f"Reservation has a pending operation")
+                raise KernelException(Constants.PENDING_OPERATION_ERROR)
 
             if isinstance(real, ReservationClient) and dependencies is not None:
                 real.redeem_predecessors.clear()
