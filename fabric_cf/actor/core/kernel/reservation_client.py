@@ -319,6 +319,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
         # Alternative: could transition to (state, None) to allow retry of the
         # redeem/extend by a higher level.
         if update_data.failed:
+            if self.is_redeeming() and Constants.PENDING_OPERATION_ERROR in update_data.get_message():
+                self.logger.info("Ignoring Update Lease, likely duplicate redeem received at the AM")
+                return True
             self.fail(message=f"failed lease update- {update_data.get_message()}",
                       sliver=incoming.get_resources().get_sliver())
             #self.transition(prefix="failed lease update", state=ReservationStates.Failed,
