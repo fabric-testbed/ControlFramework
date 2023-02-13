@@ -319,6 +319,9 @@ class ReservationClient(Reservation, ABCControllerReservation):
         # Alternative: could transition to (state, None) to allow retry of the
         # redeem/extend by a higher level.
         if update_data.failed:
+            if self.is_redeeming() and Constants.PENDING_OPERATION_ERROR in update_data.get_message():
+                self.logger.info("Ignoring Update Lease, likely duplicate redeem received at the AM")
+                return True
             self.fail(message=f"failed lease update- {update_data.get_message()}",
                       sliver=incoming.get_resources().get_sliver())
             #self.transition(prefix="failed lease update", state=ReservationStates.Failed,
@@ -467,7 +470,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
             # Skip Facility Port Interfaces for Create or Modify
             # Allocated interfaces on Modify i.e. ExtendTicket
-            if component_name == str(NodeType.Facility) or component_name == Constants.PEERED or \
+            if component_name == str(NodeType.Facility) or component_name == Constants.PEERED or\
                     ifs.label_allocations is not None:
                 continue
 
@@ -491,10 +494,11 @@ class ReservationClient(Reservation, ABCControllerReservation):
                     parent_labs = parent_res_ifs_sliver.get_label_allocations()
 
                     if component.get_model() == Constants.OPENSTACK_VNIC_MODEL:
-                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac,
+                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, bdf=parent_labs.bdf,
                                                    instance_parent=f"{parent_res.get_reservation_id()}-{node_sliver.get_name()}")
                     else:
-                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan)
+                        ifs.labels = Labels.update(ifs.labels, mac=parent_labs.mac, vlan=parent_labs.vlan,
+                                                   bdf=parent_labs.bdf)
 
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {sliver}")
 
@@ -517,10 +521,17 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 continue
             if pred_state.get_reservation().is_failed() or pred_state.get_reservation().is_closed() or \
                     pred_state.get_reservation().is_closing():
-                self.logger.error(f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"
-                                  f" is in a terminal state, failing the reservation# {self.get_reservation_id()}")
-                self.fail(message=f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"
-                                  f" is in a terminal state")
+                msg = f"redeem predecessor reservation# {pred_state.get_reservation().get_reservation_id()}"\
+                      f" is in a terminal state, failing the reservation# {self.get_reservation_id()}"
+                self.logger.error(msg)
+
+                # In case of modify, roll back to the previous state and do not fail the reservation
+                if self.is_active() or self.is_active_joined() or self.is_active_ticketed():
+                    self.transition_with_join(prefix=msg,
+                                              state=self.state, pending=ReservationPendingStates.None_,
+                                              join_state=JoinState.None_)
+                else:
+                    self.fail(message=msg)
 
             if not (pred_state.get_reservation().is_ticketed() or pred_state.get_reservation().is_active()):
                 approved = False
@@ -599,6 +610,17 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Failed:
             self.logger.debug(f"Reservation in state: {self.state}, transition to {ReservationStates.Closed}")
             self.transition(prefix="close", state=ReservationStates.Closed, pending=self.pending_state)
+            # Send Close to the authority if resources were provisioned
+            if self.last_pending_state in [ReservationPendingStates.ExtendingTicket,
+                                           ReservationPendingStates.ExtendingLease,
+                                           ReservationPendingStates.ModifyingLease]:
+                try:
+                    self.sequence_lease_out += 1
+                    RPCManagerSingleton.get().close(reservation=self)
+                except Exception as e:
+                    self.logger.error("authority reports close error: e: {}".format(e))
+                    self.logger.error(traceback.format_exc())
+
             if self.broker is not None:
                 self.logger.debug("Triggering relinquish")
                 self.do_relinquish()
