@@ -34,7 +34,7 @@ from typing import TYPE_CHECKING, List
 
 from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
-from fim.slivers.capacities_labels import Labels
+from fim.slivers.capacities_labels import Labels, ReservationInfo
 from fim.slivers.network_node import NodeSliver, NodeType
 from fim.slivers.network_service import NetworkServiceSliver
 
@@ -530,6 +530,14 @@ class ReservationClient(Reservation, ABCControllerReservation):
                     self.transition_with_join(prefix=msg,
                                               state=self.state, pending=ReservationPendingStates.None_,
                                               join_state=JoinState.None_)
+                    # Mark the failed interfaces
+                    sliver = self.resources.sliver
+                    for ifs in sliver.interface_info.interfaces.values():
+                        component_name, rid = ifs.get_node_map()
+                        if rid == str(pred_state.get_reservation().get_reservation_id()):
+                            ifs.reservation_info = ReservationInfo()
+                            ifs.reservation_info.reservation_id = str(self.get_reservation_id())
+                            ifs.reservation_info.reservation_state = str(ReservationStates.Failed)
                 else:
                     self.fail(message=msg)
 
