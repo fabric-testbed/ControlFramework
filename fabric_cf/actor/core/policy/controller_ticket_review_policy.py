@@ -182,5 +182,6 @@ class ControllerTicketReviewPolicy(ControllerSimplePolicy):
                 # Remove active or close reservations
                 self.logger.debug("Removing from pendingRedeem: {}".format(reservation))
                 self.pending_redeem.remove(reservation=reservation)
+                self.calendar.remove_pending(reservation=reservation)
 
         super().check_pending()

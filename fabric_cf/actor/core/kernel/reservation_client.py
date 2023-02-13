@@ -30,7 +30,7 @@ import re
 import threading
 import time
 import traceback
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Tuple
 
 from fim.slivers.attached_components import ComponentType
 from fim.slivers.base_sliver import BaseSliver
@@ -502,7 +502,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
             self.logger.trace(f"Updated Network Res# {self.get_reservation_id()} {sliver}")
 
-    def approve_ticket(self, extend: bool = False):
+    def approve_ticket(self, extend: bool = False) -> Tuple[bool, List[str]]:
         """
         Ticket predicate: invoked internally to determine if the reservation
         should be ticketed. This gives subclasses an opportunity sequence actions at the orchestrator side.
@@ -512,9 +512,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         facilitate ticketing from the broker. Note that approve_ticket may be polled multiple
         times, and should be idempotent.
 
-        @return true if approved; false otherwise
+        @return tuple (true if approved; false otherwise, list of failed predecessors in case of false)
         """
         approved = True
+        failed_preds = []
         for pred_state in self.redeem_predecessors.values():
             if pred_state.get_reservation() is None:
                 self.logger.error(f"redeem predecessor reservation is null, ignoring it: {pred_state.get_reservation()}")
@@ -527,17 +528,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                 # In case of modify, roll back to the previous state and do not fail the reservation
                 if self.is_active() or self.is_active_joined() or self.is_active_ticketed():
-                    self.transition_with_join(prefix=msg,
-                                              state=self.state, pending=ReservationPendingStates.None_,
-                                              join_state=JoinState.None_)
-                    # Mark the failed interfaces
-                    sliver = self.resources.sliver
-                    for ifs in sliver.interface_info.interfaces.values():
-                        component_name, rid = ifs.get_node_map()
-                        if rid == str(pred_state.get_reservation().get_reservation_id()):
-                            ifs.reservation_info = ReservationInfo()
-                            ifs.reservation_info.reservation_id = str(self.get_reservation_id())
-                            ifs.reservation_info.reservation_state = str(ReservationStates.Failed)
+                    failed_preds.append(str(pred_state.get_reservation().get_reservation_id()))
                 else:
                     self.fail(message=msg)
 
@@ -548,14 +539,14 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if approved:
             self.prepare_ticket(extend=extend)
 
-        return approved
+        return approved, failed_preds
 
     def can_ticket(self, extend: bool = False) -> bool:
         ret_val = False
         if self.get_type() is not None:
             resource_type_str = str(self.get_type())
             if resource_type_str in Constants.SUPPORTED_SERVICES_STR:
-                ret_val = self.approve_ticket(extend=extend)
+                ret_val, failed_preds = self.approve_ticket(extend=extend)
             else:
                 ret_val = True
 
@@ -934,7 +925,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # blocked for a predecessor: see if we can get it going now.
             assert self.state == ReservationStates.Nascent
 
-            if self.approve_ticket():
+            status, failed_preds = self.approve_ticket()
+            if status:
                 self.transition_with_join(prefix="unblock ticket", state=ReservationStates.Nascent,
                                           pending=ReservationPendingStates.Ticketing, join_state=JoinState.NoJoin)
 
@@ -950,7 +942,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # blocked for a predecessor: see if we can get it going now.
             assert self.state == ReservationStates.Active
 
-            if self.approve_ticket(extend=True):
+            status, failed_preds = self.approve_ticket(extend=True)
+            if status:
                 self.transition_with_join(prefix="unblock ticket", state=self.state,
                                           pending=self.pending_state, join_state=JoinState.NoJoin)
 
@@ -961,6 +954,25 @@ class ReservationClient(Reservation, ABCControllerReservation):
 
                 # Update ASM with Reservation Info
                 self.update_slice_graph(sliver=self.resources.sliver)
+            else:
+                # Modify scenario; interfaces to the newly added VMs cannot be attached
+                # as the VM failed to ticket at the broker
+                if len(failed_preds) > 0:
+                    msg = f"ignore modify, redeem predecessor reservation# {failed_preds[0]} is in a terminal state"
+                    self.transition_with_join(prefix=msg,
+                                              state=self.state, pending=ReservationPendingStates.None_,
+                                              join_state=JoinState.None_)
+
+                    for ifs in self.resources.sliver.interface_info.interfaces.values():
+                        component_name, rid = ifs.get_node_map()
+                        if rid in failed_preds:
+                            ifs.reservation_info = ReservationInfo()
+                            ifs.reservation_info.reservation_id = str(self.get_reservation_id())
+                            ifs.reservation_info.reservation_state = str(ReservationStates.Failed)
+                            self.remove_redeem_predecessor(rid=ID(uid=rid))
+
+                    # Update ASM with Reservation Info
+                    self.update_slice_graph(sliver=self.resources.sliver)
 
         elif self.joinstate == JoinState.BlockedRedeem:
             # this reservation has a ticket to redeem, and the redeem is
@@ -1047,8 +1059,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # To avoid the slice from being stuck in Configuring state
             # Close the reservation - send Close to AM and relinquish to Broker
             # Timeout is configurable
-            if self.pending_state == ReservationPendingStates.Redeeming or \
-                    self.pending_state == ReservationPendingStates.Ticketing:
+            if self.is_redeeming() or self.is_ticketing():
                 from fabric_cf.actor.core.container.globals import GlobalsSingleton
                 if self.exceeds_timeout(timeout=GlobalsSingleton.get().RPC_TIMEOUT):
                     self.logger.info(f"Res# {self.get_reservation_id()} Redeem/Ticket timeout! "
@@ -1077,6 +1088,20 @@ class ReservationClient(Reservation, ABCControllerReservation):
                     update_data.message = "Redeem/Ticket timeout"
                     self.mark_close_by_ticket_review(update_data=update_data)
 
+            else:
+                if not self.is_closing() and isinstance(self.resources.sliver, NetworkServiceSliver):
+                    # Check dependencies
+                    closed_preds = 0
+                    no_of_preds = 0
+                    for pred_state in self.get_redeem_predecessors():
+                        if pred_state.get_reservation().is_closed():
+                            closed_preds += 1
+                        no_of_preds += 1
+
+                    if closed_preds == no_of_preds:
+                        self.close()
+                        return
+
         if self.leased_resources is None:
             return
 
@@ -1084,7 +1109,7 @@ class ReservationClient(Reservation, ABCControllerReservation):
         # "stick" once we enter the CloseWait state, if we never hear back from
         # the authority. There is no harm to purging a CloseWait reservation,
         # but we just leave them for now.
-        if self.pending_state == ReservationPendingStates.Closing and self.leased_resources.is_closed():
+        if self.is_closing() and self.leased_resources.is_closed():
             self.logger.debug("LEASED RESOURCES are closed")
 
             self.transition(prefix="local close complete", state=ReservationStates.CloseWait,
@@ -1459,6 +1484,10 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if reservation.get_reservation_id() not in self.redeem_predecessors:
             state = PredecessorState(reservation=reservation)
             self.redeem_predecessors[reservation.get_reservation_id()] = state
+
+    def remove_redeem_predecessor(self, *, rid: ID):
+        if rid in self.redeem_predecessors:
+            self.redeem_predecessors.pop(rid)
 
     def add_join_predecessor(self, *, predecessor):
         if predecessor.get_reservation_id() not in self.redeem_predecessors:
