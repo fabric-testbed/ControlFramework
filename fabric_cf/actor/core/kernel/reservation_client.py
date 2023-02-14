@@ -959,13 +959,14 @@ class ReservationClient(Reservation, ABCControllerReservation):
                     msg = f"ignore modify, redeem predecessor reservation# {failed_preds[0]} is in a terminal state"
                     self.transition_with_join(prefix=msg,
                                               state=self.state, pending=ReservationPendingStates.None_,
-                                              join_state=JoinState.None_)
+                                              join_state=JoinState.NoJoin)
 
                     for rid in failed_preds:
                         self.remove_redeem_predecessor(rid=ID(uid=rid))
 
                     # Update ASM with Reservation Info
                     self.update_slice_graph(sliver=self.resources.sliver)
+                    self.pending_recover = False
 
         elif self.joinstate == JoinState.BlockedRedeem:
             # this reservation has a ticket to redeem, and the redeem is
