@@ -529,6 +529,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 # In case of modify, roll back to the previous state and do not fail the reservation
                 if self.is_active() or self.is_active_joined() or self.is_active_ticketed():
                     failed_preds.append(str(pred_state.get_reservation().get_reservation_id()))
+                    approved = False
+                    continue
                 else:
                     self.fail(message=msg)
 
@@ -609,17 +611,13 @@ class ReservationClient(Reservation, ABCControllerReservation):
         if self.state == ReservationStates.Nascent or self.state == ReservationStates.Failed:
             self.logger.debug(f"Reservation in state: {self.state}, transition to {ReservationStates.Closed}")
             self.transition(prefix="close", state=ReservationStates.Closed, pending=self.pending_state)
-            # Send Close to the authority if resources were provisioned
-            if self.last_pending_state in [ReservationPendingStates.ExtendingTicket,
-                                           ReservationPendingStates.ExtendingLease,
-                                           ReservationPendingStates.ModifyingLease]:
+            if self.authority is not None:
                 try:
                     self.sequence_lease_out += 1
                     RPCManagerSingleton.get().close(reservation=self)
                 except Exception as e:
                     self.logger.error("authority reports close error: e: {}".format(e))
                     self.logger.error(traceback.format_exc())
-
             if self.broker is not None:
                 self.logger.debug("Triggering relinquish")
                 self.do_relinquish()
@@ -963,13 +961,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
                                               state=self.state, pending=ReservationPendingStates.None_,
                                               join_state=JoinState.None_)
 
-                    for ifs in self.resources.sliver.interface_info.interfaces.values():
-                        component_name, rid = ifs.get_node_map()
-                        if rid in failed_preds:
-                            ifs.reservation_info = ReservationInfo()
-                            ifs.reservation_info.reservation_id = str(self.get_reservation_id())
-                            ifs.reservation_info.reservation_state = str(ReservationStates.Failed)
-                            self.remove_redeem_predecessor(rid=ID(uid=rid))
+                    for rid in failed_preds:
+                        self.remove_redeem_predecessor(rid=ID(uid=rid))
 
                     # Update ASM with Reservation Info
                     self.update_slice_graph(sliver=self.resources.sliver)
@@ -1049,6 +1042,28 @@ class ReservationClient(Reservation, ABCControllerReservation):
                 # Update ASM with Reservation Info
                 self.update_slice_graph(sliver=self.leased_resources.sliver)
 
+    def __are_dependencies_closed(self):
+        """
+        For Network Service service reservations, if there is no pending operation
+        Check if atleast one dependency is in Closed State
+        Used to close network service sliver to handle scenarios where VM connected to Network Service is closed but
+        Network Service is up resulting in failures at Network AM as the component can now be allocated to different VM
+        @return true if dependencies are closed; false otherwise
+        """
+        # Network Service Sliver not in closing/closed state
+        ret_val = False
+        if self.resources.sliver is not None and isinstance(self.resources.sliver, NetworkServiceSliver) and \
+                self.pending_state == ReservationPendingStates.None_ and self.joinstate == JoinState.None_:
+            # Check dependencies
+            closed_preds = 0
+            for pred_state in self.get_redeem_predecessors():
+                if pred_state.get_reservation().is_closed():
+                    closed_preds += 1
+
+            if closed_preds > len(self.get_redeem_predecessors()):
+                ret_val = True
+        return ret_val
+
     def probe_pending(self):
         # Process join state to complete or restart join-related operations for Controller
         if self.joinstate != JoinState.NoJoin:
@@ -1059,7 +1074,8 @@ class ReservationClient(Reservation, ABCControllerReservation):
             # To avoid the slice from being stuck in Configuring state
             # Close the reservation - send Close to AM and relinquish to Broker
             # Timeout is configurable
-            if self.is_redeeming() or self.is_ticketing():
+            if self.pending_state == ReservationPendingStates.Redeeming or \
+                    self.pending_state == ReservationPendingStates.Ticketing:
                 from fabric_cf.actor.core.container.globals import GlobalsSingleton
                 if self.exceeds_timeout(timeout=GlobalsSingleton.get().RPC_TIMEOUT):
                     self.logger.info(f"Res# {self.get_reservation_id()} Redeem/Ticket timeout! "
@@ -1088,20 +1104,6 @@ class ReservationClient(Reservation, ABCControllerReservation):
                     update_data.message = "Redeem/Ticket timeout"
                     self.mark_close_by_ticket_review(update_data=update_data)
 
-            else:
-                if not self.is_closing() and isinstance(self.resources.sliver, NetworkServiceSliver):
-                    # Check dependencies
-                    closed_preds = 0
-                    no_of_preds = 0
-                    for pred_state in self.get_redeem_predecessors():
-                        if pred_state.get_reservation().is_closed():
-                            closed_preds += 1
-                        no_of_preds += 1
-
-                    if closed_preds == no_of_preds:
-                        self.close()
-                        return
-
         if self.leased_resources is None:
             return
 
@@ -1109,11 +1111,17 @@ class ReservationClient(Reservation, ABCControllerReservation):
         # "stick" once we enter the CloseWait state, if we never hear back from
         # the authority. There is no harm to purging a CloseWait reservation,
         # but we just leave them for now.
-        if self.is_closing() and self.leased_resources.is_closed():
-            self.logger.debug("LEASED RESOURCES are closed")
+        close_by_deps = self.__are_dependencies_closed()
+        if (self.pending_state == ReservationPendingStates.Closing and self.leased_resources.is_closed()) or \
+                close_by_deps:
 
-            self.transition(prefix="local close complete", state=ReservationStates.CloseWait,
-                            pending=ReservationPendingStates.None_)
+            if not close_by_deps:
+                self.logger.debug("LEASED RESOURCES are closed")
+                msg = "local close complete"
+            else:
+                msg = "close by dependencies"
+
+            self.transition(prefix=msg, state=ReservationStates.CloseWait, pending=ReservationPendingStates.None_)
 
             try:
                 self.sequence_lease_out += 1
