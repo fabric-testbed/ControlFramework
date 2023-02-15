@@ -51,7 +51,7 @@ services:
       network: host
       context: ../../../
       dockerfile: Dockerfile-auth
-    image: authority:1.4.0
+    image: authority:1.4.3
     container_name: site1-am
     restart: always
     depends_on:
