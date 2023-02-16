@@ -1052,15 +1052,20 @@ class ReservationClient(Reservation, ABCControllerReservation):
         """
         # Network Service Sliver not in closing/closed state
         ret_val = False
+        if self.is_closed() or self.is_closing():
+            return ret_val
         if self.resources.sliver is not None and isinstance(self.resources.sliver, NetworkServiceSliver) and \
                 self.pending_state == ReservationPendingStates.None_ and self.joinstate == JoinState.NoJoin:
+            self.logger.debug("Checking dependency state")
             # Check dependencies
             closed_preds = 0
             for pred_state in self.get_redeem_predecessors():
                 if pred_state.get_reservation().is_closed():
                     closed_preds += 1
 
-            if closed_preds > len(self.get_redeem_predecessors()):
+            #if closed_preds > len(self.get_redeem_predecessors()):
+            if closed_preds:
+                self.logger.debug(f"Found dependencies# {closed_preds} in closed state")
                 ret_val = True
         return ret_val
 
