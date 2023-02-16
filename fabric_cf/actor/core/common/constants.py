@@ -250,6 +250,7 @@ class Constants:
 
     CLOSURE_BY_TICKET_REVIEW_POLICY = "TicketReviewPolicy: Closing reservation due to failure in slice"
     MAINTENANCE_MODE_ERROR = "Testbed is in maintenance mode: Create, Modify and Renew Slice(s) are disabled!"
+    PENDING_OPERATION_ERROR = "Reservation has a pending operation"
 
     CLAIMS_SUB = "sub"
     CLAIMS_EMAIL = "email"
