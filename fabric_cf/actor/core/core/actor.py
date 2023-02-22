@@ -429,7 +429,7 @@ class ActorMixin(ABCActorMixin):
             return False
 
         self.logger.info(f"Closing old delegations and adding new delegations to the slice: {slice_obj}!")
-        delegation_names = []
+        delegation_guids = {}
 
         try:
             delegations = self.plugin.get_database().get_delegations(slice_id=str(slice_obj.get_slice_id()))
@@ -441,14 +441,14 @@ class ActorMixin(ABCActorMixin):
             self.logger.info(f"Closing delegation: {d}!")
             d.set_graph(graph=None)
             d.transition(prefix="closed as part of recovers", state=DelegationState.Closed)
-            delegation_names.append(d.get_delegation_name())
+            delegation_guids[d.get_delegation_name()] = d.get_delegation_id()
             self.plugin.get_database().update_delegation(delegation=d)
 
-        adms = self.policy.aggregate_resource_model.generate_adms()
+        adms = self.policy.aggregate_resource_model.generate_adms(delegation_guids=delegation_guids)
 
         # Create new delegations and add to the broker slice;
         # they will be re-registered with the policy in the recovery
-        for name in delegation_names:
+        for name in delegation_guids.keys():
             new_delegation_graph = adms.get(name)
             dlg_obj = DelegationFactory.create(did=new_delegation_graph.get_graph_id(),
                                                slice_id=slice_obj.get_slice_id(),
