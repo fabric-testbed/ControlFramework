@@ -438,25 +438,27 @@ class ActorMixin(ABCActorMixin):
             raise ActorException(f"Could not fetch delegations records for slice {slice_obj} from database")
 
         for d in delegations:
-            self.logger.info(f"Closing delegation: {d}!")
-            d.set_graph(graph=None)
-            d.transition(prefix="closed as part of recovers", state=DelegationState.Closed)
+            # Skip closed delegation
+            if d.is_closed():
+                self.logger.info(f"Skipping closed delegation: {d}!")
+                continue
+            # Grab Delegation Name and Delegation Id
             delegation_guids[d.get_delegation_name()] = d.get_delegation_id()
-            self.plugin.get_database().update_delegation(delegation=d)
 
+        # Generate ADMs and use existing delegation Id
         adms = self.policy.aggregate_resource_model.generate_adms(delegation_guids=delegation_guids)
 
-        # Create new delegations and add to the broker slice;
-        # they will be re-registered with the policy in the recovery
-        for name in delegation_guids.keys():
-            new_delegation_graph = adms.get(name)
-            dlg_obj = DelegationFactory.create(did=new_delegation_graph.get_graph_id(),
-                                               slice_id=slice_obj.get_slice_id(),
-                                               delegation_name=name)
-            dlg_obj.set_slice_object(slice_object=slice_obj)
-            dlg_obj.set_graph(graph=new_delegation_graph)
-            dlg_obj.transition(prefix="Reload Model", state=DelegationState.Delegated)
-            self.plugin.get_database().add_delegation(delegation=dlg_obj)
+        # Update the delegations with the new graph
+        for d in delegations:
+            # Skip closed delegation
+            if d.is_closed():
+                continue
+
+            new_delegation_graph = adms.get(d.get_delegation_name())
+            if new_delegation_graph.get_graph_id() == d.get_delegation_id():
+                self.logger.info(f"Updating graph for delegation: {d}")
+                d.set_graph(graph=new_delegation_graph)
+            self.plugin.get_database().update_delegation(delegation=d)
 
     def recover_inventory_slice(self, *, slice_obj: ABCSlice) -> bool:
         """
