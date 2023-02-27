@@ -65,10 +65,10 @@ from fabric_cf.actor.core.apis.abc_client_reservation import ABCClientReservatio
 from fabric_cf.actor.fim.fim_helper import FimHelper
 from fabric_cf.actor.fim.plugins.broker.aggregate_bqm_plugin import AggregatedBQMPlugin
 from fabric_cf.actor.core.util.resource_type import ResourceType
+from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_broker_mixin import ABCBrokerMixin
-    from fabric_cf.actor.core.policy.inventory_for_type import InventoryForType
 
 
 class BrokerAllocationAlgorithm(Enum):
