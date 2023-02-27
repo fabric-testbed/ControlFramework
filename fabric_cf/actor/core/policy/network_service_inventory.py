@@ -430,13 +430,8 @@ class NetworkServiceInventory(InventoryForType):
         available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
                                                          existing_reservations=existing_reservations)
 
-        if owner_switch.get_name() == Constants.AL2S:
-            names = bqm_interface.get_name().split(":")
-            device_name = names[0]
-            local_name = names[1]
-        else:
-            local_name = bqm_interface.get_name()
-            device_name = owner_switch.get_name()
+        local_name = bqm_interface.get_name()
+        device_name = owner_switch.get_name()
 
         # local_name, device_name
         ifs_labels = Labels.update(ifs_labels, local_name=local_name, device_name=device_name,

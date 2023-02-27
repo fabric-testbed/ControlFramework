@@ -675,11 +675,6 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             local_name = net_cp.get_name()
             device_name = owner_switch.get_name()
 
-            if device_name == Constants.AL2S:
-                names = local_name.split(":")
-                device_name = names[0]
-                local_name = names[1]
-
             # local_name source: (a)
             ifs_labels = ifs.get_labels()
             ifs_labels = Labels.update(ifs_labels, local_name=local_name)
