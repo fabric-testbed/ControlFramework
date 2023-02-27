@@ -143,7 +143,7 @@ class NetworkServiceInventory(InventoryForType):
                     else:
                         return requested_ifs
 
-                delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
+                delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
                 vlan_range = self.__extract_vlan_range(labels=delegated_label)
 
                 if vlan_range is not None and requested_vlan not in vlan_range:
@@ -164,7 +164,7 @@ class NetworkServiceInventory(InventoryForType):
 
         else:
             # Grab Label Delegations
-            delegation_id, delegated_label = self._get_delegations(
+            delegation_id, delegated_label = self.get_delegations(
                 lab_cap_delegations=owner_ns.get_label_delegations())
 
             # Get the VLAN range
@@ -293,7 +293,7 @@ class NetworkServiceInventory(InventoryForType):
                 return requested_ns
 
             # Grab Label Delegations
-            delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
+            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=owner_ns.get_label_delegations())
 
             # HACK to use FabNetv6 for FabNetv6Ext as both have the same range
             # Needs to be removed if FabNetv6/FabNetv6Ext are configured with different ranges
@@ -430,12 +430,13 @@ class NetworkServiceInventory(InventoryForType):
         available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
                                                          existing_reservations=existing_reservations)
 
-        local_name = bqm_interface.get_name()
-        device_name = owner_switch.get_name()
-
-        if device_name == Constants.AL2S:
-            local_name = bqm_interface.get_labels().local_name
-            device_name = bqm_interface.get_labels().device_name
+        if owner_switch.get_name() == Constants.AL2S:
+            delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=bqm_interface.get_label_delegations())
+            local_name = delegated_label.local_name
+            device_name = delegated_label.device_name
+        else:
+            local_name = bqm_interface.get_name()
+            device_name = owner_switch.get_name()
 
         # local_name, device_name
         ifs_labels = Labels.update(ifs_labels, local_name=local_name, device_name=device_name,

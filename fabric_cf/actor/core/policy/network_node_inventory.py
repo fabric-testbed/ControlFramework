@@ -55,7 +55,7 @@ class NetworkNodeInventory(InventoryForType):
         """
         self.logger.debug(f"requested_capacities: {requested_capacities} for reservation# {rid}")
 
-        delegation_id, delegated_capacity = self._get_delegations(lab_cap_delegations=delegated_capacities)
+        delegation_id, delegated_capacity = self.get_delegations(lab_cap_delegations=delegated_capacities)
 
         # Remove allocated capacities to the reservations
         if existing_reservations is not None:
@@ -110,7 +110,7 @@ class NetworkNodeInventory(InventoryForType):
         :return updated requested component with VLAN, MAC and IP information
         """
         # Check labels
-        delegation_id, delegated_label = self._get_delegations(
+        delegation_id, delegated_label = self.get_delegations(
             lab_cap_delegations=available_component.get_label_delegations())
 
         if delegated_label.bdf is None or len(delegated_label.bdf) < 1:
@@ -142,7 +142,7 @@ class NetworkNodeInventory(InventoryForType):
         ifs_name = next(iter(ns.interface_info.interfaces))
         ifs = ns.interface_info.interfaces[ifs_name]
 
-        delegation_id, ifs_delegated_labels = self._get_delegations(lab_cap_delegations=ifs.get_label_delegations())
+        delegation_id, ifs_delegated_labels = self.get_delegations(lab_cap_delegations=ifs.get_label_delegations())
 
         # Determine the index which points to the same PCI id as assigned above
         # This index points to the other relevant information such as MAC Address,
@@ -206,7 +206,7 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"{message}")
 
         for ifs in ns.interface_info.interfaces.values():
-            delegation_id, ifs_delegated_labels = self._get_delegations(lab_cap_delegations=ifs.get_label_delegations())
+            delegation_id, ifs_delegated_labels = self.get_delegations(lab_cap_delegations=ifs.get_label_delegations())
 
             for requested_ns in requested_component.network_service_info.network_services.values():
                 if requested_ns.interface_info is not None and requested_ns.interface_info.interfaces is not None:
@@ -242,7 +242,7 @@ class NetworkNodeInventory(InventoryForType):
             return requested_component
 
         # Checking capacity for component
-        delegation_id, delegated_capacity = self._get_delegations(
+        delegation_id, delegated_capacity = self.get_delegations(
             lab_cap_delegations=available_component.get_capacity_delegations())
 
         # Delegated capacity would have been decremented already to exclude allocated shared NICs
@@ -255,7 +255,7 @@ class NetworkNodeInventory(InventoryForType):
         requested_component.capacity_allocations = Capacities(unit=1)
 
         # Check labels
-        delegation_id, delegated_label = self._get_delegations(
+        delegation_id, delegated_label = self.get_delegations(
             lab_cap_delegations=available_component.get_label_delegations())
 
         if requested_component.get_type() == ComponentType.SharedNIC:
@@ -290,7 +290,7 @@ class NetworkNodeInventory(InventoryForType):
                                   msg=f"shared_nic: {shared_nic} allocated_nic: {allocated_nic}")
 
         # Reduce capacity for component
-        delegation_id, delegated_capacity = self._get_delegations(
+        delegation_id, delegated_capacity = self.get_delegations(
             lab_cap_delegations=shared_nic.get_capacity_delegations())
 
         self.logger.debug(f"Allocated NIC: {allocated_nic} labels: {allocated_nic.get_label_allocations()}")
@@ -298,7 +298,7 @@ class NetworkNodeInventory(InventoryForType):
         # Get the Allocated PCI address
         allocated_labels = allocated_nic.get_label_allocations()
 
-        delegation_id, delegated_label = self._get_delegations(lab_cap_delegations=shared_nic.get_label_delegations())
+        delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=shared_nic.get_label_delegations())
 
         # Remove allocated PCI address from delegations
         excluded_labels = []

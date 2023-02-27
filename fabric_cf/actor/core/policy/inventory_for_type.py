@@ -49,7 +49,8 @@ class InventoryForType:
         self.__dict__.update(state)
         self.logger = None
 
-    def _get_delegations(self, *, lab_cap_delegations: Delegations) -> Tuple[str, Union[Labels, Capacities]]:
+    @staticmethod
+    def get_delegations(*, lab_cap_delegations: Delegations) -> Tuple[str or None, Union[Labels, Capacities] or None]:
         # Grab Label Delegations
         delegation_id, deleg = lab_cap_delegations.get_sole_delegation()
         #self.logger.debug(f"Available label/capacity delegations: {deleg} format {deleg.get_format()}")
