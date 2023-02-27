@@ -433,6 +433,10 @@ class NetworkServiceInventory(InventoryForType):
         local_name = bqm_interface.get_name()
         device_name = owner_switch.get_name()
 
+        if device_name == Constants.AL2S:
+            local_name = bqm_interface.labels.get_local_name()
+            device_name = bqm_interface.labels.get_device_name()
+
         # local_name, device_name
         ifs_labels = Labels.update(ifs_labels, local_name=local_name, device_name=device_name,
                                    vlan=str(available_vlans[0]))

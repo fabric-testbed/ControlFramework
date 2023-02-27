@@ -66,6 +66,8 @@ class AggregatedBQMPlugin:
         return {k: v for (k, v) in d.items() if v}
 
     def __site_maintenance_info(self, *, site_name: str):
+        if self.actor is None:
+            return None
         site = self.actor.get_plugin().get_database().get_site(site_name=site_name)
         if site is not None:
             result = site.get_maintenance_info().copy()
