@@ -678,8 +678,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             if device_name == Constants.AL2S:
                 delegation_id, delegated_label = InventoryForType.get_delegations(lab_cap_delegations=
                                                                                    net_cp.get_label_delegations())
-                device_name = delegated_label.local_name
-                local_name = delegated_label.device_name
+                device_name = delegated_label.device_name
+                local_name = delegated_label.local_name
 
             # local_name source: (a)
             ifs_labels = ifs.get_labels()
