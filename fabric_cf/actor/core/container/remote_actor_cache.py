@@ -36,10 +36,11 @@ from fabric_cf.actor.core.core.actor_identity import ActorIdentity
 from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
-    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin, ActorType
+    from fabric_cf.actor.core.apis.abc_actor_mixin import ABCActorMixin
 
 
 class RemoteActorCacheException(Exception):
@@ -163,22 +164,24 @@ class RemoteActorCache:
         """
         self.logger.debug(f"Check if Peer {peer_guid}/{peer_type} already exists!")
         try:
-            # For Broker/AM
-            if isinstance(mgmt_actor, ABCMgmtServerActor):
-                self.logger.debug(f"Checking clients")
-                clients = mgmt_actor.get_clients(guid=peer_guid)
-                self.logger.debug(f"clients -- {clients} {mgmt_actor.get_last_error()}")
-                if clients is not None:
-                    self.logger.debug(f"Edge between {mgmt_actor.get_guid()} and {peer_guid} exists (client)")
-                    return True
-
-            # For Orchestrator/Broker
-            elif isinstance(mgmt_actor, ABCMgmtClientActor):
+            # For Broker - all AMs are added as proxies
+            # For Orchestrator - all peers will be added as Proxies
+            if isinstance(mgmt_actor, ABCMgmtClientActor) and peer_type in [ActorType.Authority, ActorType.Broker]:
                 self.logger.debug(f"Checking brokers")
                 brokers = mgmt_actor.get_brokers(broker=peer_guid)
                 self.logger.debug(f"brokers -- {brokers}")
                 if brokers is not None:
                     self.logger.debug(f"Edge between {mgmt_actor.get_guid()} and {peer_guid} exists (broker)")
+                    return True
+
+            # For AM - all peers will be added as clients
+            # For Broker - orchestrator as client
+            elif isinstance(mgmt_actor, ABCMgmtServerActor) and peer_type in [ActorType.Orchestrator, ActorType.Broker]:
+                self.logger.debug(f"Checking clients")
+                clients = mgmt_actor.get_clients(guid=peer_guid)
+                self.logger.debug(f"clients -- {clients} {mgmt_actor.get_last_error()}")
+                if clients is not None:
+                    self.logger.debug(f"Edge between {mgmt_actor.get_guid()} and {peer_guid} exists (client)")
                     return True
         except Exception as e:
             raise RemoteActorCacheException(f"Unable to cast actor {mgmt_actor.get_guid()} or {peer_guid} e={e}")
@@ -186,11 +189,13 @@ class RemoteActorCache:
         self.logger.debug(f"Edge between {mgmt_actor.get_guid()} and {peer_guid} does not exist")
         return False
 
-    def establish_peer_private(self, *, mgmt_actor: ABCMgmtActor, peer_guid: ID, update: bool = False) -> ClientMng:
+    def establish_peer_private(self, *, mgmt_actor: ABCMgmtActor, peer_guid: ID, peer_type: ActorType,
+                               update: bool = False) -> ClientMng:
         """
         Establish connection i.e. create either proxies or clients between peer
         @param mgmt_actor mgmt_actor
         @param peer_guid peer_guid
+        @param peer_type peer_type
         @param update update
         """
         self.logger.debug("establish_peer_private IN")
@@ -206,7 +211,7 @@ class RemoteActorCache:
         if kafka_topic is None:
             raise RemoteActorCacheException(f"Actor {peer_guid} does not have a kafka topic")
 
-        if isinstance(mgmt_actor, ABCMgmtClientActor):
+        if isinstance(mgmt_actor, ABCMgmtClientActor) and peer_type in [ActorType.Authority, ActorType.Broker]:
             proxy = ProxyAvro()
             proxy.set_protocol(protocol)
             proxy.set_guid(str(identity.get_guid()))
@@ -228,7 +233,7 @@ class RemoteActorCache:
             except Exception as e:
                 self.logger.error(e)
                 self.logger.error(traceback.format_exc())
-        elif isinstance(mgmt_actor, ABCMgmtServerActor):
+        elif isinstance(mgmt_actor, ABCMgmtServerActor) and peer_type in [ActorType.Orchestrator, ActorType.Broker]:
             client = ClientMng()
             client.set_name(name=cache_entry.get(self.actor_name))
             client.set_guid(guid=str(peer_guid))
@@ -261,7 +266,8 @@ class RemoteActorCache:
         try:
             update = self.check_peer(mgmt_actor=mgmt_actor, peer_guid=peer_guid, peer_type=peer_type)
 
-            client = self.establish_peer_private(mgmt_actor=mgmt_actor, peer_guid=peer_guid, update=update)
+            client = self.establish_peer_private(mgmt_actor=mgmt_actor, peer_guid=peer_guid, peer_type=peer_type,
+                                                 update=update)
 
             self.check_to_remove_entry(guid=peer_guid)
 

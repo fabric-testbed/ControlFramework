@@ -98,7 +98,7 @@ class ControllerManagementObject(ActorManagementObject, ABCClientActorManagement
         return self.client_helper.add_broker(broker=broker, caller=caller)
 
     def update_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
-        return self.client_helper.add_broker(broker=broker, caller=caller)
+        return self.client_helper.update_broker(broker=broker, caller=caller)
 
     def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str,
                                level: int, graph_format: GraphFormat) -> ResultBrokerQueryModelAvro:

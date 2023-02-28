@@ -86,7 +86,6 @@ class PeerRegistry:
         except Exception as e:
             self.plugin.get_logger().error("Error while adding broker {}".format(e))
 
-
     def get_broker(self, *, guid: ID) -> ABCBrokerProxy:
         ret_val = None
         try:
