@@ -117,6 +117,15 @@ class ABCClientActorManagementObject(ABC):
         """
 
     @abstractmethod
+    def update_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
+        """
+        Update a broker
+        @param broker: broker_proxy to be added
+        @param caller: caller
+        @return success or failure status
+        """
+
+    @abstractmethod
     def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str,
                                level: int, graph_format: GraphFormat) -> ResultBrokerQueryModelAvro:
         """
