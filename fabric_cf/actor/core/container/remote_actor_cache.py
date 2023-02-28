@@ -216,10 +216,12 @@ class RemoteActorCache:
 
             try:
                 if not update:
+                    self.logger.debug(f"Creating new proxy: {proxy}")
                     if not mgmt_actor.add_broker(broker=proxy):
                         raise RemoteActorCacheException(f"Could not register broker {peer_guid} "
                                                         f"error: {mgmt_actor.get_last_error()}")
                 else:
+                    self.logger.debug(f"Updating existing proxy: {proxy}")
                     if not mgmt_actor.update_broker(broker=proxy):
                         raise RemoteActorCacheException(f"Could not update broker {peer_guid} "
                                                         f"error: {mgmt_actor.get_last_error()}")
@@ -227,14 +229,15 @@ class RemoteActorCache:
                 self.logger.error(e)
                 self.logger.error(traceback.format_exc())
         elif isinstance(mgmt_actor, ABCMgmtServerActor):
-            self.logger.debug("Creating a client for local to actor")
             client = ClientMng()
             client.set_name(name=cache_entry.get(self.actor_name))
             client.set_guid(guid=str(peer_guid))
             try:
                 if not update:
+                    self.logger.debug(f"Creating new client: {client}")
                     mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
                 else:
+                    self.logger.debug(f"Updating existing client: {client}")
                     mgmt_actor.update_client(client=client, kafka_topic=kafka_topic)
             except Exception as e:
                 raise RemoteActorCacheException(f"Could not register actor: {peer_guid} as a client of "
@@ -256,9 +259,9 @@ class RemoteActorCache:
             self.logger.error("Cannot establish peer when either guid is not known")
             raise RemoteActorCacheException("Cannot establish peer when either guid is not known")
         try:
-            exists = self.check_peer(mgmt_actor=mgmt_actor, peer_guid=peer_guid, peer_type=peer_type)
+            update = self.check_peer(mgmt_actor=mgmt_actor, peer_guid=peer_guid, peer_type=peer_type)
 
-            client = self.establish_peer_private(mgmt_actor=mgmt_actor, peer_guid=peer_guid, update=exists is not None)
+            client = self.establish_peer_private(mgmt_actor=mgmt_actor, peer_guid=peer_guid, update=update)
 
             self.check_to_remove_entry(guid=peer_guid)
 
