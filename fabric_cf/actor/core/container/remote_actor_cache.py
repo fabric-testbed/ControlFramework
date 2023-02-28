@@ -191,7 +191,7 @@ class RemoteActorCache:
         Establish connection i.e. create either proxies or clients between peer
         @param mgmt_actor mgmt_actor
         @param peer_guid peer_guid
-        @param peer_type peer_type
+        @param update update
         """
         self.logger.debug("establish_peer_private IN")
         client = None
@@ -253,13 +253,13 @@ class RemoteActorCache:
             self.logger.error("Cannot establish peer when either guid is not known")
             raise RemoteActorCacheException("Cannot establish peer when either guid is not known")
         try:
-            if not self.check_peer(mgmt_actor=mgmt_actor, peer_guid=peer_guid, peer_type=peer_type):
+            exists = self.check_peer(mgmt_actor=mgmt_actor, peer_guid=peer_guid, peer_type=peer_type)
 
-                client = self.establish_peer_private(mgmt_actor=mgmt_actor, peer_guid=peer_guid, peer_type=peer_type)
+            client = self.establish_peer_private(mgmt_actor=mgmt_actor, peer_guid=peer_guid, update=exists is not None)
 
-                self.check_to_remove_entry(guid=peer_guid)
+            self.check_to_remove_entry(guid=peer_guid)
 
-                self.logger.debug(f"Peer established from {mgmt_actor} to {peer_guid}")
+            self.logger.debug(f"Peer established from {mgmt_actor} to {peer_guid}")
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
