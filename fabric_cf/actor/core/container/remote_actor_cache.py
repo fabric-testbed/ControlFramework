@@ -232,7 +232,10 @@ class RemoteActorCache:
             client.set_name(name=cache_entry.get(self.actor_name))
             client.set_guid(guid=str(peer_guid))
             try:
-                mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
+                if not update:
+                    mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
+                else:
+                    mgmt_actor.update_client(client=client, kafka_topic=kafka_topic)
             except Exception as e:
                 raise RemoteActorCacheException(f"Could not register actor: {peer_guid} as a client of "
                                                 f"actor: {mgmt_actor} e= {e}")
