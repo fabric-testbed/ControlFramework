@@ -123,6 +123,9 @@ class Broker(ActorMixin, ABCBrokerMixin):
     def add_broker(self, *, broker: ABCBrokerProxy):
         self.registry.add_broker(broker=broker)
 
+    def update_broker(self, *, broker: ABCBrokerProxy):
+        self.registry.update_broker(broker=broker)
+
     def register_client_slice(self, *, slice_obj: ABCSlice):
         self.wrapper.register_slice(slice_object=slice_obj)
 
@@ -385,6 +388,19 @@ class Broker(ActorMixin, ABCBrokerMixin):
 
         try:
             database.add_client(client=client)
+        except Exception as e:
+            raise BrokerException(error_code=ExceptionErrorCode.FAILURE, msg=f"client: {client.get_guid()} e: {e}")
+
+    def update_client(self, *, client: Client):
+        database = self.plugin.get_database()
+
+        try:
+            database.get_client(guid=client.get_guid())
+        except Exception as e:
+            raise BrokerException(error_code=ExceptionErrorCode.NOT_FOUND, msg=f"client: {client.get_guid()} e: {e}")
+
+        try:
+            database.update_client(client=client)
         except Exception as e:
             raise BrokerException(error_code=ExceptionErrorCode.FAILURE, msg=f"client: {client.get_guid()} e: {e}")
 

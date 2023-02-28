@@ -194,14 +194,14 @@ class Converter:
         return result
 
     @staticmethod
-    def fill_client_mng(*, client: dict) -> ClientMng:
+    def fill_client_mng(*, client: Client) -> ClientMng:
         result = ClientMng()
-        result.set_name(name=client['clt_name'])
-        result.set_guid(guid=client['clt_guid'])
+        result.set_name(name=client.get_name())
+        result.set_guid(guid=str(client.get_guid()))
         return result
 
     @staticmethod
-    def fill_clients(*, client_list: list) -> List[ClientMng]:
+    def fill_clients(*, client_list: List[Client]) -> List[ClientMng]:
         result = []
         for c in client_list:
             mng = Converter.fill_client_mng(client=c)

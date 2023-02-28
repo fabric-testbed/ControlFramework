@@ -69,6 +69,18 @@ class LocalBroker(LocalServerActor, ABCMgmtBrokerMixin):
 
         return False
 
+    def update_broker(self, *, broker: ProxyAvro) -> bool:
+        self.clear_last()
+        try:
+            result = self.manager.update_broker(broker=broker, caller=self.auth)
+            self.last_status = result
+
+            return result.get_code() == 0
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return False
+
     def get_brokers(self, *, broker: ID = None, id_token: str = None) -> List[ProxyAvro]:
         self.clear_last()
         try:

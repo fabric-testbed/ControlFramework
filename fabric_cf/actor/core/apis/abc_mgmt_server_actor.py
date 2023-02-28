@@ -105,6 +105,15 @@ class ABCMgmtServerActor(ABCMgmtActor):
         """
 
     @abstractmethod
+    def update_client(self, *, client: ClientMng, kafka_topic: str) -> bool:
+        """
+        Update a client
+        @param client client
+        @param kafka_topic Kafka topic
+        @return true for success; false otherwise
+        """
+
+    @abstractmethod
     def unregister_client(self, *, guid: ID) -> bool:
         """
         Unregisters the specified client.

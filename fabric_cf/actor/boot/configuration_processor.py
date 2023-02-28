@@ -447,50 +447,30 @@ class ConfigurationProcessor:
         @param peer peer
         @raises ConfigurationException in case of error
         """
-        from_guid = ID(uid=peer.get_guid())
-        from_type = ActorType.get_actor_type_from_string(actor_type=peer.get_type())
-        to_guid = self.actor.get_guid()
-        to_type = self.actor.get_type()
-
-        # We only like peers broker->site and orchestrator->broker
-        # Reverse the peer if it connects site->broker or broker->orchestrator
-
-        if from_type == ActorType.Authority and to_type == ActorType.Broker:
-            from_guid, to_guid = to_guid, from_guid
-            from_type, to_type = to_type, from_type
-
-        if from_type == ActorType.Broker and to_type == ActorType.Orchestrator:
-            from_guid, to_guid = to_guid, from_guid
-            from_type, to_type = to_type, from_type
-
-        if from_type == ActorType.Authority and to_type == ActorType.Orchestrator:
-            from_guid, to_guid = to_guid, from_guid
-            from_type, to_type = to_type, from_type
+        peer_guid = ID(uid=peer.get_guid())
+        peer_type = ActorType.get_actor_type_from_string(actor_type=peer.get_type())
+        actor_guid = self.actor.get_guid()
+        actor_type = self.actor.get_type()
 
         # peers between actors of same type aren't allowed unless the actors are both brokers
-        if from_type == to_type and from_type != ActorType.Broker:
+        if peer_type == actor_type and peer_type != ActorType.Broker:
             raise ConfigurationException(
                 "Invalid peer type: broker can only talk to broker, orchestrator or site authority")
 
         container = ManagementUtils.connect(caller=self.actor.get_identity())
-        to_mgmt_actor = container.get_actor(guid=to_guid)
-        self.logger.debug(f"to_mgmt_actor={to_mgmt_actor} to_guid={to_guid}")
-        if to_mgmt_actor is None and container.get_last_error() is not None:
+        mgmt_actor = container.get_actor(guid=actor_guid)
+        self.logger.info(f"Management Actor: {mgmt_actor} === {type(mgmt_actor)}")
+        if mgmt_actor is None and container.get_last_error() is not None:
             self.logger.error(container.get_last_error())
-        from_mgmt_actor = container.get_actor(guid=from_guid)
-        self.logger.debug(f"from_mgmt_actor={from_mgmt_actor} from_guid={from_guid}")
-        if from_mgmt_actor is None and container.get_last_error() is not None:
-                self.logger.error(container.get_last_error())
 
         self.vertex_to_registry_cache(peer=peer)
 
         try:
-            client = RemoteActorCacheSingleton.get().establish_peer(from_guid=from_guid,
-                                                                    from_mgmt_actor=from_mgmt_actor,
-                                                                    to_guid=to_guid, to_mgmt_actor=to_mgmt_actor)
+            client = RemoteActorCacheSingleton.get().establish_peer(mgmt_actor=mgmt_actor, peer_guid=peer_guid,
+                                                                    peer_type=peer_type)
             self.logger.debug(f"Client returned {client}")
             if client is not None:
-                self.parse_exports(peer=peer, client=client, mgmt_actor=to_mgmt_actor)
+                self.parse_exports(peer=peer, client=client, mgmt_actor=mgmt_actor)
         except Exception as e:
             raise ConfigurationException(f"Could not process exports from: {peer.get_guid()} to "
                                          f"{self.actor.get_guid()}. e= {e}")
