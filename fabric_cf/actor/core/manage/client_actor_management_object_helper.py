@@ -42,6 +42,7 @@ from fim.user import GraphFormat
 
 from fabric_cf.actor.core.apis.abc_actor_runnable import ABCActorRunnable
 from fabric_cf.actor.core.apis.abc_controller_reservation import ABCControllerReservation
+from fabric_cf.actor.core.apis.abc_reservation_mixin import ABCReservationMixin
 from fabric_cf.actor.core.common.constants import Constants, ErrorCodes
 from fabric_cf.actor.core.common.exceptions import ManageException
 from fabric_cf.actor.core.kernel.reservation_client import ClientReservationFactory
@@ -120,6 +121,29 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                 self.client.add_broker(broker=proxy)
         except Exception as e:
             self.logger.error("add_broker {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
+    def update_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
+        result = ResultAvro()
+
+        if broker is None or caller is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+            proxy = Converter.get_agent_proxy(mng=broker)
+            if proxy is None:
+                result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            else:
+                self.client.update_broker(broker=proxy)
+        except Exception as e:
+            self.logger.error("update_broker {}".format(e))
             result.set_code(ErrorCodes.ErrorInternalError.value)
             result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result = ManagementObject.set_exception_details(result=result, e=e)
@@ -320,6 +344,31 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                     self.actor = actor
                     self.logger = logger
 
+                def __add_predecessors(self, predecessors: List[ReservationPredecessorAvro],
+                                       res: ABCControllerReservation):
+                    for pred in predecessors:
+                        if pred.get_reservation_id() is None:
+                            self.logger.warning(f"Predecessor specified for rid={res.get_reservation_id()} "
+                                                "but missing reservation id of predecessor")
+                            continue
+
+                        predid = ID(uid=pred.get_reservation_id())
+                        pr = self.actor.get_reservation(rid=predid)
+
+                        if pr is None:
+                            self.logger.warning(f"Predecessor for rid={res.get_reservation_id()} with rid={predid} "
+                                                f"does not exist. Ignoring it!")
+                            continue
+
+                        if not isinstance(pr, ABCControllerReservation):
+                            self.logger.warning(f"Predecessor for rid={res.get_reservation_id()} is not an "
+                                                f"IControllerReservation: class={type(pr)}")
+                            continue
+
+                        self.logger.debug(f"Setting redeem predecessor on reservation # {res.get_reservation_id()} "
+                                          f"pred={pr.get_reservation_id()}")
+                        res.add_redeem_predecessor(reservation=pr)
+
                 def run(self):
                     result = ResultAvro()
                     rid = ID(uid=reservation.get_reservation_id())
@@ -332,28 +381,9 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                     ManagementUtils.update_reservation(res_obj=r, rsv_mng=reservation)
                     if isinstance(reservation, LeaseReservationAvro):
                         predecessors = reservation.get_redeem_predecessors()
-                        for pred in predecessors:
-                            if pred.get_reservation_id() is None:
-                                self.logger.warning("Redeem predecessor specified for rid={} "
-                                                    "but missing reservation id of predecessor".format(rid))
-                                continue
-
-                            predid = ID(uid=pred.get_reservation_id())
-                            pr = self.actor.get_reservation(rid=predid)
-
-                            if pr is None:
-                                self.logger.warning("Redeem predecessor for rid={} with rid={} does not exist. "
-                                                    "Ignoring it!".format(rid, predid))
-                                continue
-
-                            if not isinstance(pr, ABCControllerReservation):
-                                self.logger.warning("Redeem predecessor for rid={} is not an IControllerReservation: "
-                                                    "class={}".format(rid, type(pr)))
-                                continue
-
-                            self.logger.debug("Setting redeem predecessor on reservation # {} pred={}".
-                                              format(r.get_reservation_id(), pr.get_reservation_id()))
-                            r.add_redeem_predecessor(reservation=pr)
+                        if predecessors is not None:
+                            self.logger.debug("Processing Redeem predecessors")
+                            self.__add_predecessors(res=r, predecessors=predecessors)
 
                     try:
                         self.actor.get_plugin().get_database().update_reservation(reservation=r)
@@ -397,7 +427,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                         result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
                         return result
 
-                    dep_res_list = []
+                    redeem_dep_res_list = []
                     if dependencies is not None:
                         for d in dependencies:
                             dep_res = self.actor.get_reservation(rid=ID(uid=d.get_reservation_id()))
@@ -405,7 +435,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                                 result.set_code(ErrorCodes.ErrorNoSuchReservation.value)
                                 result.set_message(ErrorCodes.ErrorNoSuchReservation.interpret())
                                 return result
-                            dep_res_list.append(dep_res)
+                            redeem_dep_res_list.append(dep_res)
 
                     rset = ResourceSet()
                     units = r.get_resources().get_units()
@@ -424,7 +454,7 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
                         rset.set_sliver(sliver=sliver)
 
                     self.actor.extend(rid=r.get_reservation_id(), resources=rset, term=new_term,
-                                      dependencies=dep_res_list)
+                                      dependencies=redeem_dep_res_list)
 
                     return result
 

@@ -70,6 +70,22 @@ class PeerRegistry:
         except Exception as e:
             self.plugin.get_logger().error("Error while adding broker {}".format(e))
 
+    def update_broker(self, *, broker: ABCBrokerProxy):
+        try:
+            self.lock.acquire()
+            self.brokers[broker.get_identity().get_guid()] = broker
+
+            if self.default_broker is None:
+                self.default_broker = broker
+        finally:
+            self.lock.release()
+
+        try:
+            self.plugin.get_database().update_broker(broker=broker)
+            self.logger.info("Added {} as broker".format(broker.get_name()))
+        except Exception as e:
+            self.plugin.get_logger().error("Error while adding broker {}".format(e))
+
     def get_broker(self, *, guid: ID) -> ABCBrokerProxy:
         ret_val = None
         try:

@@ -227,6 +227,36 @@ class ServerActorManagementObject(ActorManagementObject):
 
         return result
 
+    def update_client(self, *, client: ClientMng, kafka_topic: str, caller: AuthToken) -> ResultAvro:
+        result = ResultAvro()
+
+        if client is None or kafka_topic is None or caller is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+            client_obj = Converter.fill_client(client_mng=client)
+            client_obj.set_kafka_topic(kafka_topic=kafka_topic)
+
+            class Runner(ABCActorRunnable):
+                def __init__(self, *, actor: ABCServerActor):
+                    self.actor = actor
+
+                def run(self):
+                    self.actor.update_client(client=client_obj)
+                    return None
+
+            self.actor.execute_on_actor_thread_and_wait(runnable=Runner(actor=self.actor))
+
+        except Exception as e:
+            self.logger.error("register_client: {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
     def get_clients(self, *, caller: AuthToken, guid: ID = None) -> ResultClientMng:
         result = ResultClientMng()
         result.status = ResultAvro()
@@ -255,6 +285,7 @@ class ServerActorManagementObject(ActorManagementObject):
             result.status.set_code(ErrorCodes.ErrorInternalError.value)
             result.status.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
             result.status = ManagementObject.set_exception_details(result=result.status, e=e)
+        return result
 
     def unregister_client(self, *, guid: ID, caller: AuthToken) -> ResultAvro:
         result = ResultAvro()

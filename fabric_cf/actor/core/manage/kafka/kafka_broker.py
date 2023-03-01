@@ -184,3 +184,6 @@ class KafkaBroker(KafkaServerActor, ABCMgmtBrokerMixin):
 
     def add_broker(self, *, broker: ProxyAvro) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
+
+    def update_broker(self, *, broker: ProxyAvro) -> bool:
+        raise ManageException(Constants.NOT_IMPLEMENTED)

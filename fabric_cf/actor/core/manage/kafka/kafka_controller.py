@@ -59,6 +59,9 @@ class KafkaController(KafkaActor, ABCMgmtControllerMixin):
     def add_broker(self, *, broker: ProxyAvro) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
+    def update_broker(self, *, broker: ProxyAvro) -> bool:
+        raise ManageException(Constants.NOT_IMPLEMENTED)
+
     def get_brokers(self, *, broker: ID = None, id_token: str = None) -> List[ProxyAvro]:
         request = GetActorsRequestAvro()
         request = self.fill_request_by_id_message(request=request, id_token=id_token, broker_id=broker)

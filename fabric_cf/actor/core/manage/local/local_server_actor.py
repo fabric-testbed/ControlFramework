@@ -73,7 +73,7 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
             result = self.manager.get_clients(caller=self.auth, guid=guid)
             self.last_status = result.status
             if result.status.get_code() == 0:
-                return result.clients
+                return result.result
         except Exception as e:
             self.on_exception(e=e, traceback_str=traceback.format_exc())
 
@@ -87,6 +87,22 @@ class LocalServerActor(LocalActor, ABCMgmtServerActor):
 
         try:
             result = self.manager.register_client(client=client, kafka_topic=kafka_topic, caller=self.auth)
+            self.last_status = result
+
+            return result.get_code() == 0
+        except Exception as e:
+            self.on_exception(e=e, traceback_str=traceback.format_exc())
+
+        return False
+
+    def update_client(self, *, client: ClientMng, kafka_topic: str) -> bool:
+        self.clear_last()
+        if client is None or kafka_topic is None:
+            self.last_exception = Exception("Invalid arguments")
+            return False
+
+        try:
+            result = self.manager.update_client(client=client, kafka_topic=kafka_topic, caller=self.auth)
             self.last_status = result
 
             return result.get_code() == 0

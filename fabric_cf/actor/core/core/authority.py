@@ -248,6 +248,16 @@ class Authority(ActorMixin, ABCAuthority):
 
         db.add_client(client=client)
 
+    def update_client(self, *, client: Client):
+        db = self.plugin.get_database()
+
+        try:
+            db.get_client(guid=client.get_guid())
+        except Exception as e:
+            self.logger.debug("Client does not exist e:{}".format(e))
+
+        db.update_client(client=client)
+
     def unregister_client(self, *, guid: ID):
         db = self.plugin.get_database()
         db.remove_client(guid=guid)
