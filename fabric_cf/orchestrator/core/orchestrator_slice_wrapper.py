@@ -196,7 +196,7 @@ class OrchestratorSliceWrapper:
                                         http_error_code=BAD_REQUEST)
 
     def __build_ns_sliver_reservation(self, *, slice_graph: ABCASMPropertyGraph, node_id: str,
-                                      node_res_mapping: Dict[str, str]) -> LeaseReservationAvro or None:
+                                      node_res_mapping: Dict[str, str]) -> Tuple[LeaseReservationAvro or None, bool]:
         """
         Build Network Service Reservation
         @param slice_graph Slice graph
@@ -205,6 +205,7 @@ class OrchestratorSliceWrapper:
                                 Needed to add dependency information in network service slivers
         @return Network service reservation
         """
+        dep_update_needed = False
 
         # Build Network Service Sliver
         sliver = slice_graph.build_deep_ns_sliver(node_id=node_id)
@@ -214,7 +215,7 @@ class OrchestratorSliceWrapper:
 
         # Ignore Sliver types P4,OVS and MPLS
         if sliver_type in Constants.IGNORABLE_NS:
-            return None
+            return None, dep_update_needed
 
         # Process only the currently supported Network Sliver types L2STS, L2PTP and L2Bridge
         elif sliver_type in Constants.SUPPORTED_SERVICES:
@@ -226,6 +227,7 @@ class OrchestratorSliceWrapper:
                 for ifs in sliver.interface_info.interfaces.values():
                     # Get Mapping information for Interface Sliver from ASM
                     # i.e. [Peer IFS, Peer NS Id, Component Name, Node Id]
+                    # For Facility IFS [Peer IFS, Peer NS Id, Component Name, Facility Name]
                     ifs_mapping = FimHelper.get_interface_sliver_mapping(ifs_node_id=ifs.node_id,
                                                                          slice_graph=slice_graph)
                     if ifs_mapping is None:
@@ -258,9 +260,20 @@ class OrchestratorSliceWrapper:
 
                     elif ifs_mapping.is_peered():
                         # Peered Interface between L3VPN;
-                        # For FABRIC NS IF Sliver, NodeMap [Peered, AL2S]
+                        # For FABRIC NS IF Sliver, NodeMap [Peered:<peered ns id>:<peer ifs name>,
+                        #                                                 Tuple(Site Name (e.g. AWS),
+                        #                                                 Node Type (e.g. Facility),
+                        #                                                 Node Name (e.g. Cloud_Facility_AWS)]
                         # For AL2S NS IF Sliver, NodeMap [Peered, <site name>]
-                        node_map = tuple([Constants.PEERED, f"{ifs_mapping.get_peer_site()}"])
+                        if sliver.get_technology() == Constants.AL2S:
+                            node_map = tuple([Constants.PEERED, f"{ifs_mapping.get_peer_site()}"])
+                        else:
+                            # For FABRIC NS IFS, Need the VLAN to be same as the VLAN allocated by Broker to AL2S NS IFS
+                            # Add the AL2S Sliver as a redeem predecessor
+                            node_map = tuple([f"{Constants.PEERED},{ifs_mapping.get_peer_ns_id()},{ifs_mapping.get_peer_ifs().get_name()}",
+                                              f"{ifs_mapping.get_peer_site()}"])
+                            dep_update_needed = True
+
                         ifs.set_node_map(node_map=node_map)
                         peer_ifs_labels = ifs_mapping.get_peer_ifs().get_labels()
                         ifs.set_peer_labels(lab=peer_ifs_labels)
@@ -320,10 +333,28 @@ class OrchestratorSliceWrapper:
 
                 if sliver.node_id not in node_res_mapping:
                     node_res_mapping[sliver.node_id] = reservation.get_reservation_id()
-                return reservation
+                return reservation, dep_update_needed
             else:
                 raise OrchestratorException(message="Not implemented",
                                             http_error_code=BAD_REQUEST)
+
+    def __update_peered_ns_dependencies(self, *, ns_peered_reservations: List[LeaseReservationAvro],
+                                        ns_mapping: Dict[str, str]):
+        for r in ns_peered_reservations:
+            for ifs in r.sliver.interface_info.interfaces.values():
+                t1, t2 = ifs.get_node_map()
+                if Constants.PEERED not in t1:
+                    continue
+                result = t1.split(",")
+                if len(result) > 1:
+                    dep_ns_id = result[1]
+                    predecessor = ReservationPredecessorAvro()
+                    predecessor.reservation_id = ns_mapping.get(dep_ns_id)
+                    r.redeem_processors.append(predecessor)
+                    if r.get_reservation_id() in self.computed_modify_reservations:
+                        self.computed_modify_reservations[r.get_reservation_id()].dependencies.append(predecessor)
+                    # Update NODE MAP
+                    ifs.set_node_map(node_map=(f"{result[0]},{predecessor.reservation_id},{result[2]}", t2))
 
     def __build_network_service_reservations(self, *, slice_graph: ABCASMPropertyGraph,
                                              node_res_mapping: Dict[str, str]) -> List[LeaseReservationAvro]:
@@ -335,12 +366,14 @@ class OrchestratorSliceWrapper:
         @return list of network service reservations
         """
         reservations = []
+        ns_mapping = {}
+        ns_peered_reservations = []
         for ns_id in slice_graph.get_all_network_service_nodes():
 
             # Build Network Service Sliver
-            reservation = self.__build_ns_sliver_reservation(slice_graph=slice_graph,
-                                                             node_id=ns_id,
-                                                             node_res_mapping=node_res_mapping)
+            reservation, dep_update_needed = self.__build_ns_sliver_reservation(slice_graph=slice_graph,
+                                                                                node_id=ns_id,
+                                                                                node_res_mapping=node_res_mapping)
             if reservation is None:
                 continue
 
@@ -348,6 +381,10 @@ class OrchestratorSliceWrapper:
                 self.computed_l3_reservations.append(reservation)
 
             reservations.append(reservation)
+            ns_mapping[reservation.sliver.node_id] = reservation.get_reservation_id()
+            if dep_update_needed:
+                ns_peered_reservations.append(reservation)
+        self.__update_peered_ns_dependencies(ns_peered_reservations=ns_peered_reservations, ns_mapping=ns_mapping)
         return reservations
 
     def __build_node_sliver_reservation(self, *, slice_graph: ABCASMPropertyGraph,
@@ -419,6 +456,8 @@ class OrchestratorSliceWrapper:
         topology_diff = existing_topology.diff(new_topology)
 
         reservations = []
+        ns_peered_reservations = []
+        ns_mapping = {}
 
         if topology_diff is None:
             return reservations
@@ -433,6 +472,12 @@ class OrchestratorSliceWrapper:
                 continue
             node_res_mapping[x.node_id] = x.reservation_info.reservation_id
 
+        # Build Network Service mapping to update dependencies for Peered Network Services
+        for x in new_topology.nodes.values():
+            if x in topology_diff.added.nodes or x in topology_diff.removed.nodes:
+                continue
+            ns_mapping[x.node_id] = x.reservation_info.reservation_id
+
         # Add Nodes
         for x in topology_diff.added.nodes:
             reservation = self.__build_node_sliver_reservation(slice_graph=new_slice_graph, node_id=x.node_id)
@@ -445,10 +490,13 @@ class OrchestratorSliceWrapper:
         for x in topology_diff.added.services:
             if x.get_sliver().get_type() in Constants.IGNORABLE_NS:
                 continue
-            reservation = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
-                                                             node_id=x.node_id,
-                                                             node_res_mapping=node_res_mapping)
+            reservation, dep_update_needed = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
+                                                                                node_id=x.node_id,
+                                                                                node_res_mapping=node_res_mapping)
             reservations.append(reservation)
+            ns_mapping[reservation.sliver.node_id] = reservation.get_reservation_id()
+            if dep_update_needed:
+                ns_peered_reservations.append(reservation)
 
         # Add components
         for x in topology_diff.added.components:
@@ -477,11 +525,15 @@ class OrchestratorSliceWrapper:
             # If corresponding sliver also has add operations; it's already in the map
             # No need to rebuild it
             if rid not in self.computed_modify_reservations:
-                new_reservation = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
-                                                                     node_id=parent_node_id,
-                                                                     node_res_mapping=node_res_mapping)
+                new_reservation, dep_update_needed = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
+                                                                                        node_id=parent_node_id,
+                                                                                        node_res_mapping=node_res_mapping)
                 self.computed_modify_reservations[rid] = ModifiedReservation(sliver=new_reservation.get_sliver(),
                                                                              dependencies=new_reservation.redeem_processors)
+
+                if dep_update_needed:
+                    ns_peered_reservations.append(new_reservation)
+                ns_mapping[new_reservation.sliver.node_id] = rid
 
         # Removed Interfaces
         for x in topology_diff.removed.interfaces:
@@ -490,11 +542,15 @@ class OrchestratorSliceWrapper:
             # If corresponding sliver also has add operations; it's already in the map
             # No need to rebuild it
             if rid not in self.computed_modify_reservations:
-                new_reservation = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
-                                                                     node_id=parent_node_id,
-                                                                     node_res_mapping=node_res_mapping)
+                new_reservation, dep_update_needed = self.__build_ns_sliver_reservation(slice_graph=new_slice_graph,
+                                                                                        node_id=parent_node_id,
+                                                                                        node_res_mapping=node_res_mapping)
                 self.computed_modify_reservations[rid] = ModifiedReservation(sliver=new_reservation.get_sliver(),
                                                                              dependencies=new_reservation.redeem_processors)
+
+                if dep_update_needed:
+                    ns_peered_reservations.append(new_reservation)
+                ns_mapping[new_reservation.sliver.node_id] = rid
 
         # Remove nodes
         for x in topology_diff.removed.nodes:
@@ -506,6 +562,9 @@ class OrchestratorSliceWrapper:
                 continue
             reservation_info = x.get_property('reservation_info')
             self.computed_remove_reservations.append(reservation_info.reservation_id)
+
+        # Update Dependencies for Peered NS
+        self.__update_peered_ns_dependencies(ns_peered_reservations=ns_peered_reservations, ns_mapping=ns_mapping)
 
         # Add the new reservations to the controller
         for r in reservations:

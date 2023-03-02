@@ -466,22 +466,43 @@ class ReservationClient(Reservation, ABCControllerReservation):
             return
 
         for ifs in sliver.interface_info.interfaces.values():
-            component_name, rid = ifs.get_node_map()
+            # For Peered IFS belonging to FABRIC L3VPN
+            # value1 => Peered:<rid>:<peer ifs name>
+            # value2 =>Tuple(Site Name (e.g. AWS), Node Type (e.g. Facility), Node Name (e.g. Cloud_Facility_AWS))
+            # Otherwise, value1=> Component Name and value2 => Reservation Id
+            value1, value2 = ifs.get_node_map()
+            rid = value2
 
             # Skip Facility Port Interfaces for Create or Modify
             # Allocated interfaces on Modify i.e. ExtendTicket
-            if component_name == str(NodeType.Facility) or component_name == Constants.PEERED or\
-                    ifs.label_allocations is not None:
+            if value1 == str(NodeType.Facility) or ifs.label_allocations is not None:
                 continue
+
+            result = value1.split(",")
+            if Constants.PEERED in value1:
+                if sliver.get_technology() == Constants.AL2S:
+                    continue
+                else:
+                    rid = result[1]
 
             pred_state = self.redeem_predecessors.get(ID(uid=rid))
             if not pred_state:
                 self.logger.error(f"Redeem predecessors not found {rid} for {self.get_reservation_id()}")
                 continue
             parent_res = pred_state.get_reservation()
+
+            if Constants.PEERED in value1:
+                if parent_res is not None:
+                    ns_sliver = parent_res.get_resources().get_sliver()
+                    # component_name contains =>  Peered:<peered ns id>:<peer ifs name>
+                    al2s_ifs = ns_sliver.interface_info.interfaces.get(result[2])
+                    ifs.labels = Labels.update(ifs.labels, vlan=al2s_ifs.labels.vlan)
+                    ifs.set_node_map(node_map=(Constants.PEERED, value2))
+                continue
+
             if parent_res is not None and (parent_res.is_ticketed() or parent_res.is_active()):
                 node_sliver = parent_res.get_resources().get_sliver()
-                component = node_sliver.attached_components_info.get_device(name=component_name)
+                component = node_sliver.attached_components_info.get_device(name=value1)
                 graph_id, bqm_component_id = component.get_node_map()
                 graph_id, node_id = node_sliver.get_node_map()
                 ifs.set_node_map(node_map=(node_id, bqm_component_id))

@@ -129,12 +129,12 @@ class NetworkServiceInventory(InventoryForType):
             if requested_ifs.labels is not None and requested_ifs.labels.vlan is not None:
                 requested_vlan = int(requested_ifs.labels.vlan)
 
-            if requested_vlan is None:
-                return requested_ifs
-
             # Validate the requested VLAN is in range specified on MPLS Network Service in BQM
             # Only do this for Non FacilityPorts
             if bqm_ifs.get_type() != InterfaceType.FacilityPort:
+                if requested_vlan is None:
+                    return requested_ifs
+
                 if owner_ns.get_label_delegations() is None:
                     if 1 > requested_vlan > 4095:
                         raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
@@ -156,6 +156,10 @@ class NetworkServiceInventory(InventoryForType):
             if vlan_range is not None:
                 vlan_range = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_ifs,
                                                             existing_reservations=existing_reservations)
+
+                if requested_vlan is None:
+                    requested_ifs.labels.vlan = str(vlan_range[0])
+                    return requested_ifs
 
                 if requested_vlan not in vlan_range:
                     raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
@@ -181,8 +185,11 @@ class NetworkServiceInventory(InventoryForType):
                     requested_ifs.labels.vlan = str(vlan_range[0])
                     requested_ifs.label_allocations = Labels(vlan=str(vlan_range[0]))
                 else:
-                    if requested_ifs.labels is None or requested_ifs.labels.vlan is None:
+                    if requested_ifs.labels is None:
                         return requested_ifs
+
+                    if requested_ifs.labels.vlan is None:
+                        requested_ifs.labels.vlan = str(vlan_range[0])
 
                     if int(requested_ifs.labels.vlan) not in vlan_range:
                         raise BrokerException(error_code=ExceptionErrorCode.FAILURE,
@@ -417,18 +424,9 @@ class NetworkServiceInventory(InventoryForType):
         Update Labels for a Peered Interface
         @param
         """
-
         ifs_labels = requested_ifs.get_labels()
         if ifs_labels is None:
             ifs_labels = Labels()
-
-        if bqm_interface.labels.vlan_range is not None:
-            vlan_range = self.__extract_vlan_range(labels=bqm_interface.labels)
-        else:
-            vlan_range = list(range(100, 1000))
-
-        available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
-                                                         existing_reservations=existing_reservations)
 
         if owner_switch.get_name() == Constants.AL2S:
             delegation_id, delegated_label = self.get_delegations(lab_cap_delegations=bqm_interface.get_label_delegations())
@@ -438,9 +436,14 @@ class NetworkServiceInventory(InventoryForType):
             local_name = bqm_interface.get_name()
             device_name = owner_switch.get_name()
 
-        # local_name, device_name
-        ifs_labels = Labels.update(ifs_labels, local_name=local_name, device_name=device_name,
-                                   vlan=str(available_vlans[0]))
+        ifs_labels = Labels.update(ifs_labels, local_name=local_name, device_name=device_name)
+
+        if bqm_interface.labels.vlan_range is not None:
+            vlan_range = self.__extract_vlan_range(labels=bqm_interface.labels)
+            available_vlans = self.__exclude_allocated_vlans(available_vlan_range=vlan_range, bqm_ifs=bqm_interface,
+                                                             existing_reservations=existing_reservations)
+            vlan = str(available_vlans[0])
+            ifs_labels = Labels.update(ifs_labels, vlan=vlan)
 
         requested_ifs.labels = ifs_labels
         requested_ifs.label_allocations = Labels.update(lab=ifs_labels)
