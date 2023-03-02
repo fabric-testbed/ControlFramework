@@ -355,6 +355,8 @@ class FimHelper:
                                 topo_ifs.set_properties(labels=ifs.labels,
                                                         label_allocations=ifs.label_allocations,
                                                         node_map=ifs.node_map)
+                                if ifs.peer_labels is not None:
+                                    topo_ifs.set_properties(peer_labels=ifs.peer_labels)
 
         elif isinstance(sliver, NetworkServiceSliver) and node_name in neo4j_topo.network_services:
             node = neo4j_topo.network_services[node_name]
@@ -373,6 +375,8 @@ class FimHelper:
                                             label_allocations=ifs.label_allocations,
                                             node_map=ifs.node_map)
 
+                    if ifs.peer_labels is not None:
+                        topo_ifs.set_properties(peer_labels=ifs.peer_labels)
 
     @staticmethod
     def get_neo4j_asm_graph(*, slice_graph: str) -> ABCASMPropertyGraph:
@@ -524,7 +528,7 @@ class FimHelper:
                     return random.choice(list(ns.interface_info.interfaces.values()))
                 # Return an interface chosen randomly for a specific region
                 else:
-                    result = list(filter(lambda x: (region in x.labels.device_name), ns.interface_info.interfaces.values()))
+                    result = list(filter(lambda x: (region in x.labels.region), ns.interface_info.interfaces.values()))
                     return random.choice(result)
         return None
 
