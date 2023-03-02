@@ -508,7 +508,7 @@ class FimHelper:
 
     @staticmethod
     def get_site_interface_sliver(*, component: ComponentSliver or NodeSliver, local_name: str,
-                                  region: str = None) -> InterfaceSliver or None:
+                                  region: str = None, device_name: str = None) -> InterfaceSliver or None:
         """
         Get Interface Sliver (child of Component Sliver) with a local name
 
@@ -522,9 +522,25 @@ class FimHelper:
         @param component Component Sliver
         @param local_name Local Name
         @param region region
+        @param device_name device name
         @return Interface sliver
         """
         for ns in component.network_service_info.network_services.values():
+            # Filter on region
+            if region is not None:
+                result = list(filter(lambda x: (region in x.labels.region), ns.interface_info.interfaces.values()))
+            else:
+                result = list(ns.interface_info.interfaces.values())
+
+            # Filter on device name
+            if device_name is not None:
+                result = list(filter(lambda x: (device_name in x.labels.device_name), result))
+
+            if local_name is not None:
+                result = list(filter(lambda x: (local_name in x.labels.local_name), result))
+
+            return random.choice(result)
+            '''
             # Return specific interface where local name matches
             if local_name is not None:
                 return next(x for x in ns.interface_info.interfaces.values() if local_name in x.get_name())
@@ -536,6 +552,7 @@ class FimHelper:
                 else:
                     result = list(filter(lambda x: (region in x.labels.region), ns.interface_info.interfaces.values()))
                     return random.choice(result)
+            '''
         return None
 
     @staticmethod

@@ -632,7 +632,8 @@ class BrokerSimplerUnitsPolicy(BrokerCalendarPolicy):
             # Get BQM Connection Point in Site Delegation (c)
             site_cp = FimHelper.get_site_interface_sliver(component=bqm_component,
                                                           local_name=ifs.get_labels().local_name,
-                                                          region=ifs.get_labels().region)
+                                                          region=ifs.get_labels().region,
+                                                          device_name=ifs.get_labels().device_name)
             self.logger.debug(f"Interface Sliver [Site Delegation] (C): {site_cp}")
 
             # Get BQM Peer Connection Point in Site Delegation (a)
