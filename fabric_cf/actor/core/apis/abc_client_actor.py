@@ -64,6 +64,15 @@ class ABCClientActor(ABCActorMixin):
         """
 
     @abstractmethod
+    def update_broker(self, *, broker: ABCBrokerProxy):
+        """
+        Registers a broker. If this is the first broker to be registered, it is
+        set as the default broker.
+
+        @params broker broker to register
+        """
+
+    @abstractmethod
     def demand(self, *, rid: ID):
         """
         Demand a reservation

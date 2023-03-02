@@ -74,6 +74,14 @@ class ABCServerActor(ABCActorMixin):
         """
 
     @abstractmethod
+    def update_client(self, *, client: Client):
+        """
+        Update the specified client.
+        @param client client to register
+        @throws Exception in case of error
+        """
+
+    @abstractmethod
     def unregister_client(self, *, guid: ID):
         """
         Unregisters the specified client.

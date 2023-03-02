@@ -127,6 +127,29 @@ class ClientActorManagementObjectHelper(ABCClientActorManagementObject):
 
         return result
 
+    def update_broker(self, *, broker: ProxyAvro, caller: AuthToken) -> ResultAvro:
+        result = ResultAvro()
+
+        if broker is None or caller is None:
+            result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+            result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            return result
+
+        try:
+            proxy = Converter.get_agent_proxy(mng=broker)
+            if proxy is None:
+                result.set_code(ErrorCodes.ErrorInvalidArguments.value)
+                result.set_message(ErrorCodes.ErrorInvalidArguments.interpret())
+            else:
+                self.client.update_broker(broker=proxy)
+        except Exception as e:
+            self.logger.error("update_broker {}".format(e))
+            result.set_code(ErrorCodes.ErrorInternalError.value)
+            result.set_message(ErrorCodes.ErrorInternalError.interpret(exception=e))
+            result = ManagementObject.set_exception_details(result=result, e=e)
+
+        return result
+
     def get_broker_query_model(self, *, broker: ID, caller: AuthToken, id_token: str,
                                level: int, graph_format: GraphFormat) -> ResultBrokerQueryModelAvro:
         result = ResultBrokerQueryModelAvro()

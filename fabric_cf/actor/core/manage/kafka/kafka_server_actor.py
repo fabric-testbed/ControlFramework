@@ -126,5 +126,8 @@ class KafkaServerActor(KafkaActor, ABCMgmtServerActor):
     def register_client(self, *, client: ClientMng, kafka_topic: str) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)
 
+    def update_client(self, *, client: ClientMng, kafka_topic: str) -> bool:
+        raise ManageException(Constants.NOT_IMPLEMENTED)
+
     def unregister_client(self, *, guid: ID) -> bool:
         raise ManageException(Constants.NOT_IMPLEMENTED)

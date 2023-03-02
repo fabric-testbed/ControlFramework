@@ -36,6 +36,7 @@ from fabric_cf.actor.core.core.actor_identity import ActorIdentity
 from fabric_cf.actor.core.manage.messages.client_mng import ClientMng
 from fabric_mb.message_bus.messages.proxy_avro import ProxyAvro
 from fabric_cf.actor.core.util.id import ID
+from fabric_cf.actor.core.apis.abc_actor_mixin import ActorType
 
 if TYPE_CHECKING:
     from fabric_cf.actor.core.apis.abc_mgmt_actor import ABCMgmtActor
@@ -154,164 +155,127 @@ class RemoteActorCache:
         finally:
             self.lock.release()
 
-    def check_peer(self, *, from_mgmt_actor: ABCMgmtActor, from_guid: ID, to_mgmt_actor: ABCMgmtActor, to_guid: ID):
+    def check_peer(self, *, mgmt_actor: ABCMgmtActor, peer_guid: ID, peer_type: ActorType):
         """
         Check if a peer is already connected
-        @param from_mgmt_actor from actor
-        @param from_guid guid of from actor
-        @param to_mgmt_actor to actor
-        @param to_guid guid of to actor
+        @param mgmt_actor mgmt_actor
+        @param peer_guid peer_guid
+        @param peer_type peer_type
         """
-        self.logger.debug("from_mgmt_actor={} from_guid={} to_mgmt_actor={} to_guid={}".format(type(from_mgmt_actor),
-                                                                                               from_guid,
-                                                                                               type(to_mgmt_actor),
-                                                                                               to_guid))
+        self.logger.debug(f"Check if Peer {peer_guid}/{peer_type} already exists!")
         try:
-            # For Broker/AM
-            if to_mgmt_actor is not None and isinstance(to_mgmt_actor, ABCMgmtServerActor):
-                clients = to_mgmt_actor.get_clients(guid=from_guid)
-                if clients is not None:
-                    self.logger.debug("Edge between {} and {} exists (client)".format(from_guid, to_guid))
+            # For Broker - all AMs are added as proxies
+            # For Orchestrator - all peers will be added as Proxies
+            if isinstance(mgmt_actor, ABCMgmtClientActor) and peer_type in [ActorType.Authority, ActorType.Broker]:
+                self.logger.debug(f"Checking brokers")
+                brokers = mgmt_actor.get_brokers(broker=peer_guid)
+                self.logger.debug(f"brokers -- {brokers}")
+                if brokers is not None:
+                    self.logger.debug(f"Edge between {mgmt_actor.get_guid()} and {peer_guid} exists (broker)")
                     return True
 
-            # For Orchestrator/Broker
-            elif from_mgmt_actor is not None and isinstance(from_mgmt_actor, ABCMgmtClientActor):
-                brokers = from_mgmt_actor.get_brokers(broker=to_guid)
-                if brokers is not None:
-                    self.logger.debug("Edge between {} and {} exists (broker)".format(from_guid, to_guid))
+            # For AM - all peers will be added as clients
+            # For Broker - orchestrator as client
+            elif isinstance(mgmt_actor, ABCMgmtServerActor) and peer_type in [ActorType.Orchestrator, ActorType.Broker]:
+                self.logger.debug(f"Checking clients")
+                clients = mgmt_actor.get_clients(guid=peer_guid)
+                self.logger.debug(f"clients -- {clients} {mgmt_actor.get_last_error()}")
+                if clients is not None:
+                    self.logger.debug(f"Edge between {mgmt_actor.get_guid()} and {peer_guid} exists (client)")
                     return True
         except Exception as e:
-            raise RemoteActorCacheException("Unable to cast actor {} or {} e={}".format(from_guid, to_guid, e))
+            raise RemoteActorCacheException(f"Unable to cast actor {mgmt_actor.get_guid()} or {peer_guid} e={e}")
 
-        self.logger.debug("Edge between {} and {} does not exist".format(from_guid, to_guid))
+        self.logger.debug(f"Edge between {mgmt_actor.get_guid()} and {peer_guid} does not exist")
         return False
 
-    def establish_peer_private(self, *, from_mgmt_actor: ABCMgmtActor, from_guid: ID, to_mgmt_actor: ABCMgmtActor,
-                               to_guid: ID) -> ClientMng:
+    def establish_peer_private(self, *, mgmt_actor: ABCMgmtActor, peer_guid: ID, peer_type: ActorType,
+                               update: bool = False) -> ClientMng:
         """
         Establish connection i.e. create either proxies or clients between peer
-        @param from_mgmt_actor from actor
-        @param from_guid guid of from actor
-        @param to_mgmt_actor to actor
-        @param to_guid guid of to actor
+        @param mgmt_actor mgmt_actor
+        @param peer_guid peer_guid
+        @param peer_type peer_type
+        @param update update
         """
         self.logger.debug("establish_peer_private IN")
         client = None
-        from_map = self.get_cache_entry_copy(guid=from_guid)
-        to_map = self.get_cache_entry_copy(guid=to_guid)
+        cache_entry = self.get_cache_entry_copy(guid=peer_guid)
+        if cache_entry is None:
+            raise RemoteActorCacheException(f"Actor {peer_guid} does not have a registry cache entry")
 
-        if from_map is None:
-            raise RemoteActorCacheException("Actor {} does not have a registry cache entry".format(from_guid))
+        protocol = cache_entry.get(self.actor_protocol)
+        kafka_topic = cache_entry.get(self.actor_location)
+        identity = ActorIdentity(name=cache_entry.get(self.actor_name), guid=peer_guid)
 
-        if to_map is None:
-            raise RemoteActorCacheException("Actor {} does not have a registry cache entry".format(to_guid))
+        if kafka_topic is None:
+            raise RemoteActorCacheException(f"Actor {peer_guid} does not have a kafka topic")
 
-        if from_mgmt_actor is not None:
-            self.logger.debug("From actor {} is local".format(from_mgmt_actor.get_name()))
+        if isinstance(mgmt_actor, ABCMgmtClientActor) and peer_type in [ActorType.Authority, ActorType.Broker]:
+            proxy = ProxyAvro()
+            proxy.set_protocol(protocol)
+            proxy.set_guid(str(identity.get_guid()))
+            proxy.set_name(identity.get_name())
+            proxy.set_type(cache_entry.get(self.actor_type))
+            proxy.set_kafka_topic(kafka_topic)
 
-            protocol = Constants.PROTOCOL_LOCAL
-            kafka_topic = None
+            try:
+                if not update:
+                    self.logger.debug(f"Creating new proxy: {proxy}")
+                    if not mgmt_actor.add_broker(broker=proxy):
+                        raise RemoteActorCacheException(f"Could not register broker {peer_guid} "
+                                                        f"error: {mgmt_actor.get_last_error()}")
+                else:
+                    self.logger.debug(f"Updating existing proxy: {proxy}")
+                    if not mgmt_actor.update_broker(broker=proxy):
+                        raise RemoteActorCacheException(f"Could not update broker {peer_guid} "
+                                                        f"error: {mgmt_actor.get_last_error()}")
+            except Exception as e:
+                self.logger.error(e)
+                self.logger.error(traceback.format_exc())
+        elif isinstance(mgmt_actor, ABCMgmtServerActor) and peer_type in [ActorType.Orchestrator, ActorType.Broker]:
+            client = ClientMng()
+            client.set_name(name=cache_entry.get(self.actor_name))
+            client.set_guid(guid=str(peer_guid))
+            try:
+                if not update:
+                    self.logger.debug(f"Creating new client: {client}")
+                    mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
+                else:
+                    self.logger.debug(f"Updating existing client: {client}")
+                    mgmt_actor.update_client(client=client, kafka_topic=kafka_topic)
+            except Exception as e:
+                raise RemoteActorCacheException(f"Could not register actor: {peer_guid} as a client of "
+                                                f"actor: {mgmt_actor} e= {e}")
 
-            if self.actor_location in to_map:
-                if self.actor_protocol not in to_map:
-                    raise RemoteActorCacheException("Actor {} does not specify communications protocol (local/kafka)".
-                                                    format(to_map[self.actor_name]))
-
-                protocol = to_map.get(self.actor_protocol, None)
-                kafka_topic = to_map[self.actor_location]
-                self.logger.debug("Added To actor location (non-local) {}".format(to_map[self.actor_location]))
-
-            identity = ActorIdentity(name=to_map[self.actor_name], guid=to_guid)
-
-            if kafka_topic is not None and isinstance(from_mgmt_actor, ABCMgmtClientActor):
-                self.logger.debug("Kafka Topic is available, registering broker proxy")
-                proxy = ProxyAvro()
-                proxy.set_protocol(protocol)
-                proxy.set_guid(str(identity.get_guid()))
-                proxy.set_name(identity.get_name())
-                proxy.set_type(to_map[self.actor_type])
-                proxy.set_kafka_topic(kafka_topic)
-
-                try:
-                    if not from_mgmt_actor.add_broker(broker=proxy):
-                        raise RemoteActorCacheException("Could not register broker {}".
-                                                        format(from_mgmt_actor.get_last_error()))
-                except Exception as e:
-                    self.logger.error(e)
-                    self.logger.error(traceback.format_exc())
-            else:
-                self.logger.debug("Not adding broker to actor at this time because the remote actor actor "
-                                  "kafka topic is not available")
-
-            if to_mgmt_actor is not None and isinstance(to_mgmt_actor, ABCMgmtServerActor):
-                self.logger.debug("Creating a client for local to actor")
-                client = ClientMng()
-                client.set_name(name=from_mgmt_actor.get_name())
-                client.set_guid(guid=str(from_mgmt_actor.get_guid()))
-                try:
-                    to_mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
-                except Exception as e:
-                    raise RemoteActorCacheException("Could not register actor: {} as a client of actor: {} e= {}".
-                                                    format(client.get_name(), to_mgmt_actor.get_name(), e))
-        else:
-            # fromActor is remote: toActor must be local
-            # no-need to create any proxies
-            # we only need to register clients
-            if to_mgmt_actor is None:
-                raise RemoteActorCacheException("Both peer endpoints are non local actors: {} {}".format(
-                    from_map[self.actor_name], to_map[self.actor_name]))
-
-            if self.actor_guid not in from_map:
-                raise RemoteActorCacheException("Missing guid for remote actor: {}".format(from_map[self.actor_name]))
-
-            self.logger.debug("From actor was remote, to actor {} is local".format(to_mgmt_actor.get_name()))
-            if self.actor_location in from_map and isinstance(to_mgmt_actor, ABCMgmtServerActor):
-                kafka_topic = from_map[self.actor_location]
-                self.logger.debug("From actor has kafka topic")
-                self.logger.debug("Creating client for from actor {}".format(from_map[self.actor_name]))
-                client = ClientMng()
-                client.set_name(name=from_map[self.actor_name])
-                client.set_guid(guid=str(from_map[self.actor_guid]))
-                try:
-                    to_mgmt_actor.register_client(client=client, kafka_topic=kafka_topic)
-                except Exception as e:
-                    raise RemoteActorCacheException(
-                        "Could not register actor: {} as a client of actor: {} e= {}".format(
-                            client.get_name(), to_mgmt_actor.get_name(), e))
-            else:
-                self.logger.debug("Not adding client to actor at this time - remote actor topic not available")
         self.logger.debug("establish_peer_private OUT {}".format(client))
         return client
 
-    def establish_peer(self, *, from_guid: ID, from_mgmt_actor: ABCMgmtActor, to_guid: ID,
-                       to_mgmt_actor: ABCMgmtActor) -> ClientMng:
+    def establish_peer(self, *, mgmt_actor: ABCMgmtActor, peer_guid: ID, peer_type: ActorType) -> ClientMng:
         """
         Check if peer exists in cache and if not Establish connection i.e. create either proxies or clients between peer
-        @param from_mgmt_actor from actor
-        @param from_guid guid of from actor
-        @param to_mgmt_actor to actor
-        @param to_guid guid of to actor
+        @param mgmt_actor mgmt_actor
+        @param peer_guid peer_guid
+        @param peer_type peer_type
         """
         self.logger.debug("establish_peer IN")
         client = None
-        if from_guid is None or to_guid is None:
+        if mgmt_actor is None or peer_guid is None:
             self.logger.error("Cannot establish peer when either guid is not known")
             raise RemoteActorCacheException("Cannot establish peer when either guid is not known")
         try:
-            if not self.check_peer(from_mgmt_actor=from_mgmt_actor, from_guid=from_guid,
-                                   to_mgmt_actor=to_mgmt_actor, to_guid=to_guid):
+            update = self.check_peer(mgmt_actor=mgmt_actor, peer_guid=peer_guid, peer_type=peer_type)
 
-                client = self.establish_peer_private(from_mgmt_actor=from_mgmt_actor, from_guid=from_guid,
-                                                     to_mgmt_actor=to_mgmt_actor, to_guid=to_guid)
+            client = self.establish_peer_private(mgmt_actor=mgmt_actor, peer_guid=peer_guid, peer_type=peer_type,
+                                                 update=update)
 
-                self.check_to_remove_entry(guid=from_guid)
-                self.check_to_remove_entry(guid=to_guid)
+            self.check_to_remove_entry(guid=peer_guid)
 
-                self.logger.debug("Peer established from {} to {}".format(from_guid, to_guid))
+            self.logger.debug(f"Peer established from {mgmt_actor} to {peer_guid}")
 
         except Exception as e:
             self.logger.error(traceback.format_exc())
-            self.logger.error("Peer could not be established from {} to {} e:={}".format(from_guid, to_guid, e))
+            self.logger.error(f"Peer could not be established from {mgmt_actor} to {peer_guid} e:={e}")
         self.logger.debug("establish_peer OUT {}".format(client))
         return client
 

@@ -143,6 +143,9 @@ class Controller(ActorMixin, ABCController):
     def add_broker(self, *, broker: ABCBrokerProxy):
         self.registry.add_broker(broker=broker)
 
+    def update_broker(self, *, broker: ABCBrokerProxy):
+        self.registry.update_broker(broker=broker)
+
     def bid(self):
         """
         Bids for resources as dictated by the plugin bidding policy for the

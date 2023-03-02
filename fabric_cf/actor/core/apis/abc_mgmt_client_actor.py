@@ -108,6 +108,14 @@ class ABCMgmtClientActor(ABCComponent):
         """
 
     @abstractmethod
+    def update_broker(self, *, broker: ProxyAvro) -> bool:
+        """
+        Update an existing broker.
+        @param broker broker
+        @return true for sucess; false otherwise
+        """
+
+    @abstractmethod
     def get_broker_query_model(self, *, broker: ID, id_token: str, level: int,
                                graph_format: GraphFormat) -> BrokerQueryModelAvro:
         """
